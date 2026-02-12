@@ -1,0 +1,261 @@
+# Control Docs Templates
+
+This file contains ready-to-copy templates for each document in `control_docs/`.
+
+---
+## File: TODO.md
+**Purpose:** Transient sprint backlog. Clear at sprint end — completed items migrate to `FEATURES.md`.
+
+```
+# Sprint TODO (clear at sprint end)
+# Status: [ ] todo | [~] in-progress | [x] done
+
+[#ID] [ ] AS a <role> I WANT <goal> SO THAT <benefit>
+
+Acceptance Criteria
+* Given <preconditions>
+* When <action>
+* Then <outcome>
+
+Notes
+- Link to PR/issue: <URL or #ID>
+- Owner: <name>
+- Estimate: <Xs | S | M | L>
+- Risks/Dependencies: <...>
+
+---
+[#ID] [ ] AS a <role> I WANT <goal> SO THAT <benefit>
+
+Acceptance Criteria
+* Given …
+* When …
+* Then …
+```
+> Rule: At sprint end, move all `[x]` items to `FEATURES.md` under **Done**.
+
+---
+## File: FEATURES.md
+**Purpose:** Single source of truth for backlog and delivered features.
+
+```
+# Features
+
+## Backlog
+- [ID-001] Short title – status: planned
+- [ID-002] Short title – status: in design
+
+## Done
+- [ID-000] Short title – merged in PR #123 on 2025-09-05
+```
+> Rule: Keep this file authoritative; every shipped feature must appear here.
+
+---
+## File: RUN_DEPLOY.md
+**Purpose:** How to run locally, build with Docker, and deploy (GCP by default).
+
+```
+# Run & Deploy Playbook
+
+## Prereqs
+- Node: v20.x | PNPM v9.x
+- Python: 3.11
+- Docker: 24+ / Docker Compose v2
+- GCloud CLI: latest
+- Make (optional)
+
+## Environment
+cp .env.example .env
+# Fill all required variables
+# APP_ENV=local|staging|prod
+# DATABASE_URL=...
+# REDIS_URL=...
+# OPENAI_API_KEY=...
+# ...
+
+## Local Setup
+pnpm i
+pnpm build
+pnpm dev
+
+# OR (Python backend)
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+
+## Tests
+pnpm test
+pytest -q
+# Coverage gate: ≥95% on touched code
+
+## Docker (multi-stage)
+docker build -t org/app:$(git rev-parse --short HEAD) .
+docker run --env-file .env -p 8080:8080 org/app:$(git rev-parse --short HEAD)
+
+## Database Init & Seed
+# One-time migrations + seed data
+pnpm db:migrate
+pnpm db:seed
+# OR
+alembic upgrade head
+python scripts/seed.py
+
+## GCP Deploy (Cloud Run example)
+gcloud auth login
+gcloud config set project <PROJECT_ID>
+gcloud builds submit --tag gcr.io/<PROJECT_ID>/app:$(git rev-parse --short HEAD)
+gcloud run deploy <SERVICE_NAME>   --image gcr.io/<PROJECT_ID>/app:$(git rev-parse --short HEAD)   --region <REGION> --platform managed   --set-env-vars "$(cat .env | xargs)"
+
+## Secrets
+# Prefer GCP Secret Manager; avoid plaintext in .env for production.
+gcloud secrets create OPENAI_API_KEY --replication-policy="automatic"
+gcloud secrets versions add OPENAI_API_KEY --data-file=<(echo -n "$OPENAI_API_KEY")
+
+## CI/CD
+# GitHub Actions: lint → test → build → scan → push → deploy (manual approval for prod)
+# Add SBOM generation (syft) and vuln scan (grype or Trivy).
+
+## Rollback
+# Re-deploy previous image tag
+gcloud run revisions list --service <SERVICE_NAME>
+gcloud run services update-traffic <SERVICE_NAME> --to-revisions <REVISION>=100
+```
+> Rule: Keep this document updated whenever local setup or deploy steps change.
+
+---
+## File: TEST.md
+**Purpose:** Test catalogue and coverage evidence.
+
+```
+# Test Register
+
+## Strategy
+- Unit tests (Jest / PyTest)
+- Integration tests (Playwright / HTTPX)
+- E2E tests (Playwright)
+- Security tests (dependency & container scanning)
+
+## Coverage Goals
+- Overall: ≥ 85–90%
+- Touched code in PRs: ≥ 95%
+
+## Suites
+- packages/web: pnpm test
+- services/api: pytest
+
+## How to Run
+pnpm test
+pytest -q
+playwright test
+
+## Recent Runs
+- 2025-09-05: All green, coverage 91.3% overall
+```
+> Rule: Update when tests are added/modified or executed.
+
+---
+## File: CHANGELOG.md
+**Purpose:** Keep-a-Changelog compliant history.
+
+```
+# Changelog
+All notable changes to this project will be documented in this file.
+
+The format is based on Keep a Changelog and this project adheres to SemVer.
+
+## [Unreleased]
+
+## [1.0.0] - 2025-09-05
+### Added
+- Initial MVP release
+
+### Changed
+- N/A
+
+### Fixed
+- N/A
+```
+
+---
+## File: PROJECT_OVERVIEW.md
+**Purpose:** Vision, goals, KPIs.
+
+```
+# Project Overview
+
+## Vision
+<one-paragraph vision>
+
+## Goals (12 months)
+- <goal 1>
+- <goal 2>
+
+## KPIs
+- MRR
+- Active users
+- NPS
+```
+
+---
+## File: SYSTEM_DESIGN.md
+**Purpose:** Architecture, ADRs, data flows.
+
+```
+# System Design
+
+## Context
+- Problem domain & constraints
+
+## Architecture
+- C4 diagrams (System/Container/Component)
+- Services and responsibilities
+
+## Data Model
+- ERD overview
+
+## Flows
+- Sequence diagrams for critical paths
+
+## ADR Log
+- ADR-001: <title> — <decision>, <date>
+```
+> Rule: Update whenever structure changes.
+
+---
+## File: SECURITY.md
+**Purpose:** Threat model, SBOM, mitigations.
+
+```
+# Security
+
+## Threat Model
+- Assets, actors, attack surfaces, STRIDE analysis
+
+## Dependencies
+- SBOM: generated via `syft packages dir:. -o cyclonedx-json > sbom.json`
+- Scans: `trivy image` / `grype`
+
+## Secrets
+- Managed in cloud secret manager; never commit .env
+
+## Access Control
+- Roles & permissions
+
+## Compliance
+- Notes on LGPD/GDPR if applicable
+```
+
+---
+## File: End_End_Quality_Review.md
+**Purpose:** Temporary notes during end-to-end QA; clear once resolved.
+
+```
+# End-to-End Quality Review
+
+## Findings
+- [ ] Issue: <description> — Owner: <name> — Due: <date>
+
+## Evidence
+- Screenshots/links
+
+## Remediation Plan
+- Steps & verification criteria
+```

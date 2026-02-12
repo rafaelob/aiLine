@@ -1,0 +1,140 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Backend: lint + typecheck + unit tests
+  # ---------------------------------------------------------------------------
+  backend-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+
+      - name: Install dependencies
+        working-directory: runtime
+        run: uv sync --dev
+
+      - name: Ruff check
+        working-directory: runtime
+        run: uv run ruff check .
+
+      - name: Ruff format check
+        working-directory: runtime
+        run: uv run ruff format --check .
+
+  backend-typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+
+      - name: Install dependencies
+        working-directory: runtime
+        run: uv sync --dev
+
+      - name: Mypy
+        working-directory: runtime
+        run: uv run mypy ailine_runtime/ --ignore-missing-imports
+
+  backend-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+
+      - name: Install dependencies
+        working-directory: runtime
+        run: uv sync --dev
+
+      - name: Run tests with coverage
+        working-directory: runtime
+        run: uv run pytest tests/ -v --cov=ailine_runtime --cov-report=xml --cov-report=term-missing -m "not live_llm and not slow"
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: runtime/coverage.xml
+
+  # ---------------------------------------------------------------------------
+  # Frontend: lint + typecheck
+  # ---------------------------------------------------------------------------
+  frontend-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: pnpm install
+
+      - name: Lint
+        working-directory: frontend
+        run: pnpm lint
+
+  frontend-typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: pnpm install
+
+      - name: Typecheck
+        working-directory: frontend
+        run: pnpm typecheck
+
+  # ---------------------------------------------------------------------------
+  # Docker Compose build validation
+  # ---------------------------------------------------------------------------
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create minimal .env for build
+        run: cp .env.example .env
+
+      - name: Build Docker images
+        run: docker compose build --no-cache

@@ -1,0 +1,65 @@
+# Features
+
+## Done
+- [F-001] Hexagonal Architecture (Ports-and-Adapters) — domain/ports/adapters layers with DI container
+- [F-002] Multi-LLM Port Protocols — ChatLLM protocol with Anthropic, OpenAI, Gemini adapters
+- [F-003] Pydantic Settings Config — multi-provider env-driven configuration
+- [F-004] LangGraph Workflow Orchestration — plan pipeline with parallel fan-out topology
+- [F-005] FastAPI API Layer — routers package with CORS, streaming support
+- [F-006] Domain Entities — StudyPlan, Material, Tutor, Curriculum, Accessibility, Run
+- [F-007] Observability Foundation — structlog JSON logging + OTEL trace context
+- [F-008] Database Layer — SQLAlchemy 2.x async + Alembic + UUID v7 + 11 tables
+- [F-009] Multi-Embedding Service — Gemini/OpenAI adapters (1536d MRL default) + FakeEmbeddings
+- [F-010] Vector Store — pgvector (HNSW) + ChromaDB + InMemoryVectorStore pluggable
+- [F-011] Material Ingestion — chunk (512t/64 overlap), embed, and index educator-uploaded docs
+- [F-012] RAG Query — retrieve relevant chunks for plan enrichment and tutoring
+- [F-013] Curriculum Standards — BNCC (Brazil) + CCSS/NGSS (USA) with grade mapping
+- [F-014] Frontend Dashboard — Next.js 16 with Glass Box AI pipeline viewer
+- [F-015] WCAG AAA Design System — 9 persona themes via CSS custom properties
+- [F-016] SSE Pipeline Streaming — 14 typed events with {run_id, seq, ts, type, stage, payload} envelope
+- [F-017] Tutor Agents — LangGraph workflow (intent->search->respond->check), session mgmt, playbooks
+- [F-018] i18n (Full Stack) — English, Portuguese (BR), Spanish via next-intl 4.8.2 + backend i18n data
+- [F-019] Sign Language Input — MediaPipe hand landmarks for Libras (MVP: 4 gestures)
+- [F-020] Sign Language Output — VLibras 3D avatar widget integration
+- [F-021] Speech-to-Text — Whisper V3 Turbo via faster-whisper + OpenAI cloud STT
+- [F-022] Text-to-Speech — ElevenLabs primary + FakeTTS for CI
+- [F-023] OCR + Image Description — Opus 4.6 vision for auto alt-text + OCR processor
+- [F-024] Persona Toggle — live content morphing with CSS var swap
+- [F-025] Simulate Disability — Empathy Bridge (dyslexia, tunnel vision, color blindness)
+- [F-026] Export Viewer — side-by-side original vs adapted comparison
+- [F-027] Accessibility Twin — Tabbed View with diff highlights (ADR-044)
+- [F-028] Score Gauge — radial chart 0-100 with color interpolation and spring animation
+- [F-029] SmartRouterAdapter — rebalanced weights (0.25/0.25/0.25/0.15/0.10), hard overrides, rules|weighted mode
+- [F-030] Docker Compose Stack — one-command local dev (API + DB + Redis + Frontend)
+- [F-031] Demo Mode — curated inputs, 3 scenarios, cached golden path, DemoModeMiddleware
+- [F-032] React Compiler 1.0 — auto-memoization enabled (ADR-045)
+- [F-033] HTML Sanitization — DOMPurify 3.3.1 for safe export rendering (ADR-046)
+- [F-034] Tutor ChatBlock — structured message components
+- [F-036] Direct Anthropic Tool Calling in Executor — replaces Claude Agent SDK (ADR-048)
+- [F-037] FakeLLM Test Adapter — deterministic outputs for CI, zero external LLM calls (ADR-051)
+- [F-038] Tiered Quality Gate — mandatory structural checks + heuristic scoring (ADR-050)
+- [F-039] Composite FK Tenant Safety — DB-level cross-tenant prevention (ADR-053)
+
+- [F-040] Full Test Coverage — 1247 backend tests (1136 runtime + 111 agents), 331 frontend tests (41 suites)
+- [F-041] Docker Compose Full Stack — API + DB + Redis + Frontend with healthchecks
+- [F-042] GitHub Actions CI — lint, typecheck, test pipeline
+- [F-043] SSE Event Replay — InMemoryReplayStore + RedisReplayStore (ZSET, score=seq, TTL 30min) for reconnection (ADR-054)
+- [F-044] Terminal SSE Guarantee — RunContext async context manager ensures run.completed or run.failed (ADR-055)
+- [F-045] ThemeContext MutationObserver — useThemeContext hook for Recharts/Canvas theme reactivity (ADR-058)
+- [F-046] Web Worker Sign Language — sign-language-worker.ts runs MediaPipe/MLP off main thread (ADR-057)
+- [F-047] VLibras Accessibility — aria-hidden when inactive, skip-link for keyboard users
+- [F-048] Reduced Motion — prefers-reduced-motion OS sync + localStorage override in accessibility store
+- [F-049] Low-Distraction Mode — React 19.2 Activity component in sidebar for animation suppression
+- [F-050] SmartRouter Pure Decision — compute_route() extracted as pure function with RouteFeatures/RouteDecision
+- [F-051] SSE Emitter Thread Safety — asyncio.Lock on emit for parallel LangGraph branches
+- [F-052] Live API Integration Tests — @pytest.mark.live_llm for real Anthropic/OpenAI/Gemini/OpenRouter testing (65 live tests)
+- [F-053] ailine_agents Package — Pydantic AI 1.58.0 typed agents + LangGraph workflows (ADR-059)
+- [F-054] Pydantic AI Model Selection Bridge — SmartRouter tier -> Pydantic AI Model mapping
+- [F-055] Custom Skill Registry — parse SKILL.md YAML frontmatter + markdown, SkillRegistry.scan_paths(), get_prompt_fragment() for agent system prompts
+- [F-056] CCSS ELA Curriculum — Common Core English Language Arts K-8 standards (ccss_ela.json, 46 objectives)
+- [F-057] Bloom's Taxonomy Filtering — bloom_level field on CurriculumObjective, filter in search API across all 4 curriculum systems
+- [F-058] Libras STT ML Pipeline — training scaffold, TF.js MLP classifier, webcam->landmarks->gloss->LLM streaming
+- [F-059] SKILL.md Frontmatter Migration — 11 skills migrated to metadata block with compatibility structure
+
+## Backlog
+- [F-035] Sign Language Post-MVP Path — SPOTER transformer + VLibrasBD NMT dataset (ADR-047)

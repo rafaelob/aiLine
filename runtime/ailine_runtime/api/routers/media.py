@@ -1,0 +1,148 @@
+"""Media API router -- STT, TTS, image description, OCR endpoints.
+
+All endpoints resolve their adapter from ``app.state.container``.
+When no real adapter is configured the container falls back to the
+fake implementations, which keeps the API surface testable without
+external services.
+"""
+
+from __future__ import annotations
+
+from typing import Any
+
+import structlog
+from fastapi import APIRouter, HTTPException, Request, UploadFile
+from fastapi.responses import Response
+from pydantic import BaseModel, Field
+
+logger = structlog.get_logger(__name__)
+
+router = APIRouter()
+
+
+# -- Request / Response schemas -----------------------------------------------
+
+
+class SynthesizeRequest(BaseModel):
+    text: str = Field(..., min_length=1, max_length=5000, description="Text to synthesize.")
+    locale: str = Field("pt-BR", description="BCP-47 locale tag.")
+    speed: float = Field(1.0, ge=0.25, le=4.0, description="Playback speed multiplier.")
+
+
+class TranscriptionResponse(BaseModel):
+    text: str
+
+
+class DescriptionResponse(BaseModel):
+    description: str
+
+
+class ExtractedTextResponse(BaseModel):
+    text: str
+    file_type: str
+
+
+# -- Helper to resolve adapters -----------------------------------------------
+
+
+def _get_adapter(request: Request, name: str) -> Any:
+    """Retrieve a media adapter from the DI container.
+
+    Raises 503 if the adapter is not configured.
+    """
+    container = request.app.state.container
+    adapter = getattr(container, name, None)
+    if adapter is None:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Media adapter '{name}' is not configured.",
+        )
+    return adapter
+
+
+# -- Endpoints ----------------------------------------------------------------
+
+
+@router.post("/transcribe", response_model=TranscriptionResponse)
+async def transcribe_audio(
+    request: Request,
+    file: UploadFile,
+    language: str = "pt",
+) -> TranscriptionResponse:
+    """Transcribe an audio file to text (STT)."""
+    stt = _get_adapter(request, "stt")
+    audio_bytes = await file.read()
+    if not audio_bytes:
+        raise HTTPException(status_code=400, detail="Empty audio file.")
+    logger.info("media.transcribe", language=language, size=len(audio_bytes))
+    text = await stt.transcribe(audio_bytes, language=language)
+    return TranscriptionResponse(text=text)
+
+
+@router.post("/synthesize")
+async def synthesize_speech(
+    request: Request,
+    body: SynthesizeRequest,
+) -> Response:
+    """Synthesize text to audio (TTS).
+
+    Returns raw audio bytes with an appropriate content type.
+    """
+    tts = _get_adapter(request, "tts")
+    logger.info(
+        "media.synthesize",
+        locale=body.locale,
+        speed=body.speed,
+        text_length=len(body.text),
+    )
+    audio_bytes = await tts.synthesize(
+        body.text, locale=body.locale, speed=body.speed
+    )
+    return Response(
+        content=audio_bytes,
+        media_type="audio/wav",
+        headers={"Content-Disposition": "inline; filename=speech.wav"},
+    )
+
+
+@router.post("/describe-image", response_model=DescriptionResponse)
+async def describe_image(
+    request: Request,
+    file: UploadFile,
+    locale: str = "pt-BR",
+) -> DescriptionResponse:
+    """Generate an alt-text description for an uploaded image."""
+    describer = _get_adapter(request, "image_describer")
+    image_bytes = await file.read()
+    if not image_bytes:
+        raise HTTPException(status_code=400, detail="Empty image file.")
+    logger.info("media.describe_image", locale=locale, size=len(image_bytes))
+    description = await describer.describe(image_bytes, locale=locale)
+    return DescriptionResponse(description=description)
+
+
+@router.post("/extract-text", response_model=ExtractedTextResponse)
+async def extract_text(
+    request: Request,
+    file: UploadFile,
+) -> ExtractedTextResponse:
+    """Extract text from a PDF or image file (OCR).
+
+    The file type is inferred from the upload's content type.
+    """
+    ocr = _get_adapter(request, "ocr")
+    file_bytes = await file.read()
+    if not file_bytes:
+        raise HTTPException(status_code=400, detail="Empty file.")
+
+    content_type = file.content_type or ""
+    file_type = "pdf" if "pdf" in content_type else "image"
+
+    logger.info(
+        "media.extract_text",
+        file_type=file_type,
+        content_type=content_type,
+        size=len(file_bytes),
+    )
+    text = await ocr.extract_text(file_bytes, file_type=file_type)
+    return ExtractedTextResponse(text=text, file_type=file_type)
