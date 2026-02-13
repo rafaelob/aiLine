@@ -40,7 +40,7 @@
 - [F-038] Tiered Quality Gate — mandatory structural checks + heuristic scoring (ADR-050)
 - [F-039] Composite FK Tenant Safety — DB-level cross-tenant prevention (ADR-053)
 
-- [F-040] Full Test Coverage — 1247 backend tests (1136 runtime + 111 agents), 331 frontend tests (41 suites)
+- [F-040] Full Test Coverage — 1527+ backend tests (1350 runtime + 177 agents), 331 frontend tests (41 suites)
 - [F-041] Docker Compose Full Stack — API + DB + Redis + Frontend with healthchecks
 - [F-042] GitHub Actions CI — lint, typecheck, test pipeline
 - [F-043] SSE Event Replay — InMemoryReplayStore + RedisReplayStore (ZSET, score=seq, TTL 30min) for reconnection (ADR-054)
@@ -60,6 +60,20 @@
 - [F-057] Bloom's Taxonomy Filtering — bloom_level field on CurriculumObjective, filter in search API across all 4 curriculum systems
 - [F-058] Libras STT ML Pipeline — training scaffold, TF.js MLP classifier, webcam->landmarks->gloss->LLM streaming
 - [F-059] SKILL.md Frontmatter Migration — 11 skills migrated to metadata block with compatibility structure
+- [F-060] Rate Limiter Middleware — sliding window, 429+Retry-After, X-RateLimit-* headers
+- [F-061] Prometheus Metrics — /metrics endpoint (Counter, Histogram, text exposition)
+- [F-062] Security Headers Middleware — CSP, X-Frame-Options, Referrer-Policy, Permissions-Policy
+- [F-063] Request ID Middleware — X-Request-ID + structlog correlation
+- [F-064] Tenant Context Middleware — JWT sub + X-Teacher-ID dev mode via contextvars
+- [F-065] Input Sanitization — sanitize_prompt, validate_teacher_id, sanitize_metadata
+- [F-066] Circuit Breaker — 5 fail -> 60s open -> half-open -> reset
+- [F-067] Retry with Exponential Backoff — 3 attempts, factor 2.0, transient-only
+- [F-068] Workflow Timeout — 300s max with graceful degradation
+- [F-069] Idempotency Guard — duplicate plan generation prevention
+- [F-070] DI Container Lifecycle — health_check, close, validate, OCR protocol
+- [F-071] Observability Spans — span_context, timed_operation, log_llm_call, log_tool_execution
+- [F-072] Dev-Mode Safety Guard — startup fail if production + dev mode
+- [F-073] Readiness Probe — /health/ready (DB+Redis checks, degraded/ready)
 
 ## Backlog
 - [F-035] Sign Language Post-MVP Path — SPOTER transformer + VLibrasBD NMT dataset (ADR-047)

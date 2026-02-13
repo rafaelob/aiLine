@@ -103,7 +103,7 @@ export function PipelineNodeGraph({
 
   return (
     <div
-      className="flex flex-col items-start gap-2 py-2 sm:flex-row sm:items-center sm:gap-1 sm:overflow-x-auto"
+      className="relative flex flex-col items-start gap-2 py-2 sm:flex-row sm:items-center sm:gap-1 sm:overflow-x-auto"
       role="img"
       aria-label={t('title')}
     >
@@ -189,27 +189,50 @@ export function PipelineNodeGraph({
             )}
           </motion.div>
 
-          {/* Connector arrow */}
+          {/* Connector arrow -- vertical on mobile, horizontal on sm+ */}
           {i < nodes.length - 1 && (
-            <div className="flex items-center mx-0.5" aria-hidden="true">
-              <div
-                className={cn(
-                  'w-4 h-0.5 transition-colors duration-300',
-                  nodes[i].completed
-                    ? 'bg-[var(--color-success)]'
-                    : 'bg-[var(--color-border)]'
-                )}
-              />
-              <div
-                className={cn(
-                  'w-0 h-0 border-t-[3px] border-b-[3px] border-l-[5px]',
-                  'border-t-transparent border-b-transparent transition-colors duration-300',
-                  nodes[i].completed
-                    ? 'border-l-[var(--color-success)]'
-                    : 'border-l-[var(--color-border)]'
-                )}
-              />
-            </div>
+            <>
+              {/* Horizontal connector (sm+) */}
+              <div className="hidden sm:flex items-center mx-0.5" aria-hidden="true">
+                <div
+                  className={cn(
+                    'w-4 h-0.5 transition-colors duration-300',
+                    nodes[i].completed
+                      ? 'bg-[var(--color-success)]'
+                      : 'bg-[var(--color-border)]'
+                  )}
+                />
+                <div
+                  className={cn(
+                    'w-0 h-0 border-t-[3px] border-b-[3px] border-l-[5px]',
+                    'border-t-transparent border-b-transparent transition-colors duration-300',
+                    nodes[i].completed
+                      ? 'border-l-[var(--color-success)]'
+                      : 'border-l-[var(--color-border)]'
+                  )}
+                />
+              </div>
+              {/* Vertical connector (mobile) */}
+              <div className="flex sm:hidden flex-col items-center my-0.5 ml-4" aria-hidden="true">
+                <div
+                  className={cn(
+                    'w-0.5 h-3 transition-colors duration-300',
+                    nodes[i].completed
+                      ? 'bg-[var(--color-success)]'
+                      : 'bg-[var(--color-border)]'
+                  )}
+                />
+                <div
+                  className={cn(
+                    'w-0 h-0 border-l-[3px] border-r-[3px] border-t-[5px]',
+                    'border-l-transparent border-r-transparent transition-colors duration-300',
+                    nodes[i].completed
+                      ? 'border-t-[var(--color-success)]'
+                      : 'border-t-[var(--color-border)]'
+                  )}
+                />
+              </div>
+            </>
           )}
         </div>
       ))}

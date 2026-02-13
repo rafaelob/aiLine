@@ -30,6 +30,16 @@ class PgVectorStore:
             (typically a ``sessionmaker`` or async context manager).
         table_name: Name of the chunks table. Must be a valid SQL identifier.
         dimensions: Embedding vector length (must match the column width).
+
+    Graceful degradation:
+        When PostgreSQL is unreachable, all query/upsert methods raise
+        ``SQLAlchemy`` connection errors. The Container handles this by
+        returning ``None`` for the vectorstore port when the DB URL is
+        not configured or points to SQLite, so callers should check for
+        ``container.vectorstore is None`` before attempting vector ops.
+        The readiness probe (``/health/ready``) reports ``"error"`` status
+        when the database connection fails, allowing load balancers to
+        route traffic away from unhealthy instances.
     """
 
     def __init__(

@@ -5,7 +5,7 @@ import { MobileNav } from './mobile-nav'
 describe('MobileNav', () => {
   it('renders as a navigation landmark', () => {
     render(<MobileNav />)
-    const nav = screen.getByRole('navigation', { name: /Mobile navigation/i })
+    const nav = screen.getByRole('navigation', { name: /nav\.mobile_nav_label/i })
     expect(nav).toBeInTheDocument()
   })
 

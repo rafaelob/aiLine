@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, NamedTuple
 
 from ..domain.ports.embeddings import Embeddings
 from ..domain.ports.events import EventBus
@@ -20,9 +20,25 @@ from .config import Settings
 _log = logging.getLogger("ailine.container")
 
 
+class ValidationResult(NamedTuple):
+    """Structured result from container validation.
+
+    Attributes:
+        ok: True when all critical ports are wired (no missing required adapters).
+        missing_critical: Names of required ports that are None.
+        missing_optional: Names of optional ports that are None (informational).
+    """
+
+    ok: bool
+    missing_critical: list[str]
+    missing_optional: list[str]
+
+
 @dataclass(frozen=True)
 class Container:
     """Lightweight DI container. Built once at startup, immutable during requests.
+
+    Lifecycle: ``build(settings)`` -> ``validate()`` -> use -> ``close()``.
 
     The container is a frozen dataclass, so fields cannot be mutated after
     construction.  Mutable cleanup state (engine references for graceful
@@ -30,6 +46,15 @@ class Container:
     which is itself immutable at the reference level but its *contents* can
     be mutated (append/pop) -- a deliberate pattern to combine immutability
     of the public API with lifecycle management.
+
+    Graceful degradation:
+        Required ports (``llm``, ``event_bus``) must be present in production
+        (validated at startup). Optional ports (``vectorstore``, ``embeddings``,
+        ``stt``, ``tts``, ``image_describer``, ``ocr``, ``sign_recognition``)
+        default to None or fake adapters (ADR-051). Callers must check for
+        None before using optional adapters. The ``close()`` method is
+        idempotent and safe to call multiple times; it logs but does not
+        raise on cleanup errors, ensuring all resources are attempted.
     """
 
     settings: Settings
@@ -145,16 +170,25 @@ class Container:
 
     # -- DI: container validation ----------------------------------------------
 
-    def validate(self) -> None:
+    def validate(self) -> ValidationResult:
         """Validate that critical ports are wired correctly.
 
+        Checks all required ports (llm, event_bus) and logs warnings for
+        missing optional adapters. Returns a ``ValidationResult`` with
+        structured information about what is missing.
+
         In production mode (``settings.env == "production"``), raises
-        ``ValueError`` if critical ports (llm, event_bus) are None.
-        In all modes, logs warnings for missing optional adapters.
+        ``ValueError`` if any critical port is None.
+
+        Returns:
+            A ``ValidationResult`` where ``ok`` is True when all critical
+            ports are present.
         """
         env = self.settings.env
         missing_critical: list[str] = []
+        missing_optional: list[str] = []
 
+        # Required ports -- must be present for the system to function.
         if self.llm is None:
             missing_critical.append("llm")
         if self.event_bus is None:
@@ -166,22 +200,44 @@ class Container:
                 f"missing critical ports: {', '.join(missing_critical)}"
             )
 
-        # Warn about missing optional adapters (useful for debugging)
-        if self.vectorstore is None:
-            _log.warning(
-                "container.missing_optional_adapter: vectorstore is None "
-                "(vector search unavailable)"
+        # Optional ports -- degraded operation when missing.
+        optional_checks: list[tuple[str, Any, str]] = [
+            ("vectorstore", self.vectorstore, "vector search unavailable"),
+            ("embeddings", self.embeddings, "embedding generation unavailable"),
+            ("stt", self.stt, "speech-to-text unavailable"),
+            ("tts", self.tts, "text-to-speech unavailable"),
+            ("image_describer", self.image_describer, "image description unavailable"),
+            ("ocr", self.ocr, "OCR text extraction unavailable"),
+            ("sign_recognition", self.sign_recognition, "sign recognition unavailable"),
+        ]
+        for name, value, description in optional_checks:
+            if value is None:
+                missing_optional.append(name)
+                _log.warning(
+                    "container.missing_optional_adapter: %s is None (%s)",
+                    name,
+                    description,
+                )
+
+        ok = len(missing_critical) == 0
+        result = ValidationResult(
+            ok=ok,
+            missing_critical=missing_critical,
+            missing_optional=missing_optional,
+        )
+
+        if ok:
+            _log.info(
+                "container.validation_passed missing_optional=%d",
+                len(missing_optional),
             )
-        if self.embeddings is None:
+        else:
             _log.warning(
-                "container.missing_optional_adapter: embeddings is None "
-                "(embedding generation unavailable)"
+                "container.validation_degraded missing_critical=%s",
+                ", ".join(missing_critical),
             )
-        if self.ocr is None:
-            _log.warning(
-                "container.missing_optional_adapter: ocr is None "
-                "(OCR text extraction unavailable)"
-            )
+
+        return result
 
     # -- Debugging: repr -------------------------------------------------------
 

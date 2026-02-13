@@ -28,10 +28,11 @@ describe('ToastProvider', () => {
     expect(screen.getByText('Test message')).toBeInTheDocument()
   })
 
-  it('renders the container with notifications aria-label', () => {
+  it('renders the container with notifications aria-label and region role', () => {
     useToastStore.getState().addToast('Hello', 'error')
     render(<ToastProvider />)
-    expect(screen.getByLabelText('Notificações')).toBeInTheDocument()
+    const region = screen.getByRole('region', { name: 'Notificações' })
+    expect(region).toBeInTheDocument()
   })
 
   it('renders multiple toasts', () => {

@@ -42,6 +42,7 @@ import base64
 import json
 import os
 from collections.abc import Awaitable, Callable
+from typing import Any
 
 import structlog
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -113,18 +114,81 @@ def _is_dev_mode() -> bool:
 def _extract_teacher_id_from_jwt(token: str) -> str | None:
     """Extract teacher_id (``sub`` claim) from a JWT token.
 
-    Pre-MVP: decodes the payload without signature verification.
-    Production hardening will add proper verification (JWK, expiry).
+    Attempts verified decode first (PyJWT with HS256, exp/iss validation).
+    If PyJWT is not installed, falls back to unverified base64 decode
+    (suitable for pre-MVP / local development only).
+
+    Environment variables used for verified mode:
+    - ``AILINE_JWT_SECRET``: HMAC secret for HS256 signature verification.
+    - ``AILINE_JWT_ISSUER``: Expected ``iss`` claim (optional; skipped if empty).
 
     Returns None if the token cannot be decoded or lacks a ``sub`` claim.
+    """
+    # Try verified decode when PyJWT is available and a secret is configured
+    jwt_secret = os.getenv("AILINE_JWT_SECRET", "")
+    if jwt_secret:
+        result = _verified_jwt_decode(token, jwt_secret)
+        if result is not None:
+            return result
+        # Verified decode failed (expired, bad signature, etc.)
+        # Do NOT fall through to unverified decode -- that would
+        # bypass the security the secret was meant to enforce.
+        return None
+
+    # Fallback: unverified base64 decode (pre-MVP convenience)
+    return _unverified_jwt_decode(token)
+
+
+def _verified_jwt_decode(token: str, secret: str) -> str | None:
+    """Decode and verify a JWT using PyJWT (HS256).
+
+    Validates ``exp`` (expiry) and optionally ``iss`` (issuer) claims.
+    Returns the ``sub`` claim on success, None on any failure.
+    """
+    try:
+        import jwt as pyjwt
+    except ImportError:
+        logger.warning(
+            "jwt_library_missing",
+            msg=(
+                "AILINE_JWT_SECRET is set but PyJWT is not installed. "
+                "Install it with: pip install PyJWT"
+            ),
+        )
+        return None
+
+    issuer = os.getenv("AILINE_JWT_ISSUER", "") or None
+    try:
+        decode_opts: dict[str, Any] = {
+            "algorithms": ["HS256"],
+            "options": {"require": ["exp", "sub"]},
+        }
+        if issuer:
+            decode_opts["issuer"] = issuer
+        payload = pyjwt.decode(token, secret, **decode_opts)
+        return payload.get("sub")
+    except pyjwt.ExpiredSignatureError:
+        logger.warning("jwt_expired", msg="JWT token has expired")
+        return None
+    except pyjwt.InvalidIssuerError:
+        logger.warning("jwt_invalid_issuer", msg="JWT issuer mismatch")
+        return None
+    except pyjwt.InvalidTokenError as exc:
+        logger.warning("jwt_invalid", error=str(exc))
+        return None
+
+
+def _unverified_jwt_decode(token: str) -> str | None:
+    """Decode JWT payload without signature verification (pre-MVP fallback).
+
+    Only used when AILINE_JWT_SECRET is not configured. Extracts the
+    ``sub`` claim from the base64-encoded payload segment.
     """
     try:
         parts = token.split(".")
         if len(parts) < 2:
             return None
-        # JWT payload is the second part, base64url-encoded
         payload_b64 = parts[1]
-        # Add padding if needed
         padding = 4 - len(payload_b64) % 4
         if padding != 4:
             payload_b64 += "=" * padding

@@ -25,17 +25,10 @@ FRONTEND_HOST_PORT=3000
 # Full stack: api (8000), frontend (3000), db (5432 internal), redis (6379 internal)
 docker compose up -d --build
 
-# Check health
-docker compose ps
-
-# View logs
-docker compose logs -f api
-
-# Tear down (preserves volumes)
-docker compose down
-
-# Tear down + delete data
-docker compose down -v
+docker compose ps                # health
+docker compose logs -f api       # logs
+docker compose down              # stop (keeps volumes)
+docker compose down -v           # stop + delete data
 ```
 
 **Services:**
@@ -93,13 +86,7 @@ infra/
 
 ## GCP Deploy
 ```bash
-gcloud auth login
-gcloud config set project ailine-hackathon
 gcloud builds submit --tag gcr.io/ailine-hackathon/api:$(git rev-parse --short HEAD)
-gcloud run deploy ailine-api \
-  --image gcr.io/ailine-hackathon/api:$(git rev-parse --short HEAD) \
-  --region us-central1 --platform managed
+gcloud run deploy ailine-api --image gcr.io/ailine-hackathon/api:$(git rev-parse --short HEAD) --region us-central1 --platform managed
 ```
-
-## Secrets
 Production secrets via GCP Secret Manager. Never commit .env files.

@@ -34,4 +34,16 @@ describe('InteractiveCard', () => {
     const card = screen.getByText('Content').closest('div')
     expect(card).toHaveClass('cursor-pointer')
   })
+
+  it('is keyboard focusable with tabIndex=0', () => {
+    render(<InteractiveCard>Content</InteractiveCard>)
+    const card = screen.getByText('Content').closest('div')
+    expect(card).toHaveAttribute('tabindex', '0')
+  })
+
+  it('has focus-visible ring classes for WCAG AAA compliance', () => {
+    render(<InteractiveCard>Content</InteractiveCard>)
+    const card = screen.getByText('Content').closest('div')
+    expect(card?.className).toContain('focus-visible:ring-2')
+  })
 })

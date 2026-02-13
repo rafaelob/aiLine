@@ -23,4 +23,15 @@ describe('ServiceWorkerRegistrar', () => {
     render(<ServiceWorkerRegistrar />)
     expect(mockRegister).toHaveBeenCalledWith('/sw.js')
   })
+
+  it('registers service worker only once', () => {
+    render(<ServiceWorkerRegistrar />)
+    expect(mockRegister).toHaveBeenCalledTimes(1)
+  })
+
+  it('handles registration failure silently', () => {
+    mockRegister.mockRejectedValueOnce(new Error('SW registration failed'))
+    // Should not throw
+    expect(() => render(<ServiceWorkerRegistrar />)).not.toThrow()
+  })
 })

@@ -85,6 +85,14 @@ class SmartRouterAdapter:
 
     Satisfies the ``ChatLLM`` protocol. Captures telemetry for every
     routing decision in an in-memory ring buffer.
+
+    Graceful degradation:
+        When the provider selected for a tier is unavailable (not configured),
+        the router falls back through the chain: primary -> middle -> cheap.
+        At least one provider must be present at construction time. If a
+        call to a provider raises an exception, the caller receives the
+        error directly (no automatic retry across tiers) -- retries are
+        handled upstream by the LangGraph ``RetryPolicy``.
     """
 
     def __init__(self, config: SmartRouterConfig) -> None:

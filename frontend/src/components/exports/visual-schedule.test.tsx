@@ -93,9 +93,8 @@ describe('VisualSchedule', () => {
 
   it('displays step duration', () => {
     render(<VisualSchedule planTitle="Test" steps={mockSteps} />)
-    expect(screen.getByText('15 min')).toBeInTheDocument()
-    expect(screen.getByText('25 min')).toBeInTheDocument()
-    expect(screen.getByText('10 min')).toBeInTheDocument()
+    const durations = screen.getAllByText('visual_schedule.duration_short')
+    expect(durations).toHaveLength(3)
   })
 
   it('displays materials when present', () => {

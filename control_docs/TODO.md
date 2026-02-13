@@ -6,7 +6,7 @@ Status key: `[x]` done | `[~]` in-progress | `[ ]` planned
 
 ## Completed Sprints (0-12)
 
-All 14 sprints + agents package COMPLETED. 1265+ backend tests (1199 runtime + 129 agents), 331+ frontend tests.
+All 14 sprints + agents package + architecture excellence sprint COMPLETED. 1527+ backend tests (1350 runtime + 177 agents), 331+ frontend tests.
 
 S0-S12 + S-Agents: all done (S0 Foundation, S1 Clean Arch, S2 DB, S3 Embed/Vec, S4 Curriculum, S5 Frontend, S6 Exports, S7 Tutor, S8 SignLang, S9 STT/TTS, S10 SSE, S11 Docker, S12 Demo, S-Agents Pydantic AI).
 

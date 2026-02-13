@@ -8,6 +8,7 @@ Usage:
 from __future__ import annotations
 
 import os
+import re
 import time
 from typing import Any
 
@@ -27,6 +28,34 @@ from ..shared.metrics import (
 from ..shared.observability import configure_logging
 
 _log = structlog.get_logger("ailine.api.app")
+
+# Regex patterns for normalizing path parameters in metrics labels.
+# Matches UUID v4/v7 (with or without hyphens) and pure numeric IDs.
+_UUID_RE = re.compile(
+    r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
+)
+_NUMERIC_RE = re.compile(r"^[0-9]+$")
+
+
+def normalize_metric_path(path: str) -> str:
+    """Replace dynamic path segments with ``:id`` to avoid high-cardinality labels.
+
+    Normalizes UUID-like segments and numeric IDs so that
+    ``/plans/550e8400-e29b-41d4-a716-446655440000`` becomes ``/plans/:id``
+    and ``/materials/123`` becomes ``/materials/:id``.
+    """
+    parts = path.split("/")
+    normalized = []
+    for part in parts:
+        if not part:
+            normalized.append(part)
+        elif _UUID_RE.fullmatch(part):
+            normalized.append(":id")
+        elif _NUMERIC_RE.match(part):
+            normalized.append(":id")
+        else:
+            normalized.append(part)
+    return "/".join(normalized)
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -112,7 +141,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         response = await call_next(request)
         duration = time.monotonic() - start
         # Normalize path to avoid high cardinality from path params.
-        path = request.url.path
+        path = normalize_metric_path(request.url.path)
         method = request.method
         status = str(response.status_code)
         http_requests_total.inc(method=method, path=path, status=status)

@@ -47,4 +47,29 @@ describe('PlansPage', () => {
     const header = screen.getByRole('banner')
     expect(header).toBeInTheDocument()
   })
+
+  it('renders an h1 heading', () => {
+    render(<PlansPage />)
+    const heading = screen.getByRole('heading', { level: 1 })
+    expect(heading).toBeInTheDocument()
+    expect(heading.textContent).toBe('plans.title')
+  })
+
+  it('wraps content in a max-width container', () => {
+    const { container } = render(<PlansPage />)
+    const wrapper = container.firstChild as HTMLElement
+    expect(wrapper.className).toContain('max-w-5xl')
+    expect(wrapper.className).toContain('mx-auto')
+  })
+
+  it('includes spacing between header and plan flow', () => {
+    const { container } = render(<PlansPage />)
+    const wrapper = container.firstChild as HTMLElement
+    expect(wrapper.className).toContain('space-y')
+  })
+
+  it('renders a single root element', () => {
+    const { container } = render(<PlansPage />)
+    expect(container.children).toHaveLength(1)
+  })
 })

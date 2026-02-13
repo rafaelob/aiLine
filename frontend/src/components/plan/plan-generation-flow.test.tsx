@@ -176,4 +176,97 @@ describe('PlanGenerationFlow', () => {
     const backBtn = screen.getByText('plans.wizard.back')
     expect(backBtn).toBeDisabled()
   })
+
+  it('clears field errors when user types in subject', async () => {
+    render(<PlanGenerationFlow />)
+    // Trigger validation error
+    await user.click(screen.getByText('plans.wizard.next'))
+    expect(screen.getAllByRole('alert').length).toBeGreaterThanOrEqual(1)
+    // Type to clear the error
+    await user.type(screen.getByLabelText('plans.form.subject'), 'Math')
+    // Subject error should be cleared
+    const remaining = screen.queryAllByRole('alert')
+    // At most 1 alert (for grade field still empty)
+    expect(remaining.length).toBeLessThanOrEqual(1)
+  })
+
+  it('navigates through all 4 wizard steps', async () => {
+    render(<PlanGenerationFlow />)
+
+    // Step 1: fill and advance
+    await user.type(screen.getByLabelText('plans.form.subject'), 'Math')
+    await user.type(screen.getByLabelText('plans.form.grade'), '5th')
+    await user.click(screen.getByText('plans.wizard.next'))
+
+    // Step 2: profile (no validation, advance)
+    expect(screen.getByText('plans.wizard.profile_description')).toBeInTheDocument()
+    await user.click(screen.getByText('plans.wizard.next'))
+
+    // Step 3: prompt
+    expect(screen.getByLabelText('plans.form.prompt')).toBeInTheDocument()
+    await user.type(screen.getByLabelText('plans.form.prompt'), 'Teach fractions')
+    await user.click(screen.getByText('plans.wizard.next'))
+
+    // Step 4: review
+    expect(screen.getByText('plans.wizard.review_title')).toBeInTheDocument()
+  })
+
+  it('shows character counter on prompt step', async () => {
+    render(<PlanGenerationFlow />)
+    // Advance to step 3
+    await user.type(screen.getByLabelText('plans.form.subject'), 'Math')
+    await user.type(screen.getByLabelText('plans.form.grade'), '5th')
+    await user.click(screen.getByText('plans.wizard.next'))
+    await user.click(screen.getByText('plans.wizard.next'))
+
+    // Should show the counter with 0/2000
+    expect(screen.getByText(/0 \/ 2000/)).toBeInTheDocument()
+  })
+
+  it('shows generate button on review step instead of next', async () => {
+    render(<PlanGenerationFlow />)
+    // Navigate to step 4
+    await user.type(screen.getByLabelText('plans.form.subject'), 'Science')
+    await user.type(screen.getByLabelText('plans.form.grade'), '6th')
+    await user.click(screen.getByText('plans.wizard.next'))
+    await user.click(screen.getByText('plans.wizard.next'))
+    await user.type(screen.getByLabelText('plans.form.prompt'), 'Test prompt')
+    await user.click(screen.getByText('plans.wizard.next'))
+
+    // Should show generate button, not next
+    expect(screen.getByText('plans.generate')).toBeInTheDocument()
+    expect(screen.queryByText('plans.wizard.next')).not.toBeInTheDocument()
+  })
+
+  it('shows try again button when error occurs', () => {
+    mockHookState = {
+      ...mockHookState,
+      isRunning: false,
+      plan: null,
+      error: 'Connection timeout',
+    }
+    render(<PlanGenerationFlow />)
+    expect(screen.getByText('plans.try_again')).toBeInTheDocument()
+  })
+
+  it('shows quality score when plan result has a score', () => {
+    mockHookState = {
+      ...mockHookState,
+      isRunning: false,
+      plan: { id: 'plan-1', title: 'Test' },
+      score: 92,
+    }
+    render(<PlanGenerationFlow />)
+    expect(screen.getByText(/92\/100/)).toBeInTheDocument()
+  })
+
+  it('shows create new plan button after generation', () => {
+    mockHookState = {
+      ...mockHookState,
+      isRunning: false,
+      plan: { id: 'plan-1', title: 'Test' },
+    }
+    render(<PlanGenerationFlow />)
+    expect(screen.getByText('plans.create')).toBeInTheDocument()
+  })
 })

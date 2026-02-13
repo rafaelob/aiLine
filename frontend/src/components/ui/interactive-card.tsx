@@ -17,11 +17,13 @@ export function InteractiveCard({ className, children, ...props }: InteractiveCa
       whileHover={{ y: -2 }}
       whileTap={{ scale: 0.98 }}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+      tabIndex={0}
       className={cn(
         'rounded-[var(--radius-lg)] border',
         'bg-[var(--color-surface)] border-[var(--color-border)]',
         'cursor-pointer transition-shadow',
         'hover:shadow-[var(--shadow-md)]',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2',
         className,
       )}
       {...props}

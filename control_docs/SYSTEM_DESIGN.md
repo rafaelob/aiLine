@@ -87,7 +87,6 @@ Escalation triggers: JSON parse fail, schema validation fail, low validator scor
 
 59 ADRs (ADR-001 through ADR-059). Key: 001 Hexagonal | 002-003 SQLAlchemy+pgvector | 006 SSE+WS | 012 multi-tenancy | 013 parallel LangGraph | 017/028-029/049 SmartRouter | 024/038 typed SSE | 042 recursion_limit=25 | 048 direct Anthropic API (no SDK) | 050 tiered quality gate | 051 FakeLLM CI | 053 composite FK | 054 SSE replay (Redis ZSET) | 055 RunContext terminal guarantee | 056 pool sizing | 057 Web Worker sign lang | 058 ThemeContext | 059 ailine_agents (Pydantic AI)
 
-Full ADR details: `references/technology_research_synthesis.md`
 
 ## Dependencies in Use
 

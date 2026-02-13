@@ -26,11 +26,18 @@ describe('Toast', () => {
     expect(screen.getByText('Saved!')).toBeInTheDocument()
   })
 
-  it('has role="status" for accessibility', () => {
+  it('has role="status" for non-error variants', () => {
     render(
       <Toast toast={{ id: 'test-1', message: 'Info', variant: 'info', duration: 5000 }} />
     )
     expect(screen.getByRole('status')).toBeInTheDocument()
+  })
+
+  it('has role="alert" for error variant', () => {
+    render(
+      <Toast toast={{ id: 'test-1', message: 'Fail', variant: 'error', duration: 0 }} />
+    )
+    expect(screen.getByRole('alert')).toBeInTheDocument()
   })
 
   it('renders close button with aria-label', () => {

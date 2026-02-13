@@ -2,11 +2,13 @@
 
 import { useTranslations } from 'next-intl'
 import { useEffect } from 'react'
+import { cn } from '@/lib/cn'
 
 /**
  * Global error boundary for the [locale] route group.
  * Catches unhandled errors and displays a user-friendly page
- * with retry and go-home options.
+ * with retry and go-home options. Supports all 9 persona themes
+ * via CSS custom properties.
  */
 export default function ErrorPage({
   error,
@@ -23,27 +25,33 @@ export default function ErrorPage({
   }, [error])
 
   return (
-    <div className="flex min-h-[60vh] items-center justify-center p-6">
+    <div
+      className="flex min-h-[60vh] items-center justify-center p-6"
+      role="alert"
+      aria-live="assertive"
+    >
       <div
-        className="glass flex max-w-md flex-col items-center gap-6 rounded-2xl p-8 text-center"
-        style={{
-          boxShadow: 'var(--shadow-lg)',
-          borderRadius: 'var(--radius-lg)',
-        }}
+        className={cn(
+          'flex max-w-md flex-col items-center gap-6 text-center',
+          'rounded-[var(--radius-lg)] border border-[var(--color-border)]',
+          'bg-[var(--color-surface)] p-8',
+          'shadow-[var(--shadow-lg)]',
+        )}
       >
         {/* Error icon */}
         <div
-          className="flex h-16 w-16 items-center justify-center rounded-full"
-          style={{ background: 'var(--color-error)', color: 'var(--color-on-primary)' }}
+          className={cn(
+            'flex h-16 w-16 items-center justify-center rounded-full',
+            'bg-[var(--color-error)]/10',
+          )}
           aria-hidden="true"
         >
           <svg
-            xmlns="http://www.w3.org/2000/svg"
             width="32"
             height="32"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="currentColor"
+            stroke="var(--color-error)"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -54,25 +62,17 @@ export default function ErrorPage({
           </svg>
         </div>
 
-        <h1
-          className="text-2xl font-bold"
-          style={{ color: 'var(--color-text)' }}
-        >
-          {t('error_title')}
-        </h1>
-
-        <p
-          className="text-base leading-relaxed"
-          style={{ color: 'var(--color-muted)' }}
-        >
-          {t('error_description')}
-        </p>
+        <div className="flex flex-col gap-2">
+          <h1 className="text-xl font-bold text-[var(--color-text)]">
+            {t('error_title')}
+          </h1>
+          <p className="text-sm leading-relaxed text-[var(--color-muted)]">
+            {t('error_description')}
+          </p>
+        </div>
 
         {error.digest && (
-          <p
-            className="font-mono text-xs"
-            style={{ color: 'var(--color-muted)' }}
-          >
+          <p className="font-mono text-xs text-[var(--color-muted)]">
             {error.digest}
           </p>
         )}
@@ -80,13 +80,15 @@ export default function ErrorPage({
         <div className="flex gap-3">
           <button
             onClick={reset}
-            className="rounded-lg px-6 py-3 text-sm font-semibold transition-shadow hover:shadow-md focus-visible:outline focus-visible:outline-2"
-            style={{
-              background: 'var(--color-primary)',
-              color: 'var(--color-on-primary)',
-              borderRadius: 'var(--radius-md)',
-              outlineColor: 'var(--focus-ring)',
-            }}
+            className={cn(
+              'rounded-[var(--radius-md)] px-5 py-2.5',
+              'bg-[var(--color-primary)] text-[var(--color-on-primary)]',
+              'text-sm font-semibold',
+              'hover:bg-[var(--color-primary-hover)]',
+              'focus-visible:outline-2 focus-visible:outline-offset-2',
+              'focus-visible:outline-[var(--color-primary)]',
+              'transition-colors',
+            )}
           >
             {t('retry')}
           </button>
@@ -94,13 +96,15 @@ export default function ErrorPage({
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- Error boundaries must use <a> to work when the router is broken */}
           <a
             href="/"
-            className="rounded-lg border px-6 py-3 text-sm font-semibold transition-shadow hover:shadow-md focus-visible:outline focus-visible:outline-2"
-            style={{
-              borderColor: 'var(--color-border)',
-              color: 'var(--color-text)',
-              borderRadius: 'var(--radius-md)',
-              outlineColor: 'var(--focus-ring)',
-            }}
+            className={cn(
+              'rounded-[var(--radius-md)] px-5 py-2.5',
+              'border border-[var(--color-border)]',
+              'text-sm font-semibold text-[var(--color-text)]',
+              'hover:bg-[var(--color-surface-elevated)]',
+              'focus-visible:outline-2 focus-visible:outline-offset-2',
+              'focus-visible:outline-[var(--color-primary)]',
+              'transition-colors',
+            )}
           >
             {t('go_home')}
           </a>

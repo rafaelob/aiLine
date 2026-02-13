@@ -34,8 +34,8 @@ export function Toast({ toast }: ToastProps) {
       animate={{ opacity: 1, x: 0, scale: 1 }}
       exit={{ opacity: 0, x: 40, scale: 0.95 }}
       transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-      role="status"
-      aria-live="polite"
+      role={toast.variant === 'error' ? 'alert' : 'status'}
+      aria-live={toast.variant === 'error' ? 'assertive' : 'polite'}
       className={cn(
         'pointer-events-auto flex items-start gap-3 rounded-[var(--radius-md)] px-4 py-3',
         'bg-[var(--color-surface)] border border-[var(--color-border)]',

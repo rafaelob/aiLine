@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/cn'
 import { useTutorSSE } from '@/hooks/use-tutor-sse'
@@ -15,12 +15,22 @@ export function TutorChat() {
   const t = useTranslations('tutor')
   const { sendMessage, cancel, messages, isStreaming, error } = useTutorSSE()
   const scrollRef = useRef<HTMLDivElement>(null)
+  const userScrolledUp = useRef(false)
 
-  // Auto-scroll to bottom when new messages arrive
+  // Track whether user has scrolled away from bottom
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current
+    if (!el) return
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+    userScrolledUp.current = distanceFromBottom > 80
+  }, [])
+
+  // Auto-scroll to bottom when new messages arrive (unless user scrolled up)
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-    }
+    const el = scrollRef.current
+    if (!el) return
+    if (userScrolledUp.current) return
+    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
   }, [messages])
 
   const isEmpty = messages.length === 0
@@ -36,7 +46,8 @@ export function TutorChat() {
       {/* Messages area */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto p-4 space-y-4"
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth"
         role="list"
         aria-label={t('messages_label')}
       >

@@ -20,4 +20,37 @@ describe('PageTransition', () => {
     )
     expect(screen.getByText('Hello')).toBeInTheDocument()
   })
+
+  it('renders multiple children', () => {
+    render(
+      <PageTransition>
+        <p>First</p>
+        <p>Second</p>
+      </PageTransition>
+    )
+    expect(screen.getByText('First')).toBeInTheDocument()
+    expect(screen.getByText('Second')).toBeInTheDocument()
+  })
+
+  it('wraps children in a div container', () => {
+    const { container } = render(
+      <PageTransition>
+        <span>Content</span>
+      </PageTransition>
+    )
+    expect(container.firstChild?.nodeName).toBe('DIV')
+  })
+
+  it('preserves children structure', () => {
+    render(
+      <PageTransition>
+        <div data-testid="inner">
+          <p>Nested</p>
+        </div>
+      </PageTransition>
+    )
+    const inner = screen.getByTestId('inner')
+    expect(inner).toBeInTheDocument()
+    expect(inner.querySelector('p')).toHaveTextContent('Nested')
+  })
 })

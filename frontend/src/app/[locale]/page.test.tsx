@@ -28,4 +28,22 @@ describe('DashboardPage', () => {
     const wrapper = container.firstChild as HTMLElement
     expect(wrapper.className).toContain('max-w-5xl')
   })
+
+  it('applies mx-auto for centering', () => {
+    const { container } = render(<DashboardPage />)
+    const wrapper = container.firstChild as HTMLElement
+    expect(wrapper.className).toContain('mx-auto')
+  })
+
+  it('renders a single root element', () => {
+    const { container } = render(<DashboardPage />)
+    expect(container.children).toHaveLength(1)
+  })
+
+  it('renders DashboardContent as the only child', () => {
+    const { container } = render(<DashboardPage />)
+    const wrapper = container.firstChild as HTMLElement
+    expect(wrapper.children).toHaveLength(1)
+    expect(wrapper.querySelector('[data-testid="dashboard-content"]')).toBeInTheDocument()
+  })
 })

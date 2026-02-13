@@ -58,6 +58,8 @@ vi.mock('motion/react', () => ({
 
 beforeEach(() => {
   vi.clearAllMocks()
+  // JSDOM does not implement scrollTo
+  Element.prototype.scrollTo = vi.fn()
 })
 
 describe('TutorChat', () => {

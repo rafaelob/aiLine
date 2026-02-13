@@ -134,7 +134,7 @@ function StepCard({ step }: StepCardProps) {
         aria-label={t('duration_label', { minutes: step.durationMinutes })}
       >
         <ClockIcon />
-        <span>{step.durationMinutes} min</span>
+        <span>{t('duration_short', { minutes: step.durationMinutes })}</span>
       </div>
 
       {/* Materials */}

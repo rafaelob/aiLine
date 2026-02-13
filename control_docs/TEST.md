@@ -8,7 +8,7 @@
 - **Security:** trivy (container), pip-audit (Python), pnpm audit (Node)
 
 ## Coverage Targets
-- Pre-MVP (current): 1340+ backend tests (1211 runtime + 129 agents), all passing (excl. 17 pre-existing WebSearchResult import failures + 27 live-only errors)
+- Pre-MVP (current): 1527+ backend tests (1350 runtime + 177 agents), all passing
 - Frontend: 331 tests, all passing (41 test suites)
 - Post-MVP: >= 90% on touched code (hard gate)
 
@@ -51,7 +51,7 @@ docker compose up -d --build && docker compose exec api uv run pytest -v  # Dock
 | Database CRUD | - | Yes | - |
 | RAG pipeline | - | Yes | - |
 | LLM adapters | - | Yes (@pytest.mark.live_llm) | - |
-| Pydantic AI agents (ailine_agents) | Yes (119) | Yes (10 live_llm) | - |
+| Pydantic AI agents (ailine_agents) | Yes (167) | Yes (10 live_llm) | - |
 | Skill Registry (parse, scan, prompt) | Yes (18) | - | - |
 | SSE replay store | Yes | - | - |
 | RunContext terminal SSE | Yes | - | - |
@@ -61,3 +61,11 @@ docker compose up -d --build && docker compose exec api uv run pytest -v  # Dock
 | Frontend components | Yes (Vitest) | - | - |
 | WCAG AAA compliance | - | - | Yes (axe-core) |
 | Keyboard navigation | - | - | Yes (Playwright) |
+| Rate limiter middleware | Yes | - | - |
+| Prometheus metrics | Yes | - | - |
+| Input sanitization | Yes | - | - |
+| Tenant context middleware | Yes | - | - |
+| Observability spans | Yes | - | - |
+| Circuit breaker + retry | Yes | - | - |
+| Idempotency guard | Yes | - | - |
+| Readiness probe | - | Yes | - |

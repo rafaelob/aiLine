@@ -22,13 +22,21 @@ All notable changes documented here. Format: [Keep a Changelog](https://keepacha
 - Web Worker sign language (ADR-057), ThemeContext MutationObserver (ADR-058)
 - VLibras a11y, reduced-motion sync, React Activity low-distraction, compute_route() pure fn
 - Live API tests (@pytest.mark.live_llm): 65 total (55 runtime + 10 agents)
-- 1265+ backend tests (1199 runtime + 129 agents), 331+ frontend tests
 - 59 ADRs (ADR-001 through ADR-059), technology research synthesis
 - Custom Skill Registry: YAML frontmatter parser, SkillRegistry with scan/query/prompt-fragment, wired into Planner + Tutor agents
 - SKILL.md frontmatter migration: 11 skills moved to metadata block with compatibility structure
 - CCSS ELA curriculum data (ccss_ela.json): 46 Common Core English Language Arts K-8 standards
 - Bloom's Taxonomy: bloom_level field on all 4 curriculum systems, filter in search API
 - Libras STT ML Pipeline: training scaffold, TF.js MLP classifier, webcam landmarks, gloss->LLM streaming
+- Middleware stack: Rate Limiter (sliding window, 429+Retry-After), Security Headers, Request ID (structlog correlation), Tenant Context (JWT+contextvars)
+- Prometheus Metrics: /metrics endpoint (Counter, Histogram, text exposition)
+- Input Sanitization: sanitize_prompt (NFC+null+truncate), validate_teacher_id, sanitize_metadata
+- Resilience: Circuit Breaker (5 fail->60s open->half-open), Retry (exp backoff, 3 attempts), Workflow Timeout (300s)
+- Idempotency Guard, DI Container Lifecycle (health_check/close/validate/OCR protocol)
+- Observability Spans: span_context, timed_operation, log_llm_call, log_tool_execution
+- Dev-Mode Safety Guard, Readiness Probe (/health/ready, DB+Redis checks)
+- SmartRouter pure extraction: routing_types.py with RouteFeatures/ScoreBreakdown/RouteDecision
+- 1527+ backend tests (1350 runtime + 177 agents), 331+ frontend tests
 
 ### Changed
 - FastAPI upgraded 0.128.8 -> 0.129.0; runtime + agents lock files upgraded
