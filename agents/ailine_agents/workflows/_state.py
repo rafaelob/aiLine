@@ -29,6 +29,12 @@ class RunState(_RunStateRequired, total=False):
     final: dict[str, Any]
     refine_iter: int
 
+    # Idempotency: prevents duplicate plan generations from double-clicks.
+    idempotency_key: str | None
+
+    # Workflow timing: monotonic timestamp when the workflow started.
+    started_at: float | None
+
 
 class _TutorGraphStateRequired(TypedDict):
     """Required fields for the tutor graph state."""
@@ -48,3 +54,6 @@ class TutorGraphState(_TutorGraphStateRequired, total=False):
     response: str
     validated_output: dict[str, Any] | None
     error: str | None
+
+    # Workflow timing: monotonic timestamp when the workflow started.
+    started_at: float | None

@@ -1,4 +1,4 @@
-"""SmartRouter adapter — routes requests to the best-fit LLM provider.
+"""SmartRouter adapter -- routes requests to the best-fit LLM provider.
 
 Implements ADR-049: Weighted complexity scoring with rebalanced weights
 (0.25/0.25/0.25/0.15/0.10) to determine the cheapest adequate provider.
@@ -11,115 +11,80 @@ Thresholds (ADR-049):
 Supports two routing modes:
   - "weighted" (default): score-based complexity classification
   - "rules": hard override rules evaluated before scoring
+
+Observability:
+  - Every routing decision is captured as a RouteMetrics entry
+  - In-memory ring buffer (default 100) for recent metrics retrieval
+  - Structured logging of routing decisions, latency, and fallback attempts
+
+Types and pure scoring functions live in routing_types.py. This module
+re-exports them for backward compatibility.
 """
 
 from __future__ import annotations
 
 import re
+import time
+from collections import deque
 from collections.abc import AsyncIterator
-from dataclasses import dataclass, field
+from dataclasses import asdict
 from typing import Any
 
 from ...domain.ports.llm import WebSearchResult
 from ...shared.observability import get_logger
 
+# Re-export types and functions so existing imports keep working
+from .routing_types import (
+    DEFAULT_METRICS_CAPACITY,
+    TIER_CHEAP_MAX,
+    TIER_MIDDLE_MAX,
+    W_HISTORY,
+    W_INTENT,
+    W_STRUCTURED,
+    W_TOKENS,
+    W_TOOLS,
+    RouteDecision,
+    RouteFeatures,
+    RouteMetrics,
+    RoutingRule,
+    ScoreBreakdown,
+    SmartRouterConfig,
+    compute_route,
+    estimate_tokens,
+    score_history,
+    score_intent,
+    score_structured,
+    score_tokens,
+    score_tools,
+)
+
+__all__ = [
+    "DEFAULT_METRICS_CAPACITY",
+    "TIER_CHEAP_MAX",
+    "TIER_MIDDLE_MAX",
+    "W_HISTORY",
+    "W_INTENT",
+    "W_STRUCTURED",
+    "W_TOKENS",
+    "W_TOOLS",
+    "RouteDecision",
+    "RouteFeatures",
+    "RouteMetrics",
+    "RoutingRule",
+    "ScoreBreakdown",
+    "SmartRouterAdapter",
+    "SmartRouterConfig",
+    "compute_route",
+]
+
 _log = get_logger("ailine.adapters.llm.smart_router")
-
-# Dimension weights (ADR-049 rebalanced)
-W_TOKENS = 0.25
-W_STRUCTURED = 0.25
-W_TOOLS = 0.25
-W_HISTORY = 0.15
-W_INTENT = 0.10
-
-# Tier thresholds
-TIER_CHEAP_MAX = 0.40
-TIER_MIDDLE_MAX = 0.70
-
-
-@dataclass(frozen=True)
-class RouteFeatures:
-    """Input features for the routing decision function."""
-
-    token_score: float
-    structured_score: float
-    tool_score: float
-    history_score: float
-    intent_score: float
-    rule_tier: str | None = None  # Hard override from rules
-
-
-@dataclass(frozen=True)
-class RouteDecision:
-    """Output of the routing decision: tier name and computed score."""
-
-    tier: str  # "cheap", "middle", or "primary"
-    score: float
-    reason: str = ""
-
-
-def compute_route(features: RouteFeatures) -> RouteDecision:
-    """Pure, stateless routing decision based on feature scores.
-
-    ADR-049: Weighted complexity scoring with rebalanced weights
-    (0.25/0.25/0.25/0.15/0.10). Thresholds:
-    - score <= 0.40  -> cheap tier
-    - 0.41-0.70      -> middle tier
-    - score >= 0.71  -> primary tier
-
-    If a rule_tier hard override is provided, it takes precedence.
-    """
-    if features.rule_tier is not None:
-        return RouteDecision(
-            tier=features.rule_tier,
-            score=0.0,
-            reason="rule_override",
-        )
-
-    score = (
-        W_TOKENS * features.token_score
-        + W_STRUCTURED * features.structured_score
-        + W_TOOLS * features.tool_score
-        + W_HISTORY * features.history_score
-        + W_INTENT * features.intent_score
-    )
-    score = min(1.0, max(0.0, score))
-
-    if score <= TIER_CHEAP_MAX:
-        tier = "cheap"
-    elif score <= TIER_MIDDLE_MAX:
-        tier = "middle"
-    else:
-        tier = "primary"
-
-    return RouteDecision(tier=tier, score=score)
-
-
-@dataclass(frozen=True)
-class RoutingRule:
-    """Hard override rule evaluated before scoring."""
-
-    pattern: str  # regex applied to the last user message
-    tier: str  # "cheap", "middle", or "primary"
-    reason: str = ""
-
-
-@dataclass
-class SmartRouterConfig:
-    """Configuration for the SmartRouter."""
-
-    cheap_provider: Any = None  # ChatLLM instance for cheap tier
-    middle_provider: Any = None  # ChatLLM instance for middle tier
-    primary_provider: Any = None  # ChatLLM instance for primary tier
-    mode: str = "weighted"  # "weighted" or "rules"
-    rules: list[RoutingRule] = field(default_factory=list)
-    cache_ttl_seconds: int = 300  # 5 min default
 
 
 class SmartRouterAdapter:
     """Routes LLM requests to the cheapest adequate provider.
 
-    Satisfies the ``ChatLLM`` protocol.
+    Satisfies the ``ChatLLM`` protocol. Captures telemetry for every
+    routing decision in an in-memory ring buffer.
     """
 
     def __init__(self, config: SmartRouterConfig) -> None:
@@ -132,7 +97,9 @@ class SmartRouterAdapter:
         if self._fallback is None:
             msg = "SmartRouter requires at least one provider"
             raise ValueError(msg)
-        self._cache: dict[str, tuple[str, float]] = {}  # sig -> (tier, timestamp)
+        self._metrics: deque[RouteMetrics] = deque(
+            maxlen=config.metrics_capacity,
+        )
 
     @property
     def model_name(self) -> str:
@@ -140,7 +107,6 @@ class SmartRouterAdapter:
 
     @property
     def capabilities(self) -> dict[str, Any]:
-        # web_search is available if any underlying provider supports it
         has_search = any(
             getattr(p, "capabilities", {}).get("web_search", False)
             for p in [self._cheap, self._middle, self._primary]
@@ -155,6 +121,8 @@ class SmartRouterAdapter:
             "routing_mode": self._config.mode,
         }
 
+    # --- Feature extraction and routing ---
+
     def _extract_features(
         self,
         messages: list[dict[str, Any]],
@@ -166,15 +134,43 @@ class SmartRouterAdapter:
             rule_tier = self._check_rules(messages)
 
         return RouteFeatures(
-            token_score=self._score_tokens(messages),
-            structured_score=self._score_structured(kwargs),
-            tool_score=self._score_tools(kwargs),
-            history_score=self._score_history(messages),
-            intent_score=self._score_intent(messages),
+            token_score=score_tokens(messages),
+            structured_score=score_structured(kwargs),
+            tool_score=score_tools(kwargs),
+            history_score=score_history(messages),
+            intent_score=score_intent(messages),
             rule_tier=rule_tier,
         )
 
-    def score_complexity(self, messages: list[dict[str, Any]], **kwargs: Any) -> float:
+    def _route_and_resolve(
+        self,
+        messages: list[dict[str, Any]],
+        **kwargs: Any,
+    ) -> tuple[RouteDecision, RouteFeatures, Any, bool]:
+        """Compute route, resolve provider, detect fallback.
+
+        Returns (decision, features, provider, is_fallback).
+        """
+        features = self._extract_features(messages, **kwargs)
+        decision = compute_route(features)
+        tier = decision.tier
+
+        provider = self._get_tier_provider(tier)
+        is_fallback = provider is None
+        if is_fallback:
+            _log.warning(
+                "smart_router.fallback",
+                requested_tier=tier,
+                fallback_provider=self._fallback.model_name,
+                reason=f"no provider configured for tier '{tier}'",
+            )
+            provider = self._fallback
+
+        return decision, features, provider, is_fallback
+
+    def score_complexity(
+        self, messages: list[dict[str, Any]], **kwargs: Any
+    ) -> float:
         """Score request complexity on [0, 1] scale."""
         features = self._extract_features(messages, **kwargs)
         decision = compute_route(features)
@@ -190,15 +186,101 @@ class SmartRouterAdapter:
         decision = compute_route(features)
         return decision.tier
 
+    # --- Provider resolution ---
+
+    def _get_tier_provider(self, tier: str) -> Any | None:
+        """Get the exact provider for a tier, or None if missing."""
+        if tier == "cheap":
+            return self._cheap
+        if tier == "middle":
+            return self._middle
+        if tier == "primary":
+            return self._primary
+        return None
+
     def _get_provider(self, tier: str) -> Any:
         """Get the provider for a tier, with fallback."""
-        if tier == "cheap" and self._cheap:
-            return self._cheap
-        if tier == "middle" and self._middle:
-            return self._middle
-        if tier == "primary" and self._primary:
-            return self._primary
-        return self._fallback
+        provider = self._get_tier_provider(tier)
+        return provider if provider is not None else self._fallback
+
+    # --- Telemetry ---
+
+    def _record_metrics(
+        self,
+        decision: RouteDecision,
+        features: RouteFeatures,
+        provider_name: str,
+        latency_ms: float,
+        token_estimate: int,
+        *,
+        is_fallback: bool = False,
+    ) -> RouteMetrics:
+        """Create and store a RouteMetrics entry."""
+        metrics = RouteMetrics(
+            timestamp=time.monotonic(),
+            tier=decision.tier,
+            score=decision.score,
+            provider_name=provider_name,
+            latency_ms=latency_ms,
+            token_estimate=token_estimate,
+            features=features,
+            score_breakdown=decision.score_breakdown,
+            is_fallback=is_fallback,
+        )
+        self._metrics.append(metrics)
+        return metrics
+
+    def _log_route_decision(
+        self,
+        event: str,
+        decision: RouteDecision,
+        features: RouteFeatures,
+        provider_name: str,
+        *,
+        is_fallback: bool = False,
+    ) -> None:
+        """Structured log of the routing decision with all feature scores."""
+        breakdown = (
+            asdict(decision.score_breakdown)
+            if decision.score_breakdown
+            else None
+        )
+        _log.info(
+            event,
+            tier=decision.tier,
+            score=round(decision.score, 4),
+            provider=provider_name,
+            is_fallback=is_fallback,
+            reason=decision.reason or None,
+            features=asdict(features),
+            score_breakdown=breakdown,
+        )
+
+    def _log_latency(
+        self,
+        event: str,
+        provider_name: str,
+        latency_ms: float,
+    ) -> None:
+        """Log provider call latency."""
+        _log.info(
+            event,
+            provider=provider_name,
+            latency_ms=round(latency_ms, 2),
+        )
+
+    def get_recent_metrics(self, n: int | None = None) -> list[RouteMetrics]:
+        """Return the last *n* routing decisions (default: all in buffer).
+
+        The ring buffer holds at most ``metrics_capacity`` entries
+        (default 100). Oldest entries are evicted automatically.
+        """
+        items = list(self._metrics)
+        if n is not None:
+            return items[-n:]
+        return items
+
+    # --- ChatLLM protocol methods ---
 
     async def generate(
         self,
@@ -208,19 +290,40 @@ class SmartRouterAdapter:
         max_tokens: int = 4096,
         **kwargs: Any,
     ) -> str:
-        tier = self.classify_tier(messages, **kwargs)
-        provider = self._get_provider(tier)
-        _log.info(
-            "smart_router.route",
-            tier=tier,
-            provider=provider.model_name,
+        decision, features, provider, is_fallback = self._route_and_resolve(
+            messages, **kwargs
         )
-        return await provider.generate(
+        provider_name: str = provider.model_name
+        self._log_route_decision(
+            "smart_router.route",
+            decision,
+            features,
+            provider_name,
+            is_fallback=is_fallback,
+        )
+        token_est = estimate_tokens(messages)
+
+        t0 = time.monotonic()
+        result = await provider.generate(
             messages,
             temperature=temperature,
             max_tokens=max_tokens,
             **kwargs,
         )
+        latency_ms = (time.monotonic() - t0) * 1000
+
+        self._log_latency(
+            "smart_router.generate_done", provider_name, latency_ms
+        )
+        self._record_metrics(
+            decision,
+            features,
+            provider_name,
+            latency_ms,
+            token_est,
+            is_fallback=is_fallback,
+        )
+        return result
 
     async def stream(
         self,
@@ -230,13 +333,20 @@ class SmartRouterAdapter:
         max_tokens: int = 4096,
         **kwargs: Any,
     ) -> AsyncIterator[str]:
-        tier = self.classify_tier(messages, **kwargs)
-        provider = self._get_provider(tier)
-        _log.info(
-            "smart_router.route_stream",
-            tier=tier,
-            provider=provider.model_name,
+        decision, features, provider, is_fallback = self._route_and_resolve(
+            messages, **kwargs
         )
+        provider_name: str = provider.model_name
+        self._log_route_decision(
+            "smart_router.route_stream",
+            decision,
+            features,
+            provider_name,
+            is_fallback=is_fallback,
+        )
+        token_est = estimate_tokens(messages)
+
+        t0 = time.monotonic()
         async for chunk in provider.stream(
             messages,
             temperature=temperature,
@@ -244,6 +354,19 @@ class SmartRouterAdapter:
             **kwargs,
         ):
             yield chunk
+        latency_ms = (time.monotonic() - t0) * 1000
+
+        self._log_latency(
+            "smart_router.stream_done", provider_name, latency_ms
+        )
+        self._record_metrics(
+            decision,
+            features,
+            provider_name,
+            latency_ms,
+            token_est,
+            is_fallback=is_fallback,
+        )
 
     async def generate_with_search(
         self,
@@ -254,9 +377,9 @@ class SmartRouterAdapter:
     ) -> WebSearchResult:
         """Route web search to the first provider that supports it."""
         for provider in [self._primary, self._middle, self._cheap]:
-            if provider is not None and getattr(provider, "capabilities", {}).get(
-                "web_search", False
-            ):
+            if provider is not None and getattr(
+                provider, "capabilities", {}
+            ).get("web_search", False):
                 return await provider.generate_with_search(
                     query, max_results=max_results, **kwargs
                 )
@@ -265,77 +388,18 @@ class SmartRouterAdapter:
             sources=[],
         )
 
-    # --- Scoring functions ---
+    # --- Backward-compatible static scoring methods ---
+    # These delegate to module-level functions in routing_types.py
+    # but keep the SmartRouterAdapter._score_* API for existing callers.
 
-    @staticmethod
-    def _score_tokens(messages: list[dict[str, Any]]) -> float:
-        """Estimate token complexity from total character length."""
-        if not messages:
-            return 0.0
-        total_chars = sum(len(str(m.get("content", ""))) for m in messages)
-        if total_chars > 8000:
-            return 1.0
-        if total_chars > 4000:
-            return 0.7
-        if total_chars > 2000:
-            return 0.4
-        return 0.1
+    _score_tokens = staticmethod(score_tokens)
+    _score_structured = staticmethod(score_structured)
+    _score_tools = staticmethod(score_tools)
+    _score_history = staticmethod(score_history)
+    _score_intent = staticmethod(score_intent)
+    _estimate_tokens = staticmethod(estimate_tokens)
 
-    @staticmethod
-    def _score_structured(kwargs: dict[str, Any]) -> float:
-        """Score based on whether structured output is requested."""
-        if "response_format" in kwargs or "structured_output" in kwargs:
-            return 1.0
-        if kwargs.get("json_mode"):
-            return 0.6
-        return 0.0
-
-    @staticmethod
-    def _score_tools(kwargs: dict[str, Any]) -> float:
-        """Score based on tool/function calling requirements."""
-        tools = kwargs.get("tools") or []
-        if len(tools) > 5:
-            return 1.0
-        if len(tools) > 0:
-            return 0.6
-        return 0.0
-
-    @staticmethod
-    def _score_history(messages: list[dict[str, Any]]) -> float:
-        """Score based on conversation history length."""
-        turns = len(messages)
-        if turns > 20:
-            return 1.0
-        if turns > 10:
-            return 0.6
-        if turns > 4:
-            return 0.3
-        return 0.0
-
-    @staticmethod
-    def _score_intent(messages: list[dict[str, Any]]) -> float:
-        """Score based on detected complexity signals in the prompt."""
-        if not messages:
-            return 0.0
-        last_content = str(messages[-1].get("content", ""))
-        complexity_signals = [
-            r"(?:analis|compar|avali|sintetiz|critic)",  # high-order thinking
-            r"(?:multi|complex|detalhad|aprofundad)",  # complexity markers
-            r"(?:curricul|BNCC|standard|alignment)",  # curriculum alignment
-            r"(?:acessibilid|inclusiv|adapt|TEA|TDAH)",  # accessibility
-        ]
-        matches = sum(
-            1
-            for pattern in complexity_signals
-            if re.search(pattern, last_content, re.IGNORECASE)
-        )
-        if matches >= 3:
-            return 1.0
-        if matches >= 2:
-            return 0.6
-        if matches >= 1:
-            return 0.3
-        return 0.0
+    # --- Rule checking ---
 
     def _check_rules(self, messages: list[dict[str, Any]]) -> str | None:
         """Check hard override rules. Returns tier or None."""

@@ -92,11 +92,9 @@ class TestRedisEventBus:
 
 
 class TestEventBusSelection:
-    def test_default_redis_url_uses_inmemory(self):
-        """The default redis URL is treated as 'not configured' -> InMemoryEventBus."""
-        # Explicitly set the localhost URL to simulate "not configured" regardless
-        # of the actual environment (e.g., Docker sets AILINE_REDIS_URL to redis://redis:6379/0).
-        settings = Settings(redis={"url": "redis://localhost:6379/0"})
+    def test_empty_redis_url_uses_inmemory(self):
+        """An empty redis URL means 'not configured' -> InMemoryEventBus."""
+        settings = Settings(redis={"url": ""})
         bus = _build_event_bus(settings)
         assert isinstance(bus, InMemoryEventBus)
 

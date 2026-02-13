@@ -121,7 +121,7 @@ def settings() -> Settings:
         db={"url": "sqlite+aiosqlite:///:memory:"},
         llm={"provider": "fake", "api_key": "fake"},
         embedding={"provider": "gemini", "api_key": ""},
-        redis={"url": "redis://localhost:6379/0"},
+        redis={"url": ""},
     )
 
 

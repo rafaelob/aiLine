@@ -94,7 +94,7 @@ class TestRunPipelineError:
             "ailine_runtime.api.routers.plans_stream.AgentDepsFactory",
             mock_factory,
         ):
-            await _run_pipeline(body, settings, container, emitter, queue)
+            await _run_pipeline(body, "teacher-001", settings, container, emitter, queue)
 
         # Collect all events from queue
         events = []

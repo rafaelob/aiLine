@@ -13,13 +13,14 @@ auto-generate correct JSON schemas for LLM tool calling.
 # in __annotations__, not stringified forward references.
 
 import inspect
-from typing import Any
+import typing
+from typing import Any, Union, get_args, get_origin
 
 from pydantic_ai import Agent, RunContext
 
 from ..deps import AgentDeps
 
-# Pydantic JSON Schema type -> Python annotation mapping
+# Pydantic JSON Schema type -> Python annotation mapping (fallback)
 _TYPE_MAP: dict[str, type] = {
     "string": str,
     "integer": int,
@@ -28,6 +29,26 @@ _TYPE_MAP: dict[str, type] = {
     "array": list,
     "object": dict,
 }
+
+
+def _resolve_annotation(field_info: Any, prop: dict[str, Any]) -> Any:
+    """Resolve the best Python annotation for a tool parameter.
+
+    Prefers the Pydantic field annotation (preserves enums, Optional,
+    nested models, constrained types). Falls back to JSON schema type
+    mapping only when the annotation is unavailable.
+    """
+    ann = getattr(field_info, "annotation", None)
+    if ann is not None and ann is not Any:
+        # Unwrap Optional[X] to X for the signature (Pydantic AI handles
+        # optionality via defaults, not via Union[X, None] in annotations)
+        origin = get_origin(ann)
+        if origin is Union:
+            args = [a for a in get_args(ann) if a is not type(None)]
+            if len(args) == 1:
+                return args[0]
+        return ann
+    return _TYPE_MAP.get(prop.get("type", "string"), Any)
 
 
 def _build_typed_wrapper(tool_def: Any) -> Any:
@@ -54,25 +75,28 @@ def _build_typed_wrapper(tool_def: Any) -> Any:
     annotations: dict[str, Any] = {"ctx": RunContext[AgentDeps], "return": Any}
 
     for field_name, field_info in model_fields.items():
-        # Skip teacher_id — auto-injected from deps
-        if field_name == "teacher_id":
+        # Skip teacher_id — auto-injected from deps (only when optional)
+        if field_name == "teacher_id" and not getattr(field_info, "is_required", lambda: True)():
             continue
 
         prop = properties.get(field_name, {})
-        annotation = _TYPE_MAP.get(prop.get("type", "string"), Any)
+        annotation = _resolve_annotation(field_info, prop)
 
-        # Use field default if available, otherwise EMPTY for required
-        if field_name in required_fields:
+        # Use Pydantic field metadata for default handling
+        is_required = getattr(field_info, "is_required", None)
+        if callable(is_required) and is_required():
             default = inspect.Parameter.empty
         elif field_info.default is not None:
             default = field_info.default
+        elif getattr(field_info, "default_factory", None) is not None:
+            default = None  # factory will fill at model init
         else:
             default = None
 
         params.append(
             inspect.Parameter(
                 field_name,
-                inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                inspect.Parameter.KEYWORD_ONLY,
                 default=default,
                 annotation=annotation,
             )
@@ -97,6 +121,17 @@ def _build_typed_wrapper(tool_def: Any) -> Any:
     _tool_fn.__qualname__ = f"_tool_bridge.{tool_def.name}"
     # Pydantic AI uses __module__ for get_type_hints globalns lookup
     _tool_fn.__module__ = __name__
+
+    # Fail-fast: verify patched signature is readable by inspection APIs.
+    # Catches breakage early if Pydantic AI changes its introspection logic.
+    try:
+        inspect.signature(_tool_fn)
+        typing.get_type_hints(_tool_fn, include_extras=True)
+    except Exception as exc:
+        raise RuntimeError(
+            f"Tool bridge self-check failed for '{tool_def.name}': {exc}. "
+            f"Pydantic AI inspection may have changed."
+        ) from exc
 
     return _tool_fn
 

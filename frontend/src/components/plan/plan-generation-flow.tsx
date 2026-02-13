@@ -34,6 +34,7 @@ export function PlanGenerationFlow() {
   const tForm = useTranslations('plans.form')
   const tProfiles = useTranslations('plans.form.accessibility_profiles')
   const tWizard = useTranslations('plans.wizard')
+  const tWizardShort = useTranslations('wizard_short')
 
   const {
     startGeneration,
@@ -181,7 +182,7 @@ export function PlanGenerationFlow() {
                           : 'text-[var(--color-muted)]'
                       )}
                     >
-                      <span className="sm:hidden">{STEP_SHORT_LABELS[i]}</span>
+                      <span className="sm:hidden">{tWizardShort(`step_${i}`)}</span>
                       <span className="hidden sm:inline">{label}</span>
                     </span>
                   </div>
@@ -571,7 +572,7 @@ function ReviewRow({
   )
 }
 
-/** CSS-based persona avatar -- no images needed */
+/** CSS-based persona avatar using theme custom properties for high-contrast compliance */
 function PersonaAvatar({
   profile,
   selected,
@@ -581,12 +582,12 @@ function PersonaAvatar({
 }) {
   const colors: Record<string, string> = {
     standard: 'var(--color-primary)',
-    tea: '#2D8B6E',
-    tdah: '#E07E34',
-    dyslexia: '#3B7DD8',
-    low_vision: '#1A56DB',
-    hearing: '#4338CA',
-    motor: '#3B82F6',
+    tea: 'var(--color-success)',
+    tdah: 'var(--color-warning)',
+    dyslexia: 'var(--color-primary)',
+    low_vision: 'var(--color-primary)',
+    hearing: 'var(--color-secondary)',
+    motor: 'var(--color-primary)',
   }
   const color = colors[profile] ?? 'var(--color-primary)'
 
@@ -608,8 +609,7 @@ function PersonaAvatar({
   )
 }
 
-/** Short labels for mobile display (1-2 words max) */
-const STEP_SHORT_LABELS = ['Info', 'Perfil', 'Texto', 'Revisar']
+/** Short labels for mobile display -- resolved from i18n at render time via tWizardShort */
 
 function StepCheckIcon() {
   return (

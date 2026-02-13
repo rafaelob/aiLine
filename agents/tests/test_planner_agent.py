@@ -48,15 +48,14 @@ class TestBuildPlannerAgent:
 
 
 class TestResetPlannerAgent:
-    """reset_planner_agent() clears the module-level singleton."""
+    """reset_planner_agent() clears the lru_cache singletons."""
 
-    def test_reset_clears_singleton(self) -> None:
-        from ailine_agents.agents import planner as planner_mod
+    def test_reset_clears_cache(self) -> None:
+        from ailine_agents.agents.planner import _build_and_register_planner
 
-        # Build via get (creates singleton)
-        # We do NOT call get_planner_agent() as it triggers build_tool_registry()
-        # Instead just verify the reset mechanism works on the module variable
-        planner_mod._planner_agent = build_planner_agent()
-        assert planner_mod._planner_agent is not None
+        # Populate cache
+        _build_and_register_planner(True)
+        assert _build_and_register_planner.cache_info().currsize == 1
+
         reset_planner_agent()
-        assert planner_mod._planner_agent is None
+        assert _build_and_register_planner.cache_info().currsize == 0

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import { motion, AnimatePresence } from 'motion/react'
 import { cn } from '@/lib/cn'
 import type { DiffChange, TwinTab } from '@/types/accessibility'
@@ -25,6 +26,7 @@ export function AccessibilityTwin({
   adaptedContent,
   adaptationLabel = 'Adaptação',
 }: AccessibilityTwinProps) {
+  const t = useTranslations('twin')
   const [activeTab, setActiveTab] = useState<TwinTab>('original')
 
   const diffChanges = useMemo(
@@ -39,17 +41,17 @@ export function AccessibilityTwin({
   return (
     <div className="flex flex-col gap-4">
       {/* Tab bar */}
-      <div role="tablist" aria-label="Comparação de versões" className="flex gap-1 rounded-lg bg-[var(--color-surface-elevated)] p-1">
+      <div role="tablist" aria-label={t('comparison_label')} className="flex gap-1 rounded-lg bg-[var(--color-surface-elevated)] p-1">
         <TabButton
           id="tab-original"
-          label="Versão Original"
+          label={t('original')}
           isActive={activeTab === 'original'}
           controls="panel-original"
           onSelect={() => handleTabChange('original')}
         />
         <TabButton
           id="tab-adapted"
-          label={`Versão Adaptada (${adaptationLabel})`}
+          label={t('adapted', { label: adaptationLabel })}
           isActive={activeTab === 'adapted'}
           controls="panel-adapted"
           onSelect={() => handleTabChange('adapted')}
@@ -149,16 +151,18 @@ interface DiffViewProps {
  * This ensures changes are perceivable by color-blind users.
  */
 function DiffView({ changes }: DiffViewProps) {
+  const t = useTranslations('twin')
+
   if (changes.length === 0) {
     return (
       <p className="text-[var(--color-muted)] italic">
-        Nenhuma diferença encontrada.
+        {t('no_diff')}
       </p>
     )
   }
 
   return (
-    <div className="space-y-1" role="list" aria-label="Diferenças entre versões">
+    <div className="space-y-1" role="list" aria-label={t('diff_label')}>
       {changes.map((change, i) => (
         <div
           key={i}
@@ -174,7 +178,7 @@ function DiffView({ changes }: DiffViewProps) {
         >
           {change.type === 'addition' && (
             <span
-              aria-label="Adição"
+              aria-label={t('addition')}
               className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-success)] text-xs font-bold text-[var(--color-on-primary)]"
             >
               +
@@ -182,7 +186,7 @@ function DiffView({ changes }: DiffViewProps) {
           )}
           {change.type === 'removal' && (
             <span
-              aria-label="Remoção"
+              aria-label={t('removal')}
               className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-error)] text-xs font-bold text-[var(--color-on-primary)]"
             >
               -

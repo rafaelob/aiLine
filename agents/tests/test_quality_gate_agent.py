@@ -52,12 +52,14 @@ class TestBuildQualityGateAgent:
 
 
 class TestResetQualityGateAgent:
-    """reset_quality_gate_agent() clears the module-level singleton."""
+    """reset_quality_gate_agent() clears the lru_cache singleton."""
 
-    def test_reset_clears_singleton(self) -> None:
-        from ailine_agents.agents import quality_gate as qg_mod
+    def test_reset_clears_cache(self) -> None:
+        from ailine_agents.agents.quality_gate import get_quality_gate_agent
 
-        qg_mod._quality_gate_agent = build_quality_gate_agent()
-        assert qg_mod._quality_gate_agent is not None
+        # Populate cache
+        get_quality_gate_agent()
+        assert get_quality_gate_agent.cache_info().currsize == 1
+
         reset_quality_gate_agent()
-        assert qg_mod._quality_gate_agent is None
+        assert get_quality_gate_agent.cache_info().currsize == 0

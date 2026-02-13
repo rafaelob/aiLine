@@ -19,6 +19,10 @@ class EmbeddingConfig(BaseSettings):
     model: str = "gemini-embedding-001"
     dimensions: int = 1536
     api_key: str = ""
+    batch_size: int = 100
+    """Max embeddings per API call. Controls chunking of large embed requests
+    to avoid provider timeouts and memory pressure. Typical provider limits:
+    Gemini=100, OpenAI=2048. Use a conservative default."""
 
 
 class VectorStoreConfig(BaseSettings):
@@ -83,6 +87,9 @@ class Settings(BaseSettings):
         "standard_html,low_distraction_html,large_print_html,high_contrast_html,"
         "dyslexia_friendly_html,screen_reader_html,visual_schedule_html,student_plain_text,audio_script"
     )
+
+    # Environment (development | staging | production)
+    env: Literal["development", "staging", "production"] = "development"
 
     # Demo
     demo_mode: bool = False

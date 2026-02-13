@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect, useRef } from 'react'
+import { useTranslations } from 'next-intl'
 import { motion, AnimatePresence } from 'motion/react'
 import { cn } from '@/lib/cn'
 import { SIMULATIONS, SIMULATION_CATEGORIES, getSimulationCSS } from '@/lib/accessibility-data'
@@ -20,6 +21,7 @@ import type { SimulationMode } from '@/types/accessibility'
  * - Motor difficulty (cursor delay)
  */
 export function SimulateDisability() {
+  const t = useTranslations('simulate')
   const [activeSimulations, setActiveSimulations] = useState<Set<SimulationMode>>(new Set())
   const tunnelOverlayRef = useRef<HTMLDivElement | null>(null)
 
@@ -108,13 +110,19 @@ export function SimulateDisability() {
     `
     document.head.appendChild(styleEl)
 
-    // Add delayed click handling
+    // Add delayed click handling with guard to prevent infinite loop
+    let isSyntheticClick = false
     const handleClick = (e: MouseEvent) => {
+      if (isSyntheticClick) {
+        isSyntheticClick = false
+        return
+      }
       const target = e.target as HTMLElement
       if (target.tagName === 'BUTTON' || target.tagName === 'A') {
         e.preventDefault()
         e.stopPropagation()
         setTimeout(() => {
+          isSyntheticClick = true
           target.click()
         }, 500)
       }
@@ -148,11 +156,10 @@ export function SimulateDisability() {
       <div className="flex items-center justify-between">
         <div>
           <h2 id="simulate-heading" className="text-xl font-semibold text-[var(--color-text)]">
-            Ponte de Empatia
+            {t('title')}
           </h2>
           <p className="mt-1 text-sm text-[var(--color-muted)]">
-            Simule como seus alunos experienciam o conteúdo.
-            Ative uma ou mais simulações para entender suas perspectivas.
+            {t('description')}
           </p>
         </div>
 
@@ -164,9 +171,9 @@ export function SimulateDisability() {
               'hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2',
               'focus-visible:outline-[var(--color-error)] transition-colors',
             )}
-            aria-label="Desativar todas as simulações"
+            aria-label={t('reset_all_label')}
           >
-            Resetar Tudo
+            {t('reset_all')}
           </button>
         )}
       </div>
@@ -189,8 +196,7 @@ export function SimulateDisability() {
                 !
               </span>
               <span>
-                {activeSimulations.size} simulação(ões) ativa(s).
-                A página pode parecer diferente do normal.
+                {t('active_simulations', { count: activeSimulations.size })}
               </span>
             </div>
           </motion.div>

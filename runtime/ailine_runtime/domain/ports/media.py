@@ -37,3 +37,17 @@ class ImageDescriber(Protocol):
     async def describe(
         self, image_bytes: bytes, *, locale: str = "pt-BR"
     ) -> str: ...
+
+
+@runtime_checkable
+class OCRProcessor(Protocol):
+    """OCR text extraction from PDF and image files.
+
+    Implementations should handle graceful degradation when underlying
+    libraries (pypdf, pytesseract) are not installed, returning a
+    diagnostic message instead of raising.
+    """
+
+    async def extract_text(
+        self, file_bytes: bytes, *, file_type: str = "pdf"
+    ) -> str: ...

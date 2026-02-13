@@ -20,10 +20,12 @@ from typing import Any
 import structlog
 from ailine_agents import AgentDepsFactory
 from ailine_agents.workflows.plan_workflow import build_plan_workflow
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
 
+from ...shared.sanitize import sanitize_prompt, validate_teacher_id
+from ...shared.tenant import try_get_current_teacher_id
 from ...workflow.plan_workflow import DEFAULT_RECURSION_LIMIT, RunState
 from ..streaming.events import SSEEventEmitter
 
@@ -33,6 +35,19 @@ router = APIRouter()
 
 # Heartbeat interval to keep the connection alive (seconds).
 _HEARTBEAT_INTERVAL_S = 15.0
+
+
+def _resolve_teacher_id(body_teacher_id: str | None) -> str:
+    """Resolve teacher_id: middleware context takes precedence over body."""
+    ctx_teacher_id = try_get_current_teacher_id()
+    if ctx_teacher_id:
+        return ctx_teacher_id
+    if body_teacher_id:
+        try:
+            return validate_teacher_id(body_teacher_id)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return ""
 
 
 class PlanStreamIn(BaseModel):
@@ -70,6 +85,7 @@ async def _heartbeat_loop(
 
 async def _run_pipeline(
     body: PlanStreamIn,
+    teacher_id: str,
     settings: Any,
     container: Any,
     emitter: SSEEventEmitter,
@@ -79,7 +95,7 @@ async def _run_pipeline(
     try:
         deps = AgentDepsFactory.from_container(
             container,
-            teacher_id=body.teacher_id or "",
+            teacher_id=teacher_id,
             run_id=body.run_id,
             subject=body.subject or "",
             default_variants=getattr(settings, "default_variants", "standard_html"),
@@ -97,7 +113,7 @@ async def _run_pipeline(
         init_state: RunState = {
             "run_id": body.run_id,
             "user_prompt": body.user_prompt,
-            "teacher_id": body.teacher_id,
+            "teacher_id": teacher_id or body.teacher_id,
             "subject": body.subject,
             "class_accessibility_profile": body.class_accessibility_profile,
             "learner_profiles": body.learner_profiles,
@@ -153,13 +169,21 @@ async def plans_generate_stream(body: PlanStreamIn, request: Request) -> EventSo
     container = request.app.state.container
     settings = request.app.state.settings
 
+    # --- Input sanitization ---
+    body.user_prompt = sanitize_prompt(body.user_prompt)
+    if not body.user_prompt:
+        raise HTTPException(status_code=422, detail="user_prompt must not be empty after sanitization")
+
+    # Resolve teacher_id: middleware > body
+    teacher_id = _resolve_teacher_id(body.teacher_id)
+
     emitter = SSEEventEmitter(body.run_id)
     queue: asyncio.Queue[dict[str, str] | None] = asyncio.Queue()
 
     async def event_generator() -> AsyncIterator[dict[str, str]]:
         # Start the pipeline and heartbeat as background tasks
         pipeline_task = asyncio.create_task(
-            _run_pipeline(body, settings, container, emitter, queue)
+            _run_pipeline(body, teacher_id, settings, container, emitter, queue)
         )
         heartbeat_task = asyncio.create_task(
             _heartbeat_loop(emitter, queue)

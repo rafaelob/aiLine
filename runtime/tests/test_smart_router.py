@@ -6,6 +6,9 @@ Covers:
 - Hard override rules
 - Provider routing + fallback
 - Protocol compliance (generate/stream)
+- Score breakdown per dimension
+- RouteMetrics telemetry and ring buffer
+- Fallback chain logging
 """
 
 from __future__ import annotations
@@ -16,6 +19,7 @@ import pytest
 
 from ailine_runtime.adapters.llm.fake_llm import FakeChatLLM
 from ailine_runtime.adapters.llm.smart_router import (
+    DEFAULT_METRICS_CAPACITY,
     TIER_CHEAP_MAX,
     TIER_MIDDLE_MAX,
     W_HISTORY,
@@ -25,7 +29,9 @@ from ailine_runtime.adapters.llm.smart_router import (
     W_TOOLS,
     RouteDecision,
     RouteFeatures,
+    RouteMetrics,
     RoutingRule,
+    ScoreBreakdown,
     SmartRouterAdapter,
     SmartRouterConfig,
     compute_route,
@@ -515,3 +521,221 @@ class TestSmartRouterWebSearch:
         result = await router.generate_with_search("test query")
         assert "test query" in result.text
         assert len(result.sources) >= 1
+
+
+# ---------------------------------------------------------------------------
+# ScoreBreakdown
+# ---------------------------------------------------------------------------
+
+
+class TestScoreBreakdown:
+    """Tests for per-dimension weighted score breakdown."""
+
+    def test_compute_route_returns_breakdown(self):
+        features = RouteFeatures(
+            token_score=0.8,
+            structured_score=0.6,
+            tool_score=0.5,
+            history_score=0.3,
+            intent_score=0.2,
+        )
+        decision = compute_route(features)
+        assert decision.score_breakdown is not None
+        bd = decision.score_breakdown
+        assert isinstance(bd, ScoreBreakdown)
+        assert abs(bd.token - W_TOKENS * 0.8) < 1e-9
+        assert abs(bd.structured - W_STRUCTURED * 0.6) < 1e-9
+        assert abs(bd.tool - W_TOOLS * 0.5) < 1e-9
+        assert abs(bd.history - W_HISTORY * 0.3) < 1e-9
+        assert abs(bd.intent - W_INTENT * 0.2) < 1e-9
+
+    def test_breakdown_sums_to_score(self):
+        features = RouteFeatures(
+            token_score=0.7,
+            structured_score=0.4,
+            tool_score=0.9,
+            history_score=0.1,
+            intent_score=0.5,
+        )
+        decision = compute_route(features)
+        bd = decision.score_breakdown
+        assert bd is not None
+        total = bd.token + bd.structured + bd.tool + bd.history + bd.intent
+        assert abs(total - decision.score) < 1e-9
+
+    def test_rule_override_has_no_breakdown(self):
+        features = RouteFeatures(
+            token_score=0.5,
+            structured_score=0.5,
+            tool_score=0.5,
+            history_score=0.5,
+            intent_score=0.5,
+            rule_tier="primary",
+        )
+        decision = compute_route(features)
+        # Rule override skips scoring, so no breakdown
+        assert decision.score_breakdown is None
+
+    def test_breakdown_frozen(self):
+        features = RouteFeatures(
+            token_score=0.5,
+            structured_score=0.0,
+            tool_score=0.0,
+            history_score=0.0,
+            intent_score=0.0,
+        )
+        decision = compute_route(features)
+        assert decision.score_breakdown is not None
+        with pytest.raises(AttributeError):
+            decision.score_breakdown.token = 999.0  # type: ignore[misc]
+
+
+# ---------------------------------------------------------------------------
+# RouteMetrics + get_recent_metrics ring buffer
+# ---------------------------------------------------------------------------
+
+
+class TestRouteMetrics:
+    """Tests for telemetry capture and ring buffer retrieval."""
+
+    @pytest.mark.asyncio
+    async def test_generate_captures_metrics(self, router: SmartRouterAdapter):
+        assert len(router.get_recent_metrics()) == 0
+        await router.generate([_user_msg("Oi")])
+        metrics = router.get_recent_metrics()
+        assert len(metrics) == 1
+        m = metrics[0]
+        assert isinstance(m, RouteMetrics)
+        assert m.tier == "cheap"
+        assert m.provider_name == "cheap-model"
+        assert m.latency_ms >= 0.0
+        assert m.token_estimate >= 1
+        assert isinstance(m.features, RouteFeatures)
+
+    @pytest.mark.asyncio
+    async def test_stream_captures_metrics(self, router: SmartRouterAdapter):
+        chunks = []
+        async for chunk in router.stream([_user_msg("Oi")]):
+            chunks.append(chunk)
+        metrics = router.get_recent_metrics()
+        assert len(metrics) == 1
+        assert metrics[0].tier == "cheap"
+        assert metrics[0].provider_name == "cheap-model"
+        assert metrics[0].latency_ms >= 0.0
+
+    @pytest.mark.asyncio
+    async def test_metrics_accumulate(self, router: SmartRouterAdapter):
+        await router.generate([_user_msg("a")])
+        await router.generate([_user_msg("b")])
+        await router.generate([_user_msg("c")])
+        assert len(router.get_recent_metrics()) == 3
+
+    @pytest.mark.asyncio
+    async def test_get_recent_metrics_with_n(self, router: SmartRouterAdapter):
+        for i in range(5):
+            await router.generate([_user_msg(f"msg{i}")])
+        assert len(router.get_recent_metrics(n=3)) == 3
+        assert len(router.get_recent_metrics(n=10)) == 5
+        assert len(router.get_recent_metrics(n=1)) == 1
+
+    @pytest.mark.asyncio
+    async def test_ring_buffer_evicts_oldest(self):
+        config = SmartRouterConfig(
+            cheap_provider=FakeChatLLM(model="cheap", responses=["r"]),
+            metrics_capacity=3,
+        )
+        router = SmartRouterAdapter(config)
+        for i in range(5):
+            await router.generate([_user_msg(f"msg{i}")])
+        metrics = router.get_recent_metrics()
+        # Only last 3 should remain
+        assert len(metrics) == 3
+
+    @pytest.mark.asyncio
+    async def test_metrics_include_score_breakdown(
+        self, router: SmartRouterAdapter
+    ):
+        await router.generate([_user_msg("Oi")])
+        m = router.get_recent_metrics()[0]
+        assert m.score_breakdown is not None
+        assert isinstance(m.score_breakdown, ScoreBreakdown)
+
+    def test_default_metrics_capacity(self):
+        assert DEFAULT_METRICS_CAPACITY == 100
+        config = SmartRouterConfig(
+            cheap_provider=FakeChatLLM(model="cheap"),
+        )
+        router = SmartRouterAdapter(config)
+        assert router._metrics.maxlen == 100
+
+
+# ---------------------------------------------------------------------------
+# Fallback chain logging
+# ---------------------------------------------------------------------------
+
+
+class TestFallbackLogging:
+    """Tests for fallback detection and is_fallback flag in metrics."""
+
+    @pytest.mark.asyncio
+    async def test_fallback_sets_flag_in_metrics(self):
+        # Only primary configured -- cheap tier request triggers fallback
+        config = SmartRouterConfig(
+            primary_provider=FakeChatLLM(
+                model="primary", responses=["fallback"]
+            ),
+        )
+        router = SmartRouterAdapter(config)
+        result = await router.generate([_user_msg("Oi")])
+        assert result == "fallback"
+        metrics = router.get_recent_metrics()
+        assert len(metrics) == 1
+        assert metrics[0].is_fallback is True
+        assert metrics[0].provider_name == "primary"
+
+    @pytest.mark.asyncio
+    async def test_no_fallback_flag_when_tier_matches(
+        self, router: SmartRouterAdapter
+    ):
+        await router.generate([_user_msg("Oi")])
+        metrics = router.get_recent_metrics()
+        assert len(metrics) == 1
+        assert metrics[0].is_fallback is False
+        assert metrics[0].provider_name == "cheap-model"
+
+    @pytest.mark.asyncio
+    async def test_stream_fallback_sets_flag(self):
+        config = SmartRouterConfig(
+            primary_provider=FakeChatLLM(
+                model="primary", responses=["fallback"]
+            ),
+        )
+        router = SmartRouterAdapter(config)
+        chunks = []
+        async for chunk in router.stream([_user_msg("Oi")]):
+            chunks.append(chunk)
+        metrics = router.get_recent_metrics()
+        assert len(metrics) == 1
+        assert metrics[0].is_fallback is True
+
+
+# ---------------------------------------------------------------------------
+# Config: cache_ttl_seconds removed
+# ---------------------------------------------------------------------------
+
+
+class TestConfigCacheTtlRemoved:
+    """Verify dead cache_ttl_seconds field no longer exists."""
+
+    def test_no_cache_ttl_field(self):
+        config = SmartRouterConfig(
+            cheap_provider=FakeChatLLM(model="cheap"),
+        )
+        assert not hasattr(config, "cache_ttl_seconds")
+
+    def test_metrics_capacity_field_exists(self):
+        config = SmartRouterConfig(
+            cheap_provider=FakeChatLLM(model="cheap"),
+            metrics_capacity=50,
+        )
+        assert config.metrics_capacity == 50

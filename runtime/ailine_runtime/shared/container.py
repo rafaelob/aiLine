@@ -1,19 +1,36 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+import logging
+from dataclasses import dataclass, field
 from typing import Any
 
 from ..domain.ports.embeddings import Embeddings
 from ..domain.ports.events import EventBus
 from ..domain.ports.llm import ChatLLM
-from ..domain.ports.media import STT, TTS, ImageDescriber, SignRecognition
+from ..domain.ports.media import (
+    STT,
+    TTS,
+    ImageDescriber,
+    OCRProcessor,
+    SignRecognition,
+)
 from ..domain.ports.vectorstore import VectorStore
 from .config import Settings
+
+_log = logging.getLogger("ailine.container")
 
 
 @dataclass(frozen=True)
 class Container:
-    """Lightweight DI container. Built once at startup, immutable during requests."""
+    """Lightweight DI container. Built once at startup, immutable during requests.
+
+    The container is a frozen dataclass, so fields cannot be mutated after
+    construction.  Mutable cleanup state (engine references for graceful
+    shutdown) is stored in the ``_cleanup`` list using ``field(default_factory)``,
+    which is itself immutable at the reference level but its *contents* can
+    be mutated (append/pop) -- a deliberate pattern to combine immutability
+    of the public API with lifecycle management.
+    """
 
     settings: Settings
 
@@ -27,19 +44,25 @@ class Container:
     stt: STT | None = None
     tts: TTS | None = None
     image_describer: ImageDescriber | None = None
-    ocr: Any = None  # OCRProcessor does not implement a port protocol yet
+    ocr: OCRProcessor | None = None
     sign_recognition: SignRecognition | None = None
+
+    # Internal: holds references to resources that need cleanup on shutdown.
+    # Using a mutable list inside a frozen dataclass is safe because the list
+    # reference itself is never reassigned -- only its contents change.
+    _cleanup: list[Any] = field(default_factory=list, repr=False)
 
     @classmethod
     def build(cls, settings: Settings) -> Container:
         """Build container from settings, resolving all adapters."""
+        cleanup: list[Any] = []
         event_bus = _build_event_bus(settings)
         llm = _build_llm(settings)
         embeddings = _build_embeddings(settings)
-        vectorstore = _build_vectorstore(settings)
+        vectorstore = _build_vectorstore(settings, cleanup)
         stt, tts, image_describer, ocr = _build_media(settings)
         sign_recognition = _build_sign_recognition(settings)
-        return cls(
+        container = cls(
             settings=settings,
             llm=llm,
             embeddings=embeddings,
@@ -50,13 +73,148 @@ class Container:
             image_describer=image_describer,
             ocr=ocr,
             sign_recognition=sign_recognition,
+            _cleanup=cleanup,
         )
+        container.validate()
+        return container
+
+    # -- Scalability: health check & pool stats --------------------------------
+
+    async def health_check(self) -> dict[str, Any]:
+        """Verify connectivity to DB and Redis, return pool statistics.
+
+        Returns a dict with keys:
+            - ``db``: ``{"status": "ok"|"unavailable"|"error", ...pool stats}``
+            - ``redis``: ``{"status": "ok"|"unavailable"|"error"}``
+        """
+        result: dict[str, Any] = {
+            "db": {"status": "unavailable"},
+            "redis": {"status": "unavailable"},
+        }
+
+        # DB pool stats
+        for item in self._cleanup:
+            if hasattr(item, "pool"):
+                pool = item.pool
+                try:
+                    result["db"] = {
+                        "status": "ok",
+                        "pool_size": pool.size(),
+                        "checked_in": pool.checkedin(),
+                        "checked_out": pool.checkedout(),
+                        "overflow": pool.overflow(),
+                    }
+                except Exception as exc:
+                    result["db"] = {"status": "error", "detail": str(exc)}
+                break
+
+        # Redis connectivity
+        if self.event_bus is not None and hasattr(self.event_bus, "_redis"):
+            try:
+                redis_client = self.event_bus._redis
+                await redis_client.ping()
+                result["redis"] = {"status": "ok"}
+            except Exception as exc:
+                result["redis"] = {"status": "error", "detail": str(exc)}
+
+        return result
+
+    # -- Scalability: graceful shutdown ----------------------------------------
+
+    async def close(self) -> None:
+        """Dispose SQLAlchemy engine pools and close Redis connections.
+
+        Safe to call multiple times.  Logs errors but does not raise,
+        ensuring all resources are attempted for cleanup.
+        """
+        # Dispose SQLAlchemy engines
+        for item in self._cleanup:
+            try:
+                await item.dispose()
+                _log.info("container.engine_disposed")
+            except Exception:
+                _log.exception("container.engine_dispose_failed")
+
+        # Close Redis event bus
+        if self.event_bus is not None and hasattr(self.event_bus, "close"):
+            try:
+                await self.event_bus.close()
+                _log.info("container.event_bus_closed")
+            except Exception:
+                _log.exception("container.event_bus_close_failed")
+
+    # -- DI: container validation ----------------------------------------------
+
+    def validate(self) -> None:
+        """Validate that critical ports are wired correctly.
+
+        In production mode (``settings.env == "production"``), raises
+        ``ValueError`` if critical ports (llm, event_bus) are None.
+        In all modes, logs warnings for missing optional adapters.
+        """
+        env = self.settings.env
+        missing_critical: list[str] = []
+
+        if self.llm is None:
+            missing_critical.append("llm")
+        if self.event_bus is None:
+            missing_critical.append("event_bus")
+
+        if env == "production" and missing_critical:
+            raise ValueError(
+                f"Container validation failed in production: "
+                f"missing critical ports: {', '.join(missing_critical)}"
+            )
+
+        # Warn about missing optional adapters (useful for debugging)
+        if self.vectorstore is None:
+            _log.warning(
+                "container.missing_optional_adapter: vectorstore is None "
+                "(vector search unavailable)"
+            )
+        if self.embeddings is None:
+            _log.warning(
+                "container.missing_optional_adapter: embeddings is None "
+                "(embedding generation unavailable)"
+            )
+        if self.ocr is None:
+            _log.warning(
+                "container.missing_optional_adapter: ocr is None "
+                "(OCR text extraction unavailable)"
+            )
+
+    # -- Debugging: repr -------------------------------------------------------
+
+    def __repr__(self) -> str:
+        """Show which adapters are active vs None for debugging."""
+        fields = [
+            ("llm", self.llm),
+            ("embeddings", self.embeddings),
+            ("vectorstore", self.vectorstore),
+            ("event_bus", self.event_bus),
+            ("stt", self.stt),
+            ("tts", self.tts),
+            ("image_describer", self.image_describer),
+            ("ocr", self.ocr),
+            ("sign_recognition", self.sign_recognition),
+        ]
+        parts = []
+        for name, value in fields:
+            if value is None:
+                parts.append(f"{name}=None")
+            else:
+                parts.append(f"{name}={type(value).__name__}")
+        return f"Container(env={self.settings.env!r}, {', '.join(parts)})"
 
 
-def _build_vectorstore(settings: Settings) -> VectorStore | None:
+def _build_vectorstore(
+    settings: Settings, cleanup: list[Any]
+) -> VectorStore | None:
     """Build vector store adapter based on provider setting.
 
     Returns None when the required database URL is not configured (e.g. SQLite dev).
+    When a SQLAlchemy engine is created, its reference is appended to the
+    ``cleanup`` list so the Container can dispose it on shutdown.
     """
     provider = settings.vectorstore.provider
     if provider == "pgvector":
@@ -74,6 +232,14 @@ def _build_vectorstore(settings: Settings) -> VectorStore | None:
                 pool_size=settings.db.pool_size,
                 max_overflow=settings.db.max_overflow,
                 echo=settings.db.echo,
+            )
+            # Track engine for graceful shutdown and pool monitoring
+            cleanup.append(engine)
+            _log.info(
+                "container.engine_created pool_size=%d max_overflow=%d pool_class=%s",
+                settings.db.pool_size,
+                settings.db.max_overflow,
+                type(engine.pool).__name__,
             )
             session_factory = async_sessionmaker(engine, expire_on_commit=False)
             return PgVectorStore(
@@ -98,7 +264,6 @@ def _build_event_bus(settings: Settings) -> EventBus:
 
     use_redis = (
         explicit_provider == "redis"
-        or (explicit_provider not in ("inmemory", "") and False)
         or (explicit_provider == "" and bool(redis_url))
     )
 
@@ -151,7 +316,7 @@ def _build_embeddings(settings: Settings) -> Embeddings | None:
     api_key = settings.embedding.api_key or _resolve_api_key(settings, provider)
 
     if not api_key:
-        # No API key — return None (embeddings unavailable until configured)
+        # No API key -- return None (embeddings unavailable until configured)
         return None
 
     if provider == "gemini":
@@ -173,7 +338,9 @@ def _build_embeddings(settings: Settings) -> Embeddings | None:
     return None
 
 
-def _build_media(settings: Settings) -> tuple[STT | Any, TTS | Any, ImageDescriber | Any, Any]:
+def _build_media(
+    settings: Settings,
+) -> tuple[STT | Any, TTS | Any, ImageDescriber | Any, OCRProcessor]:
     """Build media adapters (STT, TTS, ImageDescriber, OCR).
 
     Falls back to fake implementations when no API keys are configured
@@ -182,7 +349,7 @@ def _build_media(settings: Settings) -> tuple[STT | Any, TTS | Any, ImageDescrib
     from ..adapters.media.fake_image_describer import FakeImageDescriber
     from ..adapters.media.fake_stt import FakeSTT
     from ..adapters.media.fake_tts import FakeTTS
-    from ..adapters.media.ocr_processor import OCRProcessor
+    from ..adapters.media.ocr_processor import OCRProcessor as OCRProcessorAdapter
 
     # STT: prefer OpenAI cloud when key available, else Whisper local, else fake
     stt: Any
@@ -216,7 +383,7 @@ def _build_media(settings: Settings) -> tuple[STT | Any, TTS | Any, ImageDescrib
     image_describer = FakeImageDescriber()
 
     # OCR: always available (graceful degradation via lazy imports)
-    ocr = OCRProcessor()
+    ocr = OCRProcessorAdapter()
 
     return stt, tts, image_describer, ocr
 

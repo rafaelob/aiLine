@@ -33,8 +33,17 @@ export function PreferencesPanel({ onClose }: PreferencesPanelProps) {
   const t = useTranslations('accessibility')
   const panelRef = useRef<HTMLDivElement>(null)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
+  const previousFocusRef = useRef<HTMLElement | null>(null)
   const { theme, fontSize, reducedMotion, setTheme, setFontSize, setReducedMotion } =
     useAccessibilityStore()
+
+  // Save previously focused element and restore on unmount
+  useEffect(() => {
+    previousFocusRef.current = document.activeElement as HTMLElement | null
+    return () => {
+      previousFocusRef.current?.focus()
+    }
+  }, [])
 
   // Focus trap: focus close button on mount and trap Tab within panel
   useEffect(() => {

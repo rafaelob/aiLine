@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { motion } from 'motion/react'
 import { cn } from '@/lib/cn'
 import type { ScheduleStep, StepType } from '@/types/exports'
@@ -26,6 +27,8 @@ export function VisualSchedule({
   steps,
   totalDurationMinutes,
 }: VisualScheduleProps) {
+  const t = useTranslations('visual_schedule')
+
   const totalMinutes =
     totalDurationMinutes ??
     steps.reduce((sum, s) => sum + s.durationMinutes, 0)
@@ -42,7 +45,7 @@ export function VisualSchedule({
             {planTitle}
           </h2>
           <p className="mt-1 text-sm text-[var(--color-muted)]">
-            Agenda Visual - {steps.length} etapas - {totalMinutes} min total
+            {t('subtitle', { steps: steps.length, minutes: totalMinutes })}
           </p>
         </div>
       </div>
@@ -50,7 +53,7 @@ export function VisualSchedule({
       {/* Step cards grid */}
       <ol
         className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
-        aria-label="Etapas da aula em ordem"
+        aria-label={t('steps_label')}
       >
         {steps.map((step, index) => (
           <motion.li
@@ -78,7 +81,9 @@ interface StepCardProps {
 }
 
 function StepCard({ step }: StepCardProps) {
+  const t = useTranslations('visual_schedule')
   const colors = STEP_COLORS[step.type]
+  const typeKey = `type_${step.type}` as const
 
   return (
     <article
@@ -90,7 +95,7 @@ function StepCard({ step }: StepCardProps) {
         colors.bg,
       )}
       tabIndex={0}
-      aria-label={`Etapa ${step.stepNumber}: ${step.title}, ${step.durationMinutes} minutos`}
+      aria-label={t('step_label', { number: step.stepNumber, title: step.title, minutes: step.durationMinutes })}
     >
       {/* Step header */}
       <div className="flex items-center justify-between">
@@ -109,7 +114,7 @@ function StepCard({ step }: StepCardProps) {
             colors.typeBadge,
           )}
         >
-          {STEP_TYPE_LABELS[step.type]}
+          {t(typeKey)}
         </span>
       </div>
 
@@ -126,7 +131,7 @@ function StepCard({ step }: StepCardProps) {
       {/* Duration */}
       <div
         className="flex items-center gap-2 text-sm font-medium text-[var(--color-muted)]"
-        aria-label={`Duração: ${step.durationMinutes} minutos`}
+        aria-label={t('duration_label', { minutes: step.durationMinutes })}
       >
         <ClockIcon />
         <span>{step.durationMinutes} min</span>
@@ -136,9 +141,9 @@ function StepCard({ step }: StepCardProps) {
       {step.materials && step.materials.length > 0 && (
         <div className="mt-1">
           <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">
-            Materiais
+            {t('materials_heading')}
           </p>
-          <ul className="flex flex-wrap gap-1.5" aria-label="Materiais necessários">
+          <ul className="flex flex-wrap gap-1.5" aria-label={t('materials_label')}>
             {step.materials.map((material, i) => (
               <li
                 key={i}
@@ -155,9 +160,9 @@ function StepCard({ step }: StepCardProps) {
       {step.adaptations && step.adaptations.length > 0 && (
         <div className="mt-1">
           <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">
-            Adaptações
+            {t('adaptations_heading')}
           </p>
-          <ul className="flex flex-col gap-1" aria-label="Adaptações de acessibilidade">
+          <ul className="flex flex-col gap-1" aria-label={t('adaptations_label')}>
             {step.adaptations.map((adaptation, i) => (
               <li
                 key={i}
@@ -198,14 +203,6 @@ function ClockIcon() {
 }
 
 /* --- Constants --- */
-
-const STEP_TYPE_LABELS: Record<StepType, string> = {
-  intro: 'Introdução',
-  develop: 'Desenvolvimento',
-  close: 'Fechamento',
-  activity: 'Atividade',
-  assessment: 'Avaliação',
-}
 
 interface StepColorSet {
   border: string

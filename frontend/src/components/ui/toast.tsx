@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { motion } from 'motion/react'
 import { cn } from '@/lib/cn'
 import { useToastStore, type Toast as ToastType, type ToastVariant } from '@/stores/toast-store'
@@ -23,6 +24,7 @@ interface ToastProps {
 }
 
 export function Toast({ toast }: ToastProps) {
+  const t = useTranslations('toast')
   const removeToast = useToastStore((s) => s.removeToast)
 
   return (
@@ -52,7 +54,7 @@ export function Toast({ toast }: ToastProps) {
         type="button"
         onClick={() => removeToast(toast.id)}
         className="shrink-0 text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors"
-        aria-label="Fechar notificação"
+        aria-label={t('close')}
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <line x1="18" y1="6" x2="6" y2="18" />

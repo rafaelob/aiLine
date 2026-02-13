@@ -6,6 +6,7 @@ approximate nearest-neighbor search.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
 from typing import Any
 
@@ -17,6 +18,9 @@ from ...shared.observability import get_logger
 
 _log = get_logger("ailine.adapters.vectorstores.pgvector")
 
+# Strict SQL identifier pattern to prevent injection via table name (FINDING-SEC-1).
+_VALID_IDENT = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
+
 
 class PgVectorStore:
     """VectorStore backed by PostgreSQL + pgvector.
@@ -24,7 +28,7 @@ class PgVectorStore:
     Args:
         session_factory: An async callable that returns an ``AsyncSession``
             (typically a ``sessionmaker`` or async context manager).
-        table_name: Name of the chunks table.
+        table_name: Name of the chunks table. Must be a valid SQL identifier.
         dimensions: Embedding vector length (must match the column width).
     """
 
@@ -35,6 +39,10 @@ class PgVectorStore:
         table_name: str = "chunks",
         dimensions: int = 1536,
     ) -> None:
+        if not _VALID_IDENT.match(table_name):
+            raise ValueError(f"Invalid table_name: {table_name!r} (must be a valid SQL identifier)")
+        if not (1 <= dimensions <= 4000):
+            raise ValueError(f"Invalid dimensions: {dimensions} (must be 1..4000)")
         self._session_factory = session_factory
         self._table = table_name
         self._dimensions = dimensions
@@ -92,7 +100,14 @@ class PgVectorStore:
         if not ids:
             return
 
-        _log.debug("upsert", table=self._table, count=len(ids))
+        n = len(ids)
+        if not (len(embeddings) == len(texts) == len(metadatas) == n):
+            raise ValueError(
+                f"upsert expects ids/embeddings/texts/metadatas with same length "
+                f"(got {n}/{len(embeddings)}/{len(texts)}/{len(metadatas)})"
+            )
+
+        _log.debug("upsert", table=self._table, count=n)
 
         stmt = text(
             f"""

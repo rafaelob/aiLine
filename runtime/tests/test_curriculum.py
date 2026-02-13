@@ -379,7 +379,8 @@ class TestUnifiedProvider:
     async def test_list_standards_bncc_only(self, provider: UnifiedCurriculumProvider):
         codes = await provider.list_standards(system="bncc")
         assert len(codes) > 0
-        assert all(c.startswith("EF") for c in codes)
+        # BNCC codes: EF (Ensino Fundamental), EI (Educacao Infantil), EM (Ensino Medio)
+        assert all(c.startswith(("EF", "EI", "EM")) for c in codes)
 
     async def test_list_standards_ngss_only(self, provider: UnifiedCurriculumProvider):
         codes = await provider.list_standards(system="ngss")

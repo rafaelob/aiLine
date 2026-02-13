@@ -121,4 +121,4 @@ class InMemoryVectorStore:
 
 def _matches_filters(metadata: dict[str, Any], filters: dict[str, Any]) -> bool:
     """Check whether *metadata* satisfies all equality *filters*."""
-    return all(not (key not in metadata or metadata[key] != value) for key, value in filters.items())
+    return all(key in metadata and metadata[key] == value for key, value in filters.items())

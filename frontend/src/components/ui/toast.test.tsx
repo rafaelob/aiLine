@@ -37,7 +37,7 @@ describe('Toast', () => {
     render(
       <Toast toast={{ id: 'test-1', message: 'Hello', variant: 'info', duration: 5000 }} />
     )
-    expect(screen.getByLabelText('Fechar notificação')).toBeInTheDocument()
+    expect(screen.getByLabelText('toast.close')).toBeInTheDocument()
   })
 
   it('calls removeToast when close button is clicked', async () => {
@@ -46,7 +46,7 @@ describe('Toast', () => {
       <Toast toast={useToastStore.getState().toasts[0]} />
     )
 
-    await user.click(screen.getByLabelText('Fechar notificação'))
+    await user.click(screen.getByLabelText('toast.close'))
     expect(useToastStore.getState().toasts.find((t) => t.id === id)).toBeUndefined()
   })
 })

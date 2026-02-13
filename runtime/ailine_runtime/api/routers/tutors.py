@@ -11,6 +11,8 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
+from ...shared.sanitize import sanitize_prompt, validate_teacher_id
+from ...shared.tenant import get_tenant, try_get_current_teacher_id
 from ...tutoring.builder import create_tutor_agent, load_tutor_spec
 from ...tutoring.session import create_session, load_session, save_session
 
@@ -31,12 +33,28 @@ class TutorCreateIn(BaseModel):
     auto_persona: bool = False
 
 
+def _resolve_teacher_id_required(body_teacher_id: str) -> str:
+    """Resolve teacher_id: middleware context takes precedence over body.
+
+    Unlike the plans router, tutor creation always requires a teacher_id.
+    """
+    ctx_teacher_id = try_get_current_teacher_id()
+    if ctx_teacher_id:
+        return ctx_teacher_id
+    try:
+        return validate_teacher_id(body_teacher_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
 @router.post("")
 async def tutors_create(body: TutorCreateIn, request: Request):
+    teacher_id = _resolve_teacher_id_required(body.teacher_id)
+
     settings = request.app.state.settings
     spec = await create_tutor_agent(
         cfg=settings,
-        teacher_id=body.teacher_id,
+        teacher_id=teacher_id,
         subject=body.subject,
         grade=body.grade,
         standard=body.standard,
@@ -56,6 +74,13 @@ async def tutors_get(tutor_id: str):
     spec = load_tutor_spec(tutor_id)
     if not spec:
         raise HTTPException(status_code=404, detail="Tutor not found")
+
+    # If tenant context is available, verify access
+    ctx_teacher_id = try_get_current_teacher_id()
+    if ctx_teacher_id:
+        tenant = get_tenant()
+        tenant.verify_access(spec.teacher_id)
+
     return spec.model_dump()
 
 
@@ -68,6 +93,13 @@ async def tutor_create_session(tutor_id: str):
     spec = load_tutor_spec(tutor_id)
     if not spec:
         raise HTTPException(status_code=404, detail="Tutor not found")
+
+    # If tenant context is available, verify access
+    ctx_teacher_id = try_get_current_teacher_id()
+    if ctx_teacher_id:
+        tenant = get_tenant()
+        tenant.verify_access(spec.teacher_id)
+
     s = create_session(tutor_id)
     save_session(s)
     return TutorSessionCreateOut(session_id=s.session_id)
@@ -75,16 +107,27 @@ async def tutor_create_session(tutor_id: str):
 
 class TutorChatIn(BaseModel):
     session_id: str
-    message: str
+    message: str = Field(..., min_length=1, max_length=4000)
 
 
 @router.post("/{tutor_id}/chat")
 async def tutor_chat(tutor_id: str, body: TutorChatIn, request: Request):
     container = request.app.state.container
 
+    # --- Input sanitization ---
+    body.message = sanitize_prompt(body.message, max_length=4000)
+    if not body.message:
+        raise HTTPException(status_code=422, detail="message must not be empty after sanitization")
+
     spec = load_tutor_spec(tutor_id)
     if not spec:
         raise HTTPException(status_code=404, detail="Tutor not found")
+
+    # If tenant context is available, verify access
+    ctx_teacher_id = try_get_current_teacher_id()
+    if ctx_teacher_id:
+        tenant = get_tenant()
+        tenant.verify_access(spec.teacher_id)
 
     session = load_session(body.session_id)
     if not session:

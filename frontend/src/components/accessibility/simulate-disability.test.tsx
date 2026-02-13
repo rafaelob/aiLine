@@ -31,7 +31,7 @@ describe('SimulateDisability', () => {
 
   it('renders the section heading', () => {
     render(<SimulateDisability />)
-    expect(screen.getByText('Ponte de Empatia')).toBeInTheDocument()
+    expect(screen.getByText('simulate.title')).toBeInTheDocument()
   })
 
   it('renders simulation categories as fieldsets', () => {
@@ -56,7 +56,7 @@ describe('SimulateDisability', () => {
 
   it('does not show reset button when no simulations are active', () => {
     render(<SimulateDisability />)
-    expect(screen.queryByText('Resetar Tudo')).not.toBeInTheDocument()
+    expect(screen.queryByText('simulate.reset_all')).not.toBeInTheDocument()
   })
 
   it('toggles a simulation on click', async () => {
@@ -76,7 +76,7 @@ describe('SimulateDisability', () => {
     })
 
     await user.click(protanopiaSwitch)
-    expect(screen.getByText('Resetar Tudo')).toBeInTheDocument()
+    expect(screen.getByText('simulate.reset_all')).toBeInTheDocument()
   })
 
   it('shows active simulation count status', async () => {
@@ -88,7 +88,7 @@ describe('SimulateDisability', () => {
     await user.click(protanopiaSwitch)
 
     const status = screen.getByRole('status')
-    expect(status).toHaveTextContent(/simulação/)
+    expect(status).toHaveTextContent(/simulate\.active_simulations/)
   })
 
   it('reset button deactivates all simulations', async () => {
@@ -99,7 +99,7 @@ describe('SimulateDisability', () => {
     })
     await user.click(protanopiaSwitch)
 
-    const resetButton = screen.getByText('Resetar Tudo')
+    const resetButton = screen.getByText('simulate.reset_all')
     await user.click(resetButton)
 
     const switches = screen.getAllByRole('switch')

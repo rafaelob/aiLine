@@ -16,10 +16,10 @@ class TestContainer:
     def test_event_bus_is_inmemory(self):
         from ailine_runtime.adapters.events.inmemory_bus import InMemoryEventBus
 
-        # Force the default localhost Redis URL so _build_event_bus treats it
-        # as "not configured" and returns InMemoryEventBus. In Docker,
-        # AILINE_REDIS_URL points at the real Redis service.
-        settings = Settings(redis={"url": "redis://localhost:6379/0"})
+        # Use empty Redis URL so _build_event_bus falls through to
+        # InMemoryEventBus.  A non-empty URL (even localhost) causes
+        # the builder to create a RedisEventBus.
+        settings = Settings(redis={"url": ""})
         container = Container.build(settings)
         assert isinstance(container.event_bus, InMemoryEventBus)
 

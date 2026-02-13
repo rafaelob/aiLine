@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import DOMPurify from 'dompurify'
 import { cn } from '@/lib/cn'
 import { EXPORT_VARIANTS } from '@/lib/accessibility-data'
@@ -25,6 +26,7 @@ export function ExportViewer({
   fullScreen = false,
   onFullScreenToggle,
 }: ExportViewerProps) {
+  const t = useTranslations('export_viewer')
   const [selectedVariant, setSelectedVariant] = useState<ExportVariant>('low_distraction')
 
   const standardHtml = useMemo(
@@ -63,7 +65,7 @@ export function ExportViewer({
             htmlFor="variant-select"
             className="text-sm font-medium text-[var(--color-text)]"
           >
-            Variante de acessibilidade:
+            {t('variant_label')}
           </label>
           <select
             id="variant-select"
@@ -73,7 +75,7 @@ export function ExportViewer({
               'rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]',
               'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]',
             )}
-            aria-label="Selecionar variante de exportação acessível"
+            aria-label={t('variant_aria')}
           >
             {availableVariants.map((v) => (
               <option key={v.id} value={v.id}>
@@ -91,9 +93,9 @@ export function ExportViewer({
               'hover:bg-[var(--color-surface)] focus-visible:outline-2 focus-visible:outline-offset-2',
               'focus-visible:outline-[var(--color-primary)] transition-colors',
             )}
-            aria-label={fullScreen ? 'Sair da tela cheia' : 'Visualizar em tela cheia'}
+            aria-label={fullScreen ? t('fullscreen_exit_label') : t('fullscreen_enter_label')}
           >
-            {fullScreen ? 'Sair da Tela Cheia' : 'Tela Cheia'}
+            {fullScreen ? t('fullscreen_exit') : t('fullscreen_enter')}
           </button>
         )}
       </div>
@@ -102,20 +104,24 @@ export function ExportViewer({
       <div
         className="grid flex-1 gap-4 md:grid-cols-2"
         role="region"
-        aria-label="Comparação de exportações"
+        aria-label={t('comparison_label')}
       >
         <ExportPanel
-          title="Versão Padrão"
+          title={t('standard_panel')}
           html={standardHtml}
           panelId="standard-panel"
+          contentLabel={t('content_label', { title: t('standard_panel') })}
+          noContentLabel={t('no_content')}
         />
         <ExportPanel
           title={
             availableVariants.find((v) => v.id === selectedVariant)?.label ??
-            'Variante'
+            t('variant_fallback')
           }
           html={variantHtml}
           panelId="variant-panel"
+          contentLabel={t('content_label', { title: availableVariants.find((v) => v.id === selectedVariant)?.label ?? t('variant_fallback') })}
+          noContentLabel={t('no_content')}
         />
       </div>
     </div>
@@ -128,9 +134,11 @@ interface ExportPanelProps {
   title: string
   html: string
   panelId: string
+  contentLabel: string
+  noContentLabel: string
 }
 
-function ExportPanel({ title, html, panelId }: ExportPanelProps) {
+function ExportPanel({ title, html, panelId, contentLabel, noContentLabel }: ExportPanelProps) {
   return (
     <article
       id={panelId}
@@ -144,7 +152,7 @@ function ExportPanel({ title, html, panelId }: ExportPanelProps) {
       <div
         className="flex-1 overflow-auto p-4"
         role="document"
-        aria-label={`Conteúdo da exportação: ${title}`}
+        aria-label={contentLabel}
         tabIndex={0}
       >
         {html ? (
@@ -154,7 +162,7 @@ function ExportPanel({ title, html, panelId }: ExportPanelProps) {
           />
         ) : (
           <p className="text-sm text-[var(--color-muted)] italic">
-            Nenhum conteúdo disponível para esta variante.
+            {noContentLabel}
           </p>
         )}
       </div>

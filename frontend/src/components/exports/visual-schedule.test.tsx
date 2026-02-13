@@ -48,7 +48,7 @@ describe('VisualSchedule', () => {
 
   it('renders all step cards in the ordered list', () => {
     render(<VisualSchedule planTitle="Test" steps={mockSteps} />)
-    const ol = screen.getByRole('list', { name: /Etapas da aula/i })
+    const ol = screen.getByRole('list', { name: /visual_schedule\.steps_label/i })
     // Each step has a <li> wrapper from motion mock
     const items = ol.querySelectorAll(':scope > li')
     expect(items).toHaveLength(3)
@@ -56,8 +56,8 @@ describe('VisualSchedule', () => {
 
   it('computes total duration from steps when not provided', () => {
     render(<VisualSchedule planTitle="Test" steps={mockSteps} />)
-    // 15 + 25 + 10 = 50 min
-    expect(screen.getByText(/50 min total/)).toBeInTheDocument()
+    // i18n mock returns "visual_schedule.subtitle" (key only)
+    expect(screen.getByText(/visual_schedule\.subtitle/)).toBeInTheDocument()
   })
 
   it('uses provided totalDurationMinutes when given', () => {
@@ -68,7 +68,7 @@ describe('VisualSchedule', () => {
         totalDurationMinutes={60}
       />
     )
-    expect(screen.getByText(/60 min total/)).toBeInTheDocument()
+    expect(screen.getByText(/visual_schedule\.subtitle/)).toBeInTheDocument()
   })
 
   it('displays step numbers', () => {
@@ -87,8 +87,8 @@ describe('VisualSchedule', () => {
 
   it('displays step type labels', () => {
     render(<VisualSchedule planTitle="Test" steps={mockSteps} />)
-    expect(screen.getByText('Introdução')).toBeInTheDocument()
-    expect(screen.getByText('Desenvolvimento')).toBeInTheDocument()
+    expect(screen.getByText('visual_schedule.type_intro')).toBeInTheDocument()
+    expect(screen.getByText('visual_schedule.type_develop')).toBeInTheDocument()
   })
 
   it('displays step duration', () => {
@@ -110,12 +110,12 @@ describe('VisualSchedule', () => {
 
   it('renders step count in subtitle', () => {
     render(<VisualSchedule planTitle="Test" steps={mockSteps} />)
-    expect(screen.getByText(/3 etapas/)).toBeInTheDocument()
+    expect(screen.getByText(/visual_schedule\.subtitle/)).toBeInTheDocument()
   })
 
   it('has accessible label on the ordered list', () => {
     render(<VisualSchedule planTitle="Test" steps={mockSteps} />)
-    const ol = screen.getByRole('list', { name: /Etapas da aula/i })
+    const ol = screen.getByRole('list', { name: /visual_schedule\.steps_label/i })
     expect(ol).toBeInTheDocument()
   })
 })

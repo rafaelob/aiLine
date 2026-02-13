@@ -65,7 +65,7 @@ describe('AccessibilityPage', () => {
 
   it('renders the Simulate Disability section', () => {
     render(<AccessibilityPage />)
-    expect(screen.getByText('Ponte de Empatia')).toBeInTheDocument()
+    expect(screen.getByText('simulate.title')).toBeInTheDocument()
   })
 
   it('renders the color blind filters SVG', () => {

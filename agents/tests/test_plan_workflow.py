@@ -2,13 +2,19 @@
 
 from __future__ import annotations
 
+import time
 from unittest.mock import patch
+
+import pytest
 
 from ailine_agents.deps import AgentDeps
 from ailine_agents.workflows.plan_workflow import (
+    WorkflowTimeoutError,
     _build_executor_prompt,
     _build_refinement_feedback,
+    _check_timeout,
     build_plan_workflow,
+    get_idempotency_guard,
 )
 
 
@@ -36,6 +42,56 @@ class TestBuildPlanWorkflow:
         assert "decision" in node_names
         assert "bump_refine" in node_names
         assert "executor" in node_names
+
+
+class TestCheckTimeout:
+    """_check_timeout() raises WorkflowTimeoutError when time exceeds budget."""
+
+    def test_no_started_at_no_error(self) -> None:
+        state = {"run_id": "r-1", "user_prompt": "test"}
+        deps = AgentDeps(max_workflow_duration_seconds=300)
+        # Should not raise
+        _check_timeout(state, deps, "planner")
+
+    def test_within_budget_no_error(self) -> None:
+        state = {
+            "run_id": "r-1",
+            "user_prompt": "test",
+            "started_at": time.monotonic() - 10,  # 10 seconds ago
+        }
+        deps = AgentDeps(max_workflow_duration_seconds=300)
+        _check_timeout(state, deps, "planner")
+
+    def test_exceeds_budget_raises(self) -> None:
+        state = {
+            "run_id": "r-1",
+            "user_prompt": "test",
+            "started_at": time.monotonic() - 400,  # 400 seconds ago
+        }
+        deps = AgentDeps(max_workflow_duration_seconds=300)
+        with pytest.raises(WorkflowTimeoutError, match="timed out"):
+            _check_timeout(state, deps, "planner")
+
+    def test_error_message_includes_stage(self) -> None:
+        state = {
+            "run_id": "r-1",
+            "user_prompt": "test",
+            "started_at": time.monotonic() - 600,
+        }
+        deps = AgentDeps(max_workflow_duration_seconds=300)
+        with pytest.raises(WorkflowTimeoutError, match="executor"):
+            _check_timeout(state, deps, "executor")
+
+
+class TestIdempotencyGuard:
+    """get_idempotency_guard() returns the module-level guard."""
+
+    def test_returns_guard(self) -> None:
+        guard = get_idempotency_guard()
+        assert guard is not None
+        assert hasattr(guard, "try_acquire")
+        assert hasattr(guard, "complete")
+        assert hasattr(guard, "fail")
 
 
 class TestBuildRefinementFeedback:

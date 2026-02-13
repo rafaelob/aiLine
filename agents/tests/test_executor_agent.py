@@ -47,12 +47,14 @@ class TestBuildExecutorAgent:
 
 
 class TestResetExecutorAgent:
-    """reset_executor_agent() clears the module-level singleton."""
+    """reset_executor_agent() clears the lru_cache singleton."""
 
-    def test_reset_clears_singleton(self) -> None:
-        from ailine_agents.agents import executor as executor_mod
+    def test_reset_clears_cache(self) -> None:
+        from ailine_agents.agents.executor import _build_and_register_executor
 
-        executor_mod._executor_agent = build_executor_agent()
-        assert executor_mod._executor_agent is not None
+        # Populate cache
+        _build_and_register_executor()
+        assert _build_and_register_executor.cache_info().currsize == 1
+
         reset_executor_agent()
-        assert executor_mod._executor_agent is None
+        assert _build_and_register_executor.cache_info().currsize == 0

@@ -47,12 +47,14 @@ class TestBuildTutorAgent:
 
 
 class TestResetTutorAgent:
-    """reset_tutor_agent() clears the module-level singleton."""
+    """reset_tutor_agent() clears the lru_cache singletons."""
 
-    def test_reset_clears_singleton(self) -> None:
-        from ailine_agents.agents import tutor as tutor_mod
+    def test_reset_clears_cache(self) -> None:
+        from ailine_agents.agents.tutor import _build_and_register_tutor
 
-        tutor_mod._tutor_agent = build_tutor_agent()
-        assert tutor_mod._tutor_agent is not None
+        # Populate cache
+        _build_and_register_tutor(True)
+        assert _build_and_register_tutor.cache_info().currsize == 1
+
         reset_tutor_agent()
-        assert tutor_mod._tutor_agent is None
+        assert _build_and_register_tutor.cache_info().currsize == 0

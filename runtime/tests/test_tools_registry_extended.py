@@ -57,13 +57,13 @@ class TestRagSearchHandler:
 
 class TestCurriculumLookupHandler:
     @pytest.mark.asyncio
-    async def test_stub_response(self):
+    async def test_returns_real_objectives(self):
         args = CurriculumLookupArgs(standard="BNCC", grade="4", topic="fractions")
         result = await curriculum_lookup_handler(args)
         assert result["standard"] == "BNCC"
         assert result["grade"] == "4"
         assert result["topic"] == "fractions"
-        assert "stub" in result["note"]
+        assert "objectives" in result
 
 
 class TestAccessibilityChecklistHandler:
@@ -190,16 +190,17 @@ class TestTenantFilteringSavePlan:
     @pytest.mark.asyncio
     async def test_saves_under_teacher_directory(self, tmp_path, monkeypatch):
         monkeypatch.setenv("AILINE_LOCAL_STORE", str(tmp_path))
+        teacher_uuid = "00000000-0000-0000-0000-000000000789"
         args = SavePlanArgs(
             plan_json={"title": "Plan"},
             metadata={"run_id": "r1"},
-            teacher_id="t-789",
+            teacher_id=teacher_uuid,
         )
         result = await save_plan_handler(args)
-        assert result["teacher_id"] == "t-789"
+        assert result["teacher_id"] == teacher_uuid
         stored_path = Path(result["stored_at"])
         assert stored_path.exists()
-        assert "t-789" in str(stored_path)
+        assert teacher_uuid in str(stored_path)
 
     @pytest.mark.asyncio
     async def test_anonymous_fallback(self, tmp_path, monkeypatch):
