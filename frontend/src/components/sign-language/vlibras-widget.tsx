@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import Script from 'next/script'
 import { cn } from '@/lib/cn'
 
@@ -33,6 +34,7 @@ export function VLibrasWidget({
   position = 'right',
   className,
 }: VLibrasWidgetProps) {
+  const t = useTranslations('vlibras')
   const containerRef = useRef<HTMLDivElement>(null)
   const initializedRef = useRef(false)
   const [active, setActive] = useState(false)
@@ -73,13 +75,13 @@ export function VLibrasWidget({
           'focus:text-sm focus:text-[var(--color-text)] focus:shadow-lg',
         )}
       >
-        Skip VLibras widget
+        {t('skip_widget')}
       </a>
 
       <div
         ref={containerRef}
         className={cn('vlibras-container', className)}
-        aria-label="VLibras - Tradutor de Libras"
+        aria-label={t('aria_label')}
         aria-hidden={!active}
         tabIndex={active ? undefined : -1}
       >
@@ -89,7 +91,7 @@ export function VLibrasWidget({
           dangerouslySetInnerHTML={{
             __html: `
               <div vw="true" class="enabled">
-                <div vw-access-button="true" class="active" style="${position}: 10px" aria-label="Abrir VLibras"></div>
+                <div vw-access-button="true" class="active" style="${position}: 10px" aria-label="${t('open_vlibras')}"></div>
                 <div vw-plugin-wrapper="true">
                   <div class="vw-plugin-top-wrapper"></div>
                 </div>
@@ -105,8 +107,7 @@ export function VLibrasWidget({
         />
 
         <p className="mt-2 text-xs text-[var(--color-muted)]">
-          VLibras: selecione texto na pagina para traduzir em Libras.
-          A traducao programatica nao esta disponivel via API JS do widget.
+          {t('help_text')}
         </p>
       </div>
 

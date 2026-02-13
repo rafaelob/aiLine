@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useSyncExternalStore, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { motion, useSpring, useTransform } from 'motion/react'
 import { useThemeContext } from '@/hooks/use-theme-context'
 
@@ -33,6 +34,7 @@ function getServerSnapshotMounted() {
  * Uses motion/react for spring physics animation.
  */
 export function ScoreGauge({ score, size = 160 }: ScoreGaugeProps) {
+  const t = useTranslations('quality')
   // Subscribe to theme changes so Canvas/SVG redraws with correct colors (FINDING-18)
   useThemeContext()
 
@@ -68,7 +70,7 @@ export function ScoreGauge({ score, size = 160 }: ScoreGaugeProps) {
       aria-valuenow={clampedScore}
       aria-valuemin={0}
       aria-valuemax={100}
-      aria-label={`Quality score: ${clampedScore} out of 100`}
+      aria-label={t('gauge_label', { score: clampedScore })}
     >
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
         {/* Background track */}

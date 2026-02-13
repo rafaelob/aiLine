@@ -92,7 +92,8 @@ class DemoService:
         """Return the list of simulated SSE events for a scenario."""
         scenario = self._scenarios.get(scenario_id)
         if scenario:
-            return scenario.get("cached_events", [])
+            events: list[dict[str, Any]] = scenario.get("cached_events", [])
+            return events
         return []
 
     def get_score(self, scenario_id: str) -> int | None:

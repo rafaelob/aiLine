@@ -26,7 +26,7 @@ TeacherId = NewType("TeacherId", str)
 # ----------------------------
 
 ArgsModelT = type[BaseModel]
-ToolHandler = Callable[[BaseModel], Awaitable[Any]]
+ToolHandler = Callable[..., Awaitable[Any]]
 
 
 @dataclass(frozen=True)

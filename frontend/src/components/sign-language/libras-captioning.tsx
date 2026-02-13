@@ -55,7 +55,7 @@ export function LibrasCaptioning({ className }: LibrasCaptioningProps) {
             'focus-visible:outline-[var(--color-primary)]',
             'disabled:opacity-50 disabled:cursor-not-allowed',
             isRecording
-              ? 'bg-red-600 text-white hover:bg-red-700'
+              ? 'bg-[var(--color-error)] text-white hover:opacity-90'
               : 'bg-[var(--color-primary)] text-[var(--color-on-primary)] hover:opacity-90'
           )}
         >
@@ -85,11 +85,11 @@ export function LibrasCaptioning({ className }: LibrasCaptioningProps) {
         {isRecording && (
           <div className="absolute right-3 top-3 flex items-center gap-1.5">
             <span
-              className="block h-2.5 w-2.5 rounded-full bg-red-500"
+              className="block h-2.5 w-2.5 rounded-full bg-[var(--color-error)]"
               style={{ animation: 'pulse 1.5s ease-in-out infinite' }}
               aria-hidden="true"
             />
-            <span className="text-xs text-red-500 font-medium">
+            <span className="text-xs text-[var(--color-error)] font-medium">
               {t('captioning_recording')}
             </span>
           </div>
@@ -165,10 +165,10 @@ export function LibrasCaptioning({ className }: LibrasCaptioningProps) {
                 className={cn(
                   'h-full rounded-full',
                   confidencePercent >= 80
-                    ? 'bg-green-500'
+                    ? 'bg-[var(--color-success)]'
                     : confidencePercent >= 50
-                      ? 'bg-yellow-500'
-                      : 'bg-red-500'
+                      ? 'bg-[var(--color-warning)]'
+                      : 'bg-[var(--color-error)]'
                 )}
                 initial={{ width: 0 }}
                 animate={{ width: `${confidencePercent}%` }}
@@ -184,7 +184,7 @@ export function LibrasCaptioning({ className }: LibrasCaptioningProps) {
 
       {/* Error display */}
       {error && (
-        <p className="text-sm text-red-600" role="alert">
+        <p className="text-sm text-[var(--color-error)]" role="alert">
           {t('captioning_error')}
         </p>
       )}

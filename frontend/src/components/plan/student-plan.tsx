@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/cn'
 import { MarkdownWithMermaid } from '@/components/shared/markdown-with-mermaid'
 import type { StudyPlan } from '@/types/plan'
@@ -14,8 +15,10 @@ interface StudentPlanProps {
  * Uses simpler language and larger text for readability.
  */
 export function StudentPlan({ plan }: StudentPlanProps) {
+  const t = useTranslations('student_plan')
+
   return (
-    <article aria-label={`Student plan: ${plan.title}`} className="space-y-6">
+    <article aria-label={t('aria_label', { title: plan.title })} className="space-y-6">
       {/* Header */}
       <header className="text-center">
         <h2 className="text-2xl font-bold text-[var(--color-text)]">{plan.title}</h2>
@@ -34,7 +37,7 @@ export function StudentPlan({ plan }: StudentPlanProps) {
           )}
         >
           <TargetIcon />
-          What You Will Learn
+          {t('what_you_will_learn')}
         </h3>
         <ul className="space-y-3">
           {plan.objectives.map((obj, i) => (
@@ -72,7 +75,7 @@ export function StudentPlan({ plan }: StudentPlanProps) {
           )}
         >
           <ActivityIcon />
-          Activities
+          {t('activities')}
         </h3>
         <div className="space-y-4">
           {plan.activities.map((activity, i) => (
@@ -106,7 +109,7 @@ export function StudentPlan({ plan }: StudentPlanProps) {
               </div>
               <div className="mt-3 flex items-center gap-2 text-sm text-[var(--color-muted)]">
                 <ClockIcon />
-                <span>{activity.duration_minutes} minutes</span>
+                <span>{t('duration', { minutes: activity.duration_minutes })}</span>
               </div>
             </div>
           ))}

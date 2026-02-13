@@ -25,10 +25,10 @@ export default function AccessibilityPage() {
 
       {/* Page header */}
       <header>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-3xl font-bold text-[var(--color-text)]">
           {t('page_title')}
         </h1>
-        <p className="mt-2 max-w-2xl text-gray-600 dark:text-gray-400">
+        <p className="mt-2 max-w-2xl text-[var(--color-muted)]">
           {t('page_description')}
         </p>
       </header>
@@ -37,28 +37,28 @@ export default function AccessibilityPage() {
       <section aria-labelledby="persona-heading" className="flex flex-col gap-4">
         <h2
           id="persona-heading"
-          className="text-xl font-semibold text-gray-900 dark:text-white"
+          className="text-xl font-semibold text-[var(--color-text)]"
         >
           {t('persona_heading')}
         </h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+        <p className="text-sm text-[var(--color-muted)]">
           {t('persona_description')}
         </p>
         <PersonaToggle />
       </section>
 
       {/* Divider */}
-      <hr className="border-gray-200 dark:border-gray-700" />
+      <hr className="border-[var(--color-border)]" />
 
       {/* Section 2: Accessibility Twin */}
       <section aria-labelledby="twin-heading" className="flex flex-col gap-4">
         <h2
           id="twin-heading"
-          className="text-xl font-semibold text-gray-900 dark:text-white"
+          className="text-xl font-semibold text-[var(--color-text)]"
         >
           {t('twin_heading')}
         </h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+        <p className="text-sm text-[var(--color-muted)]">
           {t('twin_description')}
         </p>
         <AccessibilityTwin
@@ -69,7 +69,7 @@ export default function AccessibilityPage() {
       </section>
 
       {/* Divider */}
-      <hr className="border-gray-200 dark:border-gray-700" />
+      <hr className="border-[var(--color-border)]" />
 
       {/* Section 3: Simulate Disability */}
       <SimulateDisability />

@@ -30,7 +30,7 @@ describe('Sidebar', () => {
 
   it('renders as a navigation landmark', () => {
     render(<Sidebar />)
-    const nav = screen.getByRole('navigation', { name: /Main navigation/i })
+    const nav = screen.getByRole('navigation', { name: 'nav.main_nav_label' })
     expect(nav).toBeInTheDocument()
   })
 

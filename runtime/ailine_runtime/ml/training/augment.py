@@ -60,7 +60,8 @@ def spatial_noise(
         rng = np.random.default_rng()
 
     noise = rng.normal(0.0, std, size=sequence.shape).astype(sequence.dtype)
-    return sequence + noise
+    result: np.ndarray = sequence + noise
+    return result
 
 
 def mirror_horizontal(sequence: np.ndarray) -> np.ndarray:

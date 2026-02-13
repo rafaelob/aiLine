@@ -63,18 +63,18 @@ class UnifiedCurriculumProvider:
         g = grade.lower().replace("º", "o")
 
         for entry in mapping["mappings"]:
-            if g == entry["br"].lower().replace("º", "o"):
-                return entry["us"]
-            if g == entry["us"].lower():
-                return entry["br"]
+            if g == str(entry["br"]).lower().replace("º", "o"):
+                return str(entry["us"])
+            if g == str(entry["us"]).lower():
+                return str(entry["br"])
 
         # Check kindergarten
         kg = mapping.get("kindergarten", {})
         if kg:
-            if g == kg["br"].lower().replace("º", "o"):
-                return kg["us"]
-            if g == kg["us"].lower():
-                return kg["br"]
+            if g == str(kg["br"]).lower().replace("º", "o"):
+                return str(kg["us"])
+            if g == str(kg["us"]).lower():
+                return str(kg["br"])
 
         return None
 

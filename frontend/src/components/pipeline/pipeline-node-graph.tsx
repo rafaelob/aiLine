@@ -3,11 +3,10 @@
 import { useTranslations } from 'next-intl'
 import { motion } from 'motion/react'
 import { cn } from '@/lib/cn'
-import type { PipelineEvent, PipelineStage } from '@/types/pipeline'
+import type { PipelineEvent } from '@/types/pipeline'
 
 interface PipelineNodeGraphProps {
   events: PipelineEvent[]
-  currentStage: PipelineStage | null
   isRunning: boolean
   score: number | null
 }
@@ -94,7 +93,6 @@ const NODE_ICONS: Record<NodeId, string> = {
  */
 export function PipelineNodeGraph({
   events,
-  currentStage,
   isRunning,
   score,
 }: PipelineNodeGraphProps) {

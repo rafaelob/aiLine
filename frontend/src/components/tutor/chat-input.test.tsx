@@ -6,19 +6,29 @@ import { ChatInput } from './chat-input'
 const mockStartListening = vi.fn()
 const mockStopListening = vi.fn()
 
+let voiceState = {
+  isListening: false,
+  isSupported: true,
+  transcript: '',
+  startListening: mockStartListening,
+  stopListening: mockStopListening,
+  error: null as string | null,
+}
+
 vi.mock('@/hooks/use-voice-input', () => ({
-  useVoiceInput: () => ({
+  useVoiceInput: () => voiceState,
+}))
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  voiceState = {
     isListening: false,
     isSupported: true,
     transcript: '',
     startListening: mockStartListening,
     stopListening: mockStopListening,
     error: null,
-  }),
-}))
-
-beforeEach(() => {
-  vi.clearAllMocks()
+  }
 })
 
 describe('ChatInput', () => {
@@ -122,7 +132,6 @@ describe('ChatInput', () => {
 
   it('does not call onSend when disabled even with text', async () => {
     const onSend = vi.fn()
-    const user = userEvent.setup()
     render(<ChatInput onSend={onSend} disabled />)
 
     // Input is disabled so we can't type, but test the handler logic
@@ -133,5 +142,53 @@ describe('ChatInput', () => {
     render(<ChatInput onSend={vi.fn()} />)
     const input = screen.getByLabelText('tutor.input_label') as HTMLTextAreaElement
     expect(input.placeholder).toBe('tutor.input_placeholder')
+  })
+
+  it('calls startListening when mic button is clicked', async () => {
+    const user = userEvent.setup()
+    render(<ChatInput onSend={vi.fn()} />)
+    await user.click(screen.getByLabelText('tutor.start_voice'))
+    expect(mockStartListening).toHaveBeenCalled()
+  })
+
+  it('shows voice error alert when voice error is present', () => {
+    voiceState.error = 'not-allowed'
+    render(<ChatInput onSend={vi.fn()} />)
+    const alert = screen.getByRole('alert')
+    expect(alert).toBeInTheDocument()
+  })
+
+  it('shows listening indicator when voice is active', () => {
+    voiceState.isListening = true
+    render(<ChatInput onSend={vi.fn()} />)
+    expect(screen.getByText('tutor.listening')).toBeInTheDocument()
+  })
+
+  it('shows stop voice label when listening', () => {
+    voiceState.isListening = true
+    render(<ChatInput onSend={vi.fn()} />)
+    expect(screen.getByLabelText('tutor.stop_voice')).toBeInTheDocument()
+  })
+
+  it('shows listening placeholder when voice is active', () => {
+    voiceState.isListening = true
+    render(<ChatInput onSend={vi.fn()} />)
+    const input = screen.getByLabelText('tutor.input_label') as HTMLTextAreaElement
+    expect(input.placeholder).toBe('tutor.listening_placeholder')
+  })
+
+  it('displays live transcript when listening', () => {
+    voiceState.isListening = true
+    voiceState.transcript = 'Hello world'
+    render(<ChatInput onSend={vi.fn()} />)
+    const input = screen.getByLabelText('tutor.input_label') as HTMLTextAreaElement
+    expect(input.value).toBe('Hello world')
+  })
+
+  it('hides mic button when voice is not supported', () => {
+    voiceState.isSupported = false
+    render(<ChatInput onSend={vi.fn()} />)
+    expect(screen.queryByLabelText('tutor.start_voice')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('tutor.stop_voice')).not.toBeInTheDocument()
   })
 })

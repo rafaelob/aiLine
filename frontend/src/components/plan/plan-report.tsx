@@ -20,7 +20,7 @@ export function PlanReport({ report, score }: PlanReportProps) {
   if (!report && score === null) {
     return (
       <div className="text-center py-12 text-[var(--color-muted)]" role="status">
-        No quality report available yet.
+        {t('no_report')}
       </div>
     )
   }

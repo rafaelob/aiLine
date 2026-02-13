@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import { cn } from '@/lib/cn'
 import { useVoiceInput } from '@/hooks/use-voice-input'

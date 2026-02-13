@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { GlassBoxPanel } from './glass-box-panel'
-import type { PipelineEvent, StageInfo } from '@/types/pipeline'
+import type { PipelineEvent } from '@/types/pipeline'
 
 vi.mock('motion/react', () => ({
   motion: {
@@ -28,27 +28,6 @@ vi.mock('./timeline-entry', () => ({
     </div>
   ),
 }))
-
-const mockStages: StageInfo[] = [
-  {
-    id: 'planning',
-    label: 'Planning',
-    description: '',
-    status: 'completed',
-    progress: 100,
-    startedAt: '2026-01-01T00:00:00Z',
-    completedAt: '2026-01-01T00:01:00Z',
-  },
-  {
-    id: 'validation',
-    label: 'Validation',
-    description: '',
-    status: 'active',
-    progress: 50,
-    startedAt: '2026-01-01T00:01:00Z',
-    completedAt: null,
-  },
-]
 
 const mockEvents: PipelineEvent[] = [
   {
@@ -80,8 +59,6 @@ const mockEvents: PipelineEvent[] = [
 describe('GlassBoxPanel', () => {
   const defaultProps = {
     events: mockEvents,
-    stages: mockStages,
-    currentStage: 'validation' as const,
     isRunning: true,
     score: null,
     error: null,

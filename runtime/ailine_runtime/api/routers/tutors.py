@@ -6,7 +6,7 @@ structured output, tool access, and RAG integration.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
@@ -24,7 +24,7 @@ class TutorCreateIn(BaseModel):
     subject: str
     grade: str
     standard: str = "BNCC"
-    style: str = "socratic"
+    style: Literal["socratic", "coach", "direct", "explainer"] = "socratic"
     tone: str = "calmo, paciente, encorajador"
     student_profile: dict[str, Any]
     class_accessibility_profile: dict[str, Any] | None = None

@@ -24,9 +24,10 @@ interface AccessibilityTwinProps {
 export function AccessibilityTwin({
   originalContent,
   adaptedContent,
-  adaptationLabel = 'Adaptação',
+  adaptationLabel,
 }: AccessibilityTwinProps) {
   const t = useTranslations('twin')
+  const effectiveLabel = adaptationLabel ?? t('default_adaptation_label')
   const [activeTab, setActiveTab] = useState<TwinTab>('original')
 
   const diffChanges = useMemo(
@@ -51,7 +52,7 @@ export function AccessibilityTwin({
         />
         <TabButton
           id="tab-adapted"
-          label={t('adapted', { label: adaptationLabel })}
+          label={t('adapted', { label: effectiveLabel })}
           isActive={activeTab === 'adapted'}
           controls="panel-adapted"
           onSelect={() => handleTabChange('adapted')}

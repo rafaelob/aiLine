@@ -70,7 +70,7 @@ export function GestureList({ className }: GestureListProps) {
   if (error) {
     return (
       <div className={cn('flex items-center justify-center py-8', className)} role="alert">
-        <p className="text-sm text-red-600">{t('error_loading_gestures')}</p>
+        <p className="text-sm text-[var(--color-error)]">{t('error_loading_gestures')}</p>
       </div>
     )
   }

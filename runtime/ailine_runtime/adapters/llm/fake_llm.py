@@ -54,7 +54,7 @@ class FakeChatLLM:
         """Extract the content of the last user message."""
         for msg in reversed(messages):
             if msg.get("role") == "user":
-                return msg.get("content", "")[:100]
+                return str(msg.get("content", ""))[:100]
         return ""
 
     def _next_response(self, messages: list[dict[str, Any]]) -> str:

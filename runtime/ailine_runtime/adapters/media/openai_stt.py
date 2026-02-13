@@ -66,4 +66,4 @@ class OpenAISTT:
             file=audio_file,
             language=language,
         )
-        return response.text
+        return str(response.text)

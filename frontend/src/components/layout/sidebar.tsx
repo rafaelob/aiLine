@@ -64,7 +64,7 @@ export function Sidebar() {
   return (
     <motion.aside
       role="navigation"
-      aria-label="Main navigation"
+      aria-label={t('main_nav_label')}
       initial={false}
       animate={{ width: collapsed ? 72 : 256 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}

@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useTranslations } from 'next-intl'
 
 /**
  * PWA install prompt banner.
@@ -10,6 +11,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
  * in localStorage for 30 days.
  */
 export function InstallPrompt() {
+  const t = useTranslations('pwa')
   const [showPrompt, setShowPrompt] = useState(false)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const deferredPromptRef = useRef<any>(null)
@@ -51,15 +53,15 @@ export function InstallPrompt() {
   return (
     <div
       role="banner"
-      aria-label="Install AiLine app"
+      aria-label={t('install_label')}
       className="fixed bottom-20 left-4 right-4 z-50 flex items-center justify-between
                  rounded-lg bg-[var(--color-primary)] p-4 text-white shadow-lg
                  md:bottom-4 md:left-auto md:right-4 md:w-96"
     >
       <div className="flex-1">
-        <p className="text-sm font-medium">Install AiLine</p>
+        <p className="text-sm font-medium">{t('install_title')}</p>
         <p className="text-xs opacity-80">
-          Access offline and get a native experience
+          {t('install_description')}
         </p>
       </div>
       <div className="flex gap-2">
@@ -67,18 +69,18 @@ export function InstallPrompt() {
           onClick={handleDismiss}
           className="rounded px-3 py-1.5 text-xs font-medium opacity-80 hover:opacity-100
                      focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-          aria-label="Dismiss install prompt"
+          aria-label={t('dismiss_label')}
         >
-          Later
+          {t('later')}
         </button>
         <button
           onClick={handleInstall}
           className="rounded bg-white px-3 py-1.5 text-xs font-medium text-[var(--color-primary)]
                      hover:bg-opacity-90
                      focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-          aria-label="Install AiLine app"
+          aria-label={t('install_label')}
         >
-          Install
+          {t('install')}
         </button>
       </div>
     </div>

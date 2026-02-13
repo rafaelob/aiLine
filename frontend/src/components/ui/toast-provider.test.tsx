@@ -31,7 +31,7 @@ describe('ToastProvider', () => {
   it('renders the container with notifications aria-label and region role', () => {
     useToastStore.getState().addToast('Hello', 'error')
     render(<ToastProvider />)
-    const region = screen.getByRole('region', { name: 'Notificações' })
+    const region = screen.getByRole('region', { name: 'common.notifications' })
     expect(region).toBeInTheDocument()
   })
 

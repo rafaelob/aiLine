@@ -10,14 +10,13 @@ from __future__ import annotations
 import os
 import re
 import time
-from typing import Any
 
 import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
-from starlette.responses import PlainTextResponse, Response
+from starlette.responses import JSONResponse, PlainTextResponse, Response
 
 from ..shared.config import Settings, get_settings
 from ..shared.container import Container
@@ -46,7 +45,7 @@ def normalize_metric_path(path: str) -> str:
     and ``/materials/123`` becomes ``/materials/:id``.
     """
     parts = path.split("/")
-    normalized = []
+    normalized: list[str] = []
     for part in parts:
         if not part:
             normalized.append(part)
@@ -165,7 +164,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return {"status": "ok"}
 
     @app.get("/health/ready")
-    async def health_ready() -> dict[str, Any]:
+    async def health_ready() -> Response:
         """Readiness probe. Checks database and Redis connectivity.
 
         Returns 200 when all checks pass or are skipped (unconfigured),
@@ -191,8 +190,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
         status = "degraded" if has_error else "ready"
         status_code = 503 if has_error else 200
-
-        from starlette.responses import JSONResponse
 
         return JSONResponse(
             content={"status": status, "checks": checks},

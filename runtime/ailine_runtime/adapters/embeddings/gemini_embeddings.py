@@ -65,7 +65,8 @@ class GeminiEmbeddings:
         norm = float(np.linalg.norm(vec))
         if norm > 0:
             vec = vec / norm
-        return vec.tolist()
+        result: list[float] = vec.tolist()
+        return result
 
     def _embed_config(self):
         """Build an EmbedContentConfig with the target dimensionality."""
@@ -89,7 +90,11 @@ class GeminiEmbeddings:
             config=self._embed_config(),
         )
 
-        raw = np.array(response.embeddings[0].values, dtype=np.float32)
+        embeddings = response.embeddings
+        if not embeddings:
+            msg = "Gemini embed_content returned no embeddings"
+            raise ValueError(msg)
+        raw = np.array(embeddings[0].values, dtype=np.float32)
         return self._l2_normalize(raw)
 
     async def embed_batch(self, texts: list[str]) -> list[list[float]]:
@@ -112,7 +117,7 @@ class GeminiEmbeddings:
                 contents=batch,
                 config=config,
             )
-            for emb in response.embeddings:
+            for emb in response.embeddings or []:
                 vec = np.array(emb.values, dtype=np.float32)
                 results.append(self._l2_normalize(vec))
 

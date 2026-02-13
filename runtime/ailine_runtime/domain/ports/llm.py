@@ -48,7 +48,7 @@ class ChatLLM(Protocol):
         **kwargs: Any,
     ) -> str: ...
 
-    async def stream(
+    def stream(
         self,
         messages: list[dict[str, Any]],
         *,

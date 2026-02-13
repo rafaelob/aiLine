@@ -53,7 +53,7 @@ export default function ExportsPage() {
       const message = err instanceof Error ? err.message : tc('error')
       setFetchState({ status: 'error', message })
     }
-  }, [])
+  }, [tc])
 
   useEffect(() => {
     if (planId) {
@@ -89,12 +89,12 @@ export default function ExportsPage() {
       {/* Error state */}
       {fetchState.status === 'error' && (
         <div className="flex flex-1 flex-col items-center justify-center gap-4" role="alert">
-          <p className="text-red-600">{fetchState.message}</p>
+          <p className="text-[var(--color-error)]">{fetchState.message}</p>
           {planId && (
             <button
               type="button"
               onClick={() => fetchExports(planId)}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              className="rounded-[var(--radius-md)] bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-[var(--color-on-primary)] hover:bg-[var(--color-primary-hover)] transition-colors"
             >
               {tc('retry')}
             </button>
@@ -115,12 +115,12 @@ export default function ExportsPage() {
           {/* Sidebar: variant list */}
           <aside
             className={cn(
-              'w-64 shrink-0 rounded-lg border border-gray-200 p-4 dark:border-gray-700',
+              'w-64 shrink-0 rounded-[var(--radius-lg)] border border-[var(--color-border)] p-4',
               isFullScreen && 'hidden',
             )}
             aria-label={t('variants_aria_label')}
           >
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--color-muted)]">
               {t('variants_heading')}
             </h2>
             <nav>
@@ -135,16 +135,16 @@ export default function ExportsPage() {
                         disabled={!hasContent}
                         aria-current={isActive ? 'page' : undefined}
                         className={cn(
-                          'w-full rounded-lg px-3 py-2 text-left text-sm transition-colors',
-                          'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600',
+                          'w-full rounded-[var(--radius-md)] px-3 py-2 text-left text-sm transition-colors',
+                          'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]',
                           isActive
-                            ? 'bg-blue-50 font-medium text-blue-700 dark:bg-blue-950 dark:text-blue-300'
-                            : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800',
+                            ? 'bg-[var(--color-primary)]/10 font-medium text-[var(--color-primary)]'
+                            : 'text-[var(--color-text)] hover:bg-[var(--color-surface-elevated)]',
                           !hasContent && 'cursor-not-allowed opacity-40',
                         )}
                       >
                         <span className="block">{tv(variant.label)}</span>
-                        <span className="block text-xs text-gray-400">
+                        <span className="block text-xs text-[var(--color-muted)]">
                           {tv(variant.description)}
                         </span>
                       </button>

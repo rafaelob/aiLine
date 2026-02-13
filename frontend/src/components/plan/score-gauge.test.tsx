@@ -42,7 +42,7 @@ describe('ScoreGauge', () => {
     expect(meter).toHaveAttribute('aria-valuenow', '75')
     expect(meter).toHaveAttribute('aria-valuemin', '0')
     expect(meter).toHaveAttribute('aria-valuemax', '100')
-    expect(meter).toHaveAttribute('aria-label', 'Quality score: 75 out of 100')
+    expect(meter).toHaveAttribute('aria-label', 'quality.gauge_label')
   })
 
   it('clamps score to 0-100 range', () => {

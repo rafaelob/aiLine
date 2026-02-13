@@ -55,7 +55,8 @@ def load_grade_mapping() -> dict[str, Any]:
     filepath = _DATA_DIR / "grade_mapping.json"
     if not filepath.exists():
         raise FileNotFoundError(f"Grade mapping file not found: {filepath}")
-    return json.loads(filepath.read_text(encoding="utf-8"))
+    result: dict[str, Any] = json.loads(filepath.read_text(encoding="utf-8"))
+    return result
 
 
 def text_matches(query: str, text: str) -> bool:

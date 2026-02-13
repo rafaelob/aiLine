@@ -154,7 +154,8 @@ class RedisReplayStore:
 
     async def is_terminal(self, run_id: str) -> bool:
         """Check if a run has been marked as terminal."""
-        return await self._redis.exists(self._terminal_key(run_id)) > 0
+        result = await self._redis.exists(self._terminal_key(run_id))
+        return int(result) > 0
 
     async def close(self) -> None:
         """Close the Redis connection."""

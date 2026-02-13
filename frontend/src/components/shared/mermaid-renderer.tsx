@@ -71,7 +71,7 @@ export function MermaidRenderer({ code, className }: MermaidRendererProps) {
       } catch (err) {
         if (!cancelled) {
           setError(
-            err instanceof Error ? err.message : 'Failed to render diagram'
+            err instanceof Error ? err.message : t('render_error')
           )
           setLoading(false)
         }

@@ -30,7 +30,7 @@ describe('InstallPrompt', () => {
       fireInstallPromptEvent()
     })
 
-    expect(screen.getByText('Install AiLine')).toBeDefined()
+    expect(screen.getByText('pwa.install_title')).toBeDefined()
   })
 
   it('dismisses the banner and stores dismissal time', async () => {
@@ -40,10 +40,10 @@ describe('InstallPrompt', () => {
       fireInstallPromptEvent()
     })
 
-    fireEvent.click(screen.getByLabelText('Dismiss install prompt'))
+    fireEvent.click(screen.getByLabelText('pwa.dismiss_label'))
 
     // Banner should be gone
-    expect(screen.queryByText('Install AiLine')).toBeNull()
+    expect(screen.queryByText('pwa.install_title')).toBeNull()
     // Dismissal should be stored
     expect(localStorage.getItem('ailine-pwa-dismissed')).toBeTruthy()
   })
@@ -60,7 +60,7 @@ describe('InstallPrompt', () => {
     })
 
     // Should not show because user dismissed recently
-    expect(screen.queryByText('Install AiLine')).toBeNull()
+    expect(screen.queryByText('pwa.install_title')).toBeNull()
   })
 
   it('has proper aria-label on the install container', async () => {
@@ -71,7 +71,7 @@ describe('InstallPrompt', () => {
     })
 
     // The container div has role="banner" and aria-label
-    const containers = screen.getAllByLabelText('Install AiLine app')
+    const containers = screen.getAllByLabelText('pwa.install_label')
     expect(containers.length).toBeGreaterThanOrEqual(1)
     // One of them should be the banner container
     const bannerContainer = containers.find(

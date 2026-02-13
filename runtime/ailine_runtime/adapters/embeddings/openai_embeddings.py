@@ -65,7 +65,8 @@ class OpenAIEmbeddings:
         norm = float(np.linalg.norm(vec))
         if norm > 0:
             vec = vec / norm
-        return vec.tolist()
+        result: list[float] = vec.tolist()
+        return result
 
     # -- Public API (matches Embeddings protocol) -----------------------------
 

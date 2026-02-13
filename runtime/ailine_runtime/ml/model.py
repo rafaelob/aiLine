@@ -103,7 +103,8 @@ class LibrasRecognitionModel:
         if lengths is not None:
             feeds["lengths"] = lengths.astype(np.int64)
         outputs = self._onnx_session.run(None, feeds)
-        return outputs[0]
+        result: np.ndarray = outputs[0]
+        return result
 
     def _forward_numpy(
         self, x: np.ndarray, lengths: np.ndarray | None = None
@@ -132,6 +133,6 @@ class LibrasRecognitionModel:
         # Log softmax along vocab dimension
         logits_max = logits.max(axis=-1, keepdims=True)
         log_sum_exp = np.log(np.exp(logits - logits_max).sum(axis=-1, keepdims=True))
-        log_probs = logits - logits_max - log_sum_exp
+        log_probs: np.ndarray = logits - logits_max - log_sum_exp
 
         return log_probs

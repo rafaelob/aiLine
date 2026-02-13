@@ -73,7 +73,7 @@ export function PlanTabs({ plan, qualityReport, score }: PlanTabsProps) {
         />
         <div
           role="tablist"
-          aria-label={t('teacher')}
+          aria-label={t('tabs_label')}
           onKeyDown={handleKeyDown}
           className={cn(
             'flex border-b border-[var(--color-border)]',

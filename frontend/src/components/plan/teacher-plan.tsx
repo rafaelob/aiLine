@@ -14,7 +14,7 @@ interface TeacherPlanProps {
  * Shows objectives, activities with adaptations, assessments, and curriculum alignment.
  */
 export function TeacherPlan({ plan }: TeacherPlanProps) {
-  const t = useTranslations()
+  const t = useTranslations('teacher_plan')
 
   return (
     <article aria-label={plan.title} className="space-y-6">
@@ -34,7 +34,7 @@ export function TeacherPlan({ plan }: TeacherPlanProps) {
           id="objectives-heading"
           className="text-base font-semibold text-[var(--color-text)] mb-3"
         >
-          {t('plans.form.prompt')} &mdash; Objectives
+          {t('objectives')}
         </h3>
         <ul className="space-y-2">
           {plan.objectives.map((obj, i) => (
@@ -57,7 +57,7 @@ export function TeacherPlan({ plan }: TeacherPlanProps) {
           id="activities-heading"
           className="text-base font-semibold text-[var(--color-text)] mb-3"
         >
-          Activities
+          {t('activities')}
         </h3>
         <div className="space-y-4">
           {plan.activities.map((activity, i) => (
@@ -87,7 +87,7 @@ export function TeacherPlan({ plan }: TeacherPlanProps) {
               {activity.materials.length > 0 && (
                 <div className="mb-3">
                   <span className="text-xs font-semibold text-[var(--color-muted)] uppercase tracking-wide">
-                    Materials
+                    {t('materials')}
                   </span>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {activity.materials.map((mat, j) => (
@@ -106,7 +106,7 @@ export function TeacherPlan({ plan }: TeacherPlanProps) {
               {activity.adaptations.length > 0 && (
                 <div>
                   <span className="text-xs font-semibold text-[var(--color-secondary)] uppercase tracking-wide">
-                    Adaptations
+                    {t('adaptations')}
                   </span>
                   <ul className="mt-1 space-y-1">
                     {activity.adaptations.map((adapt, j) => (
@@ -135,7 +135,7 @@ export function TeacherPlan({ plan }: TeacherPlanProps) {
             id="assessments-heading"
             className="text-base font-semibold text-[var(--color-text)] mb-3"
           >
-            Assessments
+            {t('assessments')}
           </h3>
           <div className="space-y-3">
             {plan.assessments.map((assessment, i) => (
@@ -150,7 +150,7 @@ export function TeacherPlan({ plan }: TeacherPlanProps) {
                   {assessment.title}
                 </h4>
                 <span className="text-xs text-[var(--color-muted)]">
-                  Type: {assessment.type}
+                  {t('type')}: {assessment.type}
                 </span>
                 <ul className="mt-2 space-y-1">
                   {assessment.criteria.map((c, j) => (
@@ -175,7 +175,7 @@ export function TeacherPlan({ plan }: TeacherPlanProps) {
             id="a11y-notes-heading"
             className="text-base font-semibold text-[var(--color-secondary)] mb-3"
           >
-            Accessibility Notes
+            {t('accessibility_notes')}
           </h3>
           <ul className="space-y-2">
             {plan.accessibility_notes.map((note, i) => (

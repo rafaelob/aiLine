@@ -96,7 +96,7 @@ describe('TeacherPlan', () => {
   it('renders assessments', () => {
     render(<TeacherPlan plan={mockPlan} />)
     expect(screen.getByText('Quick Quiz')).toBeInTheDocument()
-    expect(screen.getByText('Type: formative')).toBeInTheDocument()
+    expect(screen.getByText('teacher_plan.type: formative')).toBeInTheDocument()
     expect(screen.getByText('Understands fractions')).toBeInTheDocument()
   })
 
@@ -116,12 +116,12 @@ describe('TeacherPlan', () => {
   it('does not render assessments section when empty', () => {
     const planNoAssessments = { ...mockPlan, assessments: [] }
     render(<TeacherPlan plan={planNoAssessments} />)
-    expect(screen.queryByText('Assessments')).not.toBeInTheDocument()
+    expect(screen.queryByText('teacher_plan.assessments')).not.toBeInTheDocument()
   })
 
   it('does not render accessibility notes section when empty', () => {
     const planNoNotes = { ...mockPlan, accessibility_notes: [] }
     render(<TeacherPlan plan={planNoNotes} />)
-    expect(screen.queryByText('Accessibility Notes')).not.toBeInTheDocument()
+    expect(screen.queryByText('teacher_plan.accessibility_notes')).not.toBeInTheDocument()
   })
 })

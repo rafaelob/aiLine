@@ -49,12 +49,15 @@ class AnthropicChatLLM:
     ) -> str:
         response = await self._client.messages.create(
             model=self._model,
-            messages=messages,
+            messages=messages,  # type: ignore[arg-type]  # SDK accepts dict messages
             temperature=temperature,
             max_tokens=max_tokens,
             **kwargs,
         )
-        return response.content[0].text if response.content else ""
+        for block in response.content:
+            if hasattr(block, "text"):
+                return block.text  # type: ignore[no-any-return]
+        return ""
 
     async def stream(
         self,
@@ -66,7 +69,7 @@ class AnthropicChatLLM:
     ) -> AsyncIterator[str]:
         async with self._client.messages.stream(
             model=self._model,
-            messages=messages,
+            messages=messages,  # type: ignore[arg-type]  # SDK accepts dict messages
             temperature=temperature,
             max_tokens=max_tokens,
             **kwargs,
@@ -99,8 +102,8 @@ class AnthropicChatLLM:
         sources: list[WebSearchSource] = []
 
         for block in response.content:
-            if getattr(block, "type", None) == "text":
-                text_parts.append(block.text)
+            if getattr(block, "type", None) == "text" and hasattr(block, "text"):
+                text_parts.append(block.text)  # type: ignore[union-attr]
                 # Extract citations if present
                 for citation in getattr(block, "citations", []) or []:
                     if getattr(citation, "type", None) == "web_search_result_location":

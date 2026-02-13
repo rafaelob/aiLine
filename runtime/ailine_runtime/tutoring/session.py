@@ -65,7 +65,8 @@ def _extract_json(text: str) -> dict[str, Any] | None:
     """Try to parse JSON from text, falling back to brace extraction."""
     text = text.strip()
     try:
-        return json.loads(text)
+        result: dict[str, Any] = json.loads(text)
+        return result
     except (json.JSONDecodeError, ValueError):
         pass  # Fall through to brace-extraction below
     if "{" in text and "}" in text:
@@ -73,7 +74,8 @@ def _extract_json(text: str) -> dict[str, Any] | None:
         end = text.rfind("}")
         if 0 <= start < end:
             try:
-                return json.loads(text[start : end + 1])
+                extracted: dict[str, Any] = json.loads(text[start : end + 1])
+                return extracted
             except Exception:
                 return None
     return None

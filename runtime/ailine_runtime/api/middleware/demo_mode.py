@@ -102,4 +102,5 @@ def _get_or_create_demo_service(request: Request) -> DemoService:
     """Retrieve or create the DemoService singleton on app state."""
     if not hasattr(request.app.state, "demo_service"):
         request.app.state.demo_service = DemoService()
-    return request.app.state.demo_service
+    svc: DemoService = request.app.state.demo_service
+    return svc

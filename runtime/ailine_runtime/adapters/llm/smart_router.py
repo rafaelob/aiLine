@@ -164,8 +164,8 @@ class SmartRouterAdapter:
         decision = compute_route(features)
         tier = decision.tier
 
-        provider = self._get_tier_provider(tier)
-        is_fallback = provider is None
+        tier_provider = self._get_tier_provider(tier)
+        is_fallback = tier_provider is None
         if is_fallback:
             _log.warning(
                 "smart_router.fallback",
@@ -173,8 +173,8 @@ class SmartRouterAdapter:
                 fallback_provider=self._fallback.model_name,
                 reason=f"no provider configured for tier '{tier}'",
             )
-            provider = self._fallback
 
+        provider: ChatLLM = tier_provider if tier_provider is not None else self._fallback
         return decision, features, provider, is_fallback
 
     def score_complexity(

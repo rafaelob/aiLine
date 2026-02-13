@@ -10,14 +10,7 @@ interface SessionSummaryProps {
   plan: StudyPlan
 }
 
-const BLOOM_LEVELS = [
-  'remember',
-  'understand',
-  'apply',
-  'analyze',
-  'evaluate',
-  'create',
-] as const
+type BloomLevel = 'remember' | 'understand' | 'apply' | 'analyze' | 'evaluate' | 'create'
 
 /**
  * Teacher Impact View / Session Summary.
@@ -250,7 +243,7 @@ export function SessionSummary({ plan }: SessionSummaryProps) {
 
 /* ===== Helpers ===== */
 
-function inferBloomLevel(description: string): (typeof BLOOM_LEVELS)[number] {
+function inferBloomLevel(description: string): BloomLevel {
   const lower = description.toLowerCase()
   if (/creat|design|produc|compor|inventar/.test(lower)) return 'create'
   if (/evaluat|judg|justif|avaliar|julgar/.test(lower)) return 'evaluate'

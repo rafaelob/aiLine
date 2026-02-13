@@ -44,7 +44,7 @@ const mockReport: QualityReport = {
 describe('PlanReport', () => {
   it('shows empty state when no report and no score', () => {
     render(<PlanReport report={null} score={null} />)
-    expect(screen.getByText(/No quality report/i)).toBeInTheDocument()
+    expect(screen.getByText('quality.no_report')).toBeInTheDocument()
   })
 
   it('renders score gauge when score is provided', () => {

@@ -91,6 +91,29 @@ strict = false
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false
+plugins = ["pydantic.mypy"]
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = false
+
+[[tool.mypy.overrides]]
+module = [
+    "ailine_agents.*",
+    "alembic.*",
+    "chromadb.*",
+    "faster_whisper.*",
+    "pypdf.*",
+    "pytesseract.*",
+    "PIL.*",
+    "onnxruntime.*",
+    "onnx.*",
+    "torch.*",
+    "opentelemetry.exporter.otlp.*",
+    "opentelemetry.instrumentation.*",
+]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

@@ -141,4 +141,145 @@ describe('ObservabilityDashboardContent', () => {
 
     vi.unstubAllGlobals()
   })
+
+  it('renders retry button on error state', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network error')))
+
+    render(<ObservabilityDashboardContent />)
+    await waitFor(() => {
+      expect(screen.getByText('observability.retry')).toBeInTheDocument()
+    })
+
+    vi.unstubAllGlobals()
+  })
+
+  it('calls fetch again when retry button is clicked', async () => {
+    const mockFetch = vi.fn()
+      .mockRejectedValueOnce(new Error('Network error'))
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockData),
+      })
+    vi.stubGlobal('fetch', mockFetch)
+
+    render(<ObservabilityDashboardContent />)
+    await waitFor(() => {
+      expect(screen.getByText('observability.retry')).toBeInTheDocument()
+    })
+
+    const { default: userEvent } = await import('@testing-library/user-event')
+    const user = userEvent.setup()
+    await user.click(screen.getByText('observability.retry'))
+
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledTimes(2)
+    })
+
+    vi.unstubAllGlobals()
+  })
+
+  it('renders open circuit breaker state', async () => {
+    const openData = { ...mockData, circuit_breaker_state: 'open' as const }
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(openData),
+    }))
+
+    render(<ObservabilityDashboardContent />)
+    await waitFor(() => {
+      expect(screen.getByText('observability.cb_open')).toBeInTheDocument()
+    })
+
+    vi.unstubAllGlobals()
+  })
+
+  it('renders half_open circuit breaker state', async () => {
+    const halfOpenData = { ...mockData, circuit_breaker_state: 'half_open' as const }
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(halfOpenData),
+    }))
+
+    render(<ObservabilityDashboardContent />)
+    await waitFor(() => {
+      expect(screen.getByText('observability.cb_half_open')).toBeInTheDocument()
+    })
+
+    vi.unstubAllGlobals()
+  })
+
+  it('renders quality average score', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(mockData),
+    }))
+
+    render(<ObservabilityDashboardContent />)
+    await waitFor(() => {
+      expect(screen.getByText('82.5')).toBeInTheDocument()
+    })
+
+    vi.unstubAllGlobals()
+  })
+
+  it('renders model name', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(mockData),
+    }))
+
+    render(<ObservabilityDashboardContent />)
+    await waitFor(() => {
+      expect(screen.getByText('claude-haiku-4-5-20251001')).toBeInTheDocument()
+    })
+
+    vi.unstubAllGlobals()
+  })
+
+  it('renders estimated cost', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(mockData),
+    }))
+
+    render(<ObservabilityDashboardContent />)
+    await waitFor(() => {
+      expect(screen.getByText('$0.0854')).toBeInTheDocument()
+    })
+
+    vi.unstubAllGlobals()
+  })
+
+  it('shows error for non-ok HTTP response', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: false,
+      status: 503,
+    }))
+
+    render(<ObservabilityDashboardContent />)
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeInTheDocument()
+      expect(screen.getByText(/HTTP 503/)).toBeInTheDocument()
+    })
+
+    vi.unstubAllGlobals()
+  })
+
+  it('renders latency sparkline when history is present', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(mockData),
+    }))
+
+    const { container } = render(<ObservabilityDashboardContent />)
+    await waitFor(() => {
+      expect(screen.getByText('Anthropic')).toBeInTheDocument()
+    })
+
+    // Sparkline bars should be rendered (aria-hidden container with flex items)
+    const sparklineBars = container.querySelectorAll('.rounded-t')
+    expect(sparklineBars.length).toBeGreaterThan(0)
+
+    vi.unstubAllGlobals()
+  })
 })

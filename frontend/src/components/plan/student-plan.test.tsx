@@ -55,7 +55,7 @@ describe('StudentPlan', () => {
 
   it('renders objectives with "What You Will Learn" heading', () => {
     render(<StudentPlan plan={mockPlan} />)
-    expect(screen.getByText('What You Will Learn')).toBeInTheDocument()
+    expect(screen.getByText('student_plan.what_you_will_learn')).toBeInTheDocument()
     expect(screen.getByText('Learn fractions')).toBeInTheDocument()
     expect(screen.getByText('Practice conversions')).toBeInTheDocument()
   })
@@ -71,20 +71,19 @@ describe('StudentPlan', () => {
 
   it('renders activities section', () => {
     render(<StudentPlan plan={mockPlan} />)
-    expect(screen.getByText('Activities')).toBeInTheDocument()
+    expect(screen.getByText('student_plan.activities')).toBeInTheDocument()
     expect(screen.getByText('Discussion')).toBeInTheDocument()
     expect(screen.getByText('Exercises')).toBeInTheDocument()
   })
 
   it('displays activity durations', () => {
     render(<StudentPlan plan={mockPlan} />)
-    expect(screen.getByText('15 minutes')).toBeInTheDocument()
-    expect(screen.getByText('25 minutes')).toBeInTheDocument()
+    expect(screen.getAllByText('student_plan.duration')).toHaveLength(2)
   })
 
   it('has accessible article label', () => {
     render(<StudentPlan plan={mockPlan} />)
-    const article = screen.getByLabelText(/Student plan: Fracoes e Decimais/)
+    const article = screen.getByLabelText('student_plan.aria_label')
     expect(article).toBeInTheDocument()
   })
 

@@ -18,14 +18,14 @@ describe('VLibrasWidget', () => {
 
   it('renders the container with aria-label', () => {
     render(<VLibrasWidget />)
-    const container = screen.getByLabelText('VLibras - Tradutor de Libras')
+    const container = screen.getByLabelText('vlibras.aria_label')
     expect(container).toBeInTheDocument()
   })
 
   it('renders the instruction text', () => {
     render(<VLibrasWidget />)
     expect(
-      screen.getByText(/selecione texto na pagina/i)
+      screen.getByText('vlibras.help_text')
     ).toBeInTheDocument()
   })
 
@@ -37,7 +37,7 @@ describe('VLibrasWidget', () => {
 
   it('applies custom className', () => {
     render(<VLibrasWidget className="custom-class" />)
-    const container = screen.getByLabelText('VLibras - Tradutor de Libras')
+    const container = screen.getByLabelText('vlibras.aria_label')
     expect(container).toHaveClass('custom-class')
   })
 
@@ -56,19 +56,19 @@ describe('VLibrasWidget', () => {
   // FINDING-26: aria-hidden + skip-link
   it('has aria-hidden="true" when widget is inactive (before script loads)', () => {
     render(<VLibrasWidget />)
-    const container = screen.getByLabelText('VLibras - Tradutor de Libras')
+    const container = screen.getByLabelText('vlibras.aria_label')
     expect(container).toHaveAttribute('aria-hidden', 'true')
   })
 
   it('has tabIndex={-1} when inactive', () => {
     render(<VLibrasWidget />)
-    const container = screen.getByLabelText('VLibras - Tradutor de Libras')
+    const container = screen.getByLabelText('vlibras.aria_label')
     expect(container).toHaveAttribute('tabindex', '-1')
   })
 
   it('renders a skip-link before the widget', () => {
     render(<VLibrasWidget />)
-    const skipLink = screen.getByText('Skip VLibras widget')
+    const skipLink = screen.getByText('vlibras.skip_widget')
     expect(skipLink).toBeInTheDocument()
     expect(skipLink.tagName).toBe('A')
     expect(skipLink).toHaveAttribute('href', '#vlibras-after')

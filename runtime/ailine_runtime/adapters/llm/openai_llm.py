@@ -73,7 +73,7 @@ class OpenAIChatLLM:
     ) -> str:
         response = await self._client.chat.completions.create(
             model=self._model,
-            messages=messages,
+            messages=messages,  # type: ignore[arg-type]  # SDK accepts dict messages
             temperature=temperature,
             max_tokens=max_tokens,
             **kwargs,
@@ -88,15 +88,15 @@ class OpenAIChatLLM:
         max_tokens: int = 4096,
         **kwargs: Any,
     ) -> AsyncIterator[str]:
-        stream = await self._client.chat.completions.create(
+        response_stream = await self._client.chat.completions.create(
             model=self._model,
-            messages=messages,
+            messages=messages,  # type: ignore[arg-type]  # SDK accepts dict messages
             temperature=temperature,
             max_tokens=max_tokens,
             stream=True,
             **kwargs,
         )
-        async for chunk in stream:
+        async for chunk in response_stream:  # type: ignore[union-attr]
             delta = chunk.choices[0].delta
             if delta.content:
                 yield delta.content

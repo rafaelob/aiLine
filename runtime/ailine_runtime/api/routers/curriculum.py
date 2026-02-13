@@ -23,12 +23,12 @@ def _get_provider(request: Request) -> UnifiedCurriculumProvider:
     provide one — this keeps the router self-contained for testing.
     """
     provider = getattr(request.app.state, "curriculum_provider", None)
-    if provider is not None:
+    if isinstance(provider, UnifiedCurriculumProvider):
         return provider
     # Lazy default — acceptable for pre-MVP; production should wire via DI
-    provider = UnifiedCurriculumProvider()
-    request.app.state.curriculum_provider = provider
-    return provider
+    new_provider = UnifiedCurriculumProvider()
+    request.app.state.curriculum_provider = new_provider
+    return new_provider
 
 
 @router.get("/search")

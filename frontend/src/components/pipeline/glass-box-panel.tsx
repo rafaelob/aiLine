@@ -6,12 +6,10 @@ import { motion, AnimatePresence } from 'motion/react'
 import { cn } from '@/lib/cn'
 import { PipelineNodeGraph } from './pipeline-node-graph'
 import { TimelineEntry } from './timeline-entry'
-import type { PipelineEvent, PipelineStage, StageInfo } from '@/types/pipeline'
+import type { PipelineEvent } from '@/types/pipeline'
 
 interface GlassBoxPanelProps {
   events: PipelineEvent[]
-  stages: StageInfo[]
-  currentStage: PipelineStage | null
   isRunning: boolean
   score: number | null
   error: string | null
@@ -25,8 +23,6 @@ interface GlassBoxPanelProps {
  */
 export function GlassBoxPanel({
   events,
-  stages,
-  currentStage,
   isRunning,
   score,
   error,
@@ -144,7 +140,6 @@ export function GlassBoxPanel({
             <div className="px-3 py-3 border-b border-[var(--color-border)]/50">
               <PipelineNodeGraph
                 events={events}
-                currentStage={currentStage}
                 isRunning={isRunning}
                 score={score}
               />

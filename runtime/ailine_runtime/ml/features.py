@@ -72,7 +72,8 @@ def normalize_landmarks(
     if shoulder_dist > 1e-8:
         arr = arr / shoulder_dist
 
-    return arr.flatten().tolist()
+    result: list[float] = arr.flatten().tolist()
+    return result
 
 
 def compute_velocity(frames: list[list[float]]) -> list[list[float]]:
