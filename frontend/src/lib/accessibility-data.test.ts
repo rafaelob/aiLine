@@ -32,6 +32,14 @@ describe('PERSONAS', () => {
       expect(persona.description).toBeTruthy()
     }
   })
+
+  it('label and description are i18n keys (not translated strings)', () => {
+    for (const persona of Object.values(PERSONAS)) {
+      // i18n keys use the persona id as the label key
+      expect(persona.label).toBe(persona.id)
+      expect(persona.description).toBe(`${persona.id}_desc`)
+    }
+  })
 })
 
 describe('PERSONA_LIST', () => {
@@ -69,6 +77,13 @@ describe('SIMULATIONS', () => {
     expect(categories).toContain('cognitive')
     expect(categories).toContain('motor')
   })
+
+  it('label and description are i18n keys', () => {
+    for (const sim of SIMULATIONS) {
+      expect(sim.label).toBe(sim.id)
+      expect(sim.description).toBe(`${sim.id}_desc`)
+    }
+  })
 })
 
 describe('SIMULATION_CATEGORIES', () => {
@@ -76,10 +91,10 @@ describe('SIMULATION_CATEGORIES', () => {
     expect(SIMULATION_CATEGORIES).toHaveLength(4)
   })
 
-  it('each has id and label', () => {
+  it('each has id and label (i18n key)', () => {
     for (const cat of SIMULATION_CATEGORIES) {
       expect(cat.id).toBeTruthy()
-      expect(cat.label).toBeTruthy()
+      expect(cat.label).toBe(cat.id)
     }
   })
 })
@@ -100,6 +115,13 @@ describe('EXPORT_VARIANTS', () => {
   it('includes standard variant', () => {
     const ids = EXPORT_VARIANTS.map((v) => v.id)
     expect(ids).toContain('standard')
+  })
+
+  it('label and description are i18n keys', () => {
+    for (const variant of EXPORT_VARIANTS) {
+      expect(variant.label).toBe(variant.id)
+      expect(variant.description).toBe(`${variant.id}_desc`)
+    }
   })
 })
 

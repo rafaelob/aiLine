@@ -34,6 +34,7 @@ export default function ExportsPage() {
   const planId = searchParams.get('planId')
   const t = useTranslations('exports')
   const tc = useTranslations('common')
+  const tv = useTranslations('export_variants')
 
   const [isFullScreen, setIsFullScreen] = useState(false)
   const [sidebarVariant, setSidebarVariant] = useState<ExportVariant>('standard')
@@ -142,9 +143,9 @@ export default function ExportsPage() {
                           !hasContent && 'cursor-not-allowed opacity-40',
                         )}
                       >
-                        <span className="block">{variant.label}</span>
+                        <span className="block">{tv(variant.label)}</span>
                         <span className="block text-xs text-gray-400">
-                          {variant.description}
+                          {tv(variant.description)}
                         </span>
                       </button>
                     </li>

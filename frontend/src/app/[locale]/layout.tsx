@@ -7,6 +7,7 @@ import { TopBar } from '@/components/layout/topbar'
 import { MobileNav } from '@/components/layout/mobile-nav'
 import { A11yHydrator } from '@/components/accessibility/a11y-hydrator'
 import { ServiceWorkerRegistrar } from '@/components/pwa/sw-registrar'
+import { InstallPrompt } from '@/components/pwa/install-prompt'
 import { ToastProvider } from '@/components/ui/toast-provider'
 import '@/styles/globals.css'
 
@@ -39,6 +40,19 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
           name="description"
           content="AI-powered inclusive education platform for adaptive learning"
         />
+        {/* Open Graph / Social preview */}
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="AiLine - Adaptive Inclusive Learning" />
+        <meta
+          property="og:description"
+          content="AI-powered inclusive education platform for adaptive learning"
+        />
+        <meta property="og:image" content="/api/og?title=AiLine&subtitle=Adaptive+Inclusive+Learning" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="AiLine - Adaptive Inclusive Learning" />
+        <meta name="twitter:image" content="/api/og?title=AiLine&subtitle=Adaptive+Inclusive+Learning" />
         {/* PWA meta tags */}
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#2563EB" />
@@ -79,6 +93,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
 
           {/* Mobile bottom navigation */}
           <MobileNav />
+          <InstallPrompt />
           <ToastProvider />
         </NextIntlClientProvider>
       </body>

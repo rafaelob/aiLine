@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
+import { motion } from 'motion/react'
 import { cn } from '@/lib/cn'
 import { TeacherPlan } from './teacher-plan'
 import { StudentPlan } from './student-plan'
@@ -90,14 +91,21 @@ export function PlanTabs({ plan, qualityReport, score }: PlanTabsProps) {
             tabIndex={activeTab === key ? 0 : -1}
             onClick={() => setActiveTab(key)}
             className={cn(
-              'whitespace-nowrap px-4 py-3 text-sm font-medium',
-              'border-b-2 transition-colors',
+              'relative whitespace-nowrap px-4 py-3 text-sm font-medium',
+              'transition-colors',
               activeTab === key
-                ? 'border-[var(--color-primary)] text-[var(--color-primary)]'
-                : 'border-transparent text-[var(--color-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-border)]'
+                ? 'text-[var(--color-primary)]'
+                : 'text-[var(--color-muted)] hover:text-[var(--color-text)]'
             )}
           >
             {t(key)}
+            {activeTab === key && (
+              <motion.span
+                layoutId="active-tab-indicator"
+                className="absolute inset-x-0 bottom-0 h-0.5 bg-[var(--color-primary)]"
+                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+              />
+            )}
           </button>
         ))}
         </div>

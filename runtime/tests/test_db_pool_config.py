@@ -9,13 +9,14 @@ from ailine_runtime.shared.config import DatabaseConfig
 
 
 class TestDBPoolConfig:
-    def test_default_max_overflow(self):
+    def test_default_pool_size(self):
         config = DatabaseConfig()
-        assert config.max_overflow == 5
+        assert config.pool_size == 10
+        assert config.max_overflow == 10
 
     def test_custom_max_overflow(self):
-        config = DatabaseConfig(max_overflow=10)
-        assert config.max_overflow == 10
+        config = DatabaseConfig(max_overflow=20)
+        assert config.max_overflow == 20
 
     def test_max_overflow_passed_to_engine(self):
         """Non-SQLite engine receives max_overflow from config."""

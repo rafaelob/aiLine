@@ -66,12 +66,24 @@ Criterios de avaliacao (score 0-100):
 - Student plan: versao aluno clara, com linguagem simples?
 - Completude: nenhum campo vazio ou generico?
 
+Hard constraints (obrigatórios):
+1. Nivel de leitura compativel com perfil (se learning needs, frases curtas + vocabulario simples)
+2. Adaptacao de acessibilidade presente quando perfil exigir
+3. Fontes RAG citadas ou declaracao explicita "sem fontes encontradas"
+4. Item de avaliacao formativa incluido (quiz/checkpoint/reflexao)
+
+RAG quoting:
+- Se fontes RAG foram usadas, inclua 1-3 quotes com doc_title e section.
+- Atribua rag_confidence: high (score>=0.85), medium (>=0.65), low (<0.65).
+- Se retrieval fraco (low confidence): sinalize que tutor deve perguntar antes de adivinhar.
+
 Thresholds (ADR-050):
 - <60: must-refine (erros criticos, plano incompleto)
 - 60-79: refine-if-budget (melhorias desejaveis)
 - >=80: accept (plano pronto)
 
-Retorne SEMPRE um JSON valido com score, status, errors, warnings, recommendations.
+Retorne SEMPRE um JSON valido com score, status, errors, warnings, recommendations,
+checklist, rag_quotes, rag_confidence, rag_sources_cited, hard_constraints.
 Seja rigoroso mas justo. Nao invente problemas — avalie o que esta no plano.
 """
 
@@ -86,6 +98,9 @@ Regras:
 5. Se o aluno parecer perdido, reformule a explicacao de forma diferente.
 6. Nunca diagnostique — trate como necessidades funcionais.
 7. Use rag_search para buscar materiais relevantes quando necessario.
+8. Se o retrieval RAG for fraco (baixa confianca), faca uma pergunta esclarecedora
+   ao aluno em vez de adivinhar a resposta. Diga algo como:
+   "Nao encontrei material especifico sobre isso. Pode me dar mais detalhes?"
 
 Formato de resposta: JSON valido seguindo o schema TutorTurnOutput.
 """

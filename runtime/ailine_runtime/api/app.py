@@ -15,8 +15,9 @@ from typing import Any
 import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
-from starlette.responses import PlainTextResponse
+from starlette.responses import PlainTextResponse, Response
 
 from ..shared.config import Settings, get_settings
 from ..shared.container import Container
@@ -49,9 +50,7 @@ def normalize_metric_path(path: str) -> str:
     for part in parts:
         if not part:
             normalized.append(part)
-        elif _UUID_RE.fullmatch(part):
-            normalized.append(":id")
-        elif _NUMERIC_RE.match(part):
+        elif _UUID_RE.fullmatch(part) or _NUMERIC_RE.match(part):
             normalized.append(":id")
         else:
             normalized.append(part)
@@ -70,6 +69,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     validate_dev_mode(env=settings.env)
 
+    # Initialize OpenTelemetry tracing (no-op when AILINE_OTEL_ENABLED is unset)
+    from ..shared.tracing import init_tracing, instrument_fastapi
+
+    init_tracing(service_name="ailine-runtime")
+
     container = Container.build(settings)
 
     app = FastAPI(
@@ -81,6 +85,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # Store container in app state for access in routers
     app.state.container = container
     app.state.settings = settings
+
+    # Auto-instrument FastAPI with OpenTelemetry spans
+    instrument_fastapi(app)
 
     # -----------------------------------------------------------------
     # Middleware stack (outermost first)
@@ -135,7 +142,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # -----------------------------------------------------------------
 
     @app.middleware("http")
-    async def metrics_middleware(request: Request, call_next):  # type: ignore[no-untyped-def]
+    async def metrics_middleware(request: Request, call_next: RequestResponseEndpoint) -> Response:
         """Record HTTP request count and duration metrics."""
         start = time.monotonic()
         response = await call_next(request)
@@ -205,6 +212,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
 
     # -----------------------------------------------------------------
+    # RFC 7807 error handlers
+    # -----------------------------------------------------------------
+    from .middleware.error_handler import install_error_handlers
+
+    install_error_handlers(app)
+
+    # -----------------------------------------------------------------
     # Demo mode middleware
     # -----------------------------------------------------------------
     if settings.demo_mode:
@@ -220,9 +234,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         demo,
         materials,
         media,
+        observability,
         plans,
         plans_stream,
+        rag_diagnostics,
         sign_language,
+        traces,
         tutors,
     )
 
@@ -236,6 +253,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         sign_language.router, prefix="/sign-language", tags=["sign-language"]
     )
     app.include_router(demo.router, prefix="/demo", tags=["demo"])
+    app.include_router(traces.router, prefix="/traces", tags=["traces"])
+    app.include_router(
+        rag_diagnostics.router, prefix="/rag", tags=["rag-diagnostics"]
+    )
+    app.include_router(
+        observability.router, prefix="/observability", tags=["observability"]
+    )
 
     return app
 

@@ -3,19 +3,26 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import ExportsPage from './page'
 
-vi.mock('motion/react', () => ({
-  motion: {
-    div: ({ children, ...rest }: Record<string, unknown>) => {
-      const { initial: _i, animate: _a, transition: _t, ...safe } = rest
-      return <div {...safe}>{children as React.ReactNode}</div>
+vi.mock('motion/react', () => {
+  function stripMotionProps(rest: Record<string, unknown>) {
+    const { initial: _i, animate: _a, transition: _t, layoutId: _l, ...safe } = rest
+    return safe
+  }
+  return {
+    motion: {
+      div: ({ children, ...rest }: Record<string, unknown>) => {
+        return <div {...stripMotionProps(rest)}>{children as React.ReactNode}</div>
+      },
+      li: ({ children, ...rest }: Record<string, unknown>) => {
+        return <li {...stripMotionProps(rest)}>{children as React.ReactNode}</li>
+      },
+      article: ({ children, ...rest }: Record<string, unknown>) => {
+        return <article {...stripMotionProps(rest)}>{children as React.ReactNode}</article>
+      },
     },
-    li: ({ children, ...rest }: Record<string, unknown>) => {
-      const { initial: _i, animate: _a, transition: _t, ...safe } = rest
-      return <li {...safe}>{children as React.ReactNode}</li>
-    },
-  },
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}))
+    AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  }
+})
 
 vi.mock('dompurify', () => ({
   default: {
@@ -164,9 +171,9 @@ describe('ExportsPage', () => {
     })
 
     const sidebar = screen.getByLabelText('exports.variants_aria_label')
-    expect(within(sidebar).getByText('Padrão')).toBeInTheDocument()
-    expect(within(sidebar).getByText('Baixa Distração')).toBeInTheDocument()
-    expect(within(sidebar).getByText('Impressão Grande')).toBeInTheDocument()
+    expect(within(sidebar).getByText('export_variants.standard')).toBeInTheDocument()
+    expect(within(sidebar).getByText('export_variants.low_distraction')).toBeInTheDocument()
+    expect(within(sidebar).getByText('export_variants.large_print')).toBeInTheDocument()
   })
 
   it('shows error on HTTP error status', async () => {
@@ -197,7 +204,7 @@ describe('ExportsPage', () => {
     })
 
     const sidebar = screen.getByLabelText('exports.variants_aria_label')
-    const visualScheduleButton = within(sidebar).getByText('Agenda Visual').closest('button')
+    const visualScheduleButton = within(sidebar).getByText('export_variants.visual_schedule').closest('button')
     if (visualScheduleButton) {
       await user.click(visualScheduleButton)
       expect(screen.getByText('Frações e Números Decimais')).toBeInTheDocument()

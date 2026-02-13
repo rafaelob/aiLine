@@ -422,6 +422,7 @@ body {
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 500ms ease, color 500ms ease;
 }
 
 /* Focus styles — WCAG AAA compliant */
@@ -577,5 +578,51 @@ textarea,
   article, section, li {
     page-break-inside: avoid;
     break-inside: avoid;
+  }
+}
+
+/* ===== View Transitions API (experimental) ===== */
+
+/* Default cross-fade for route changes */
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 200ms;
+  animation-timing-function: ease-out;
+}
+
+/* Main content morph transition */
+main#main-content {
+  view-transition-name: main-content;
+}
+
+::view-transition-old(main-content) {
+  animation: fade-out-slide 200ms ease-out forwards;
+}
+
+::view-transition-new(main-content) {
+  animation: fade-in-slide 200ms ease-out forwards;
+}
+
+@keyframes fade-out-slide {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-4px); }
+}
+
+@keyframes fade-in-slide {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Disable transitions when user prefers reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root),
+  ::view-transition-old(main-content),
+  ::view-transition-new(main-content) {
+    animation: none;
   }
 }

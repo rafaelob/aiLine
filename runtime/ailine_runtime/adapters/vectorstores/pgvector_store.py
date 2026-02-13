@@ -87,6 +87,7 @@ class PgVectorStore:
                     CREATE INDEX IF NOT EXISTS {idx_name}
                         ON {self._table}
                         USING hnsw (embedding vector_cosine_ops)
+                        WITH (m = 16, ef_construction = 128)
                     """
                 )
             )
@@ -237,4 +238,5 @@ def _json_loads(raw: str | bytes) -> dict[str, Any]:
     """Deserialize JSON string."""
     import json
 
-    return json.loads(raw)  # type: ignore[no-any-return]
+    result: dict[str, Any] = json.loads(raw)
+    return result

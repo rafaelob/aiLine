@@ -14,7 +14,6 @@ from __future__ import annotations
 import re
 import unicodedata
 
-
 # Precompiled patterns for performance.
 _NULL_BYTE_RE = re.compile(r"\x00")
 _UUID_RE = re.compile(

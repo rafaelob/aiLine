@@ -41,7 +41,7 @@ beforeEach(() => {
       this.terminate = mockWorkerInstance.terminate
       this.onmessage = null
       this.onerror = null
-      const self = this
+      const self = this // eslint-disable-line @typescript-eslint/no-this-alias
       Object.defineProperty(mockWorkerInstance, 'onmessage', {
         get: () => self.onmessage,
         set: (fn) => { self.onmessage = fn },

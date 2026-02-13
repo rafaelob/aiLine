@@ -20,6 +20,12 @@ from pydantic_ai import Agent, RunContext
 
 from ..deps import AgentDeps
 
+# OTEL tracing -- optional; no-op when runtime tracing is unavailable
+try:
+    from ailine_runtime.shared.tracing import trace_tool_call as _trace_tool_call
+except ImportError:
+    _trace_tool_call = None
+
 # Pydantic JSON Schema type -> Python annotation mapping (fallback)
 _TYPE_MAP: dict[str, type] = {
     "string": str,
@@ -112,6 +118,15 @@ def _build_typed_wrapper(tool_def: Any) -> Any:
             kwargs["teacher_id"] = ctx.deps.teacher_id
 
         parsed_args = tool_def.args_model(**kwargs)
+
+        if _trace_tool_call is not None:
+            import time as _time
+
+            with _trace_tool_call(tool_name=tool_def.name) as span_data:
+                _t0 = _time.monotonic()
+                result = await tool_def.handler(parsed_args)
+                span_data["latency_ms"] = (_time.monotonic() - _t0) * 1000
+                return result
         return await tool_def.handler(parsed_args)
 
     _tool_fn.__signature__ = sig  # type: ignore[attr-defined]

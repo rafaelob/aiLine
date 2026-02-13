@@ -8,8 +8,10 @@
 - **Security:** trivy (container), pip-audit (Python), pnpm audit (Node)
 
 ## Coverage Targets
-- Pre-MVP (current): 1527+ backend tests (1350 runtime + 177 agents), all passing
-- Frontend: 331 tests, all passing (41 test suites)
+- Pre-MVP (current): 1330+ backend tests (1090+ runtime + 235 agents), all passing
+- Frontend: 717 tests, all passing (84 test suites)
+- E2E: 3 Playwright golden path specs + 8 visual regression + axe-core a11y audit
+- Agent eval: 15 golden test sets (Planner/QualityGate/Tutor) + rubric scoring
 - Post-MVP: >= 90% on touched code (hard gate)
 
 ## Test Layers

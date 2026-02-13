@@ -181,6 +181,16 @@ export function WebcamCapture({ className }: WebcamCaptureProps) {
         ? 'text-[var(--color-warning)]'
         : 'text-[var(--color-error)]'
 
+  // Active ring: glow/pulse border based on capture state and confidence
+  const isActive = captureState === 'streaming' || captureState === 'capturing'
+  const ringClass = isActive
+    ? result && confidencePercent >= 80
+      ? 'ring-2 ring-[var(--color-success)] ring-offset-2 ring-offset-[var(--color-bg)]'
+      : result && confidencePercent >= 50
+        ? 'ring-2 ring-[var(--color-warning)] ring-offset-2 ring-offset-[var(--color-bg)]'
+        : 'ring-2 ring-[var(--color-primary)]/50 ring-offset-2 ring-offset-[var(--color-bg)] animate-pulse'
+    : ''
+
   return (
     <div className={cn('grid gap-6 md:grid-cols-2', className)}>
       {/* Left panel: webcam feed */}
@@ -192,8 +202,11 @@ export function WebcamCapture({ className }: WebcamCaptureProps) {
         <div
           className={cn(
             'relative aspect-video overflow-hidden rounded-[var(--radius-md)]',
-            'border border-[var(--color-border)] bg-[var(--color-surface-elevated)]'
+            'border border-[var(--color-border)] bg-[var(--color-surface-elevated)]',
+            'transition-shadow duration-300',
+            ringClass
           )}
+          data-testid="webcam-container"
         >
           {captureState === 'idle' ? (
             <div className="flex h-full items-center justify-center">

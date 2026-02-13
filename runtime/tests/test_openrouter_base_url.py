@@ -79,7 +79,7 @@ class TestContainerOpenRouterWiring:
         mock_openai.AsyncOpenAI.return_value = MagicMock()
 
         from ailine_runtime.shared.config import Settings
-        from ailine_runtime.shared.container import _build_llm
+        from ailine_runtime.shared.container_adapters import build_llm as _build_llm
 
         settings = Settings(
             llm={"provider": "openrouter", "api_key": "sk-or-test"},

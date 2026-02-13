@@ -4,6 +4,17 @@ import userEvent from '@testing-library/user-event'
 import { PlanTabs } from './plan-tabs'
 import type { StudyPlan } from '@/types/plan'
 
+vi.mock('motion/react', () => ({
+  motion: {
+    div: ({ children, layout: _l, layoutId: _li, initial: _i, animate: _a, exit: _e, transition: _t, ...rest }: Record<string, unknown>) => {
+      return <div {...rest}>{children as React.ReactNode}</div>
+    },
+    span: ({ children, layout: _l, layoutId: _li, initial: _i, animate: _a, exit: _e, transition: _t, ...rest }: Record<string, unknown>) => {
+      return <span data-testid="tab-indicator" {...rest}>{children as React.ReactNode}</span>
+    },
+  },
+}))
+
 vi.mock('./teacher-plan', () => ({
   TeacherPlan: () => <div data-testid="teacher-plan">Teacher Plan</div>,
 }))
@@ -109,5 +120,27 @@ describe('PlanTabs', () => {
 
     const studentTab = screen.getByRole('tab', { name: 'plans.tabs.student' })
     expect(studentTab).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('renders a sliding indicator on the active tab', () => {
+    render(<PlanTabs plan={mockPlan} qualityReport={null} score={null} />)
+    const indicator = screen.getByTestId('tab-indicator')
+    expect(indicator).toBeInTheDocument()
+  })
+
+  it('moves indicator when switching tabs', async () => {
+    render(<PlanTabs plan={mockPlan} qualityReport={null} score={null} />)
+
+    // Indicator is inside the active tab (teacher) initially
+    const teacherTab = screen.getByRole('tab', { name: 'plans.tabs.teacher' })
+    expect(teacherTab.querySelector('[data-testid="tab-indicator"]')).toBeInTheDocument()
+
+    // Switch to student tab
+    const studentTab = screen.getByRole('tab', { name: 'plans.tabs.student' })
+    await user.click(studentTab)
+
+    // Indicator moved to student tab
+    expect(studentTab.querySelector('[data-testid="tab-indicator"]')).toBeInTheDocument()
+    expect(teacherTab.querySelector('[data-testid="tab-indicator"]')).not.toBeInTheDocument()
   })
 })

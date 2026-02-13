@@ -14,7 +14,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from ailine_runtime.shared.config import Settings
-from ailine_runtime.shared.container import _build_media, _build_sign_recognition
+from ailine_runtime.shared.container_adapters import build_media, build_sign_recognition
 
 # ---------------------------------------------------------------------------
 # Env-var isolation
@@ -55,7 +55,7 @@ class TestBuildMediaElevenLabsTTS:
         # Dynamically set the attribute the container reads via getattr
         object.__setattr__(settings, "elevenlabs_api_key", "el-test-key")
 
-        _stt, tts, _describer, _ocr = _build_media(settings)
+        _stt, tts, _describer, _ocr = build_media(settings)
 
         assert type(tts).__name__ == "ElevenLabsTTS"
         assert tts._api_key == "el-test-key"
@@ -63,7 +63,7 @@ class TestBuildMediaElevenLabsTTS:
     def test_fake_tts_when_no_elevenlabs_key(self):
         """Without elevenlabs_api_key, fall back to FakeTTS."""
         settings = Settings()
-        _stt, tts, _describer, _ocr = _build_media(settings)
+        _stt, tts, _describer, _ocr = build_media(settings)
         assert type(tts).__name__ == "FakeTTS"
 
 
@@ -95,7 +95,7 @@ class TestBuildSignRecognitionMediaPipe:
 
             settings = Settings()
             object.__setattr__(settings, "sign_model_path", "/models/sign.tflite")
-            sr = _build_sign_recognition(settings)
+            sr = build_sign_recognition(settings)
 
             assert sr is mock_sign_rec_instance
             mock_sign_rec_cls.assert_called_once_with(model_path="/models/sign.tflite")
@@ -119,7 +119,7 @@ class TestBuildSignRecognitionMediaPipe:
 
             settings = Settings()
             object.__setattr__(settings, "sign_model_path", "/models/sign.tflite")
-            sr = _build_sign_recognition(settings)
+            sr = build_sign_recognition(settings)
 
             assert type(sr).__name__ == "FakeSignRecognition"
         finally:
@@ -131,5 +131,5 @@ class TestBuildSignRecognitionMediaPipe:
     def test_no_model_path_uses_fake(self):
         """Without sign_model_path, always use FakeSignRecognition."""
         settings = Settings()
-        sr = _build_sign_recognition(settings)
+        sr = build_sign_recognition(settings)
         assert type(sr).__name__ == "FakeSignRecognition"

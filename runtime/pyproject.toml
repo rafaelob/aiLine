@@ -24,6 +24,7 @@ dependencies = [
   "structlog>=24,<26",
   "numpy>=1.26,<3",
   "ailine-agents>=0.1.0",
+  "PyJWT[crypto]>=2.9,<3",
 ]
 
 [tool.uv.sources]
@@ -53,6 +54,9 @@ redis = ["arq>=0.26,<1"]
 otel = [
   "opentelemetry-api>=1.29,<2",
   "opentelemetry-sdk>=1.29,<2",
+  "opentelemetry-instrumentation-fastapi>=0.50b0,<1",
+  "opentelemetry-instrumentation-sqlalchemy>=0.50b0,<1",
+  "opentelemetry-exporter-otlp-proto-grpc>=1.29,<2",
 ]
 all = [
   "ailine-runtime[db,embeddings-gemini,embeddings-openai,media,redis,otel]",

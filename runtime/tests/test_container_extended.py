@@ -8,12 +8,20 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from ailine_runtime.shared.config import EmbeddingConfig, LLMConfig, Settings
-from ailine_runtime.shared.container import (
-    _build_embeddings,
-    _build_llm,
-    _build_media,
-    _build_sign_recognition,
-    _resolve_api_key,
+from ailine_runtime.shared.container_adapters import (
+    build_embeddings as _build_embeddings,
+)
+from ailine_runtime.shared.container_adapters import (
+    build_llm as _build_llm,
+)
+from ailine_runtime.shared.container_adapters import (
+    build_media as _build_media,
+)
+from ailine_runtime.shared.container_adapters import (
+    build_sign_recognition as _build_sign_recognition,
+)
+from ailine_runtime.shared.container_adapters import (
+    resolve_api_key as _resolve_api_key,
 )
 
 # ---------------------------------------------------------------------------

@@ -1,41 +1,50 @@
 'use client'
 
 import { useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import { motion } from 'motion/react'
 import { cn } from '@/lib/cn'
 import { useTheme } from '@/hooks/use-theme'
+import { useViewTransition } from '@/hooks/use-view-transition'
 import { PERSONA_LIST } from '@/lib/accessibility-data'
 import type { PersonaId } from '@/types/accessibility'
 
 /**
  * Animated persona selector with horizontal pill/chip layout.
  * Uses motion layoutId for smooth sliding indicator animation.
+ * Uses View Transitions API for cross-fade theme morphing.
  * On select: sets data-theme on document.body and persists to localStorage.
  */
 export function PersonaToggle() {
   const { activePersona, switchTheme } = useTheme()
+  const { startTransition } = useViewTransition()
+  const tp = useTranslations('personas')
 
   const handleSelect = useCallback(
     (personaId: PersonaId) => {
-      switchTheme(personaId)
+      startTransition(() => {
+        switchTheme(personaId)
+      })
     },
-    [switchTheme],
+    [switchTheme, startTransition],
   )
 
   return (
     <nav
       role="radiogroup"
-      aria-label="Selecionar persona de acessibilidade"
+      aria-label={tp('select_label')}
       className="flex flex-wrap gap-2"
     >
       {PERSONA_LIST.map((persona) => {
         const isActive = activePersona === persona.id
+        const personaLabel = tp(persona.label)
+        const personaDesc = tp(persona.description)
         return (
           <button
             key={persona.id}
             role="radio"
             aria-checked={isActive}
-            aria-label={`${persona.label}: ${persona.description}`}
+            aria-label={`${personaLabel}: ${personaDesc}`}
             onClick={() => handleSelect(persona.id)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
@@ -63,7 +72,7 @@ export function PersonaToggle() {
             )}
             <span className="relative z-10 flex items-center gap-2">
               <span aria-hidden="true">{persona.icon}</span>
-              <span>{persona.label}</span>
+              <span>{personaLabel}</span>
             </span>
           </button>
         )

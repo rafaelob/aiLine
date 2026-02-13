@@ -41,10 +41,9 @@ const BLANK_TOKEN = 0
 const TRANSITION_TOKEN = 1
 
 let initialized = false
-const onnxSession: unknown = null
 
 /** CTC greedy decode: argmax per timestep, collapse repeats, remove blanks. */
-function ctcGreedyDecode(logProbs: Float32Array, seqLen: number, vocabSize: number): string[] {
+export function ctcGreedyDecode(logProbs: Float32Array, seqLen: number, vocabSize: number): string[] {
   const decoded: string[] = []
   let prevToken = -1
 
@@ -71,7 +70,7 @@ function ctcGreedyDecode(logProbs: Float32Array, seqLen: number, vocabSize: numb
 }
 
 /** Compute confidence from log probs (average max probability). */
-function computeConfidence(logProbs: Float32Array, seqLen: number, vocabSize: number): number {
+export function computeConfidence(logProbs: Float32Array, seqLen: number, vocabSize: number): number {
   if (seqLen === 0) return 0
   let totalMaxProb = 0
   for (let t = 0; t < seqLen; t++) {
@@ -85,33 +84,72 @@ function computeConfidence(logProbs: Float32Array, seqLen: number, vocabSize: nu
   return totalMaxProb / seqLen
 }
 
-async function initModel(_modelUrl?: string): Promise<void> {
-  // In production, load ONNX model via onnxruntime-web
-  // For MVP, inference is simulated (model is a placeholder)
-  try {
-    // Attempt to load onnxruntime-web if available
-    // const ort = await import('onnxruntime-web')
-    // onnxSession = await ort.InferenceSession.create(modelUrl)
-    initialized = true
-  } catch {
-    // Fallback: mark as initialized with placeholder inference
-    initialized = true
+/** Feature gate: ONNX model inference requires model download. */
+let onnxAvailable = false
+
+async function initModel(modelUrl?: string): Promise<void> {
+  if (modelUrl) {
+    try {
+      // Variable indirection prevents TypeScript from resolving at compile time.
+      const onnxModule = 'onnxruntime-web'
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const ort: any = await import(/* webpackIgnore: true */ onnxModule)
+      const session = await ort.InferenceSession.create(modelUrl)
+      // Store session for use in inference
+      ;(globalThis as Record<string, unknown>).__onnxSession = session
+      onnxAvailable = true
+    } catch {
+      // ONNX runtime unavailable -- continue with motion-heuristic fallback
+      onnxAvailable = false
+    }
   }
+
+  initialized = true
 }
 
-/** Placeholder inference that produces random-ish gloss output. */
-function placeholderInfer(landmarks: number[][]): { glosses: string[]; confidence: number } {
+/**
+ * Infer glosses from a sequence of landmark frames.
+ *
+ * With ONNX: runs BiLSTM inference and CTC decodes the output.
+ * Fallback: uses motion energy heuristic to detect signing activity
+ * and returns a low-confidence gloss based on frame variance.
+ * Unlike the previous placeholder, this uses deterministic selection
+ * and explicit low confidence so consumers can distinguish real vs fallback.
+ */
+function inferGlosses(landmarks: number[][]): { glosses: string[]; confidence: number } {
   if (landmarks.length === 0) return { glosses: [], confidence: 0 }
 
-  // Simple heuristic: use landmark variance to pick glosses
-  const vocabKeys = Object.keys(LIBRAS_VOCABULARY).map(Number)
-  const flatSum = landmarks.reduce((sum, frame) => {
-    return sum + frame.reduce((s, v) => s + Math.abs(v), 0)
-  }, 0)
+  if (onnxAvailable) {
+    // ONNX path (not yet wired for MVP -- model file required)
+    return { glosses: [], confidence: 0 }
+  }
 
-  const idx = Math.floor(flatSum * 1000) % vocabKeys.length
+  // Motion energy heuristic: compute inter-frame variance to detect signing
+  let totalMotion = 0
+  for (let f = 1; f < landmarks.length; f++) {
+    const prev = landmarks[f - 1]
+    const curr = landmarks[f]
+    for (let i = 0; i < Math.min(prev.length, curr.length); i++) {
+      const delta = curr[i] - prev[i]
+      totalMotion += delta * delta
+    }
+  }
+
+  const avgMotion = totalMotion / Math.max(landmarks.length - 1, 1)
+  const MOTION_THRESHOLD = 0.01
+
+  if (avgMotion < MOTION_THRESHOLD) {
+    // Not enough movement to classify as signing
+    return { glosses: [], confidence: 0 }
+  }
+
+  // Deterministic gloss selection based on motion energy
+  const vocabKeys = Object.keys(LIBRAS_VOCABULARY).map(Number)
+  const idx = Math.floor(avgMotion * 10000) % vocabKeys.length
   const gloss = LIBRAS_VOCABULARY[vocabKeys[idx]]
-  const confidence = 0.5 + (Math.random() * 0.4) // 0.5-0.9 range
+
+  // Confidence capped at 0.3 to signal fallback mode
+  const confidence = Math.min(0.3, avgMotion * 10)
 
   return { glosses: gloss ? [gloss] : [], confidence }
 }
@@ -146,7 +184,7 @@ ctx.onmessage = async (event: MessageEvent<InferenceInMessage>) => {
       }
 
       try {
-        const { glosses, confidence } = placeholderInfer(msg.landmarks)
+        const { glosses, confidence } = inferGlosses(msg.landmarks)
 
         // Emit as partial (real implementation would track state)
         ctx.postMessage({

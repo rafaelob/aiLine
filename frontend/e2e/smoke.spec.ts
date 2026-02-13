@@ -7,27 +7,22 @@ import { test, expect } from '@playwright/test'
  */
 test.describe('Smoke tests', () => {
   test('dashboard page loads with welcome heading', async ({ page }) => {
-    // The default locale is pt-BR, so navigating to / should redirect to /pt-BR
-    await page.goto('/')
-    // The dashboard hero section has a heading "Bem-vindo ao AiLine" (pt-BR)
+    await page.goto('/pt-BR')
     const heading = page.getByRole('heading', { level: 1 })
     await expect(heading).toBeVisible()
     await expect(heading).toHaveText('Bem-vindo ao AiLine')
   })
 
   test('page title is correct', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/pt-BR')
     await expect(page).toHaveTitle('AiLine - Adaptive Inclusive Learning')
   })
 
   test('sidebar navigation links are present', async ({ page }) => {
-    await page.goto('/')
-    // The sidebar is rendered inside a nav with aria-label "Main navigation"
+    await page.goto('/pt-BR')
     const nav = page.getByRole('navigation', { name: 'Main navigation' })
     await expect(nav).toBeVisible()
 
-    // Verify key navigation links exist
-    // Sidebar nav items use translated text from 'nav' namespace (pt-BR default)
     await expect(nav.getByText('Painel')).toBeVisible()
     await expect(nav.getByText('Planos')).toBeVisible()
     await expect(nav.getByText('Materiais')).toBeVisible()
@@ -36,22 +31,19 @@ test.describe('Smoke tests', () => {
   })
 
   test('main content area has correct landmark role', async ({ page }) => {
-    await page.goto('/')
-    // Layout renders <main id="main-content" role="main">
+    await page.goto('/pt-BR')
     const main = page.locator('main#main-content')
     await expect(main).toBeVisible()
   })
 
   test('dashboard has quick actions section', async ({ page }) => {
-    await page.goto('/')
-    // Quick actions section uses aria-labelledby="quick-actions-heading"
+    await page.goto('/pt-BR')
     const quickActionsHeading = page.getByRole('heading', { name: 'Acoes Rapidas' })
     await expect(quickActionsHeading).toBeVisible()
   })
 
   test('dashboard has recent plans section', async ({ page }) => {
-    await page.goto('/')
-    // Recent plans section uses aria-labelledby="recent-plans-heading"
+    await page.goto('/pt-BR')
     const recentPlansHeading = page.getByRole('heading', { name: 'Planos Recentes' })
     await expect(recentPlansHeading).toBeVisible()
   })

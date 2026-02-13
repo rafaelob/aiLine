@@ -22,6 +22,8 @@ import type { SimulationMode } from '@/types/accessibility'
  */
 export function SimulateDisability() {
   const t = useTranslations('simulate')
+  const tCat = useTranslations('simulate.categories')
+  const tMode = useTranslations('simulate.modes')
   const [activeSimulations, setActiveSimulations] = useState<Set<SimulationMode>>(new Set())
   const tunnelOverlayRef = useRef<HTMLDivElement | null>(null)
 
@@ -215,13 +217,15 @@ export function SimulateDisability() {
               className="rounded-lg border border-[var(--color-border)] p-4"
             >
               <legend className="px-2 text-sm font-semibold text-[var(--color-text)]">
-                {category.label}
+                {tCat(category.label)}
               </legend>
               <div className="mt-2 flex flex-col gap-3">
                 {categorySimulations.map((sim) => (
                   <SimulationToggle
                     key={sim.id}
                     simulation={sim}
+                    label={tMode(sim.label)}
+                    description={tMode(sim.description)}
                     isActive={activeSimulations.has(sim.id)}
                     onToggle={() => toggleSimulation(sim.id)}
                   />
@@ -239,11 +243,13 @@ export function SimulateDisability() {
 
 interface SimulationToggleProps {
   simulation: (typeof SIMULATIONS)[number]
+  label: string
+  description: string
   isActive: boolean
   onToggle: () => void
 }
 
-function SimulationToggle({ simulation, isActive, onToggle }: SimulationToggleProps) {
+function SimulationToggle({ label, description, isActive, onToggle }: SimulationToggleProps) {
   return (
     <label
       className={cn(
@@ -279,10 +285,10 @@ function SimulationToggle({ simulation, isActive, onToggle }: SimulationTogglePr
       </div>
       <div className="flex flex-col">
         <span className="text-sm font-medium text-[var(--color-text)]">
-          {simulation.label}
+          {label}
         </span>
         <span className="text-xs text-[var(--color-muted)]">
-          {simulation.description}
+          {description}
         </span>
       </div>
     </label>

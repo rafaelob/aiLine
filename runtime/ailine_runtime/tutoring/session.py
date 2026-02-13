@@ -62,11 +62,12 @@ def _format_history(session: TutorSession, max_turns: int = 8) -> str:
 
 
 def _extract_json(text: str) -> dict[str, Any] | None:
+    """Try to parse JSON from text, falling back to brace extraction."""
     text = text.strip()
     try:
         return json.loads(text)
-    except Exception:
-        pass
+    except (json.JSONDecodeError, ValueError):
+        pass  # Fall through to brace-extraction below
     if "{" in text and "}" in text:
         start = text.find("{")
         end = text.rfind("}")

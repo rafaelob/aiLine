@@ -50,6 +50,22 @@ export function Toast({ toast }: ToastProps) {
         {VARIANT_ICONS[toast.variant]}
       </span>
       <p className="flex-1 text-sm text-[var(--color-text)]">{toast.message}</p>
+      {toast.onUndo && (
+        <button
+          type="button"
+          onClick={() => {
+            toast.onUndo?.()
+            removeToast(toast.id)
+          }}
+          className={cn(
+            'shrink-0 text-xs font-semibold',
+            'text-[var(--color-primary)] hover:text-[var(--color-primary-hover)]',
+            'transition-colors'
+          )}
+        >
+          {t('undo')}
+        </button>
+      )}
       <button
         type="button"
         onClick={() => removeToast(toast.id)}

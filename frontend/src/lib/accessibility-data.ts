@@ -1,6 +1,10 @@
 /**
  * Static data for accessibility personas, simulation modes, and export variants.
  * Centralized here to avoid duplication across components.
+ *
+ * Labels and descriptions use i18n translation keys (resolved by consuming
+ * components via useTranslations). The `labelKey` and `descKey` fields
+ * reference keys in the messages JSON files under the corresponding namespace.
  */
 
 import type {
@@ -14,66 +18,66 @@ import type {
 export const PERSONAS: Record<PersonaId, Persona> = {
   standard: {
     id: 'standard',
-    label: 'Padrão',
-    icon: '👤',
+    label: 'standard',
+    icon: '\u{1F464}',
     theme: 'standard',
-    description: 'Visualização padrão sem adaptações específicas',
+    description: 'standard_desc',
   },
   high_contrast: {
     id: 'high_contrast',
-    label: 'Alto Contraste',
-    icon: '🔲',
+    label: 'high_contrast',
+    icon: '\u{1F532}',
     theme: 'high_contrast',
-    description: 'Cores de alto contraste para melhor legibilidade',
+    description: 'high_contrast_desc',
   },
   tea: {
     id: 'tea',
-    label: 'TEA',
-    icon: '🧩',
+    label: 'tea',
+    icon: '\u{1F9E9}',
     theme: 'tea',
-    description: 'Otimizado para Transtorno do Espectro Autista',
+    description: 'tea_desc',
   },
   tdah: {
     id: 'tdah',
-    label: 'TDAH',
-    icon: '⚡',
+    label: 'tdah',
+    icon: '\u26A1',
     theme: 'tdah',
-    description: 'Otimizado para Transtorno de Déficit de Atenção',
+    description: 'tdah_desc',
   },
   dyslexia: {
     id: 'dyslexia',
-    label: 'Dislexia',
-    icon: '📖',
+    label: 'dyslexia',
+    icon: '\u{1F4D6}',
     theme: 'dyslexia',
-    description: 'Fontes e espaçamentos otimizados para dislexia',
+    description: 'dyslexia_desc',
   },
   low_vision: {
     id: 'low_vision',
-    label: 'Baixa Visão',
-    icon: '🔍',
+    label: 'low_vision',
+    icon: '\u{1F50D}',
     theme: 'low_vision',
-    description: 'Texto ampliado e contraste reforçado',
+    description: 'low_vision_desc',
   },
   hearing: {
     id: 'hearing',
-    label: 'Auditivo',
-    icon: '👂',
+    label: 'hearing',
+    icon: '\u{1F442}',
     theme: 'hearing',
-    description: 'Ênfase em conteúdo visual e legendas',
+    description: 'hearing_desc',
   },
   motor: {
     id: 'motor',
-    label: 'Motor',
-    icon: '🖐️',
+    label: 'motor',
+    icon: '\u{1F590}\uFE0F',
     theme: 'motor',
-    description: 'Áreas de toque ampliadas e navegação simplificada',
+    description: 'motor_desc',
   },
   screen_reader: {
     id: 'screen_reader',
-    label: 'Leitor de Tela',
-    icon: '🔊',
+    label: 'screen_reader',
+    icon: '\u{1F50A}',
     theme: 'screen_reader',
-    description: 'Otimizado para tecnologias assistivas',
+    description: 'screen_reader_desc',
   },
 }
 
@@ -82,97 +86,90 @@ export const PERSONA_LIST: Persona[] = Object.values(PERSONAS)
 export const SIMULATIONS: SimulationInfo[] = [
   {
     id: 'protanopia',
-    label: 'Protanopia',
-    description:
-      'Dificuldade em distinguir vermelho do verde. Afeta ~1% dos homens. Vermelho aparece como verde-amarelado.',
+    label: 'protanopia',
+    description: 'protanopia_desc',
     category: 'color_blindness',
   },
   {
     id: 'deuteranopia',
-    label: 'Deuteranopia',
-    description:
-      'Forma mais comum de daltonismo. Afeta ~6% dos homens. Verde é confundido com vermelho.',
+    label: 'deuteranopia',
+    description: 'deuteranopia_desc',
     category: 'color_blindness',
   },
   {
     id: 'tritanopia',
-    label: 'Tritanopia',
-    description:
-      'Dificuldade em distinguir azul do amarelo. Rara (~0.01%). Azul aparece como verde.',
+    label: 'tritanopia',
+    description: 'tritanopia_desc',
     category: 'color_blindness',
   },
   {
     id: 'low_vision',
-    label: 'Baixa Visão',
-    description:
-      'Simula visão embaçada e contraste reduzido, como experimentado por pessoas com degeneração macular.',
+    label: 'low_vision',
+    description: 'low_vision_desc',
     category: 'vision',
   },
   {
     id: 'tunnel_vision',
-    label: 'Visão Tubular',
-    description:
-      'Campo visual restrito ao centro, como experimentado por pessoas com glaucoma ou retinite pigmentosa.',
+    label: 'tunnel_vision',
+    description: 'tunnel_vision_desc',
     category: 'vision',
   },
   {
     id: 'dyslexia',
-    label: 'Dislexia',
-    description:
-      'Letras embaralhadas simulam a dificuldade de leitura. Afeta ~5-10% da população.',
+    label: 'dyslexia',
+    description: 'dyslexia_desc',
     category: 'cognitive',
   },
   {
     id: 'motor_difficulty',
-    label: 'Dificuldade Motora',
-    description:
-      'Atraso no cursor simula tremor e dificuldade de controle motor fino.',
+    label: 'motor_difficulty',
+    description: 'motor_difficulty_desc',
     category: 'motor',
   },
 ]
 
 export const SIMULATION_CATEGORIES = [
-  { id: 'color_blindness' as const, label: 'Daltonismo' },
-  { id: 'vision' as const, label: 'Visão' },
-  { id: 'cognitive' as const, label: 'Cognitivo' },
-  { id: 'motor' as const, label: 'Motor' },
+  { id: 'color_blindness' as const, label: 'color_blindness' },
+  { id: 'vision' as const, label: 'vision' },
+  { id: 'cognitive' as const, label: 'cognitive' },
+  { id: 'motor' as const, label: 'motor' },
 ]
 
 export const EXPORT_VARIANTS: ExportVariantInfo[] = [
   {
     id: 'standard',
-    label: 'Padrão',
-    description: 'Formato padrão do plano de aula',
+    label: 'standard',
+    description: 'standard_desc',
   },
   {
     id: 'low_distraction',
-    label: 'Baixa Distração',
-    description: 'Layout simplificado com menos elementos visuais',
+    label: 'low_distraction',
+    description: 'low_distraction_desc',
   },
   {
     id: 'large_print',
-    label: 'Impressão Grande',
-    description: 'Texto ampliado para baixa visão',
+    label: 'large_print',
+    description: 'large_print_desc',
   },
   {
     id: 'high_contrast',
-    label: 'Alto Contraste',
-    description: 'Cores de alto contraste para melhor legibilidade',
+    label: 'high_contrast',
+    description: 'high_contrast_desc',
   },
   {
     id: 'dyslexia_friendly',
-    label: 'Amigável à Dislexia',
-    description: 'Fontes e espaçamentos otimizados para dislexia',
+    label: 'dyslexia_friendly',
+    description: 'dyslexia_friendly_desc',
   },
   {
     id: 'screen_reader',
-    label: 'Leitor de Tela',
-    description: 'Estrutura semântica otimizada para leitores de tela',
+    label: 'screen_reader',
+    description: 'screen_reader_desc',
   },
   {
     id: 'visual_schedule',
-    label: 'Agenda Visual',
-    description: 'Cartões visuais para TEA/TDAH',
+    label: 'visual_schedule',
+    description: 'visual_schedule_desc',
   },
 ]
 

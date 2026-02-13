@@ -29,6 +29,9 @@ class RunState(_RunStateRequired, total=False):
     final: dict[str, Any]
     refine_iter: int
 
+    # RAG results from planner tool calls (if any)
+    rag_results: list[dict[str, Any]] | None
+
     # Idempotency: prevents duplicate plan generations from double-clicks.
     idempotency_key: str | None
 

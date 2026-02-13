@@ -30,8 +30,9 @@ from collections.abc import AsyncIterator
 from dataclasses import asdict
 from typing import Any
 
-from ...domain.ports.llm import WebSearchResult
+from ...domain.ports.llm import ChatLLM, WebSearchResult
 from ...shared.observability import get_logger
+from ...shared.tracing import trace_llm_call
 
 # Re-export types and functions so existing imports keep working
 from .routing_types import (
@@ -97,11 +98,11 @@ class SmartRouterAdapter:
 
     def __init__(self, config: SmartRouterConfig) -> None:
         self._config = config
-        self._cheap = config.cheap_provider
-        self._middle = config.middle_provider
-        self._primary = config.primary_provider
+        self._cheap: ChatLLM | None = config.cheap_provider
+        self._middle: ChatLLM | None = config.middle_provider
+        self._primary: ChatLLM | None = config.primary_provider
         # Fallback chain: primary -> middle -> cheap
-        self._fallback = self._primary or self._middle or self._cheap
+        self._fallback: ChatLLM = self._primary or self._middle or self._cheap  # type: ignore[assignment]  # validated below
         if self._fallback is None:
             msg = "SmartRouter requires at least one provider"
             raise ValueError(msg)
@@ -154,7 +155,7 @@ class SmartRouterAdapter:
         self,
         messages: list[dict[str, Any]],
         **kwargs: Any,
-    ) -> tuple[RouteDecision, RouteFeatures, Any, bool]:
+    ) -> tuple[RouteDecision, RouteFeatures, ChatLLM, bool]:
         """Compute route, resolve provider, detect fallback.
 
         Returns (decision, features, provider, is_fallback).
@@ -196,7 +197,7 @@ class SmartRouterAdapter:
 
     # --- Provider resolution ---
 
-    def _get_tier_provider(self, tier: str) -> Any | None:
+    def _get_tier_provider(self, tier: str) -> ChatLLM | None:
         """Get the exact provider for a tier, or None if missing."""
         if tier == "cheap":
             return self._cheap
@@ -206,7 +207,7 @@ class SmartRouterAdapter:
             return self._primary
         return None
 
-    def _get_provider(self, tier: str) -> Any:
+    def _get_provider(self, tier: str) -> ChatLLM:
         """Get the provider for a tier, with fallback."""
         provider = self._get_tier_provider(tier)
         return provider if provider is not None else self._fallback
@@ -311,14 +312,19 @@ class SmartRouterAdapter:
         )
         token_est = estimate_tokens(messages)
 
-        t0 = time.monotonic()
-        result = await provider.generate(
-            messages,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            **kwargs,
-        )
-        latency_ms = (time.monotonic() - t0) * 1000
+        with trace_llm_call(
+            provider=provider_name, model=provider_name, tier=decision.tier,
+        ) as span_data:
+            t0 = time.monotonic()
+            result = await provider.generate(
+                messages,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                **kwargs,
+            )
+            latency_ms = (time.monotonic() - t0) * 1000
+            span_data["latency_ms"] = latency_ms
+            span_data["tokens_in"] = token_est
 
         self._log_latency(
             "smart_router.generate_done", provider_name, latency_ms

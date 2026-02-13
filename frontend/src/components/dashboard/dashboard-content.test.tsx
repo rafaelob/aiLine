@@ -32,11 +32,19 @@ describe('DashboardContent', () => {
     expect(screen.getByText('dashboard.quick_actions')).toBeInTheDocument()
   })
 
-  it('renders 3 quick action links and view-all + empty CTA', () => {
+  it('renders quick action links, view-all, and empty CTA', () => {
     render(<DashboardContent />)
     const links = screen.getAllByRole('link')
-    // 3 quick actions + 1 "view all" + 1 empty CTA
+    // 3 quick actions + 1 "view all" + 1 empty CTA = 5
     expect(links.length).toBeGreaterThanOrEqual(5)
+  })
+
+  it('uses bento grid layout with 4-column grid', () => {
+    const { container } = render(<DashboardContent />)
+    // The bento grid container uses md:grid-cols-4
+    const gridEl = container.querySelector('.grid')
+    expect(gridEl).toBeInTheDocument()
+    expect(gridEl?.className).toContain('md:grid-cols-4')
   })
 
   it('renders stat cards', () => {

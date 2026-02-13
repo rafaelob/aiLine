@@ -24,12 +24,12 @@ vi.mock('@/hooks/use-theme', () => ({
   }),
 }))
 
-// Mock accessibility data
+// Mock accessibility data -- label/description are now i18n keys
 vi.mock('@/lib/accessibility-data', () => ({
   PERSONA_LIST: [
-    { id: 'standard', label: 'Padrao', icon: 'U', theme: 'standard', description: 'Padrao' },
-    { id: 'tea', label: 'TEA', icon: 'T', theme: 'tea', description: 'Autismo' },
-    { id: 'dyslexia', label: 'Dislexia', icon: 'D', theme: 'dyslexia', description: 'Dislexia' },
+    { id: 'standard', label: 'standard', icon: 'U', theme: 'standard', description: 'standard_desc' },
+    { id: 'tea', label: 'tea', icon: 'T', theme: 'tea', description: 'tea_desc' },
+    { id: 'dyslexia', label: 'dyslexia', icon: 'D', theme: 'dyslexia', description: 'dyslexia_desc' },
   ],
 }))
 
@@ -44,7 +44,7 @@ describe('PersonaToggle', () => {
   it('renders a radiogroup with correct ARIA label', () => {
     render(<PersonaToggle />)
     const group = screen.getByRole('radiogroup')
-    expect(group).toHaveAttribute('aria-label', 'Selecionar persona de acessibilidade')
+    expect(group).toHaveAttribute('aria-label', 'personas.select_label')
   })
 
   it('renders all personas as radio buttons', () => {
@@ -55,23 +55,23 @@ describe('PersonaToggle', () => {
 
   it('marks the active persona as checked', () => {
     render(<PersonaToggle />)
-    const standardRadio = screen.getByRole('radio', { name: /Padrao/ })
+    const standardRadio = screen.getByRole('radio', { name: /personas\.standard/ })
     expect(standardRadio).toHaveAttribute('aria-checked', 'true')
 
-    const teaRadio = screen.getByRole('radio', { name: /TEA/ })
+    const teaRadio = screen.getByRole('radio', { name: /personas\.tea/ })
     expect(teaRadio).toHaveAttribute('aria-checked', 'false')
   })
 
   it('calls switchTheme when a persona is clicked', async () => {
     render(<PersonaToggle />)
-    const teaRadio = screen.getByRole('radio', { name: /TEA/ })
+    const teaRadio = screen.getByRole('radio', { name: /personas\.tea/ })
     await user.click(teaRadio)
     expect(mockSwitchTheme).toHaveBeenCalledWith('tea')
   })
 
   it('calls switchTheme on Enter key press', async () => {
     render(<PersonaToggle />)
-    const dyslexiaRadio = screen.getByRole('radio', { name: /Dislexia/ })
+    const dyslexiaRadio = screen.getByRole('radio', { name: /personas\.dyslexia/ })
     dyslexiaRadio.focus()
     await user.keyboard('{Enter}')
     expect(mockSwitchTheme).toHaveBeenCalledWith('dyslexia')
@@ -79,24 +79,25 @@ describe('PersonaToggle', () => {
 
   it('calls switchTheme on Space key press', async () => {
     render(<PersonaToggle />)
-    const dyslexiaRadio = screen.getByRole('radio', { name: /Dislexia/ })
+    const dyslexiaRadio = screen.getByRole('radio', { name: /personas\.dyslexia/ })
     dyslexiaRadio.focus()
     await user.keyboard(' ')
     expect(mockSwitchTheme).toHaveBeenCalledWith('dyslexia')
   })
 
-  it('shows persona labels and icons', () => {
+  it('shows translated persona labels and icons', () => {
     render(<PersonaToggle />)
-    expect(screen.getByText('Padrao')).toBeInTheDocument()
-    expect(screen.getByText('TEA')).toBeInTheDocument()
-    expect(screen.getByText('Dislexia')).toBeInTheDocument()
+    // In test mode, useTranslations returns the namespaced key
+    expect(screen.getByText('personas.standard')).toBeInTheDocument()
+    expect(screen.getByText('personas.tea')).toBeInTheDocument()
+    expect(screen.getByText('personas.dyslexia')).toBeInTheDocument()
   })
 
   it('displays active persona with different styling', () => {
     mockActivePersona = 'tea'
     render(<PersonaToggle />)
 
-    const teaRadio = screen.getByRole('radio', { name: /TEA/ })
+    const teaRadio = screen.getByRole('radio', { name: /personas\.tea/ })
     expect(teaRadio).toHaveAttribute('aria-checked', 'true')
     expect(teaRadio).toHaveClass('text-[var(--color-on-primary)]')
   })

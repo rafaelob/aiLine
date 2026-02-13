@@ -9,7 +9,7 @@ import pytest
 
 from ailine_runtime.adapters.events.inmemory_bus import InMemoryEventBus
 from ailine_runtime.shared.config import Settings
-from ailine_runtime.shared.container import _build_event_bus
+from ailine_runtime.shared.container_adapters import build_event_bus as _build_event_bus
 
 
 class TestRedisEventBus:

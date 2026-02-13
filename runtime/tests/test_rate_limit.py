@@ -23,7 +23,6 @@ from ailine_runtime.api.middleware.rate_limit import (
 )
 from ailine_runtime.shared.config import Settings
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------

@@ -3,12 +3,18 @@
 from __future__ import annotations
 
 from ailine_runtime.accessibility.profiles import ClassAccessibilityProfile
-from ailine_runtime.accessibility.validator import (
-    _cognitive_load_bucket,
-    _collect_text,
-    _contains_any,
-    _readability_metrics,
-    validate_draft_accessibility,
+from ailine_runtime.accessibility.validator import validate_draft_accessibility
+from ailine_runtime.accessibility.validator_helpers import (
+    cognitive_load_bucket as _cognitive_load_bucket,
+)
+from ailine_runtime.accessibility.validator_helpers import (
+    collect_text as _collect_text,
+)
+from ailine_runtime.accessibility.validator_helpers import (
+    contains_any as _contains_any,
+)
+from ailine_runtime.accessibility.validator_helpers import (
+    readability_metrics as _readability_metrics,
 )
 
 # ---------------------------------------------------------------------------
@@ -335,7 +341,7 @@ class TestValidatorNoProfile:
         # Patch _collect_text to avoid the join crash, since we want to test
         # the validator loop's isinstance check (line 172)
         with unittest.mock.patch(
-            "ailine_runtime.accessibility.validator._collect_text",
+            "ailine_runtime.accessibility.validator.collect_text",
             return_value="dummy text with agora pausa checkpoint exemplo glossario",
         ):
             report = validate_draft_accessibility(draft)

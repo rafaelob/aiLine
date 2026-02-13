@@ -4,7 +4,6 @@ import { useTranslations } from 'next-intl'
 import { usePathname } from 'next/navigation'
 import { motion } from 'motion/react'
 import { cn } from '@/lib/cn'
-import { StaggerList, StaggerItem } from '@/components/ui/stagger-list'
 
 /**
  * Dashboard content with hero welcome, stat cards, quick actions,
@@ -59,13 +58,25 @@ export function DashboardContent() {
     },
   ]
 
+  const sectionVariants = {
+    hidden: { opacity: 0, y: 16 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.4, ease: 'easeOut' as const },
+    },
+  }
+
   return (
-    <div className="space-y-8">
-      {/* Hero welcome section */}
+    <motion.div
+      variants={{ hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.12 } } }}
+      initial="hidden"
+      animate="visible"
+      className="space-y-8"
+    >
+      {/* Hero welcome section — spans full width in bento grid */}
       <motion.section
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: 'easeOut' }}
+        variants={sectionVariants}
         className={cn(
           'relative overflow-hidden rounded-[var(--radius-lg)] p-8',
           'text-[var(--color-on-primary)]'
@@ -98,70 +109,80 @@ export function DashboardContent() {
         </div>
       </motion.section>
 
-      {/* Stats cards */}
-      <StaggerList className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+      {/* Bento grid: stats + quick actions + recent plans */}
+      <motion.div
+        variants={sectionVariants}
+        className="grid grid-cols-1 md:grid-cols-4 gap-4"
+      >
+        {/* Stats cards — each 1x1 on desktop, full width on mobile */}
         {stats.map((stat) => (
-          <StaggerItem key={stat.key}>
+          <div
+            key={stat.key}
+            className={cn(
+              'flex items-center gap-4 p-5',
+              'rounded-[var(--radius-lg)] border',
+              'bg-[var(--color-surface)] border-[var(--color-border)]',
+              'hover:shadow-[var(--shadow-md)] transition-shadow',
+              'md:col-span-1'
+            )}
+            style={{ transitionDuration: 'var(--transition-normal)' }}
+          >
             <div
-              className={cn(
-                'flex items-center gap-4 p-5',
-                'rounded-[var(--radius-lg)] border',
-                'bg-[var(--color-surface)] border-[var(--color-border)]',
-                'hover:shadow-[var(--shadow-md)] transition-shadow'
-              )}
-              style={{ transitionDuration: 'var(--transition-normal)' }}
+              className="flex items-center justify-center w-12 h-12 rounded-[var(--radius-md)]"
+              style={{
+                backgroundColor: `color-mix(in srgb, ${stat.color} 12%, transparent)`,
+                color: stat.color,
+              }}
+              aria-hidden="true"
             >
-              <div
-                className="flex items-center justify-center w-12 h-12 rounded-[var(--radius-md)]"
-                style={{
-                  backgroundColor: `color-mix(in srgb, ${stat.color} 12%, transparent)`,
-                  color: stat.color,
-                }}
-                aria-hidden="true"
-              >
-                {stat.icon}
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-[var(--color-text)]">
-                  {stat.value}
-                </p>
-                <p className="text-xs text-[var(--color-muted)]">
-                  {t(stat.key)}
-                </p>
-              </div>
+              {stat.icon}
             </div>
-          </StaggerItem>
+            <div>
+              <p className="text-2xl font-bold text-[var(--color-text)]">
+                {stat.value}
+              </p>
+              <p className="text-xs text-[var(--color-muted)]">
+                {t(stat.key)}
+              </p>
+            </div>
+          </div>
         ))}
-      </StaggerList>
 
-      {/* Quick actions */}
-      <section aria-labelledby="quick-actions-heading">
-        <h2
-          id="quick-actions-heading"
-          className="text-lg font-semibold text-[var(--color-text)] mb-4"
+        {/* Quick actions — span 1 column on desktop (vertical list in last col) */}
+        <section
+          aria-labelledby="quick-actions-heading"
+          className={cn(
+            'md:col-span-1 md:row-span-2',
+            'rounded-[var(--radius-lg)] border',
+            'bg-[var(--color-surface)] border-[var(--color-border)]',
+            'p-5'
+          )}
         >
-          {t('quick_actions')}
-        </h2>
-        <StaggerList className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          {quickActions.map((action) => (
-            <StaggerItem key={action.key}>
+          <h2
+            id="quick-actions-heading"
+            className="text-sm font-semibold text-[var(--color-text)] mb-4"
+          >
+            {t('quick_actions')}
+          </h2>
+          <div className="flex flex-col gap-3">
+            {quickActions.map((action) => (
               <a
+                key={action.key}
                 href={action.href}
                 className={cn(
-                  'flex items-center gap-4 p-5',
-                  'rounded-[var(--radius-lg)] border',
-                  'bg-[var(--color-surface)] border-[var(--color-border)]',
-                  'hover:shadow-[var(--shadow-md)]',
+                  'flex items-center gap-3 p-3',
+                  'rounded-[var(--radius-md)]',
+                  'hover:bg-[var(--color-surface-elevated)]',
                   'group'
                 )}
                 style={{
-                  transitionProperty: 'box-shadow, border-color',
+                  transitionProperty: 'background-color',
                   transitionDuration: 'var(--transition-normal)',
                 }}
               >
                 <div
                   className={cn(
-                    'flex items-center justify-center w-12 h-12',
+                    'flex items-center justify-center w-10 h-10',
                     'rounded-[var(--radius-md)]',
                     'group-hover:scale-105 transition-transform'
                   )}
@@ -173,7 +194,7 @@ export function DashboardContent() {
                   <span style={{ color: action.color }}>{action.icon}</span>
                 </div>
                 <div>
-                  <span className="font-medium text-[var(--color-text)]">
+                  <span className="font-medium text-sm text-[var(--color-text)]">
                     {t(action.key)}
                   </span>
                   <span className="block text-xs text-[var(--color-muted)] mt-0.5">
@@ -181,70 +202,70 @@ export function DashboardContent() {
                   </span>
                 </div>
               </a>
-            </StaggerItem>
-          ))}
-        </StaggerList>
-      </section>
+            ))}
+          </div>
+        </section>
 
-      {/* Recent plans */}
-      <section aria-labelledby="recent-plans-heading">
-        <div className="flex items-center justify-between mb-4">
-          <h2
-            id="recent-plans-heading"
-            className="text-lg font-semibold text-[var(--color-text)]"
-          >
-            {t('recent_plans')}
-          </h2>
-          <a
-            href={`${localePrefix}/plans`}
-            className={cn(
-              'text-sm text-[var(--color-primary)]',
-              'hover:underline underline-offset-4'
-            )}
-          >
-            {t('view_all')}
-          </a>
-        </div>
-
-        {/* Empty state with onboarding hint */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className={cn(
-            'flex flex-col items-center justify-center py-16 gap-4',
-            'rounded-[var(--radius-lg)] border border-dashed',
-            'border-[var(--color-border)] bg-[var(--color-surface)]'
-          )}
+        {/* Recent plans — span 3 columns on desktop */}
+        <section
+          aria-labelledby="recent-plans-heading"
+          className="md:col-span-3"
         >
+          <div className="flex items-center justify-between mb-4">
+            <h2
+              id="recent-plans-heading"
+              className="text-sm font-semibold text-[var(--color-text)]"
+            >
+              {t('recent_plans')}
+            </h2>
+            <a
+              href={`${localePrefix}/plans`}
+              className={cn(
+                'text-sm text-[var(--color-primary)]',
+                'hover:underline underline-offset-4'
+              )}
+            >
+              {t('view_all')}
+            </a>
+          </div>
+
+          {/* Empty state with onboarding hint */}
           <div
             className={cn(
-              'flex items-center justify-center w-16 h-16',
-              'rounded-full bg-[var(--color-surface-elevated)]'
+              'flex flex-col items-center justify-center py-16 gap-4',
+              'rounded-[var(--radius-lg)] border border-dashed',
+              'border-[var(--color-border)] bg-[var(--color-surface)]'
             )}
-            aria-hidden="true"
           >
-            <EmptyPlansIcon />
+            <div
+              className={cn(
+                'flex items-center justify-center w-16 h-16',
+                'rounded-full bg-[var(--color-surface-elevated)]'
+              )}
+              aria-hidden="true"
+            >
+              <EmptyPlansIcon />
+            </div>
+            <p className="text-sm text-[var(--color-muted)] text-center max-w-sm">
+              {t('no_plans')}
+            </p>
+            <a
+              href={`${localePrefix}/plans`}
+              className={cn(
+                'inline-flex items-center gap-2 px-5 py-2.5',
+                'rounded-[var(--radius-md)]',
+                'bg-[var(--color-primary)] text-[var(--color-on-primary)]',
+                'text-sm font-medium',
+                'hover:bg-[var(--color-primary-hover)]'
+              )}
+              style={{ transitionDuration: 'var(--transition-fast)' }}
+            >
+              {t('empty_cta')}
+            </a>
           </div>
-          <p className="text-sm text-[var(--color-muted)] text-center max-w-sm">
-            {t('no_plans')}
-          </p>
-          <a
-            href={`${localePrefix}/plans`}
-            className={cn(
-              'inline-flex items-center gap-2 px-5 py-2.5',
-              'rounded-[var(--radius-md)]',
-              'bg-[var(--color-primary)] text-[var(--color-on-primary)]',
-              'text-sm font-medium',
-              'hover:bg-[var(--color-primary-hover)]'
-            )}
-            style={{ transitionDuration: 'var(--transition-fast)' }}
-          >
-            {t('empty_cta')}
-          </a>
-        </motion.div>
-      </section>
-    </div>
+        </section>
+      </motion.div>
+    </motion.div>
   )
 }
 

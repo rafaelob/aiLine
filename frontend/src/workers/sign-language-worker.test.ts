@@ -20,7 +20,7 @@ vi.stubGlobal('postMessage', mockPostMessage)
 // Simulate the worker's onmessage being set
 let workerOnMessage: ((event: MessageEvent) => void) | null = null
 
-const originalDefineProperty = Object.defineProperty
+const _originalDefineProperty = Object.defineProperty
 Object.defineProperty(globalThis, 'onmessage', {
   set(fn: ((event: MessageEvent) => void) | null) {
     workerOnMessage = fn
@@ -75,7 +75,7 @@ describe('sign-language-worker protocol', () => {
     )
   })
 
-  it('handles classify message after initialization', async () => {
+  it('handles classify message after initialization (fallback mode)', async () => {
     vi.resetModules()
     postedMessages.length = 0
 
@@ -93,11 +93,39 @@ describe('sign-language-worker protocol', () => {
       )
     }
 
+    // Without NEXT_PUBLIC_SIGN_RECOGNITION_ENABLED, returns 'experimental'
     expect(postedMessages).toContainEqual(
       expect.objectContaining({
         type: 'result',
-        gesture: expect.any(String),
-        confidence: expect.any(Number),
+        gesture: 'experimental',
+        confidence: 0,
+      })
+    )
+  })
+
+  it('handles extract_landmarks message after initialization', async () => {
+    vi.resetModules()
+    postedMessages.length = 0
+
+    await import('./sign-language-worker')
+
+    if (workerOnMessage) {
+      await workerOnMessage(new MessageEvent('message', { data: { type: 'init' } }))
+      postedMessages.length = 0
+
+      const imageData = { width: 2, height: 2, data: new Uint8ClampedArray(16) } as unknown as ImageData
+      await workerOnMessage(
+        new MessageEvent('message', {
+          data: { type: 'extract_landmarks', imageData, timestamp: 12345 },
+        })
+      )
+    }
+
+    expect(postedMessages).toContainEqual(
+      expect.objectContaining({
+        type: 'landmarks',
+        landmarks: expect.any(Array),
+        timestamp: 12345,
       })
     )
   })

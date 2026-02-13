@@ -75,5 +75,56 @@
 - [F-072] Dev-Mode Safety Guard — startup fail if production + dev mode
 - [F-073] Readiness Probe — /health/ready (DB+Redis checks, degraded/ready)
 
+### Sprint 13 — Final Polish & Wow Factor (Feb 13, 2026)
+- [F-074] Agent Trace Viewer — GET /traces/{run_id}, LangGraph node execution timeline with inputs/outputs/time/tools/quality
+- [F-075] SmartRouter Route Rationale — "Why this model?" payload in SSE stage.started events (task type, weighted scores, model selection reason)
+- [F-076] QualityGate Hard Constraints — 4 deterministic validators (reading level, a11y adaptation, RAG citation, assessment item)
+- [F-077] RAG-Grounded Quoting — 1-3 source quotes with doc title/section, confidence labels (high/medium/low)
+- [F-078] Observability Judge Dashboard — GET /observability/dashboard (LLM provider, latency p50/p95, error rate, CB state, SSE counts, token usage/cost)
+- [F-079] Standards Alignment Evidence — GET /observability/standards-evidence/{run_id} + teacher handout export with BNCC/CCSS/NGSS/Bloom
+- [F-080] Theme Morphing Animation — CSS transition-colors 500ms on body for smooth accessibility theme switching
+- [F-081] Magic Layout Tabs — Motion layoutId sliding active tab indicator
+- [F-082] Skeleton Shimmer Loading — animate-pulse SkeletonCardGrid with React 19 Suspense fallbacks
+- [F-083] Staggered Dashboard Entrance — Motion staggerChildren 0.12s sequential load animation
+- [F-084] Bento Grid Dashboard — CSS Grid responsive layout (grid-cols-4) with semantic widget sizing
+- [F-085] Streaming Typewriter Effect — Token-by-token SSE rendering with motion.div fade+slide in Tutor ChatBlock
+- [F-086] Toast Notifications — sonner integration for AI action completion with undo capability
+- [F-087] Interactive Empty States — text-balance typography with CTA buttons for empty lists
+- [F-088] Webcam Active Ring — Confidence-based border glow on sign language recognition
+- [F-089] Export Paper Fold — motion.article rotateY expand animation on Export Viewer
+- [F-090] Degradation Panel — Demo-mode chaos simulation (Redis down, LLM timeout) with status banner
+- [F-091] Privacy Data Panel — Data summary, retention policies, export/delete with LGPD/FERPA compliance display
+- [F-092] Cognitive Load Meter — 3-factor heuristic (UI density 40%, reading level 35%, interactions 25%) with simplify suggestion
+- [F-093] Agent Trace Viewer UI — Collapsible timeline component for LangGraph node visualization
+- [F-094] SmartRouter Rationale Card UI — Expandable badge with 5 weight category breakdown
+- [F-095] Observability Dashboard UI — Recharts latency sparkline, circuit breaker state, SSE event counts, token usage charts
+- [F-096] Enhanced Error Boundary — Branded error.tsx with copy diagnostics, SSE reconnect state, focus management
+- [F-097] Full i18n Coverage — All components localized across 3 locales (en, pt-BR, es) including exports, accessibility, observability
+- [F-098] Playwright E2E Golden Paths — 3 specs (onboarding wizard, language switch, SSE streaming) + axe-core a11y audit
+- [F-099] Judge Artifacts — Architecture diagram (8 Mermaid), feature map (6 areas), demo script (3-min "Meet Ana"), judge packet (1-page)
+
+### Sprint 14 — State-of-the-Art Hardening (Feb 13, 2026)
+- [F-100] JWT RS256/ES256 Verification — Full asymmetric JWT with JWKS support, algorithm pinning, iss/aud/exp/nbf validation
+- [F-101] JWT Security Test Suite — 57 tests: forged tokens, expired, wrong aud/kid, replay, tenant impersonation
+- [F-102] Prompt Injection Defenses — Document trust scoring, retrieval sanitization, instruction hierarchy in RAG
+- [F-103] Structured Audit Logging — Admin actions, content access, auth events to structured log
+- [F-104] OpenTelemetry Tracing — Spans for FastAPI/SQLAlchemy/LLM/pipeline/tool calls, OTLP export
+- [F-105] RFC 7807 Problem Details — Unified error handler, application/problem+json, field-level validation errors
+- [F-106] DB Pool Tuning — pool_size=10 + max_overflow=10 for SSE workload, HNSW m=16/ef_construction=128
+- [F-107] Cache Headers — Curriculum API 1h cache (static standards data)
+- [F-108] Container Refactoring — container.py 476→278 LOC split into core + adapters
+- [F-109] Agent Eval Harness — 15 golden test sets (5 Planner + 5 QualityGate + 5 Tutor) with rubric scoring
+- [F-110] Eval Rubric System — Multi-dimension scoring (accuracy/safety/pedagogy/structure), regression detection
+- [F-111] RAG Provenance Diagnostics — RetrievalResult with confidence classification, RAGDiagnostics with answerability
+- [F-112] RAG Diagnostics API — GET /rag/diagnostics/{run_id} + /recent with chunk provenance
+- [F-113] Sign Language Worker Fix — MediaPipe feature-gated loading, TODO stubs replaced
+- [F-114] Playwright webServer Config — Self-contained E2E (build + start + test)
+- [F-115] Visual Regression Tests — 8 screenshot comparisons for key layouts
+- [F-116] View Transitions API — CSS-based route morphing animations
+- [F-117] Dynamic OG Images — next/og ImageResponse for shared lesson links
+- [F-118] PWA Manifest — manifest.json, beforeinstallprompt, icons, shortcuts, service worker registrar
+- [F-119] Recharts Keyboard Accessibility — Tab through data points, aria-live announcements
+- [F-120] Optimistic UI — useOptimistic hook for quick interactions
+
 ## Backlog
 - [F-035] Sign Language Post-MVP Path — SPOTER transformer + VLibrasBD NMT dataset (ADR-047)

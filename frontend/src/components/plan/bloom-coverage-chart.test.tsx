@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { BloomCoverageChart } from './bloom-coverage-chart'
 
 // Mock recharts to avoid canvas/SVG rendering issues in jsdom
@@ -30,10 +30,10 @@ const sampleData = [
 ]
 
 describe('BloomCoverageChart', () => {
-  it('renders the chart container with img role', () => {
+  it('renders the chart container with figure role', () => {
     render(<BloomCoverageChart data={sampleData} />)
     expect(
-      screen.getByRole('img', { name: "Bloom's taxonomy coverage chart" })
+      screen.getByRole('figure')
     ).toBeInTheDocument()
   })
 
@@ -99,5 +99,34 @@ describe('BloomCoverageChart', () => {
   it('renders Tooltip', () => {
     render(<BloomCoverageChart data={sampleData} />)
     expect(screen.getByTestId('tooltip')).toBeInTheDocument()
+  })
+
+  it('is focusable with tabIndex', () => {
+    render(<BloomCoverageChart data={sampleData} />)
+    const figure = screen.getByRole('figure')
+    expect(figure.getAttribute('tabindex')).toBe('0')
+  })
+
+  it('announces data points via aria-live region on keyboard navigation', () => {
+    render(<BloomCoverageChart data={sampleData} />)
+    const figure = screen.getByRole('figure')
+
+    // Focus starts at index 0
+    fireEvent.focus(figure)
+
+    // Navigate down
+    fireEvent.keyDown(figure, { key: 'ArrowDown' })
+
+    // Check the aria-live region exists
+    const liveRegion = document.querySelector('[aria-live="polite"]')
+    expect(liveRegion).toBeTruthy()
+  })
+
+  it('includes accessible data summary in aria-label', () => {
+    render(<BloomCoverageChart data={sampleData} />)
+    const figure = screen.getByRole('figure')
+    const label = figure.getAttribute('aria-label') ?? ''
+    expect(label).toContain('remember: 2')
+    expect(label).toContain('create: 1')
   })
 })

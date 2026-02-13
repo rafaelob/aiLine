@@ -62,7 +62,7 @@ describe('SimulateDisability', () => {
   it('toggles a simulation on click', async () => {
     render(<SimulateDisability />)
     const protanopiaSwitch = screen.getByRole('switch', {
-      name: /Protanopia/i,
+      name: /simulate\.modes\.protanopia/i,
     })
 
     await user.click(protanopiaSwitch)
@@ -72,7 +72,7 @@ describe('SimulateDisability', () => {
   it('shows reset button when a simulation is active', async () => {
     render(<SimulateDisability />)
     const protanopiaSwitch = screen.getByRole('switch', {
-      name: /Protanopia/i,
+      name: /simulate\.modes\.protanopia/i,
     })
 
     await user.click(protanopiaSwitch)
@@ -82,7 +82,7 @@ describe('SimulateDisability', () => {
   it('shows active simulation count status', async () => {
     render(<SimulateDisability />)
     const protanopiaSwitch = screen.getByRole('switch', {
-      name: /Protanopia/i,
+      name: /simulate\.modes\.protanopia/i,
     })
 
     await user.click(protanopiaSwitch)
@@ -95,7 +95,7 @@ describe('SimulateDisability', () => {
     render(<SimulateDisability />)
 
     const protanopiaSwitch = screen.getByRole('switch', {
-      name: /Protanopia/i,
+      name: /simulate\.modes\.protanopia/i,
     })
     await user.click(protanopiaSwitch)
 
@@ -110,10 +110,11 @@ describe('SimulateDisability', () => {
 
   it('displays simulation labels and descriptions', () => {
     render(<SimulateDisability />)
-    expect(screen.getByText('Protanopia')).toBeInTheDocument()
-    expect(screen.getByText('Deuteranopia')).toBeInTheDocument()
-    expect(screen.getByText('Tritanopia')).toBeInTheDocument()
-    expect(screen.getByText('Baixa Visão')).toBeInTheDocument()
-    expect(screen.getByText(/Dislexia/)).toBeInTheDocument()
+    // In test mode, useTranslations returns namespaced keys
+    expect(screen.getByText('simulate.modes.protanopia')).toBeInTheDocument()
+    expect(screen.getByText('simulate.modes.deuteranopia')).toBeInTheDocument()
+    expect(screen.getByText('simulate.modes.tritanopia')).toBeInTheDocument()
+    expect(screen.getByText('simulate.modes.low_vision')).toBeInTheDocument()
+    expect(screen.getByText('simulate.modes.dyslexia')).toBeInTheDocument()
   })
 })

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, HTTPException, Query, Request, Response
 
 from ...adapters.curriculum.unified_provider import UnifiedCurriculumProvider
 
@@ -34,6 +34,7 @@ def _get_provider(request: Request) -> UnifiedCurriculumProvider:
 @router.get("/search")
 async def curriculum_search(
     request: Request,
+    response: Response,
     q: str = Query(..., min_length=1, description="Search query (code, keyword, or text)."),
     grade: str | None = Query(None, description="Grade filter (e.g. '6o ano', 'Grade 6')."),
     subject: str | None = Query(None, description="Subject filter (e.g. 'Matematica', 'Science')."),
@@ -47,6 +48,7 @@ async def curriculum_search(
 
     Returns a list of matching objectives as JSON objects.
     """
+    response.headers["Cache-Control"] = "public, max-age=3600"
     provider = _get_provider(request)
     results = await provider.search(
         q, grade=grade, subject=subject, system=system, bloom_level=bloom_level,
@@ -57,9 +59,11 @@ async def curriculum_search(
 @router.get("/standards")
 async def curriculum_list_standards(
     request: Request,
+    response: Response,
     system: str | None = Query(None, description="System filter: bncc, ccss, or ngss."),
 ) -> list[str]:
     """List all available standard codes, optionally filtered by system."""
+    response.headers["Cache-Control"] = "public, max-age=3600"
     provider = _get_provider(request)
     return await provider.list_standards(system=system)
 

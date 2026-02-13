@@ -26,6 +26,7 @@ from sse_starlette.sse import EventSourceResponse
 
 from ...shared.sanitize import sanitize_prompt, validate_teacher_id
 from ...shared.tenant import try_get_current_teacher_id
+from ...shared.trace_store import get_trace_store
 from ...workflow.plan_workflow import DEFAULT_RECURSION_LIMIT, RunState
 from ..streaming.events import SSEEventEmitter
 
@@ -80,7 +81,7 @@ async def _heartbeat_loop(
             event = emitter.heartbeat()
             await queue.put({"data": event.to_sse_data()})
     except asyncio.CancelledError:
-        pass
+        return  # Graceful shutdown: pipeline finished, heartbeat no longer needed
 
 
 async def _run_pipeline(
@@ -93,6 +94,10 @@ async def _run_pipeline(
 ) -> None:
     """Execute the LangGraph plan workflow, pushing SSE events to the queue."""
     try:
+        # Initialize trace
+        trace_store = get_trace_store()
+        await trace_store.get_or_create(body.run_id)
+
         deps = AgentDepsFactory.from_container(
             container,
             teacher_id=teacher_id,
@@ -147,10 +152,20 @@ async def _run_pipeline(
         complete_event = emitter.run_complete(final_payload)
         await queue.put({"data": complete_event.to_sse_data()})
 
+        # Finalize trace
+        await trace_store.update_run(
+            body.run_id,
+            status="completed",
+            final_score=final_payload.get("score"),
+        )
+
     except Exception as exc:
         logger.error("pipeline_failed", run_id=body.run_id, error=str(exc), tb=traceback.format_exc())
         error_event = emitter.run_failed(str(exc), stage="pipeline")
         await queue.put({"data": error_event.to_sse_data()})
+
+        # Mark trace as failed
+        await trace_store.update_run(body.run_id, status="failed")
 
     finally:
         # Sentinel to signal the generator to stop

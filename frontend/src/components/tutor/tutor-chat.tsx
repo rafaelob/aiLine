@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
+import { motion } from 'motion/react'
 import { cn } from '@/lib/cn'
 import { useTutorSSE } from '@/hooks/use-tutor-sse'
 import { ChatMessageBubble } from './chat-message-bubble'
@@ -81,11 +82,17 @@ export function TutorChat() {
         )}
 
         {messages.map((msg, i) => (
-          <ChatMessageBubble
+          <motion.div
             key={msg.id}
-            message={msg}
-            isStreaming={isStreaming && i === messages.length - 1 && msg.role === 'assistant'}
-          />
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
+          >
+            <ChatMessageBubble
+              message={msg}
+              isStreaming={isStreaming && i === messages.length - 1 && msg.role === 'assistant'}
+            />
+          </motion.div>
         ))}
 
         {/* Thinking indicator */}

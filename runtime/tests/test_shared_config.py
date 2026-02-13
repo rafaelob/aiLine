@@ -58,7 +58,7 @@ class TestDatabaseConfig:
         with patch.dict(os.environ, clean_env, clear=True):
             cfg = DatabaseConfig()
             assert "sqlite" in cfg.url
-            assert cfg.pool_size == 5
+            assert cfg.pool_size == 10
             assert cfg.echo is False
 
 
@@ -95,7 +95,7 @@ class TestSettings:
         assert settings.llm.provider == "anthropic"
         assert settings.embedding.provider == "gemini"
         assert settings.vectorstore.provider == "pgvector"
-        assert settings.db.pool_size == 5
+        assert settings.db.pool_size == 10
         assert "redis" in settings.redis.url
 
 

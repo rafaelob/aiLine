@@ -33,8 +33,8 @@ class VectorStoreConfig(BaseSettings):
 class DatabaseConfig(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="AILINE_DB_")
     url: str = "sqlite+aiosqlite:///./dev.db"
-    pool_size: int = 5
-    max_overflow: int = 5
+    pool_size: int = 10
+    max_overflow: int = 10
     echo: bool = False
 
 
@@ -101,6 +101,71 @@ class Settings(BaseSettings):
         from ..skills.paths import parse_skill_source_paths
 
         return parse_skill_source_paths(self.skill_sources if self.skill_sources else None)
+
+    def validate_environment(self) -> list[str]:
+        """Validate that critical environment variables are set for the current env.
+
+        Returns a list of validation errors. In production, raises
+        ``OSError`` if any critical variable is missing.
+        In dev/test, returns warnings as a list.
+
+        Production requirements:
+        - DB URL must NOT be SQLite
+        - At least one LLM API key must be set
+        - JWT key material must be configured
+
+        Always:
+        - DB URL must be set (non-empty)
+        """
+        errors: list[str] = []
+        warnings: list[str] = []
+        is_prod = self.env == "production"
+
+        # DB URL always required
+        if not self.db.url:
+            errors.append("AILINE_DB__URL is required")
+
+        if is_prod:
+            # Production must not use SQLite
+            if "sqlite" in self.db.url.lower():
+                errors.append(
+                    "SQLite is not allowed in production. "
+                    "Set AILINE_DB__URL to a PostgreSQL connection string."
+                )
+
+            # At least one LLM API key in production
+            has_llm_key = any([
+                self.anthropic_api_key,
+                self.openai_api_key,
+                self.google_api_key,
+                self.openrouter_api_key,
+            ])
+            if not has_llm_key:
+                errors.append(
+                    "At least one LLM API key is required in production. "
+                    "Set ANTHROPIC_API_KEY, OPENAI_API_KEY, GOOGLE_API_KEY, "
+                    "or OPENROUTER_API_KEY."
+                )
+
+            # JWT key material in production
+            import os
+
+            jwt_secret = os.getenv("AILINE_JWT_SECRET", "")
+            jwt_public_key = os.getenv("AILINE_JWT_PUBLIC_KEY", "")
+            if not jwt_secret and not jwt_public_key:
+                errors.append(
+                    "JWT key material is required in production. "
+                    "Set AILINE_JWT_SECRET (HS256) or "
+                    "AILINE_JWT_PUBLIC_KEY (RS256/ES256)."
+                )
+
+        if errors and is_prod:
+            raise OSError(
+                "Production environment validation failed:\n"
+                + "\n".join(f"  - {e}" for e in errors)
+            )
+
+        return errors + warnings
 
 
 _settings: Settings | None = None

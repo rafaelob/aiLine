@@ -56,4 +56,30 @@ describe('Toast', () => {
     await user.click(screen.getByLabelText('toast.close'))
     expect(useToastStore.getState().toasts.find((t) => t.id === id)).toBeUndefined()
   })
+
+  it('renders undo button when onUndo is provided', () => {
+    const onUndo = vi.fn()
+    render(
+      <Toast toast={{ id: 'test-undo', message: 'Action done', variant: 'success', duration: 5000, onUndo }} />
+    )
+    expect(screen.getByText('toast.undo')).toBeInTheDocument()
+  })
+
+  it('does not render undo button when onUndo is not provided', () => {
+    render(
+      <Toast toast={{ id: 'test-no-undo', message: 'Normal toast', variant: 'info', duration: 5000 }} />
+    )
+    expect(screen.queryByText('toast.undo')).not.toBeInTheDocument()
+  })
+
+  it('calls onUndo and removes toast when undo is clicked', async () => {
+    const onUndo = vi.fn()
+    const id = useToastStore.getState().addToast('Undoable', 'success', 5000, onUndo)
+    const toast = useToastStore.getState().toasts.find((t) => t.id === id)!
+    render(<Toast toast={toast} />)
+
+    await user.click(screen.getByText('toast.undo'))
+    expect(onUndo).toHaveBeenCalledTimes(1)
+    expect(useToastStore.getState().toasts.find((t) => t.id === id)).toBeUndefined()
+  })
 })

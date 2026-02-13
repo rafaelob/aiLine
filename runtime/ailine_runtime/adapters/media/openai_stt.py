@@ -60,7 +60,7 @@ class OpenAISTT:
         """Transcribe audio bytes via the OpenAI Transcriptions API."""
         self._ensure_client()
         audio_file = io.BytesIO(audio_bytes)
-        audio_file.name = "audio.wav"  # type: ignore[attr-defined]
+        audio_file.name = "audio.wav"  # type: ignore[attr-defined]  # OpenAI SDK reads .name for format detection
         response = await self._client.audio.transcriptions.create(
             model=self._model,
             file=audio_file,

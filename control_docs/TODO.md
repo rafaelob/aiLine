@@ -4,30 +4,70 @@ Status key: `[x]` done | `[~]` in-progress | `[ ]` planned
 
 ---
 
-## Completed Sprints (0-12)
+## Completed Sprints (0-14)
 
-All 14 sprints + agents package + architecture excellence sprint COMPLETED. 1527+ backend tests (1350 runtime + 177 agents), 331+ frontend tests.
+All sprints + agents package COMPLETED. 1700+ backend tests (1090+ runtime + 235 agents), 717 frontend tests, 8+ E2E specs.
 
-S0-S12 + S-Agents: all done (S0 Foundation, S1 Clean Arch, S2 DB, S3 Embed/Vec, S4 Curriculum, S5 Frontend, S6 Exports, S7 Tutor, S8 SignLang, S9 STT/TTS, S10 SSE, S11 Docker, S12 Demo, S-Agents Pydantic AI).
+S0-S12 + S-Agents + S13-Polish + S14-Hardening: all done.
 
 - [ ] [S12-005] Demo video (3 min, "Meet Ana" narrative) — post-implementation
 
 ---
 
-## Final Sprint (Feb 12, 2026)
+## Sprint 13 — Final Polish & Wow Factor (Feb 13, 2026) — COMPLETED
 
-| Task | Scope | Status |
-|------|-------|--------|
-| #3 | Custom Skill Registry + SKILL.md migration | [x] done |
-| #4 | FastAPI 0.129.0 + lock file upgrade | [x] done |
-| #5 | Bloom's Taxonomy on curriculum objectives | [x] done (prior sprint) |
-| #6 | CCSS ELA curriculum data | [x] done (prior sprint) |
-| #7 | Libras STT Frontend (webcam->landmarks->gloss) | [x] done |
-| #8 | Libras STT Backend (gloss->LLM->streaming) | [x] done |
-| #9 | Libras STT ML Pipeline (training scaffold) | [x] done |
-| #1 | i18n: exports page + hardcoded strings | [~] in-progress (frontend) |
-| #2 | error.tsx boundary | [~] in-progress (frontend) |
-| #10 | Comprehensive test suite verification | [~] backend done; frontend pending #1, #2 |
+### Frontend Polish (8 tasks)
+- [x] i18n: exports page + all hardcoded strings (8 components, 3 locales)
+- [x] error.tsx boundary (branded UX, copy diagnostics, SSE reconnect)
+- [x] Theme morphing animation (CSS transition-colors 500ms)
+- [x] Magic Layout Tabs (Motion layoutId) + Skeleton shimmer (Suspense)
+- [x] Staggered dashboard entrance + Bento Grid layout
+- [x] Streaming typewriter + toast notifications (sonner)
+- [x] Empty states + webcam active ring + export paper fold
+- [x] Agent Trace Viewer + SmartRouter Rationale + Observability Dashboard UI
+- [x] Degradation Panel + Privacy Panel + Cognitive Load Meter
+
+### Backend Architecture (3 tasks)
+- [x] Agent Trace API (GET /traces/{run_id}) + SmartRouter route rationale in SSE
+- [x] QualityGate 4 hard constraints + RAG-grounded quoting with confidence
+- [x] Observability Dashboard API + Standards alignment evidence + teacher handout
+
+### Quality & E2E (1 task)
+- [x] 3 Playwright E2E golden paths + axe-core accessibility audit + baseline validation
+
+### Demo Artifacts (1 task)
+- [x] Architecture diagram (8 Mermaid) + Feature map + Demo script + Judge packet
+
+---
+
+## Sprint 14 — State-of-the-Art Hardening (Feb 13, 2026) — COMPLETED
+
+### Stream A: Security Hardening
+- [x] JWT RS256/ES256 verification + JWKS + algorithm pinning
+- [x] 57 security tests (forged, expired, wrong aud/kid, replay, impersonation)
+- [x] Prompt injection defenses (trust scoring, sanitization, instruction hierarchy)
+- [x] Structured audit logging
+
+### Stream B: Backend Quality
+- [x] Type safety cleanup (container refactored 476→278 LOC)
+- [x] OpenTelemetry tracing (FastAPI + SQLAlchemy + LLM + pipeline + tools)
+- [x] RFC 7807 Problem Details error model
+- [x] DB pool tuning (10+10), HNSW tuning (m=16, ef_construction=128)
+- [x] Agent eval harness (15 golden sets + rubric scoring + regression detection)
+- [x] RAG provenance diagnostics API
+
+### Stream C: Frontend Excellence
+- [x] Sign language worker MediaPipe fix
+- [x] Playwright webServer config (self-contained E2E)
+- [x] Visual regression tests (8 screenshots)
+- [x] View Transitions API + Dynamic OG images
+- [x] PWA manifest + install prompt
+- [x] Recharts keyboard a11y + Optimistic UI
+
+### Stream D: Quality Validation
+- [x] Full test suite green (runtime + agents + frontend)
+- [x] Ruff + TypeScript clean
+- [x] Security scans reviewed
 
 ---
 

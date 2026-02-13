@@ -10,10 +10,10 @@ from __future__ import annotations
 from ailine_agents.workflows._state import RunState
 
 # Re-export workflow builder
-from ailine_agents.workflows.plan_workflow import (
-    DEFAULT_RECURSION_LIMIT,
-    build_plan_workflow,
-)
+from ailine_agents.workflows.plan_workflow import build_plan_workflow
+
+# ADR-042: Explicit recursion_limit=25
+DEFAULT_RECURSION_LIMIT: int = 25
 
 __all__ = [
     "DEFAULT_RECURSION_LIMIT",

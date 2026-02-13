@@ -54,6 +54,7 @@ class BaseRepository(Generic[T]):
 
     async def get_by_id_and_teacher(self, entity_id: str, teacher_id: str) -> T | None:
         """Fetch an entity by PK, scoped to a teacher."""
+        # type: ignore[attr-defined] below: SQLAlchemy column attrs on generic T
         stmt = select(self._model).where(
             self._model.id == entity_id,  # type: ignore[attr-defined]
             self._model.teacher_id == teacher_id,  # type: ignore[attr-defined]

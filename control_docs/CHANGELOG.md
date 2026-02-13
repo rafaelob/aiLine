@@ -37,6 +37,14 @@ All notable changes documented here. Format: [Keep a Changelog](https://keepacha
 - Dev-Mode Safety Guard, Readiness Probe (/health/ready, DB+Redis checks)
 - SmartRouter pure extraction: routing_types.py with RouteFeatures/ScoreBreakdown/RouteDecision
 - 1527+ backend tests (1350 runtime + 177 agents), 331+ frontend tests
+- Sprint 13: Agent Trace API, SmartRouter rationale SSE, QualityGate 4 hard constraints, RAG-grounded quoting
+- Sprint 13: Observability Dashboard, Standards Evidence, theme morphing, bento grid, typewriter, sonner toasts
+- Sprint 13: 3 E2E golden paths + axe-core, judge artifacts (4 docs)
+- Sprint 14: JWT RS256/ES256 + JWKS + 57 security tests, prompt injection defenses, audit logging
+- Sprint 14: OpenTelemetry tracing, RFC 7807 error model, DB pool tuning 10+10, HNSW m=16/ef=128
+- Sprint 14: Agent eval harness (15 golden sets + rubric + regression), RAG provenance diagnostics API
+- Sprint 14: Sign lang worker fix, Playwright webServer, 8 visual regression, View Transitions, OG images
+- Sprint 14: PWA manifest, Recharts keyboard a11y, optimistic UI, container refactor 476→278 LOC
 
 ### Changed
 - FastAPI upgraded 0.128.8 -> 0.129.0; runtime + agents lock files upgraded

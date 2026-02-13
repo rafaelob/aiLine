@@ -28,7 +28,8 @@ class TestCreateEngineNonSqlite:
 
         config = DatabaseConfig(
             url="postgresql+asyncpg://user:pass@localhost:5432/testdb",
-            pool_size=5,
+            pool_size=8,
+            max_overflow=12,
             echo=False,
         )
 
@@ -42,8 +43,8 @@ class TestCreateEngineNonSqlite:
         mock_create.assert_called_once_with(
             "postgresql+asyncpg://user:pass@localhost:5432/testdb",
             echo=False,
-            pool_size=5,
-            max_overflow=5,
+            pool_size=8,
+            max_overflow=12,
             pool_pre_ping=True,
         )
         assert result is mock_engine

@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import base64
 import json
-import os
 import time
 from unittest.mock import patch
 
@@ -23,7 +22,6 @@ from ailine_runtime.api.middleware.tenant_context import (
 )
 from ailine_runtime.shared.config import Settings
 from ailine_runtime.shared.container import Container, ValidationResult
-
 
 # ---------------------------------------------------------------------------
 # Path normalization tests
@@ -123,79 +121,102 @@ class TestUnverifiedJwtDecode:
 
 
 class TestVerifiedJwtDecode:
-    """Tests for _verified_jwt_decode (requires PyJWT)."""
+    """Tests for _verified_jwt_decode (requires PyJWT).
+
+    Note: _verified_jwt_decode now takes (token, cfg_dict) where cfg_dict
+    has keys: secret, public_key, issuer, audience, algorithms.
+    It returns (sub_claim, None) on success, (None, error_reason) on failure.
+    """
+
+    @staticmethod
+    def _make_cfg(
+        secret: str = "my-test-secret",
+        issuer: str | None = None,
+        audience: str | None = None,
+    ) -> dict:
+        return {
+            "secret": secret,
+            "public_key": "",
+            "issuer": issuer,
+            "audience": audience,
+            "algorithms": ["HS256"],
+        }
 
     def test_valid_token_returns_sub(self) -> None:
-        secret = "my-test-secret"
+        secret = "my-test-secret-key-32bytes-long!"
         payload = {
             "sub": "teacher-jwt-verified",
             "exp": int(time.time()) + 3600,
         }
         token = _make_jwt_hs256(payload, secret)
-        result = _verified_jwt_decode(token, secret)
+        result, error = _verified_jwt_decode(token, self._make_cfg(secret=secret))
         assert result == "teacher-jwt-verified"
+        assert error is None
 
     def test_expired_token_returns_none(self) -> None:
-        secret = "my-test-secret"
+        secret = "my-test-secret-key-32bytes-long!"
         payload = {
             "sub": "teacher-expired",
             "exp": int(time.time()) - 3600,  # expired 1 hour ago
         }
         token = _make_jwt_hs256(payload, secret)
-        result = _verified_jwt_decode(token, secret)
+        result, error = _verified_jwt_decode(token, self._make_cfg(secret=secret))
         assert result is None
+        assert error == "expired"
 
     def test_wrong_secret_returns_none(self) -> None:
         payload = {
             "sub": "teacher-wrong-secret",
             "exp": int(time.time()) + 3600,
         }
-        token = _make_jwt_hs256(payload, "correct-secret")
-        result = _verified_jwt_decode(token, "wrong-secret")
+        token = _make_jwt_hs256(payload, "correct-secret-key-32bytes-long!")
+        result, _error = _verified_jwt_decode(token, self._make_cfg(secret="wrong-secret-key-32-bytes-longer!"))
         assert result is None
 
-    def test_issuer_mismatch_returns_none(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setenv("AILINE_JWT_ISSUER", "expected-issuer")
-        secret = "my-test-secret"
+    def test_issuer_mismatch_returns_none(self) -> None:
+        secret = "my-test-secret-key-32bytes-long!"
         payload = {
             "sub": "teacher-iss",
             "exp": int(time.time()) + 3600,
             "iss": "wrong-issuer",
         }
         token = _make_jwt_hs256(payload, secret)
-        result = _verified_jwt_decode(token, secret)
+        result, error = _verified_jwt_decode(token, self._make_cfg(secret=secret, issuer="expected-issuer"))
         assert result is None
+        assert error == "invalid_issuer"
 
-    def test_issuer_match_succeeds(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setenv("AILINE_JWT_ISSUER", "ailine-auth")
-        secret = "my-test-secret"
+    def test_issuer_match_succeeds(self) -> None:
+        secret = "my-test-secret-key-32bytes-long!"
         payload = {
             "sub": "teacher-iss-ok",
             "exp": int(time.time()) + 3600,
             "iss": "ailine-auth",
         }
         token = _make_jwt_hs256(payload, secret)
-        result = _verified_jwt_decode(token, secret)
+        result, error = _verified_jwt_decode(token, self._make_cfg(secret=secret, issuer="ailine-auth"))
         assert result == "teacher-iss-ok"
+        assert error is None
 
     def test_missing_exp_returns_none(self) -> None:
         """Tokens without exp claim should be rejected."""
-        secret = "my-test-secret"
+        secret = "my-test-secret-key-32bytes-long!"
         try:
             import jwt as pyjwt
 
             # Manually encode without exp to bypass PyJWT's own checks
             token = pyjwt.encode({"sub": "teacher-no-exp"}, secret, algorithm="HS256")
-            result = _verified_jwt_decode(token, secret)
+            result, _error = _verified_jwt_decode(token, self._make_cfg(secret=secret))
             assert result is None
         except ImportError:
             pytest.skip("PyJWT not installed")
 
     def test_pyjwt_not_installed_returns_none(self) -> None:
         """When PyJWT is not importable, should return None and log warning."""
+        cfg = self._make_cfg()
         with patch.dict("sys.modules", {"jwt": None}):
-            result = _verified_jwt_decode("some.token.here", "secret")
+            result, error = _verified_jwt_decode("some.token.here", cfg)
             assert result is None
+            assert error == "jwt_library_missing"
 
 
 # ---------------------------------------------------------------------------
@@ -204,21 +225,41 @@ class TestVerifiedJwtDecode:
 
 
 class TestExtractTeacherIdFromJwt:
-    """Integration tests for the main JWT extraction function."""
+    """Integration tests for the main JWT extraction function.
 
-    def test_unverified_mode_no_secret(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Without AILINE_JWT_SECRET, unverified decode is used."""
+    Note: _extract_teacher_id_from_jwt now returns (teacher_id, error_reason).
+    """
+
+    def test_unverified_mode_no_secret_dev_mode(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Without AILINE_JWT_SECRET but with dev mode, unverified decode is used."""
         monkeypatch.delenv("AILINE_JWT_SECRET", raising=False)
+        monkeypatch.delenv("AILINE_JWT_PUBLIC_KEY", raising=False)
+        monkeypatch.setenv("AILINE_DEV_MODE", "true")
         from ailine_runtime.api.middleware.tenant_context import (
             _extract_teacher_id_from_jwt,
         )
 
         token = _make_unsigned_jwt({"sub": "teacher-unverified"})
-        assert _extract_teacher_id_from_jwt(token) == "teacher-unverified"
+        teacher_id, _error = _extract_teacher_id_from_jwt(token)
+        assert teacher_id == "teacher-unverified"
+
+    def test_unverified_mode_no_secret_no_dev_mode_rejects(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Without AILINE_JWT_SECRET and without dev mode, JWT is rejected."""
+        monkeypatch.delenv("AILINE_JWT_SECRET", raising=False)
+        monkeypatch.delenv("AILINE_JWT_PUBLIC_KEY", raising=False)
+        monkeypatch.delenv("AILINE_DEV_MODE", raising=False)
+        from ailine_runtime.api.middleware.tenant_context import (
+            _extract_teacher_id_from_jwt,
+        )
+
+        token = _make_unsigned_jwt({"sub": "teacher-unverified"})
+        teacher_id, error = _extract_teacher_id_from_jwt(token)
+        assert teacher_id is None
+        assert error == "no_key_material"
 
     def test_verified_mode_valid(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """With AILINE_JWT_SECRET, verified decode is used."""
-        secret = "integration-test-secret"
+        secret = "integration-test-secret-32bytes!"
         monkeypatch.setenv("AILINE_JWT_SECRET", secret)
         monkeypatch.delenv("AILINE_JWT_ISSUER", raising=False)
         from ailine_runtime.api.middleware.tenant_context import (
@@ -230,11 +271,12 @@ class TestExtractTeacherIdFromJwt:
             "exp": int(time.time()) + 3600,
         }
         token = _make_jwt_hs256(payload, secret)
-        assert _extract_teacher_id_from_jwt(token) == "teacher-verified"
+        teacher_id, _error = _extract_teacher_id_from_jwt(token)
+        assert teacher_id == "teacher-verified"
 
     def test_verified_mode_expired_rejects(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """With AILINE_JWT_SECRET, expired tokens are rejected (no fallback)."""
-        secret = "integration-test-secret"
+        secret = "integration-test-secret-32bytes!"
         monkeypatch.setenv("AILINE_JWT_SECRET", secret)
         monkeypatch.delenv("AILINE_JWT_ISSUER", raising=False)
         from ailine_runtime.api.middleware.tenant_context import (
@@ -247,7 +289,9 @@ class TestExtractTeacherIdFromJwt:
         }
         token = _make_jwt_hs256(payload, secret)
         # Should NOT fall through to unverified decode
-        assert _extract_teacher_id_from_jwt(token) is None
+        teacher_id, error = _extract_teacher_id_from_jwt(token)
+        assert teacher_id is None
+        assert error == "expired"
 
 
 # ---------------------------------------------------------------------------

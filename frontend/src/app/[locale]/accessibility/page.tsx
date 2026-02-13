@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { PersonaToggle } from '@/components/accessibility/persona-toggle'
 import { AccessibilityTwin } from '@/components/accessibility/accessibility-twin'
 import { SimulateDisability } from '@/components/accessibility/simulate-disability'
@@ -15,6 +16,8 @@ import { ColorBlindFilters } from '@/components/accessibility/color-blind-filter
  * ARIA attributes, and semantic HTML structure.
  */
 export default function AccessibilityPage() {
+  const t = useTranslations('accessibility')
+
   return (
     <main className="flex min-h-screen flex-col gap-10 p-6">
       {/* SVG filters for color blindness simulation (hidden, referenced by CSS) */}
@@ -23,12 +26,10 @@ export default function AccessibilityPage() {
       {/* Page header */}
       <header>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          Acessibilidade
+          {t('page_title')}
         </h1>
         <p className="mt-2 max-w-2xl text-gray-600 dark:text-gray-400">
-          Personalize a experiência para diferentes necessidades de aprendizagem.
-          Alterne entre personas, compare versões adaptadas e simule
-          condições para entender a perspectiva dos seus alunos.
+          {t('page_description')}
         </p>
       </header>
 
@@ -38,10 +39,10 @@ export default function AccessibilityPage() {
           id="persona-heading"
           className="text-xl font-semibold text-gray-900 dark:text-white"
         >
-          Persona de Acessibilidade
+          {t('persona_heading')}
         </h2>
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          Selecione uma persona para ajustar o tema visual da plataforma.
+          {t('persona_description')}
         </p>
         <PersonaToggle />
       </section>
@@ -55,11 +56,10 @@ export default function AccessibilityPage() {
           id="twin-heading"
           className="text-xl font-semibold text-gray-900 dark:text-white"
         >
-          Comparação de Versões
+          {t('twin_heading')}
         </h2>
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          Compare a versão original do plano com a versão adaptada.
-          Diferenças são destacadas com cores e indicadores visuais.
+          {t('twin_description')}
         </p>
         <AccessibilityTwin
           originalContent={DEMO_ORIGINAL}

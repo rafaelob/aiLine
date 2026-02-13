@@ -8,11 +8,13 @@ export interface Toast {
   variant: ToastVariant
   /** Auto-dismiss duration in ms. 0 = persistent. Default: 5000 for success, 0 for error. */
   duration: number
+  /** Optional undo callback. When present, the toast shows an "Undo" button. */
+  onUndo?: () => void
 }
 
 interface ToastState {
   toasts: Toast[]
-  addToast: (message: string, variant?: ToastVariant, duration?: number) => string
+  addToast: (message: string, variant?: ToastVariant, duration?: number, onUndo?: () => void) => string
   removeToast: (id: string) => void
   clearAll: () => void
 }
@@ -29,12 +31,12 @@ const DEFAULT_DURATIONS: Record<ToastVariant, number> = {
 export const useToastStore = create<ToastState>((set) => ({
   toasts: [],
 
-  addToast: (message, variant = 'info', duration?) => {
+  addToast: (message, variant = 'info', duration?, onUndo?) => {
     const id = `toast-${++nextId}`
     const finalDuration = duration ?? DEFAULT_DURATIONS[variant]
 
     set((state) => ({
-      toasts: [...state.toasts, { id, message, variant, duration: finalDuration }],
+      toasts: [...state.toasts, { id, message, variant, duration: finalDuration, onUndo }],
     }))
 
     if (finalDuration > 0) {

@@ -10,11 +10,13 @@ import json
 import os
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from ..accessibility.profiles import ClassAccessibilityProfile, human_review_flags
 from ..domain.entities.tutor import LearnerProfile, TutorAgentSpec, TutorMaterialsScope, TutorPersona
 from .playbooks import build_tutor_system_prompt
+
+TutorStyle = Literal["socratic", "coach", "direct", "explainer"]
 
 # -----------------------------
 # Local persistence (MVP)
@@ -95,7 +97,7 @@ async def create_tutor_agent(
     student_profile: dict[str, Any],
     class_accessibility_profile: dict[str, Any] | None = None,
     standard: str = "BNCC",
-    style: str = "socratic",
+    style: TutorStyle = "socratic",
     tone: str = "calmo, paciente, encorajador",
     material_ids: list[str] | None = None,
     tags: list[str] | None = None,
@@ -154,7 +156,7 @@ async def create_tutor_agent(
             subject=subject,
             grade=grade,
             standard=standard,
-            style=style,  # type: ignore[arg-type]
+            style=style,
             tone=tone,
             student_profile=learner,
             materials_scope=scope,

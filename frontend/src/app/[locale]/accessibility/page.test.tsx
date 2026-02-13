@@ -37,7 +37,7 @@ vi.mock('@/lib/accessibility-data', async (importOriginal) => {
   return {
     ...actual,
     PERSONA_LIST: [
-      { id: 'standard', label: 'Padrao', icon: 'U', theme: 'standard', description: 'Padrao' },
+      { id: 'standard', label: 'standard', icon: 'U', theme: 'standard', description: 'standard_desc' },
     ],
   }
 })
@@ -45,22 +45,22 @@ vi.mock('@/lib/accessibility-data', async (importOriginal) => {
 describe('AccessibilityPage', () => {
   it('renders the page heading', () => {
     render(<AccessibilityPage />)
-    expect(screen.getByText('Acessibilidade')).toBeInTheDocument()
+    expect(screen.getByText('accessibility.page_title')).toBeInTheDocument()
   })
 
   it('renders the description text', () => {
     render(<AccessibilityPage />)
-    expect(screen.getByText(/Personalize a experiência/i)).toBeInTheDocument()
+    expect(screen.getByText('accessibility.page_description')).toBeInTheDocument()
   })
 
   it('renders the Persona section heading', () => {
     render(<AccessibilityPage />)
-    expect(screen.getByText('Persona de Acessibilidade')).toBeInTheDocument()
+    expect(screen.getByText('accessibility.persona_heading')).toBeInTheDocument()
   })
 
   it('renders the Accessibility Twin section heading', () => {
     render(<AccessibilityPage />)
-    expect(screen.getByText('Comparação de Versões')).toBeInTheDocument()
+    expect(screen.getByText('accessibility.twin_heading')).toBeInTheDocument()
   })
 
   it('renders the Simulate Disability section', () => {

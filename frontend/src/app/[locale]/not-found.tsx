@@ -45,6 +45,7 @@ export default function NotFoundPage() {
           </p>
         </div>
 
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- Not-found page uses <a> to ensure navigation works when router is broken */}
         <a
           href="/"
           className={cn(

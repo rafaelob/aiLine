@@ -29,10 +29,19 @@ from ailine_runtime.shared.tenant import (
     validate_teacher_id_format,
 )
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
+
+@pytest.fixture(autouse=True)
+def _enable_dev_mode(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Enable dev mode for all tests in this module.
+
+    The test helpers use unsigned JWTs (_make_jwt with alg=none),
+    which require dev mode for the unverified fallback path.
+    """
+    monkeypatch.setenv("AILINE_DEV_MODE", "true")
 
 
 @pytest.fixture()
@@ -219,9 +228,10 @@ class TestTenantMiddlewareJWT:
 
 class TestTenantMiddlewareDevHeader:
     async def test_x_teacher_id_ignored_without_dev_mode(
-        self, client: AsyncClient
+        self, client: AsyncClient, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """X-Teacher-ID header should be ignored when dev mode is off."""
+        monkeypatch.setenv("AILINE_DEV_MODE", "false")
         resp = await client.get(
             "/health",
             headers={"X-Teacher-ID": "teacher-dev-001"},

@@ -10,9 +10,7 @@ replace with a shared-memory or Redis-backed backend.
 
 from __future__ import annotations
 
-import math
 import threading
-import time
 from typing import Any
 
 

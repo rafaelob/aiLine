@@ -75,7 +75,7 @@ describe('PlanExports', () => {
     const options = screen.getAllByRole('option')
     await user.click(options[0])
 
-    expect(screen.getByText('Loading export...')).toBeInTheDocument()
+    expect(screen.getByText('plan_exports.loading')).toBeInTheDocument()
 
     // Resolve
     resolvePromise!({
@@ -92,7 +92,7 @@ describe('PlanExports', () => {
     await user.click(options[0])
 
     expect(
-      await screen.findByText('Export not available yet.')
+      await screen.findByText('plan_exports.unavailable')
     ).toBeInTheDocument()
   })
 

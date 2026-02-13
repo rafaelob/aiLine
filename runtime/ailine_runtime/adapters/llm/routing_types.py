@@ -12,7 +12,10 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from ...domain.ports.llm import ChatLLM
 
 # Dimension weights (ADR-049 rebalanced)
 W_TOKENS = 0.25
@@ -94,9 +97,9 @@ class RoutingRule:
 class SmartRouterConfig:
     """Configuration for the SmartRouter."""
 
-    cheap_provider: Any = None  # ChatLLM instance for cheap tier
-    middle_provider: Any = None  # ChatLLM instance for middle tier
-    primary_provider: Any = None  # ChatLLM instance for primary tier
+    cheap_provider: ChatLLM | None = None
+    middle_provider: ChatLLM | None = None
+    primary_provider: ChatLLM | None = None
     mode: str = "weighted"  # "weighted" or "rules"
     rules: list[RoutingRule] = field(default_factory=list)
     metrics_capacity: int = DEFAULT_METRICS_CAPACITY

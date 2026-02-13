@@ -3,6 +3,14 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ExportViewer } from './export-viewer'
 
+vi.mock('motion/react', () => ({
+  motion: {
+    article: ({ children, layoutId: _li, initial: _i, animate: _a, transition: _t, style: _s, ...rest }: Record<string, unknown>) => {
+      return <article {...rest}>{children as React.ReactNode}</article>
+    },
+  },
+}))
+
 vi.mock('dompurify', () => ({
   default: {
     sanitize: (html: string) => html,

@@ -22,6 +22,7 @@ import structlog
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
+from starlette.types import ASGIApp
 
 from ...shared.tenant import try_get_current_teacher_id
 
@@ -42,7 +43,7 @@ class _SlidingWindowCounter:
     timestamps.
     """
 
-    __slots__ = ("prev_count", "curr_count", "prev_window_start", "curr_window_start")
+    __slots__ = ("curr_count", "curr_window_start", "prev_count", "prev_window_start")
 
     def __init__(self) -> None:
         self.prev_count: int = 0
@@ -64,8 +65,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     - X-RateLimit-Reset: Unix timestamp when the current window resets
     """
 
-    def __init__(self, app: object, *, rpm: int | None = None) -> None:
-        super().__init__(app)  # type: ignore[arg-type]
+    def __init__(self, app: ASGIApp, *, rpm: int | None = None) -> None:
+        super().__init__(app)
         self._rpm = rpm if rpm is not None else int(
             os.getenv("AILINE_RATE_LIMIT_RPM", "60")
         )

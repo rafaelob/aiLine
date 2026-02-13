@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
+import { motion } from 'motion/react'
 import DOMPurify from 'dompurify'
 import { cn } from '@/lib/cn'
 import { EXPORT_VARIANTS } from '@/lib/accessibility-data'
@@ -27,6 +28,7 @@ export function ExportViewer({
   onFullScreenToggle,
 }: ExportViewerProps) {
   const t = useTranslations('export_viewer')
+  const tv = useTranslations('export_variants')
   const [selectedVariant, setSelectedVariant] = useState<ExportVariant>('low_distraction')
 
   const standardHtml = useMemo(
@@ -43,6 +45,11 @@ export function ExportViewer({
     () => EXPORT_VARIANTS.filter((v) => v.id !== 'standard' && exports[v.id]),
     [exports],
   )
+
+  const selectedVariantLabel = useMemo(() => {
+    const found = availableVariants.find((v) => v.id === selectedVariant)
+    return found ? tv(found.label) : t('variant_fallback')
+  }, [availableVariants, selectedVariant, tv, t])
 
   const handleVariantChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -79,7 +86,7 @@ export function ExportViewer({
           >
             {availableVariants.map((v) => (
               <option key={v.id} value={v.id}>
-                {v.label}
+                {tv(v.label)}
               </option>
             ))}
           </select>
@@ -114,13 +121,10 @@ export function ExportViewer({
           noContentLabel={t('no_content')}
         />
         <ExportPanel
-          title={
-            availableVariants.find((v) => v.id === selectedVariant)?.label ??
-            t('variant_fallback')
-          }
+          title={selectedVariantLabel}
           html={variantHtml}
           panelId="variant-panel"
-          contentLabel={t('content_label', { title: availableVariants.find((v) => v.id === selectedVariant)?.label ?? t('variant_fallback') })}
+          contentLabel={t('content_label', { title: selectedVariantLabel })}
           noContentLabel={t('no_content')}
         />
       </div>
@@ -140,9 +144,14 @@ interface ExportPanelProps {
 
 function ExportPanel({ title, html, panelId, contentLabel, noContentLabel }: ExportPanelProps) {
   return (
-    <article
+    <motion.article
       id={panelId}
+      layoutId={`export-panel-${panelId}`}
+      initial={{ opacity: 0, rotateY: -8 }}
+      animate={{ opacity: 1, rotateY: 0 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 25 }}
       className="flex flex-col overflow-hidden rounded-lg border border-[var(--color-border)]"
+      style={{ perspective: '800px', transformStyle: 'preserve-3d' }}
     >
       <header className="border-b border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3">
         <h3 className="text-sm font-semibold text-[var(--color-text)]">
@@ -166,7 +175,7 @@ function ExportPanel({ title, html, panelId, contentLabel, noContentLabel }: Exp
           </p>
         )}
       </div>
-    </article>
+    </motion.article>
   )
 }
 

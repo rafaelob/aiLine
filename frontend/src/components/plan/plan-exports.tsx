@@ -29,6 +29,7 @@ interface PlanExportsProps {
  */
 export function PlanExports({ planId }: PlanExportsProps) {
   const t = useTranslations('exports')
+  const tpe = useTranslations('plan_exports')
   const [selected, setSelected] = useState<ExportVariant | null>(null)
   const [loading, setLoading] = useState(false)
   const [content, setContent] = useState<string | null>(null)
@@ -47,7 +48,7 @@ export function PlanExports({ planId }: PlanExportsProps) {
       const data = await res.json()
       setContent(data.content ?? JSON.stringify(data, null, 2))
     } catch {
-      setContent('Export not available yet.')
+      setContent(tpe('unavailable'))
     } finally {
       setLoading(false)
     }
@@ -106,7 +107,7 @@ export function PlanExports({ planId }: PlanExportsProps) {
           {loading ? (
             <div className="flex items-center justify-center py-12" role="status">
               <span className="text-sm text-[var(--color-muted)]">
-                Loading export...
+                {tpe('loading')}
               </span>
             </div>
           ) : (
