@@ -62,7 +62,7 @@ export function MobileNav() {
                 aria-current={active ? 'page' : undefined}
                 className={cn(
                   'flex flex-col items-center gap-1 py-2 px-1',
-                  'text-[10px] font-medium transition-colors',
+                  'text-xs font-medium transition-colors',
                   active
                     ? 'text-[var(--color-primary)]'
                     : 'text-[var(--color-muted)]'

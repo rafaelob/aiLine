@@ -105,19 +105,19 @@ class PgVectorStore:
             """
         )
 
+        # Batch all rows into a single executemany call to avoid N+1 round-trips
+        params_list = [
+            {
+                "id": ids[i],
+                "embedding": "[" + ",".join(str(v) for v in embeddings[i]) + "]",
+                "content": texts[i],
+                "metadata": _json_dumps(metadatas[i]),
+            }
+            for i in range(len(ids))
+        ]
+
         async with self._session_factory() as session:
-            for i, doc_id in enumerate(ids):
-                # pgvector expects the vector as a string like '[0.1, 0.2, ...]'
-                vec_str = "[" + ",".join(str(v) for v in embeddings[i]) + "]"
-                await session.execute(
-                    stmt,
-                    {
-                        "id": doc_id,
-                        "embedding": vec_str,
-                        "content": texts[i],
-                        "metadata": _json_dumps(metadatas[i]),
-                    },
-                )
+            await session.execute(stmt, params_list)
             await session.commit()
 
     async def search(

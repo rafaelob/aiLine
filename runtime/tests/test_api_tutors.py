@@ -139,9 +139,12 @@ async def test_tutor_chat(client: AsyncClient, tmp_local_store: Path) -> None:
     )
     assert resp.status_code == 200
     body = resp.json()
-    assert "text" in body
+    assert "validated" in body
     assert "session_id" in body
     assert body["session_id"] == session_id
+    # validated output contains structured TutorTurnOutput fields
+    validated = body["validated"]
+    assert "answer_markdown" in validated
 
 
 async def test_tutor_chat_session_not_found(client: AsyncClient, tmp_local_store: Path) -> None:

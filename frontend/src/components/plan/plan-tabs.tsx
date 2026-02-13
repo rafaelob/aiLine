@@ -60,16 +60,25 @@ export function PlanTabs({ plan, qualityReport, score }: PlanTabsProps) {
 
   return (
     <div className="w-full">
-      {/* Tab list */}
-      <div
-        role="tablist"
-        aria-label={t('teacher')}
-        onKeyDown={handleKeyDown}
-        className={cn(
-          'flex border-b border-[var(--color-border)]',
-          'overflow-x-auto'
-        )}
-      >
+      {/* Tab list with scroll indicators */}
+      <div className="relative">
+        <div
+          className="pointer-events-none absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-[var(--color-bg)] to-transparent z-10 sm:hidden"
+          aria-hidden="true"
+        />
+        <div
+          className="pointer-events-none absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-[var(--color-bg)] to-transparent z-10 sm:hidden"
+          aria-hidden="true"
+        />
+        <div
+          role="tablist"
+          aria-label={t('teacher')}
+          onKeyDown={handleKeyDown}
+          className={cn(
+            'flex border-b border-[var(--color-border)]',
+            'overflow-x-auto scrollbar-none'
+          )}
+        >
         {TAB_KEYS.map((key) => (
           <button
             key={key}
@@ -91,6 +100,7 @@ export function PlanTabs({ plan, qualityReport, score }: PlanTabsProps) {
             {t(key)}
           </button>
         ))}
+        </div>
       </div>
 
       {/* Tab panels */}

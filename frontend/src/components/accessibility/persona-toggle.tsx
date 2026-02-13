@@ -47,18 +47,16 @@ export function PersonaToggle() {
               'relative flex items-center gap-2 rounded-full px-4 py-2',
               'text-sm font-medium transition-colors duration-200',
               'focus-visible:outline-2 focus-visible:outline-offset-2',
-              'focus-visible:outline-blue-600',
+              'focus-visible:outline-[var(--color-primary)]',
               isActive
-                ? 'text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
-              'dark:focus-visible:outline-blue-400',
-              !isActive && 'dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700',
+                ? 'text-[var(--color-on-primary)]'
+                : 'bg-[var(--color-surface-elevated)] text-[var(--color-text)] hover:bg-[var(--color-border)]',
             )}
           >
             {isActive && (
               <motion.span
                 layoutId="persona-pill"
-                className="absolute inset-0 rounded-full bg-blue-600 dark:bg-blue-500"
+                className="absolute inset-0 rounded-full bg-[var(--color-primary)]"
                 transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                 aria-hidden="true"
               />

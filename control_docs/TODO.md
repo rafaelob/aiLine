@@ -27,7 +27,7 @@ S0-S12 + S-Agents: all done (S0 Foundation, S1 Clean Arch, S2 DB, S3 Embed/Vec, 
 | #9 | Libras STT ML Pipeline (training scaffold) | [x] done |
 | #1 | i18n: exports page + hardcoded strings | [~] in-progress (frontend) |
 | #2 | error.tsx boundary | [~] in-progress (frontend) |
-| #10 | Comprehensive test suite verification | [ ] blocked by #1, #2 |
+| #10 | Comprehensive test suite verification | [~] backend done; frontend pending #1, #2 |
 
 ---
 

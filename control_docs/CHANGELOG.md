@@ -43,6 +43,7 @@ All notable changes documented here. Format: [Keep a Changelog](https://keepacha
 - Deleted: executor_agent_sdk.py, planner_deepagents.py, claude_sdk_executor.py, deepagents_planner.py, adapters_agent_sdk.py
 
 ### Fixed
+- Ruff lint: 33 errors fixed across runtime + agents (N806 uppercase vars, SIM109, RUF005, I001, F401, UP035, RUF022, SIM300, RUF059)
 - Anthropic model ID: claude-haiku-4-20250414 -> claude-haiku-4-5-20251001
 - Gemini streaming: generate_content_stream requires await (google-genai API change)
 - ChatLLM protocol/adapter signature unified; LearnerProfile name collision resolved

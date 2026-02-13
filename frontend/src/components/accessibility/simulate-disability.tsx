@@ -147,10 +147,10 @@ export function SimulateDisability() {
     <section aria-labelledby="simulate-heading" className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 id="simulate-heading" className="text-xl font-semibold text-gray-900 dark:text-white">
+          <h2 id="simulate-heading" className="text-xl font-semibold text-[var(--color-text)]">
             Ponte de Empatia
           </h2>
-          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+          <p className="mt-1 text-sm text-[var(--color-muted)]">
             Simule como seus alunos experienciam o conteúdo.
             Ative uma ou mais simulações para entender suas perspectivas.
           </p>
@@ -160,9 +160,9 @@ export function SimulateDisability() {
           <button
             onClick={resetAll}
             className={cn(
-              'rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white',
-              'hover:bg-red-700 focus-visible:outline-2 focus-visible:outline-offset-2',
-              'focus-visible:outline-red-600 transition-colors',
+              'rounded-lg bg-[var(--color-error)] px-4 py-2 text-sm font-medium text-[var(--color-on-primary)]',
+              'hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2',
+              'focus-visible:outline-[var(--color-error)] transition-colors',
             )}
             aria-label="Desativar todas as simulações"
           >
@@ -183,7 +183,7 @@ export function SimulateDisability() {
             <div
               role="status"
               aria-live="polite"
-              className="flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200"
+              className="flex items-center gap-2 rounded-lg border border-[var(--color-warning)]/30 bg-[var(--color-warning)]/10 px-4 py-3 text-sm text-[var(--color-text)]"
             >
               <span aria-hidden="true" className="text-lg">
                 !
@@ -206,9 +206,9 @@ export function SimulateDisability() {
           return (
             <fieldset
               key={category.id}
-              className="rounded-lg border border-gray-200 p-4 dark:border-gray-700"
+              className="rounded-lg border border-[var(--color-border)] p-4"
             >
-              <legend className="px-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
+              <legend className="px-2 text-sm font-semibold text-[var(--color-text)]">
                 {category.label}
               </legend>
               <div className="mt-2 flex flex-col gap-3">
@@ -243,8 +243,8 @@ function SimulationToggle({ simulation, isActive, onToggle }: SimulationTogglePr
       className={cn(
         'flex cursor-pointer items-start gap-3 rounded-lg p-3 transition-colors',
         isActive
-          ? 'bg-blue-50 dark:bg-blue-950'
-          : 'hover:bg-gray-50 dark:hover:bg-gray-800',
+          ? 'bg-[var(--color-primary)]/10'
+          : 'hover:bg-[var(--color-surface)]',
       )}
     >
       <div className="relative mt-0.5 shrink-0">
@@ -259,7 +259,7 @@ function SimulationToggle({ simulation, isActive, onToggle }: SimulationTogglePr
         <div
           className={cn(
             'h-6 w-11 rounded-full transition-colors',
-            isActive ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600',
+            isActive ? 'bg-[var(--color-primary)]' : 'bg-[var(--color-border)]',
           )}
           aria-hidden="true"
         />
@@ -272,10 +272,10 @@ function SimulationToggle({ simulation, isActive, onToggle }: SimulationTogglePr
         />
       </div>
       <div className="flex flex-col">
-        <span className="text-sm font-medium text-gray-900 dark:text-white">
+        <span className="text-sm font-medium text-[var(--color-text)]">
           {simulation.label}
         </span>
-        <span className="text-xs text-gray-500 dark:text-gray-400">
+        <span className="text-xs text-[var(--color-muted)]">
           {simulation.description}
         </span>
       </div>

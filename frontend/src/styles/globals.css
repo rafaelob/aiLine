@@ -532,3 +532,50 @@ textarea,
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+
+/* ===== PRINT STYLESHEET ===== */
+@media print {
+  .skip-link,
+  nav,
+  aside,
+  header[role="banner"],
+  [aria-label="Mobile navigation"],
+  [aria-label="Notificações"],
+  button:not([data-print]),
+  .glass-box-panel {
+    display: none !important;
+  }
+
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 12pt !important;
+    line-height: 1.5 !important;
+  }
+
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  a {
+    text-decoration: underline;
+    color: black !important;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  article, section, li {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+}

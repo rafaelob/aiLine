@@ -99,7 +99,7 @@ export function DashboardContent() {
       </motion.section>
 
       {/* Stats cards */}
-      <StaggerList className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <StaggerList className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         {stats.map((stat) => (
           <StaggerItem key={stat.key}>
             <div
@@ -142,7 +142,7 @@ export function DashboardContent() {
         >
           {t('quick_actions')}
         </h2>
-        <StaggerList className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <StaggerList className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {quickActions.map((action) => (
             <StaggerItem key={action.key}>
               <a

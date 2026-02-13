@@ -176,10 +176,10 @@ export function WebcamCapture({ className }: WebcamCaptureProps) {
   const confidencePercent = result ? Math.round(result.confidence * 100) : 0
   const confidenceColor =
     confidencePercent >= 80
-      ? 'text-green-600'
+      ? 'text-[var(--color-success)]'
       : confidencePercent >= 50
-        ? 'text-yellow-600'
-        : 'text-red-600'
+        ? 'text-[var(--color-warning)]'
+        : 'text-[var(--color-error)]'
 
   return (
     <div className={cn('grid gap-6 md:grid-cols-2', className)}>
@@ -203,7 +203,7 @@ export function WebcamCapture({ className }: WebcamCaptureProps) {
             </div>
           ) : captureState === 'error' ? (
             <div className="flex h-full items-center justify-center p-4">
-              <p className="text-center text-sm text-red-600" role="alert">
+              <p className="text-center text-sm text-[var(--color-error)]" role="alert">
                 {errorCode === 'not_allowed'
                   ? t('error_not_allowed')
                   : errorCode === 'not_found'

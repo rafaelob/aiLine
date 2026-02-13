@@ -6,6 +6,8 @@ No tools — pure LLM-based assessment combined with deterministic validation.
 
 from __future__ import annotations
 
+import functools
+
 from pydantic_ai import Agent
 
 from ..deps import AgentDeps
@@ -25,18 +27,12 @@ def build_quality_gate_agent() -> Agent[AgentDeps, QualityAssessment]:
     return agent
 
 
-_quality_gate_agent: Agent[AgentDeps, QualityAssessment] | None = None
-
-
+@functools.lru_cache(maxsize=1)
 def get_quality_gate_agent() -> Agent[AgentDeps, QualityAssessment]:
-    """Get or create the singleton QualityGateAgent."""
-    global _quality_gate_agent
-    if _quality_gate_agent is None:
-        _quality_gate_agent = build_quality_gate_agent()
-    return _quality_gate_agent
+    """Get or create the singleton QualityGateAgent (cached, thread-safe)."""
+    return build_quality_gate_agent()
 
 
 def reset_quality_gate_agent() -> None:
     """Reset singleton (for testing)."""
-    global _quality_gate_agent
-    _quality_gate_agent = None
+    get_quality_gate_agent.cache_clear()

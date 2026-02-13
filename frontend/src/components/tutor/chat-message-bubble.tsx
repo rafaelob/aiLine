@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useState, useMemo } from 'react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/cn'
 import { MarkdownWithMermaid } from '@/components/shared/markdown-with-mermaid'
@@ -23,6 +23,33 @@ export function ChatMessageBubble({
   const t = useTranslations('tutor')
   const isUser = message.role === 'user'
   const [isSpeaking, setIsSpeaking] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  const relativeTime = useMemo(() => {
+    if (!message.timestamp) return null
+    try {
+      const date = new Date(message.timestamp)
+      const now = new Date()
+      const diffMs = now.getTime() - date.getTime()
+      const diffMin = Math.floor(diffMs / 60000)
+      if (diffMin < 1) return t('just_now')
+      if (diffMin < 60) return `${diffMin} min`
+      const diffHrs = Math.floor(diffMin / 60)
+      return `${diffHrs}h`
+    } catch {
+      return null
+    }
+  }, [message.timestamp, t])
+
+  const handleCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(message.content)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // Clipboard API not available
+    }
+  }, [message.content])
 
   const handleReadAloud = useCallback(() => {
     if (typeof window === 'undefined' || !window.speechSynthesis) return
@@ -34,7 +61,9 @@ export function ChatMessageBubble({
     }
 
     const utterance = new SpeechSynthesisUtterance(message.content)
-    utterance.lang = 'pt-BR'
+    // Use locale from document for correct TTS language
+    const docLang = typeof document !== 'undefined' ? document.documentElement.lang : 'pt-BR'
+    utterance.lang = docLang || 'pt-BR'
     utterance.rate = 0.9
     utterance.onend = () => setIsSpeaking(false)
     utterance.onerror = () => setIsSpeaking(false)
@@ -90,21 +119,43 @@ export function ChatMessageBubble({
           </div>
         )}
 
-        {/* Read aloud button for assistant messages */}
+        {/* Action buttons for assistant messages */}
         {!isUser && !isStreaming && message.content && (
-          <button
-            type="button"
-            onClick={handleReadAloud}
-            className={cn(
-              'mt-2 flex items-center gap-1 text-xs',
-              'text-[var(--color-muted)] hover:text-[var(--color-text)]',
-              'transition-colors'
-            )}
-            aria-label={isSpeaking ? t('stop_reading') : t('read_aloud')}
-          >
-            {isSpeaking ? <StopIcon /> : <SpeakerIcon />}
-            {isSpeaking ? t('stop_reading') : t('read_aloud')}
-          </button>
+          <div className="mt-2 flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleReadAloud}
+              className={cn(
+                'flex items-center gap-1 text-xs',
+                'text-[var(--color-muted)] hover:text-[var(--color-text)]',
+                'transition-colors'
+              )}
+              aria-label={isSpeaking ? t('stop_reading') : t('read_aloud')}
+            >
+              {isSpeaking ? <StopIcon /> : <SpeakerIcon />}
+              {isSpeaking ? t('stop_reading') : t('read_aloud')}
+            </button>
+            <button
+              type="button"
+              onClick={handleCopy}
+              className={cn(
+                'flex items-center gap-1 text-xs',
+                'text-[var(--color-muted)] hover:text-[var(--color-text)]',
+                'transition-colors'
+              )}
+              aria-label={copied ? t('copied') : t('copy')}
+            >
+              {copied ? <CheckIcon /> : <CopyIcon />}
+              {copied ? t('copied') : t('copy')}
+            </button>
+          </div>
+        )}
+
+        {/* Timestamp */}
+        {relativeTime && (
+          <p className="mt-1 text-[10px] text-[var(--color-muted)] opacity-60">
+            {relativeTime}
+          </p>
         )}
       </div>
     </div>
@@ -145,6 +196,23 @@ function StopIcon() {
   return (
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <rect x="6" y="6" width="12" height="12" rx="1" />
+    </svg>
+  )
+}
+
+function CopyIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+      <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+    </svg>
+  )
+}
+
+function CheckIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <polyline points="20 6 9 17 4 12" />
     </svg>
   )
 }

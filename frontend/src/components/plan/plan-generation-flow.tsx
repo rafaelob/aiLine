@@ -22,6 +22,7 @@ const ACCESSIBILITY_PROFILES = [
 type WizardStep = 0 | 1 | 2 | 3
 
 const STEP_COUNT = 4
+const PROMPT_MAX_LENGTH = 2000
 
 /**
  * Plan generation multi-step wizard.
@@ -55,6 +56,19 @@ export function PlanGenerationFlow() {
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [showSuccess, setShowSuccess] = useState(false)
+
+  const resetWizard = useCallback(() => {
+    setStep(0)
+    setFormData({
+      prompt: '',
+      grade: '',
+      subject: '',
+      accessibility_profile: 'standard',
+      locale: 'pt-BR',
+    })
+    setErrors({})
+    setShowSuccess(false)
+  }, [])
 
   const handleSubmit = useCallback(
     async () => {
@@ -161,13 +175,14 @@ export function PlanGenerationFlow() {
                     </motion.div>
                     <span
                       className={cn(
-                        'text-xs font-medium truncate hidden sm:block',
+                        'text-xs font-medium truncate',
                         i === step
                           ? 'text-[var(--color-text)]'
                           : 'text-[var(--color-muted)]'
                       )}
                     >
-                      {label}
+                      <span className="sm:hidden">{STEP_SHORT_LABELS[i]}</span>
+                      <span className="hidden sm:inline">{label}</span>
                     </span>
                   </div>
                   {i < STEP_COUNT - 1 && (
@@ -212,6 +227,7 @@ export function PlanGenerationFlow() {
                           type="text"
                           value={formData.subject}
                           onChange={(e) => updateField('subject', e.target.value)}
+                          onBlur={() => validateStep(0)}
                           placeholder={tForm('subject_placeholder')}
                           className={cn(
                             'w-full rounded-[var(--radius-md)] border p-3',
@@ -235,6 +251,7 @@ export function PlanGenerationFlow() {
                           type="text"
                           value={formData.grade}
                           onChange={(e) => updateField('grade', e.target.value)}
+                          onBlur={() => validateStep(0)}
                           placeholder={tForm('grade_placeholder')}
                           className={cn(
                             'w-full rounded-[var(--radius-md)] border p-3',
@@ -303,8 +320,10 @@ export function PlanGenerationFlow() {
                       id="plan-prompt"
                       value={formData.prompt}
                       onChange={(e) => updateField('prompt', e.target.value)}
+                      onBlur={() => validateStep(2)}
                       placeholder={tForm('prompt_placeholder')}
                       rows={6}
+                      maxLength={PROMPT_MAX_LENGTH}
                       className={cn(
                         'w-full rounded-[var(--radius-md)] border p-3',
                         'bg-[var(--color-bg)] border-[var(--color-border)]',
@@ -314,7 +333,20 @@ export function PlanGenerationFlow() {
                         errors.prompt && 'border-[var(--color-error)]'
                       )}
                     />
-                    <FieldError message={errors.prompt} />
+                    <div className="flex items-center justify-between mt-1.5">
+                      <FieldError message={errors.prompt} />
+                      <span
+                        className={cn(
+                          'text-xs ml-auto',
+                          formData.prompt.length > PROMPT_MAX_LENGTH * 0.9
+                            ? 'text-[var(--color-warning)]'
+                            : 'text-[var(--color-muted)]'
+                        )}
+                        aria-live="polite"
+                      >
+                        {formData.prompt.length} / {PROMPT_MAX_LENGTH}
+                      </span>
+                    </div>
                   </div>
                 )}
 
@@ -453,10 +485,7 @@ export function PlanGenerationFlow() {
           <div className="flex justify-center">
             <button
               type="button"
-              onClick={() => {
-                setShowSuccess(false)
-                window.location.reload()
-              }}
+              onClick={resetWizard}
               className={cn(
                 'px-6 py-2 rounded-[var(--radius-md)]',
                 'border border-[var(--color-border)] text-[var(--color-text)]',
@@ -481,7 +510,7 @@ export function PlanGenerationFlow() {
           <p className="text-sm">{error}</p>
           <button
             type="button"
-            onClick={() => window.location.reload()}
+            onClick={resetWizard}
             className={cn(
               'mt-3 px-4 py-2 rounded-[var(--radius-md)]',
               'border border-[var(--color-error)] text-sm',
@@ -578,6 +607,9 @@ function PersonaAvatar({
     </div>
   )
 }
+
+/** Short labels for mobile display (1-2 words max) */
+const STEP_SHORT_LABELS = ['Info', 'Perfil', 'Texto', 'Revisar']
 
 function StepCheckIcon() {
   return (

@@ -6,6 +6,7 @@ Tools: rag_search, web_search.
 
 from __future__ import annotations
 
+import functools
 from typing import Any
 
 import structlog
@@ -13,13 +14,22 @@ from ailine_runtime.domain.entities.tutor import TutorTurnOutput
 from pydantic_ai import Agent, RunContext
 
 from ..deps import AgentDeps
-from ..skills.registry import SkillRegistry
 from ._prompts import TUTOR_BASE_SYSTEM_PROMPT
 from ._tool_bridge import register_tools
 
 log = structlog.get_logger(__name__)
 
 _TUTOR_SKILLS = ["socratic-tutor"]
+
+
+@functools.lru_cache(maxsize=1)
+def _cached_tutor_skill_fragment() -> str:
+    """Load and cache tutor skill prompt fragments (scanned once per process)."""
+    from ..skills.registry import SkillRegistry
+
+    registry = SkillRegistry()
+    registry.scan_paths()
+    return registry.get_prompt_fragment(_TUTOR_SKILLS)
 
 
 def build_tutor_agent(*, use_skills: bool = True) -> Agent[AgentDeps, TutorTurnOutput]:
@@ -46,10 +56,8 @@ def build_tutor_agent(*, use_skills: bool = True) -> Agent[AgentDeps, TutorTurnO
 
         @agent.system_prompt
         async def add_skills(ctx: RunContext[AgentDeps]) -> str:
-            """Load skill instructions (socratic-tutor)."""
-            registry = SkillRegistry()
-            registry.scan_paths()
-            fragment = registry.get_prompt_fragment(_TUTOR_SKILLS)
+            """Load cached skill instructions (socratic-tutor)."""
+            fragment = _cached_tutor_skill_fragment()
             if fragment:
                 log.debug("tutor_skills_loaded", skills=_TUTOR_SKILLS)
             return fragment
@@ -84,33 +92,34 @@ def build_tutor_agent(*, use_skills: bool = True) -> Agent[AgentDeps, TutorTurnO
     return agent
 
 
-_tutor_agent: Agent[AgentDeps, TutorTurnOutput] | None = None
+@functools.lru_cache(maxsize=1)
+def _build_and_register_tutor(use_skills: bool) -> Agent[AgentDeps, TutorTurnOutput]:
+    """Build tutor agent with tools (cached, thread-safe via lru_cache)."""
+    agent = build_tutor_agent(use_skills=use_skills)
+    from ailine_runtime.tools.registry import build_tool_registry
+
+    register_tools(
+        agent,
+        build_tool_registry(),
+        allowed_names=["rag_search"],
+    )
+    return agent
 
 
 def get_tutor_agent(*, use_skills: bool | None = None) -> Agent[AgentDeps, TutorTurnOutput]:
     """Get or create the singleton TutorAgent with tools registered."""
-    global _tutor_agent
-    if _tutor_agent is None:
-        if use_skills is None:
-            try:
-                from ailine_runtime.shared.config import get_settings
+    if use_skills is None:
+        try:
+            from ailine_runtime.shared.config import get_settings
 
-                use_skills = get_settings().persona_use_skills
-            except Exception:
-                use_skills = True
+            use_skills = get_settings().persona_use_skills
+        except Exception:
+            use_skills = True
 
-        _tutor_agent = build_tutor_agent(use_skills=use_skills)
-        from ailine_runtime.tools.registry import build_tool_registry
-
-        register_tools(
-            _tutor_agent,
-            build_tool_registry(),
-            allowed_names=["rag_search"],
-        )
-    return _tutor_agent
+    return _build_and_register_tutor(use_skills)
 
 
 def reset_tutor_agent() -> None:
     """Reset singleton (for testing)."""
-    global _tutor_agent
-    _tutor_agent = None
+    _build_and_register_tutor.cache_clear()
+    _cached_tutor_skill_fragment.cache_clear()

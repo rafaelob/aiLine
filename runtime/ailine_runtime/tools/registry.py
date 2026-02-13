@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import os
-import uuid
+import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -111,16 +111,36 @@ async def rag_search_handler(args: RagSearchArgs) -> dict[str, Any]:
 
 
 async def curriculum_lookup_handler(args: CurriculumLookupArgs) -> dict[str, Any]:
-    # MVP: stub. Trocar por tabela BNCC/US ou serviço.
-    # Tenant filtering: teacher_id is logged for audit; curriculum data is
-    # shared/public but the lookup scope is teacher-contextualized.
+    """Look up real curriculum objectives via UnifiedCurriculumProvider."""
+    from ..adapters.curriculum.unified_provider import UnifiedCurriculumProvider
+
+    provider = UnifiedCurriculumProvider()
+    system_filter = args.standard.lower() if args.standard else None
+
+    objectives = await provider.search(
+        args.topic,
+        grade=args.grade,
+        system=system_filter,
+    )
+
     return {
         "standard": args.standard,
         "grade": args.grade,
         "topic": args.topic,
         "teacher_id": args.teacher_id,
-        "objectives": [],
-        "note": "stub_curriculum_lookup (implemente BNCC/US lookup)",
+        "objectives": [
+            {
+                "code": obj.code,
+                "system": obj.system.value if hasattr(obj.system, "value") else str(obj.system),
+                "subject": obj.subject,
+                "grade": obj.grade,
+                "domain": obj.domain,
+                "description": obj.description,
+                "keywords": obj.keywords,
+                "bloom_level": obj.bloom_level,
+            }
+            for obj in objectives[:10]
+        ],
     }
 
 
@@ -143,8 +163,13 @@ async def save_plan_handler(args: SavePlanArgs) -> dict[str, Any]:
     # MVP: persistência local (arquivo) para demo; troque por Postgres.
     # Tenant filtering: teacher_id is included in the stored metadata
     # and in the file path namespace to prevent cross-tenant access.
+    from uuid_utils import uuid7
+
     teacher_id = args.teacher_id or "anonymous"
-    plan_id = str(uuid.uuid4())
+    # Validate teacher_id format to prevent path traversal (S-5)
+    if teacher_id != "anonymous" and not re.match(r"^[0-9a-f\-]{36}$", teacher_id):
+        return {"error": "Invalid teacher_id format (expected UUID)"}
+    plan_id = str(uuid7())
     out_dir = Path(os.getenv("AILINE_LOCAL_STORE", ".local_store")) / teacher_id
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / f"{plan_id}.json"

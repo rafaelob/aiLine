@@ -53,7 +53,7 @@ export function ExportViewer({
     <div
       className={cn(
         'flex flex-col gap-4',
-        fullScreen && 'fixed inset-0 z-50 bg-white p-6 dark:bg-gray-900',
+        fullScreen && 'fixed inset-0 z-50 bg-[var(--color-bg)] p-6',
       )}
     >
       {/* Toolbar */}
@@ -61,7 +61,7 @@ export function ExportViewer({
         <div className="flex items-center gap-3">
           <label
             htmlFor="variant-select"
-            className="text-sm font-medium text-gray-700 dark:text-gray-300"
+            className="text-sm font-medium text-[var(--color-text)]"
           >
             Variante de acessibilidade:
           </label>
@@ -70,9 +70,8 @@ export function ExportViewer({
             value={selectedVariant}
             onChange={handleVariantChange}
             className={cn(
-              'rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm',
-              'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600',
-              'dark:border-gray-600 dark:bg-gray-800 dark:text-white',
+              'rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]',
+              'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]',
             )}
             aria-label="Selecionar variante de exportação acessível"
           >
@@ -88,10 +87,9 @@ export function ExportViewer({
           <button
             onClick={onFullScreenToggle}
             className={cn(
-              'rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium',
-              'hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2',
-              'focus-visible:outline-blue-600 transition-colors',
-              'dark:border-gray-600 dark:hover:bg-gray-800 dark:text-gray-300',
+              'rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm font-medium text-[var(--color-text)]',
+              'hover:bg-[var(--color-surface)] focus-visible:outline-2 focus-visible:outline-offset-2',
+              'focus-visible:outline-[var(--color-primary)] transition-colors',
             )}
             aria-label={fullScreen ? 'Sair da tela cheia' : 'Visualizar em tela cheia'}
           >
@@ -136,10 +134,10 @@ function ExportPanel({ title, html, panelId }: ExportPanelProps) {
   return (
     <article
       id={panelId}
-      className="flex flex-col overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700"
+      className="flex flex-col overflow-hidden rounded-lg border border-[var(--color-border)]"
     >
-      <header className="border-b border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-800">
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+      <header className="border-b border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3">
+        <h3 className="text-sm font-semibold text-[var(--color-text)]">
           {title}
         </h3>
       </header>
@@ -151,11 +149,11 @@ function ExportPanel({ title, html, panelId }: ExportPanelProps) {
       >
         {html ? (
           <div
-            className="prose prose-sm max-w-none dark:prose-invert"
+            className="prose prose-sm max-w-none"
             dangerouslySetInnerHTML={{ __html: html }}
           />
         ) : (
-          <p className="text-sm text-gray-400 italic dark:text-gray-500">
+          <p className="text-sm text-[var(--color-muted)] italic">
             Nenhum conteúdo disponível para esta variante.
           </p>
         )}

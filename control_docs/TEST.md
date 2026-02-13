@@ -8,7 +8,7 @@
 - **Security:** trivy (container), pip-audit (Python), pnpm audit (Node)
 
 ## Coverage Targets
-- Pre-MVP (current): 1265+ backend tests (1199 runtime + 129 agents), all passing
+- Pre-MVP (current): 1340+ backend tests (1211 runtime + 129 agents), all passing (excl. 17 pre-existing WebSearchResult import failures + 27 live-only errors)
 - Frontend: 331 tests, all passing (41 test suites)
 - Post-MVP: >= 90% on touched code (hard gate)
 

@@ -6,6 +6,8 @@ Tools: accessibility_checklist, export_variant, save_plan, curriculum_lookup.
 
 from __future__ import annotations
 
+import functools
+
 from pydantic_ai import Agent, RunContext
 
 from ..deps import AgentDeps
@@ -39,30 +41,30 @@ def build_executor_agent() -> Agent[AgentDeps, ExecutorResult]:
     return agent
 
 
-_executor_agent: Agent[AgentDeps, ExecutorResult] | None = None
+@functools.lru_cache(maxsize=1)
+def _build_and_register_executor() -> Agent[AgentDeps, ExecutorResult]:
+    """Build executor agent with tools (cached, thread-safe via lru_cache)."""
+    agent = build_executor_agent()
+    from ailine_runtime.tools.registry import build_tool_registry
+
+    register_tools(
+        agent,
+        build_tool_registry(),
+        allowed_names=[
+            "accessibility_checklist",
+            "export_variant",
+            "save_plan",
+            "curriculum_lookup",
+        ],
+    )
+    return agent
 
 
 def get_executor_agent() -> Agent[AgentDeps, ExecutorResult]:
     """Get or create the singleton ExecutorAgent with tools registered."""
-    global _executor_agent
-    if _executor_agent is None:
-        _executor_agent = build_executor_agent()
-        from ailine_runtime.tools.registry import build_tool_registry
-
-        register_tools(
-            _executor_agent,
-            build_tool_registry(),
-            allowed_names=[
-                "accessibility_checklist",
-                "export_variant",
-                "save_plan",
-                "curriculum_lookup",
-            ],
-        )
-    return _executor_agent
+    return _build_and_register_executor()
 
 
 def reset_executor_agent() -> None:
     """Reset singleton (for testing)."""
-    global _executor_agent
-    _executor_agent = None
+    _build_and_register_executor.cache_clear()

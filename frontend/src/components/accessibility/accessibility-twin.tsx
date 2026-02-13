@@ -39,7 +39,7 @@ export function AccessibilityTwin({
   return (
     <div className="flex flex-col gap-4">
       {/* Tab bar */}
-      <div role="tablist" aria-label="Comparação de versões" className="flex gap-1 rounded-lg bg-gray-100 p-1 dark:bg-gray-800">
+      <div role="tablist" aria-label="Comparação de versões" className="flex gap-1 rounded-lg bg-[var(--color-surface-elevated)] p-1">
         <TabButton
           id="tab-original"
           label="Versão Original"
@@ -69,9 +69,9 @@ export function AccessibilityTwin({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2 }}
-            className="rounded-lg border border-gray-200 p-6 dark:border-gray-700"
+            className="rounded-lg border border-[var(--color-border)] p-6"
           >
-            <div className="prose prose-sm max-w-none dark:prose-invert">
+            <div className="prose prose-sm max-w-none">
               {originalContent.split('\n').map((line, i) => (
                 <p key={i} className="mb-2 last:mb-0">
                   {line || '\u00A0'}
@@ -90,7 +90,7 @@ export function AccessibilityTwin({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2 }}
-            className="rounded-lg border border-gray-200 p-6 dark:border-gray-700"
+            className="rounded-lg border border-[var(--color-border)] p-6"
           >
             <DiffView changes={diffChanges} />
           </motion.div>
@@ -127,10 +127,10 @@ function TabButton({ id, label, isActive, controls, onSelect }: TabButtonProps) 
       }}
       className={cn(
         'flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors',
-        'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600',
+        'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]',
         isActive
-          ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-white'
-          : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white',
+          ? 'bg-[var(--color-surface)] text-[var(--color-text)] shadow-sm'
+          : 'text-[var(--color-muted)] hover:text-[var(--color-text)]',
       )}
     >
       {label}
@@ -151,7 +151,7 @@ interface DiffViewProps {
 function DiffView({ changes }: DiffViewProps) {
   if (changes.length === 0) {
     return (
-      <p className="text-gray-500 italic dark:text-gray-400">
+      <p className="text-[var(--color-muted)] italic">
         Nenhuma diferença encontrada.
       </p>
     )
@@ -166,16 +166,16 @@ function DiffView({ changes }: DiffViewProps) {
           className={cn(
             'flex items-start gap-2 rounded px-3 py-1.5 text-sm',
             change.type === 'addition' &&
-              'border-l-4 border-green-600 bg-green-50 text-green-900 dark:border-green-400 dark:bg-green-950 dark:text-green-100',
+              'border-l-4 border-[var(--color-success)] bg-[var(--color-success)]/10 text-[var(--color-text)]',
             change.type === 'removal' &&
-              'border-l-4 border-red-600 bg-red-50 text-red-900 line-through dark:border-red-400 dark:bg-red-950 dark:text-red-100',
-            change.type === 'unchanged' && 'text-gray-700 dark:text-gray-300',
+              'border-l-4 border-[var(--color-error)] bg-[var(--color-error)]/10 text-[var(--color-text)] line-through',
+            change.type === 'unchanged' && 'text-[var(--color-text)]',
           )}
         >
           {change.type === 'addition' && (
             <span
               aria-label="Adição"
-              className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-green-600 text-xs font-bold text-white"
+              className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-success)] text-xs font-bold text-[var(--color-on-primary)]"
             >
               +
             </span>
@@ -183,7 +183,7 @@ function DiffView({ changes }: DiffViewProps) {
           {change.type === 'removal' && (
             <span
               aria-label="Remoção"
-              className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white"
+              className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-error)] text-xs font-bold text-[var(--color-on-primary)]"
             >
               -
             </span>

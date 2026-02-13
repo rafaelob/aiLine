@@ -103,12 +103,12 @@ export function PipelineNodeGraph({
 
   return (
     <div
-      className="flex items-center gap-1 overflow-x-auto py-2"
+      className="flex flex-col items-start gap-2 py-2 sm:flex-row sm:items-center sm:gap-1 sm:overflow-x-auto"
       role="img"
       aria-label={t('title')}
     >
       {nodes.map((node, i) => (
-        <div key={node.id} className="flex items-center">
+        <div key={node.id} className="flex items-center sm:flex-row">
           {/* Node */}
           <motion.div
             className={cn(

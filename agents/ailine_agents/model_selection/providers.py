@@ -53,11 +53,10 @@ def _build_model(provider: str, model: str, api_key: str) -> Model | None:
 
 
 def _resolve_key(settings: Any, provider: str) -> str:
-    """Resolve API key from top-level settings."""
-    mapping = {
-        "anthropic": settings.anthropic_api_key,
-        "openai": settings.openai_api_key,
-        "gemini": settings.google_api_key,
-        "openrouter": settings.openrouter_api_key,
-    }
-    return mapping.get(provider, "")
+    """Resolve API key from top-level settings.
+
+    Delegates to the shared container utility to avoid duplication.
+    """
+    from ailine_runtime.shared.container import _resolve_api_key
+
+    return _resolve_api_key(settings, provider)

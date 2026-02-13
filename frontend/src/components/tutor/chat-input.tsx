@@ -43,12 +43,8 @@ export function ChatInput({ onSend, disabled = false }: ChatInputProps) {
     silenceTimeout: 1500,
   })
 
-  // Show live transcript in the text field
-  useEffect(() => {
-    if (isListening && transcript) {
-      setText(transcript)
-    }
-  }, [isListening, transcript])
+  // Show live transcript in the text field (derived — no effect needed)
+  const displayText = isListening && transcript ? transcript : text
 
   const handleSubmit = useCallback(() => {
     const trimmed = text.trim()
@@ -102,7 +98,7 @@ export function ChatInput({ onSend, disabled = false }: ChatInputProps) {
         <div className="flex-1 relative">
           <textarea
             ref={inputRef}
-            value={text}
+            value={displayText}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={
@@ -127,7 +123,7 @@ export function ChatInput({ onSend, disabled = false }: ChatInputProps) {
         <button
           type="button"
           onClick={handleSubmit}
-          disabled={disabled || !text.trim()}
+          disabled={disabled || !displayText.trim()}
           className={cn(
             'flex items-center justify-center w-10 h-10 rounded-full shrink-0',
             'bg-[var(--color-primary)] text-[var(--color-on-primary)]',

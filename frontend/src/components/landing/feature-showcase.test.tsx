@@ -13,7 +13,7 @@ vi.mock('motion/react', () => ({
       return <h2 {...safe}>{children as React.ReactNode}</h2>
     },
     article: ({ children, ...rest }: Record<string, unknown>) => {
-      const { initial: _i, animate: _a, transition: _t, ...safe } = rest
+      const { initial: _i, animate: _a, transition: _t, whileInView: _w, viewport: _v, whileHover: _h, whileTap: _tp, ...safe } = rest
       return <article {...safe}>{children as React.ReactNode}</article>
     },
   },

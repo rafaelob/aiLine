@@ -127,8 +127,9 @@ export function HeroSection({ onStartDemo }: HeroSectionProps) {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.4, delay: 0.55, type: 'spring', stiffness: 200 }}
       >
-        <button
+        <motion.button
           onClick={onStartDemo}
+          whileTap={{ scale: 0.97 }}
           className={cn(
             'inline-flex items-center gap-2 px-8 py-4',
             'rounded-full text-lg font-bold',
@@ -153,7 +154,7 @@ export function HeroSection({ onStartDemo }: HeroSectionProps) {
           >
             <path d="M5 12h14M12 5l7 7-7 7" />
           </svg>
-        </button>
+        </motion.button>
       </motion.div>
 
       {/* Hackathon badge */}

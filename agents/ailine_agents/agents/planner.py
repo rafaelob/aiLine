@@ -6,18 +6,29 @@ Tools: rag_search, curriculum_lookup.
 
 from __future__ import annotations
 
+import functools
+
 import structlog
 from ailine_runtime.domain.entities.plan import StudyPlanDraft
 from pydantic_ai import Agent, RunContext
 
 from ..deps import AgentDeps
-from ..skills.registry import SkillRegistry
 from ._prompts import PLANNER_SYSTEM_PROMPT
 from ._tool_bridge import register_tools
 
 log = structlog.get_logger(__name__)
 
 _PLANNER_SKILLS = ["lesson-planner", "accessibility-coach"]
+
+
+@functools.lru_cache(maxsize=1)
+def _cached_skill_fragment() -> str:
+    """Load and cache skill prompt fragments (scanned once per process)."""
+    from ..skills.registry import SkillRegistry
+
+    registry = SkillRegistry()
+    registry.scan_paths()
+    return registry.get_prompt_fragment(_PLANNER_SKILLS)
 
 
 def build_planner_agent(*, use_skills: bool = True) -> Agent[AgentDeps, StudyPlanDraft]:
@@ -46,10 +57,8 @@ def build_planner_agent(*, use_skills: bool = True) -> Agent[AgentDeps, StudyPla
 
         @agent.system_prompt
         async def add_skills(ctx: RunContext[AgentDeps]) -> str:
-            """Load skill instructions (lesson-planner + accessibility-coach)."""
-            registry = SkillRegistry()
-            registry.scan_paths()
-            fragment = registry.get_prompt_fragment(_PLANNER_SKILLS)
+            """Load cached skill instructions (lesson-planner + accessibility-coach)."""
+            fragment = _cached_skill_fragment()
             if fragment:
                 log.debug("planner_skills_loaded", skills=_PLANNER_SKILLS)
             return fragment
@@ -57,33 +66,34 @@ def build_planner_agent(*, use_skills: bool = True) -> Agent[AgentDeps, StudyPla
     return agent
 
 
-_planner_agent: Agent[AgentDeps, StudyPlanDraft] | None = None
+@functools.lru_cache(maxsize=1)
+def _build_and_register_planner(use_skills: bool) -> Agent[AgentDeps, StudyPlanDraft]:
+    """Build planner agent with tools (cached, thread-safe via lru_cache)."""
+    agent = build_planner_agent(use_skills=use_skills)
+    from ailine_runtime.tools.registry import build_tool_registry
+
+    register_tools(
+        agent,
+        build_tool_registry(),
+        allowed_names=["rag_search", "curriculum_lookup"],
+    )
+    return agent
 
 
 def get_planner_agent(*, use_skills: bool | None = None) -> Agent[AgentDeps, StudyPlanDraft]:
     """Get or create the singleton PlannerAgent with tools registered."""
-    global _planner_agent
-    if _planner_agent is None:
-        if use_skills is None:
-            try:
-                from ailine_runtime.shared.config import get_settings
+    if use_skills is None:
+        try:
+            from ailine_runtime.shared.config import get_settings
 
-                use_skills = get_settings().planner_use_skills
-            except Exception:
-                use_skills = True
+            use_skills = get_settings().planner_use_skills
+        except Exception:
+            use_skills = True
 
-        _planner_agent = build_planner_agent(use_skills=use_skills)
-        from ailine_runtime.tools.registry import build_tool_registry
-
-        register_tools(
-            _planner_agent,
-            build_tool_registry(),
-            allowed_names=["rag_search", "curriculum_lookup"],
-        )
-    return _planner_agent
+    return _build_and_register_planner(use_skills)
 
 
 def reset_planner_agent() -> None:
     """Reset singleton (for testing)."""
-    global _planner_agent
-    _planner_agent = None
+    _build_and_register_planner.cache_clear()
+    _cached_skill_fragment.cache_clear()

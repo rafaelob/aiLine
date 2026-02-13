@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import json
 import os
-import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -120,7 +119,9 @@ async def create_tutor_agent(
         auto_persona: If True and LLM available, generate persona with AI.
         llm: Optional ChatLLM instance for persona generation.
     """
-    tutor_id = str(uuid.uuid4())
+    from uuid_utils import uuid7
+
+    tutor_id = str(uuid7())
     created_at = datetime.now(UTC).isoformat()
 
     learner = LearnerProfile(**student_profile)

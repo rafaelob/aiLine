@@ -24,6 +24,7 @@ from langgraph.types import RunnableConfig
 
 from ..agents.executor import get_executor_agent
 from ..agents.planner import get_planner_agent
+from ..agents.quality_gate import get_quality_gate_agent
 from ..deps import AgentDeps
 from ..model_selection.bridge import PydanticAIModelSelector
 from ._sse_helpers import get_emitter_and_writer, try_emit
@@ -118,8 +119,8 @@ def build_plan_workflow(
             try_emit(emitter, writer, SSEEventType.STAGE_FAILED, "planner", {"error": str(exc)})
             raise
 
-    def validate_node(state: RunState, config: RunnableConfig) -> RunState:
-        """Deterministic validation + quality scoring (ADR-050)."""
+    async def validate_node(state: RunState, config: RunnableConfig) -> RunState:
+        """Hybrid validation: deterministic first, LLM QualityGate for borderline (ADR-050)."""
         emitter, writer = get_emitter_and_writer(config)
         run_id = state.get("run_id", "")
 
@@ -134,12 +135,48 @@ def build_plan_workflow(
             )
             validation = validate_draft_accessibility(state.get("draft") or {}, class_profile)
 
-            score = validation.get("score", 0)
+            det_score = validation.get("score", 0)
             status = validation.get("status", "unknown")
 
-            log_event("validate.complete", run_id=run_id, score=score, status=status)
+            # Hybrid gate: if borderline (60-85), run QualityGateAgent for nuanced LLM assessment
+            final_score = det_score
+            if 60 <= det_score <= 85:
+                try:
+                    qg_agent = get_quality_gate_agent()
+                    draft_json = state.get("draft") or {}
+                    qg_prompt = (
+                        f"Avalie este plano de aula. Score deterministico: {det_score}.\n"
+                        f"Draft: {json.dumps(draft_json, ensure_ascii=False)[:3000]}\n"
+                        f"Checklist: {json.dumps(validation.get('checklist', {}), ensure_ascii=False)}\n"
+                    )
+                    qg_result = await qg_agent.run(qg_prompt, deps=deps)
+                    llm_score = qg_result.output.score
+                    # Merge: 0.4 deterministic + 0.6 LLM
+                    final_score = int(0.4 * det_score + 0.6 * llm_score)
+                    validation["llm_assessment"] = qg_result.output.model_dump()
+                    validation["score"] = final_score
+                    validation["score_breakdown"] = {
+                        "deterministic": det_score,
+                        "llm": llm_score,
+                        "weights": "0.4*det+0.6*llm",
+                    }
+                    log_event("validate.llm_gate", run_id=run_id, det=det_score, llm=llm_score, final=final_score)
+                except Exception as llm_exc:
+                    # LLM gate failed — fall back to deterministic only
+                    log_event("validate.llm_gate_failed", run_id=run_id, error=str(llm_exc))
+
+            # Update status based on final score
+            if final_score < 60:
+                status = "must-refine"
+            elif final_score < 80:
+                status = "refine-if-budget"
+            else:
+                status = "accept"
+            validation["status"] = status
+
+            log_event("validate.complete", run_id=run_id, score=final_score, status=status)
             try_emit(emitter, writer, SSEEventType.QUALITY_SCORED, "validate", {
-                "score": score,
+                "score": final_score,
                 "status": status,
                 "checklist": validation.get("checklist", {}),
             })

@@ -7,6 +7,7 @@ import { TopBar } from '@/components/layout/topbar'
 import { MobileNav } from '@/components/layout/mobile-nav'
 import { A11yHydrator } from '@/components/accessibility/a11y-hydrator'
 import { ServiceWorkerRegistrar } from '@/components/pwa/sw-registrar'
+import { ToastProvider } from '@/components/ui/toast-provider'
 import '@/styles/globals.css'
 
 interface LocaleLayoutProps {
@@ -78,6 +79,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
 
           {/* Mobile bottom navigation */}
           <MobileNav />
+          <ToastProvider />
         </NextIntlClientProvider>
       </body>
     </html>

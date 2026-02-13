@@ -67,7 +67,14 @@ class TestPgVectorStoreUpsert:
             texts=["hello", "world"],
             metadatas=[{"k": "v"}, {"n": 1}],
         )
-        assert mock_session.execute.call_count == 2
+        # Batch upsert: single executemany call instead of N per-row calls
+        assert mock_session.execute.call_count == 1
+        # Verify all rows were passed as a batch params list
+        call_args = mock_session.execute.call_args
+        params_list = call_args[0][1]
+        assert len(params_list) == 2
+        assert params_list[0]["id"] == "a"
+        assert params_list[1]["id"] == "b"
         mock_session.commit.assert_called_once()
 
 

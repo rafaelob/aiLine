@@ -98,6 +98,6 @@ describe('PersonaToggle', () => {
 
     const teaRadio = screen.getByRole('radio', { name: /TEA/ })
     expect(teaRadio).toHaveAttribute('aria-checked', 'true')
-    expect(teaRadio).toHaveClass('text-white')
+    expect(teaRadio).toHaveClass('text-[var(--color-on-primary)]')
   })
 })

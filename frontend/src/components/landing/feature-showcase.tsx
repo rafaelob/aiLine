@@ -73,10 +73,13 @@ export function FeatureShowcase() {
               'border border-[var(--color-border)]',
               'hover:shadow-[var(--shadow-lg)]',
               'transition-shadow duration-300',
-              'group'
+              'group cursor-default'
             )}
             initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-50px' }}
+            whileHover={{ y: -3 }}
+            whileTap={{ scale: 0.98 }}
             transition={{ duration: 0.4, delay: 0.1 * i }}
           >
             {/* Icon */}

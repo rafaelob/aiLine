@@ -36,9 +36,39 @@ export function PreferencesPanel({ onClose }: PreferencesPanelProps) {
   const { theme, fontSize, reducedMotion, setTheme, setFontSize, setReducedMotion } =
     useAccessibilityStore()
 
-  // Focus trap: focus close button on mount
+  // Focus trap: focus close button on mount and trap Tab within panel
   useEffect(() => {
     closeButtonRef.current?.focus()
+
+    const panel = panelRef.current
+    if (!panel) return
+
+    function handleFocusTrap(e: KeyboardEvent) {
+      if (e.key !== 'Tab') return
+
+      const focusableEls = panel!.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+      if (focusableEls.length === 0) return
+
+      const first = focusableEls[0]
+      const last = focusableEls[focusableEls.length - 1]
+
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault()
+          last.focus()
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault()
+          first.focus()
+        }
+      }
+    }
+
+    document.addEventListener('keydown', handleFocusTrap)
+    return () => document.removeEventListener('keydown', handleFocusTrap)
   }, [])
 
   // Close on Escape
@@ -70,21 +100,31 @@ export function PreferencesPanel({ onClose }: PreferencesPanelProps) {
   }
 
   return (
-    <motion.div
-      ref={panelRef}
-      role="dialog"
-      aria-label={t('title')}
-      aria-modal="true"
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 20 }}
-      onKeyDown={handleKeyDown}
-      className={cn(
-        'fixed right-0 top-0 z-50 h-full w-80 max-w-full',
-        'border-l bg-[var(--color-surface)] border-[var(--color-border)]',
-        'overflow-y-auto shadow-lg p-6'
-      )}
-    >
+    <>
+      {/* Backdrop overlay */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="fixed inset-0 z-40 bg-black/30"
+        aria-hidden="true"
+      />
+      <motion.div
+        ref={panelRef}
+        role="dialog"
+        aria-label={t('title')}
+        aria-modal="true"
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: 20 }}
+        onKeyDown={handleKeyDown}
+        className={cn(
+          'fixed right-0 top-0 z-50 h-full w-full sm:w-80 sm:max-w-full',
+          'border-l bg-[var(--color-surface)] border-[var(--color-border)]',
+          'overflow-y-auto shadow-lg p-6'
+        )}
+      >
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-bold text-[var(--color-text)]">{t('title')}</h2>
@@ -228,6 +268,7 @@ export function PreferencesPanel({ onClose }: PreferencesPanelProps) {
         </div>
       </fieldset>
     </motion.div>
+    </>
   )
 }
 

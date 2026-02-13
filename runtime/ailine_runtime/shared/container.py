@@ -36,12 +36,14 @@ class Container:
         event_bus = _build_event_bus(settings)
         llm = _build_llm(settings)
         embeddings = _build_embeddings(settings)
+        vectorstore = _build_vectorstore(settings)
         stt, tts, image_describer, ocr = _build_media(settings)
         sign_recognition = _build_sign_recognition(settings)
         return cls(
             settings=settings,
             llm=llm,
             embeddings=embeddings,
+            vectorstore=vectorstore,
             event_bus=event_bus,
             stt=stt,
             tts=tts,
@@ -51,10 +53,56 @@ class Container:
         )
 
 
+def _build_vectorstore(settings: Settings) -> VectorStore | None:
+    """Build vector store adapter based on provider setting.
+
+    Returns None when the required database URL is not configured (e.g. SQLite dev).
+    """
+    provider = settings.vectorstore.provider
+    if provider == "pgvector":
+        db_url = settings.db.url
+        # pgvector requires a PostgreSQL URL
+        if not db_url or "sqlite" in db_url:
+            return None
+        try:
+            from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+            from ..adapters.vectorstores.pgvector_store import PgVectorStore
+
+            engine = create_async_engine(
+                db_url,
+                pool_size=settings.db.pool_size,
+                max_overflow=settings.db.max_overflow,
+                echo=settings.db.echo,
+            )
+            session_factory = async_sessionmaker(engine, expire_on_commit=False)
+            return PgVectorStore(
+                session_factory=session_factory,
+                dimensions=settings.embedding.dimensions,
+            )
+        except ImportError:
+            return None
+    return None
+
+
 def _build_event_bus(settings: Settings) -> EventBus:
-    """Build event bus: in-memory for dev, Redis for prod."""
+    """Build event bus: in-memory for dev, Redis for prod.
+
+    Uses AILINE_EVENT_BUS_PROVIDER setting (redis|inmemory) when set,
+    otherwise falls back to detecting a non-empty redis URL.
+    """
+    import os
+
+    explicit_provider = os.getenv("AILINE_EVENT_BUS_PROVIDER", "").lower()
     redis_url = settings.redis.url
-    if redis_url and redis_url != "redis://localhost:6379/0":
+
+    use_redis = (
+        explicit_provider == "redis"
+        or (explicit_provider not in ("inmemory", "") and False)
+        or (explicit_provider == "" and bool(redis_url))
+    )
+
+    if use_redis and redis_url:
         try:
             from ..adapters.events.redis_bus import RedisEventBus
 

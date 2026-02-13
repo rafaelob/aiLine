@@ -13,7 +13,7 @@ import { ChatInput } from './chat-input'
  */
 export function TutorChat() {
   const t = useTranslations('tutor')
-  const { sendMessage, messages, isStreaming, error } = useTutorSSE()
+  const { sendMessage, cancel, messages, isStreaming, error } = useTutorSSE()
   const scrollRef = useRef<HTMLDivElement>(null)
 
   // Auto-scroll to bottom when new messages arrive
@@ -28,7 +28,7 @@ export function TutorChat() {
   return (
     <div
       className={cn(
-        'flex flex-col h-[calc(100vh-12rem)]',
+        'flex flex-col flex-1 min-h-0 max-h-[calc(100vh-10rem)] sm:max-h-[calc(100vh-8rem)]',
         'rounded-[var(--radius-lg)] border border-[var(--color-border)]',
         'bg-[var(--color-surface)] overflow-hidden'
       )}
@@ -96,6 +96,25 @@ export function TutorChat() {
         </div>
       )}
 
+      {/* Stop generating button */}
+      {isStreaming && (
+        <div className="flex justify-center px-4 py-2 border-t border-[var(--color-border)]">
+          <button
+            type="button"
+            onClick={cancel}
+            className={cn(
+              'flex items-center gap-2 px-4 py-2 rounded-[var(--radius-md)]',
+              'border border-[var(--color-border)] text-sm font-medium',
+              'text-[var(--color-text)] hover:bg-[var(--color-surface-elevated)]',
+              'transition-colors'
+            )}
+          >
+            <StopSquareIcon />
+            {t('stop_generating')}
+          </button>
+        </div>
+      )}
+
       {/* Input bar */}
       <ChatInput onSend={sendMessage} disabled={isStreaming} />
     </div>
@@ -122,6 +141,14 @@ function TutorWelcomeIcon() {
         <circle cx="15" cy="10" r="1" fill="var(--color-primary)" />
       </svg>
     </div>
+  )
+}
+
+function StopSquareIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="6" y="6" width="12" height="12" rx="1" />
+    </svg>
   )
 }
 

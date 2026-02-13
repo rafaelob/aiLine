@@ -1,4 +1,8 @@
-"""Tutors API router — tutor agent CRUD + chat."""
+"""Tutors API router — tutor agent CRUD + chat.
+
+Chat uses the LangGraph tutor workflow (via ailine_agents) for validated
+structured output, tool access, and RAG integration.
+"""
 
 from __future__ import annotations
 
@@ -8,7 +12,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from ...tutoring.builder import create_tutor_agent, load_tutor_spec
-from ...tutoring.session import create_session, load_session, save_session, tutor_chat_turn
+from ...tutoring.session import create_session, load_session, save_session
 
 router = APIRouter()
 
@@ -76,10 +80,11 @@ class TutorChatIn(BaseModel):
 
 @router.post("/{tutor_id}/chat")
 async def tutor_chat(tutor_id: str, body: TutorChatIn, request: Request):
-    settings = request.app.state.settings
-    from ...tools.registry import build_tool_registry
+    container = request.app.state.container
 
-    registry = build_tool_registry()
+    spec = load_tutor_spec(tutor_id)
+    if not spec:
+        raise HTTPException(status_code=404, detail="Tutor not found")
 
     session = load_session(body.session_id)
     if not session:
@@ -87,11 +92,41 @@ async def tutor_chat(tutor_id: str, body: TutorChatIn, request: Request):
     if session.tutor_id != tutor_id:
         raise HTTPException(status_code=400, detail="Session does not belong to this tutor")
 
-    result = await tutor_chat_turn(
-        cfg=settings,
-        registry=registry,
-        tutor_id=tutor_id,
-        session=session,
-        user_message=body.message,
+    # Update session with user message
+    session.append("user", body.message)
+
+    # Build AgentDeps from container
+    from ailine_agents.deps import AgentDepsFactory
+    from ailine_agents.workflows.tutor_workflow import build_tutor_workflow, run_tutor_turn
+
+    deps = AgentDepsFactory.from_container(
+        container,
+        teacher_id=spec.teacher_id,
+        subject=spec.subject,
     )
-    return result
+
+    workflow = build_tutor_workflow(deps)
+
+    # Build history from session messages
+    history = [{"role": m.role, "content": m.content} for m in session.messages[:-1]]
+
+    result = await run_tutor_turn(
+        workflow=workflow,
+        tutor_id=tutor_id,
+        session_id=session.session_id,
+        user_message=body.message,
+        history=history,
+        spec=spec.model_dump(),
+    )
+
+    # Persist assistant response in session
+    validated = result.get("validated_output") or {}
+    answer = validated.get("answer_markdown", "")
+    session.append("assistant", answer)
+    save_session(session)
+
+    return {
+        "validated": validated,
+        "session_id": session.session_id,
+        "error": result.get("error"),
+    }

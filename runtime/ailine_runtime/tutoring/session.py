@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import json
 import os
-import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -44,8 +43,10 @@ def load_session(session_id: str) -> TutorSession | None:
 
 
 def create_session(tutor_id: str) -> TutorSession:
+    from uuid_utils import uuid7
+
     return TutorSession(
-        session_id=str(uuid.uuid4()),
+        session_id=str(uuid7()),
         tutor_id=tutor_id,
         created_at=datetime.now(UTC).isoformat(),
     )
