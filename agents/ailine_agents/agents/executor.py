@@ -15,11 +15,17 @@ from ..models import ExecutorResult
 from ._prompts import EXECUTOR_SYSTEM_PROMPT
 from ._tool_bridge import register_tools
 
+_DEFAULT_EXECUTOR_MODEL = "anthropic:claude-sonnet-4-5"
 
-def build_executor_agent() -> Agent[AgentDeps, ExecutorResult]:
-    """Create the ExecutorAgent with typed output and tools."""
+
+def build_executor_agent(*, model: str | None = None) -> Agent[AgentDeps, ExecutorResult]:
+    """Create the ExecutorAgent with typed output and tools.
+
+    Args:
+        model: Override the default model ID (e.g. for testing or SmartRouter).
+    """
     agent: Agent[AgentDeps, ExecutorResult] = Agent(
-        model="anthropic:claude-sonnet-4-5",
+        model=model or _DEFAULT_EXECUTOR_MODEL,
         output_type=ExecutorResult,
         deps_type=AgentDeps,
         system_prompt=EXECUTOR_SYSTEM_PROMPT,
@@ -41,10 +47,10 @@ def build_executor_agent() -> Agent[AgentDeps, ExecutorResult]:
     return agent
 
 
-@functools.lru_cache(maxsize=1)
-def _build_and_register_executor() -> Agent[AgentDeps, ExecutorResult]:
+@functools.lru_cache(maxsize=4)
+def _build_and_register_executor(model: str | None = None) -> Agent[AgentDeps, ExecutorResult]:
     """Build executor agent with tools (cached, thread-safe via lru_cache)."""
-    agent = build_executor_agent()
+    agent = build_executor_agent(model=model)
     from ailine_runtime.tools.registry import build_tool_registry
 
     register_tools(
@@ -60,9 +66,17 @@ def _build_and_register_executor() -> Agent[AgentDeps, ExecutorResult]:
     return agent
 
 
-def get_executor_agent() -> Agent[AgentDeps, ExecutorResult]:
+def get_executor_agent(*, model: str | None = None) -> Agent[AgentDeps, ExecutorResult]:
     """Get or create the singleton ExecutorAgent with tools registered."""
-    return _build_and_register_executor()
+    if model is None:
+        try:
+            from ailine_runtime.shared.config import get_settings
+
+            model = getattr(get_settings(), "executor_model", None)
+        except (ImportError, AttributeError):
+            pass
+
+    return _build_and_register_executor(model)
 
 
 def reset_executor_agent() -> None:

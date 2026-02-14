@@ -14,11 +14,17 @@ from ..deps import AgentDeps
 from ..models import QualityAssessment
 from ._prompts import QUALITY_GATE_SYSTEM_PROMPT
 
+_DEFAULT_QG_MODEL = "anthropic:claude-sonnet-4-5"
 
-def build_quality_gate_agent() -> Agent[AgentDeps, QualityAssessment]:
-    """Create the QualityGateAgent with typed output."""
+
+def build_quality_gate_agent(*, model: str | None = None) -> Agent[AgentDeps, QualityAssessment]:
+    """Create the QualityGateAgent with typed output.
+
+    Args:
+        model: Override the default model ID (e.g. for testing or SmartRouter).
+    """
     agent: Agent[AgentDeps, QualityAssessment] = Agent(
-        model="anthropic:claude-sonnet-4-5",
+        model=model or _DEFAULT_QG_MODEL,
         output_type=QualityAssessment,
         deps_type=AgentDeps,
         system_prompt=QUALITY_GATE_SYSTEM_PROMPT,
@@ -27,12 +33,25 @@ def build_quality_gate_agent() -> Agent[AgentDeps, QualityAssessment]:
     return agent
 
 
-@functools.lru_cache(maxsize=1)
-def get_quality_gate_agent() -> Agent[AgentDeps, QualityAssessment]:
-    """Get or create the singleton QualityGateAgent (cached, thread-safe)."""
-    return build_quality_gate_agent()
+@functools.lru_cache(maxsize=4)
+def _build_and_cache_qg(model: str | None = None) -> Agent[AgentDeps, QualityAssessment]:
+    """Build quality gate agent (cached, thread-safe via lru_cache)."""
+    return build_quality_gate_agent(model=model)
+
+
+def get_quality_gate_agent(*, model: str | None = None) -> Agent[AgentDeps, QualityAssessment]:
+    """Get or create the singleton QualityGateAgent."""
+    if model is None:
+        try:
+            from ailine_runtime.shared.config import get_settings
+
+            model = getattr(get_settings(), "qg_model", None)
+        except (ImportError, AttributeError):
+            pass
+
+    return _build_and_cache_qg(model)
 
 
 def reset_quality_gate_agent() -> None:
     """Reset singleton (for testing)."""
-    get_quality_gate_agent.cache_clear()
+    _build_and_cache_qg.cache_clear()

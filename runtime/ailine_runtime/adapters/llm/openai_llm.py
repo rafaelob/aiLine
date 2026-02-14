@@ -33,7 +33,8 @@ class OpenAIChatLLM:
     ) -> None:
         from openai import AsyncOpenAI
 
-        self._model = model
+        # Strip provider prefix if present (e.g. "openai:gpt-4o" → "gpt-4o")
+        self._model = model.removeprefix("openai:").removeprefix("openrouter:")
         self._provider = provider
         self._api_key = api_key
 

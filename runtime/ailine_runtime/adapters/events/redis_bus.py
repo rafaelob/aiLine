@@ -50,5 +50,5 @@ class RedisEventBus:
         """Gracefully shut down the Redis connection."""
         if self._listener_task and not self._listener_task.done():
             self._listener_task.cancel()
-        await self._pubsub.close()
-        await self._redis.close()
+        await self._pubsub.aclose()
+        await self._redis.aclose()

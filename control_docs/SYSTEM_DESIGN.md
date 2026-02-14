@@ -50,6 +50,17 @@ Upload -> parse (PDF/DOCX/TXT) -> chunk (512 tokens, 64 overlap) -> embed (gemin
 Weighted complexity classifier -> route to primary/cheap/escalation (see patterns below).
 Escalation triggers: JSON parse fail, schema validation fail, low validator score. Model badge in UI.
 
+### Agent Model Configuration (per-agent, env-overridable)
+
+| Agent | Env Var | Default | Rationale |
+|-------|---------|---------|-----------|
+| Planner | `AILINE_PLANNER_MODEL` | `anthropic:claude-opus-4-6` | Best reasoning for plan generation |
+| Executor | `AILINE_EXECUTOR_MODEL` | `google-gla:gemini-3-flash-preview` | Cost-efficient for tool execution |
+| QualityGate | `AILINE_QG_MODEL` | `anthropic:claude-sonnet-4-5` | Balanced for assessment |
+| Tutor | `AILINE_TUTOR_MODEL` | `anthropic:claude-sonnet-4-5` | Conversational quality |
+
+Format: `provider:model-name` (anthropic, google-gla, openai, openrouter).
+
 ## Key Implementation Patterns
 
 - **UnitOfWork:** `async_sessionmaker(expire_on_commit=False)`, pool 10+10 (ADR-052), step-level UoW per LangGraph node

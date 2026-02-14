@@ -21,7 +21,8 @@ class AnthropicChatLLM:
     """ChatLLM implementation backed by Anthropic's Messages API."""
 
     def __init__(self, *, model: str = "claude-opus-4-6", api_key: str = "") -> None:
-        self._model = model
+        # Strip provider prefix if present (e.g. "anthropic:claude-opus-4-6" → "claude-opus-4-6")
+        self._model = model.removeprefix("anthropic:")
         self._client = AsyncAnthropic(api_key=api_key) if api_key else AsyncAnthropic()
 
     @property

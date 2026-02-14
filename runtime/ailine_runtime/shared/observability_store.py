@@ -18,8 +18,10 @@ _COST_PER_1K_INPUT: dict[str, float] = {
     "gpt-5.2": 0.015,
     "gpt-4o": 0.005,
     "gpt-4o-mini": 0.00015,
-    "gemini-3-pro": 0.00125,
-    "gemini-flash": 0.000075,
+    "gemini-3-pro-preview": 0.00125,
+    "gemini-3-flash-preview": 0.000075,
+    "gemini-2.5-pro": 0.00125,
+    "gemini-2.5-flash": 0.000075,
     "default": 0.003,
 }
 
@@ -30,8 +32,10 @@ _COST_PER_1K_OUTPUT: dict[str, float] = {
     "gpt-5.2": 0.060,
     "gpt-4o": 0.015,
     "gpt-4o-mini": 0.0006,
-    "gemini-3-pro": 0.005,
-    "gemini-flash": 0.0003,
+    "gemini-3-pro-preview": 0.005,
+    "gemini-3-flash-preview": 0.0003,
+    "gemini-2.5-pro": 0.005,
+    "gemini-2.5-flash": 0.0003,
     "default": 0.015,
 }
 

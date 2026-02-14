@@ -9,12 +9,8 @@ export default defineConfig({
     include: ['src/**/*.test.{ts,tsx}'],
     css: false,
     pool: 'forks',
-    poolOptions: {
-      forks: {
-        maxForks: 2,
-        execArgv: ['--max-old-space-size=4096'],
-      },
-    },
+    maxWorkers: 2,
+    execArgv: ['--max-old-space-size=4096'],
     coverage: {
       provider: 'v8',
       include: ['src/**/*.{ts,tsx}'],

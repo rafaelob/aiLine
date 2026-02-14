@@ -9,8 +9,11 @@ class TestAiLineConfig:
     def test_default_creation(self):
         from ailine_runtime.config import AiLineConfig
         cfg = AiLineConfig()
-        assert cfg.planner_model == "claude-opus-4-6"
-        assert cfg.executor_model == "claude-opus-4-6"
+        # Env vars may override defaults; check against actual env or default
+        expected_planner = os.getenv("AILINE_PLANNER_MODEL", "anthropic:claude-opus-4-6")
+        expected_executor = os.getenv("AILINE_EXECUTOR_MODEL", "google-gla:gemini-3-flash-preview")
+        assert cfg.planner_model == expected_planner
+        assert cfg.executor_model == expected_executor
         assert cfg.max_refinement_iters == 2
 
     def test_skill_source_paths(self):

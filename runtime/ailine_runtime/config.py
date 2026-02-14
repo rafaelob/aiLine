@@ -10,8 +10,10 @@ class AiLineConfig:
     anthropic_api_key: str | None = os.getenv("ANTHROPIC_API_KEY")
 
     # Runtime models
-    planner_model: str = os.getenv("AILINE_PLANNER_MODEL", "claude-opus-4-6")
-    executor_model: str = os.getenv("AILINE_EXECUTOR_MODEL", "claude-opus-4-6")
+    planner_model: str = os.getenv("AILINE_PLANNER_MODEL", "anthropic:claude-opus-4-6")
+    executor_model: str = os.getenv("AILINE_EXECUTOR_MODEL", "google-gla:gemini-3-flash-preview")
+    qg_model: str = os.getenv("AILINE_QG_MODEL", "anthropic:claude-sonnet-4-5")
+    tutor_model: str = os.getenv("AILINE_TUTOR_MODEL", "anthropic:claude-sonnet-4-5")
 
     # Effort costuma ser controlado via Claude Code settings/env; mantemos uma cópia para o Planner (DeepAgents).
     planner_effort: str = os.getenv("AILINE_PLANNER_EFFORT", "high")  # low|medium|high|max

@@ -67,9 +67,11 @@ class Settings(BaseSettings):
     db: DatabaseConfig = Field(default_factory=DatabaseConfig)
     redis: RedisConfig = Field(default_factory=RedisConfig)
 
-    # Pipeline
-    planner_model: str = "claude-opus-4-6"
-    executor_model: str = "claude-opus-4-6"
+    # Pipeline — all model IDs use Pydantic AI format: "provider:model-name"
+    planner_model: str = "anthropic:claude-opus-4-6"
+    executor_model: str = "google-gla:gemini-3-flash-preview"
+    qg_model: str = "anthropic:claude-sonnet-4-5"
+    tutor_model: str = "anthropic:claude-sonnet-4-5"
     planner_effort: str = "high"
     max_refinement_iters: int = 2
 

@@ -18,6 +18,10 @@ All 15 sprints (S0-S14) + agents package COMPLETED. 1,993+ backend tests (1,743 
 - [x] Fix all HIGH audit findings (Link, model IDs, cognitive curtain, reducedMotion)
 - [x] Fix all lint errors (ruff F401, I001, UP017, E501; ESLint 0 errors)
 - [x] Docker Compose verification
+- [x] Eliminate Pydantic AI DeprecationWarning (model prefix `provider:model-name`)
+- [x] Migrate Vitest 4 deprecated `poolOptions` → top-level config
+- [x] Per-agent model configuration (4 env vars, Gemini 3 Flash default for executor)
+- [x] LLM adapter prefix stripping (Anthropic, OpenAI, Gemini)
 - [ ] Demo video (3 min)
 
 ---

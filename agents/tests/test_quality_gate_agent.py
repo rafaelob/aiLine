@@ -55,11 +55,11 @@ class TestResetQualityGateAgent:
     """reset_quality_gate_agent() clears the lru_cache singleton."""
 
     def test_reset_clears_cache(self) -> None:
-        from ailine_agents.agents.quality_gate import get_quality_gate_agent
+        from ailine_agents.agents.quality_gate import _build_and_cache_qg
 
         # Populate cache
-        get_quality_gate_agent()
-        assert get_quality_gate_agent.cache_info().currsize == 1
+        _build_and_cache_qg()
+        assert _build_and_cache_qg.cache_info().currsize == 1
 
         reset_quality_gate_agent()
-        assert get_quality_gate_agent.cache_info().currsize == 0
+        assert _build_and_cache_qg.cache_info().currsize == 0

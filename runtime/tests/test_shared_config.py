@@ -67,7 +67,7 @@ class TestSettings:
         from ailine_runtime.shared.config import Settings
 
         settings = Settings()
-        assert settings.planner_model == "claude-opus-4-6"
+        assert settings.planner_model == "anthropic:claude-opus-4-6"
         assert settings.max_refinement_iters == 2
         assert settings.demo_mode is False
         assert settings.default_locale == "pt-BR"

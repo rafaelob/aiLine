@@ -15,7 +15,13 @@ All notable changes documented here. Format: [Keep a Changelog](https://keepacha
 - Ruff: F401, I001, UP017, E501 all fixed (0 lint errors across runtime + agents)
 
 ### Improved
-- Agent model IDs now configurable via settings (planner_model, tutor_model)
+- All 4 agent model IDs configurable via env vars with `provider:model` format (Pydantic AI 1.58 compliant)
+- Default executor model changed to `google-gla:gemini-3-flash-preview` (cost-efficient)
+- Pydantic AI DeprecationWarning eliminated (model names now use required provider prefix)
+- Vitest 4 config migrated: deprecated `poolOptions` → top-level `maxWorkers`/`execArgv`
+- Gemini adapter default updated to `gemini-3-flash-preview` (was `gemini-2.5-flash`)
+- LLM adapters defensively strip provider prefix (e.g. `anthropic:claude-opus-4-6` → `claude-opus-4-6`)
+- Cost tracking includes Gemini 3 Pro/Flash pricing
 - README.md rewritten for hackathon judges (badges, Mermaid diagrams, metrics)
 - Accessibility persona themes enhanced with meaningful UX adaptations
 - Quality decision persisted in LangGraph workflow state for auditability

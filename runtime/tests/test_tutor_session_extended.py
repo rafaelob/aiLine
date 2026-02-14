@@ -156,7 +156,7 @@ class TestTutorChatTurn:
         container.llm = container_llm
 
         cfg = MagicMock()
-        cfg.executor_model = "claude-opus-4-6"
+        cfg.executor_model = "anthropic:claude-opus-4-6"
         cfg._container = container
 
         result = await tutor_chat_turn(
@@ -189,7 +189,7 @@ class TestTutorChatTurn:
         # Pass a simple mock cfg with no container
         from unittest.mock import MagicMock
         cfg = MagicMock()
-        cfg.executor_model = "claude-opus-4-6"
+        cfg.executor_model = "anthropic:claude-opus-4-6"
         cfg._container = None
 
         result = await tutor_chat_turn(
