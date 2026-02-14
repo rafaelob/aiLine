@@ -31,7 +31,7 @@ interface WebcamCaptureProps {
   className?: string
 }
 
-export function WebcamCapture({ className }: WebcamCaptureProps) {
+export default function WebcamCapture({ className }: WebcamCaptureProps) {
   const t = useTranslations('sign_language')
 
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -233,6 +233,7 @@ export function WebcamCapture({ className }: WebcamCaptureProps) {
             autoPlay
             playsInline
             muted
+            aria-label={t('webcam')}
             className={cn(
               'h-full w-full object-cover',
               captureState !== 'streaming' && captureState !== 'capturing' && 'hidden'

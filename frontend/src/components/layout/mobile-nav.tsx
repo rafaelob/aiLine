@@ -1,6 +1,7 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
+import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/cn'
 
@@ -57,8 +58,9 @@ export function MobileNav() {
           const active = isActive(item.href)
           return (
             <li key={item.key} className="flex-1">
-              <a
-                href={`${localePrefix}${item.href}`}
+              <Link
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic locale-prefixed paths
+                href={`${localePrefix}${item.href}` as any}
                 aria-current={active ? 'page' : undefined}
                 className={cn(
                   'flex flex-col items-center gap-1 py-2 px-1',
@@ -78,7 +80,7 @@ export function MobileNav() {
                   {item.icon}
                 </span>
                 <span>{t(item.key)}</span>
-              </a>
+              </Link>
             </li>
           )
         })}

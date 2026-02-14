@@ -3,6 +3,10 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import ErrorPage from './error'
 
+vi.mock('next/navigation', () => ({
+  useParams: () => ({ locale: 'pt-BR' }),
+}))
+
 describe('ErrorPage', () => {
   const mockError = Object.assign(new Error('Test error'), { digest: 'abc123' })
   const mockReset = vi.fn()
@@ -34,11 +38,11 @@ describe('ErrorPage', () => {
     expect(mockReset).toHaveBeenCalledTimes(1)
   })
 
-  it('renders go home link pointing to root', () => {
+  it('renders go home link pointing to locale root', () => {
     render(<ErrorPage error={mockError} reset={mockReset} />)
     const link = screen.getByText('common.go_home')
     expect(link).toBeInTheDocument()
-    expect(link.closest('a')).toHaveAttribute('href', '/')
+    expect(link.closest('a')).toHaveAttribute('href', '/pt-BR')
   })
 
   it('renders the error icon', () => {

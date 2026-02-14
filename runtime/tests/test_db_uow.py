@@ -32,8 +32,8 @@ from ailine_runtime.adapters.db.unit_of_work import SqlAlchemyUnitOfWork
 # ---------------------------------------------------------------------------
 
 
-def _make_teacher(**overrides: object) -> TeacherRow:
-    defaults = {
+def _make_teacher(**overrides: str) -> TeacherRow:
+    defaults: dict[str, str] = {
         "id": _uuid7_str(),
         "email": "uow-test@ailine.dev",
         "display_name": "UoW Tester",

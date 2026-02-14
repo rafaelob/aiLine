@@ -99,7 +99,7 @@ class TestExtractImage:
     @pytest.mark.asyncio
     async def test_image_extraction_failure(self, ocr):
         mock_pil = MagicMock()
-        mock_pil.Image.open.side_effect = Exception("Bad image")
+        mock_pil.Image.open.side_effect = OSError("Bad image")
         mock_pytesseract = MagicMock()
 
         with patch.dict(

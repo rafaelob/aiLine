@@ -49,8 +49,10 @@ export function TutorChat() {
         ref={scrollRef}
         onScroll={handleScroll}
         className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth"
-        role="list"
+        role="log"
         aria-label={t('messages_label')}
+        aria-live="polite"
+        aria-relevant="additions"
       >
         {isEmpty && (
           <div className="flex flex-col items-center justify-center h-full text-center px-8">
@@ -97,7 +99,7 @@ export function TutorChat() {
 
         {/* Thinking indicator */}
         {isStreaming && messages.length > 0 && messages[messages.length - 1].role === 'assistant' && messages[messages.length - 1].content === '' && (
-          <div className="flex items-center gap-2 text-sm text-[var(--color-muted)] pl-11">
+          <div className="flex items-center gap-2 text-sm text-[var(--color-muted)] pl-11" role="status" aria-label={t('thinking')}>
             <ThinkingDots />
             {t('thinking')}
           </div>
@@ -132,6 +134,15 @@ export function TutorChat() {
           </button>
         </div>
       )}
+
+      {/* SR-only live region for streaming status */}
+      <div className="sr-only" aria-live="assertive" aria-atomic="true">
+        {isStreaming && messages.length > 0
+          ? t('typing')
+          : error
+            ? error
+            : null}
+      </div>
 
       {/* Input bar */}
       <ChatInput onSend={sendMessage} disabled={isStreaming} />

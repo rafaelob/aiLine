@@ -24,11 +24,16 @@ from ailine_runtime.shared.config import Settings
 
 def _test_settings() -> Settings:
     """Settings configured with no real API keys."""
+    import os
+    os.environ["AILINE_DEV_MODE"] = "true"
     return Settings(
         anthropic_api_key="",
         openai_api_key="",
         google_api_key="",
     )
+
+
+_AUTH = {"X-Teacher-ID": "teacher-test"}
 
 
 _GOOD_FINAL_STATE = {
@@ -109,6 +114,7 @@ class TestPlansStreamEndpoint:
         with _patch_build_workflow(mock_wf), _patch_agent_deps_factory(), TestClient(app) as client:
             response = client.post(
                 "/plans/generate/stream",
+                headers=_AUTH,
                 json={"run_id": "test-001", "user_prompt": "Crie um plano de matematica"},
             )
             assert response.status_code == 200
@@ -122,6 +128,7 @@ class TestPlansStreamEndpoint:
         with _patch_build_workflow(mock_wf), _patch_agent_deps_factory(), TestClient(app) as client:
             response = client.post(
                 "/plans/generate/stream",
+                headers=_AUTH,
                 json={"run_id": "test-002", "user_prompt": "Plano de ciencias"},
             )
 
@@ -138,6 +145,7 @@ class TestPlansStreamEndpoint:
         with _patch_build_workflow(mock_wf), _patch_agent_deps_factory(), TestClient(app) as client:
             response = client.post(
                 "/plans/generate/stream",
+                headers=_AUTH,
                 json={"run_id": "test-003", "user_prompt": "Plano de historia"},
             )
 
@@ -160,6 +168,7 @@ class TestPlansStreamEndpoint:
         with _patch_build_workflow(mock_wf), _patch_agent_deps_factory(), TestClient(app) as client:
             response = client.post(
                 "/plans/generate/stream",
+                headers=_AUTH,
                 json={"run_id": "test-004", "user_prompt": "Plano de portugues"},
             )
 
@@ -176,6 +185,7 @@ class TestPlansStreamEndpoint:
         with _patch_build_workflow(mock_wf), _patch_agent_deps_factory(), TestClient(app) as client:
             response = client.post(
                 "/plans/generate/stream",
+                headers=_AUTH,
                 json={"run_id": "my-unique-run", "user_prompt": "Test run id"},
             )
 
@@ -191,6 +201,7 @@ class TestPlansStreamEndpoint:
         with _patch_build_workflow(mock_wf), _patch_agent_deps_factory(), TestClient(app) as client:
             response = client.post(
                 "/plans/generate/stream",
+                headers=_AUTH,
                 json={"run_id": "error-run", "user_prompt": "This will fail"},
             )
 
@@ -211,6 +222,7 @@ class TestPlansStreamEndpoint:
             # Missing user_prompt
             response = client.post(
                 "/plans/generate/stream",
+                headers=_AUTH,
                 json={"run_id": "no-prompt"},
             )
             assert response.status_code == 422
@@ -218,6 +230,7 @@ class TestPlansStreamEndpoint:
             # Missing run_id
             response = client.post(
                 "/plans/generate/stream",
+                headers=_AUTH,
                 json={"user_prompt": "hello"},
             )
             assert response.status_code == 422
@@ -230,6 +243,7 @@ class TestPlansStreamEndpoint:
         with _patch_build_workflow(mock_wf), _patch_agent_deps_factory(), TestClient(app) as client:
             response = client.post(
                 "/plans/generate/stream",
+                headers=_AUTH,
                 json={"run_id": "headers-run", "user_prompt": "Test headers"},
             )
 
@@ -246,6 +260,7 @@ class TestPlansStreamEndpoint:
         with _patch_build_workflow(mock_wf), _patch_agent_deps_factory(), TestClient(app) as client:
             response = client.post(
                 "/plans/generate/stream",
+                headers=_AUTH,
                 json={"run_id": "quality-run", "user_prompt": "Test quality"},
             )
 

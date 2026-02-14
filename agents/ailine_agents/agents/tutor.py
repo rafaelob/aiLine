@@ -32,10 +32,22 @@ def _cached_tutor_skill_fragment() -> str:
     return registry.get_prompt_fragment(_TUTOR_SKILLS)
 
 
-def build_tutor_agent(*, use_skills: bool = True) -> Agent[AgentDeps, TutorTurnOutput]:
-    """Create the TutorAgent with typed output, RAG tool, and web search."""
+_DEFAULT_TUTOR_MODEL = "anthropic:claude-sonnet-4-5"
+
+
+def build_tutor_agent(
+    *,
+    use_skills: bool = True,
+    model: str | None = None,
+) -> Agent[AgentDeps, TutorTurnOutput]:
+    """Create the TutorAgent with typed output, RAG tool, and web search.
+
+    Args:
+        use_skills: Whether to load skill prompt fragments.
+        model: Override the default model ID (e.g. for testing or SmartRouter).
+    """
     agent: Agent[AgentDeps, TutorTurnOutput] = Agent(
-        model="anthropic:claude-sonnet-4-5",
+        model=model or _DEFAULT_TUTOR_MODEL,
         output_type=TutorTurnOutput,
         deps_type=AgentDeps,
         system_prompt=TUTOR_BASE_SYSTEM_PROMPT,
@@ -92,10 +104,10 @@ def build_tutor_agent(*, use_skills: bool = True) -> Agent[AgentDeps, TutorTurnO
     return agent
 
 
-@functools.lru_cache(maxsize=1)
-def _build_and_register_tutor(use_skills: bool) -> Agent[AgentDeps, TutorTurnOutput]:
+@functools.lru_cache(maxsize=4)
+def _build_and_register_tutor(use_skills: bool, model: str | None = None) -> Agent[AgentDeps, TutorTurnOutput]:
     """Build tutor agent with tools (cached, thread-safe via lru_cache)."""
-    agent = build_tutor_agent(use_skills=use_skills)
+    agent = build_tutor_agent(use_skills=use_skills, model=model)
     from ailine_runtime.tools.registry import build_tool_registry
 
     register_tools(
@@ -106,17 +118,29 @@ def _build_and_register_tutor(use_skills: bool) -> Agent[AgentDeps, TutorTurnOut
     return agent
 
 
-def get_tutor_agent(*, use_skills: bool | None = None) -> Agent[AgentDeps, TutorTurnOutput]:
+def get_tutor_agent(
+    *,
+    use_skills: bool | None = None,
+    model: str | None = None,
+) -> Agent[AgentDeps, TutorTurnOutput]:
     """Get or create the singleton TutorAgent with tools registered."""
     if use_skills is None:
         try:
             from ailine_runtime.shared.config import get_settings
 
             use_skills = get_settings().persona_use_skills
-        except Exception:
+        except (ImportError, AttributeError):
             use_skills = True
 
-    return _build_and_register_tutor(use_skills)
+    if model is None:
+        try:
+            from ailine_runtime.shared.config import get_settings
+
+            model = getattr(get_settings(), "tutor_model", None)
+        except (ImportError, AttributeError):
+            pass
+
+    return _build_and_register_tutor(use_skills, model)
 
 
 def reset_tutor_agent() -> None:

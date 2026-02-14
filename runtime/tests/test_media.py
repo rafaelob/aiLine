@@ -53,8 +53,9 @@ def ocr() -> OCRProcessor:
 
 
 @pytest.fixture
-def app():
+def app(monkeypatch):
     """Create a test FastAPI app with fake media adapters wired in."""
+    monkeypatch.setenv("AILINE_DEV_MODE", "true")
     from ailine_runtime.api.app import create_app
     from ailine_runtime.shared.config import Settings
 
@@ -84,7 +85,11 @@ def _make_container_with_fakes(container):
 async def client(app):
     """Async HTTP client for the FastAPI test app."""
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as c:
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://test",
+        headers={"X-Teacher-ID": "teacher-media-test"},
+    ) as c:
         yield c
 
 
@@ -444,7 +449,8 @@ class TestMediaAdapterNotConfigured:
     """Cover line 56: _get_adapter raises 503 when adapter is None."""
 
     @pytest.fixture
-    def app_no_stt(self):
+    def app_no_stt(self, monkeypatch):
+        monkeypatch.setenv("AILINE_DEV_MODE", "true")
         from dataclasses import replace
 
         from ailine_runtime.api.app import create_app
@@ -462,7 +468,11 @@ class TestMediaAdapterNotConfigured:
     @pytest.fixture
     async def client_no_stt(self, app_no_stt):
         transport = ASGITransport(app=app_no_stt)
-        async with AsyncClient(transport=transport, base_url="http://test") as c:
+        async with AsyncClient(
+            transport=transport,
+            base_url="http://test",
+            headers={"X-Teacher-ID": "teacher-media-test"},
+        ) as c:
             yield c
 
     async def test_transcribe_returns_503_without_stt(self, client_no_stt: AsyncClient):

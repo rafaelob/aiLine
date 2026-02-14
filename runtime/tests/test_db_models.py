@@ -38,8 +38,8 @@ from ailine_runtime.adapters.db.repositories import (
 # ---------------------------------------------------------------------------
 
 
-def _make_teacher(**overrides: object) -> TeacherRow:
-    defaults = {
+def _make_teacher(**overrides: str) -> TeacherRow:
+    defaults: dict[str, str] = {
         "id": _uuid7_str(),
         "email": "ana@example.com",
         "display_name": "Ana Silva",
@@ -49,8 +49,8 @@ def _make_teacher(**overrides: object) -> TeacherRow:
     return TeacherRow(**defaults)  # type: ignore[arg-type]
 
 
-def _make_course(teacher_id: str, **overrides: object) -> CourseRow:
-    defaults = {
+def _make_course(teacher_id: str, **overrides: str) -> CourseRow:
+    defaults: dict[str, str] = {
         "id": _uuid7_str(),
         "teacher_id": teacher_id,
         "title": "Matematica 6o Ano",
@@ -63,7 +63,7 @@ def _make_course(teacher_id: str, **overrides: object) -> CourseRow:
 
 
 def _make_lesson(teacher_id: str, course_id: str, **overrides: object) -> LessonRow:
-    defaults = {
+    defaults: dict[str, object] = {
         "id": _uuid7_str(),
         "teacher_id": teacher_id,
         "course_id": course_id,
@@ -73,7 +73,7 @@ def _make_lesson(teacher_id: str, course_id: str, **overrides: object) -> Lesson
         "accessibility_json": {},
         "status": "draft",
     }
-    defaults.update(overrides)
+    defaults.update(overrides)  # type: ignore[arg-type]
     return LessonRow(**defaults)  # type: ignore[arg-type]
 
 

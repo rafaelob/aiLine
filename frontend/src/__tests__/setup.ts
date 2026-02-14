@@ -12,6 +12,10 @@ vi.mock('next-intl', () => ({
 // Mock next-intl/server
 vi.mock('next-intl/server', () => ({
   getMessages: vi.fn(async () => ({})),
+  getTranslations: vi.fn(async (opts?: { locale?: string; namespace?: string }) => {
+    const ns = typeof opts === 'object' ? opts?.namespace : opts
+    return (key: string) => (ns ? `${ns}.${key}` : key)
+  }),
   getRequestConfig: vi.fn((fn: unknown) => fn),
 }))
 

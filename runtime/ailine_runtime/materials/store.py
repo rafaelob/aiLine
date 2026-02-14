@@ -119,7 +119,7 @@ def iter_materials(*, teacher_id: str | None = None, subject: str | None = None)
                 try:
                     raw = json.loads(f.read_text(encoding="utf-8"))
                     yield Material(**raw)
-                except Exception:
+                except (json.JSONDecodeError, ValueError, TypeError, OSError):
                     continue
 
 

@@ -28,7 +28,7 @@ SSE Event Types: run.started, stage.started, stage.progress, quality.scored, qua
 
 ### Tutor Chat
 
-Student message -> WebSocket -> LangGraph tutor StateGraph:
+Student message -> SSE (fetch-event-source) -> LangGraph tutor StateGraph:
 
 1. Route (classify: needs RAG? yes -> Retrieve | no -> Respond)
 2. Respond (Socratic system prompt + accessibility playbook + RAG context)
@@ -52,40 +52,15 @@ Escalation triggers: JSON parse fail, schema validation fail, low validator scor
 
 ## Key Implementation Patterns
 
-### UnitOfWork (SQLAlchemy 2.x Async)
-- `async_sessionmaker(expire_on_commit=False)` per request scope
-- Pool: `pool_pre_ping=True`, `pool_size=5`, `max_overflow=5` (ADR-052)
-- Repository accessors cached on UoW instance (lazy init)
-- Step-level UoW: each LangGraph node opens/closes own UoW; never hold session across LLM calls
-- JSONB columns stored as plain `Mapped[dict]`; explicit `DomainModel.model_validate()` in mapper
-
-### SmartRouter Scoring
-- Weights: 0.25 tokens + 0.25 structured + 0.25 tools + 0.15 history + 0.10 intent (ADR-049)
-- Thresholds: score <= 0.40 cheap, 0.41-0.70 middle, >= 0.71 primary
-- Hard overrides: tools_required or strict_json -> disallow cheap regardless of score
-- Cache: TTL 5 min (±20% jitter) keyed by node_type + tool/schema hash + intent category
-- Escalation ladder: same-model self-repair → one tier up → max 4-6 total attempts
-
-### SSE Event Contract
-- 14 events: run.started, stage.started/progress/completed/failed, quality.scored/decision, refinement.started/completed, tool.started/completed, run.completed/failed, heartbeat
-- Envelope: `{run_id, seq, ts, type, stage, payload}`
-- Terminal safety: RunContext async context manager guarantees exactly-once terminal (ADR-055)
-- Replay: InMemoryReplayStore (dev) / RedisReplayStore (ZSET, score=seq, TTL 30min) (ADR-054)
-- Thread safety: asyncio.Lock on SSEEventEmitter.emit for parallel LangGraph branches
-- Reverse proxy: X-Accel-Buffering: no header on SSE endpoints
-
-### Branch Error Envelopes
-- `safe_branch(fn, *a, **kw)` -> `{"ok": bool, "payload": T|None, "error": str|None}`
-- Fan-in proceeds if at least one branch succeeds; partial results surfaced in SSE
-
-### TenantContext
-- `teacher_id` extracted from JWT only (never request body)
-- `TeacherId = NewType("TeacherId", uuid.UUID)` wrapper for type safety
-- All repository methods require `TeacherId` parameter; no implicit global
+- **UnitOfWork:** `async_sessionmaker(expire_on_commit=False)`, pool 10+10 (ADR-052), step-level UoW per LangGraph node
+- **SmartRouter:** 0.25 tokens + 0.25 structured + 0.25 tools + 0.15 history + 0.10 intent (ADR-049). Thresholds: <=0.40 cheap, 0.41-0.70 middle, >=0.71 primary. Hard overrides for tools/strict_json. Escalation ladder up to 4-6 attempts.
+- **SSE:** 14 events, `{run_id, seq, ts, type, stage, payload}` envelope. Terminal guarantee via RunContext (ADR-055). Redis ZSET replay (ADR-054). asyncio.Lock for thread safety.
+- **Branch errors:** `safe_branch()` -> `{ok, payload, error}`. Fan-in on partial success.
+- **TenantContext:** `teacher_id` from JWT only, `TeacherId` NewType wrapper, all repos require it.
 
 ## ADR Log
 
-59 ADRs (ADR-001 through ADR-059). Key: 001 Hexagonal | 002-003 SQLAlchemy+pgvector | 006 SSE+WS | 012 multi-tenancy | 013 parallel LangGraph | 017/028-029/049 SmartRouter | 024/038 typed SSE | 042 recursion_limit=25 | 048 direct Anthropic API (no SDK) | 050 tiered quality gate | 051 FakeLLM CI | 053 composite FK | 054 SSE replay (Redis ZSET) | 055 RunContext terminal guarantee | 056 pool sizing | 057 Web Worker sign lang | 058 ThemeContext | 059 ailine_agents (Pydantic AI)
+60 ADRs (ADR-001 through ADR-060). Key decisions: 001 Hexagonal | 002-003 SQLAlchemy+pgvector | 006 SSE+WS | 012 multi-tenancy | 013 parallel LangGraph | 017/028-029/049 SmartRouter | 024/038 typed SSE | 042 recursion_limit=25 | 048 direct Anthropic API (no SDK) | 050 tiered quality gate | 051 FakeLLM CI | 053 composite FK | 054 SSE replay (Redis ZSET) | 055 RunContext terminal guarantee | 056 pool sizing | 057 Web Worker sign lang | 058 ThemeContext | 059 ailine_agents (Pydantic AI) | 060 structural tenant isolation + centralized authz
 
 
 ## Dependencies in Use
@@ -102,4 +77,4 @@ Next.js 16.1.6, React 19.2.4, Tailwind 4.1.18, shadcn/ui 3.8.4, next-intl 4.8.2,
 Zustand 5.0.11, motion 12.34.0, Recharts 3.7.0, DOMPurify 3.3.1,
 @mediapipe/tasks-vision 0.10.32, @tensorflow/tfjs 4.22.0, @microsoft/fetch-event-source 2.0.1
 
-**Infrastructure:** PostgreSQL 17, pgvector 0.8.1, Redis 7.x, Docker Compose v2
+**Infrastructure:** PostgreSQL 16, pgvector 0.8.1, Redis 7.x, Docker Compose v2

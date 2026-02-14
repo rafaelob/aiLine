@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useRef } from 'react'
+import { useCallback, useRef, useEffect } from 'react'
 import { fetchEventSource } from '@microsoft/fetch-event-source'
 import { usePipelineStore } from '@/stores/pipeline-store'
 import type { PipelineEvent } from '@/types/pipeline'
@@ -13,9 +13,35 @@ import type { PlanGenerationRequest } from '@/types/plan'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
 
+/** Build auth headers from available token sources. */
+function getAuthHeaders(): Record<string, string> {
+  // Check for JWT in sessionStorage (set by auth flow)
+  const token =
+    typeof window !== 'undefined'
+      ? sessionStorage.getItem('ailine_token') ??
+        localStorage.getItem('ailine_token')
+      : null
+  if (token) {
+    return { Authorization: `Bearer ${token}` }
+  }
+  // Dev mode fallback: X-Teacher-ID from env
+  const devTeacherId = process.env.NEXT_PUBLIC_DEV_TEACHER_ID
+  if (devTeacherId) {
+    return { 'X-Teacher-ID': devTeacherId }
+  }
+  return {}
+}
+
 export function usePipelineSSE() {
   const abortRef = useRef<AbortController | null>(null)
   const store = usePipelineStore()
+
+  // Abort SSE connection on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort()
+    }
+  }, [])
 
   const startGeneration = useCallback(
     async (request: PlanGenerationRequest) => {
@@ -32,6 +58,7 @@ export function usePipelineSSE() {
           headers: {
             'Content-Type': 'application/json',
             Accept: 'text/event-stream',
+            ...getAuthHeaders(),
           },
           body: JSON.stringify(request),
           signal: ctrl.signal,

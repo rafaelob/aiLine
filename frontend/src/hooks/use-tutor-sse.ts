@@ -1,10 +1,27 @@
 'use client'
 
-import { useCallback, useRef } from 'react'
+import { useCallback, useRef, useEffect } from 'react'
 import { fetchEventSource } from '@microsoft/fetch-event-source'
 import { useTutorStore } from '@/stores/tutor-store'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
+
+/** Build auth headers from available token sources. */
+function getAuthHeaders(): Record<string, string> {
+  const token =
+    typeof window !== 'undefined'
+      ? sessionStorage.getItem('ailine_token') ??
+        localStorage.getItem('ailine_token')
+      : null
+  if (token) {
+    return { Authorization: `Bearer ${token}` }
+  }
+  const devTeacherId = process.env.NEXT_PUBLIC_DEV_TEACHER_ID
+  if (devTeacherId) {
+    return { 'X-Teacher-ID': devTeacherId }
+  }
+  return {}
+}
 
 /**
  * SSE hook for tutor chat streaming.
@@ -13,6 +30,13 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
 export function useTutorSSE() {
   const abortRef = useRef<AbortController | null>(null)
   const store = useTutorStore()
+
+  // Abort SSE connection on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort()
+    }
+  }, [])
 
   const sendMessage = useCallback(
     async (message: string) => {
@@ -29,6 +53,7 @@ export function useTutorSSE() {
           headers: {
             'Content-Type': 'application/json',
             Accept: 'text/event-stream',
+            ...getAuthHeaders(),
           },
           body: JSON.stringify({
             message,

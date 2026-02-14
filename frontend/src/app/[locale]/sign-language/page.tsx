@@ -1,8 +1,13 @@
+'use client'
+
+import { lazy, Suspense } from 'react'
 import { useTranslations } from 'next-intl'
-import { WebcamCapture } from '@/components/sign-language/webcam-capture'
 import { VLibrasWidget } from '@/components/sign-language/vlibras-widget'
 import { GestureList } from '@/components/sign-language/gesture-list'
 import { LibrasCaptioning } from '@/components/sign-language/libras-captioning'
+import { SkeletonCard } from '@/components/ui/skeleton'
+
+const WebcamCapture = lazy(() => import('@/components/sign-language/webcam-capture'))
 
 /**
  * Sign language page -- combines webcam gesture recognition,
@@ -18,7 +23,7 @@ export default function SignLanguagePage() {
   const t = useTranslations('sign_language')
 
   return (
-    <main className="mx-auto max-w-5xl space-y-8 px-4 py-8">
+    <div className="mx-auto max-w-5xl space-y-8 px-4 py-8">
       {/* Page header */}
       <div>
         <h1 className="text-2xl font-bold text-[var(--color-text)]">
@@ -31,7 +36,9 @@ export default function SignLanguagePage() {
 
       {/* Webcam capture and recognition */}
       <section aria-label={t('webcam_section')}>
-        <WebcamCapture />
+        <Suspense fallback={<SkeletonCard />}>
+          <WebcamCapture />
+        </Suspense>
       </section>
 
       {/* Libras captioning */}
@@ -54,6 +61,6 @@ export default function SignLanguagePage() {
         </p>
         <VLibrasWidget />
       </section>
-    </main>
+    </div>
   )
 }

@@ -4,7 +4,7 @@ from .curriculum import CurriculumProvider
 from .db import Repository, UnitOfWork
 from .embeddings import Embeddings
 from .events import EventBus
-from .llm import ChatLLM
+from .llm import ChatLLM, ChatMessage
 from .media import STT, TTS, ImageDescriber, SignRecognition
 from .storage import ObjectStorage
 from .vectorstore import VectorSearchResult, VectorStore
@@ -13,6 +13,7 @@ __all__ = [
     "STT",
     "TTS",
     "ChatLLM",
+    "ChatMessage",
     "CurriculumProvider",
     "Embeddings",
     "EventBus",

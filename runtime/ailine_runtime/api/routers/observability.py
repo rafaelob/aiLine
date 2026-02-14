@@ -17,8 +17,9 @@ import math
 from typing import Any
 
 import structlog
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from ...app.authz import require_authenticated
 from ...shared.metrics import (
     circuit_breaker_state,
     http_requests_total,
@@ -48,7 +49,7 @@ def _compute_percentiles(values: list[float], percentiles: list[float]) -> dict[
 
 
 @router.get("/dashboard")
-async def observability_dashboard() -> dict[str, Any]:
+async def observability_dashboard(teacher_id: str = Depends(require_authenticated)) -> dict[str, Any]:
     """System health and performance dashboard for judges.
 
     Returns current LLM provider info, SmartRouter breakdown,
@@ -92,9 +93,9 @@ async def observability_dashboard() -> dict[str, Any]:
     # Token usage + cost estimate from observability store
     token_stats = obs_store.get_token_stats()
 
-    # Recent SmartRouter score breakdown from trace store
+    # Recent SmartRouter score breakdown from trace store (tenant-scoped)
     trace_store = get_trace_store()
-    recent_traces = await trace_store.list_recent(limit=10)
+    recent_traces = await trace_store.list_recent(limit=10, teacher_id=teacher_id)
     router_breakdowns = []
     for trace in recent_traces:
         for node in trace.nodes:
@@ -142,15 +143,16 @@ async def observability_dashboard() -> dict[str, Any]:
 
 
 @router.get("/standards-evidence/{run_id}")
-async def standards_evidence(run_id: str) -> dict[str, Any]:
+async def standards_evidence(run_id: str, teacher_id: str = Depends(require_authenticated)) -> dict[str, Any]:
     """Standards alignment evidence for a specific plan run.
 
     Returns curriculum standard tags (BNCC/CCSS/NGSS), Bloom level,
     and a 1-2 sentence explainer for why the plan aligns.
     Also includes export-as-teacher-handout option.
+    Scoped to the authenticated teacher (tenant isolation).
     """
     trace_store = get_trace_store()
-    trace = await trace_store.get(run_id)
+    trace = await trace_store.get(run_id, teacher_id=teacher_id)
     if trace is None:
         raise HTTPException(
             status_code=404,
@@ -182,15 +184,16 @@ async def standards_evidence(run_id: str) -> dict[str, Any]:
 
 
 @router.get("/standards-evidence/{run_id}/handout")
-async def standards_handout(run_id: str) -> dict[str, Any]:
+async def standards_handout(run_id: str, teacher_id: str = Depends(require_authenticated)) -> dict[str, Any]:
     """Export standards alignment as teacher handout format.
 
     Returns structured data suitable for rendering as a printable
     teacher handout with standards tags, alignment rationale,
     and quality score.
+    Scoped to the authenticated teacher (tenant isolation).
     """
     trace_store = get_trace_store()
-    trace = await trace_store.get(run_id)
+    trace = await trace_store.get(run_id, teacher_id=teacher_id)
     if trace is None:
         raise HTTPException(
             status_code=404,

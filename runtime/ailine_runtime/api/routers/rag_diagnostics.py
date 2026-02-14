@@ -12,8 +12,9 @@ from __future__ import annotations
 from typing import Any
 
 import structlog
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from ...app.authz import require_authenticated
 from ...shared.rag_diagnostics_store import get_rag_diagnostics_store
 
 logger = structlog.get_logger("ailine.api.rag_diagnostics")
@@ -22,14 +23,17 @@ router = APIRouter()
 
 
 @router.get("/diagnostics/recent")
-async def list_recent_diagnostics(limit: int = 20) -> list[dict[str, Any]]:
+async def list_recent_diagnostics(
+    limit: int = 20, teacher_id: str = Depends(require_authenticated),
+) -> list[dict[str, Any]]:
     """List recent RAG diagnostics (lightweight summary).
 
     Returns: run_id, query preview, chunk count, top score,
     answerability status, filters applied.
+    Scoped to the authenticated teacher (tenant isolation).
     """
     store = get_rag_diagnostics_store()
-    diagnostics = await store.list_recent(limit=min(limit, 50))
+    diagnostics = await store.list_recent(limit=min(limit, 50), teacher_id=teacher_id)
     return [
         {
             "run_id": d.run_id,
@@ -45,15 +49,16 @@ async def list_recent_diagnostics(limit: int = 20) -> list[dict[str, Any]]:
 
 
 @router.get("/diagnostics/{run_id}")
-async def get_diagnostics(run_id: str) -> dict[str, Any]:
+async def get_diagnostics(run_id: str, teacher_id: str = Depends(require_authenticated)) -> dict[str, Any]:
     """Get full RAG diagnostics for a specific run.
 
     Returns chunk provenance (chunk IDs, document titles, page/section
     references, retrieval scores), filters applied, answerability check,
     and selection rationale.
+    Scoped to the authenticated teacher (tenant isolation).
     """
     store = get_rag_diagnostics_store()
-    diag = await store.get(run_id)
+    diag = await store.get(run_id, teacher_id=teacher_id)
     if diag is None:
         raise HTTPException(
             status_code=404,

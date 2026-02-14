@@ -235,7 +235,7 @@ def _check_chunking(
     if class_profile:
         try:
             focus_window = int(class_profile.supports.adhd.focus_window_minutes)
-        except Exception:
+        except (ValueError, TypeError, AttributeError):
             focus_window = 10
 
     if (

@@ -12,71 +12,37 @@ Resilience features:
 - Workflow timeout aborts gracefully after max_workflow_duration_seconds.
 - Idempotency key prevents duplicate plan generations.
 - Structured logging with run_id, stage, model, and duration.
+
+Node implementations live in _plan_nodes.py for maintainability.
 """
 
 from __future__ import annotations
 
-import json
-import time
 from typing import Any
 
-import structlog
-from ailine_runtime.accessibility.hard_constraints import (
-    compute_rag_confidence,
-    extract_rag_quotes,
-    run_hard_constraints,
-)
-from ailine_runtime.accessibility.profiles import ClassAccessibilityProfile
-from ailine_runtime.accessibility.validator import validate_draft_accessibility
 from ailine_runtime.api.streaming.events import SSEEventType
-from ailine_runtime.shared.observability import log_event, log_pipeline_stage
+from ailine_runtime.shared.observability import log_event
 from langgraph.graph import END, StateGraph
 from langgraph.types import RunnableConfig
 
 from ..agents.executor import get_executor_agent
 from ..agents.planner import get_planner_agent
-from ..agents.quality_gate import get_quality_gate_agent
 from ..deps import AgentDeps
 from ..model_selection.bridge import PydanticAIModelSelector
-from ..resilience import CircuitOpenError, IdempotencyGuard
-from ._retry import with_retry
+from ..resilience import IdempotencyGuard
+from ._plan_nodes import (
+    WorkflowTimeoutError,
+    make_executor_node,
+    make_planner_node,
+    make_validate_node,
+)
 from ._sse_helpers import get_emitter_and_writer, try_emit
 from ._state import RunState
-from ._trace_capture import build_route_rationale, capture_node_trace
 
-log = structlog.get_logger(__name__)
+__all__ = ["WorkflowTimeoutError", "build_plan_workflow", "get_idempotency_guard"]
 
 # Module-level idempotency guard (single-process).
 _idempotency_guard = IdempotencyGuard()
-
-
-class WorkflowTimeoutError(Exception):
-    """Raised when a workflow exceeds its maximum allowed duration."""
-
-
-def _check_timeout(state: RunState, deps: AgentDeps, stage: str) -> None:
-    """Check if the workflow has exceeded its time budget.
-
-    Raises WorkflowTimeoutError if the elapsed time exceeds
-    deps.max_workflow_duration_seconds.
-    """
-    started_at = state.get("started_at")
-    if started_at is None:
-        return
-    elapsed = time.monotonic() - started_at
-    if elapsed > deps.max_workflow_duration_seconds:
-        run_id = state.get("run_id", "")
-        log.error(
-            "workflow.timeout",
-            run_id=run_id,
-            stage=stage,
-            elapsed_seconds=round(elapsed, 1),
-            limit_seconds=deps.max_workflow_duration_seconds,
-        )
-        raise WorkflowTimeoutError(
-            f"Workflow timed out after {elapsed:.1f}s "
-            f"(limit: {deps.max_workflow_duration_seconds}s) at stage '{stage}'"
-        )
 
 
 def build_plan_workflow(
@@ -97,308 +63,14 @@ def build_plan_workflow(
     planner = get_planner_agent()
     executor = get_executor_agent()
 
-    async def planner_node(state: RunState, config: RunnableConfig) -> RunState:
-        emitter, writer = get_emitter_and_writer(config)
-        run_id = state.get("run_id", "")
-        refine_iter = int(state.get("refine_iter") or 0)
-        stage_start = time.monotonic()
-
-        # Set started_at on first entry (iteration 0)
-        updates: dict[str, Any] = {}
-        if state.get("started_at") is None:
-            updates["started_at"] = time.monotonic()
-
-        # Check timeout
-        _check_timeout(state, deps, "planner")
-
-        # Check circuit breaker
-        if not deps.circuit_breaker.check():
-            log_event("planner.circuit_open", run_id=run_id)
-            try_emit(emitter, writer, SSEEventType.STAGE_FAILED, "planner", {
-                "error": "Circuit breaker open -- LLM service unavailable",
-            })
-            raise CircuitOpenError("LLM circuit breaker is open")
-
-        try:
-            log_event("planner.start", run_id=run_id, stage="planner", refine_iter=refine_iter)
-
-            # Build route rationale for SSE and tracing
-            _model_override = None
-            _model_name = "default"
-            if model_selector:
-                _model_override = model_selector.select_model(tier="primary")
-                _model_name = str(_model_override) if _model_override else "default"
-
-            _rationale = build_route_rationale(
-                task_type="planner",
-                model_name=_model_name,
-                model_selector=model_selector,
-            )
-
-            if refine_iter > 0:
-                try_emit(emitter, writer, SSEEventType.REFINEMENT_START, "planner", {
-                    "iteration": refine_iter,
-                    "route_rationale": _rationale,
-                })
-            else:
-                try_emit(emitter, writer, SSEEventType.STAGE_START, "planner", {
-                    "route_rationale": _rationale,
-                })
-
-            # Build prompt
-            prompt = state["user_prompt"]
-
-            # RAG context
-            teacher_id = state.get("teacher_id")
-            subject = state.get("subject")
-            if teacher_id:
-                prompt += (
-                    f"\n\n## CONTEXTO DE MATERIAIS (RAG)\n"
-                    f"- teacher_id: {teacher_id}\n"
-                    f"- subject: {subject or ''}\n"
-                    "Quando chamar rag_search, SEMPRE passe teacher_id.\n"
-                )
-
-            # Refinement feedback
-            if refine_iter > 0:
-                prev = state.get("quality_assessment") or state.get("validation") or {}
-                prompt += _build_refinement_feedback(prev, refine_iter)
-
-            # Reuse model selected above for rationale
-            model_override = _model_override
-            model_name = _model_name
-
-            # Run Pydantic AI agent with retry
-            async def _run_planner():
-                return await planner.run(
-                    prompt,
-                    deps=deps,
-                    **({"model": model_override} if model_override else {}),
-                )
-
-            result = await with_retry(
-                _run_planner,
-                max_attempts=3,
-                initial_delay=1.0,
-                backoff_factor=2.0,
-                operation_name="planner.run",
-                run_id=run_id,
-            )
-
-            draft = result.output.model_dump()
-            deps.circuit_breaker.record_success()
-
-            duration_ms = (time.monotonic() - stage_start) * 1000
-            log_event(
-                "planner.complete",
-                run_id=run_id,
-                stage="planner",
-                model=model_name,
-                duration_ms=round(duration_ms, 2),
-            )
-            log_pipeline_stage(
-                stage="planner",
-                run_id=run_id,
-                duration_ms=duration_ms,
-                status="success",
-                metadata={"model": model_name, "refine_iter": refine_iter},
-            )
-
-            if refine_iter > 0:
-                try_emit(emitter, writer, SSEEventType.REFINEMENT_COMPLETE, "planner", {"iteration": refine_iter})
-            else:
-                try_emit(emitter, writer, SSEEventType.STAGE_COMPLETE, "planner")
-
-            # Capture trace
-            await capture_node_trace(
-                run_id=run_id,
-                node_name="planner",
-                status="success",
-                time_ms=duration_ms,
-                inputs_summary={"prompt_length": len(prompt), "refine_iter": refine_iter},
-                outputs_summary={"draft_keys": list(draft.keys())[:10]},
-                route_rationale=_rationale,
-            )
-
-            updates["draft"] = draft
-            return updates
-
-        except CircuitOpenError:
-            raise
-        except Exception as exc:
-            deps.circuit_breaker.record_failure()
-            duration_ms = (time.monotonic() - stage_start) * 1000
-            log_event("planner.failed", run_id=run_id, error=str(exc), duration_ms=round(duration_ms, 2))
-            log_pipeline_stage(
-                stage="planner", run_id=run_id, duration_ms=duration_ms,
-                status="failed", metadata={"error": str(exc)},
-            )
-            try_emit(emitter, writer, SSEEventType.STAGE_FAILED, "planner", {"error": str(exc)})
-            await capture_node_trace(
-                run_id=run_id, node_name="planner", status="failed",
-                time_ms=duration_ms, error=str(exc),
-            )
-            raise
-
-    async def validate_node(state: RunState, config: RunnableConfig) -> RunState:
-        """Hybrid validation: deterministic first, LLM QualityGate for borderline (ADR-050)."""
-        emitter, writer = get_emitter_and_writer(config)
-        run_id = state.get("run_id", "")
-        stage_start = time.monotonic()
-
-        # Check timeout
-        _check_timeout(state, deps, "validate")
-
-        try:
-            log_event("validate.start", run_id=run_id, stage="validate")
-            try_emit(emitter, writer, SSEEventType.STAGE_START, "validate")
-
-            class_profile = (
-                ClassAccessibilityProfile(**state["class_accessibility_profile"])
-                if state.get("class_accessibility_profile")
-                else None
-            )
-            draft = state.get("draft") or {}
-            validation = validate_draft_accessibility(draft, class_profile)
-
-            # --- Hard constraints (Task #8) ---
-            rag_results = state.get("rag_results") if hasattr(state, "get") else None
-            hard_results = run_hard_constraints(draft, class_profile, rag_results)
-            hard_constraints_dict = {r.name: r.passed for r in hard_results}
-            hard_failures = [r for r in hard_results if not r.passed]
-
-            validation["hard_constraints"] = hard_constraints_dict
-            validation["hard_constraint_details"] = [
-                r.model_dump() for r in hard_results
-            ]
-
-            # Penalty for hard constraint failures: -5 per failure
-            hard_penalty = len(hard_failures) * 5
-            for failure in hard_failures:
-                if failure.reason not in validation.get("warnings", []):
-                    validation.setdefault("warnings", []).append(failure.reason)
-
-            # --- RAG quoting (Task #8) ---
-            rag_confidence = compute_rag_confidence(rag_results)
-            rag_quotes = extract_rag_quotes(rag_results)
-            validation["rag_confidence"] = rag_confidence
-            validation["rag_quotes"] = rag_quotes
-            validation["rag_sources_cited"] = hard_constraints_dict.get("rag_sources_cited", False)
-
-            det_score = max(0, validation.get("score", 0) - hard_penalty)
-            validation["score"] = det_score
-
-            # Hybrid gate: if borderline (60-85), run QualityGateAgent
-            final_score = det_score
-            if 60 <= det_score <= 85 and deps.circuit_breaker.check():
-                try:
-                    qg_agent = get_quality_gate_agent()
-                    qg_prompt = (
-                        f"Avalie este plano de aula. Score deterministico: {det_score}.\n"
-                        f"Draft: {json.dumps(draft, ensure_ascii=False)[:3000]}\n"
-                        f"Checklist: {json.dumps(validation.get('checklist', {}), ensure_ascii=False)}\n"
-                        f"Hard constraints: {json.dumps(hard_constraints_dict, ensure_ascii=False)}\n"
-                        f"RAG confidence: {rag_confidence}\n"
-                        f"RAG quotes: {json.dumps(rag_quotes, ensure_ascii=False)[:500]}\n"
-                    )
-
-                    async def _run_qg():
-                        return await qg_agent.run(qg_prompt, deps=deps)
-
-                    qg_result = await with_retry(
-                        _run_qg,
-                        max_attempts=2,
-                        initial_delay=0.5,
-                        backoff_factor=2.0,
-                        operation_name="quality_gate.run",
-                        run_id=run_id,
-                    )
-
-                    llm_score = qg_result.output.score
-                    # Merge: 0.4 deterministic + 0.6 LLM
-                    final_score = int(0.4 * det_score + 0.6 * llm_score)
-                    validation["llm_assessment"] = qg_result.output.model_dump()
-                    validation["score"] = final_score
-                    validation["score_breakdown"] = {
-                        "deterministic": det_score,
-                        "llm": llm_score,
-                        "weights": "0.4*det+0.6*llm",
-                    }
-                    deps.circuit_breaker.record_success()
-                    log_event(
-                        "validate.llm_gate",
-                        run_id=run_id,
-                        det=det_score,
-                        llm=llm_score,
-                        final=final_score,
-                    )
-                except Exception as llm_exc:
-                    # LLM gate failed -- fall back to deterministic only
-                    deps.circuit_breaker.record_failure()
-                    log_event("validate.llm_gate_failed", run_id=run_id, error=str(llm_exc))
-
-            # Update status based on final score
-            if final_score < 60:
-                status = "must-refine"
-            elif final_score < 80:
-                status = "refine-if-budget"
-            else:
-                status = "accept"
-            validation["status"] = status
-
-            duration_ms = (time.monotonic() - stage_start) * 1000
-            log_event(
-                "validate.complete",
-                run_id=run_id,
-                stage="validate",
-                score=final_score,
-                status=status,
-                duration_ms=round(duration_ms, 2),
-            )
-            log_pipeline_stage(
-                stage="validate",
-                run_id=run_id,
-                duration_ms=duration_ms,
-                status="success",
-                metadata={"score": final_score, "quality_status": status},
-            )
-            try_emit(emitter, writer, SSEEventType.QUALITY_SCORED, "validate", {
-                "score": final_score,
-                "status": status,
-                "checklist": validation.get("checklist", {}),
-            })
-
-            # Capture trace
-            await capture_node_trace(
-                run_id=run_id,
-                node_name="validate",
-                status="success",
-                time_ms=duration_ms,
-                inputs_summary={"draft_keys": list((state.get("draft") or {}).keys())[:10]},
-                outputs_summary={"score": final_score, "quality_status": status},
-                quality_score=final_score,
-            )
-
-            return {"validation": validation, "quality_assessment": validation}
-
-        except Exception as exc:
-            duration_ms = (time.monotonic() - stage_start) * 1000
-            log_event("validate.failed", run_id=run_id, error=str(exc), duration_ms=round(duration_ms, 2))
-            log_pipeline_stage(
-                stage="validate", run_id=run_id, duration_ms=duration_ms,
-                status="failed", metadata={"error": str(exc)},
-            )
-            try_emit(emitter, writer, SSEEventType.STAGE_FAILED, "validate", {"error": str(exc)})
-            await capture_node_trace(
-                run_id=run_id, node_name="validate", status="failed",
-                time_ms=duration_ms, error=str(exc),
-            )
-            raise
+    # Build node functions from extracted helpers
+    planner_node = make_planner_node(planner, deps, model_selector)
+    validate_node = make_validate_node(deps, model_selector)
+    executor_node = make_executor_node(executor, deps, model_selector)
 
     def decision_node(state: RunState, config: RunnableConfig) -> RunState:
         """Emit quality decision event."""
         emitter, writer = get_emitter_and_writer(config)
-
         try:
             v = state.get("validation") or {}
             score = int(v.get("score") or 0)
@@ -411,14 +83,13 @@ def build_plan_workflow(
             else:
                 decision = "accept"
 
-            try_emit(emitter, writer, SSEEventType.QUALITY_DECISION, "validate", {
+            decision_payload = {
                 "decision": decision,
                 "score": score,
                 "iteration": refine_iter,
-            })
-
-            return {}
-
+            }
+            try_emit(emitter, writer, SSEEventType.QUALITY_DECISION, "validate", decision_payload)
+            return {"quality_decision": decision_payload}
         except Exception as exc:
             log_event("decision.failed", run_id=state.get("run_id", ""), error=str(exc))
             try_emit(emitter, writer, SSEEventType.STAGE_FAILED, "decision", {"error": str(exc)})
@@ -428,118 +99,6 @@ def build_plan_workflow(
         new_iter = int(state.get("refine_iter") or 0) + 1
         log_event("refine.bump", run_id=state.get("run_id", ""), iteration=new_iter)
         return {"refine_iter": new_iter}
-
-    async def executor_node(state: RunState, config: RunnableConfig) -> RunState:
-        emitter, writer = get_emitter_and_writer(config)
-        run_id = state.get("run_id", "")
-        stage_start = time.monotonic()
-
-        # Check timeout
-        _check_timeout(state, deps, "executor")
-
-        # Check circuit breaker
-        if not deps.circuit_breaker.check():
-            log_event("executor.circuit_open", run_id=run_id)
-            try_emit(emitter, writer, SSEEventType.STAGE_FAILED, "executor", {
-                "error": "Circuit breaker open -- LLM service unavailable",
-            })
-            raise CircuitOpenError("LLM circuit breaker is open")
-
-        try:
-            log_event("executor.start", run_id=run_id, stage="executor")
-
-            # Build route rationale for executor
-            exec_model_override = None
-            exec_model_name = "default"
-            if model_selector:
-                exec_model_override = model_selector.select_model(tier="primary")
-                exec_model_name = str(exec_model_override) if exec_model_override else "default"
-
-            exec_rationale = build_route_rationale(
-                task_type="executor",
-                model_name=exec_model_name,
-                model_selector=model_selector,
-            )
-
-            try_emit(emitter, writer, SSEEventType.STAGE_START, "executor", {
-                "route_rationale": exec_rationale,
-            })
-
-            draft_json = state.get("draft") or {}
-            prompt = _build_executor_prompt(
-                draft_json,
-                run_id,
-                state.get("class_accessibility_profile"),
-                deps.default_variants,
-            )
-
-            model_override = exec_model_override
-            model_name = exec_model_name
-
-            async def _run_executor():
-                return await executor.run(
-                    prompt,
-                    deps=deps,
-                    **({"model": model_override} if model_override else {}),
-                )
-
-            result = await with_retry(
-                _run_executor,
-                max_attempts=3,
-                initial_delay=1.0,
-                backoff_factor=2.0,
-                operation_name="executor.run",
-                run_id=run_id,
-            )
-
-            deps.circuit_breaker.record_success()
-
-            duration_ms = (time.monotonic() - stage_start) * 1000
-            log_event(
-                "executor.complete",
-                run_id=run_id,
-                stage="executor",
-                model=model_name,
-                duration_ms=round(duration_ms, 2),
-            )
-            log_pipeline_stage(
-                stage="executor",
-                run_id=run_id,
-                duration_ms=duration_ms,
-                status="success",
-                metadata={"model": model_name, "plan_id": run_id},
-            )
-            try_emit(emitter, writer, SSEEventType.STAGE_COMPLETE, "executor", {"plan_id": run_id})
-
-            # Capture trace
-            await capture_node_trace(
-                run_id=run_id,
-                node_name="executor",
-                status="success",
-                time_ms=duration_ms,
-                inputs_summary={"draft_keys": list(draft_json.keys())[:10]},
-                outputs_summary={"plan_id": run_id},
-                route_rationale=exec_rationale,
-            )
-
-            return {"final": result.output.model_dump()}
-
-        except CircuitOpenError:
-            raise
-        except Exception as exc:
-            deps.circuit_breaker.record_failure()
-            duration_ms = (time.monotonic() - stage_start) * 1000
-            log_event("executor.failed", run_id=run_id, error=str(exc), duration_ms=round(duration_ms, 2))
-            log_pipeline_stage(
-                stage="executor", run_id=run_id, duration_ms=duration_ms,
-                status="failed", metadata={"error": str(exc)},
-            )
-            try_emit(emitter, writer, SSEEventType.STAGE_FAILED, "executor", {"error": str(exc)})
-            await capture_node_trace(
-                run_id=run_id, node_name="executor", status="failed",
-                time_ms=duration_ms, error=str(exc),
-            )
-            raise
 
     def should_execute(state: RunState) -> str:
         """Route based on tiered quality gate (ADR-050)."""
@@ -576,36 +135,3 @@ def build_plan_workflow(
 def get_idempotency_guard() -> IdempotencyGuard:
     """Access the module-level idempotency guard (for testing/reset)."""
     return _idempotency_guard
-
-
-def _build_refinement_feedback(prev: dict[str, Any], refine_iter: int) -> str:
-    """Build refinement feedback prompt from previous validation."""
-    errors = prev.get("errors") or []
-    warnings = prev.get("warnings") or []
-    recs = prev.get("recommendations") or []
-    score = prev.get("score")
-    return (
-        f"\n\n## FEEDBACK DO QUALITY GATE (refinement #{refine_iter})\n"
-        f"- score_anterior: {score}\n"
-        f"- erros: {errors}\n"
-        f"- warnings: {warnings}\n"
-        f"- recomendacoes: {recs}\n\n"
-        "Ajuste o plano para enderecar os itens acima, mantendo o schema StudyPlanDraft."
-    )
-
-
-def _build_executor_prompt(
-    draft_json: dict[str, Any],
-    run_id: str,
-    class_profile: dict[str, Any] | None,
-    default_variants: str,
-) -> str:
-    """Build the executor agent prompt."""
-    variants = [v.strip() for v in default_variants.split(",") if v.strip()]
-    return (
-        f"Finalize este plano draft.\n\n"
-        f"run_id: {run_id}\n"
-        f"variants: {json.dumps(variants, ensure_ascii=False)}\n"
-        f"class_profile: {json.dumps(class_profile, ensure_ascii=False) if class_profile else 'null'}\n"
-        f"draft_plan: {json.dumps(draft_json, ensure_ascii=False)}\n"
-    )

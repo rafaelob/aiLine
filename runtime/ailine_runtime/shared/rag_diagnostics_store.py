@@ -37,14 +37,27 @@ class RAGDiagnosticsStore:
             self._timestamps[diagnostics.run_id] = time.monotonic()
             self._enforce_capacity()
 
-    async def get(self, run_id: str) -> RAGDiagnostics | None:
-        """Get diagnostics by run_id, or None if not found/expired."""
+    async def get(self, run_id: str, *, teacher_id: str | None = None) -> RAGDiagnostics | None:
+        """Get diagnostics by run_id, or None if not found/expired.
+
+        When *teacher_id* is provided, only returns the diagnostics if
+        it belongs to the given teacher (tenant isolation).
+        """
         async with self._lock:
             self._evict_expired()
-            return self._store.get(run_id)
+            diag = self._store.get(run_id)
+            if diag is None:
+                return None
+            if teacher_id is not None and diag.teacher_id and diag.teacher_id != teacher_id:
+                return None
+            return diag
 
-    async def list_recent(self, limit: int = 20) -> list[RAGDiagnostics]:
-        """List recent diagnostics, newest first."""
+    async def list_recent(self, limit: int = 20, *, teacher_id: str | None = None) -> list[RAGDiagnostics]:
+        """List recent diagnostics, newest first.
+
+        When *teacher_id* is provided, only returns diagnostics belonging
+        to that teacher (tenant isolation).
+        """
         async with self._lock:
             self._evict_expired()
             items = sorted(
@@ -52,7 +65,14 @@ class RAGDiagnosticsStore:
                 key=lambda kv: self._timestamps.get(kv[0], 0),
                 reverse=True,
             )
-            return [v for _, v in items[:limit]]
+            results: list[RAGDiagnostics] = []
+            for _, v in items:
+                if teacher_id is not None and v.teacher_id and v.teacher_id != teacher_id:
+                    continue
+                results.append(v)
+                if len(results) >= limit:
+                    break
+            return results
 
     def _evict_expired(self) -> None:
         now = time.monotonic()

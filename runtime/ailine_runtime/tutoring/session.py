@@ -12,8 +12,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+import structlog
+
 from ..domain.entities.tutor import TutorAgentSpec, TutorSession, TutorTurnOutput
 from .builder import load_tutor_spec
+
+logger = structlog.get_logger("ailine.tutoring.session")
 
 
 def _root_dir() -> Path:
@@ -38,7 +42,8 @@ def load_session(session_id: str) -> TutorSession | None:
         return None
     try:
         return TutorSession(**json.loads(path.read_text(encoding="utf-8")))
-    except Exception:
+    except (json.JSONDecodeError, ValueError, TypeError, OSError):
+        logger.warning("load_session_failed", session_id=session_id)
         return None
 
 
@@ -76,7 +81,8 @@ def _extract_json(text: str) -> dict[str, Any] | None:
             try:
                 extracted: dict[str, Any] = json.loads(text[start : end + 1])
                 return extracted
-            except Exception:
+            except (json.JSONDecodeError, ValueError):
+                logger.warning("extract_json_failed", text_preview=text[:100])
                 return None
     return None
 
@@ -142,7 +148,8 @@ async def tutor_chat_turn(
     if parsed is not None:
         try:
             out = TutorTurnOutput(**parsed)
-        except Exception:
+        except (ValueError, TypeError):
+            logger.warning("tutor_output_validation_failed", tutor_id=tutor_id)
             out = None
 
     # Persist response in session

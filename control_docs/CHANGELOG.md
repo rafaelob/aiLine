@@ -1,68 +1,45 @@
 # Changelog
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
-## [Unreleased]
-
-### Added
-- Hexagonal architecture: domain entities, port protocols, adapter implementations
-- Plan pipeline: LangGraph parallel fan-out (ADR-042), SmartRouter (ADR-049), quality gate (ADR-050)
-- ailine_agents package: 4 Pydantic AI 1.58.0 typed agents (Planner, Executor, QualityGate, Tutor) + tool/model bridges (ADR-059)
-- LangGraph workflows: plan_workflow (Planner->QualityGate->Refine->Executor), tutor_workflow
-- FastAPI 8 routers, SSE 14 typed events, DI container with FakeLLM/FakeSTT/FakeTTS (ADR-051)
-- LLM adapters: Anthropic, OpenAI, Gemini + FakeChatLLM; SmartRouterAdapter (rules+weighted)
-- SQLAlchemy 2.x async ORM (11 tables, UUID v7), Alembic migrations, UoW+Repository, composite FK (ADR-053)
-- Embeddings (Gemini/OpenAI 1536d MRL), vector stores (pgvector HNSW/ChromaDB/InMemory)
-- Material ingestion (chunk 512t/64 overlap, embed, index), RAG query, curriculum (BNCC/CCSS/NGSS)
-- Tutor agents: LangGraph workflow, session management, playbooks
-- Media: WhisperSTT, OpenAISTT, ElevenLabsTTS, OCR, MediaPipeSignRecognition + CI fakes
-- Demo mode (3 scenarios), i18n (PT-BR/EN/ES), observability (structlog+OTEL)
-- Docker Compose (Postgres+pgvector, Redis, API, Frontend), Next.js 16 frontend (React Compiler, 9 themes)
-- Frontend: Pipeline Viewer, Plan Tabs, Score Gauge, Export Viewer, Visual Schedule, Persona Toggle, Accessibility Twin, VLibras, Webcam
-- SSE replay (InMemory+Redis ZSET, ADR-054), RunContext terminal guarantee (ADR-055)
-- Web Worker sign language (ADR-057), ThemeContext MutationObserver (ADR-058)
-- VLibras a11y, reduced-motion sync, React Activity low-distraction, compute_route() pure fn
-- Live API tests (@pytest.mark.live_llm): 65 total (55 runtime + 10 agents)
-- 59 ADRs (ADR-001 through ADR-059), technology research synthesis
-- Custom Skill Registry: YAML frontmatter parser, SkillRegistry with scan/query/prompt-fragment, wired into Planner + Tutor agents
-- SKILL.md frontmatter migration: 11 skills moved to metadata block with compatibility structure
-- CCSS ELA curriculum data (ccss_ela.json): 46 Common Core English Language Arts K-8 standards
-- Bloom's Taxonomy: bloom_level field on all 4 curriculum systems, filter in search API
-- Libras STT ML Pipeline: training scaffold, TF.js MLP classifier, webcam landmarks, gloss->LLM streaming
-- Middleware stack: Rate Limiter (sliding window, 429+Retry-After), Security Headers, Request ID (structlog correlation), Tenant Context (JWT+contextvars)
-- Prometheus Metrics: /metrics endpoint (Counter, Histogram, text exposition)
-- Input Sanitization: sanitize_prompt (NFC+null+truncate), validate_teacher_id, sanitize_metadata
-- Resilience: Circuit Breaker (5 fail->60s open->half-open), Retry (exp backoff, 3 attempts), Workflow Timeout (300s)
-- Idempotency Guard, DI Container Lifecycle (health_check/close/validate/OCR protocol)
-- Observability Spans: span_context, timed_operation, log_llm_call, log_tool_execution
-- Dev-Mode Safety Guard, Readiness Probe (/health/ready, DB+Redis checks)
-- SmartRouter pure extraction: routing_types.py with RouteFeatures/ScoreBreakdown/RouteDecision
-- 1527+ backend tests (1350 runtime + 177 agents), 331+ frontend tests
-- Sprint 13: Agent Trace API, SmartRouter rationale SSE, QualityGate 4 hard constraints, RAG-grounded quoting
-- Sprint 13: Observability Dashboard, Standards Evidence, theme morphing, bento grid, typewriter, sonner toasts
-- Sprint 13: 3 E2E golden paths + axe-core, judge artifacts (4 docs)
-- Sprint 14: JWT RS256/ES256 + JWKS + 57 security tests, prompt injection defenses, audit logging
-- Sprint 14: OpenTelemetry tracing, RFC 7807 error model, DB pool tuning 10+10, HNSW m=16/ef=128
-- Sprint 14: Agent eval harness (15 golden sets + rubric + regression), RAG provenance diagnostics API
-- Sprint 14: Sign lang worker fix, Playwright webServer, 8 visual regression, View Transitions, OG images
-- Sprint 14: PWA manifest, Recharts keyboard a11y, optimistic UI, container refactor 476→278 LOC
-
-### Changed
-- FastAPI upgraded 0.128.8 -> 0.129.0; runtime + agents lock files upgraded
-- OpenAI SDK upgraded to 2.x (openai>=2.11,<3) — required by pydantic-ai
-- Runtime workflows (plan_workflow.py, tutor_workflow.py) now thin re-exports from ailine_agents
-- Routers (plans.py, plans_stream.py) use AgentDepsFactory.from_container()
-- SmartRouter rebalanced: 0.25/0.25/0.25/0.15/0.10 (ADR-049); pools: 5/5 (ADR-052)
-- uuid-utils for UUID v7, motion (was framer-motion), proxy.ts (was middleware.ts)
-
-### Removed
-- claude-agent-sdk removed from dependencies (ADR-048)
-- Deleted: executor_agent_sdk.py, planner_deepagents.py, claude_sdk_executor.py, deepagents_planner.py, adapters_agent_sdk.py
+## [0.1.1] - 2026-02-14 (Excellence Sweep)
 
 ### Fixed
-- Ruff lint: 33 errors fixed across runtime + agents (N806 uppercase vars, SIM109, RUF005, I001, F401, UP035, RUF022, SIM300, RUF059)
-- Anthropic model ID: claude-haiku-4-20250414 -> claude-haiku-4-5-20251001
-- Gemini streaming: generate_content_stream requires await (google-genai API change)
-- ChatLLM protocol/adapter signature unified; LearnerProfile name collision resolved
-- Container.build() wires all adapters; embedding dimensions default=1536
-- OpenAI+Gemini clients in __init__; datetime.utcnow()->datetime.now(UTC)
-- DeepAgents structured_response None (ADR-043); all 17 S1 review + 21 expert items resolved
+- All 114 mypy type errors resolved (0 errors in 155 source files)
+- Raw LangGraph state no longer leaked to client in POST /plans/generate
+- Tool bridge now catches and returns errors instead of propagating raw exceptions
+- useTranslations→getTranslations in server components (plans, tutors pages)
+- Nested `<main>` removed from sign-language page (prevents WCAG landmark violation)
+- Sidebar/MobileNav: `<a href>`→`<Link>` for client-side navigation
+- Cognitive curtain: hover/focus restores interactivity (was blocking all nav)
+- Preferences panel animations respect user's reducedMotion preference
+- Ruff: F401, I001, UP017, E501 all fixed (0 lint errors across runtime + agents)
+
+### Improved
+- Agent model IDs now configurable via settings (planner_model, tutor_model)
+- README.md rewritten for hackathon judges (badges, Mermaid diagrams, metrics)
+- Accessibility persona themes enhanced with meaningful UX adaptations
+- Quality decision persisted in LangGraph workflow state for auditability
+- Test setup: getTranslations mock added for async server component testing
+
+## [0.1.0] - 2026-02-13 (Hackathon Release)
+
+### Added
+- Hexagonal architecture (Ports-and-Adapters) with domain, ports, adapters, application layers
+- 4 Pydantic AI 1.58 typed agents (Planner, Executor, QualityGate, Tutor) via ailine_agents package (ADR-059)
+- LangGraph workflows: plan pipeline (parallel fan-out, quality gate, refine loop) + tutor chat
+- SmartRouter multi-LLM routing: weighted scoring, hard overrides, escalation ladder (ADR-049)
+- 3 LLM adapters (Anthropic, OpenAI, Gemini) + FakeLLM/FakeSTT/FakeTTS for CI (ADR-051)
+- FastAPI 0.129 with 8 routers, SSE 14 typed events, RFC 7807 error model
+- SQLAlchemy 2.x async (11 tables, UUID v7), pgvector HNSW, composite FK tenant safety (ADR-053)
+- RAG pipeline: material ingestion, embeddings (Gemini 1536d MRL), query with provenance diagnostics
+- Curriculum alignment: BNCC, CCSS Math, CCSS ELA, NGSS with Bloom's Taxonomy filtering
+- Next.js 16 frontend: React 19, Tailwind 4, React Compiler, 9 WCAG AAA themes, 3 locales
+- Accessibility: VLibras, MediaPipe sign language, Whisper STT, ElevenLabs TTS, OCR
+- Wow features: Cognitive Curtain, Bionic Reading, TTS Karaoke, Glass Box Pipeline Viewer
+- Security: JWT RS256/ES256 + JWKS (57 tests), prompt injection defenses, audit logging, CSP/HSTS
+- Structural tenant isolation in all vector stores (ADR-060), centralized authz policy
+- OpenTelemetry tracing, Prometheus metrics, circuit breaker, retry with backoff
+- SSE replay (Redis ZSET), RunContext terminal guarantee, asyncio.Lock thread safety
+- Docker Compose (PostgreSQL 16 + pgvector, Redis, API, Frontend) with healthchecks
+- 1,993+ backend tests, 770+ frontend tests, 35+ E2E Playwright, 65 live API tests
+- 60 ADRs, 120 features, 11 skills, demo mode with 3 cached scenarios

@@ -9,10 +9,22 @@ from ailine_agents.workflows.plan_workflow import build_plan_workflow
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
-from ...shared.sanitize import sanitize_prompt, validate_teacher_id
-from ...shared.tenant import try_get_current_teacher_id
+from ...app.authz import require_authenticated
+from ...shared.sanitize import sanitize_prompt
 
 router = APIRouter()
+
+# Fields safe to expose to the client from the LangGraph RunState.
+# Internal workflow fields (refine_iter, started_at, idempotency_key, etc.)
+# are explicitly excluded to prevent information leakage.
+_SAFE_RESPONSE_FIELDS = frozenset({
+    "run_id",
+    "draft",
+    "quality_assessment",
+    "quality_decision",
+    "validation",
+    "final",
+})
 
 
 class PlanGenerateIn(BaseModel):
@@ -24,27 +36,20 @@ class PlanGenerateIn(BaseModel):
     learner_profiles: list[dict[str, Any]] | None = None
 
 
-def _resolve_teacher_id(body_teacher_id: str | None) -> str:
-    """Resolve teacher_id: middleware context takes precedence over request body.
+def _resolve_teacher_id() -> str:
+    """Resolve teacher_id from JWT context (mandatory).
 
-    Returns an empty string if neither source provides a value.
+    Raises 401 if no authenticated teacher context is available.
     """
-    # Middleware-injected tenant context takes precedence
-    ctx_teacher_id = try_get_current_teacher_id()
-    if ctx_teacher_id:
-        return ctx_teacher_id
-
-    # Fall back to request body (backward compatibility)
-    if body_teacher_id:
-        try:
-            return validate_teacher_id(body_teacher_id)
-        except ValueError as exc:
-            raise HTTPException(status_code=422, detail=str(exc)) from exc
-
-    return ""
+    return require_authenticated()
 
 
-@router.post("/generate")
+def _filter_state(state: dict[str, Any]) -> dict[str, Any]:
+    """Filter raw LangGraph state to only expose safe fields to the client."""
+    return {k: v for k, v in state.items() if k in _SAFE_RESPONSE_FIELDS}
+
+
+@router.post("/generate", response_model=dict[str, Any])
 async def plans_generate(body: PlanGenerateIn, request: Request):
     container = request.app.state.container
     settings = request.app.state.settings
@@ -54,7 +59,7 @@ async def plans_generate(body: PlanGenerateIn, request: Request):
     if not user_prompt:
         raise HTTPException(status_code=422, detail="user_prompt must not be empty after sanitization")
 
-    teacher_id = _resolve_teacher_id(body.teacher_id)
+    teacher_id = _resolve_teacher_id()
 
     deps = AgentDepsFactory.from_container(
         container,
@@ -69,7 +74,7 @@ async def plans_generate(body: PlanGenerateIn, request: Request):
     init_state = {
         "run_id": body.run_id,
         "user_prompt": user_prompt,
-        "teacher_id": teacher_id if teacher_id else body.teacher_id,
+        "teacher_id": teacher_id,
         "subject": body.subject,
         "class_accessibility_profile": body.class_accessibility_profile,
         "learner_profiles": body.learner_profiles,
@@ -77,4 +82,4 @@ async def plans_generate(body: PlanGenerateIn, request: Request):
     }
 
     final_state = await workflow.ainvoke(init_state)
-    return final_state
+    return _filter_state(final_state)

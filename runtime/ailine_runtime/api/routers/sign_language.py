@@ -21,10 +21,16 @@ from pydantic import BaseModel, Field
 
 from ...accessibility.caption_orchestrator import CaptionOrchestrator
 from ...accessibility.gloss_translator import GlossToTextTranslator
+from ...api.middleware.tenant_context import _extract_teacher_id_from_jwt
+from ...app.authz import require_authenticated
 
 logger = structlog.get_logger(__name__)
 
 router = APIRouter()
+
+# -- File upload size limits ---------------------------------------------------
+
+MAX_SIGN_UPLOAD_SIZE = 10 * 1024 * 1024  # 10 MB (video/image of gesture)
 
 
 # -- Response schemas --------------------------------------------------------
@@ -130,10 +136,13 @@ async def recognize_sign(
     input size; the real adapter returns "unknown" until a trained model
     is provided.
     """
+    require_authenticated()
     recognizer = _get_sign_recognizer(request)
     video_bytes = await file.read()
     if not video_bytes:
         raise HTTPException(status_code=400, detail="Empty file uploaded.")
+    if len(video_bytes) > MAX_SIGN_UPLOAD_SIZE:
+        raise HTTPException(status_code=413, detail="File too large. Maximum size: 10MB.")
 
     content_type = file.content_type or "unknown"
     logger.info(
@@ -166,6 +175,9 @@ async def list_gestures() -> GestureListResponse:
 async def libras_caption_ws(websocket: WebSocket) -> None:
     """WebSocket endpoint for real-time Libras gloss → Portuguese captioning.
 
+    Authentication: pass JWT as ``?token=<jwt>`` query parameter.
+    The token is verified before accepting the connection.
+
     Protocol (client → server):
       {"type": "gloss_partial", "glosses": ["EU", "GOSTAR"], "confidence": 0.75, "ts": 1234}
       {"type": "gloss_final",   "glosses": ["EU", "GOSTAR"], "confidence": 0.95, "ts": 1234}
@@ -175,6 +187,21 @@ async def libras_caption_ws(websocket: WebSocket) -> None:
       {"type": "caption_final_delta", "text": "Eu gosto da escola.", "full_text": "...", "glosses": [...]}
       {"type": "error", "detail": "..."}
     """
+    # Authenticate via query parameter token before accepting the connection.
+    token = websocket.query_params.get("token", "")
+    if token:
+        teacher_id, _error = _extract_teacher_id_from_jwt(token)
+        if not teacher_id:
+            await websocket.close(code=4001, reason="Authentication failed")
+            return
+    else:
+        # Allow unauthenticated WebSocket only in dev mode for backward compat
+        import os
+        if os.getenv("AILINE_DEV_MODE", "").lower() not in ("true", "1", "yes"):
+            await websocket.close(code=4001, reason="Authentication required: pass ?token=<jwt>")
+            return
+        teacher_id = None
+
     await websocket.accept()
 
     # Resolve LLM from container

@@ -4,7 +4,7 @@ import { MarkdownWithMermaid } from './markdown-with-mermaid'
 
 // Mock the MermaidRenderer to avoid dynamic import
 vi.mock('./mermaid-renderer', () => ({
-  MermaidRenderer: ({ code }: { code: string }) => (
+  default: ({ code }: { code: string }) => (
     <div data-testid="mermaid-renderer">{code}</div>
   ),
   extractMermaidBlocks: vi.fn().mockImplementation((text: string) => {
@@ -47,25 +47,25 @@ describe('MarkdownWithMermaid', () => {
     expect(container.firstChild).toBeNull()
   })
 
-  it('renders mermaid blocks via MermaidRenderer', () => {
+  it('renders mermaid blocks via MermaidRenderer', async () => {
     const content = 'Before\n```mermaid\ngraph TD\nA-->B\n```\nAfter'
     const { container } = render(<MarkdownWithMermaid content={content} />)
-    expect(screen.getByTestId('mermaid-renderer')).toBeInTheDocument()
+    expect(await screen.findByTestId('mermaid-renderer')).toBeInTheDocument()
     // Text segments are rendered as spans
     const spans = container.querySelectorAll('span')
     expect(spans.length).toBeGreaterThanOrEqual(2)
   })
 
-  it('renders multiple mermaid blocks', () => {
+  it('renders multiple mermaid blocks', async () => {
     const content = 'Text1\n```mermaid\ngraph A\n```\nMiddle\n```mermaid\ngraph B\n```\nEnd'
     render(<MarkdownWithMermaid content={content} />)
-    const renderers = screen.getAllByTestId('mermaid-renderer')
+    const renderers = await screen.findAllByTestId('mermaid-renderer')
     expect(renderers).toHaveLength(2)
   })
 
-  it('renders only mermaid block when no surrounding text', () => {
+  it('renders only mermaid block when no surrounding text', async () => {
     const content = '```mermaid\nflowchart LR\nA-->B\n```'
     render(<MarkdownWithMermaid content={content} />)
-    expect(screen.getByTestId('mermaid-renderer')).toBeInTheDocument()
+    expect(await screen.findByTestId('mermaid-renderer')).toBeInTheDocument()
   })
 })

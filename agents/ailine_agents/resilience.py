@@ -125,12 +125,40 @@ class IdempotencyGuard:
 
     Thread-safe. Keys are tracked in memory (suitable for single-process
     deployments; for multi-process, use Redis or a database).
+
+    TTL and max_size prevent unbounded memory growth:
+    - Entries older than ``ttl_seconds`` are evicted on access.
+    - When the results dict exceeds ``max_size``, the oldest entries
+      are evicted first.
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        *,
+        ttl_seconds: float = 300.0,
+        max_size: int = 1000,
+    ) -> None:
+        self._ttl_seconds = ttl_seconds
+        self._max_size = max_size
         self._in_progress: dict[str, asyncio.Event] = {}
         self._results: dict[str, Any] = {}
+        self._timestamps: dict[str, float] = {}
         self._lock = threading.Lock()
+
+    def _evict_expired_locked(self) -> None:
+        """Remove entries older than TTL (must hold _lock)."""
+        cutoff = time.monotonic() - self._ttl_seconds
+        expired = [k for k, ts in self._timestamps.items() if ts < cutoff]
+        for k in expired:
+            self._results.pop(k, None)
+            self._timestamps.pop(k, None)
+
+    def _evict_oldest_locked(self) -> None:
+        """Remove oldest entries if results exceed max_size (must hold _lock)."""
+        while len(self._results) > self._max_size:
+            oldest_key = min(self._timestamps, key=self._timestamps.get)  # type: ignore[arg-type]
+            self._results.pop(oldest_key, None)
+            self._timestamps.pop(oldest_key, None)
 
     def try_acquire(self, key: str) -> bool:
         """Attempt to acquire a lock for the given idempotency key.
@@ -139,6 +167,7 @@ class IdempotencyGuard:
         Returns False if a run with this key is already in progress.
         """
         with self._lock:
+            self._evict_expired_locked()
             if key in self._in_progress:
                 return False
             self._in_progress[key] = asyncio.Event()
@@ -148,7 +177,9 @@ class IdempotencyGuard:
         """Mark a run as completed and store its result."""
         with self._lock:
             self._results[key] = result
+            self._timestamps[key] = time.monotonic()
             event = self._in_progress.pop(key, None)
+            self._evict_oldest_locked()
         if event is not None:
             event.set()
 
@@ -157,15 +188,17 @@ class IdempotencyGuard:
         with self._lock:
             event = self._in_progress.pop(key, None)
             self._results.pop(key, None)
+            self._timestamps.pop(key, None)
         if event is not None:
             event.set()
 
     def get_result(self, key: str) -> tuple[bool, Any]:
         """Get the result for a completed run.
 
-        Returns (found, result) tuple.
+        Returns (found, result) tuple. Evicts expired entries first.
         """
         with self._lock:
+            self._evict_expired_locked()
             if key in self._results:
                 return True, self._results[key]
             return False, None
@@ -180,3 +213,4 @@ class IdempotencyGuard:
         with self._lock:
             self._in_progress.clear()
             self._results.clear()
+            self._timestamps.clear()

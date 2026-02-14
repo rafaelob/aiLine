@@ -48,8 +48,8 @@ class TestPgVectorStoreEnsureTable:
     @pytest.mark.asyncio
     async def test_ensure_table_creates_extension_and_table(self, store, mock_session):
         await store.ensure_table()
-        # Should have executed 3 statements: CREATE EXTENSION, CREATE TABLE, CREATE INDEX
-        assert mock_session.execute.call_count == 3
+        # 4 statements: CREATE EXTENSION, CREATE TABLE, HNSW INDEX, tenant_id INDEX
+        assert mock_session.execute.call_count == 4
         assert mock_session.commit.call_count == 1
 
 

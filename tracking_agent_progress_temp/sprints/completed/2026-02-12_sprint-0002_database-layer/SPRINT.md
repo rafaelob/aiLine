@@ -1,6 +1,6 @@
 # Sprint 0002 — Database Layer
 
-**Status:** planned | **Date:** 2026-02-12
+**Status:** completed | **Date:** 2026-02-12
 **Goal:** SQLAlchemy 2.x async ORM models, Alembic migrations, multi-DB support
 (Postgres+pgvector primary, SQLite fallback), Docker Compose with pgvector+Redis,
 i18n data files.

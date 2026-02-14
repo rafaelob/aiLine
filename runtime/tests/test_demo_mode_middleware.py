@@ -7,12 +7,19 @@ Lines 59-60: json.JSONDecodeError / UnicodeDecodeError on body parse -> pass thr
 from __future__ import annotations
 
 import asyncio
+from collections.abc import AsyncGenerator
 
 import pytest
 from httpx import ASGITransport, AsyncClient
 
 from ailine_runtime.api.app import create_app
-from ailine_runtime.shared.config import Settings
+from ailine_runtime.shared.config import (
+    DatabaseConfig,
+    EmbeddingConfig,
+    LLMConfig,
+    RedisConfig,
+    Settings,
+)
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -26,10 +33,10 @@ def settings_demo_on() -> Settings:
         anthropic_api_key="fake-key",
         openai_api_key="",
         google_api_key="",
-        db={"url": "sqlite+aiosqlite:///:memory:"},
-        llm={"provider": "fake", "api_key": "fake"},
-        embedding={"provider": "gemini", "api_key": ""},
-        redis={"url": "redis://localhost:6379/0"},
+        db=DatabaseConfig(url="sqlite+aiosqlite:///:memory:"),
+        llm=LLMConfig(provider="fake", api_key="fake"),
+        embedding=EmbeddingConfig(provider="gemini", api_key=""),
+        redis=RedisConfig(url="redis://localhost:6379/0"),
         demo_mode=True,
     )
 
@@ -40,7 +47,7 @@ def app_demo_on(settings_demo_on: Settings):
 
 
 @pytest.fixture()
-async def client_demo_on(app_demo_on) -> AsyncClient:
+async def client_demo_on(app_demo_on) -> AsyncGenerator[AsyncClient, None]:
     transport = ASGITransport(app=app_demo_on, raise_app_exceptions=False)
     async with AsyncClient(transport=transport, base_url="http://test") as c:
         yield c

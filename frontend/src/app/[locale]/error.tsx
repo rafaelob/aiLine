@@ -1,6 +1,7 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
+import { useParams } from 'next/navigation'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { cn } from '@/lib/cn'
 
@@ -23,6 +24,7 @@ export default function ErrorPage({
   reset: () => void
 }) {
   const t = useTranslations('common')
+  const params = useParams<{ locale: string }>()
   const [copied, setCopied] = useState(false)
   const [sseState, setSseState] = useState<'idle' | 'reconnecting' | 'failed'>('idle')
   const copiedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -274,7 +276,7 @@ export default function ErrorPage({
 
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- Error boundaries must use <a> to work when the router is broken */}
           <a
-            href="/"
+            href={`/${params.locale ?? 'en'}`}
             className={cn(
               'rounded-[var(--radius-md)] px-5 py-2.5',
               'border border-[var(--color-border)]',

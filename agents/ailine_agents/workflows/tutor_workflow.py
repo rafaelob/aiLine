@@ -30,6 +30,21 @@ from ._state import TutorGraphState
 
 log = structlog.get_logger(__name__)
 
+
+def _make_fallback(message: str, *, flag: str) -> dict[str, Any]:
+    """Create a TutorTurnOutput fallback as a dict. Avoids repeating the full constructor."""
+    output = TutorTurnOutput(
+        answer_markdown=message,
+        step_by_step=[],
+        check_for_understanding=[],
+        options_to_respond=[],
+        citations=[],
+        flags=[flag],
+    )
+    result: dict[str, Any] = output.model_dump()
+    return result
+
+
 # Intent classification (rule-based, no LLM call)
 
 _GREETINGS = frozenset([
@@ -166,35 +181,23 @@ def build_tutor_workflow(
                     elapsed_seconds=round(elapsed, 1),
                     limit_seconds=deps.max_workflow_duration_seconds,
                 )
-                fallback = TutorTurnOutput(
-                    answer_markdown="Desculpe, o tempo limite foi atingido. Tente novamente.",
-                    step_by_step=[],
-                    check_for_understanding=[],
-                    options_to_respond=[],
-                    citations=[],
-                    flags=["timeout_error"],
-                )
                 return {
-                    "validated_output": fallback.model_dump(),
+                    "validated_output": _make_fallback(
+                        "Desculpe, o tempo limite foi atingido. Tente novamente.",
+                        flag="timeout_error",
+                    ),
                     "error": f"Workflow timeout after {elapsed:.1f}s",
                 }
 
         # Check circuit breaker
         if not deps.circuit_breaker.check():
             log_event("tutor.circuit_open", session_id=session_id)
-            fallback = TutorTurnOutput(
-                answer_markdown=(
-                    "Desculpe, o servico esta temporariamente indisponivel. "
-                    "Tente novamente em alguns instantes."
-                ),
-                step_by_step=[],
-                check_for_understanding=[],
-                options_to_respond=[],
-                citations=[],
-                flags=["circuit_open"],
-            )
             return {
-                "validated_output": fallback.model_dump(),
+                "validated_output": _make_fallback(
+                    "Desculpe, o servico esta temporariamente indisponivel. "
+                    "Tente novamente em alguns instantes.",
+                    flag="circuit_open",
+                ),
                 "error": "Circuit breaker open",
             }
 
@@ -261,16 +264,11 @@ def build_tutor_workflow(
             }
 
         except CircuitOpenError:
-            fallback = TutorTurnOutput(
-                answer_markdown="Desculpe, o servico esta temporariamente indisponivel.",
-                step_by_step=[],
-                check_for_understanding=[],
-                options_to_respond=[],
-                citations=[],
-                flags=["circuit_open"],
-            )
             return {
-                "validated_output": fallback.model_dump(),
+                "validated_output": _make_fallback(
+                    "Desculpe, o servico esta temporariamente indisponivel.",
+                    flag="circuit_open",
+                ),
                 "error": "Circuit breaker opened during call",
             }
         except Exception as exc:
@@ -290,18 +288,13 @@ def build_tutor_workflow(
                 status="failed",
                 metadata={"error": str(exc)},
             )
-            # Fallback: return error in state
-            fallback = TutorTurnOutput(
-                answer_markdown=f"Desculpe, ocorreu um erro. Tente novamente. ({exc})",
-                step_by_step=[],
-                check_for_understanding=[],
-                options_to_respond=[],
-                citations=[],
-                flags=["generation_error"],
-            )
+            # Generic message to user; details stay in logs only
             return {
-                "validated_output": fallback.model_dump(),
-                "error": f"generate_response failed: {exc}",
+                "validated_output": _make_fallback(
+                    "Desculpe, ocorreu um erro. Tente novamente.",
+                    flag="generation_error",
+                ),
+                "error": "generate_response failed",
             }
 
     def route_after_intent(state: TutorGraphState) -> str:

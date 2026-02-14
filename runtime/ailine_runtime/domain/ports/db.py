@@ -2,17 +2,23 @@
 
 from __future__ import annotations
 
-from typing import Any, Protocol, Self, runtime_checkable
+from types import TracebackType
+from typing import Protocol, Self, TypeVar, runtime_checkable
+
+T = TypeVar("T")
 
 
 @runtime_checkable
-class Repository(Protocol):
-    """Generic repository protocol."""
+class Repository(Protocol[T]):
+    """Generic repository protocol.
 
-    async def get(self, id: str) -> Any | None: ...
-    async def list(self, **filters: Any) -> list[Any]: ...
-    async def add(self, entity: Any) -> Any: ...
-    async def update(self, entity: Any) -> Any: ...
+    Type parameter T represents the entity type managed by this repository.
+    """
+
+    async def get(self, id: str) -> T | None: ...
+    async def list(self, **filters: str) -> list[T]: ...
+    async def add(self, entity: T) -> T: ...
+    async def update(self, entity: T) -> T: ...
     async def delete(self, id: str) -> None: ...
 
 
@@ -24,9 +30,9 @@ class UnitOfWork(Protocol):
 
     async def __aexit__(
         self,
-        exc_type: type | None,
+        exc_type: type[BaseException] | None,
         exc_val: BaseException | None,
-        exc_tb: Any | None,
+        exc_tb: TracebackType | None,
     ) -> None: ...
 
     async def commit(self) -> None: ...

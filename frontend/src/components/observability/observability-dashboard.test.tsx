@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
-import { ObservabilityDashboardContent } from './observability-dashboard'
+import ObservabilityDashboardContent from './observability-dashboard'
 import type { ObservabilityDashboard } from '@/types/trace'
 
 const mockData: ObservabilityDashboard = {

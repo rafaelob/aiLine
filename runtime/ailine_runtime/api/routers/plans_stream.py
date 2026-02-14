@@ -24,8 +24,8 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
 
-from ...shared.sanitize import sanitize_prompt, validate_teacher_id
-from ...shared.tenant import try_get_current_teacher_id
+from ...app.authz import require_authenticated
+from ...shared.sanitize import sanitize_prompt
 from ...shared.trace_store import get_trace_store
 from ...workflow.plan_workflow import DEFAULT_RECURSION_LIMIT, RunState
 from ..streaming.events import SSEEventEmitter
@@ -38,17 +38,12 @@ router = APIRouter()
 _HEARTBEAT_INTERVAL_S = 15.0
 
 
-def _resolve_teacher_id(body_teacher_id: str | None) -> str:
-    """Resolve teacher_id: middleware context takes precedence over body."""
-    ctx_teacher_id = try_get_current_teacher_id()
-    if ctx_teacher_id:
-        return ctx_teacher_id
-    if body_teacher_id:
-        try:
-            return validate_teacher_id(body_teacher_id)
-        except ValueError as exc:
-            raise HTTPException(status_code=422, detail=str(exc)) from exc
-    return ""
+def _resolve_teacher_id() -> str:
+    """Resolve teacher_id from JWT context (mandatory).
+
+    Raises 401 if no authenticated teacher context is available.
+    """
+    return require_authenticated()
 
 
 class PlanStreamIn(BaseModel):
@@ -93,10 +88,11 @@ async def _run_pipeline(
     queue: asyncio.Queue[dict[str, str] | None],
 ) -> None:
     """Execute the LangGraph plan workflow, pushing SSE events to the queue."""
+    trace_store = None
     try:
-        # Initialize trace
+        # Initialize trace (tenant-scoped for isolation)
         trace_store = get_trace_store()
-        await trace_store.get_or_create(body.run_id)
+        await trace_store.get_or_create(body.run_id, teacher_id=teacher_id)
 
         deps = AgentDepsFactory.from_container(
             container,
@@ -118,7 +114,7 @@ async def _run_pipeline(
         init_state: RunState = {
             "run_id": body.run_id,
             "user_prompt": body.user_prompt,
-            "teacher_id": teacher_id or body.teacher_id,
+            "teacher_id": teacher_id,
             "subject": body.subject,
             "class_accessibility_profile": body.class_accessibility_profile,
             "learner_profiles": body.learner_profiles,
@@ -164,8 +160,9 @@ async def _run_pipeline(
         error_event = emitter.run_failed(str(exc), stage="pipeline")
         await queue.put({"data": error_event.to_sse_data()})
 
-        # Mark trace as failed
-        await trace_store.update_run(body.run_id, status="failed")
+        # Mark trace as failed (guard against trace_store init failure)
+        if trace_store is not None:
+            await trace_store.update_run(body.run_id, status="failed")
 
     finally:
         # Sentinel to signal the generator to stop
@@ -189,8 +186,15 @@ async def plans_generate_stream(body: PlanStreamIn, request: Request) -> EventSo
     if not body.user_prompt:
         raise HTTPException(status_code=422, detail="user_prompt must not be empty after sanitization")
 
-    # Resolve teacher_id: middleware > body
-    teacher_id = _resolve_teacher_id(body.teacher_id)
+    # Resolve teacher_id: mandatory JWT auth
+    teacher_id = _resolve_teacher_id()
+
+    # Validate body.teacher_id matches authenticated teacher if provided
+    if body.teacher_id and body.teacher_id != teacher_id:
+        raise HTTPException(
+            status_code=403,
+            detail="teacher_id in request body does not match authenticated teacher",
+        )
 
     emitter = SSEEventEmitter(body.run_id)
     queue: asyncio.Queue[dict[str, str] | None] = asyncio.Queue()

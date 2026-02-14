@@ -12,9 +12,13 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal
 
+import structlog
+
 from ..accessibility.profiles import ClassAccessibilityProfile, human_review_flags
 from ..domain.entities.tutor import LearnerProfile, TutorAgentSpec, TutorMaterialsScope, TutorPersona
 from .playbooks import build_tutor_system_prompt
+
+logger = structlog.get_logger("ailine.tutoring.builder")
 
 TutorStyle = Literal["socratic", "coach", "direct", "explainer"]
 
@@ -44,7 +48,8 @@ def load_tutor_spec(tutor_id: str) -> TutorAgentSpec | None:
         return None
     try:
         return TutorAgentSpec(**json.loads(path.read_text(encoding="utf-8")))
-    except Exception:
+    except (json.JSONDecodeError, ValueError, TypeError, OSError):
+        logger.warning("load_tutor_spec_failed", tutor_id=tutor_id)
         return None
 
 
@@ -69,14 +74,16 @@ async def _generate_persona_with_llm(llm: Any, draft_prompt: str) -> TutorPerson
     # Parse JSON from response
     try:
         data = json.loads(result)
-    except Exception:
+    except (json.JSONDecodeError, ValueError):
+        logger.warning("persona_json_parse_failed", result_preview=result[:100])
         # Try to extract JSON from response
         if "{" in result and "}" in result:
             start = result.find("{")
             end = result.rfind("}")
             try:
                 data = json.loads(result[start : end + 1])
-            except Exception:
+            except (json.JSONDecodeError, ValueError):
+                logger.warning("persona_json_extract_failed")
                 data = {"system_prompt": result, "notes": []}
         else:
             data = {"system_prompt": result, "notes": []}

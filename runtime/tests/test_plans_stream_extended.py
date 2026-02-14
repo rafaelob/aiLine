@@ -159,11 +159,14 @@ def _patch_build_and_deps():
 class TestEventGeneratorEdgeCases:
     def test_stream_timeout_loop_continues(self):
         """When queue.get times out, the generator continues (lines 170-171)."""
+        import os
+
         from fastapi.testclient import TestClient
 
         from ailine_runtime.api.app import create_app
         from ailine_runtime.shared.config import Settings
 
+        os.environ["AILINE_DEV_MODE"] = "true"
         settings = Settings(anthropic_api_key="", openai_api_key="", google_api_key="")
         app = create_app(settings)
         p1, p2 = _patch_build_and_deps()
@@ -172,17 +175,21 @@ class TestEventGeneratorEdgeCases:
             response = client.post(
                 "/plans/generate/stream",
                 json={"run_id": "timeout-test", "user_prompt": "Test timeout loop"},
+                headers={"X-Teacher-ID": "teacher-test"},
             )
 
         assert response.status_code == 200
 
     def test_stream_client_disconnect_handled(self):
         """The event generator checks is_disconnected (lines 164-166)."""
+        import os
+
         from fastapi.testclient import TestClient
 
         from ailine_runtime.api.app import create_app
         from ailine_runtime.shared.config import Settings
 
+        os.environ["AILINE_DEV_MODE"] = "true"
         settings = Settings(anthropic_api_key="", openai_api_key="", google_api_key="")
         app = create_app(settings)
         mock_wf = _make_mock_workflow(side_effect=RuntimeError("quick fail"))
@@ -197,6 +204,7 @@ class TestEventGeneratorEdgeCases:
             response = client.post(
                 "/plans/generate/stream",
                 json={"run_id": "disconnect-test", "user_prompt": "Disconnect test"},
+                headers={"X-Teacher-ID": "teacher-test"},
             )
 
         assert response.status_code == 200

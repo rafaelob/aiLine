@@ -28,6 +28,7 @@ import time
 from collections import deque
 from collections.abc import AsyncIterator
 from dataclasses import asdict
+from datetime import UTC, datetime
 from typing import Any
 
 from ...domain.ports.llm import ChatLLM, WebSearchResult
@@ -235,6 +236,7 @@ class SmartRouterAdapter:
             features=features,
             score_breakdown=decision.score_breakdown,
             is_fallback=is_fallback,
+            wall_time_iso=datetime.now(UTC).isoformat(),
         )
         self._metrics.append(metrics)
         return metrics
@@ -360,27 +362,45 @@ class SmartRouterAdapter:
         )
         token_est = estimate_tokens(messages)
 
+        # Note: trace_llm_call is a sync context manager so we cannot wrap
+        # it around an async generator that yields across iterations.
+        # Instead, record the trace attributes after iteration completes.
         t0 = time.monotonic()
-        async for chunk in provider.stream(
-            messages,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            **kwargs,
-        ):
-            yield chunk
-        latency_ms = (time.monotonic() - t0) * 1000
+        error_occurred: Exception | None = None
+        try:
+            async for chunk in provider.stream(
+                messages,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                **kwargs,
+            ):
+                yield chunk
+        except Exception as exc:
+            error_occurred = exc
+            raise
+        finally:
+            latency_ms = (time.monotonic() - t0) * 1000
+            # Record OTel span for streaming (post-hoc since we cannot hold
+            # a sync context manager open across async yields).
+            with trace_llm_call(
+                provider=provider_name, model=provider_name, tier=decision.tier,
+            ) as span_data:
+                span_data["latency_ms"] = latency_ms
+                span_data["tokens_in"] = token_est
+                if error_occurred is not None:
+                    span_data["error"] = str(error_occurred)
 
-        self._log_latency(
-            "smart_router.stream_done", provider_name, latency_ms
-        )
-        self._record_metrics(
-            decision,
-            features,
-            provider_name,
-            latency_ms,
-            token_est,
-            is_fallback=is_fallback,
-        )
+            self._log_latency(
+                "smart_router.stream_done", provider_name, latency_ms
+            )
+            self._record_metrics(
+                decision,
+                features,
+                provider_name,
+                latency_ms,
+                token_est,
+                is_fallback=is_fallback,
+            )
 
     async def generate_with_search(
         self,

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
+import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'motion/react'
 import { cn } from '@/lib/cn'
@@ -106,8 +107,9 @@ export function Sidebar() {
             const active = isActive(item.href)
             return (
               <li key={item.key}>
-                <a
-                  href={`${localePrefix}${item.href}`}
+                <Link
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic locale-prefixed paths
+                  href={`${localePrefix}${item.href}` as any}
                   aria-current={active ? 'page' : undefined}
                   title={collapsed ? t(item.key) : undefined}
                   className={cn(
@@ -133,7 +135,7 @@ export function Sidebar() {
                       </motion.span>
                     )}
                   </AnimatePresence>
-                </a>
+                </Link>
               </li>
             )
           })}

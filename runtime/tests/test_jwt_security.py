@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import base64
 import json
+from collections.abc import AsyncGenerator
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -39,7 +40,13 @@ from ailine_runtime.api.middleware.tenant_context import (
     _extract_teacher_id_from_jwt,
     _get_jwt_config,
 )
-from ailine_runtime.shared.config import Settings
+from ailine_runtime.shared.config import (
+    DatabaseConfig,
+    EmbeddingConfig,
+    LLMConfig,
+    RedisConfig,
+    Settings,
+)
 from ailine_runtime.shared.prompt_defense import (
     build_hierarchical_prompt,
     sanitize_retrieved_content,
@@ -60,10 +67,10 @@ def settings() -> Settings:
         anthropic_api_key="fake-key-for-tests",
         openai_api_key="",
         google_api_key="",
-        db={"url": "sqlite+aiosqlite:///:memory:"},
-        llm={"provider": "fake", "api_key": "fake"},
-        embedding={"provider": "gemini", "api_key": ""},
-        redis={"url": "redis://localhost:6379/0"},
+        db=DatabaseConfig(url="sqlite+aiosqlite:///:memory:"),
+        llm=LLMConfig(provider="fake", api_key="fake"),
+        embedding=EmbeddingConfig(provider="gemini", api_key=""),
+        redis=RedisConfig(url="redis://localhost:6379/0"),
     )
 
 
@@ -73,7 +80,7 @@ def app(settings: Settings):
 
 
 @pytest.fixture()
-async def client(app) -> AsyncClient:
+async def client(app) -> AsyncGenerator[AsyncClient, None]:
     transport = ASGITransport(app=app, raise_app_exceptions=False)
     async with AsyncClient(transport=transport, base_url="http://test") as c:
         yield c
@@ -697,10 +704,10 @@ class TestEnvironmentValidation:
             anthropic_api_key="",
             openai_api_key="",
             google_api_key="",
-            db={"url": "sqlite+aiosqlite:///:memory:"},
-            llm={"provider": "fake", "api_key": "fake"},
-            embedding={"provider": "gemini", "api_key": ""},
-            redis={"url": ""},
+            db=DatabaseConfig(url="sqlite+aiosqlite:///:memory:"),
+            llm=LLMConfig(provider="fake", api_key="fake"),
+            embedding=EmbeddingConfig(provider="gemini", api_key=""),
+            redis=RedisConfig(url=""),
             env="development",
         )
         errors = s.validate_environment()
@@ -713,10 +720,10 @@ class TestEnvironmentValidation:
             anthropic_api_key="real-key",
             openai_api_key="",
             google_api_key="",
-            db={"url": "sqlite+aiosqlite:///:memory:"},
-            llm={"provider": "anthropic", "api_key": "real-key"},
-            embedding={"provider": "gemini", "api_key": ""},
-            redis={"url": ""},
+            db=DatabaseConfig(url="sqlite+aiosqlite:///:memory:"),
+            llm=LLMConfig(provider="anthropic", api_key="real-key"),
+            embedding=EmbeddingConfig(provider="gemini", api_key=""),
+            redis=RedisConfig(url=""),
             env="production",
         )
         with pytest.raises(OSError, match="SQLite is not allowed"):
@@ -737,10 +744,10 @@ class TestEnvironmentValidation:
             openai_api_key="",
             google_api_key="",
             openrouter_api_key="",
-            db={"url": "postgresql+asyncpg://user:pass@localhost/db"},
-            llm={"provider": "fake", "api_key": ""},
-            embedding={"provider": "gemini", "api_key": ""},
-            redis={"url": ""},
+            db=DatabaseConfig(url="postgresql+asyncpg://user:pass@localhost/db"),
+            llm=LLMConfig(provider="fake", api_key=""),
+            embedding=EmbeddingConfig(provider="gemini", api_key=""),
+            redis=RedisConfig(url=""),
             env="production",
         )
         with pytest.raises(OSError, match="LLM API key"):
@@ -753,10 +760,10 @@ class TestEnvironmentValidation:
             anthropic_api_key="real-key",
             openai_api_key="",
             google_api_key="",
-            db={"url": "postgresql+asyncpg://user:pass@localhost/db"},
-            llm={"provider": "anthropic", "api_key": "real-key"},
-            embedding={"provider": "gemini", "api_key": ""},
-            redis={"url": ""},
+            db=DatabaseConfig(url="postgresql+asyncpg://user:pass@localhost/db"),
+            llm=LLMConfig(provider="anthropic", api_key="real-key"),
+            embedding=EmbeddingConfig(provider="gemini", api_key=""),
+            redis=RedisConfig(url=""),
             env="production",
         )
         with pytest.raises(OSError, match="JWT key material"):
@@ -768,10 +775,10 @@ class TestEnvironmentValidation:
             anthropic_api_key="real-key",
             openai_api_key="",
             google_api_key="",
-            db={"url": "postgresql+asyncpg://user:pass@localhost/db"},
-            llm={"provider": "anthropic", "api_key": "real-key"},
-            embedding={"provider": "gemini", "api_key": ""},
-            redis={"url": "redis://localhost:6379/0"},
+            db=DatabaseConfig(url="postgresql+asyncpg://user:pass@localhost/db"),
+            llm=LLMConfig(provider="anthropic", api_key="real-key"),
+            embedding=EmbeddingConfig(provider="gemini", api_key=""),
+            redis=RedisConfig(url="redis://localhost:6379/0"),
             env="production",
         )
         errors = s.validate_environment()
@@ -782,10 +789,10 @@ class TestEnvironmentValidation:
             anthropic_api_key="",
             openai_api_key="",
             google_api_key="",
-            db={"url": ""},
-            llm={"provider": "fake", "api_key": "fake"},
-            embedding={"provider": "gemini", "api_key": ""},
-            redis={"url": ""},
+            db=DatabaseConfig(url=""),
+            llm=LLMConfig(provider="fake", api_key="fake"),
+            embedding=EmbeddingConfig(provider="gemini", api_key=""),
+            redis=RedisConfig(url=""),
             env="development",
         )
         errors = s.validate_environment()

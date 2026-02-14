@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from ailine_runtime.accessibility.hard_constraints import (
     check_accessibility_adaptation,
     check_formative_assessment,
@@ -26,7 +28,7 @@ def _make_profile(
     adhd: bool = False,
     hearing: bool = False,
     visual: bool = False,
-    target_reading_level: str = "simple",
+    target_reading_level: Literal["simple", "standard"] = "simple",
 ) -> ClassAccessibilityProfile:
     """Build a test profile with specific needs."""
     return ClassAccessibilityProfile(

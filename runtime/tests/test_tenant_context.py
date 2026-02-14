@@ -12,13 +12,20 @@ from __future__ import annotations
 
 import base64
 import json
+from collections.abc import AsyncGenerator
 from pathlib import Path
 
 import pytest
 from httpx import ASGITransport, AsyncClient
 
 from ailine_runtime.api.app import create_app
-from ailine_runtime.shared.config import Settings
+from ailine_runtime.shared.config import (
+    DatabaseConfig,
+    EmbeddingConfig,
+    LLMConfig,
+    RedisConfig,
+    Settings,
+)
 from ailine_runtime.shared.tenant import (
     TenantContext,
     clear_tenant_id,
@@ -50,10 +57,10 @@ def settings() -> Settings:
         anthropic_api_key="fake-key-for-tests",
         openai_api_key="",
         google_api_key="",
-        db={"url": "sqlite+aiosqlite:///:memory:"},
-        llm={"provider": "fake", "api_key": "fake"},
-        embedding={"provider": "gemini", "api_key": ""},
-        redis={"url": "redis://localhost:6379/0"},
+        db=DatabaseConfig(url="sqlite+aiosqlite:///:memory:"),
+        llm=LLMConfig(provider="fake", api_key="fake"),
+        embedding=EmbeddingConfig(provider="gemini", api_key=""),
+        redis=RedisConfig(url="redis://localhost:6379/0"),
     )
 
 
@@ -63,7 +70,7 @@ def app(settings: Settings):
 
 
 @pytest.fixture()
-async def client(app) -> AsyncClient:
+async def client(app) -> AsyncGenerator[AsyncClient, None]:
     transport = ASGITransport(app=app, raise_app_exceptions=False)
     async with AsyncClient(transport=transport, base_url="http://test") as c:
         yield c
@@ -87,13 +94,12 @@ class TestTenantContext:
         # Should not raise
         ctx.verify_access("teacher-001")
 
-    def test_verify_access_different_tenant_raises_403(self) -> None:
+    def test_verify_access_different_tenant_raises_error(self) -> None:
         ctx = TenantContext(teacher_id="teacher-001")
-        from fastapi import HTTPException
+        from ailine_runtime.domain.exceptions import UnauthorizedAccessError
 
-        with pytest.raises(HTTPException) as exc_info:
+        with pytest.raises(UnauthorizedAccessError, match="Access denied"):
             ctx.verify_access("teacher-002")
-        assert exc_info.value.status_code == 403
 
     def test_repr(self) -> None:
         ctx = TenantContext(teacher_id="abc")
@@ -122,12 +128,11 @@ class TestContextVars:
         finally:
             clear_tenant_id(token)
 
-    def test_get_current_teacher_id_raises_401_when_not_set(self) -> None:
-        from fastapi import HTTPException
+    def test_get_current_teacher_id_raises_when_not_set(self) -> None:
+        from ailine_runtime.domain.exceptions import TenantNotFoundError
 
-        with pytest.raises(HTTPException) as exc_info:
+        with pytest.raises(TenantNotFoundError, match="Authentication required"):
             get_current_teacher_id()
-        assert exc_info.value.status_code == 401
 
     def test_try_get_returns_none_when_not_set(self) -> None:
         assert try_get_current_teacher_id() is None
@@ -169,33 +174,29 @@ class TestValidateTeacherIdFormat:
         result = validate_teacher_id_format("  teacher-001  ")
         assert result == "teacher-001"
 
-    def test_empty_raises_422(self) -> None:
-        from fastapi import HTTPException
+    def test_empty_raises_error(self) -> None:
+        from ailine_runtime.domain.exceptions import InvalidTenantIdError
 
-        with pytest.raises(HTTPException) as exc_info:
+        with pytest.raises(InvalidTenantIdError, match="must not be empty"):
             validate_teacher_id_format("")
-        assert exc_info.value.status_code == 422
 
-    def test_too_long_raises_422(self) -> None:
-        from fastapi import HTTPException
+    def test_too_long_raises_error(self) -> None:
+        from ailine_runtime.domain.exceptions import InvalidTenantIdError
 
-        with pytest.raises(HTTPException) as exc_info:
+        with pytest.raises(InvalidTenantIdError, match="exceeds maximum length"):
             validate_teacher_id_format("a" * 129)
-        assert exc_info.value.status_code == 422
 
-    def test_special_chars_raises_422(self) -> None:
-        from fastapi import HTTPException
+    def test_special_chars_raises_error(self) -> None:
+        from ailine_runtime.domain.exceptions import InvalidTenantIdError
 
-        with pytest.raises(HTTPException) as exc_info:
+        with pytest.raises(InvalidTenantIdError, match="must be a UUID"):
             validate_teacher_id_format("teacher@evil.com")
-        assert exc_info.value.status_code == 422
 
-    def test_path_traversal_raises_422(self) -> None:
-        from fastapi import HTTPException
+    def test_path_traversal_raises_error(self) -> None:
+        from ailine_runtime.domain.exceptions import InvalidTenantIdError
 
-        with pytest.raises(HTTPException) as exc_info:
+        with pytest.raises(InvalidTenantIdError, match="must be a UUID"):
             validate_teacher_id_format("../../../etc/passwd")
-        assert exc_info.value.status_code == 422
 
 
 # ---------------------------------------------------------------------------
@@ -272,10 +273,10 @@ class TestRouterBackwardCompat:
     when no middleware context is set (backward compatibility).
     """
 
-    async def test_materials_add_with_body_teacher_id(
+    async def test_materials_add_without_auth_returns_401(
         self, client: AsyncClient, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """POST /materials with teacher_id in body should work."""
+        """POST /materials with teacher_id only in body (no auth) returns 401 (ADR-060)."""
         store_dir = tmp_path / "local_store"
         store_dir.mkdir()
         monkeypatch.setenv("AILINE_LOCAL_STORE", str(store_dir))
@@ -289,9 +290,8 @@ class TestRouterBackwardCompat:
                 "content": "Content here.",
             },
         )
-        assert resp.status_code == 200
-        body = resp.json()
-        assert body["teacher_id"] == "teacher-body-001"
+        # Centralized authz requires auth context -- body-only is no longer sufficient
+        assert resp.status_code == 401
 
     async def test_materials_add_with_jwt_overrides_body(
         self, client: AsyncClient, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -410,8 +410,9 @@ class TestTutorsRouterTenantIsolation:
         store_dir = tmp_path / "local_store"
         store_dir.mkdir()
         monkeypatch.setenv("AILINE_LOCAL_STORE", str(store_dir))
+        monkeypatch.setenv("AILINE_DEV_MODE", "true")
 
-        # Create tutor as teacher-001 (no JWT)
+        # Create tutor as teacher-001 (dev-mode header)
         create_resp = await client.post(
             "/tutors",
             json={
@@ -424,15 +425,15 @@ class TestTutorsRouterTenantIsolation:
                     "language": "pt-BR",
                 },
             },
+            headers={"X-Teacher-ID": "teacher-001"},
         )
         assert create_resp.status_code == 200
         tutor_id = create_resp.json()["tutor_id"]
 
-        # Try to access as teacher-002 via JWT
-        jwt = _make_jwt({"sub": "teacher-002"})
+        # Try to access as teacher-002 via dev-mode header
         resp = await client.get(
             f"/tutors/{tutor_id}",
-            headers={"Authorization": f"Bearer {jwt}"},
+            headers={"X-Teacher-ID": "teacher-002"},
         )
         assert resp.status_code == 403
 
@@ -442,10 +443,11 @@ class TestTutorsRouterTenantIsolation:
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        """GET /tutors/{id} with JWT for correct teacher should succeed."""
+        """GET /tutors/{id} with correct tenant should succeed."""
         store_dir = tmp_path / "local_store"
         store_dir.mkdir()
         monkeypatch.setenv("AILINE_LOCAL_STORE", str(store_dir))
+        monkeypatch.setenv("AILINE_DEV_MODE", "true")
 
         # Create tutor as teacher-001
         create_resp = await client.post(
@@ -460,15 +462,15 @@ class TestTutorsRouterTenantIsolation:
                     "language": "pt-BR",
                 },
             },
+            headers={"X-Teacher-ID": "teacher-001"},
         )
         assert create_resp.status_code == 200
         tutor_id = create_resp.json()["tutor_id"]
 
-        # Access as teacher-001 via JWT
-        jwt = _make_jwt({"sub": "teacher-001"})
+        # Access as teacher-001 via dev-mode header
         resp = await client.get(
             f"/tutors/{tutor_id}",
-            headers={"Authorization": f"Bearer {jwt}"},
+            headers={"X-Teacher-ID": "teacher-001"},
         )
         assert resp.status_code == 200
         assert resp.json()["tutor_id"] == tutor_id
@@ -551,10 +553,10 @@ class TestDevModeSafety:
             anthropic_api_key="fake-key",
             openai_api_key="",
             google_api_key="",
-            db={"url": "sqlite+aiosqlite:///:memory:"},
-            llm={"provider": "fake", "api_key": "fake"},
-            embedding={"provider": "gemini", "api_key": ""},
-            redis={"url": ""},
+            db=DatabaseConfig(url="sqlite+aiosqlite:///:memory:"),
+            llm=LLMConfig(provider="fake", api_key="fake"),
+            embedding=EmbeddingConfig(provider="gemini", api_key=""),
+            redis=RedisConfig(url=""),
             env="production",
         )
         with pytest.raises(ValueError, match="FORBIDDEN in production"):
@@ -569,10 +571,10 @@ class TestDevModeSafety:
             anthropic_api_key="fake-key",
             openai_api_key="",
             google_api_key="",
-            db={"url": "sqlite+aiosqlite:///:memory:"},
-            llm={"provider": "fake", "api_key": "fake"},
-            embedding={"provider": "gemini", "api_key": ""},
-            redis={"url": ""},
+            db=DatabaseConfig(url="sqlite+aiosqlite:///:memory:"),
+            llm=LLMConfig(provider="fake", api_key="fake"),
+            embedding=EmbeddingConfig(provider="gemini", api_key=""),
+            redis=RedisConfig(url=""),
             env="development",
         )
         app = create_app(settings=dev_settings)

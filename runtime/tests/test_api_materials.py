@@ -5,6 +5,7 @@ Uses a temporary local store to avoid polluting the filesystem.
 
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
 from pathlib import Path
 
 import pytest
@@ -15,15 +16,21 @@ from ailine_runtime.shared.config import Settings
 
 
 @pytest.fixture()
-def app(settings: Settings):
+def app(settings: Settings, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("AILINE_DEV_MODE", "true")
     return create_app(settings=settings)
 
 
 @pytest.fixture()
-async def client(app) -> AsyncClient:
+async def client(app) -> AsyncGenerator[AsyncClient, None]:
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as c:
         yield c
+
+
+def _auth(teacher_id: str) -> dict[str, str]:
+    """Build dev-mode auth header for a given teacher."""
+    return {"X-Teacher-ID": teacher_id}
 
 
 # ---------------------------------------------------------------------------
@@ -41,6 +48,7 @@ async def test_add_material(client: AsyncClient, tmp_local_store: Path) -> None:
             "content": "Texto sobre fracoes para 5o ano.",
             "tags": ["fracoes", "bncc"],
         },
+        headers=_auth("teacher-001"),
     )
     assert resp.status_code == 200
     body = resp.json()
@@ -60,6 +68,7 @@ async def test_add_material_without_tags(client: AsyncClient, tmp_local_store: P
             "title": "Ecossistemas",
             "content": "Texto sobre ecossistemas.",
         },
+        headers=_auth("teacher-001"),
     )
     assert resp.status_code == 200
     body = resp.json()
@@ -73,6 +82,7 @@ async def test_add_material_missing_required_field(client: AsyncClient, tmp_loca
             "teacher_id": "teacher-001",
             # Missing subject, title, content
         },
+        headers=_auth("teacher-001"),
     )
     assert resp.status_code == 422
 
@@ -83,13 +93,13 @@ async def test_add_material_missing_required_field(client: AsyncClient, tmp_loca
 
 
 async def test_list_materials_empty(client: AsyncClient, tmp_local_store: Path) -> None:
-    resp = await client.get("/materials")
+    resp = await client.get("/materials", headers=_auth("teacher-001"))
     assert resp.status_code == 200
     assert resp.json() == []
 
 
 async def test_list_materials_after_add(client: AsyncClient, tmp_local_store: Path) -> None:
-    # Add a material
+    # Add a material (auth context determines teacher_id)
     await client.post(
         "/materials",
         json={
@@ -99,9 +109,10 @@ async def test_list_materials_after_add(client: AsyncClient, tmp_local_store: Pa
             "content": "Texto sobre a revolucao industrial.",
             "tags": ["historia"],
         },
+        headers=_auth("teacher-002"),
     )
-    # List all
-    resp = await client.get("/materials")
+    # List as same teacher
+    resp = await client.get("/materials", headers=_auth("teacher-002"))
     assert resp.status_code == 200
     body = resp.json()
     assert len(body) >= 1
@@ -109,7 +120,7 @@ async def test_list_materials_after_add(client: AsyncClient, tmp_local_store: Pa
 
 
 async def test_list_materials_filter_by_teacher(client: AsyncClient, tmp_local_store: Path) -> None:
-    # Add materials for two teachers
+    # Add materials for two teachers (auth context determines ownership)
     await client.post(
         "/materials",
         json={
@@ -118,6 +129,7 @@ async def test_list_materials_filter_by_teacher(client: AsyncClient, tmp_local_s
             "title": "Material A",
             "content": "Content A",
         },
+        headers=_auth("teacher-A"),
     )
     await client.post(
         "/materials",
@@ -127,9 +139,10 @@ async def test_list_materials_filter_by_teacher(client: AsyncClient, tmp_local_s
             "title": "Material B",
             "content": "Content B",
         },
+        headers=_auth("teacher-B"),
     )
-    # Filter by teacher-A
-    resp = await client.get("/materials", params={"teacher_id": "teacher-A"})
+    # List as teacher-A -- scoped via auth context
+    resp = await client.get("/materials", headers=_auth("teacher-A"))
     assert resp.status_code == 200
     body = resp.json()
     assert all(m["teacher_id"] == "teacher-A" for m in body)
@@ -144,8 +157,13 @@ async def test_list_materials_filter_by_subject(client: AsyncClient, tmp_local_s
             "title": "Interpretacao",
             "content": "Texto interpretacao.",
         },
+        headers=_auth("teacher-C"),
     )
-    resp = await client.get("/materials", params={"teacher_id": "teacher-C", "subject": "Portugues"})
+    resp = await client.get(
+        "/materials",
+        params={"subject": "Portugues"},
+        headers=_auth("teacher-C"),
+    )
     assert resp.status_code == 200
     body = resp.json()
     assert len(body) >= 1

@@ -6,6 +6,8 @@ Adds recommended security-hardening HTTP headers to every response:
 - ``X-Frame-Options: DENY`` -- prevents clickjacking via iframes.
 - ``Referrer-Policy: strict-origin-when-cross-origin`` -- limits referrer leakage.
 - ``Permissions-Policy`` -- disables unused browser features.
+- ``Strict-Transport-Security`` -- enforces HTTPS.
+- ``Content-Security-Policy`` -- restricts resource origins.
 """
 
 from __future__ import annotations
@@ -21,7 +23,19 @@ _SECURITY_HEADERS: dict[str, str] = {
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
     "Referrer-Policy": "strict-origin-when-cross-origin",
-    "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+    "Permissions-Policy": "camera=(self), microphone=(), geolocation=()",
+    "Strict-Transport-Security": "max-age=63072000; includeSubDomains",
+    "Content-Security-Policy": (
+        "default-src 'self'; "
+        "script-src 'self' https://vlibras.gov.br; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data: blob:; "
+        "connect-src 'self'; "
+        "font-src 'self'; "
+        "frame-src https://vlibras.gov.br; "
+        "object-src 'none'; "
+        "base-uri 'self'"
+    ),
 }
 
 

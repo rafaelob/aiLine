@@ -54,6 +54,16 @@ export function PipelineViewer({ stages, isRunning, error }: PipelineViewerProps
         </h2>
       </div>
 
+      {/* SR-only live region for pipeline progress */}
+      <div className="sr-only" aria-live="polite" aria-atomic="true">
+        {stages.filter((s) => s.status === 'active').map((s) => (
+          <span key={s.id}>{t(`stages.${s.id}`)}: {t('status.active')}</span>
+        ))}
+        {!isRunning && stages.length > 0 && stages.every((s) => s.status === 'completed') && (
+          <span>{t('status.completed')}</span>
+        )}
+      </div>
+
       {/* Stage stepper */}
       <div role="list" aria-label={t('title')}>
         {stages.map((stage, i) => (

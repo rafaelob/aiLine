@@ -13,6 +13,8 @@ Covers:
 
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 
@@ -21,7 +23,13 @@ from ailine_runtime.api.middleware.rate_limit import (
     RateLimitMiddleware,
     _SlidingWindowCounter,
 )
-from ailine_runtime.shared.config import Settings
+from ailine_runtime.shared.config import (
+    DatabaseConfig,
+    EmbeddingConfig,
+    LLMConfig,
+    RedisConfig,
+    Settings,
+)
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -34,10 +42,10 @@ def settings() -> Settings:
         anthropic_api_key="fake-key-for-tests",
         openai_api_key="",
         google_api_key="",
-        db={"url": "sqlite+aiosqlite:///:memory:"},
-        llm={"provider": "fake", "api_key": "fake"},
-        embedding={"provider": "gemini", "api_key": ""},
-        redis={"url": ""},
+        db=DatabaseConfig(url="sqlite+aiosqlite:///:memory:"),
+        llm=LLMConfig(provider="fake", api_key="fake"),
+        embedding=EmbeddingConfig(provider="gemini", api_key=""),
+        redis=RedisConfig(url=""),
     )
 
 
@@ -49,7 +57,7 @@ def app_low_limit(settings: Settings, monkeypatch: pytest.MonkeyPatch):
 
 
 @pytest.fixture()
-async def client_low_limit(app_low_limit) -> AsyncClient:
+async def client_low_limit(app_low_limit) -> AsyncGenerator[AsyncClient, None]:
     transport = ASGITransport(app=app_low_limit, raise_app_exceptions=False)
     async with AsyncClient(transport=transport, base_url="http://test") as c:
         yield c
@@ -62,7 +70,7 @@ def app_default(settings: Settings):
 
 
 @pytest.fixture()
-async def client_default(app_default) -> AsyncClient:
+async def client_default(app_default) -> AsyncGenerator[AsyncClient, None]:
     transport = ASGITransport(app=app_default, raise_app_exceptions=False)
     async with AsyncClient(transport=transport, base_url="http://test") as c:
         yield c

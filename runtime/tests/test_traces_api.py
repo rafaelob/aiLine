@@ -19,9 +19,13 @@ def _reset():
 
 
 @pytest.fixture
-def app():
+def app(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("AILINE_DEV_MODE", "true")
     settings = Settings(env="development")
     return create_app(settings)
+
+
+_AUTH = {"X-Teacher-ID": "teacher-test"}
 
 
 class TestTracesAPI:
@@ -30,7 +34,8 @@ class TestTracesAPI:
     @pytest.mark.asyncio
     async def test_get_trace_not_found(self, app) -> None:
         async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
+            transport=ASGITransport(app=app), base_url="http://test",
+            headers=_AUTH,
         ) as client:
             resp = await client.get("/traces/nonexistent")
             assert resp.status_code == 404
@@ -46,7 +51,8 @@ class TestTracesAPI:
         await store.update_run("run-42", status="completed", total_time_ms=200.0)
 
         async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
+            transport=ASGITransport(app=app), base_url="http://test",
+            headers=_AUTH,
         ) as client:
             resp = await client.get("/traces/run-42")
             assert resp.status_code == 200
@@ -78,7 +84,8 @@ class TestTracesAPI:
         )
 
         async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
+            transport=ASGITransport(app=app), base_url="http://test",
+            headers=_AUTH,
         ) as client:
             resp = await client.get("/traces/run-99")
             assert resp.status_code == 200
@@ -91,7 +98,8 @@ class TestTracesAPI:
     @pytest.mark.asyncio
     async def test_list_recent_empty(self, app) -> None:
         async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
+            transport=ASGITransport(app=app), base_url="http://test",
+            headers=_AUTH,
         ) as client:
             resp = await client.get("/traces/recent")
             assert resp.status_code == 200
@@ -106,7 +114,8 @@ class TestTracesAPI:
         await store.update_run("run-2", status="completed", total_time_ms=200.0, final_score=72)
 
         async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
+            transport=ASGITransport(app=app), base_url="http://test",
+            headers=_AUTH,
         ) as client:
             resp = await client.get("/traces/recent?limit=10")
             assert resp.status_code == 200

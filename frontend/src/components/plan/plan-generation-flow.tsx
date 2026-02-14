@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import { motion, AnimatePresence } from 'motion/react'
 import { cn } from '@/lib/cn'
@@ -57,6 +57,7 @@ export function PlanGenerationFlow() {
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [showSuccess, setShowSuccess] = useState(false)
+  const stepContentRef = useRef<HTMLDivElement>(null)
 
   const resetWizard = useCallback(() => {
     setStep(0)
@@ -120,6 +121,13 @@ export function PlanGenerationFlow() {
     }
   }
 
+  // Move focus to step content on step change for screen reader users
+  useEffect(() => {
+    if (stepContentRef.current) {
+      stepContentRef.current.focus({ preventScroll: true })
+    }
+  }, [step])
+
   const showForm = !isRunning && !plan && !showSuccess
   const showPipeline = isRunning
   const showResult = !isRunning && plan !== null
@@ -146,64 +154,78 @@ export function PlanGenerationFlow() {
             'bg-[var(--color-surface)] border-[var(--color-border)]',
             'overflow-hidden'
           )}
+          role="group"
+          aria-roledescription="wizard"
+          aria-label={tWizard('wizard_label')}
         >
           {/* Step indicator */}
           <div className="px-6 pt-6 pb-4">
-            <div className="flex items-center justify-between mb-2">
-              {stepLabels.map((label, i) => (
-                <div key={i} className="flex items-center gap-2 flex-1">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <motion.div
-                      className={cn(
-                        'flex items-center justify-center w-8 h-8 rounded-full',
-                        'text-xs font-bold shrink-0 transition-colors'
-                      )}
-                      animate={{
-                        backgroundColor:
+            <nav aria-label={`Step ${step + 1} of ${STEP_COUNT}`}>
+              <ol className="flex items-center justify-between mb-2" role="list">
+                {stepLabels.map((label, i) => (
+                  <li
+                    key={i}
+                    className="flex items-center gap-2 flex-1"
+                    aria-current={i === step ? 'step' : undefined}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <motion.div
+                        className={cn(
+                          'flex items-center justify-center w-8 h-8 rounded-full',
+                          'text-xs font-bold shrink-0 transition-colors'
+                        )}
+                        animate={{
+                          backgroundColor:
+                            i < step
+                              ? 'var(--color-success)'
+                              : i === step
+                                ? 'var(--color-primary)'
+                                : 'var(--color-surface-elevated)',
+                          color:
+                            i <= step
+                              ? 'var(--color-on-primary)'
+                              : 'var(--color-muted)',
+                        }}
+                        transition={{ duration: 0.2 }}
+                        aria-hidden="true"
+                      >
+                        {i < step ? <StepCheckIcon /> : i + 1}
+                      </motion.div>
+                      <span
+                        className={cn(
+                          'text-xs font-medium truncate',
+                          i === step
+                            ? 'text-[var(--color-text)]'
+                            : 'text-[var(--color-muted)]'
+                        )}
+                      >
+                        <span className="sm:hidden">{tWizardShort(`step_${i}`)}</span>
+                        <span className="hidden sm:inline">{label}</span>
+                      </span>
+                    </div>
+                    {i < STEP_COUNT - 1 && (
+                      <div
+                        className={cn(
+                          'flex-1 h-0.5 mx-2 rounded-full transition-colors',
                           i < step
-                            ? 'var(--color-success)'
-                            : i === step
-                              ? 'var(--color-primary)'
-                              : 'var(--color-surface-elevated)',
-                        color:
-                          i <= step
-                            ? 'var(--color-on-primary)'
-                            : 'var(--color-muted)',
-                      }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      {i < step ? <StepCheckIcon /> : i + 1}
-                    </motion.div>
-                    <span
-                      className={cn(
-                        'text-xs font-medium truncate',
-                        i === step
-                          ? 'text-[var(--color-text)]'
-                          : 'text-[var(--color-muted)]'
-                      )}
-                    >
-                      <span className="sm:hidden">{tWizardShort(`step_${i}`)}</span>
-                      <span className="hidden sm:inline">{label}</span>
-                    </span>
-                  </div>
-                  {i < STEP_COUNT - 1 && (
-                    <div
-                      className={cn(
-                        'flex-1 h-0.5 mx-2 rounded-full transition-colors',
-                        i < step
-                          ? 'bg-[var(--color-success)]'
-                          : 'bg-[var(--color-border)]'
-                      )}
-                      aria-hidden="true"
-                    />
-                  )}
-                </div>
-              ))}
+                            ? 'bg-[var(--color-success)]'
+                            : 'bg-[var(--color-border)]'
+                        )}
+                        aria-hidden="true"
+                      />
+                    )}
+                  </li>
+                ))}
+              </ol>
+            </nav>
+            {/* Live region for screen readers announcing step changes */}
+            <div className="sr-only" aria-live="polite" aria-atomic="true">
+              {`Step ${step + 1} of ${STEP_COUNT}: ${stepLabels[step]}`}
             </div>
           </div>
 
           {/* Step content */}
-          <div className="px-6 pb-6">
+          <div ref={stepContentRef} tabIndex={-1} className="px-6 pb-6 outline-none">
             <AnimatePresence mode="wait">
               <motion.div
                 key={step}
@@ -230,6 +252,10 @@ export function PlanGenerationFlow() {
                           onChange={(e) => updateField('subject', e.target.value)}
                           onBlur={() => validateStep(0)}
                           placeholder={tForm('subject_placeholder')}
+                          autoComplete="off"
+                          aria-required={true}
+                          aria-invalid={!!errors.subject}
+                          aria-describedby={errors.subject ? 'subject-error' : undefined}
                           className={cn(
                             'w-full rounded-[var(--radius-md)] border p-3',
                             'bg-[var(--color-bg)] border-[var(--color-border)]',
@@ -238,7 +264,7 @@ export function PlanGenerationFlow() {
                             errors.subject && 'border-[var(--color-error)]'
                           )}
                         />
-                        <FieldError message={errors.subject} />
+                        <FieldError id="subject-error" message={errors.subject} />
                       </div>
                       <div>
                         <label
@@ -254,6 +280,10 @@ export function PlanGenerationFlow() {
                           onChange={(e) => updateField('grade', e.target.value)}
                           onBlur={() => validateStep(0)}
                           placeholder={tForm('grade_placeholder')}
+                          autoComplete="off"
+                          aria-required={true}
+                          aria-invalid={!!errors.grade}
+                          aria-describedby={errors.grade ? 'grade-error' : undefined}
                           className={cn(
                             'w-full rounded-[var(--radius-md)] border p-3',
                             'bg-[var(--color-bg)] border-[var(--color-border)]',
@@ -262,7 +292,7 @@ export function PlanGenerationFlow() {
                             errors.grade && 'border-[var(--color-error)]'
                           )}
                         />
-                        <FieldError message={errors.grade} />
+                        <FieldError id="grade-error" message={errors.grade} />
                       </div>
                     </div>
                   </div>
@@ -274,13 +304,35 @@ export function PlanGenerationFlow() {
                     <p className="text-sm text-[var(--color-muted)]">
                       {tWizard('profile_description')}
                     </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <div
+                      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
+                      role="radiogroup"
+                      aria-label={tForm('accessibility_profile')}
+                      onKeyDown={(e) => {
+                        const keys = ['ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft']
+                        if (!keys.includes(e.key)) return
+                        e.preventDefault()
+                        const idx = ACCESSIBILITY_PROFILES.indexOf(
+                          formData.accessibility_profile as typeof ACCESSIBILITY_PROFILES[number]
+                        )
+                        const dir = e.key === 'ArrowDown' || e.key === 'ArrowRight' ? 1 : -1
+                        const next = (idx + dir + ACCESSIBILITY_PROFILES.length) % ACCESSIBILITY_PROFILES.length
+                        updateField('accessibility_profile', ACCESSIBILITY_PROFILES[next])
+                        // Focus the newly selected radio
+                        const container = e.currentTarget
+                        const radios = container.querySelectorAll<HTMLElement>('[role="radio"]')
+                        radios[next]?.focus()
+                      }}
+                    >
                       {ACCESSIBILITY_PROFILES.map((profile) => {
                         const selected = formData.accessibility_profile === profile
                         return (
                           <button
                             key={profile}
                             type="button"
+                            role="radio"
+                            aria-checked={selected}
+                            tabIndex={selected ? 0 : -1}
                             onClick={() => updateField('accessibility_profile', profile)}
                             className={cn(
                               'flex items-center gap-3 p-4 rounded-[var(--radius-md)]',
@@ -325,6 +377,9 @@ export function PlanGenerationFlow() {
                       placeholder={tForm('prompt_placeholder')}
                       rows={6}
                       maxLength={PROMPT_MAX_LENGTH}
+                      aria-required={true}
+                      aria-invalid={!!errors.prompt}
+                      aria-describedby={errors.prompt ? 'prompt-error' : undefined}
                       className={cn(
                         'w-full rounded-[var(--radius-md)] border p-3',
                         'bg-[var(--color-bg)] border-[var(--color-border)]',
@@ -335,7 +390,7 @@ export function PlanGenerationFlow() {
                       )}
                     />
                     <div className="flex items-center justify-between mt-1.5">
-                      <FieldError message={errors.prompt} />
+                      <FieldError id="prompt-error" message={errors.prompt} />
                       <span
                         className={cn(
                           'text-xs ml-auto',
@@ -458,6 +513,8 @@ export function PlanGenerationFlow() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
+            role="status"
+            aria-live="polite"
             className={cn(
               'flex items-center gap-3 p-4 rounded-[var(--radius-lg)]',
               'bg-[var(--color-success)]/10 border border-[var(--color-success)]/20'
@@ -528,11 +585,12 @@ export function PlanGenerationFlow() {
 
 /* ===== Sub-components ===== */
 
-function FieldError({ message }: { message?: string }) {
+function FieldError({ id, message }: { id?: string; message?: string }) {
   return (
     <AnimatePresence>
       {message && (
         <motion.p
+          id={id}
           initial={{ opacity: 0, y: -4, height: 0 }}
           animate={{ opacity: 1, y: 0, height: 'auto' }}
           exit={{ opacity: 0, y: -4, height: 0 }}

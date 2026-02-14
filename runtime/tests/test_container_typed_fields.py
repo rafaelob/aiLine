@@ -6,13 +6,18 @@ from unittest.mock import patch
 
 from ailine_runtime.domain.ports.events import EventBus
 from ailine_runtime.domain.ports.llm import ChatLLM
-from ailine_runtime.shared.config import Settings
+from ailine_runtime.shared.config import (
+    DatabaseConfig,
+    EmbeddingConfig,
+    LLMConfig,
+    Settings,
+)
 from ailine_runtime.shared.container import Container
 
 
 class TestContainerTypedFields:
     def test_llm_field_conforms_to_chatllm_protocol(self):
-        settings = Settings(llm={"provider": "fake", "api_key": ""})
+        settings = Settings(llm=LLMConfig(provider="fake", api_key=""))
         container = Container.build(settings)
         assert isinstance(container.llm, ChatLLM)
 
@@ -22,12 +27,13 @@ class TestContainerTypedFields:
         assert isinstance(container.event_bus, EventBus)
 
     def test_embeddings_none_when_no_key(self):
-        settings = Settings(embedding={"provider": "gemini", "api_key": ""})
+        settings = Settings(embedding=EmbeddingConfig(provider="gemini", api_key=""))
         container = Container.build(settings)
         assert container.embeddings is None
 
-    def test_vectorstore_none_by_default(self):
-        settings = Settings()
+    def test_vectorstore_none_with_sqlite(self):
+        """Vectorstore returns None when the DB URL is SQLite (not PostgreSQL)."""
+        settings = Settings(db=DatabaseConfig(url="sqlite+aiosqlite:///./dev.db"))
         container = Container.build(settings)
         assert container.vectorstore is None
 

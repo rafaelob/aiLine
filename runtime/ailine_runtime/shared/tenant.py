@@ -22,7 +22,11 @@ from __future__ import annotations
 import contextvars
 import re
 
-from fastapi import HTTPException
+from ..domain.exceptions import (
+    InvalidTenantIdError,
+    TenantNotFoundError,
+    UnauthorizedAccessError,
+)
 
 # ---------------------------------------------------------------------------
 # Context variable: populated by TenantContextMiddleware
@@ -57,30 +61,23 @@ def validate_teacher_id_format(teacher_id: str) -> str:
         The stripped teacher_id.
 
     Raises:
-        HTTPException(422): If the value is empty, too long, or contains
+        InvalidTenantIdError: If the value is empty, too long, or contains
             characters outside ``[a-zA-Z0-9_-]``.
     """
     tid = teacher_id.strip()
     if not tid:
-        raise HTTPException(
-            status_code=422,
-            detail="teacher_id must not be empty.",
-        )
+        raise InvalidTenantIdError("teacher_id must not be empty.")
     if len(tid) > 128:
-        raise HTTPException(
-            status_code=422,
-            detail="teacher_id exceeds maximum length (128 characters).",
+        raise InvalidTenantIdError(
+            "teacher_id exceeds maximum length (128 characters)."
         )
     if _UUID_RE.match(tid):
         return tid
     if _SIMPLE_ID_RE.match(tid):
         return tid
-    raise HTTPException(
-        status_code=422,
-        detail=(
-            "teacher_id must be a UUID or contain only alphanumeric "
-            "characters, hyphens, and underscores."
-        ),
+    raise InvalidTenantIdError(
+        "teacher_id must be a UUID or contain only alphanumeric "
+        "characters, hyphens, and underscores."
     )
 
 
@@ -102,15 +99,14 @@ def get_current_teacher_id() -> str:
     """Return the current tenant's teacher_id.
 
     Raises:
-        HTTPException(401): If no teacher_id is set in the current
+        TenantNotFoundError: If no teacher_id is set in the current
             request context (i.e. the middleware did not run or the
             request did not carry authentication).
     """
     tid = _tenant_id_var.get()
     if tid is None:
-        raise HTTPException(
-            status_code=401,
-            detail="Authentication required: no teacher_id in request context.",
+        raise TenantNotFoundError(
+            "Authentication required: no teacher_id in request context."
         )
     return tid
 
@@ -141,12 +137,11 @@ class TenantContext:
         """Assert that *resource_teacher_id* matches the authenticated tenant.
 
         Raises:
-            HTTPException(403): If the resource belongs to a different tenant.
+            UnauthorizedAccessError: If the resource belongs to a different tenant.
         """
         if resource_teacher_id != self.teacher_id:
-            raise HTTPException(
-                status_code=403,
-                detail="Access denied: resource belongs to a different tenant.",
+            raise UnauthorizedAccessError(
+                "Access denied: resource belongs to a different tenant."
             )
 
     def __repr__(self) -> str:
@@ -162,6 +157,6 @@ def get_tenant() -> TenantContext:
     """Build a ``TenantContext`` from the current request's contextvars.
 
     Raises:
-        HTTPException(401): If no teacher_id is set.
+        TenantNotFoundError: If no teacher_id is set.
     """
     return TenantContext(teacher_id=get_current_teacher_id())

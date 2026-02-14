@@ -12,7 +12,7 @@ vi.mock('motion/react', () => ({
 }))
 
 vi.mock('@/components/sign-language/webcam-capture', () => ({
-  WebcamCapture: () => <div data-testid="webcam-capture">Webcam</div>,
+  default: () => <div data-testid="webcam-capture">Webcam</div>,
 }))
 
 vi.mock('@/components/sign-language/vlibras-widget', () => ({
@@ -38,9 +38,9 @@ describe('SignLanguagePage', () => {
     expect(screen.getByText('sign_language.subtitle')).toBeInTheDocument()
   })
 
-  it('renders the WebcamCapture component', () => {
+  it('renders the WebcamCapture component', async () => {
     render(<SignLanguagePage />)
-    expect(screen.getByTestId('webcam-capture')).toBeInTheDocument()
+    expect(await screen.findByTestId('webcam-capture')).toBeInTheDocument()
   })
 
   it('renders the GestureList component', () => {
@@ -63,9 +63,9 @@ describe('SignLanguagePage', () => {
     expect(screen.getByText('sign_language.vlibras_description')).toBeInTheDocument()
   })
 
-  it('renders as a main landmark', () => {
-    render(<SignLanguagePage />)
-    const main = screen.getByRole('main')
-    expect(main).toBeInTheDocument()
+  it('does not render a nested main landmark (layout provides main)', () => {
+    const { container } = render(<SignLanguagePage />)
+    const mains = container.querySelectorAll('main')
+    expect(mains).toHaveLength(0)
   })
 })

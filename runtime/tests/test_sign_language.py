@@ -51,8 +51,9 @@ def mediapipe_recognizer_with_path() -> MediaPipeSignRecognition:
 
 
 @pytest.fixture
-def app():
+def app(monkeypatch):
     """Create a test FastAPI app with FakeSignRecognition wired in."""
+    monkeypatch.setenv("AILINE_DEV_MODE", "true")
     from ailine_runtime.api.app import create_app
     from ailine_runtime.shared.config import Settings
 
@@ -68,9 +69,13 @@ def app():
 
 @pytest.fixture
 async def client(app):
-    """Async HTTP client for the FastAPI test app."""
+    """Async HTTP client for the FastAPI test app (authenticated via dev-mode header)."""
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as c:
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://test",
+        headers={"X-Teacher-ID": "teacher-test-sign"},
+    ) as c:
         yield c
 
 
@@ -274,7 +279,7 @@ class TestMediaPipeSignRecognitionBehavior:
         with patch(
             "ailine_runtime.adapters.media.sign_recognition.logger"
         ) as mock_logger:
-            mock_logger.info.side_effect = Exception("unexpected error")
+            mock_logger.info.side_effect = OSError("unexpected error")
             # This should catch the exception and call logger.warning
             recognizer._try_load_model()
             mock_logger.warning.assert_called_once()
@@ -422,7 +427,8 @@ class TestRecognizeWithoutAdapter:
     """Verify 503 when sign_recognition is None on the container."""
 
     @pytest.fixture
-    def app_no_sign(self):
+    def app_no_sign(self, monkeypatch):
+        monkeypatch.setenv("AILINE_DEV_MODE", "true")
         from ailine_runtime.api.app import create_app
         from ailine_runtime.shared.config import Settings
 
@@ -437,7 +443,11 @@ class TestRecognizeWithoutAdapter:
     @pytest.fixture
     async def client_no_sign(self, app_no_sign):
         transport = ASGITransport(app=app_no_sign)
-        async with AsyncClient(transport=transport, base_url="http://test") as c:
+        async with AsyncClient(
+            transport=transport,
+            base_url="http://test",
+            headers={"X-Teacher-ID": "teacher-test-sign"},
+        ) as c:
             yield c
 
     async def test_recognize_returns_503(self, client_no_sign: AsyncClient):

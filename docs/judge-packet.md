@@ -9,11 +9,13 @@ Hackathon: "Built with Opus 4.6" | Feb 10-16, 2026
 
 | Metric | Value |
 |--------|-------|
-| Features shipped | 73 |
-| Backend tests | 1,527+ (1,350 runtime + 177 agents) |
-| Frontend tests | 331 (41 suites) |
+| Features shipped | 120 |
+| Backend tests | 1,993+ (1,743 runtime + 250 agents) |
+| Frontend tests | 770+ (90 suites) |
+| **Total tests** | **2,800+** |
+| E2E Playwright tests | 35+ (3 golden paths + 8 visual regression + a11y) |
 | Live API integration tests | 65 (real Anthropic/OpenAI/Gemini) |
-| Architecture Decision Records | 59 |
+| Architecture Decision Records | 60 |
 | Architecture | Hexagonal (Ports-and-Adapters) |
 | AI agents | 4 typed (Pydantic AI 1.58) |
 | LLM providers | 3 (Anthropic, OpenAI, Gemini) |
@@ -53,7 +55,7 @@ Hackathon: "Built with Opus 4.6" | Feb 10-16, 2026
 - [x] **WCAG AAA** -- 9 persona-based themes (hearing, visual, cognitive, motor, dyslexia, autism, ADHD, anxiety, default)
 - [x] **Libras Sign Language** -- VLibras 3D avatar for output; MediaPipe + TF.js for gesture input
 - [x] **Reduced Motion** -- OS preference sync + manual override
-- [x] **Tenant Isolation** -- JWT-only teacher_id, composite FK at DB level, cross-tenant integration tests
+- [x] **Tenant Isolation** -- JWT-only teacher_id, composite FK at DB level, structural vector store isolation (ADR-060), cross-tenant integration tests
 - [x] **Input Sanitization** -- Prompt injection prevention, DOMPurify for HTML, structured output enforcement
 - [x] **Rate Limiting** -- Sliding window, 429 responses, X-RateLimit-* headers
 - [x] **Circuit Breaker** -- 5 failures -> 60s open -> half-open -> reset
@@ -92,11 +94,11 @@ All 4 services (PostgreSQL + pgvector, Redis, FastAPI API, Next.js 16 frontend) 
 | AI Agents | Pydantic AI 1.58 (Planner, Executor, QualityGate, Tutor) |
 | LLMs | Anthropic (Claude), OpenAI (GPT-4o), Google (Gemini 2.5) |
 | Embeddings | gemini-embedding-001 @ 1536d (Matryoshka truncation) |
-| Vector Store | pgvector 0.8 (HNSW index) on PostgreSQL 17 |
+| Vector Store | pgvector 0.8 (HNSW index) on PostgreSQL 16 |
 | Frontend | Next.js 16, React 19, Tailwind 4, React Compiler 1.0 |
 | Accessibility | 9 CSS themes, VLibras, MediaPipe, ElevenLabs TTS, Whisper STT |
 | Infrastructure | Docker Compose, Redis 7.x, GitHub Actions CI |
-| Testing | pytest (1,527+), Vitest (331), Playwright E2E, axe-core a11y |
+| Testing | pytest (1,993+), Vitest (770+), Playwright E2E (35+), axe-core a11y |
 
 ---
 
@@ -106,7 +108,7 @@ All 4 services (PostgreSQL + pgvector, Redis, FastAPI API, Next.js 16 frontend) 
 
 2. **True Inclusivity** -- Not an afterthought. 9 disability-specific themes, Brazilian Sign Language (Libras) support, Empathy Bridge simulator for educator training.
 
-3. **Production Engineering** -- Hexagonal architecture, 1,800+ tests, 59 ADRs, circuit breaker, retry with backoff, SSE replay, tenant isolation. Built to run, not just to demo.
+3. **Production Engineering** -- Hexagonal architecture, 2,800+ tests, 60 ADRs, circuit breaker, retry with backoff, SSE replay, tenant isolation. Built to run, not just to demo.
 
 4. **Multi-LLM Resilience** -- SmartRouter picks the optimal model per request. If one provider fails, automatic escalation. No single point of AI failure.
 

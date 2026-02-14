@@ -40,7 +40,7 @@
 - [F-038] Tiered Quality Gate — mandatory structural checks + heuristic scoring (ADR-050)
 - [F-039] Composite FK Tenant Safety — DB-level cross-tenant prevention (ADR-053)
 
-- [F-040] Full Test Coverage — 1527+ backend tests (1350 runtime + 177 agents), 331 frontend tests (41 suites)
+- [F-040] Full Test Coverage — 1,993+ backend tests (1,743 runtime + 250 agents), 770+ frontend tests (90 suites)
 - [F-041] Docker Compose Full Stack — API + DB + Redis + Frontend with healthchecks
 - [F-042] GitHub Actions CI — lint, typecheck, test pipeline
 - [F-043] SSE Event Replay — InMemoryReplayStore + RedisReplayStore (ZSET, score=seq, TTL 30min) for reconnection (ADR-054)

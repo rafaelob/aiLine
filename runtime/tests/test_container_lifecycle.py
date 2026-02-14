@@ -13,24 +13,25 @@ Covers the 64% uncovered lines in shared/container.py:
 
 from __future__ import annotations
 
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from ailine_runtime.shared.config import Settings
+from ailine_runtime.shared.config import LLMConfig, RedisConfig, Settings
 from ailine_runtime.shared.container import Container, ValidationResult
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _make_container(**overrides) -> Container:
+def _make_container(**overrides: Any) -> Container:
     """Create a Container with test defaults."""
     settings = Settings(
-        llm={"provider": "fake", "api_key": ""},
-        redis={"url": ""},
+        llm=LLMConfig(provider="fake", api_key=""),
+        redis=RedisConfig(url=""),
     )
-    defaults = {
+    defaults: dict[str, Any] = {
         "settings": settings,
         "llm": MagicMock(),
         "event_bus": MagicMock(),
@@ -215,8 +216,8 @@ class TestValidate:
         """Production mode should raise ValueError on missing critical ports."""
         settings = Settings(
             env="production",
-            llm={"provider": "fake", "api_key": ""},
-            redis={"url": ""},
+            llm=LLMConfig(provider="fake", api_key=""),
+            redis=RedisConfig(url=""),
         )
         container = Container(settings=settings, llm=None, event_bus=MagicMock())
         with pytest.raises(ValueError, match="production"):

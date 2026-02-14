@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react'
 import ObservabilityPage from './page'
 
 vi.mock('@/components/observability/observability-dashboard', () => ({
-  ObservabilityDashboardContent: () => <div data-testid="dashboard-content">Dashboard</div>,
+  default: () => <div data-testid="dashboard-content">Dashboard</div>,
 }))
 
 describe('ObservabilityPage', () => {
@@ -17,8 +17,8 @@ describe('ObservabilityPage', () => {
     expect(screen.getByText('observability.description')).toBeInTheDocument()
   })
 
-  it('renders the dashboard content component', () => {
+  it('renders the dashboard content component', async () => {
     render(<ObservabilityPage />)
-    expect(screen.getByTestId('dashboard-content')).toBeInTheDocument()
+    expect(await screen.findByTestId('dashboard-content')).toBeInTheDocument()
   })
 })

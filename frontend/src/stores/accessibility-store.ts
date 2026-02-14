@@ -13,6 +13,8 @@ interface A11yPrefs {
   fontSize: string
   reducedMotion: boolean
   lowDistraction: boolean
+  focusMode: boolean
+  bionicReading: boolean
 }
 
 /** Check the OS-level prefers-reduced-motion media query. */
@@ -23,7 +25,7 @@ function getSystemReducedMotion(): boolean {
 
 function loadPrefs(): A11yPrefs {
   if (typeof window === 'undefined') {
-    return { theme: 'standard', fontSize: 'medium', reducedMotion: false, lowDistraction: false }
+    return { theme: 'standard', fontSize: 'medium', reducedMotion: false, lowDistraction: false, focusMode: false, bionicReading: false }
   }
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -34,6 +36,8 @@ function loadPrefs(): A11yPrefs {
         fontSize: parsed.fontSize ?? 'medium',
         reducedMotion: parsed.reducedMotion ?? false,
         lowDistraction: parsed.lowDistraction ?? false,
+        focusMode: parsed.focusMode ?? false,
+        bionicReading: parsed.bionicReading ?? false,
       }
     }
   } catch {
@@ -45,6 +49,8 @@ function loadPrefs(): A11yPrefs {
     fontSize: 'medium',
     reducedMotion: getSystemReducedMotion(),
     lowDistraction: false,
+    focusMode: false,
+    bionicReading: false,
   }
 }
 
@@ -62,6 +68,8 @@ export interface AccessibilityState extends A11yPrefs {
   setFontSize: (fontSize: string) => void
   setReducedMotion: (reduced: boolean) => void
   setLowDistraction: (low: boolean) => void
+  toggleFocusMode: () => void
+  toggleBionicReading: () => void
   hydrate: () => void
 }
 
@@ -70,6 +78,8 @@ export const useAccessibilityStore = create<AccessibilityState>((set, get) => ({
   fontSize: 'medium',
   reducedMotion: false,
   lowDistraction: false,
+  focusMode: false,
+  bionicReading: false,
 
   setTheme: (theme: string) => {
     set({ theme })
@@ -84,11 +94,29 @@ export const useAccessibilityStore = create<AccessibilityState>((set, get) => ({
   setReducedMotion: (reduced: boolean) => {
     set({ reducedMotion: reduced })
     savePrefs({ ...get(), reducedMotion: reduced })
+    if (typeof document !== 'undefined') {
+      document.body.setAttribute('data-reduced-motion', String(reduced))
+    }
   },
 
   setLowDistraction: (low: boolean) => {
     set({ lowDistraction: low })
     savePrefs({ ...get(), lowDistraction: low })
+  },
+
+  toggleFocusMode: () => {
+    const next = !get().focusMode
+    set({ focusMode: next })
+    savePrefs({ ...get(), focusMode: next })
+    if (typeof document !== 'undefined') {
+      document.body.classList.toggle('cognitive-curtain-active', next)
+    }
+  },
+
+  toggleBionicReading: () => {
+    const next = !get().bionicReading
+    set({ bionicReading: next })
+    savePrefs({ ...get(), bionicReading: next })
   },
 
   hydrate: () => {
@@ -97,10 +125,12 @@ export const useAccessibilityStore = create<AccessibilityState>((set, get) => ({
     // Apply to DOM immediately
     if (typeof document !== 'undefined') {
       document.body.setAttribute('data-theme', prefs.theme)
+      document.body.setAttribute('data-reduced-motion', String(prefs.reducedMotion))
       document.documentElement.style.setProperty(
         '--font-size-base',
         fontSizeMap[prefs.fontSize] ?? '16px'
       )
+      document.body.classList.toggle('cognitive-curtain-active', prefs.focusMode)
     }
     // Listen for OS-level reduced motion changes (FINDING-19).
     // Only update if the user has NOT explicitly overridden via setReducedMotion.

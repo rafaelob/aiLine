@@ -42,7 +42,17 @@ export function AccessibilityTwin({
   return (
     <div className="flex flex-col gap-4">
       {/* Tab bar */}
-      <div role="tablist" aria-label={t('comparison_label')} className="flex gap-1 rounded-lg bg-[var(--color-surface-elevated)] p-1">
+      <div
+        role="tablist"
+        aria-label={t('comparison_label')}
+        className="flex gap-1 rounded-lg bg-[var(--color-surface-elevated)] p-1"
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+            e.preventDefault()
+            handleTabChange(activeTab === 'original' ? 'adapted' : 'original')
+          }
+        }}
+      >
         <TabButton
           id="tab-original"
           label={t('original')}

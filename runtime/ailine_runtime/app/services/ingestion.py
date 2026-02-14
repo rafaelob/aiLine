@@ -81,6 +81,7 @@ class IngestionService:
         text: str,
         material_id: str | None = None,
         metadata: dict[str, Any] | None = None,
+        tenant_id: str | None = None,
     ) -> IngestionResult:
         """Ingest raw text into the vector store.
 
@@ -90,6 +91,9 @@ class IngestionService:
                 Generated if not provided.
             metadata: Optional base metadata to attach to every chunk.
                 Keys like ``teacher_id`` and ``subject`` are typical.
+            tenant_id: Tenant identifier for structural isolation (ADR-060).
+                Stored alongside each chunk so that searches can be
+                scoped to the owning tenant.
 
         Returns:
             An ``IngestionResult`` summarizing the operation.
@@ -133,12 +137,13 @@ class IngestionService:
             meta["chunk_count"] = len(chunks)
             chunk_metas.append(meta)
 
-        # 4. Upsert
+        # 4. Upsert (tenant-scoped when tenant_id provided -- ADR-060)
         await self._store.upsert(
             ids=chunk_ids,
             embeddings=embeddings,
             texts=chunks,
             metadatas=chunk_metas,
+            tenant_id=tenant_id,
         )
 
         _log.info(

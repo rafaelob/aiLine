@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ailine_runtime.accessibility.profiles import ClassAccessibilityProfile
+from ailine_runtime.accessibility.profiles import AccessibilityNeeds, ClassAccessibilityProfile
 from ailine_runtime.accessibility.validator import validate_draft_accessibility
 from ailine_runtime.accessibility.validator_helpers import (
     cognitive_load_bucket as _cognitive_load_bucket,
@@ -77,9 +77,9 @@ def _full_draft(**overrides) -> dict:
     return draft
 
 
-def _profile(**needs_kw) -> ClassAccessibilityProfile:
+def _profile(**needs_kw: bool) -> ClassAccessibilityProfile:
     """Shortcut to build a profile with specific needs."""
-    return ClassAccessibilityProfile(needs=needs_kw)
+    return ClassAccessibilityProfile(needs=AccessibilityNeeds.model_validate(needs_kw))
 
 
 # ---------------------------------------------------------------------------

@@ -10,6 +10,8 @@ from __future__ import annotations
 import os
 import re
 import time
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 import structlog
 from fastapi import FastAPI
@@ -75,10 +77,20 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     container = Container.build(settings)
 
+    @asynccontextmanager
+    async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+        """Manage application lifecycle: graceful startup and shutdown."""
+        _log.info("app.startup", version="0.1.0")
+        yield
+        _log.info("app.shutdown_started")
+        await container.close()
+        _log.info("app.shutdown_complete")
+
     app = FastAPI(
         title="AiLine Runtime API",
         version="0.1.0",
         description="Adaptive Inclusive Learning — Individual Needs in Education",
+        lifespan=lifespan,
     )
 
     # Store container in app state for access in routers
@@ -104,12 +116,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # but failing early avoids confusion).
     if "*" in cors_origins:
         raise ValueError("CORS origins cannot include '*' when allow_credentials=True")
+    # Only expose X-Teacher-ID header in dev mode (security hardening).
+    # In production this header is rejected by the tenant middleware anyway,
+    # but removing it from CORS prevents browsers from sending it at all.
+    cors_headers = ["Authorization", "Content-Type", "Accept", "X-Request-ID"]
+    if os.getenv("AILINE_DEV_MODE", "").lower() in ("true", "1", "yes"):
+        cors_headers.append("X-Teacher-ID")
     app.add_middleware(
         CORSMiddleware,
         allow_origins=cors_origins,
         allow_credentials=True,
         allow_methods=["GET", "POST", "OPTIONS"],
-        allow_headers=["Authorization", "Content-Type", "Accept", "X-Request-ID", "X-Teacher-ID"],
+        allow_headers=cors_headers,
     )
 
     # Security headers (X-Content-Type-Options, X-Frame-Options, etc.)

@@ -65,6 +65,11 @@ class AgentDepsFactory:
     # Shared circuit breaker across all AgentDeps instances from this factory.
     _shared_circuit_breaker: CircuitBreaker = CircuitBreaker()
 
+    @classmethod
+    def reset_shared_circuit_breaker(cls) -> None:
+        """Reset the shared circuit breaker state (for test isolation)."""
+        cls._shared_circuit_breaker.reset()
+
     @staticmethod
     def from_container(
         container: Container,
@@ -77,6 +82,7 @@ class AgentDepsFactory:
         max_workflow_duration_seconds: int | None = None,
         emitter: Any = None,
         stream_writer: Any = None,
+        circuit_breaker: CircuitBreaker | None = None,
     ) -> AgentDeps:
         from ailine_runtime.tools.registry import build_tool_registry
 
@@ -103,5 +109,5 @@ class AgentDepsFactory:
             tool_registry=build_tool_registry(),
             emitter=emitter,
             stream_writer=stream_writer,
-            circuit_breaker=AgentDepsFactory._shared_circuit_breaker,
+            circuit_breaker=circuit_breaker or AgentDepsFactory._shared_circuit_breaker,
         )

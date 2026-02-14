@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { WebcamCapture } from './webcam-capture'
+import WebcamCapture from './webcam-capture'
 
 vi.mock('motion/react', () => ({
   motion: {

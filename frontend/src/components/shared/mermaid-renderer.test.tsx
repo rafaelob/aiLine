@@ -1,10 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MermaidRenderer, extractMermaidBlocks } from './mermaid-renderer'
+import MermaidRenderer, { extractMermaidBlocks } from './mermaid-renderer'
 
 const mockInitialize = vi.fn()
 const mockRender = vi.fn()
+
+// Mock DOMPurify -- pass through for tests (XSS sanitization tested separately)
+vi.mock('dompurify', () => ({
+  default: { sanitize: (html: string) => html },
+}))
 
 // Mock the mermaid loader module (thin wrapper around dynamic import)
 vi.mock('@/lib/mermaid-loader', () => ({
@@ -71,7 +76,7 @@ describe('MermaidRenderer', () => {
     await renderAndWaitForDiagram()
     expect(mockRender).toHaveBeenCalled()
     expect(mockInitialize).toHaveBeenCalledWith(
-      expect.objectContaining({ theme: 'default', securityLevel: 'strict' })
+      expect.objectContaining({ theme: 'base', securityLevel: 'strict' })
     )
     // SVG rendered in the main content area (dialog is hidden by default)
     const imgContainers = screen.getAllByRole('img')

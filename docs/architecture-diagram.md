@@ -59,7 +59,7 @@ graph TB
     end
 
     subgraph Data["Data Stores"]
-        Postgres["PostgreSQL 17<br/>+ pgvector 0.8"]
+        Postgres["PostgreSQL 16<br/>+ pgvector 0.8"]
         Redis["Redis 7.x<br/>SSE Replay + Cache"]
     end
 
@@ -262,7 +262,7 @@ graph TB
 
         subgraph BackendNet["Backend Network"]
             API["api<br/>FastAPI + uvicorn<br/>:8000"]
-            DB["db<br/>PostgreSQL 17<br/>+ pgvector 0.8<br/>:5432 (internal)"]
+            DB["db<br/>PostgreSQL 16<br/>+ pgvector 0.8<br/>:5432 (internal)"]
             RD["redis<br/>Redis 7.x Alpine<br/>:6379 (internal)"]
         end
     end

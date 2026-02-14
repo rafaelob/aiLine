@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { motion } from 'motion/react'
 import { cn } from '@/lib/cn'
@@ -34,8 +34,11 @@ export function PreferencesPanel({ onClose }: PreferencesPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const previousFocusRef = useRef<HTMLElement | null>(null)
-  const { theme, fontSize, reducedMotion, setTheme, setFontSize, setReducedMotion } =
-    useAccessibilityStore()
+  const tHints = useTranslations('accessibility.theme_hints')
+  const {
+    theme, fontSize, reducedMotion, focusMode, bionicReading,
+    setTheme, setFontSize, setReducedMotion, toggleFocusMode, toggleBionicReading,
+  } = useAccessibilityStore()
 
   // Save previously focused element and restore on unmount
   useEffect(() => {
@@ -90,10 +93,14 @@ export function PreferencesPanel({ onClose }: PreferencesPanelProps) {
     [onClose]
   )
 
+  const [themeAnnouncement, setThemeAnnouncement] = useState('')
+
   function handleThemeChange(newTheme: ThemeId) {
     setTheme(newTheme)
     // Direct DOM manipulation -- no React re-render (ADR-019)
     document.body.setAttribute('data-theme', newTheme)
+    // Announce to screen readers
+    setThemeAnnouncement(t('switched_to', { persona: t(`themes.${newTheme}`) }))
   }
 
   function handleFontSizeChange(size: string) {
@@ -112,9 +119,9 @@ export function PreferencesPanel({ onClose }: PreferencesPanelProps) {
     <>
       {/* Backdrop overlay */}
       <motion.div
-        initial={{ opacity: 0 }}
+        initial={reducedMotion ? false : { opacity: 0 }}
         animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+        exit={reducedMotion ? undefined : { opacity: 0 }}
         onClick={onClose}
         className="fixed inset-0 z-40 bg-black/30"
         aria-hidden="true"
@@ -124,9 +131,9 @@ export function PreferencesPanel({ onClose }: PreferencesPanelProps) {
         role="dialog"
         aria-label={t('title')}
         aria-modal="true"
-        initial={{ opacity: 0, x: 20 }}
+        initial={reducedMotion ? false : { opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: 20 }}
+        exit={reducedMotion ? undefined : { opacity: 0, x: 20 }}
         onKeyDown={handleKeyDown}
         className={cn(
           'fixed right-0 top-0 z-50 h-full w-full sm:w-80 sm:max-w-full',
@@ -134,6 +141,11 @@ export function PreferencesPanel({ onClose }: PreferencesPanelProps) {
           'overflow-y-auto shadow-lg p-6'
         )}
       >
+      {/* SR-only live region for theme change announcements */}
+      <div className="sr-only" aria-live="assertive" aria-atomic="true">
+        {themeAnnouncement}
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-bold text-[var(--color-text)]">{t('title')}</h2>
@@ -191,8 +203,13 @@ export function PreferencesPanel({ onClose }: PreferencesPanelProps) {
                   <span className="w-2.5 h-2.5 rounded-full bg-[var(--color-primary)]" />
                 )}
               </span>
-              <span className="text-sm text-[var(--color-text)]">
-                {t(`themes.${id}`)}
+              <span className="flex flex-col">
+                <span className="text-sm text-[var(--color-text)]">
+                  {t(`themes.${id}`)}
+                </span>
+                <span className="text-xs text-[var(--color-muted)] mt-0.5">
+                  {tHints(id)}
+                </span>
               </span>
             </label>
           ))}
@@ -231,7 +248,7 @@ export function PreferencesPanel({ onClose }: PreferencesPanelProps) {
       </fieldset>
 
       {/* Motion */}
-      <fieldset>
+      <fieldset className="mb-6">
         <legend className="text-sm font-semibold text-[var(--color-text)] mb-3">
           {t('motion')}
         </legend>
@@ -275,6 +292,66 @@ export function PreferencesPanel({ onClose }: PreferencesPanelProps) {
             {t('motion_reduced')}
           </label>
         </div>
+      </fieldset>
+
+      {/* Focus Mode (Cognitive Curtain) */}
+      <fieldset className="mb-6">
+        <legend className="text-sm font-semibold text-[var(--color-text)] mb-3">
+          {t('focusMode')}
+        </legend>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={focusMode}
+          aria-label={t('focusMode')}
+          onClick={toggleFocusMode}
+          className={cn(
+            'relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors',
+            'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
+            focusMode
+              ? 'bg-[var(--color-primary)]'
+              : 'bg-[var(--color-border)]'
+          )}
+        >
+          <span
+            className={cn(
+              'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-sm',
+              'transform transition-transform mt-0.5',
+              focusMode ? 'translate-x-5 ml-0.5' : 'translate-x-0.5'
+            )}
+            aria-hidden="true"
+          />
+        </button>
+      </fieldset>
+
+      {/* Bionic Reading */}
+      <fieldset>
+        <legend className="text-sm font-semibold text-[var(--color-text)] mb-3">
+          {t('bionicReading')}
+        </legend>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={bionicReading}
+          aria-label={t('bionicReading')}
+          onClick={toggleBionicReading}
+          className={cn(
+            'relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors',
+            'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
+            bionicReading
+              ? 'bg-[var(--color-primary)]'
+              : 'bg-[var(--color-border)]'
+          )}
+        >
+          <span
+            className={cn(
+              'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-sm',
+              'transform transition-transform mt-0.5',
+              bionicReading ? 'translate-x-5 ml-0.5' : 'translate-x-0.5'
+            )}
+            aria-hidden="true"
+          />
+        </button>
       </fieldset>
     </motion.div>
     </>

@@ -9,9 +9,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 
 from ...adapters.curriculum.unified_provider import UnifiedCurriculumProvider
+from ...app.authz import require_authenticated
 
 router = APIRouter()
 
@@ -43,6 +44,7 @@ async def curriculum_search(
         None,
         description="Bloom's Taxonomy filter: remember, understand, apply, analyze, evaluate, or create.",
     ),
+    _teacher_id: str = Depends(require_authenticated),
 ) -> list[dict[str, Any]]:
     """Search curriculum objectives across all supported systems.
 
@@ -61,6 +63,7 @@ async def curriculum_list_standards(
     request: Request,
     response: Response,
     system: str | None = Query(None, description="System filter: bncc, ccss, or ngss."),
+    _teacher_id: str = Depends(require_authenticated),
 ) -> list[str]:
     """List all available standard codes, optionally filtered by system."""
     response.headers["Cache-Control"] = "public, max-age=3600"
@@ -72,6 +75,7 @@ async def curriculum_list_standards(
 async def curriculum_get_by_code(
     code: str,
     request: Request,
+    _teacher_id: str = Depends(require_authenticated),
 ) -> dict[str, Any]:
     """Look up a single curriculum objective by its exact code."""
     provider = _get_provider(request)
@@ -82,7 +86,7 @@ async def curriculum_get_by_code(
 
 
 @router.get("/grade-mapping")
-async def grade_mapping(request: Request) -> dict[str, Any]:
+async def grade_mapping(request: Request, _teacher_id: str = Depends(require_authenticated)) -> dict[str, Any]:
     """Return the Brazil <-> US grade equivalency mapping."""
     provider = _get_provider(request)
     return provider.get_grade_mapping()
@@ -92,6 +96,7 @@ async def grade_mapping(request: Request) -> dict[str, Any]:
 async def grade_translate(
     request: Request,
     grade: str = Query(..., description="Grade to translate (e.g. '6o ano' or 'Grade 6')."),
+    _teacher_id: str = Depends(require_authenticated),
 ) -> dict[str, str | None]:
     """Translate a grade label between Brazilian and US systems."""
     provider = _get_provider(request)

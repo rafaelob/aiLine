@@ -64,26 +64,6 @@ cd runtime
 uv run alembic upgrade head
 ```
 
-## Project Structure
-```
-agents/            # ailine_agents package (Pydantic AI 1.58.0 + LangGraph)
-  ailine_agents/   # 4 typed agents, tool/model bridges, workflows, skill registry
-skills/            # 11 SKILL.md files (lesson-planner, socratic-tutor, accessibility-coach, etc.)
-runtime/
-  ailine_runtime/
-    domain/        # Pure entities + port protocols
-    adapters/      # Concrete implementations
-    app/           # Use cases / services
-    api/           # FastAPI routers + middleware + streaming
-    workflow/      # LangGraph orchestration (re-exports from ailine_agents)
-    accessibility/ # Quality gate + exports
-    shared/        # Config, container, errors, i18n, observability
-    data/          # Static data (standards, i18n)
-frontend/          # Next.js 16
-infra/
-  db/              # DB init scripts (pgvector extension)
-```
-
 ## GCP Deploy
 ```bash
 gcloud builds submit --tag gcr.io/ailine-hackathon/api:$(git rev-parse --short HEAD)

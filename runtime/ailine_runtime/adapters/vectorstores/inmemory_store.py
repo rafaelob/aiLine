@@ -22,6 +22,7 @@ class _StoredChunk:
     embedding: np.ndarray
     text: str
     metadata: dict[str, Any]
+    tenant_id: str = ""
 
 
 class InMemoryVectorStore:
@@ -54,6 +55,7 @@ class InMemoryVectorStore:
         embeddings: list[list[float]],
         texts: list[str],
         metadatas: list[dict[str, Any]],
+        tenant_id: str | None = None,
     ) -> None:
         """Insert or update chunks in memory."""
         for i, doc_id in enumerate(ids):
@@ -62,6 +64,7 @@ class InMemoryVectorStore:
                 embedding=np.array(embeddings[i], dtype=np.float32),
                 text=texts[i],
                 metadata=dict(metadatas[i]),
+                tenant_id=tenant_id or "",
             )
 
     async def search(
@@ -70,6 +73,7 @@ class InMemoryVectorStore:
         query_embedding: list[float],
         k: int = 5,
         filters: dict[str, Any] | None = None,
+        tenant_id: str | None = None,
     ) -> list[VectorSearchResult]:
         """Find the *k* most similar chunks by cosine similarity.
 
@@ -77,6 +81,8 @@ class InMemoryVectorStore:
             query_embedding: The query vector.
             k: Maximum number of results.
             filters: Optional metadata key-value equality filters.
+            tenant_id: When provided, only chunks belonging to this
+                tenant are considered (structural isolation).
 
         Returns:
             Results ordered by descending similarity score.
@@ -89,6 +95,10 @@ class InMemoryVectorStore:
         scored: list[tuple[float, _StoredChunk]] = []
 
         for chunk in self._store.values():
+            # Structural tenant isolation
+            if tenant_id is not None and chunk.tenant_id != tenant_id:
+                continue
+
             # Apply metadata filters
             if filters and not _matches_filters(chunk.metadata, filters):
                 continue

@@ -20,6 +20,7 @@ from ailine_runtime.accessibility.caption_orchestrator import (
     CaptionOrchestrator,
 )
 from ailine_runtime.accessibility.gloss_translator import GlossToTextTranslator
+from ailine_runtime.domain.ports.llm import WebSearchResult
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -30,6 +31,10 @@ class FakeLLMForTranslation:
     """Minimal fake LLM that returns gloss input back as 'translated' text."""
 
     model_name = "fake-translator"
+
+    @property
+    def capabilities(self) -> dict[str, Any]:
+        return {"provider": "fake", "streaming": True}
 
     async def generate(
         self,
@@ -42,18 +47,31 @@ class FakeLLMForTranslation:
         user_msg = messages[-1]["content"]
         return f"Traduzido: {user_msg}"
 
-    async def stream(
+    def stream(
         self,
         messages: list[dict[str, Any]],
         *,
         temperature: float = 1.0,
         max_tokens: int = 4096,
         **kwargs: Any,
-    ):
+    ):  # type: ignore[return]
         user_msg = messages[-1]["content"]
         result = f"Traduzido: {user_msg}"
-        for char in result:
-            yield char
+
+        async def _gen():  # type: ignore[return]
+            for char in result:
+                yield char
+
+        return _gen()
+
+    async def generate_with_search(
+        self,
+        query: str,
+        *,
+        max_results: int = 5,
+        **kwargs: Any,
+    ) -> WebSearchResult:
+        return WebSearchResult(text=f"Search result for: {query}")
 
 
 @pytest.fixture
@@ -271,7 +289,9 @@ class TestLibrasCaptionWebSocket:
     """Test the WebSocket endpoint for Libras captioning."""
 
     @pytest.fixture
-    def client(self):
+    def client(self, monkeypatch):
+        monkeypatch.setenv("AILINE_DEV_MODE", "true")
+
         from starlette.testclient import TestClient
 
         from ailine_runtime.api.app import create_app

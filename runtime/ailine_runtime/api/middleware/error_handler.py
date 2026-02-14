@@ -29,9 +29,22 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from ...domain.exceptions import (
+    DomainError,
+    InvalidTenantIdError,
+    TenantNotFoundError,
+    UnauthorizedAccessError,
+)
 from ...shared.observability import get_request_context
 
 _log = structlog.get_logger("ailine.api.errors")
+
+# Map domain exceptions to HTTP status codes.
+_DOMAIN_STATUS_MAP: dict[type[DomainError], int] = {
+    TenantNotFoundError: 401,
+    UnauthorizedAccessError: 403,
+    InvalidTenantIdError: 422,
+}
 
 # Map HTTP status codes to human-readable titles.
 _STATUS_TITLES: dict[int, str] = {
@@ -132,6 +145,29 @@ def install_error_handlers(app: FastAPI) -> None:
         )
         return JSONResponse(
             status_code=422,
+            content=problem,
+            media_type="application/problem+json",
+        )
+
+    @app.exception_handler(DomainError)
+    async def domain_exception_handler(
+        request: Request, exc: DomainError
+    ) -> JSONResponse:
+        status = _DOMAIN_STATUS_MAP.get(type(exc), 400)
+        problem = _build_problem(
+            status=status,
+            detail=exc.message,
+            instance=str(request.url.path),
+        )
+        _log.info(
+            "domain_error",
+            status=status,
+            path=request.url.path,
+            error_type=type(exc).__name__,
+            detail=exc.message[:200],
+        )
+        return JSONResponse(
+            status_code=status,
             content=problem,
             media_type="application/problem+json",
         )

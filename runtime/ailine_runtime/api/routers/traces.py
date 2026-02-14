@@ -13,8 +13,9 @@ from __future__ import annotations
 from typing import Any
 
 import structlog
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from ...app.authz import require_authenticated
 from ...shared.trace_store import get_trace_store
 
 logger = structlog.get_logger("ailine.api.traces")
@@ -23,14 +24,17 @@ router = APIRouter()
 
 
 @router.get("/recent")
-async def list_recent_traces(limit: int = 20) -> list[dict[str, Any]]:
+async def list_recent_traces(
+    limit: int = 20, teacher_id: str = Depends(require_authenticated),
+) -> list[dict[str, Any]]:
     """List recent pipeline traces (lightweight summary).
 
     Returns basic info: run_id, status, total_time_ms, node count,
     final_score, model_used, refinement_count.
+    Scoped to the authenticated teacher (tenant isolation).
     """
     store = get_trace_store()
-    traces = await store.list_recent(limit=min(limit, 50))
+    traces = await store.list_recent(limit=min(limit, 50), teacher_id=teacher_id)
     return [
         {
             "run_id": t.run_id,
@@ -46,15 +50,16 @@ async def list_recent_traces(limit: int = 20) -> list[dict[str, Any]]:
 
 
 @router.get("/{run_id}")
-async def get_trace(run_id: str) -> dict[str, Any]:
+async def get_trace(run_id: str, teacher_id: str = Depends(require_authenticated)) -> dict[str, Any]:
     """Get the full execution trace for a pipeline run.
 
     Returns the complete RunTrace with per-node detail:
     inputs/outputs summary, time_ms, tool_calls, quality_score,
     and route_rationale for nodes that select a model.
+    Scoped to the authenticated teacher (tenant isolation).
     """
     store = get_trace_store()
-    trace = await store.get(run_id)
+    trace = await store.get(run_id, teacher_id=teacher_id)
     if trace is None:
         raise HTTPException(
             status_code=404,

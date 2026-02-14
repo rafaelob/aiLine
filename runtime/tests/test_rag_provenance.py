@@ -28,9 +28,13 @@ from ailine_runtime.shared.rag_diagnostics_store import (
 
 
 @pytest.fixture()
-def app():
+def app(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("AILINE_DEV_MODE", "true")
     settings = Settings(env="development")
     return create_app(settings)
+
+
+_AUTH = {"X-Teacher-ID": "teacher-test"}
 
 
 def _make_result(
@@ -206,7 +210,8 @@ class TestDiagnosticsAPIEndpoint:
     @pytest.mark.asyncio
     async def test_get_not_found(self, app) -> None:
         async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
+            transport=ASGITransport(app=app), base_url="http://test",
+            headers=_AUTH,
         ) as client:
             resp = await client.get("/rag/diagnostics/nonexistent")
             assert resp.status_code == 404
@@ -223,7 +228,8 @@ class TestDiagnosticsAPIEndpoint:
         await store.save(diag)
 
         async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
+            transport=ASGITransport(app=app), base_url="http://test",
+            headers=_AUTH,
         ) as client:
             resp = await client.get("/rag/diagnostics/prov-test-1")
             assert resp.status_code == 200

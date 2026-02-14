@@ -6,6 +6,7 @@ Tests tutor creation, retrieval, session management, and chat.
 
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
 from pathlib import Path
 
 import pytest
@@ -16,14 +17,19 @@ from ailine_runtime.shared.config import Settings
 
 
 @pytest.fixture()
-def app(settings: Settings):
+def app(settings: Settings, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("AILINE_DEV_MODE", "true")
     return create_app(settings=settings)
 
 
 @pytest.fixture()
-async def client(app) -> AsyncClient:
+async def client(app) -> AsyncGenerator[AsyncClient, None]:
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as c:
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://test",
+        headers={"X-Teacher-ID": "teacher-001"},
+    ) as c:
         yield c
 
 

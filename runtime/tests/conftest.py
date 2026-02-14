@@ -10,6 +10,7 @@ Provides:
 
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
 from pathlib import Path
 
 import pytest
@@ -22,7 +23,13 @@ from sqlalchemy.ext.asyncio import (
 
 from ailine_runtime.adapters.db.models import Base
 from ailine_runtime.adapters.llm.fake_llm import FakeChatLLM
-from ailine_runtime.shared.config import Settings
+from ailine_runtime.shared.config import (
+    DatabaseConfig,
+    EmbeddingConfig,
+    LLMConfig,
+    RedisConfig,
+    Settings,
+)
 
 # ---------------------------------------------------------------------------
 # Marker registration (mirrors pyproject.toml for IDE / plugin discovery)
@@ -51,7 +58,7 @@ def pytest_configure(config: pytest.Config) -> None:
 
 
 @pytest.fixture()
-async def async_engine() -> AsyncEngine:
+async def async_engine() -> AsyncGenerator[AsyncEngine, None]:
     """Create an in-memory aiosqlite engine with all tables."""
     engine = create_async_engine(
         "sqlite+aiosqlite://",
@@ -59,7 +66,7 @@ async def async_engine() -> AsyncEngine:
     )
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    yield engine  # type: ignore[misc]
+    yield engine
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
     await engine.dispose()
@@ -76,10 +83,10 @@ def session_factory(async_engine: AsyncEngine) -> async_sessionmaker[AsyncSessio
 
 
 @pytest.fixture()
-async def session(session_factory: async_sessionmaker[AsyncSession]) -> AsyncSession:
+async def session(session_factory: async_sessionmaker[AsyncSession]) -> AsyncGenerator[AsyncSession, None]:
     """Provide a single async session, rolled back after the test."""
     async with session_factory() as sess:
-        yield sess  # type: ignore[misc]
+        yield sess
         await sess.rollback()
 
 
@@ -118,10 +125,10 @@ def settings() -> Settings:
         anthropic_api_key="fake-key-for-tests",
         openai_api_key="",
         google_api_key="",
-        db={"url": "sqlite+aiosqlite:///:memory:"},
-        llm={"provider": "fake", "api_key": "fake"},
-        embedding={"provider": "gemini", "api_key": ""},
-        redis={"url": ""},
+        db=DatabaseConfig(url="sqlite+aiosqlite:///:memory:"),
+        llm=LLMConfig(provider="fake", api_key="fake"),
+        embedding=EmbeddingConfig(provider="gemini", api_key=""),
+        redis=RedisConfig(url=""),
     )
 
 

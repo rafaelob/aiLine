@@ -1,4 +1,19 @@
-# Python
+# ---------------------------------------------------------------
+# Root .dockerignore — used by runtime/Dockerfile (context: repo root)
+# Only agents/ and runtime/ are needed; exclude everything else.
+# ---------------------------------------------------------------
+
+# Frontend (has its own Dockerfile + .dockerignore)
+frontend/
+
+# Docs, tracking, and reference materials
+docs/
+references/
+control_docs/
+tracking_agent_progress_temp/
+skills/
+
+# Python build/cache artifacts
 __pycache__/
 *.py[cod]
 *.egg-info/
@@ -8,7 +23,7 @@ build/
 venv/
 *.egg
 
-# Testing
+# Testing artifacts
 .coverage
 htmlcov/
 .pytest_cache/
@@ -18,12 +33,12 @@ htmlcov/
 # Local store
 .local_store/
 
-# IDE
+# IDE / editor
 .vscode/
 .idea/
 .claude/
 
-# OS
+# OS files
 .DS_Store
 Thumbs.db
 
@@ -34,16 +49,17 @@ Thumbs.db
 .git/
 .gitignore
 
-# Environment (secrets)
+# Environment (secrets — never ship into images)
 .env
 .env.*
 
-# Docs and tracking (not needed in image)
-docs/
-references/
-control_docs/
-tracking_agent_progress_temp/
-skills/
+# CI/CD, infra configs not needed inside the image
+.github/
+infra/
 
-# Frontend (separate build)
-# frontend/ -- needed if frontend Dockerfile is in separate context
+# Miscellaneous root files
+*.md
+LICENSE
+CONTRIBUTING.md
+SECURITY.md
+nul

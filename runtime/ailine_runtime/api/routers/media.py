@@ -15,9 +15,17 @@ from fastapi import APIRouter, HTTPException, Request, UploadFile
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
+from ...app.authz import require_authenticated
+
 logger = structlog.get_logger(__name__)
 
 router = APIRouter()
+
+# -- File upload size limits ---------------------------------------------------
+
+MAX_AUDIO_SIZE = 10 * 1024 * 1024  # 10 MB
+MAX_IMAGE_SIZE = 5 * 1024 * 1024   # 5 MB
+MAX_DOCUMENT_SIZE = 50 * 1024 * 1024  # 50 MB
 
 
 # -- Request / Response schemas -----------------------------------------------
@@ -70,10 +78,13 @@ async def transcribe_audio(
     language: str = "pt",
 ) -> TranscriptionResponse:
     """Transcribe an audio file to text (STT)."""
+    require_authenticated()
     stt = _get_adapter(request, "stt")
     audio_bytes = await file.read()
     if not audio_bytes:
         raise HTTPException(status_code=400, detail="Empty audio file.")
+    if len(audio_bytes) > MAX_AUDIO_SIZE:
+        raise HTTPException(status_code=413, detail="File too large. Maximum audio size: 10MB.")
     logger.info("media.transcribe", language=language, size=len(audio_bytes))
     text = await stt.transcribe(audio_bytes, language=language)
     return TranscriptionResponse(text=text)
@@ -88,6 +99,7 @@ async def synthesize_speech(
 
     Returns raw audio bytes with an appropriate content type.
     """
+    require_authenticated()
     tts = _get_adapter(request, "tts")
     logger.info(
         "media.synthesize",
@@ -112,10 +124,13 @@ async def describe_image(
     locale: str = "pt-BR",
 ) -> DescriptionResponse:
     """Generate an alt-text description for an uploaded image."""
+    require_authenticated()
     describer = _get_adapter(request, "image_describer")
     image_bytes = await file.read()
     if not image_bytes:
         raise HTTPException(status_code=400, detail="Empty image file.")
+    if len(image_bytes) > MAX_IMAGE_SIZE:
+        raise HTTPException(status_code=413, detail="File too large. Maximum image size: 5MB.")
     logger.info("media.describe_image", locale=locale, size=len(image_bytes))
     description = await describer.describe(image_bytes, locale=locale)
     return DescriptionResponse(description=description)
@@ -130,10 +145,13 @@ async def extract_text(
 
     The file type is inferred from the upload's content type.
     """
+    require_authenticated()
     ocr = _get_adapter(request, "ocr")
     file_bytes = await file.read()
     if not file_bytes:
         raise HTTPException(status_code=400, detail="Empty file.")
+    if len(file_bytes) > MAX_DOCUMENT_SIZE:
+        raise HTTPException(status_code=413, detail="File too large. Maximum document size: 50MB.")
 
     content_type = file.content_type or ""
     file_type = "pdf" if "pdf" in content_type else "image"

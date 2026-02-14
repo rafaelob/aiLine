@@ -31,45 +31,54 @@ vi.mock('@/hooks/use-pipeline-sse', () => ({
   }),
 }))
 
+const defaultParams = Promise.resolve({ locale: 'pt-BR' })
+
 describe('PlansPage', () => {
-  it('renders the plans title from translations', () => {
-    render(<PlansPage />)
+  it('renders the plans title from translations', async () => {
+    const page = await PlansPage({ params: defaultParams })
+    render(page)
     expect(screen.getByText('plans.title')).toBeInTheDocument()
   })
 
-  it('renders the PlanGenerationFlow component', () => {
-    render(<PlansPage />)
+  it('renders the PlanGenerationFlow component', async () => {
+    const page = await PlansPage({ params: defaultParams })
+    render(page)
     expect(screen.getByTestId('plan-generation-flow')).toBeInTheDocument()
   })
 
-  it('has a header element', () => {
-    render(<PlansPage />)
+  it('has a header element', async () => {
+    const page = await PlansPage({ params: defaultParams })
+    render(page)
     const header = screen.getByRole('banner')
     expect(header).toBeInTheDocument()
   })
 
-  it('renders an h1 heading', () => {
-    render(<PlansPage />)
+  it('renders an h1 heading', async () => {
+    const page = await PlansPage({ params: defaultParams })
+    render(page)
     const heading = screen.getByRole('heading', { level: 1 })
     expect(heading).toBeInTheDocument()
     expect(heading.textContent).toBe('plans.title')
   })
 
-  it('wraps content in a max-width container', () => {
-    const { container } = render(<PlansPage />)
+  it('wraps content in a max-width container', async () => {
+    const page = await PlansPage({ params: defaultParams })
+    const { container } = render(page)
     const wrapper = container.firstChild as HTMLElement
     expect(wrapper.className).toContain('max-w-5xl')
     expect(wrapper.className).toContain('mx-auto')
   })
 
-  it('includes spacing between header and plan flow', () => {
-    const { container } = render(<PlansPage />)
+  it('includes spacing between header and plan flow', async () => {
+    const page = await PlansPage({ params: defaultParams })
+    const { container } = render(page)
     const wrapper = container.firstChild as HTMLElement
     expect(wrapper.className).toContain('space-y')
   })
 
-  it('renders a single root element', () => {
-    const { container } = render(<PlansPage />)
+  it('renders a single root element', async () => {
+    const page = await PlansPage({ params: defaultParams })
+    const { container } = render(page)
     expect(container.children).toHaveLength(1)
   })
 })

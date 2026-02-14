@@ -19,15 +19,21 @@ vi.mock('motion/react', () => ({
 const mockSetTheme = vi.fn()
 const mockSetFontSize = vi.fn()
 const mockSetReducedMotion = vi.fn()
+const mockToggleFocusMode = vi.fn()
+const mockToggleBionicReading = vi.fn()
 
 vi.mock('@/stores/accessibility-store', () => ({
   useAccessibilityStore: () => ({
     theme: 'standard',
     fontSize: 'medium',
     reducedMotion: false,
+    focusMode: false,
+    bionicReading: false,
     setTheme: mockSetTheme,
     setFontSize: mockSetFontSize,
     setReducedMotion: mockSetReducedMotion,
+    toggleFocusMode: mockToggleFocusMode,
+    toggleBionicReading: mockToggleBionicReading,
   }),
 }))
 
@@ -89,5 +95,27 @@ describe('PreferencesPanel', () => {
     dialog.focus()
     await user.keyboard('{Escape}')
     expect(mockOnClose).toHaveBeenCalled()
+  })
+
+  it('renders focus mode and bionic reading toggle switches', () => {
+    render(<PreferencesPanel onClose={mockOnClose} />)
+    const switches = screen.getAllByRole('switch')
+    expect(switches).toHaveLength(2)
+    expect(switches[0]).toHaveAttribute('aria-checked', 'false')
+    expect(switches[1]).toHaveAttribute('aria-checked', 'false')
+  })
+
+  it('calls toggleFocusMode when focus mode switch is clicked', async () => {
+    render(<PreferencesPanel onClose={mockOnClose} />)
+    const switches = screen.getAllByRole('switch')
+    await user.click(switches[0])
+    expect(mockToggleFocusMode).toHaveBeenCalledTimes(1)
+  })
+
+  it('calls toggleBionicReading when bionic reading switch is clicked', async () => {
+    render(<PreferencesPanel onClose={mockOnClose} />)
+    const switches = screen.getAllByRole('switch')
+    await user.click(switches[1])
+    expect(mockToggleBionicReading).toHaveBeenCalledTimes(1)
   })
 })

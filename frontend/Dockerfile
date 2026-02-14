@@ -14,8 +14,8 @@ WORKDIR /build
 # Copy dependency manifest first (layer caching)
 COPY package.json pnpm-lock.yaml* ./
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile || pnpm install
+# Install dependencies (frozen lockfile enforced -- fail fast if lockfile is stale)
+RUN pnpm install --frozen-lockfile
 
 # Copy source and build
 COPY . .

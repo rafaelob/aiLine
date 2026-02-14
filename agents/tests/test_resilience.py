@@ -168,3 +168,87 @@ class TestIdempotencyGuard:
         assert guard.is_in_progress("key-1") is False
         found, _ = guard.get_result("key-2")
         assert found is False
+
+    def test_ttl_eviction(self) -> None:
+        """Entries older than TTL are evicted on access."""
+        guard = IdempotencyGuard(ttl_seconds=1.0)
+        guard.try_acquire("k1")
+        guard.complete("k1", "r1")
+
+        # Result is available immediately
+        found, result = guard.get_result("k1")
+        assert found is True
+        assert result == "r1"
+
+        # Simulate time passing beyond TTL
+        future = time.monotonic() + 2.0
+        with patch("ailine_agents.resilience.time") as mock_time:
+            mock_time.monotonic.return_value = future
+            found, result = guard.get_result("k1")
+            assert found is False
+
+    def test_max_size_eviction(self) -> None:
+        """When results exceed max_size, oldest entries are evicted."""
+        guard = IdempotencyGuard(max_size=3, ttl_seconds=300.0)
+
+        base = time.monotonic()
+        for i in range(5):
+            key = f"k{i}"
+            guard.try_acquire(key)
+            # Set timestamps manually to control ordering
+            with guard._lock:
+                guard._results[key] = f"r{i}"
+                guard._timestamps[key] = base + i
+                guard._in_progress.pop(key, None)
+
+        # After adding 5, eviction in complete() leaves max_size=3
+        # But since we bypassed complete(), trigger eviction manually
+        guard.try_acquire("trigger")
+        guard.complete("trigger", "t")
+
+        # Oldest entries (k0, k1) should have been evicted
+        # k2, k3, k4 + trigger = 4, but max_size=3 so k2 also evicted
+        found_k0, _ = guard.get_result("k0")
+        found_k1, _ = guard.get_result("k1")
+        assert found_k0 is False
+        assert found_k1 is False
+
+    def test_max_size_eviction_on_complete(self) -> None:
+        """Complete triggers eviction when max_size is exceeded."""
+        guard = IdempotencyGuard(max_size=2, ttl_seconds=300.0)
+
+        guard.try_acquire("a")
+        guard.complete("a", "ra")
+
+        guard.try_acquire("b")
+        guard.complete("b", "rb")
+
+        # Both should exist
+        assert guard.get_result("a") == (True, "ra")
+        assert guard.get_result("b") == (True, "rb")
+
+        # Adding a third should evict the oldest (a)
+        guard.try_acquire("c")
+        guard.complete("c", "rc")
+
+        found_a, _ = guard.get_result("a")
+        assert found_a is False
+        assert guard.get_result("c") == (True, "rc")
+
+    def test_default_ttl_and_max_size(self) -> None:
+        """Default TTL is 300s and max_size is 1000."""
+        guard = IdempotencyGuard()
+        assert guard._ttl_seconds == 300.0
+        assert guard._max_size == 1000
+
+    def test_fail_clears_timestamp(self) -> None:
+        """Failing a key removes its timestamp."""
+        guard = IdempotencyGuard()
+        guard.try_acquire("k1")
+        guard.complete("k1", "r1")
+        assert "k1" in guard._timestamps
+
+        # Re-acquire and fail
+        guard.try_acquire("k1")
+        guard.fail("k1")
+        assert "k1" not in guard._timestamps

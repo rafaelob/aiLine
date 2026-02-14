@@ -2,10 +2,24 @@
 
 import { useEffect, useRef, useState, useCallback, useId } from 'react'
 import { useTranslations } from 'next-intl'
+import DOMPurify from 'dompurify'
 import { cn } from '@/lib/cn'
 import { loadMermaid } from '@/lib/mermaid-loader'
 import { useThemeContext } from '@/hooks/use-theme-context'
 import { Skeleton } from '@/components/ui/skeleton'
+
+/**
+ * Sanitize SVG output from Mermaid to prevent XSS via script injection,
+ * event handlers, or foreignObject elements. Uses DOMPurify with SVG profile.
+ */
+function sanitizeSvg(rawSvg: string): string {
+  return DOMPurify.sanitize(rawSvg, {
+    USE_PROFILES: { svg: true, svgFilters: true },
+    ADD_TAGS: ['use'],
+    FORBID_TAGS: ['script', 'foreignObject'],
+    FORBID_ATTR: ['onload', 'onclick', 'onerror', 'onmouseover'],
+  })
+}
 
 interface MermaidRendererProps {
   /** Raw Mermaid diagram code */
@@ -14,17 +28,29 @@ interface MermaidRendererProps {
   className?: string
 }
 
-const DARK_THEMES = new Set([
-  'high-contrast',
-  'screen-reader',
-])
+/** Reads CSS custom properties from current theme for Mermaid theming. */
+function getThemeVariables(): {
+  bg: string
+  text: string
+  primary: string
+} {
+  if (typeof document === 'undefined') {
+    return { bg: '#ffffff', text: '#1a1a1a', primary: '#3b82f6' }
+  }
+  const s = getComputedStyle(document.documentElement)
+  return {
+    bg: s.getPropertyValue('--color-surface').trim() || '#ffffff',
+    text: s.getPropertyValue('--color-text').trim() || '#1a1a1a',
+    primary: s.getPropertyValue('--color-primary').trim() || '#3b82f6',
+  }
+}
 
 /**
  * Client-side Mermaid.js renderer with theme awareness.
  * Dynamically imports mermaid to avoid SSR issues.
  * Supports collapsible panel, copy-to-clipboard, and fullscreen.
  */
-export function MermaidRenderer({ code, className }: MermaidRendererProps) {
+export default function MermaidRenderer({ code, className }: MermaidRendererProps) {
   const t = useTranslations('mermaid')
   const theme = useThemeContext()
   const containerId = useId()
@@ -37,9 +63,6 @@ export function MermaidRenderer({ code, className }: MermaidRendererProps) {
   const [collapsed, setCollapsed] = useState(false)
   const [copied, setCopied] = useState(false)
 
-  const isDark = DARK_THEMES.has(theme)
-  const mermaidTheme = isDark ? 'dark' : 'default'
-
   // Render mermaid diagram whenever code or theme changes
   useEffect(() => {
     let cancelled = false
@@ -50,11 +73,26 @@ export function MermaidRenderer({ code, className }: MermaidRendererProps) {
 
       try {
         const mermaid = await loadMermaid()
+        const { bg, text, primary } = getThemeVariables()
         mermaid.initialize({
           startOnLoad: false,
-          theme: mermaidTheme,
+          theme: 'base',
           securityLevel: 'strict',
           fontFamily: 'inherit',
+          themeVariables: {
+            primaryColor: primary,
+            primaryTextColor: text,
+            primaryBorderColor: primary,
+            lineColor: text,
+            secondaryColor: bg,
+            tertiaryColor: bg,
+            background: bg,
+            mainBkg: bg,
+            nodeBorder: primary,
+            clusterBkg: bg,
+            titleColor: text,
+            edgeLabelBackground: bg,
+          },
         })
 
         // Use a unique ID for rendering
@@ -83,7 +121,7 @@ export function MermaidRenderer({ code, className }: MermaidRendererProps) {
     return () => {
       cancelled = true
     }
-  }, [code, mermaidTheme, containerId])
+  }, [code, theme, containerId])
 
   const handleCopy = useCallback(async () => {
     try {
@@ -189,7 +227,7 @@ export function MermaidRenderer({ code, className }: MermaidRendererProps) {
             {!loading && !error && svg && (
               <div
                 className="mermaid-output flex justify-center"
-                dangerouslySetInnerHTML={{ __html: svg }}
+                dangerouslySetInnerHTML={{ __html: sanitizeSvg(svg) }}
                 role="img"
                 aria-label={t('diagram_alt')}
               />
@@ -229,7 +267,7 @@ export function MermaidRenderer({ code, className }: MermaidRendererProps) {
           {svg && (
             <div
               className="mermaid-output flex justify-center"
-              dangerouslySetInnerHTML={{ __html: svg }}
+              dangerouslySetInnerHTML={{ __html: sanitizeSvg(svg) }}
               role="img"
               aria-label={t('diagram_alt')}
             />

@@ -73,7 +73,7 @@ class RouteMetrics:
     visibility into routing behavior and provider performance.
     """
 
-    timestamp: float  # time.monotonic() at decision time
+    timestamp: float  # time.monotonic() for duration calculations
     tier: str
     score: float
     provider_name: str
@@ -82,6 +82,7 @@ class RouteMetrics:
     features: RouteFeatures
     score_breakdown: ScoreBreakdown | None = None
     is_fallback: bool = False  # True if a non-preferred provider was used
+    wall_time_iso: str = ""  # ISO 8601 wall-clock time for display/audit
 
 
 @dataclass(frozen=True)
@@ -224,6 +225,11 @@ def score_intent(messages: list[dict[str, Any]]) -> float:
 
 
 def estimate_tokens(messages: list[dict[str, Any]]) -> int:
-    """Rough token estimate: ~4 chars per token."""
-    total_chars = sum(len(str(m.get("content", ""))) for m in messages)
-    return max(1, total_chars // 4)
+    """Estimate token count using tiktoken BPE tokenization.
+
+    Uses cl100k_base encoding (GPT-4/Claude family) for accurate counts.
+    """
+    from ...app.token_counter import count_tokens
+
+    total_text = " ".join(str(m.get("content", "")) for m in messages)
+    return max(1, count_tokens(total_text))

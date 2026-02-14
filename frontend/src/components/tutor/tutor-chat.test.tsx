@@ -148,15 +148,15 @@ describe('TutorChat', () => {
     expect(screen.getByText('Hi there!')).toBeInTheDocument()
   })
 
-  it('renders messages list with proper role', () => {
+  it('renders messages area with log role for chat semantics', () => {
     hookState.messages = [
       { id: 'msg-1', role: 'user', content: 'Test message' },
     ]
 
     render(<TutorChat />)
 
-    const list = screen.getByRole('list', { name: 'tutor.messages_label' })
-    expect(list).toBeInTheDocument()
+    const log = screen.getByRole('log', { name: 'tutor.messages_label' })
+    expect(log).toBeInTheDocument()
   })
 
   it('shows error banner when error is present', () => {

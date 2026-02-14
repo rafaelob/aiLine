@@ -475,12 +475,135 @@ textarea,
   }
 }
 
-/* Dyslexia theme: prevent justified text */
+/* ===== PERSONA-SPECIFIC UX ADAPTATIONS ===== */
+
+/*
+ * Each persona theme applies meaningful behavioral changes beyond colors.
+ * These adaptations are grounded in evidence-based accessibility research.
+ */
+
+/* --- DYSLEXIA: wider spacing, no justified text, left-align everything --- */
 [data-theme="dyslexia"] * {
   text-align: left !important;
 }
 
-/* Screen reader theme: show skip links and landmark outlines */
+[data-theme="dyslexia"] p,
+[data-theme="dyslexia"] li,
+[data-theme="dyslexia"] span,
+[data-theme="dyslexia"] label,
+[data-theme="dyslexia"] td {
+  letter-spacing: 0.12em !important;
+  word-spacing: 0.16em !important;
+  line-height: 2.0 !important;
+}
+
+/* --- ADHD (TDAH): spotlight active element, reduce visual noise --- */
+[data-theme="tdah"] aside,
+[data-theme="tdah"] [role="complementary"] {
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+[data-theme="tdah"] aside:hover,
+[data-theme="tdah"] aside:focus-within,
+[data-theme="tdah"] [role="complementary"]:hover,
+[data-theme="tdah"] [role="complementary"]:focus-within {
+  opacity: 1;
+}
+
+[data-theme="tdah"] *:focus-within {
+  position: relative;
+  z-index: 1;
+}
+
+/* Active paragraph spotlight for ADHD */
+[data-theme="tdah"] p:hover,
+[data-theme="tdah"] li:hover {
+  background-color: color-mix(in srgb, var(--color-primary) 8%, transparent);
+  border-radius: var(--radius-sm);
+}
+
+/* --- AUTISM (TEA): Replace red errors with calming blue, no surprise popups --- */
+[data-theme="tea"] {
+  --color-error: #2E7D8C;
+}
+
+/* Disable unexpected animations and popups for autism persona */
+[data-theme="tea"] [data-gamification],
+[data-theme="tea"] [data-celebration] {
+  display: none !important;
+}
+
+/* Smoother, slower transitions for predictability */
+[data-theme="tea"] * {
+  transition-duration: 400ms !important;
+}
+
+/* No shake animations for autism */
+[data-theme="tea"] .animate-shake,
+[data-theme="tea"] [class*="shake"] {
+  animation: none !important;
+}
+
+/* --- MOTOR: Larger touch targets, generous spacing --- */
+[data-theme="motor"] button,
+[data-theme="motor"] a,
+[data-theme="motor"] input,
+[data-theme="motor"] select,
+[data-theme="motor"] textarea,
+[data-theme="motor"] [role="button"],
+[data-theme="motor"] [role="tab"],
+[data-theme="motor"] [role="menuitem"],
+[data-theme="motor"] [role="radio"] {
+  min-height: 56px !important;
+  min-width: 56px !important;
+  padding: 12px 16px !important;
+}
+
+[data-theme="motor"] .gap-2 {
+  gap: 12px !important;
+}
+
+[data-theme="motor"] .gap-3 {
+  gap: 16px !important;
+}
+
+/* --- HEARING: Visual indicators for audio, high-contrast borders --- */
+[data-theme="hearing"] [aria-live] {
+  border-left: 4px solid var(--color-primary);
+  padding-left: 12px;
+}
+
+[data-theme="hearing"] [role="alert"] {
+  border: 2px solid var(--color-error);
+  padding: 12px;
+}
+
+[data-theme="hearing"] [role="status"] {
+  border: 2px solid var(--color-primary);
+  padding: 8px;
+}
+
+/* --- LOW VISION: Extra large, bold, high contrast --- */
+[data-theme="low-vision"] h1,
+[data-theme="low-vision"] h2,
+[data-theme="low-vision"] h3 {
+  font-weight: 800 !important;
+}
+
+[data-theme="low-vision"] p,
+[data-theme="low-vision"] li,
+[data-theme="low-vision"] span {
+  font-weight: 600 !important;
+}
+
+[data-theme="low-vision"] button,
+[data-theme="low-vision"] a {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* --- SCREEN READER: show skip links and landmark outlines --- */
 [data-theme="screen-reader"] .skip-link {
   top: 16px;
 }
@@ -491,6 +614,17 @@ textarea,
 [data-theme="screen-reader"] [role="banner"] {
   outline: 2px dashed var(--color-border);
   outline-offset: 4px;
+}
+
+/* ===== USER-CONTROLLED REDUCED MOTION ===== */
+/* Applied via data-reduced-motion attribute on body (from accessibility store) */
+[data-reduced-motion="true"] *,
+[data-reduced-motion="true"] *::before,
+[data-reduced-motion="true"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
 }
 
 /* ===== GLASS EFFECT UTILITY ===== */

@@ -72,6 +72,7 @@ class PgVectorStore:
                     f"""
                     CREATE TABLE IF NOT EXISTS {self._table} (
                         id          TEXT PRIMARY KEY,
+                        tenant_id   TEXT NOT NULL DEFAULT '',
                         embedding   vector({self._dimensions}) NOT NULL,
                         content     TEXT NOT NULL DEFAULT '',
                         metadata    JSONB NOT NULL DEFAULT '{{}}'::jsonb
@@ -91,6 +92,16 @@ class PgVectorStore:
                     """
                 )
             )
+            # Index for tenant isolation queries
+            idx_tenant = f"idx_{self._table}_tenant_id"
+            await session.execute(
+                text(
+                    f"""
+                    CREATE INDEX IF NOT EXISTS {idx_tenant}
+                        ON {self._table} (tenant_id)
+                    """
+                )
+            )
             await session.commit()
         _log.info("ensure_table_done", table=self._table)
 
@@ -103,10 +114,16 @@ class PgVectorStore:
         embeddings: list[list[float]],
         texts: list[str],
         metadatas: list[dict[str, Any]],
+        tenant_id: str | None = None,
     ) -> None:
         """Insert or update chunks.
 
         Uses ``INSERT ... ON CONFLICT DO UPDATE`` for idempotency.
+
+        Args:
+            tenant_id: When provided, stored alongside each chunk for
+                structural tenant isolation. Searches with a matching
+                ``tenant_id`` will only return rows belonging to that tenant.
         """
         if not ids:
             return
@@ -118,13 +135,16 @@ class PgVectorStore:
                 f"(got {n}/{len(embeddings)}/{len(texts)}/{len(metadatas)})"
             )
 
-        _log.debug("upsert", table=self._table, count=n)
+        effective_tenant = tenant_id or ""
+
+        _log.debug("upsert", table=self._table, count=n, tenant_id=effective_tenant)
 
         stmt = text(
             f"""
-            INSERT INTO {self._table} (id, embedding, content, metadata)
-            VALUES (:id, :embedding, :content, :metadata)
+            INSERT INTO {self._table} (id, tenant_id, embedding, content, metadata)
+            VALUES (:id, :tenant_id, :embedding, :content, :metadata)
             ON CONFLICT (id) DO UPDATE SET
+                tenant_id = EXCLUDED.tenant_id,
                 embedding = EXCLUDED.embedding,
                 content   = EXCLUDED.content,
                 metadata  = EXCLUDED.metadata
@@ -135,6 +155,7 @@ class PgVectorStore:
         params_list = [
             {
                 "id": ids[i],
+                "tenant_id": effective_tenant,
                 "embedding": "[" + ",".join(str(v) for v in embeddings[i]) + "]",
                 "content": texts[i],
                 "metadata": _json_dumps(metadatas[i]),
@@ -152,11 +173,17 @@ class PgVectorStore:
         query_embedding: list[float],
         k: int = 5,
         filters: dict[str, Any] | None = None,
+        tenant_id: str | None = None,
     ) -> list[VectorSearchResult]:
         """Search for the *k* most similar chunks using cosine distance.
 
         Cosine distance ``<=>`` ranges from 0 (identical) to 2 (opposite).
         We convert it to a similarity score: ``1 - distance``.
+
+        **Structural tenant isolation (ADR-060):** When ``tenant_id`` is
+        provided, the SQL WHERE clause *always* includes
+        ``tenant_id = :tenant_id``, ensuring that results from other
+        tenants can never leak regardless of caller logic.
 
         Args:
             query_embedding: The query vector.
@@ -164,21 +191,32 @@ class PgVectorStore:
             filters: Optional metadata filters.  Keys are matched with
                 equality against the ``metadata`` JSONB column using
                 ``metadata @> :filter_json``.
+            tenant_id: Mandatory for tenant-scoped queries. Only rows
+                belonging to this tenant are returned.
 
         Returns:
             List of ``VectorSearchResult`` ordered by descending similarity.
         """
         vec_str = "[" + ",".join(str(v) for v in query_embedding) + "]"
 
-        where_clause = ""
+        conditions: list[str] = []
         params: dict[str, Any] = {
             "query_vec": vec_str,
             "k": k,
         }
 
+        # Structural tenant isolation: always filter by tenant_id when provided
+        if tenant_id is not None:
+            conditions.append("tenant_id = :tenant_id")
+            params["tenant_id"] = tenant_id
+
         if filters:
-            where_clause = "WHERE metadata @> :filter_json::jsonb"
+            conditions.append("metadata @> :filter_json::jsonb")
             params["filter_json"] = _json_dumps(filters)
+
+        where_clause = ""
+        if conditions:
+            where_clause = "WHERE " + " AND ".join(conditions)
 
         query = text(
             f"""
@@ -193,7 +231,7 @@ class PgVectorStore:
             """
         )
 
-        _log.debug("search", table=self._table, k=k, filters=filters)
+        _log.debug("search", table=self._table, k=k, filters=filters, tenant_id=tenant_id)
 
         async with self._session_factory() as session:
             result = await session.execute(query, params)

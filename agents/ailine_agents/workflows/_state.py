@@ -28,6 +28,7 @@ class RunState(_RunStateRequired, total=False):
     validation: dict[str, Any]
     final: dict[str, Any]
     refine_iter: int
+    quality_decision: dict[str, Any] | None
 
     # RAG results from planner tool calls (if any)
     rag_results: list[dict[str, Any]] | None

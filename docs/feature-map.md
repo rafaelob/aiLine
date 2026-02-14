@@ -1,6 +1,6 @@
 # AiLine Feature Map
 
-**73 features** organized into 6 capability areas. Each feature links to its ID in `control_docs/FEATURES.md`.
+**120 features** organized into 8 capability areas. Each feature links to its ID in `control_docs/FEATURES.md`.
 
 ---
 
@@ -99,7 +99,7 @@ Full-stack internationalization (3 languages), curriculum standard alignment (4 
 
 ## F. Developer Experience and Operations (15 features)
 
-Docker Compose stack, 1800+ tests, CI pipeline, observability, health checks, and documentation.
+Docker Compose stack, 2,800+ tests, CI pipeline, observability, health checks, and documentation.
 
 | ID | Feature | Key Details |
 |----|---------|-------------|
@@ -108,7 +108,7 @@ Docker Compose stack, 1800+ tests, CI pipeline, observability, health checks, an
 | F-014 | Frontend Dashboard | Next.js 16, Glass Box pipeline viewer |
 | F-030 | Docker Compose Stack | One-command local dev (4 services) |
 | F-032 | React Compiler 1.0 | Auto-memoization enabled |
-| F-040 | Full Test Coverage | 1527+ backend + 331 frontend tests |
+| F-040 | Full Test Coverage | 1,993+ backend + 770+ frontend tests |
 | F-041 | Docker Compose Full Stack | API + DB + Redis + Frontend, healthchecks |
 | F-042 | GitHub Actions CI | lint, typecheck, test pipeline |
 | F-052 | Live API Integration Tests | 65 live_llm tests (Anthropic/OpenAI/Gemini) |
@@ -117,7 +117,68 @@ Docker Compose stack, 1800+ tests, CI pipeline, observability, health checks, an
 | F-071 | Observability Spans | span_context, timed_operation, log_llm_call |
 | F-072 | Dev-Mode Safety Guard | Startup fail if production + dev mode |
 | F-073 | Readiness Probe | /health/ready (DB+Redis checks) |
-| -- | 59 ADRs | Architecture Decision Records (ADR-001 through ADR-059) |
+| -- | 60 ADRs | Architecture Decision Records (ADR-001 through ADR-060) |
+
+## G. Sprint 13 -- Final Polish & Wow Factor (26 features)
+
+Pipeline transparency, observability, quality gate hardening, and frontend UX polish.
+
+| ID | Feature | Key Details |
+|----|---------|-------------|
+| F-074 | Agent Trace Viewer API | GET /traces/{run_id}, node execution timeline |
+| F-075 | SmartRouter Route Rationale | "Why this model?" in SSE stage.started |
+| F-076 | QualityGate Hard Constraints | 4 deterministic validators |
+| F-077 | RAG-Grounded Quoting | 1-3 source quotes with confidence |
+| F-078 | Observability Dashboard API | LLM latency p50/p95, CB state, token usage |
+| F-079 | Standards Alignment Evidence | Teacher handout with BNCC/CCSS/NGSS/Bloom |
+| F-080 | Theme Morphing Animation | CSS transition-colors 500ms |
+| F-081 | Magic Layout Tabs | Motion layoutId sliding indicator |
+| F-082 | Skeleton Shimmer Loading | animate-pulse with Suspense fallbacks |
+| F-083 | Staggered Dashboard Entrance | Motion staggerChildren 0.12s |
+| F-084 | Bento Grid Dashboard | CSS Grid responsive layout |
+| F-085 | Streaming Typewriter Effect | Token-by-token SSE rendering |
+| F-086 | Toast Notifications | sonner with undo capability |
+| F-087 | Interactive Empty States | text-balance with CTA buttons |
+| F-088 | Webcam Active Ring | Confidence-based border glow |
+| F-089 | Export Paper Fold | motion.article rotateY animation |
+| F-090 | Degradation Panel | Chaos simulation with status banner |
+| F-091 | Privacy Data Panel | LGPD/FERPA compliance display |
+| F-092 | Cognitive Load Meter | 3-factor heuristic with suggestions |
+| F-093 | Agent Trace Viewer UI | Collapsible LangGraph timeline |
+| F-094 | SmartRouter Rationale Card | 5-weight breakdown badge |
+| F-095 | Observability Dashboard UI | Recharts sparkline + charts |
+| F-096 | Enhanced Error Boundary | Branded error.tsx, SSE reconnect |
+| F-097 | Full i18n Coverage | All components in 3 locales |
+| F-098 | Playwright E2E Golden Paths | 3 specs + axe-core a11y |
+| F-099 | Judge Artifacts | 4 docs: arch, features, demo, packet |
+
+## H. Sprint 14 -- State-of-the-Art Hardening (21 features)
+
+Security, observability, agent evaluation, and production readiness.
+
+| ID | Feature | Key Details |
+|----|---------|-------------|
+| F-100 | JWT RS256/ES256 Verification | Asymmetric JWT, JWKS, algorithm pinning |
+| F-101 | JWT Security Test Suite | 57 tests: forged, expired, replay |
+| F-102 | Prompt Injection Defenses | Trust scoring, retrieval sanitization |
+| F-103 | Structured Audit Logging | Admin/content/auth event logging |
+| F-104 | OpenTelemetry Tracing | Spans for FastAPI/SQLAlchemy/LLM/pipeline |
+| F-105 | RFC 7807 Problem Details | application/problem+json errors |
+| F-106 | DB Pool Tuning | pool_size=10, HNSW m=16/ef=128 |
+| F-107 | Cache Headers | Curriculum API 1h cache |
+| F-108 | Container Refactoring | 476->278 LOC split |
+| F-109 | Agent Eval Harness | 15 golden sets with rubric scoring |
+| F-110 | Eval Rubric System | Multi-dimension scoring, regression |
+| F-111 | RAG Provenance Diagnostics | Confidence classification |
+| F-112 | RAG Diagnostics API | GET /rag/diagnostics/{run_id} |
+| F-113 | Sign Language Worker Fix | MediaPipe feature-gated loading |
+| F-114 | Playwright webServer Config | Self-contained E2E |
+| F-115 | Visual Regression Tests | 8 screenshot comparisons |
+| F-116 | View Transitions API | CSS route morphing |
+| F-117 | Dynamic OG Images | next/og ImageResponse |
+| F-118 | PWA Manifest | Install prompt, icons, shortcuts |
+| F-119 | Recharts Keyboard Accessibility | Tab through data, aria-live |
+| F-120 | Optimistic UI | useOptimistic hook |
 
 ---
 
@@ -130,5 +191,7 @@ Docker Compose stack, 1800+ tests, CI pipeline, observability, health checks, an
 | C. Real-Time Pipeline | 10 | 14 SSE event types, replay, terminal guarantee |
 | D. Data and Security | 14 | Tenant isolation, circuit breaker, rate limiting, LGPD/FERPA |
 | E. Multi-Language | 5 | 3 languages, BNCC/CCSS/NGSS/ELA standards |
-| F. Developer Experience | 15 | 1800+ tests, Docker, CI, observability, 59 ADRs |
-| **Total** | **73** | |
+| F. Developer Experience | 15 | 2,800+ tests, Docker, CI, observability, 60 ADRs |
+| G. Sprint 13 Polish | 26 | Pipeline transparency, observability UI, UX animations |
+| H. Sprint 14 Hardening | 21 | JWT security, OTel tracing, agent eval, visual regression |
+| **Total** | **120** | |

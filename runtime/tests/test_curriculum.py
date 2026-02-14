@@ -429,8 +429,9 @@ class TestUnifiedProvider:
 class TestCurriculumAPIFallbackProvider:
     """Cover _get_provider both paths: fallback creation and cached return."""
 
-    async def test_fallback_provider_created_when_not_on_state(self):
+    async def test_fallback_provider_created_when_not_on_state(self, monkeypatch: pytest.MonkeyPatch):
         """When curriculum_provider is not on app.state, a new one is created."""
+        monkeypatch.setenv("AILINE_DEV_MODE", "true")
         settings = Settings()
         app = create_app(settings)
         # Remove the curriculum_provider from state if it exists
@@ -440,14 +441,16 @@ class TestCurriculumAPIFallbackProvider:
         async with AsyncClient(
             transport=ASGITransport(app=app),
             base_url="http://test",
+            headers={"X-Teacher-ID": "teacher-001"},
         ) as ac:
             resp = await ac.get("/curriculum/search", params={"q": "EF06MA01"})
             assert resp.status_code == 200
             # After the call, the provider should be cached on app.state
             assert hasattr(app.state, "curriculum_provider")
 
-    async def test_cached_provider_returned_when_on_state(self):
+    async def test_cached_provider_returned_when_on_state(self, monkeypatch: pytest.MonkeyPatch):
         """When curriculum_provider IS on app.state, return it (line 27)."""
+        monkeypatch.setenv("AILINE_DEV_MODE", "true")
         settings = Settings()
         app = create_app(settings)
         # Pre-set the provider on state so line 27 is hit
@@ -457,6 +460,7 @@ class TestCurriculumAPIFallbackProvider:
         async with AsyncClient(
             transport=ASGITransport(app=app),
             base_url="http://test",
+            headers={"X-Teacher-ID": "teacher-001"},
         ) as ac:
             resp = await ac.get("/curriculum/search", params={"q": "EF06MA01"})
             assert resp.status_code == 200
@@ -466,7 +470,8 @@ class TestCurriculumAPIFallbackProvider:
 
 class TestCurriculumAPI:
     @pytest.fixture()
-    def app(self):
+    def app(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setenv("AILINE_DEV_MODE", "true")
         settings = Settings()
         return create_app(settings)
 
@@ -475,6 +480,7 @@ class TestCurriculumAPI:
         async with AsyncClient(
             transport=ASGITransport(app=app),
             base_url="http://test",
+            headers={"X-Teacher-ID": "teacher-001"},
         ) as ac:
             yield ac
 
@@ -693,7 +699,8 @@ class TestBloomTaxonomy:
 
 class TestBloomTaxonomyAPI:
     @pytest.fixture()
-    def app(self):
+    def app(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setenv("AILINE_DEV_MODE", "true")
         settings = Settings()
         return create_app(settings)
 
@@ -702,6 +709,7 @@ class TestBloomTaxonomyAPI:
         async with AsyncClient(
             transport=ASGITransport(app=app),
             base_url="http://test",
+            headers={"X-Teacher-ID": "teacher-001"},
         ) as ac:
             yield ac
 
@@ -831,7 +839,8 @@ class TestCCSSELA:
 
 class TestCCSSELAAPI:
     @pytest.fixture()
-    def app(self):
+    def app(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setenv("AILINE_DEV_MODE", "true")
         settings = Settings()
         return create_app(settings)
 
@@ -840,6 +849,7 @@ class TestCCSSELAAPI:
         async with AsyncClient(
             transport=ASGITransport(app=app),
             base_url="http://test",
+            headers={"X-Teacher-ID": "teacher-001"},
         ) as ac:
             yield ac
 

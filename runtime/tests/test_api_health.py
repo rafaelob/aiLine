@@ -3,6 +3,8 @@ request ID middleware, and application factory."""
 
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 
@@ -23,7 +25,7 @@ def app(settings: Settings):
 
 
 @pytest.fixture()
-async def client(app) -> AsyncClient:
+async def client(app) -> AsyncGenerator[AsyncClient, None]:
     """Async HTTP client bound to the test app."""
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as c:
@@ -91,7 +93,10 @@ async def test_security_header_referrer_policy(client: AsyncClient) -> None:
 
 async def test_security_header_permissions_policy(client: AsyncClient) -> None:
     resp = await client.get("/health")
-    assert resp.headers.get("Permissions-Policy") == "camera=(), microphone=(), geolocation=()"
+    pp = resp.headers.get("Permissions-Policy", "")
+    assert "camera=(self)" in pp
+    assert "microphone=()" in pp
+    assert "geolocation=()" in pp
 
 
 # ---------------------------------------------------------------------------
@@ -125,7 +130,7 @@ def test_create_app_returns_fastapi(settings: Settings) -> None:
 
 def test_create_app_registers_routers(settings: Settings) -> None:
     app = create_app(settings=settings)
-    route_paths = [r.path for r in app.routes]
+    route_paths = [r.path for r in app.routes if hasattr(r, "path")]
     # Check that key router prefixes are registered
     assert any("/materials" in p for p in route_paths)
     assert any("/plans" in p for p in route_paths)
@@ -134,7 +139,7 @@ def test_create_app_registers_routers(settings: Settings) -> None:
 
 def test_create_app_registers_health_ready(settings: Settings) -> None:
     app = create_app(settings=settings)
-    route_paths = [r.path for r in app.routes]
+    route_paths = [r.path for r in app.routes if hasattr(r, "path")]
     assert "/health/ready" in route_paths
 
 

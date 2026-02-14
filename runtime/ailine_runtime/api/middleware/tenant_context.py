@@ -49,6 +49,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
+from ...domain.exceptions import InvalidTenantIdError
 from ...shared.tenant import (
     clear_tenant_id,
     set_tenant_id,
@@ -296,7 +297,8 @@ def _unverified_jwt_decode(token: str) -> str | None:
         payload: dict[str, Any] = json.loads(payload_bytes)
         sub = payload.get("sub")
         return str(sub) if sub is not None else None
-    except Exception:
+    except (ValueError, KeyError, json.JSONDecodeError):
+        logger.warning("unverified_jwt_decode_failed")
         return None
 
 
@@ -364,7 +366,8 @@ class TenantContextMiddleware(BaseHTTPMiddleware):
         if teacher_id is not None:
             try:
                 teacher_id = validate_teacher_id_format(teacher_id)
-            except Exception:
+            except (ValueError, InvalidTenantIdError):
+                logger.warning("teacher_id_format_invalid", path=path)
                 return JSONResponse(
                     status_code=422,
                     content={

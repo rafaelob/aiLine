@@ -35,20 +35,35 @@ class TraceStore:
         self._max_entries = max_entries
         self._lock = asyncio.Lock()
 
-    async def get(self, run_id: str) -> RunTrace | None:
-        """Get a trace by run_id, or None if not found / expired."""
+    async def get(self, run_id: str, *, teacher_id: str | None = None) -> RunTrace | None:
+        """Get a trace by run_id, or None if not found / expired.
+
+        When *teacher_id* is provided, only returns the trace if it
+        belongs to the given teacher (tenant isolation).
+        """
         async with self._lock:
             self._evict_expired()
-            return self._traces.get(run_id)
+            trace = self._traces.get(run_id)
+            if trace is None:
+                return None
+            if teacher_id is not None and trace.teacher_id and trace.teacher_id != teacher_id:
+                return None
+            return trace
 
-    async def get_or_create(self, run_id: str) -> RunTrace:
-        """Get existing trace or create a new empty one."""
+    async def get_or_create(self, run_id: str, *, teacher_id: str = "") -> RunTrace:
+        """Get existing trace or create a new empty one.
+
+        When *teacher_id* is provided, it is stored on the trace for
+        tenant isolation filtering in subsequent lookups.
+        """
         async with self._lock:
             self._evict_expired()
             if run_id not in self._traces:
-                self._traces[run_id] = RunTrace(run_id=run_id)
+                self._traces[run_id] = RunTrace(run_id=run_id, teacher_id=teacher_id)
                 self._timestamps[run_id] = time.monotonic()
                 self._enforce_capacity()
+            elif teacher_id and not self._traces[run_id].teacher_id:
+                self._traces[run_id].teacher_id = teacher_id
             return self._traces[run_id]
 
     async def append_node(self, run_id: str, node: NodeTrace) -> None:
@@ -72,8 +87,12 @@ class TraceStore:
                     setattr(trace, key, value)
             self._timestamps[run_id] = time.monotonic()
 
-    async def list_recent(self, limit: int = 20) -> list[RunTrace]:
-        """List recent traces, newest first."""
+    async def list_recent(self, limit: int = 20, *, teacher_id: str | None = None) -> list[RunTrace]:
+        """List recent traces, newest first.
+
+        When *teacher_id* is provided, only returns traces belonging to
+        that teacher (tenant isolation).
+        """
         async with self._lock:
             self._evict_expired()
             sorted_ids = sorted(
@@ -81,7 +100,15 @@ class TraceStore:
                 key=lambda rid: self._timestamps[rid],
                 reverse=True,
             )
-            return [self._traces[rid] for rid in sorted_ids[:limit]]
+            traces: list[RunTrace] = []
+            for rid in sorted_ids:
+                t = self._traces[rid]
+                if teacher_id is not None and t.teacher_id and t.teacher_id != teacher_id:
+                    continue
+                traces.append(t)
+                if len(traces) >= limit:
+                    break
+            return traces
 
     def _evict_expired(self) -> None:
         """Remove entries older than TTL (call under lock)."""

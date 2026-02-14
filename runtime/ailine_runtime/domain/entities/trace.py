@@ -58,6 +58,7 @@ class RunTrace(BaseModel):
     """Complete execution trace for a pipeline run."""
 
     run_id: str = Field(..., description="Pipeline run ID")
+    teacher_id: str = Field("", description="Owning teacher for tenant isolation")
     status: str = Field("running", description="running | completed | failed")
     total_time_ms: float = Field(0.0, description="Total wall-clock time")
     nodes: list[NodeTrace] = Field(default_factory=list, description="Per-node traces in order")

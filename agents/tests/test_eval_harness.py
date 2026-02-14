@@ -9,6 +9,13 @@ TestModel-based agent execution tests are in test_eval_agents.py.
 from __future__ import annotations
 
 import pytest
+from ailine_runtime.domain.entities.plan import (
+    AccessibilityPackDraft,
+    Objective,
+    PlanStep,
+    StudyPlanDraft,
+)
+from ailine_runtime.domain.entities.tutor import TutorTurnOutput
 
 from ailine_agents.eval import (
     EvalRubric,
@@ -31,14 +38,6 @@ from ailine_agents.eval.rubric import (
     score_tutor_output,
 )
 from ailine_agents.models import QualityAssessment
-from ailine_runtime.domain.entities.plan import (
-    AccessibilityPackDraft,
-    Objective,
-    PlanStep,
-    StudyPlanDraft,
-)
-from ailine_runtime.domain.entities.tutor import TutorTurnOutput
-
 
 # ---------------------------------------------------------------------------
 # Rubric scoring unit tests

@@ -1,19 +1,83 @@
+import type { Metadata } from 'next'
 import { NextIntlClientProvider } from 'next-intl'
-import { getMessages } from 'next-intl/server'
+import { getMessages, getTranslations } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 import { routing } from '@/i18n/routing'
 import { Sidebar } from '@/components/layout/sidebar'
 import { TopBar } from '@/components/layout/topbar'
 import { MobileNav } from '@/components/layout/mobile-nav'
 import { A11yHydrator } from '@/components/accessibility/a11y-hydrator'
+import { CognitiveCurtain } from '@/components/accessibility/cognitive-curtain'
+import { RouteAnnouncer } from '@/components/accessibility/route-announcer'
 import { ServiceWorkerRegistrar } from '@/components/pwa/sw-registrar'
 import { InstallPrompt } from '@/components/pwa/install-prompt'
 import { ToastProvider } from '@/components/ui/toast-provider'
 import '@/styles/globals.css'
 
+/**
+ * Blocking script that applies the persisted theme before React hydrates,
+ * preventing a flash of the wrong theme (FOUC).
+ */
+function ThemeScript() {
+  const code = `(function(){try{var s=localStorage.getItem('ailine-a11y-prefs');if(s){var p=JSON.parse(s);var t=p.theme||'standard';document.documentElement.setAttribute('data-theme',t);document.body&&document.body.setAttribute('data-theme',t);if(p.reducedMotion){document.body&&document.body.setAttribute('data-reduced-motion','true')}}}catch(e){}})()`;
+  return <script dangerouslySetInnerHTML={{ __html: code }} />;
+}
+
 interface LocaleLayoutProps {
   children: React.ReactNode
   params: Promise<{ locale: string }>
+}
+
+/**
+ * Generate locale-aware metadata using Next.js Metadata API.
+ */
+export async function generateMetadata({
+  params,
+}: LocaleLayoutProps): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'app' })
+  const tLanding = await getTranslations({ locale, namespace: 'landing' })
+
+  const title = `${t('name')} - ${t('tagline')}`
+  const description = tLanding('hero_subtitle')
+
+  return {
+    title: {
+      default: title,
+      template: `%s | ${t('name')}`,
+    },
+    description,
+    applicationName: t('name'),
+    openGraph: {
+      type: 'website',
+      title,
+      description,
+      siteName: t('name'),
+      images: [
+        {
+          url: '/api/og?title=AiLine&subtitle=Adaptive+Inclusive+Learning',
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: ['/api/og?title=AiLine&subtitle=Adaptive+Inclusive+Learning'],
+    },
+    manifest: '/manifest.json',
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: 'default',
+      title: t('name'),
+    },
+    other: {
+      'theme-color': '#2563EB',
+    },
+  }
 }
 
 /**
@@ -29,46 +93,25 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
   }
 
   const messages = await getMessages()
+  const t = await getTranslations('common')
 
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html lang={locale}>
       <head>
-        <meta charSet="utf-8" />
+        <ThemeScript />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-        <title>AiLine - Adaptive Inclusive Learning</title>
-        <meta
-          name="description"
-          content="AI-powered inclusive education platform for adaptive learning"
-        />
-        {/* Open Graph / Social preview */}
-        <meta property="og:type" content="website" />
-        <meta property="og:title" content="AiLine - Adaptive Inclusive Learning" />
-        <meta
-          property="og:description"
-          content="AI-powered inclusive education platform for adaptive learning"
-        />
-        <meta property="og:image" content="/api/og?title=AiLine&subtitle=Adaptive+Inclusive+Learning" />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="AiLine - Adaptive Inclusive Learning" />
-        <meta name="twitter:image" content="/api/og?title=AiLine&subtitle=Adaptive+Inclusive+Learning" />
-        {/* PWA meta tags */}
-        <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#2563EB" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="AiLine" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.svg" />
       </head>
-      <body data-theme="standard" className="antialiased">
+      <body data-theme="standard" className="antialiased" suppressHydrationWarning>
         <NextIntlClientProvider messages={messages}>
           <A11yHydrator />
+          <CognitiveCurtain />
+          <RouteAnnouncer />
           <ServiceWorkerRegistrar />
 
           {/* Skip navigation link for keyboard / screen reader users */}
           <a href="#main-content" className="skip-link">
-            Skip to main content
+            {t('skipToContent')}
           </a>
 
           <div className="flex h-screen overflow-hidden">

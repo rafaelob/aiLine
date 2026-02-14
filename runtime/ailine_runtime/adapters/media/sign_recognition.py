@@ -53,7 +53,7 @@ class MediaPipeSignRecognition:
                 model_path=self._model_path,
                 reason="real model loading not yet implemented",
             )
-        except Exception:
+        except OSError:
             logger.warning(
                 "sign_recognition.model_load_failed",
                 model_path=self._model_path,

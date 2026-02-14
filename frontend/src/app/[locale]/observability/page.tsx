@@ -1,5 +1,10 @@
+'use client'
+
+import { lazy, Suspense } from 'react'
 import { useTranslations } from 'next-intl'
-import { ObservabilityDashboardContent } from '@/components/observability/observability-dashboard'
+import { SkeletonCardGrid } from '@/components/ui/skeleton'
+
+const ObservabilityDashboardContent = lazy(() => import('@/components/observability/observability-dashboard'))
 
 export default function ObservabilityPage() {
   const t = useTranslations('observability')
@@ -14,7 +19,9 @@ export default function ObservabilityPage() {
           {t('description')}
         </p>
       </div>
-      <ObservabilityDashboardContent />
+      <Suspense fallback={<SkeletonCardGrid count={6} />}>
+        <ObservabilityDashboardContent />
+      </Suspense>
     </main>
   )
 }

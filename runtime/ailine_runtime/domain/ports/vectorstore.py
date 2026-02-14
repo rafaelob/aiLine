@@ -27,6 +27,7 @@ class VectorStore(Protocol):
         embeddings: list[list[float]],
         texts: list[str],
         metadatas: list[dict[str, Any]],
+        tenant_id: str | None = None,
     ) -> None: ...
 
     async def search(
@@ -35,6 +36,7 @@ class VectorStore(Protocol):
         query_embedding: list[float],
         k: int = 5,
         filters: dict[str, Any] | None = None,
+        tenant_id: str | None = None,
     ) -> list[VectorSearchResult]: ...
 
     async def delete(self, *, ids: list[str]) -> None: ...

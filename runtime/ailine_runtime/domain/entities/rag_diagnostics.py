@@ -37,6 +37,7 @@ class RAGDiagnostics(BaseModel):
     """Complete RAG diagnostics report for a single query/run."""
 
     run_id: str = Field(..., description="Pipeline run ID or query ID")
+    teacher_id: str = Field("", description="Owning teacher for tenant isolation")
     query: str = Field("", description="Original query text")
     chunks: list[RAGChunkProvenance] = Field(
         default_factory=list,

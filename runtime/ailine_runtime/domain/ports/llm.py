@@ -4,7 +4,20 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
-from typing import Any, Protocol, runtime_checkable
+from typing import Any, Literal, Protocol, TypedDict, runtime_checkable
+
+
+class ChatMessage(TypedDict, total=False):
+    """Typed structure for chat messages passed to LLM providers.
+
+    Required keys: role, content.
+    Optional keys: name, tool_call_id (for tool messages).
+    """
+
+    role: Literal["system", "user", "assistant", "tool"]
+    content: str
+    name: str
+    tool_call_id: str
 
 
 @dataclass(frozen=True)

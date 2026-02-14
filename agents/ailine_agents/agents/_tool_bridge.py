@@ -67,7 +67,6 @@ def _build_typed_wrapper(tool_def: Any) -> Any:
     """
     schema = tool_def.args_model.model_json_schema()
     properties = schema.get("properties", {})
-    required_fields = set(schema.get("required", []))
     model_fields = tool_def.args_model.model_fields
 
     # Build inspect.Parameter list and annotations dict
@@ -117,17 +116,23 @@ def _build_typed_wrapper(tool_def: Any) -> Any:
         if "teacher_id" in args_fields and "teacher_id" not in kwargs:
             kwargs["teacher_id"] = ctx.deps.teacher_id
 
-        parsed_args = tool_def.args_model(**kwargs)
+        try:
+            parsed_args = tool_def.args_model(**kwargs)
+        except Exception as exc:
+            return {"error": f"Invalid arguments for tool '{tool_def.name}': {exc}"}
 
-        if _trace_tool_call is not None:
-            import time as _time
+        try:
+            if _trace_tool_call is not None:
+                import time as _time
 
-            with _trace_tool_call(tool_name=tool_def.name) as span_data:
-                _t0 = _time.monotonic()
-                result = await tool_def.handler(parsed_args)
-                span_data["latency_ms"] = (_time.monotonic() - _t0) * 1000
-                return result
-        return await tool_def.handler(parsed_args)
+                with _trace_tool_call(tool_name=tool_def.name) as span_data:
+                    _t0 = _time.monotonic()
+                    result = await tool_def.handler(parsed_args)
+                    span_data["latency_ms"] = (_time.monotonic() - _t0) * 1000
+                    return result
+            return await tool_def.handler(parsed_args)
+        except Exception as exc:
+            return {"error": f"Tool '{tool_def.name}' failed: {exc}"}
 
     _tool_fn.__signature__ = sig  # type: ignore[attr-defined]
     _tool_fn.__annotations__ = annotations

@@ -10,6 +10,8 @@ ALLOW_MODEL_REQUESTS=False is enforced globally via conftest.py.
 from __future__ import annotations
 
 import pytest
+from ailine_runtime.domain.entities.plan import StudyPlanDraft
+from ailine_runtime.domain.entities.tutor import TutorTurnOutput
 from pydantic_ai import Agent
 from pydantic_ai.models.test import TestModel
 
@@ -27,8 +29,6 @@ from ailine_agents.eval.rubric import (
     score_tutor_output,
 )
 from ailine_agents.models import QualityAssessment
-from ailine_runtime.domain.entities.plan import StudyPlanDraft
-from ailine_runtime.domain.entities.tutor import TutorTurnOutput
 
 # ---------------------------------------------------------------------------
 # Baseline scores (locked; regression = drop > 5 points)

@@ -8,8 +8,8 @@
 - **Security:** trivy (container), pip-audit (Python), pnpm audit (Node)
 
 ## Coverage Targets
-- Pre-MVP (current): 1330+ backend tests (1090+ runtime + 235 agents), all passing
-- Frontend: 717 tests, all passing (84 test suites)
+- Pre-MVP (current): 1,993+ backend tests (1,743 runtime + 250 agents), all passing
+- Frontend: 770+ tests, all passing (90 test suites)
 - E2E: 3 Playwright golden path specs + 8 visual regression + axe-core a11y audit
 - Agent eval: 15 golden test sets (Planner/QualityGate/Tutor) + rubric scoring
 - Post-MVP: >= 90% on touched code (hard gate)
@@ -44,30 +44,12 @@ docker compose up -d --build && docker compose exec api uv run pytest -v  # Dock
 
 | Area | Unit | Integration | E2E |
 |------|------|-------------|-----|
-| Domain entities | Yes | - | - |
-| Accessibility validator | Yes | - | - |
-| Export renderer (10 variants) | Yes | - | - |
-| Curriculum search | Yes | Yes | - |
-| i18n translations | Yes | - | - |
-| API endpoints | - | Yes | - |
-| Database CRUD | - | Yes | - |
-| RAG pipeline | - | Yes | - |
-| LLM adapters | - | Yes (@pytest.mark.live_llm) | - |
-| Pydantic AI agents (ailine_agents) | Yes (167) | Yes (10 live_llm) | - |
-| Skill Registry (parse, scan, prompt) | Yes (18) | - | - |
-| SSE replay store | Yes | - | - |
-| RunContext terminal SSE | Yes | - | - |
-| Full plan pipeline | - | - | Yes |
-| Tutor chat flow | - | - | Yes |
-| SSE streaming | - | Yes | Yes |
-| Frontend components | Yes (Vitest) | - | - |
-| WCAG AAA compliance | - | - | Yes (axe-core) |
-| Keyboard navigation | - | - | Yes (Playwright) |
-| Rate limiter middleware | Yes | - | - |
-| Prometheus metrics | Yes | - | - |
-| Input sanitization | Yes | - | - |
-| Tenant context middleware | Yes | - | - |
-| Observability spans | Yes | - | - |
-| Circuit breaker + retry | Yes | - | - |
-| Idempotency guard | Yes | - | - |
-| Readiness probe | - | Yes | - |
+| Domain entities, validators, exports, i18n | Yes | - | - |
+| Middleware (rate limiter, sanitization, tenant, metrics) | Yes | - | - |
+| Resilience (circuit breaker, retry, idempotency, SSE) | Yes | - | - |
+| Pydantic AI agents + Skill Registry | Yes (250) | Yes (10 live_llm) | - |
+| API endpoints, DB CRUD, RAG pipeline | - | Yes | - |
+| LLM adapters (Anthropic/OpenAI/Gemini) | - | Yes (live_llm) | - |
+| Frontend components (770+ Vitest) | Yes | - | - |
+| Full plan pipeline, tutor chat, SSE streaming | - | - | Yes |
+| WCAG AAA, keyboard nav, visual regression | - | - | Yes (axe + Playwright) |

@@ -12,7 +12,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
  * Shows LLM provider, score breakdown, latency, error rate,
  * circuit breaker state, SSE event counts, and token usage.
  */
-export function ObservabilityDashboardContent() {
+export default function ObservabilityDashboardContent() {
   const t = useTranslations('observability')
   const [data, setData] = useState<ObservabilityDashboard | null>(null)
   const [loading, setLoading] = useState(true)

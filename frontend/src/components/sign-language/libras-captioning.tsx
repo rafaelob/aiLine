@@ -160,7 +160,7 @@ export function LibrasCaptioning({ className }: LibrasCaptioningProps) {
             <span className="text-xs text-[var(--color-muted)]">
               {t('captioning_confidence')}
             </span>
-            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--color-border)]">
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--color-border)]" role="progressbar" aria-valuenow={confidencePercent} aria-valuemin={0} aria-valuemax={100} aria-label={`${t('captioning_confidence')}: ${confidencePercent}%`}>
               <motion.div
                 className={cn(
                   'h-full rounded-full',

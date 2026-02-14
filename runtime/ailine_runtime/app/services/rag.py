@@ -73,6 +73,7 @@ class RAGService:
         k: int | None = None,
         filters: dict[str, Any] | None = None,
         similarity_threshold: float | None = None,
+        tenant_id: str | None = None,
     ) -> RAGResult:
         """Execute a RAG retrieval query.
 
@@ -82,6 +83,9 @@ class RAGService:
             filters: Optional metadata filters (e.g., ``teacher_id``,
                 ``subject``) passed to the vector store.
             similarity_threshold: Override the default similarity threshold.
+            tenant_id: Tenant identifier for structural isolation (ADR-060).
+                When provided, vector search results are scoped to this
+                tenant at the adapter level.
 
         Returns:
             A ``RAGResult`` containing filtered, ranked results.
@@ -95,16 +99,18 @@ class RAGService:
             k=effective_k,
             threshold=threshold,
             filters=filters,
+            tenant_id=tenant_id,
         )
 
         # 1. Embed the query
         query_embedding = await self._embeddings.embed_text(text)
 
-        # 2. Search the vector store
+        # 2. Search the vector store (tenant-scoped when tenant_id provided)
         candidates = await self._store.search(
             query_embedding=query_embedding,
             k=effective_k,
             filters=filters,
+            tenant_id=tenant_id,
         )
 
         total_candidates = len(candidates)

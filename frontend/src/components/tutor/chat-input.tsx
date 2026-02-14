@@ -137,16 +137,18 @@ export function ChatInput({ onSend, disabled = false }: ChatInputProps) {
       </div>
 
       {/* Listening indicator */}
-      {isListening && (
-        <div className="flex items-center gap-2 mt-2 text-xs text-[var(--color-error)]">
-          <span className="flex gap-0.5">
-            <span className="w-1 h-3 bg-[var(--color-error)] rounded-full animate-pulse" />
-            <span className="w-1 h-4 bg-[var(--color-error)] rounded-full animate-pulse delay-75" />
-            <span className="w-1 h-2 bg-[var(--color-error)] rounded-full animate-pulse delay-150" />
-          </span>
-          {t('listening')}
-        </div>
-      )}
+      <div aria-live="assertive" aria-atomic="true">
+        {isListening && (
+          <div className="flex items-center gap-2 mt-2 text-xs text-[var(--color-error)]" role="status">
+            <span className="flex gap-0.5" aria-hidden="true">
+              <span className="w-1 h-3 bg-[var(--color-error)] rounded-full animate-pulse" />
+              <span className="w-1 h-4 bg-[var(--color-error)] rounded-full animate-pulse delay-75" />
+              <span className="w-1 h-2 bg-[var(--color-error)] rounded-full animate-pulse delay-150" />
+            </span>
+            {t('listening')}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

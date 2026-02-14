@@ -55,6 +55,7 @@ class ChromaVectorStore:
         embeddings: list[list[float]],
         texts: list[str],
         metadatas: list[dict[str, Any]],
+        tenant_id: str | None = None,
     ) -> None:
         """Insert or update documents in the Chroma collection.
 
@@ -68,7 +69,11 @@ class ChromaVectorStore:
 
         # ChromaDB requires metadata values to be str, int, float, or bool.
         # Serialize any nested structures.
-        sanitized_metas = [_sanitize_metadata(m) for m in metadatas]
+        # Inject tenant_id into metadata for structural isolation (ADR-060)
+        enriched_metas = metadatas
+        if tenant_id is not None:
+            enriched_metas = [{**m, "_tenant_id": tenant_id} for m in metadatas]
+        sanitized_metas = [_sanitize_metadata(m) for m in enriched_metas]
 
         self._collection.upsert(
             ids=ids,
@@ -83,6 +88,7 @@ class ChromaVectorStore:
         query_embedding: list[float],
         k: int = 5,
         filters: dict[str, Any] | None = None,
+        tenant_id: str | None = None,
     ) -> list[VectorSearchResult]:
         """Query the Chroma collection for similar vectors.
 
@@ -97,14 +103,18 @@ class ChromaVectorStore:
         Returns:
             List of ``VectorSearchResult`` ordered by descending similarity.
         """
-        _log.debug("search", k=k, filters=filters)
+        _log.debug("search", k=k, filters=filters, tenant_id=tenant_id)
 
-        where = filters if filters else None
+        # Structural tenant isolation via Chroma where clause (ADR-060)
+        where = dict(filters) if filters else {}
+        if tenant_id is not None:
+            where["_tenant_id"] = tenant_id
+        where_clause: dict[str, Any] | None = where or None
 
         result = self._collection.query(
             query_embeddings=[query_embedding],
             n_results=k,
-            where=where,
+            where=where_clause,
             include=["documents", "metadatas", "distances"],
         )
 

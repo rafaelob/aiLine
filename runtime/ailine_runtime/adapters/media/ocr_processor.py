@@ -91,6 +91,6 @@ class OCRProcessor:
             image = Image.open(io.BytesIO(file_bytes))
             text: str = pytesseract.image_to_string(image, lang="por+eng")
             return text.strip()
-        except Exception:
+        except OSError:
             logger.exception("ocr.image_extraction_failed")
             return "[Falha na extracao de texto da imagem]"

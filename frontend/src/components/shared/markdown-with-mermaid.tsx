@@ -1,6 +1,10 @@
 'use client'
 
-import { MermaidRenderer, extractMermaidBlocks } from './mermaid-renderer'
+import { lazy, Suspense } from 'react'
+import { extractMermaidBlocks } from './mermaid-renderer'
+import { SkeletonCard } from '@/components/ui/skeleton'
+
+const MermaidRenderer = lazy(() => import('./mermaid-renderer'))
 
 interface MarkdownWithMermaidProps {
   /** Text content that may contain ```mermaid code blocks */
@@ -30,7 +34,9 @@ export function MarkdownWithMermaid({
     <>
       {segments.map((segment, i) =>
         segment.type === 'mermaid' ? (
-          <MermaidRenderer key={i} code={segment.content} />
+          <Suspense key={i} fallback={<SkeletonCard />}>
+            <MermaidRenderer code={segment.content} />
+          </Suspense>
         ) : (
           <span key={i} className={textClassName}>
             {segment.content}

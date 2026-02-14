@@ -20,7 +20,13 @@ from ailine_runtime.api.middleware.tenant_context import (
     _unverified_jwt_decode,
     _verified_jwt_decode,
 )
-from ailine_runtime.shared.config import Settings
+from ailine_runtime.shared.config import (
+    DatabaseConfig,
+    EmbeddingConfig,
+    LLMConfig,
+    RedisConfig,
+    Settings,
+)
 from ailine_runtime.shared.container import Container, ValidationResult
 
 # ---------------------------------------------------------------------------
@@ -302,8 +308,8 @@ class TestExtractTeacherIdFromJwt:
 class TestContainerValidation:
     def test_validate_returns_validation_result(self) -> None:
         settings = Settings(
-            llm={"provider": "fake", "api_key": ""},
-            redis={"url": ""},
+            llm=LLMConfig(provider="fake", api_key=""),
+            redis=RedisConfig(url=""),
         )
         container = Container.build(settings)
         result = container.validate()
@@ -313,9 +319,10 @@ class TestContainerValidation:
 
     def test_validate_reports_missing_optional(self) -> None:
         settings = Settings(
-            llm={"provider": "fake", "api_key": ""},
-            embedding={"provider": "gemini", "api_key": ""},
-            redis={"url": ""},
+            llm=LLMConfig(provider="fake", api_key=""),
+            embedding=EmbeddingConfig(provider="gemini", api_key=""),
+            redis=RedisConfig(url=""),
+            db=DatabaseConfig(url="sqlite+aiosqlite:///./test.db"),
         )
         container = Container.build(settings)
         result = container.validate()
@@ -327,8 +334,8 @@ class TestContainerValidation:
     def test_validate_production_raises_without_llm(self) -> None:
         """Production mode should raise if llm is None."""
         settings = Settings(
-            llm={"provider": "fake", "api_key": ""},
-            redis={"url": ""},
+            llm=LLMConfig(provider="fake", api_key=""),
+            redis=RedisConfig(url=""),
             env="production",
         )
         # Build with fake llm first, then force llm to None
