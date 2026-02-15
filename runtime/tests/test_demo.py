@@ -555,9 +555,7 @@ class TestDemoModeMiddleware:
             body = resp.json()
             assert body.get("demo_mode") is not True
 
-    async def test_middleware_intercepts_with_demo_scenario_id(
-        self, client_demo_on: AsyncClient
-    ) -> None:
+    async def test_middleware_intercepts_with_demo_scenario_id(self, client_demo_on: AsyncClient) -> None:
         """With demo_mode=True + demo_scenario_id, the middleware returns cached plan."""
         resp = await client_demo_on.post(
             "/plans/generate",
@@ -574,9 +572,7 @@ class TestDemoModeMiddleware:
         assert "plan" in body
         assert body["run_id"] == "test-run-demo"
 
-    async def test_middleware_passes_through_without_demo_scenario_id(
-        self, client_demo_on: AsyncClient
-    ) -> None:
+    async def test_middleware_passes_through_without_demo_scenario_id(self, client_demo_on: AsyncClient) -> None:
         """With demo_mode=True but no demo_scenario_id, passes through."""
         try:
             resp = await asyncio.wait_for(
@@ -598,9 +594,7 @@ class TestDemoModeMiddleware:
             body = resp.json()
             assert body.get("demo_mode") is not True
 
-    async def test_middleware_returns_404_for_unknown_scenario(
-        self, client_demo_on: AsyncClient
-    ) -> None:
+    async def test_middleware_returns_404_for_unknown_scenario(self, client_demo_on: AsyncClient) -> None:
         """Unknown demo_scenario_id returns 404."""
         resp = await client_demo_on.post(
             "/plans/generate",
@@ -684,9 +678,18 @@ class TestRealDemoScenarios:
             assert scenario is not None, f"Missing scenario: {sid}"
             # Top-level required fields
             for field in (
-                "id", "title", "description", "prompt",
-                "grade", "subject", "locale", "expected_skills", "demo_tags",
-                "cached_plan", "cached_events", "score",
+                "id",
+                "title",
+                "description",
+                "prompt",
+                "grade",
+                "subject",
+                "locale",
+                "expected_skills",
+                "demo_tags",
+                "cached_plan",
+                "cached_events",
+                "score",
             ):
                 assert field in scenario, f"Missing field '{field}' in scenario '{sid}'"
             # Plan required fields
@@ -739,7 +742,7 @@ def _parse_sse_events(text: str) -> list[dict[str, Any]]:
     for line in text.split("\n"):
         line = line.strip()
         if line.startswith("data:"):
-            data_str = line[len("data:"):].strip()
+            data_str = line[len("data:") :].strip()
             if data_str:
                 with contextlib.suppress(json.JSONDecodeError):
                     events.append(json.loads(data_str))

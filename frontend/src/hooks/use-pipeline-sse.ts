@@ -4,33 +4,14 @@ import { useCallback, useRef, useEffect } from 'react'
 import { fetchEventSource } from '@microsoft/fetch-event-source'
 import { usePipelineStore } from '@/stores/pipeline-store'
 import type { PipelineEvent } from '@/types/pipeline'
-import type { PlanGenerationRequest } from '@/types/plan'
+import type { PlanGenerationRequest, StudyPlan, QualityReport } from '@/types/plan'
+import type { ScorecardData } from '@/components/plan/transformation-scorecard'
+import { API_BASE, getAuthHeaders } from '@/lib/api'
 
 /**
  * SSE hook for the plan generation pipeline.
  * Connects to /plans/generate/stream and feeds typed events into Zustand.
  */
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
-
-/** Build auth headers from available token sources. */
-function getAuthHeaders(): Record<string, string> {
-  // Check for JWT in sessionStorage (set by auth flow)
-  const token =
-    typeof window !== 'undefined'
-      ? sessionStorage.getItem('ailine_token') ??
-        localStorage.getItem('ailine_token')
-      : null
-  if (token) {
-    return { Authorization: `Bearer ${token}` }
-  }
-  // Dev mode fallback: X-Teacher-ID from env
-  const devTeacherId = process.env.NEXT_PUBLIC_DEV_TEACHER_ID
-  if (devTeacherId) {
-    return { 'X-Teacher-ID': devTeacherId }
-  }
-  return {}
-}
 
 export function usePipelineSSE() {
   const abortRef = useRef<AbortController | null>(null)
@@ -86,12 +67,17 @@ export function usePipelineSSE() {
 
               // Extract plan from run.completed payload
               if (event.type === 'run.completed' && event.payload?.plan) {
-                store.setPlan(event.payload.plan as never)
+                store.setPlan(event.payload.plan as StudyPlan)
+              }
+
+              // Extract scorecard from run.completed payload
+              if (event.type === 'run.completed' && event.payload?.scorecard) {
+                store.setScorecard(event.payload.scorecard as ScorecardData)
               }
 
               // Extract quality report
               if (event.type === 'quality.scored' && event.payload) {
-                store.setQualityReport(event.payload as never)
+                store.setQualityReport(event.payload as unknown as QualityReport)
               }
             } catch {
               // Skip malformed events silently
@@ -134,6 +120,7 @@ export function usePipelineSSE() {
     plan: store.plan,
     qualityReport: store.qualityReport,
     score: store.score,
+    scorecard: store.scorecard,
     isRunning: store.isRunning,
     error: store.error,
   }

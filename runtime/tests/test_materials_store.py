@@ -255,9 +255,7 @@ class TestSearchMaterials:
             content="Fractions exercise.",
             tags=["exercicios"],
         )
-        results = search_materials(
-            query="fractions", teacher_id="t1", tags=["fracoes"]
-        )
+        results = search_materials(query="fractions", teacher_id="t1", tags=["fracoes"])
         assert len(results) == 1
         assert results[0]["title"] == "Tagged"
 
@@ -274,9 +272,7 @@ class TestSearchMaterials:
             title="M2",
             content="Fractions other content.",
         )
-        results = search_materials(
-            query="fractions", teacher_id="t1", material_ids=[m1.material_id]
-        )
+        results = search_materials(query="fractions", teacher_id="t1", material_ids=[m1.material_id])
         assert len(results) == 1
         assert results[0]["material_id"] == m1.material_id
 
@@ -292,8 +288,6 @@ class TestSearchMaterials:
         assert len(results) <= 2
 
     def test_search_stop_words_only(self, store_dir):
-        add_material(
-            teacher_id="t1", subject="Math", title="T", content="content"
-        )
+        add_material(teacher_id="t1", subject="Math", title="T", content="content")
         results = search_materials(query="o a e de", teacher_id="t1")
         assert results == []

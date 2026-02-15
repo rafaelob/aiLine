@@ -60,6 +60,7 @@ class TestLoader:
     def test_load_grade_mapping_missing_raises(self, tmp_path, monkeypatch):
         """Missing grade_mapping.json raises FileNotFoundError (line 56)."""
         import ailine_runtime.adapters.curriculum.loader as loader_mod
+
         monkeypatch.setattr(loader_mod, "_DATA_DIR", tmp_path / "nonexistent")
         with pytest.raises(FileNotFoundError, match="Grade mapping"):
             load_grade_mapping()
@@ -618,7 +619,12 @@ class TestBloomTaxonomy:
         for obj in objs:
             assert obj.bloom_level is not None, f"{obj.code} missing bloom_level"
             assert obj.bloom_level in (
-                "remember", "understand", "apply", "analyze", "evaluate", "create",
+                "remember",
+                "understand",
+                "apply",
+                "analyze",
+                "evaluate",
+                "create",
             )
 
     def test_bloom_level_on_ccss_objectives(self):
@@ -750,7 +756,12 @@ class TestBloomTaxonomyAPI:
         data = resp.json()
         assert "bloom_level" in data
         assert data["bloom_level"] in (
-            "remember", "understand", "apply", "analyze", "evaluate", "create",
+            "remember",
+            "understand",
+            "apply",
+            "analyze",
+            "evaluate",
+            "create",
         )
 
 

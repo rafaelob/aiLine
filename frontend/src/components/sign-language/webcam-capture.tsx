@@ -9,6 +9,7 @@ import type {
   RecognitionResult,
   WebcamErrorCode,
 } from '@/types/sign-language'
+import { API_BASE } from '@/lib/api'
 
 /**
  * Webcam capture component for sign language gesture recognition (ADR-009, ADR-026).
@@ -23,8 +24,6 @@ import type {
  * The capture button grabs a still frame from the video, converts it to a
  * Blob, and POSTs it to /sign-language/recognize.
  */
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
 
 interface WebcamCaptureProps {
   /** Additional CSS classes for the root container. */

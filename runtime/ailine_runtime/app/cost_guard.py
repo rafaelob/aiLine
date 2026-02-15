@@ -52,9 +52,7 @@ class UsageTracker:
                 self._request_timestamps[tenant_id] = []
             self._request_timestamps[tenant_id].append(now)
 
-    def check_budget(
-        self, tenant_id: str, budget: TenantBudget
-    ) -> tuple[bool, str]:
+    def check_budget(self, tenant_id: str, budget: TenantBudget) -> tuple[bool, str]:
         """Check if tenant is within budget.
 
         Returns (allowed, reason). If not allowed, reason explains why.
@@ -68,9 +66,7 @@ class UsageTracker:
             tenant_usage = self._token_usage.get(tenant_id, {})
             daily_tokens = tenant_usage.get(day, 0)
             if daily_tokens >= budget.daily_token_cap:
-                return False, (
-                    f"Daily token cap exceeded: {daily_tokens}/{budget.daily_token_cap}"
-                )
+                return False, (f"Daily token cap exceeded: {daily_tokens}/{budget.daily_token_cap}")
 
             # Check per-minute request rate
             timestamps = self._request_timestamps.get(tenant_id, [])
@@ -79,10 +75,7 @@ class UsageTracker:
             self._request_timestamps[tenant_id] = recent
 
             if len(recent) >= budget.per_minute_request_cap:
-                return False, (
-                    f"Per-minute request cap exceeded: "
-                    f"{len(recent)}/{budget.per_minute_request_cap}"
-                )
+                return False, (f"Per-minute request cap exceeded: {len(recent)}/{budget.per_minute_request_cap}")
 
         return True, ""
 

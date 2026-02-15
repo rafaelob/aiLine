@@ -117,13 +117,8 @@ def upgrade() -> None:
     )
     # pgvector embedding column (Postgres only)
     if bind.dialect.name == "postgresql":
-        op.execute(
-            "ALTER TABLE chunks ADD COLUMN embedding vector(1536)"
-        )
-        op.execute(
-            "CREATE INDEX ix_chunks_embedding ON chunks "
-            "USING hnsw (embedding vector_cosine_ops)"
-        )
+        op.execute("ALTER TABLE chunks ADD COLUMN embedding vector(1536)")
+        op.execute("CREATE INDEX ix_chunks_embedding ON chunks USING hnsw (embedding vector_cosine_ops)")
 
     # --- pipeline_runs -----------------------------------------------------
     op.create_table(

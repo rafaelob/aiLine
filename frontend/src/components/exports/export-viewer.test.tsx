@@ -5,8 +5,17 @@ import { ExportViewer } from './export-viewer'
 
 vi.mock('motion/react', () => ({
   motion: {
-    article: ({ children, layoutId: _li, initial: _i, animate: _a, transition: _t, style: _s, ...rest }: Record<string, unknown>) => {
-      return <article {...rest}>{children as React.ReactNode}</article>
+    article: ({ children, ...rest }: Record<string, unknown>) => {
+      const {
+        initial: _i,
+        animate: _a,
+        transition: _t,
+        layoutId: _li,
+        variants: _v,
+        style: _s,
+        ...safe
+      } = rest
+      return <article {...safe}>{children as React.ReactNode}</article>
     },
   },
 }))

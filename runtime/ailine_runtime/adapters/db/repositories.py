@@ -147,11 +147,7 @@ class TeacherRepository:
         **fields: object,
     ) -> None:
         """Update specific fields on a teacher row."""
-        stmt = (
-            update(TeacherRow)
-            .where(TeacherRow.id == teacher_id)
-            .values(**fields)
-        )
+        stmt = update(TeacherRow).where(TeacherRow.id == teacher_id).values(**fields)
         await self._session.execute(stmt)
 
     async def delete(self, teacher_id: str) -> None:

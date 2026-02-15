@@ -114,9 +114,7 @@ class TestUnauthenticatedAccess:
 class TestCrossTenantAccess:
     """Tenant A must not access Tenant B's resources."""
 
-    def test_tutor_get_cross_tenant_denied(
-        self, dev_mode_app, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_tutor_get_cross_tenant_denied(self, dev_mode_app, monkeypatch: pytest.MonkeyPatch) -> None:
         """GET /tutors/{id} as wrong tenant returns 403."""
         mock_spec = MagicMock()
         mock_spec.teacher_id = TENANT_B
@@ -135,9 +133,7 @@ class TestCrossTenantAccess:
             )
             assert resp.status_code == 403
 
-    def test_tutor_chat_cross_tenant_denied(
-        self, dev_mode_app, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_tutor_chat_cross_tenant_denied(self, dev_mode_app, monkeypatch: pytest.MonkeyPatch) -> None:
         """POST /tutors/{id}/chat as wrong tenant returns 403."""
         mock_spec = MagicMock()
         mock_spec.teacher_id = TENANT_B
@@ -156,9 +152,7 @@ class TestCrossTenantAccess:
             )
             assert resp.status_code == 403
 
-    def test_materials_list_scoped_to_own_tenant(
-        self, dev_mode_app, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_materials_list_scoped_to_own_tenant(self, dev_mode_app, monkeypatch: pytest.MonkeyPatch) -> None:
         """GET /materials as Tenant A returns only Tenant A's materials."""
         called_with: dict = {}
 
@@ -345,10 +339,14 @@ class TestCrossTenantVectorIsolation:
             )
 
         results_a = await store.search(
-            query_embedding=[0.5, 0.5], k=20, tenant_id=TENANT_A,
+            query_embedding=[0.5, 0.5],
+            k=20,
+            tenant_id=TENANT_A,
         )
         results_b = await store.search(
-            query_embedding=[0.5, 0.5], k=20, tenant_id=TENANT_B,
+            query_embedding=[0.5, 0.5],
+            k=20,
+            tenant_id=TENANT_B,
         )
 
         assert len(results_a) == 10

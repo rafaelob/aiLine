@@ -4,6 +4,22 @@ import userEvent from '@testing-library/user-event'
 import { SessionSummary } from './session-summary'
 import type { StudyPlan } from '@/types/plan'
 
+// Mock motion to avoid animation issues in jsdom
+const stripMotion = (props: Record<string, unknown>) => {
+  const skip = new Set(['initial', 'animate', 'transition', 'variants', 'children'])
+  const safe: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(props)) {
+    if (!skip.has(k)) safe[k] = v
+  }
+  return safe
+}
+vi.mock('motion/react', () => ({
+  motion: {
+    div: (props: Record<string, unknown>) => <div {...stripMotion(props)}>{props.children as React.ReactNode}</div>,
+    section: (props: Record<string, unknown>) => <section {...stripMotion(props)}>{props.children as React.ReactNode}</section>,
+  },
+}))
+
 // Mock Recharts to avoid canvas issues in jsdom
 vi.mock('recharts', () => ({
   ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (

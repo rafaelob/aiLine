@@ -336,9 +336,7 @@ class TestGoldenSetCompleteness:
 
     def test_all_ids_unique(self) -> None:
         all_ids = (
-            [s["id"] for s in PLANNER_GOLDEN]
-            + [s["id"] for s in QUALITY_GATE_GOLDEN]
-            + [s["id"] for s in TUTOR_GOLDEN]
+            [s["id"] for s in PLANNER_GOLDEN] + [s["id"] for s in QUALITY_GATE_GOLDEN] + [s["id"] for s in TUTOR_GOLDEN]
         )
         assert len(all_ids) == len(set(all_ids))
 

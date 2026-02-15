@@ -18,6 +18,7 @@ class TestTutoringModels:
             TutorSession,
             TutorTurnOutput,
         )
+
         # Verify all are actual classes (not None)
         assert LearnerProfile is not None
         assert TutorAgentSpec is not None
@@ -29,6 +30,7 @@ class TestTutoringModels:
 
     def test_all_exports(self):
         from ailine_runtime.tutoring.models import __all__
+
         expected = {
             "LearnerProfile",
             "TutorAgentSpec",

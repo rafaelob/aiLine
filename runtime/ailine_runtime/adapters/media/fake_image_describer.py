@@ -16,9 +16,7 @@ class FakeImageDescriber:
         self._responses = responses or []
         self._call_count = 0
 
-    async def describe(
-        self, image_bytes: bytes, *, locale: str = "pt-BR"
-    ) -> str:
+    async def describe(self, image_bytes: bytes, *, locale: str = "pt-BR") -> str:
         """Return a deterministic image description."""
         if self._responses:
             text = self._responses[self._call_count % len(self._responses)]

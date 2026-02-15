@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { motion } from 'motion/react'
 import { cn } from '@/lib/cn'
 import { useAccessibilityStore } from '@/stores/accessibility-store'
+import { useViewTransition } from '@/hooks/use-view-transition'
 
 const THEME_IDS = [
   'standard',
@@ -39,6 +40,7 @@ export function PreferencesPanel({ onClose }: PreferencesPanelProps) {
     theme, fontSize, reducedMotion, focusMode, bionicReading,
     setTheme, setFontSize, setReducedMotion, toggleFocusMode, toggleBionicReading,
   } = useAccessibilityStore()
+  const { startTransition } = useViewTransition()
 
   // Save previously focused element and restore on unmount
   useEffect(() => {
@@ -96,11 +98,16 @@ export function PreferencesPanel({ onClose }: PreferencesPanelProps) {
   const [themeAnnouncement, setThemeAnnouncement] = useState('')
 
   function handleThemeChange(newTheme: ThemeId) {
-    setTheme(newTheme)
-    // Direct DOM manipulation -- no React re-render (ADR-019)
-    document.body.setAttribute('data-theme', newTheme)
-    // Announce to screen readers
-    setThemeAnnouncement(t('switched_to', { persona: t(`themes.${newTheme}`) }))
+    startTransition(
+      () => {
+        setTheme(newTheme)
+        // Direct DOM manipulation -- no React re-render (ADR-019)
+        document.body.setAttribute('data-theme', newTheme)
+        // Announce to screen readers
+        setThemeAnnouncement(t('switched_to', { persona: t(`themes.${newTheme}`) }))
+      },
+      { type: 'theme' },
+    )
   }
 
   function handleFontSizeChange(size: string) {

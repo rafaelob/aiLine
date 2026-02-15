@@ -40,17 +40,13 @@ class RecognitionResult(BaseModel):
     """Result of a sign language gesture recognition."""
 
     gesture: str = Field(..., description="Predicted gesture label.")
-    confidence: float = Field(
-        ..., ge=0.0, le=1.0, description="Prediction confidence (0-1)."
-    )
+    confidence: float = Field(..., ge=0.0, le=1.0, description="Prediction confidence (0-1).")
     landmarks: list[Any] = Field(
         default_factory=list,
         description="Detected hand landmarks (empty in placeholder mode).",
     )
     model: str = Field(..., description="Model identifier used for recognition.")
-    note: str | None = Field(
-        None, description="Optional note about the recognition."
-    )
+    note: str | None = Field(None, description="Optional note about the recognition.")
 
 
 class GestureInfo(BaseModel):
@@ -197,6 +193,7 @@ async def libras_caption_ws(websocket: WebSocket) -> None:
     else:
         # Allow unauthenticated WebSocket only in dev mode for backward compat
         import os
+
         if os.getenv("AILINE_DEV_MODE", "").lower() not in ("true", "1", "yes"):
             await websocket.close(code=4001, reason="Authentication required: pass ?token=<jwt>")
             return
@@ -235,10 +232,12 @@ async def libras_caption_ws(websocket: WebSocket) -> None:
 
             msg_type = message.get("type")
             if msg_type not in ("gloss_partial", "gloss_final"):
-                await websocket.send_json({
-                    "type": "error",
-                    "detail": f"Unknown message type: {msg_type}",
-                })
+                await websocket.send_json(
+                    {
+                        "type": "error",
+                        "detail": f"Unknown message type: {msg_type}",
+                    }
+                )
                 continue
 
             await orchestrator.handle_message(message)

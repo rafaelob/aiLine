@@ -13,6 +13,7 @@ def to_langchain_tools(registry: list[ToolDef]) -> list[StructuredTool]:
     tools: list[StructuredTool] = []
 
     for t in registry:
+
         async def _run(_t: ToolDef = t, **kwargs: Any) -> str:
             parsed = _t.args_model(**kwargs)
             result = await _t.handler(parsed)

@@ -594,9 +594,7 @@ class TestCurriculumObjectiveRow:
         session.add(obj)
         await session.flush()
 
-        stmt = select(CurriculumObjectiveRow).where(
-            CurriculumObjectiveRow.code == "EF06MA01"
-        )
+        stmt = select(CurriculumObjectiveRow).where(CurriculumObjectiveRow.code == "EF06MA01")
         result = await session.execute(stmt)
         row = result.scalar_one()
         assert row.system == "bncc"
@@ -669,9 +667,7 @@ class TestAccessibilityProfileRow:
         session.add(profile)
         await session.flush()
 
-        stmt = select(AccessibilityProfileRow).where(
-            AccessibilityProfileRow.teacher_id == teacher.id
-        )
+        stmt = select(AccessibilityProfileRow).where(AccessibilityProfileRow.teacher_id == teacher.id)
         result = await session.execute(stmt)
         rows = result.scalars().all()
         assert len(rows) == 1

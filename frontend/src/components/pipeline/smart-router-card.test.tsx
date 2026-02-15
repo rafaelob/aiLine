@@ -6,7 +6,7 @@ import type { SmartRouterRationale } from '@/types/trace'
 
 vi.mock('motion/react', () => ({
   motion: {
-    div: ({ children, initial: _i, animate: _a, exit: _e, transition: _t, ...rest }: Record<string, unknown>) => {
+    div: ({ children, initial: _i, animate: _a, exit: _e, transition: _t, variants: _v, ...rest }: Record<string, unknown>) => {
       return <div {...rest}>{children as React.ReactNode}</div>
     },
   },

@@ -13,12 +13,17 @@ vi.mock('motion/react', () => ({
       const { initial: _i, animate: _a, exit: _e, transition: _t, ...safe } = rest
       return <span {...safe}>{children as React.ReactNode}</span>
     },
+    div: ({ children, ...rest }: Record<string, unknown>) => {
+      const { initial: _i, animate: _a, exit: _e, transition: _t, layoutId: _l, ...safe } = rest
+      return <div {...safe}>{children as React.ReactNode}</div>
+    },
     svg: ({ children, ...rest }: Record<string, unknown>) => {
       const { animate: _a, transition: _t, ...safe } = rest
       return <svg {...safe}>{children as React.ReactNode}</svg>
     },
   },
   AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  LayoutGroup: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }))
 
 describe('Sidebar', () => {
@@ -45,6 +50,9 @@ describe('Sidebar', () => {
     expect(screen.getByText('nav.plans')).toBeInTheDocument()
     expect(screen.getByText('nav.materials')).toBeInTheDocument()
     expect(screen.getByText('nav.tutors')).toBeInTheDocument()
+    expect(screen.getByText('nav.sign_language')).toBeInTheDocument()
+    expect(screen.getByText('nav.progress')).toBeInTheDocument()
+    expect(screen.getByText('nav.observability')).toBeInTheDocument()
     expect(screen.getByText('nav.settings')).toBeInTheDocument()
   })
 

@@ -1,79 +1,7 @@
 # Features
 
-## Done
-- [F-001] Hexagonal Architecture (Ports-and-Adapters) — domain/ports/adapters layers with DI container
-- [F-002] Multi-LLM Port Protocols — ChatLLM protocol with Anthropic, OpenAI, Gemini adapters
-- [F-003] Pydantic Settings Config — multi-provider env-driven configuration
-- [F-004] LangGraph Workflow Orchestration — plan pipeline with parallel fan-out topology
-- [F-005] FastAPI API Layer — routers package with CORS, streaming support
-- [F-006] Domain Entities — StudyPlan, Material, Tutor, Curriculum, Accessibility, Run
-- [F-007] Observability Foundation — structlog JSON logging + OTEL trace context
-- [F-008] Database Layer — SQLAlchemy 2.x async + Alembic + UUID v7 + 11 tables
-- [F-009] Multi-Embedding Service — Gemini/OpenAI adapters (1536d MRL default) + FakeEmbeddings
-- [F-010] Vector Store — pgvector (HNSW) + ChromaDB + InMemoryVectorStore pluggable
-- [F-011] Material Ingestion — chunk (512t/64 overlap), embed, and index educator-uploaded docs
-- [F-012] RAG Query — retrieve relevant chunks for plan enrichment and tutoring
-- [F-013] Curriculum Standards — BNCC (Brazil) + CCSS/NGSS (USA) with grade mapping
-- [F-014] Frontend Dashboard — Next.js 16 with Glass Box AI pipeline viewer
-- [F-015] WCAG AAA Design System — 9 persona themes via CSS custom properties
-- [F-016] SSE Pipeline Streaming — 14 typed events with {run_id, seq, ts, type, stage, payload} envelope
-- [F-017] Tutor Agents — LangGraph workflow (intent->search->respond->check), session mgmt, playbooks
-- [F-018] i18n (Full Stack) — English, Portuguese (BR), Spanish via next-intl 4.8.2 + backend i18n data
-- [F-019] Sign Language Input — MediaPipe hand landmarks for Libras (MVP: 4 gestures)
-- [F-020] Sign Language Output — VLibras 3D avatar widget integration
-- [F-021] Speech-to-Text — Whisper V3 Turbo via faster-whisper + OpenAI cloud STT
-- [F-022] Text-to-Speech — ElevenLabs primary + FakeTTS for CI
-- [F-023] OCR + Image Description — Opus 4.6 vision for auto alt-text + OCR processor
-- [F-024] Persona Toggle — live content morphing with CSS var swap
-- [F-025] Simulate Disability — Empathy Bridge (dyslexia, tunnel vision, color blindness)
-- [F-026] Export Viewer — side-by-side original vs adapted comparison
-- [F-027] Accessibility Twin — Tabbed View with diff highlights (ADR-044)
-- [F-028] Score Gauge — radial chart 0-100 with color interpolation and spring animation
-- [F-029] SmartRouterAdapter — rebalanced weights (0.25/0.25/0.25/0.15/0.10), hard overrides, rules|weighted mode
-- [F-030] Docker Compose Stack — one-command local dev (API + DB + Redis + Frontend)
-- [F-031] Demo Mode — curated inputs, 3 scenarios, cached golden path, DemoModeMiddleware
-- [F-032] React Compiler 1.0 — auto-memoization enabled (ADR-045)
-- [F-033] HTML Sanitization — DOMPurify 3.3.1 for safe export rendering (ADR-046)
-- [F-034] Tutor ChatBlock — structured message components
-- [F-036] Direct Anthropic Tool Calling in Executor — replaces Claude Agent SDK (ADR-048)
-- [F-037] FakeLLM Test Adapter — deterministic outputs for CI, zero external LLM calls (ADR-051)
-- [F-038] Tiered Quality Gate — mandatory structural checks + heuristic scoring (ADR-050)
-- [F-039] Composite FK Tenant Safety — DB-level cross-tenant prevention (ADR-053)
-
-- [F-040] Full Test Coverage — 1,993+ backend tests (1,743 runtime + 250 agents), 770+ frontend tests (90 suites)
-- [F-041] Docker Compose Full Stack — API + DB + Redis + Frontend with healthchecks
-- [F-042] GitHub Actions CI — lint, typecheck, test pipeline
-- [F-043] SSE Event Replay — InMemoryReplayStore + RedisReplayStore (ZSET, score=seq, TTL 30min) for reconnection (ADR-054)
-- [F-044] Terminal SSE Guarantee — RunContext async context manager ensures run.completed or run.failed (ADR-055)
-- [F-045] ThemeContext MutationObserver — useThemeContext hook for Recharts/Canvas theme reactivity (ADR-058)
-- [F-046] Web Worker Sign Language — sign-language-worker.ts runs MediaPipe/MLP off main thread (ADR-057)
-- [F-047] VLibras Accessibility — aria-hidden when inactive, skip-link for keyboard users
-- [F-048] Reduced Motion — prefers-reduced-motion OS sync + localStorage override in accessibility store
-- [F-049] Low-Distraction Mode — React 19.2 Activity component in sidebar for animation suppression
-- [F-050] SmartRouter Pure Decision — compute_route() extracted as pure function with RouteFeatures/RouteDecision
-- [F-051] SSE Emitter Thread Safety — asyncio.Lock on emit for parallel LangGraph branches
-- [F-052] Live API Integration Tests — @pytest.mark.live_llm for real Anthropic/OpenAI/Gemini/OpenRouter testing (65 live tests)
-- [F-053] ailine_agents Package — Pydantic AI 1.58.0 typed agents + LangGraph workflows (ADR-059)
-- [F-054] Pydantic AI Model Selection Bridge — SmartRouter tier -> Pydantic AI Model mapping
-- [F-055] Custom Skill Registry — parse SKILL.md YAML frontmatter + markdown, SkillRegistry.scan_paths(), get_prompt_fragment() for agent system prompts
-- [F-056] CCSS ELA Curriculum — Common Core English Language Arts K-8 standards (ccss_ela.json, 46 objectives)
-- [F-057] Bloom's Taxonomy Filtering — bloom_level field on CurriculumObjective, filter in search API across all 4 curriculum systems
-- [F-058] Libras STT ML Pipeline — training scaffold, TF.js MLP classifier, webcam->landmarks->gloss->LLM streaming
-- [F-059] SKILL.md Frontmatter Migration — 11 skills migrated to metadata block with compatibility structure
-- [F-060] Rate Limiter Middleware — sliding window, 429+Retry-After, X-RateLimit-* headers
-- [F-061] Prometheus Metrics — /metrics endpoint (Counter, Histogram, text exposition)
-- [F-062] Security Headers Middleware — CSP, X-Frame-Options, Referrer-Policy, Permissions-Policy
-- [F-063] Request ID Middleware — X-Request-ID + structlog correlation
-- [F-064] Tenant Context Middleware — JWT sub + X-Teacher-ID dev mode via contextvars
-- [F-065] Input Sanitization — sanitize_prompt, validate_teacher_id, sanitize_metadata
-- [F-066] Circuit Breaker — 5 fail -> 60s open -> half-open -> reset
-- [F-067] Retry with Exponential Backoff — 3 attempts, factor 2.0, transient-only
-- [F-068] Workflow Timeout — 300s max with graceful degradation
-- [F-069] Idempotency Guard — duplicate plan generation prevention
-- [F-070] DI Container Lifecycle — health_check, close, validate, OCR protocol
-- [F-071] Observability Spans — span_context, timed_operation, log_llm_call, log_tool_execution
-- [F-072] Dev-Mode Safety Guard — startup fail if production + dev mode
-- [F-073] Readiness Probe — /health/ready (DB+Redis checks, degraded/ready)
+## Done (F-001 → F-073: Sprints 0-12)
+Core platform: Hexagonal arch, 3 LLM adapters, LangGraph workflows, SmartRouter, 4 Pydantic AI agents, FastAPI+SSE (14 events), SQLAlchemy+pgvector, RAG pipeline, curriculum alignment (BNCC/CCSS/NGSS+Bloom), Next.js 16 (React 19, Tailwind 4, 9 WCAG themes, 3 locales), accessibility (VLibras, MediaPipe, Whisper, TTS, OCR), wow features (Cognitive Curtain, Bionic Reading, Glass Box Viewer), security (JWT RS256/ES256, prompt injection, CSP), observability (OTel, Prometheus, circuit breaker), Docker Compose, CI/CD, 65 live API tests. 73 features total — see git history for individual entries.
 
 ### Sprint 13 — Final Polish & Wow Factor (Feb 13, 2026)
 - [F-074] Agent Trace Viewer — GET /traces/{run_id}, LangGraph node execution timeline with inputs/outputs/time/tools/quality
@@ -125,6 +53,39 @@
 - [F-118] PWA Manifest — manifest.json, beforeinstallprompt, icons, shortcuts, service worker registrar
 - [F-119] Recharts Keyboard Accessibility — Tab through data points, aria-live announcements
 - [F-120] Optimistic UI — useOptimistic hook for quick interactions
+
+### Sprint 16 — Hackathon Victory Sprint (Feb 14, 2026)
+- [F-121] Transformation Scorecard — 9-metric trust card (reading level, standards, a11y, RAG, quality, model, router, timing, exports) computed as LangGraph terminal node
+- [F-122] HITL Teacher Review Panel — approve/reject/revision workflow for AI-generated plans with notes + pending reviews badge
+- [F-123] Student Progress Dashboard — mastery tracking (developing/proficient/mastered), standards heatmap, class overview, record form
+- [F-124] UX Micro-Polish — 8 nav items (sidebar + mobile), "Powered by Claude Opus 4.6" badge, empty state + skeleton components, teacher-friendly labels
+- [F-125] Conversation Review — scrollable tutor transcript with per-turn flagging for teacher oversight
+
+### Sprint 17 — Hackathon Final Push (Feb 15, 2026)
+- [F-126] Settings Page — AI model display, language, accessibility preferences link, about info with glass morphism
+- [F-127] Guided Demo Mode — URL param `?demo=true`, auto-fill wizard, floating tooltip overlay, Zustand demo-store with 3 guided steps
+- [F-128] Trust & Transparency Panel — Consolidated quality report, scorecard metrics, model provenance, teacher decision badge in plan tabs
+- [F-129] Materials Upload Page — File upload form, material listing with tags, glass card grid, server+client component split
+- [F-130] Live Dashboard Stats — Wired to `/traces/recent` + `/progress/dashboard` APIs, plan history cards, loading skeleton
+- [F-131] Tutor Persistence & Review — Zustand persist middleware for chat sessions, ConversationReview tab in tutors page
+- [F-132] System Status Indicator — TopBar health check badge (green/red dot), dropdown with API/model/privacy info
+- [F-133] Ruff Lint Zero — Fixed 9 RUF009 (dataclass default mutable) + 2 UP038 (isinstance union syntax) in runtime
+- [F-134] Orphan Component Integration — Wired CognitiveLoadMeter, DegradationPanel, PersonaHUD, PrivacyPanel into their pages
+- [F-135] Dead Code Cleanup — Removed 5 duplicate/unused components (ui/empty-state, interactive-card, stagger-list, landing/*)
+
+### Sprint 18 — Impact Sweep & State-of-the-Art Polish (Feb 15, 2026)
+- [F-136] View Transition Theme Morphing — Circular clip-path reveal animation from click origin on persona/theme switch, CSS-driven with `--vt-x`/`--vt-y` coordinates
+- [F-137] Loading Skeletons for All Pages — 8 `loading.tsx` files (dashboard, plans, tutors, materials, settings, exports, observability, sign-language) with page-specific skeleton layouts
+- [F-138] Mobile Nav Overflow Menu — "More" popover with 4 overflow items (materials, sign-language, observability, settings), AnimatePresence animation, Escape/click-outside close
+- [F-139] HITL API Test Coverage — 51 new tests: Progress API (16), Plan Review API (18), Tutor Transcript/Flag API (17), covering success/404/422/401/403 paths
+- [F-140] PreferencesPanel View Transition — Theme switch in preferences panel now uses View Transitions API for smooth circular reveal
+
+### Sprint 19 — State-of-the-Art Final Sweep (Feb 15, 2026)
+- [F-141] Command Palette (Cmd+K) — Fuzzy search, navigation (9 pages), quick actions, theme switching (9 personas), language switching (3 locales), ARIA combobox, glass morphism overlay, keyboard navigation
+- [F-142] Plan Nodes Refactor — Split 764 LOC `_plan_nodes.py` into 5 focused modules (_node_shared, _planner_node, _quality_node, _executor_node, _scorecard_node) with backward-compatible barrel re-export
+- [F-143] Plan Generation Flow Refactor — Split 757 LOC `plan-generation-flow.tsx` into orchestrator (379 LOC) + wizard-steps (358 LOC) + plan-result-display (104 LOC)
+- [F-144] Shared Motion Variants — Extracted `containerVariants`/`itemVariants` from 9 components into `lib/motion-variants.ts`, eliminating duplication
+- [F-145] SSE Type Safety — Replaced 3 `as never` casts in `use-pipeline-sse.ts` with proper `StudyPlan`, `ScorecardData`, `QualityReport` type assertions
 
 ## Backlog
 - [F-035] Sign Language Post-MVP Path — SPOTER transformer + VLibrasBD NMT dataset (ADR-047)

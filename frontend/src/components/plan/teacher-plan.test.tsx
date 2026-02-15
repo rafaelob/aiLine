@@ -5,8 +5,16 @@ import type { StudyPlan } from '@/types/plan'
 
 vi.mock('motion/react', () => ({
   motion: {
+    article: ({ children, ...rest }: Record<string, unknown>) => {
+      const { initial: _i, animate: _a, transition: _t, variants: _v, ...safe } = rest
+      return <article {...safe}>{children as React.ReactNode}</article>
+    },
+    section: ({ children, ...rest }: Record<string, unknown>) => {
+      const { variants: _v, ...safe } = rest
+      return <section {...safe}>{children as React.ReactNode}</section>
+    },
     div: ({ children, ...rest }: Record<string, unknown>) => {
-      const { initial: _i, animate: _a, transition: _t, ...safe } = rest
+      const { initial: _i, animate: _a, transition: _t, variants: _v, ...safe } = rest
       return <div {...safe}>{children as React.ReactNode}</div>
     },
   },

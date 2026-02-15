@@ -188,12 +188,14 @@ class TestCaptionOrchestrator:
         orchestrator: CaptionOrchestrator,
         emitted_messages: list[dict[str, Any]],
     ):
-        await orchestrator.handle_message({
-            "type": "gloss_final",
-            "glosses": ["OI", "TUDO-BEM"],
-            "confidence": 0.95,
-            "ts": 1234,
-        })
+        await orchestrator.handle_message(
+            {
+                "type": "gloss_final",
+                "glosses": ["OI", "TUDO-BEM"],
+                "confidence": 0.95,
+                "ts": 1234,
+            }
+        )
         # Should emit a caption_final_delta
         assert len(emitted_messages) >= 1
         final_msgs = [m for m in emitted_messages if m["type"] == MSG_CAPTION_FINAL]
@@ -206,11 +208,13 @@ class TestCaptionOrchestrator:
         orchestrator: CaptionOrchestrator,
         emitted_messages: list[dict[str, Any]],
     ):
-        await orchestrator.handle_message({
-            "type": "gloss_partial",
-            "glosses": ["EU"],
-            "confidence": 0.50,
-        })
+        await orchestrator.handle_message(
+            {
+                "type": "gloss_partial",
+                "glosses": ["EU"],
+                "confidence": 0.50,
+            }
+        )
         # Wait for debounce
         await asyncio.sleep(0.15)
         draft_msgs = [m for m in emitted_messages if m["type"] == MSG_CAPTION_DRAFT]
@@ -221,11 +225,13 @@ class TestCaptionOrchestrator:
         orchestrator: CaptionOrchestrator,
         emitted_messages: list[dict[str, Any]],
     ):
-        await orchestrator.handle_message({
-            "type": "gloss_partial",
-            "glosses": ["OBRIGADO"],
-            "confidence": 0.95,  # above commit_threshold
-        })
+        await orchestrator.handle_message(
+            {
+                "type": "gloss_partial",
+                "glosses": ["OBRIGADO"],
+                "confidence": 0.95,  # above commit_threshold
+            }
+        )
         # Wait a bit for async processing
         await asyncio.sleep(0.1)
         final_msgs = [m for m in emitted_messages if m["type"] == MSG_CAPTION_FINAL]
@@ -247,19 +253,23 @@ class TestCaptionOrchestrator:
         orchestrator: CaptionOrchestrator,
         emitted_messages: list[dict[str, Any]],
     ):
-        await orchestrator.handle_message({
-            "type": "gloss_final",
-            "glosses": ["OI"],
-            "confidence": 0.90,
-        })
+        await orchestrator.handle_message(
+            {
+                "type": "gloss_final",
+                "glosses": ["OI"],
+                "confidence": 0.90,
+            }
+        )
         orchestrator.reset()
         # After reset, new final message should start fresh
         emitted_messages.clear()
-        await orchestrator.handle_message({
-            "type": "gloss_final",
-            "glosses": ["SIM"],
-            "confidence": 0.90,
-        })
+        await orchestrator.handle_message(
+            {
+                "type": "gloss_final",
+                "glosses": ["SIM"],
+                "confidence": 0.90,
+            }
+        )
         final_msgs = [m for m in emitted_messages if m["type"] == MSG_CAPTION_FINAL]
         assert len(final_msgs) == 1
         # full_text should be just the new translation (not cumulative)
@@ -270,11 +280,13 @@ class TestCaptionOrchestrator:
         orchestrator: CaptionOrchestrator,
         emitted_messages: list[dict[str, Any]],
     ):
-        await orchestrator.handle_message({
-            "type": "gloss_final",
-            "glosses": [],
-            "confidence": 0.0,
-        })
+        await orchestrator.handle_message(
+            {
+                "type": "gloss_final",
+                "glosses": [],
+                "confidence": 0.0,
+            }
+        )
         # No final messages for empty glosses
         final_msgs = [m for m in emitted_messages if m["type"] == MSG_CAPTION_FINAL]
         assert len(final_msgs) == 0

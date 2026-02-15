@@ -198,9 +198,7 @@ class TestBuildEmbeddings:
         mock_google = MagicMock()
         mock_genai = MagicMock()
         settings = Settings(
-            embedding=EmbeddingConfig(
-                provider="gemini", api_key="gk-test", dimensions=1536
-            ),
+            embedding=EmbeddingConfig(provider="gemini", api_key="gk-test", dimensions=1536),
         )
         with patch.dict(
             sys.modules,
@@ -213,9 +211,7 @@ class TestBuildEmbeddings:
         """openai package not installed; mock it and check type name."""
         mock_openai = MagicMock()
         settings = Settings(
-            embedding=EmbeddingConfig(
-                provider="openai", api_key="sk-oai-test", dimensions=1536
-            ),
+            embedding=EmbeddingConfig(provider="openai", api_key="sk-oai-test", dimensions=1536),
         )
         with patch.dict(sys.modules, {"openai": mock_openai}):
             emb = _build_embeddings(settings)

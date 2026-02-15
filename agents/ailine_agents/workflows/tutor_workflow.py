@@ -47,16 +47,36 @@ def _make_fallback(message: str, *, flag: str) -> dict[str, Any]:
 
 # Intent classification (rule-based, no LLM call)
 
-_GREETINGS = frozenset([
-    "oi", "ola", "olá", "hello", "hi", "hey",
-    "bom dia", "boa tarde", "boa noite",
-    "e aí", "e ai", "tudo bem",
-])
+_GREETINGS = frozenset(
+    [
+        "oi",
+        "ola",
+        "olá",
+        "hello",
+        "hi",
+        "hey",
+        "bom dia",
+        "boa tarde",
+        "boa noite",
+        "e aí",
+        "e ai",
+        "tudo bem",
+    ]
+)
 
-_OFFTOPIC_MARKERS = frozenset([
-    "piada", "joke", "meme", "futebol", "jogo",
-    "namorada", "namorado", "tiktok", "instagram",
-])
+_OFFTOPIC_MARKERS = frozenset(
+    [
+        "piada",
+        "joke",
+        "meme",
+        "futebol",
+        "jogo",
+        "namorada",
+        "namorado",
+        "tiktok",
+        "instagram",
+    ]
+)
 
 
 def _classify_intent(message: str) -> str:
@@ -74,9 +94,15 @@ def _classify_intent(message: str) -> str:
             return "offtopic"
 
     clarification_signals = [
-        "não entendi", "nao entendi", "pode explicar",
-        "como assim", "o que é", "o que e",
-        "repete", "de novo", "mais uma vez",
+        "não entendi",
+        "nao entendi",
+        "pode explicar",
+        "como assim",
+        "o que é",
+        "o que e",
+        "repete",
+        "de novo",
+        "mais uma vez",
     ]
     for signal in clarification_signals:
         if signal in msg:
@@ -194,8 +220,7 @@ def build_tutor_workflow(
             log_event("tutor.circuit_open", session_id=session_id)
             return {
                 "validated_output": _make_fallback(
-                    "Desculpe, o servico esta temporariamente indisponivel. "
-                    "Tente novamente em alguns instantes.",
+                    "Desculpe, o servico esta temporariamente indisponivel. Tente novamente em alguns instantes.",
                     flag="circuit_open",
                 ),
                 "error": "Circuit breaker open",

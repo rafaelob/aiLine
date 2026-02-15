@@ -81,9 +81,7 @@ class FakeChatLLM:
                     "title": f"Plano de Aula — {last_user[:50]}",
                     "grade": "6o ano",
                     "standard": "BNCC",
-                    "objectives": [
-                        {"id": "EF06MA01", "text": "Objetivo de aprendizagem gerado para teste."}
-                    ],
+                    "objectives": [{"id": "EF06MA01", "text": "Objetivo de aprendizagem gerado para teste."}],
                     "steps": [
                         {
                             "minutes": 15,

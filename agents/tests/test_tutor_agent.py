@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from ailine_runtime.domain.entities.tutor import TutorTurnOutput
 from pydantic_ai import Agent
+from pydantic_ai.models import Model
 
 from ailine_agents.agents.tutor import (
     build_tutor_agent,
@@ -35,6 +36,7 @@ class TestBuildTutorAgent:
 
     def test_model_name(self) -> None:
         agent = build_tutor_agent()
+        assert isinstance(agent.model, Model)
         assert agent.model.model_name == "claude-sonnet-4-5"
 
     def test_has_system_prompt(self) -> None:

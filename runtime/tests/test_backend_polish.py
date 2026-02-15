@@ -98,12 +98,8 @@ def _make_jwt_hs256(payload: dict, secret: str = "test-secret") -> str:
 
 def _make_unsigned_jwt(payload: dict) -> str:
     """Create an unsigned JWT (alg: none) for testing unverified decode."""
-    header = base64.urlsafe_b64encode(
-        json.dumps({"alg": "none"}).encode()
-    ).rstrip(b"=").decode()
-    body = base64.urlsafe_b64encode(
-        json.dumps(payload).encode()
-    ).rstrip(b"=").decode()
+    header = base64.urlsafe_b64encode(json.dumps({"alg": "none"}).encode()).rstrip(b"=").decode()
+    body = base64.urlsafe_b64encode(json.dumps(payload).encode()).rstrip(b"=").decode()
     return f"{header}.{body}."
 
 

@@ -39,6 +39,9 @@ class RunState(_RunStateRequired, total=False):
     # Workflow timing: monotonic timestamp when the workflow started.
     started_at: float | None
 
+    # Transformation scorecard computed after executor.
+    scorecard: dict[str, Any] | None
+
 
 class _TutorGraphStateRequired(TypedDict):
     """Required fields for the tutor graph state."""

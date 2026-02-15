@@ -53,7 +53,11 @@ async def curriculum_search(
     response.headers["Cache-Control"] = "public, max-age=3600"
     provider = _get_provider(request)
     results = await provider.search(
-        q, grade=grade, subject=subject, system=system, bloom_level=bloom_level,
+        q,
+        grade=grade,
+        subject=subject,
+        system=system,
+        bloom_level=bloom_level,
     )
     return [obj.model_dump() for obj in results]
 

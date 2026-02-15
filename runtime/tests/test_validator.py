@@ -21,6 +21,7 @@ from ailine_runtime.accessibility.validator_helpers import (
 # Helpers — draft builders
 # ---------------------------------------------------------------------------
 
+
 def _full_draft(**overrides) -> dict:
     """Returns a well-formed draft that passes validation."""
     draft = {
@@ -86,8 +87,8 @@ def _profile(**needs_kw: bool) -> ClassAccessibilityProfile:
 # _collect_text
 # ---------------------------------------------------------------------------
 
-class TestCollectText:
 
+class TestCollectText:
     def test_collects_title_and_grade(self):
         text = _collect_text({"title": "T", "grade": "G", "steps": []})
         assert "T" in text
@@ -103,26 +104,30 @@ class TestCollectText:
         assert "Objetivo simples" in text
 
     def test_collects_student_plan(self):
-        text = _collect_text({
-            "student_plan": {
-                "summary": ["Resumo 1"],
-                "steps": [{"instructions": ["Instr 1"]}],
+        text = _collect_text(
+            {
+                "student_plan": {
+                    "summary": ["Resumo 1"],
+                    "steps": [{"instructions": ["Instr 1"]}],
+                }
             }
-        })
+        )
         assert "Resumo 1" in text
         assert "Instr 1" in text
 
     def test_collects_steps_instructions_activities_assessment(self):
-        text = _collect_text({
-            "steps": [
-                {
-                    "title": "Step T",
-                    "instructions": ["inst1"],
-                    "activities": ["act1"],
-                    "assessment": ["assess1"],
-                }
-            ]
-        })
+        text = _collect_text(
+            {
+                "steps": [
+                    {
+                        "title": "Step T",
+                        "instructions": ["inst1"],
+                        "activities": ["act1"],
+                        "assessment": ["assess1"],
+                    }
+                ]
+            }
+        )
         assert "Step T" in text
         assert "inst1" in text
         assert "act1" in text
@@ -134,15 +139,17 @@ class TestCollectText:
         assert "Ok" in text
 
     def test_collects_accessibility_pack_draft(self):
-        text = _collect_text({
-            "accessibility_pack_draft": {
-                "media_requirements": ["legenda"],
-                "ui_recommendations": ["grande"],
-                "applied_adaptations": [
-                    {"strategies": ["strat1"], "do_not": ["dont"], "notes": ["nota"]},
-                ],
+        text = _collect_text(
+            {
+                "accessibility_pack_draft": {
+                    "media_requirements": ["legenda"],
+                    "ui_recommendations": ["grande"],
+                    "applied_adaptations": [
+                        {"strategies": ["strat1"], "do_not": ["dont"], "notes": ["nota"]},
+                    ],
+                }
             }
-        })
+        )
         assert "legenda" in text
         assert "grande" in text
         assert "strat1" in text
@@ -154,8 +161,8 @@ class TestCollectText:
 # _readability_metrics
 # ---------------------------------------------------------------------------
 
-class TestReadabilityMetrics:
 
+class TestReadabilityMetrics:
     def test_basic_metrics(self):
         m = _readability_metrics("Frase curta. Outra frase.")
         assert m["sentences"] == 2.0
@@ -177,8 +184,8 @@ class TestReadabilityMetrics:
 # _cognitive_load_bucket
 # ---------------------------------------------------------------------------
 
-class TestCognitiveLoadBucket:
 
+class TestCognitiveLoadBucket:
     def test_low(self):
         assert _cognitive_load_bucket({"avg_words_per_sentence": 8, "long_word_ratio": 0.10}) == "low"
 
@@ -201,8 +208,8 @@ class TestCognitiveLoadBucket:
 # _contains_any
 # ---------------------------------------------------------------------------
 
-class TestContainsAny:
 
+class TestContainsAny:
     def test_match(self):
         assert _contains_any("agora vamos", ("agora", "depois")) is True
 
@@ -217,8 +224,8 @@ class TestContainsAny:
 # validate_draft_accessibility — structural / no-profile scenarios
 # ---------------------------------------------------------------------------
 
-class TestValidatorNoProfile:
 
+class TestValidatorNoProfile:
     def test_pass_with_good_draft(self):
         report = validate_draft_accessibility(_full_draft())
         assert report["status"] == "pass"
@@ -332,11 +339,15 @@ class TestValidatorNoProfile:
         # types but use a monkeypatch on _collect_text.
         import unittest.mock
 
-        draft = _full_draft(steps=[{
-            "minutes": 5,
-            "title": "S1",
-            "instructions": [42, None, "Real instruction"],
-        }])
+        draft = _full_draft(
+            steps=[
+                {
+                    "minutes": 5,
+                    "title": "S1",
+                    "instructions": [42, None, "Real instruction"],
+                }
+            ]
+        )
 
         # Patch _collect_text to avoid the join crash, since we want to test
         # the validator loop's isinstance check (line 172)
@@ -351,32 +362,44 @@ class TestValidatorNoProfile:
     def test_long_instruction_warning(self):
         """Lines 175-176: instruction longer than 180 chars."""
         long_text = "A" * 200
-        draft = _full_draft(steps=[{
-            "minutes": 5,
-            "title": "S1",
-            "instructions": [long_text],
-        }])
+        draft = _full_draft(
+            steps=[
+                {
+                    "minutes": 5,
+                    "title": "S1",
+                    "instructions": [long_text],
+                }
+            ]
+        )
         report = validate_draft_accessibility(draft)
         assert any("muito longa" in w.lower() for w in report["warnings"])
         assert report["checklist"]["instructions_short"] is False
 
     def test_multiple_clauses_detected(self):
         """Line 179: instruction with semicolons / multiple 'e' clauses."""
-        draft = _full_draft(steps=[{
-            "minutes": 5,
-            "title": "S1",
-            "instructions": ["Faca isto; depois aquilo"],
-        }])
+        draft = _full_draft(
+            steps=[
+                {
+                    "minutes": 5,
+                    "title": "S1",
+                    "instructions": ["Faca isto; depois aquilo"],
+                }
+            ]
+        )
         report = validate_draft_accessibility(draft)
         assert report["checklist"]["instructions_single_actionish"] is False
 
     def test_multiple_e_clauses(self):
         """Line 179: instruction with >= 3 ' e ' connectors."""
-        draft = _full_draft(steps=[{
-            "minutes": 5,
-            "title": "S1",
-            "instructions": ["passo e passo e passo e passo"],
-        }])
+        draft = _full_draft(
+            steps=[
+                {
+                    "minutes": 5,
+                    "title": "S1",
+                    "instructions": ["passo e passo e passo e passo"],
+                }
+            ]
+        )
         report = validate_draft_accessibility(draft)
         assert report["checklist"]["instructions_single_actionish"] is False
 
@@ -460,14 +483,16 @@ class TestValidatorNoProfile:
 # validate_draft_accessibility — with profiles (specific needs)
 # ---------------------------------------------------------------------------
 
-class TestValidatorWithProfile:
 
+class TestValidatorWithProfile:
     def test_focus_window_from_profile(self):
         """Lines 199-205: focus_window_minutes read from profile."""
         profile = _profile(adhd=True, learning=True)
-        draft = _full_draft(steps=[
-            {"minutes": 20, "title": "Long", "instructions": ["A"]},
-        ])
+        draft = _full_draft(
+            steps=[
+                {"minutes": 20, "title": "Long", "instructions": ["A"]},
+            ]
+        )
         report = validate_draft_accessibility(draft, profile)
         # Default focus_window_minutes = 8, step is 20 > 8+4 = 12
         assert report["checklist"]["chunked_for_attention"] is False
@@ -486,22 +511,20 @@ class TestValidatorWithProfile:
 
         # Create a mock that raises when focus_window_minutes is accessed
         broken_adhd = unittest.mock.MagicMock()
-        broken_adhd.focus_window_minutes = unittest.mock.PropertyMock(
-            side_effect=AttributeError("no such attr")
-        )
+        broken_adhd.focus_window_minutes = unittest.mock.PropertyMock(side_effect=AttributeError("no such attr"))
         # Make int() on the property raise too
-        type(broken_adhd).focus_window_minutes = unittest.mock.PropertyMock(
-            side_effect=AttributeError("broken")
-        )
+        type(broken_adhd).focus_window_minutes = unittest.mock.PropertyMock(side_effect=AttributeError("broken"))
 
         broken_supports = unittest.mock.MagicMock()
         broken_supports.adhd = broken_adhd
 
         # Patch profile.supports to use our broken mock
         with unittest.mock.patch.object(profile, "supports", broken_supports):
-            draft = _full_draft(steps=[
-                {"minutes": 20, "title": "Long", "instructions": ["A"]},
-            ])
+            draft = _full_draft(
+                steps=[
+                    {"minutes": 20, "title": "Long", "instructions": ["A"]},
+                ]
+            )
             report = validate_draft_accessibility(draft, profile)
             # Should fallback to 10, and 20 > 10+4 = 14, so chunked_for_attention = False
             assert report["checklist"]["chunked_for_attention"] is False
@@ -509,9 +532,11 @@ class TestValidatorWithProfile:
     def test_chunked_for_attention_ok(self):
         """When step minutes <= focus_window + 4, no warning."""
         profile = _profile(adhd=True, learning=True)
-        draft = _full_draft(steps=[
-            {"minutes": 10, "title": "OK", "instructions": ["A"]},
-        ])
+        draft = _full_draft(
+            steps=[
+                {"minutes": 10, "title": "OK", "instructions": ["A"]},
+            ]
+        )
         report = validate_draft_accessibility(draft, profile)
         assert report["checklist"]["chunked_for_attention"] is True
 
@@ -618,7 +643,8 @@ class TestValidatorWithProfile:
         draft["steps"][0]["instructions"].append("Agenda: hoje vamos fazer fracoes.")
         report = validate_draft_accessibility(draft, profile)
         autism_warnings = [
-            w for w in report["warnings"]
+            w
+            for w in report["warnings"]
             if "tea" in w.lower() and ("transi" in w.lower() or "pausa" in w.lower() or "agenda" in w.lower())
         ]
         assert len(autism_warnings) == 0
@@ -688,10 +714,7 @@ class TestValidatorWithProfile:
             "student_friendly_summary": ["Resumo facil."],
         }
         report = validate_draft_accessibility(draft, profile)
-        student_plan_warnings = [
-            w for w in report["warnings"]
-            if "vers" in w.lower() and "aluno" in w.lower()
-        ]
+        student_plan_warnings = [w for w in report["warnings"] if "vers" in w.lower() and "aluno" in w.lower()]
         assert len(student_plan_warnings) == 0
 
     def test_speech_language_no_aac_warning(self):
@@ -813,12 +836,14 @@ class TestValidatorWithProfile:
         )
         draft = _full_draft()
         # Enrich draft to satisfy most checks
-        draft["steps"][0]["instructions"].extend([
-            "Pausa para respiracao e alongamento.",
-            "Agora vamos ver a agenda de hoje vamos fazer fracoes.",
-            "Use pictograma e prancha de comunicacao alternativa e cartao.",
-            "Responda por ditado ou oral ou teclado assistivo.",
-        ])
+        draft["steps"][0]["instructions"].extend(
+            [
+                "Pausa para respiracao e alongamento.",
+                "Agora vamos ver a agenda de hoje vamos fazer fracoes.",
+                "Use pictograma e prancha de comunicacao alternativa e cartao.",
+                "Responda por ditado ou oral ou teclado assistivo.",
+            ]
+        )
         report = validate_draft_accessibility(draft, profile)
         assert report["status"] in ("pass", "fail")
         assert isinstance(report["score"], int)
@@ -852,9 +877,11 @@ class TestValidatorWithProfile:
         assert report["category_scores"]["max_step_minutes"] == 8
 
     def test_step_non_integer_minutes_ignored(self):
-        draft = _full_draft(steps=[
-            {"minutes": "five", "title": "S", "instructions": ["A"]},
-        ])
+        draft = _full_draft(
+            steps=[
+                {"minutes": "five", "title": "S", "instructions": ["A"]},
+            ]
+        )
         report = validate_draft_accessibility(draft)
         assert report["category_scores"]["total_minutes"] == 0
 
@@ -862,17 +889,30 @@ class TestValidatorWithProfile:
         """Verify all expected keys are present."""
         report = validate_draft_accessibility(_full_draft())
         expected_keys = {
-            "status", "score", "errors", "warnings", "recommendations",
-            "checklist", "category_scores", "human_review_required",
+            "status",
+            "score",
+            "errors",
+            "warnings",
+            "recommendations",
+            "checklist",
+            "category_scores",
+            "human_review_required",
             "human_review_reasons",
         }
         assert expected_keys.issubset(report.keys())
         expected_checklist = {
-            "has_steps", "has_instructions", "instructions_short",
-            "instructions_single_actionish", "chunked_for_attention",
-            "has_checkpoints", "has_breaks", "has_transitions",
-            "has_accessibility_section", "has_media_requirements",
-            "captions_or_transcript", "alt_text",
+            "has_steps",
+            "has_instructions",
+            "instructions_short",
+            "instructions_single_actionish",
+            "chunked_for_attention",
+            "has_checkpoints",
+            "has_breaks",
+            "has_transitions",
+            "has_accessibility_section",
+            "has_media_requirements",
+            "captions_or_transcript",
+            "alt_text",
         }
         assert expected_checklist.issubset(report["checklist"].keys())
 

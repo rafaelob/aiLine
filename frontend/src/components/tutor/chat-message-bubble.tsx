@@ -80,26 +80,31 @@ export function ChatMessageBubble({
       role="listitem"
     >
       {/* Avatar */}
-      <div
-        className={cn(
-          'flex items-center justify-center w-8 h-8 rounded-full shrink-0',
-          'text-xs font-bold',
-          isUser
-            ? 'bg-[var(--color-primary)] text-[var(--color-on-primary)]'
-            : 'bg-[var(--color-secondary)]/15 text-[var(--color-secondary)]'
-        )}
-        aria-hidden="true"
-      >
-        {isUser ? <UserIcon /> : <BotIcon />}
-      </div>
+      {isUser ? (
+        <div
+          className="flex items-center justify-center w-8 h-8 rounded-full shrink-0"
+          style={{ background: 'var(--color-primary)' }}
+          aria-hidden="true"
+        >
+          <UserIcon className="text-white" />
+        </div>
+      ) : (
+        <div
+          className="flex items-center justify-center w-8 h-8 rounded-lg shrink-0 icon-orb"
+          style={{ background: 'linear-gradient(135deg, var(--color-primary), var(--color-secondary))' }}
+          aria-hidden="true"
+        >
+          <BotIcon className="text-white" />
+        </div>
+      )}
 
       {/* Bubble */}
       <div
         className={cn(
-          'rounded-[var(--radius-lg)] px-4 py-3 text-sm',
+          'rounded-2xl px-4 py-3 text-sm',
           isUser
-            ? 'bg-[var(--color-primary)] text-[var(--color-on-primary)]'
-            : 'bg-[var(--color-surface-elevated)] text-[var(--color-text)] border border-[var(--color-border)]'
+            ? 'bg-[var(--color-primary)] text-[var(--color-on-primary)] rounded-br-md'
+            : 'glass-bubble-ai text-[var(--color-text)] rounded-bl-md'
         )}
       >
         {isUser ? (
@@ -112,7 +117,8 @@ export function ChatMessageBubble({
             />
             {isStreaming && (
               <span
-                className="inline-block w-1.5 h-4 bg-[var(--color-primary)] animate-pulse rounded-sm"
+                className="inline-block w-1.5 h-4 rounded-sm animate-pulse"
+                style={{ background: 'linear-gradient(to bottom, var(--color-primary), var(--color-secondary))' }}
                 aria-label={t('typing')}
               />
             )}
@@ -127,8 +133,9 @@ export function ChatMessageBubble({
               onClick={handleReadAloud}
               className={cn(
                 'flex items-center gap-1 text-xs',
-                'text-[var(--color-muted)] hover:text-[var(--color-text)]',
-                'transition-colors'
+                'text-[var(--color-muted)] hover:text-[var(--color-primary)]',
+                'hover:bg-[var(--color-primary)]/5 rounded-md px-1.5 py-0.5',
+                'transition-all duration-200'
               )}
               aria-label={isSpeaking ? t('stop_reading') : t('read_aloud')}
             >
@@ -140,8 +147,9 @@ export function ChatMessageBubble({
               onClick={handleCopy}
               className={cn(
                 'flex items-center gap-1 text-xs',
-                'text-[var(--color-muted)] hover:text-[var(--color-text)]',
-                'transition-colors'
+                'text-[var(--color-muted)] hover:text-[var(--color-primary)]',
+                'hover:bg-[var(--color-primary)]/5 rounded-md px-1.5 py-0.5',
+                'transition-all duration-200'
               )}
               aria-label={copied ? t('copied') : t('copy')}
             >
@@ -162,18 +170,18 @@ export function ChatMessageBubble({
   )
 }
 
-function UserIcon() {
+function UserIcon({ className = '' }: { className?: string }) {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={className}>
       <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
       <circle cx="12" cy="7" r="4" />
     </svg>
   )
 }
 
-function BotIcon() {
+function BotIcon({ className = '' }: { className?: string }) {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={className}>
       <rect x="3" y="11" width="18" height="10" rx="2" />
       <circle cx="12" cy="5" r="2" />
       <path d="M12 7v4" />

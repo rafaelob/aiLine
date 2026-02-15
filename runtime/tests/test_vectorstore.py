@@ -187,9 +187,7 @@ class TestSearchFilters:
             texts=["alice", "bob"],
             metadatas=[{"teacher_id": "t1"}, {"teacher_id": "t2"}],
         )
-        results = await store.search(
-            query_embedding=[1, 0], k=10, filters={"teacher_id": "t1"}
-        )
+        results = await store.search(query_embedding=[1, 0], k=10, filters={"teacher_id": "t1"})
         assert len(results) == 1
         assert results[0].id == "a"
 
@@ -219,9 +217,7 @@ class TestSearchFilters:
             texts=["data"],
             metadatas=[{"teacher_id": "t1"}],
         )
-        results = await store.search(
-            query_embedding=[1, 0], k=10, filters={"teacher_id": "t99"}
-        )
+        results = await store.search(query_embedding=[1, 0], k=10, filters={"teacher_id": "t99"})
         assert results == []
 
     async def test_none_filters_returns_all(self, store: InMemoryVectorStore):

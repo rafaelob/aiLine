@@ -52,8 +52,8 @@ class TestCheckTimeout:
     def test_no_started_at_no_error(self) -> None:
         state = {"run_id": "r-1", "user_prompt": "test"}
         deps = AgentDeps(max_workflow_duration_seconds=300)
-        # Should not raise
-        _check_timeout(state, deps, "planner")
+        # Should not raise -- minimal dict intentionally used in tests
+        _check_timeout(state, deps, "planner")  # type: ignore[arg-type]
 
     def test_within_budget_no_error(self) -> None:
         state = {
@@ -62,7 +62,7 @@ class TestCheckTimeout:
             "started_at": time.monotonic() - 10,  # 10 seconds ago
         }
         deps = AgentDeps(max_workflow_duration_seconds=300)
-        _check_timeout(state, deps, "planner")
+        _check_timeout(state, deps, "planner")  # type: ignore[arg-type]
 
     def test_exceeds_budget_raises(self) -> None:
         state = {
@@ -72,7 +72,7 @@ class TestCheckTimeout:
         }
         deps = AgentDeps(max_workflow_duration_seconds=300)
         with pytest.raises(WorkflowTimeoutError, match="timed out"):
-            _check_timeout(state, deps, "planner")
+            _check_timeout(state, deps, "planner")  # type: ignore[arg-type]
 
     def test_error_message_includes_stage(self) -> None:
         state = {
@@ -82,7 +82,7 @@ class TestCheckTimeout:
         }
         deps = AgentDeps(max_workflow_duration_seconds=300)
         with pytest.raises(WorkflowTimeoutError, match="executor"):
-            _check_timeout(state, deps, "executor")
+            _check_timeout(state, deps, "executor")  # type: ignore[arg-type]
 
 
 class TestIdempotencyGuard:

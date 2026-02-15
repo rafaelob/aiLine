@@ -11,11 +11,22 @@ from .plan import (
     AccessibilityPackDraft,
     ExportFormat,
     Objective,
+    PlanReview,
     PlanStep,
+    ReviewStatus,
     RunStage,
+    StandardRef,
     StudentPlan,
     StudentStep,
     StudyPlanDraft,
+    TransformationScorecard,
+)
+from .progress import (
+    ClassProgressSummary,
+    LearnerProgress,
+    MasteryLevel,
+    StandardSummary,
+    StudentSummary,
 )
 from .run import PipelineRun, RunEvent
 from .tutor import (
@@ -25,6 +36,7 @@ from .tutor import (
     TutorMessage,
     TutorPersona,
     TutorSession,
+    TutorTurnFlag,
     TutorTurnOutput,
 )
 
@@ -34,29 +46,40 @@ __all__ = [
     # accessibility
     "AccessibilityNeed",
     "AccessibilityPackDraft",
+    # progress
+    "ClassProgressSummary",
     # curriculum
     "CurriculumObjective",
     "CurriculumSystem",
     "ExportFormat",
     # tutor
     "LearnerProfile",
+    "LearnerProgress",
+    "MasteryLevel",
     # material
     "Material",
     "MaterialChunk",
     "Objective",
     # run
     "PipelineRun",
+    "PlanReview",
     "PlanStep",
+    "ReviewStatus",
     "RunEvent",
     "RunStage",
+    "StandardRef",
+    "StandardSummary",
     "StudentPlan",
     "StudentStep",
+    "StudentSummary",
     "StudyPlanDraft",
     "SupportIntensity",
+    "TransformationScorecard",
     "TutorAgentSpec",
     "TutorMaterialsScope",
     "TutorMessage",
     "TutorPersona",
     "TutorSession",
+    "TutorTurnFlag",
     "TutorTurnOutput",
 ]

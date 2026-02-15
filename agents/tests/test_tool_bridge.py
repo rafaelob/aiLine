@@ -13,6 +13,7 @@ from ailine_agents.deps import AgentDeps
 
 # -- Test args models -------------------------------------------------------
 
+
 class SimpleArgs(BaseModel):
     query: str = Field(..., description="Search query")
     k: int = Field(5, description="Number of results")
@@ -24,6 +25,7 @@ class ArgsWithTeacherId(BaseModel):
 
 
 # -- Fake ToolDef (mirrors runtime ToolDef without importing it) ------------
+
 
 class _FakeToolDef:
     """Minimal stand-in for runtime ToolDef (dataclass)."""

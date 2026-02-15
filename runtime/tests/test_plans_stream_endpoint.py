@@ -25,6 +25,7 @@ from ailine_runtime.shared.config import Settings
 def _test_settings() -> Settings:
     """Settings configured with no real API keys."""
     import os
+
     os.environ["AILINE_DEV_MODE"] = "true"
     return Settings(
         anthropic_api_key="",
@@ -271,6 +272,70 @@ class TestPlansStreamEndpoint:
 
 
 # ---------------------------------------------------------------------------
+# Tenant mismatch (403)
+# ---------------------------------------------------------------------------
+
+
+class TestPlansStreamTenantMismatch:
+    """Verify that body.teacher_id != JWT teacher_id returns 403."""
+
+    def _make_app(self) -> Any:
+        return create_app(_test_settings())
+
+    def test_stream_tenant_mismatch_returns_403(self) -> None:
+        """POST /plans/generate/stream with body.teacher_id != JWT teacher returns 403."""
+        app = self._make_app()
+
+        with TestClient(app) as client:
+            response = client.post(
+                "/plans/generate/stream",
+                headers={"X-Teacher-ID": "teacher-jwt-001"},
+                json={
+                    "run_id": "mismatch-run",
+                    "user_prompt": "Plano de teste",
+                    "teacher_id": "teacher-impersonator-999",
+                },
+            )
+            assert response.status_code == 403
+            body = response.json()
+            assert "does not match" in body.get("detail", "")
+
+    def test_stream_teacher_id_none_does_not_403(self) -> None:
+        """When body.teacher_id is null/absent, no 403 is raised."""
+        app = self._make_app()
+        mock_wf = _make_mock_workflow()
+
+        with _patch_build_workflow(mock_wf), _patch_agent_deps_factory(), TestClient(app) as client:
+            response = client.post(
+                "/plans/generate/stream",
+                headers=_AUTH,
+                json={
+                    "run_id": "no-teacher-run",
+                    "user_prompt": "Plano sem teacher_id no body",
+                },
+            )
+            # Should proceed normally (200 SSE stream), not 403
+            assert response.status_code == 200
+
+    def test_stream_teacher_id_matches_jwt_succeeds(self) -> None:
+        """When body.teacher_id == JWT teacher_id, the request succeeds."""
+        app = self._make_app()
+        mock_wf = _make_mock_workflow()
+
+        with _patch_build_workflow(mock_wf), _patch_agent_deps_factory(), TestClient(app) as client:
+            response = client.post(
+                "/plans/generate/stream",
+                headers=_AUTH,
+                json={
+                    "run_id": "match-run",
+                    "user_prompt": "Plano com teacher_id correto",
+                    "teacher_id": "teacher-test",
+                },
+            )
+            assert response.status_code == 200
+
+
+# ---------------------------------------------------------------------------
 # SSE parsing helper
 # ---------------------------------------------------------------------------
 
@@ -281,7 +346,7 @@ def _parse_sse_events(raw: str) -> list[dict[str, Any]]:
     for line in raw.split("\n"):
         line = line.strip()
         if line.startswith("data:"):
-            json_str = line[len("data:"):].strip()
+            json_str = line[len("data:") :].strip()
             if json_str:
                 with contextlib.suppress(json.JSONDecodeError):
                     events.append(json.loads(json_str))

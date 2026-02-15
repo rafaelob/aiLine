@@ -25,6 +25,7 @@ from ailine_runtime.shared.container import Container, ValidationResult
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_container(**overrides: Any) -> Container:
     """Create a Container with test defaults."""
     settings = Settings(
@@ -43,6 +44,7 @@ def _make_container(**overrides: Any) -> Container:
 # ---------------------------------------------------------------------------
 # health_check
 # ---------------------------------------------------------------------------
+
 
 class TestHealthCheck:
     @pytest.mark.asyncio
@@ -119,6 +121,7 @@ class TestHealthCheck:
 # close
 # ---------------------------------------------------------------------------
 
+
 class TestClose:
     @pytest.mark.asyncio
     async def test_disposes_engines(self):
@@ -181,6 +184,7 @@ class TestClose:
 # ---------------------------------------------------------------------------
 # validate
 # ---------------------------------------------------------------------------
+
 
 class TestValidate:
     def test_validate_all_present(self):
@@ -258,6 +262,7 @@ class TestValidate:
 # ---------------------------------------------------------------------------
 # __repr__
 # ---------------------------------------------------------------------------
+
 
 class TestRepr:
     def test_repr_shows_adapter_types(self):

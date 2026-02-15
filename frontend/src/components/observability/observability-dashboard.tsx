@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
+import { motion } from 'motion/react'
 import { cn } from '@/lib/cn'
+import { containerVariants, itemVariants } from '@/lib/motion-variants'
 import type { ObservabilityDashboard } from '@/types/trace'
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
+import { API_BASE } from '@/lib/api'
 
 /**
  * Judge Dashboard page content.
@@ -40,26 +41,36 @@ export default function ObservabilityDashboardContent() {
 
   if (loading) {
     return (
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-busy="true">
+      <motion.div
+        className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+        aria-busy="true"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
         {Array.from({ length: 6 }, (_, i) => (
-          <div
+          <motion.div
             key={i}
-            className="animate-pulse rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 h-32"
+            className="animate-pulse glass rounded-2xl p-5 h-32"
             aria-hidden="true"
+            variants={itemVariants}
           />
         ))}
-      </div>
+      </motion.div>
     )
   }
 
   if (error || !data) {
     return (
-      <div
+      <motion.div
         role="alert"
         className={cn(
-          'rounded-[var(--radius-lg)] border border-[var(--color-error)]/30',
-          'bg-[var(--color-error)]/10 p-6 text-center'
+          'glass rounded-2xl border border-[var(--color-error)]/30',
+          'p-6 text-center'
         )}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ type: 'spring', stiffness: 200, damping: 24 }}
       >
         <p className="text-sm text-[var(--color-error)]">
           {t('fetch_error')}: {error ?? 'No data'}
@@ -68,14 +79,15 @@ export default function ObservabilityDashboardContent() {
           onClick={fetchData}
           className={cn(
             'mt-3 px-4 py-2 rounded-[var(--radius-md)]',
-            'bg-[var(--color-primary)] text-[var(--color-on-primary)]',
-            'text-sm font-medium hover:bg-[var(--color-primary-hover)]',
+            'text-[var(--color-on-primary)] text-sm font-medium',
+            'btn-shimmer',
             'transition-colors'
           )}
+          style={{ background: 'var(--gradient-hero)' }}
         >
           {t('retry')}
         </button>
-      </div>
+      </motion.div>
     )
   }
 
@@ -90,7 +102,12 @@ export default function ObservabilityDashboardContent() {
   const maxSseCount = Math.max(1, ...sseEntries.map(([, c]) => c))
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <motion.div
+      className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
       {/* Provider card */}
       <StatCard title={t('provider')} className="sm:col-span-2 lg:col-span-1">
         <p className="text-lg font-bold text-[var(--color-text)]">{data.provider}</p>
@@ -125,8 +142,13 @@ export default function ObservabilityDashboardContent() {
               return (
                 <div
                   key={i}
-                  className="flex-1 rounded-t bg-[var(--color-primary)]/40"
-                  style={{ height: `${height}px` }}
+                  className="flex-1 rounded-t"
+                  style={{
+                    height: `${height}px`,
+                    background:
+                      'linear-gradient(to top, var(--color-primary), color-mix(in srgb, var(--color-primary) 60%, var(--color-secondary)))',
+                    boxShadow: '0 0 4px var(--color-primary)',
+                  }}
                 />
               )
             })}
@@ -140,7 +162,7 @@ export default function ObservabilityDashboardContent() {
           {(data.error_rate * 100).toFixed(1)}%
         </p>
         <div className="mt-2 flex items-center gap-2">
-          <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-semibold', cbStateColor)}>
+          <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-semibold glass', cbStateColor)}>
             {t(`cb_${data.circuit_breaker_state}`)}
           </span>
         </div>
@@ -156,8 +178,11 @@ export default function ObservabilityDashboardContent() {
               </span>
               <div className="flex-1 h-2 rounded-full bg-[var(--color-border)]">
                 <div
-                  className="h-full rounded-full bg-[var(--color-primary)] transition-all"
-                  style={{ width: `${(count / maxSseCount) * 100}%` }}
+                  className="h-full rounded-full transition-all"
+                  style={{
+                    width: `${(count / maxSseCount) * 100}%`,
+                    background: 'linear-gradient(90deg, var(--color-primary), var(--color-secondary))',
+                  }}
                 />
               </div>
               <span className="text-[10px] font-mono text-[var(--color-muted)] w-8 text-right">
@@ -191,7 +216,7 @@ export default function ObservabilityDashboardContent() {
           </div>
         </div>
       </StatCard>
-    </div>
+    </motion.div>
   )
 }
 
@@ -205,17 +230,26 @@ function StatCard({
   className?: string
 }) {
   return (
-    <div
+    <motion.div
       className={cn(
-        'rounded-[var(--radius-lg)] border border-[var(--color-border)]',
-        'bg-[var(--color-surface)] p-5',
+        'glass card-hover rounded-2xl p-5',
+        'shadow-[var(--shadow-md)]',
         className
       )}
+      variants={itemVariants}
     >
-      <h3 className="text-xs font-semibold text-[var(--color-muted)] uppercase tracking-wider mb-3">
+      <h3 className="flex items-center gap-2 text-xs font-semibold text-[var(--color-muted)] uppercase tracking-wider mb-3">
+        <span
+          className="w-2 h-2 rounded-full"
+          style={{
+            background:
+              'linear-gradient(135deg, var(--color-primary), var(--color-secondary))',
+          }}
+          aria-hidden="true"
+        />
         {title}
       </h3>
       {children}
-    </div>
+    </motion.div>
   )
 }

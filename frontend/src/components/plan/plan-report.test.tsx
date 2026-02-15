@@ -5,6 +5,10 @@ import type { QualityReport } from '@/types/plan'
 
 vi.mock('motion/react', () => ({
   motion: {
+    div: ({ children, ...rest }: Record<string, unknown>) => {
+      const { initial: _i, animate: _a, transition: _t, variants: _v, ...safe } = rest
+      return <div {...safe}>{children as React.ReactNode}</div>
+    },
     circle: (props: Record<string, unknown>) => {
       const { initial: _i, animate: _a, transition: _t, ...safe } = props
       return <circle {...safe} />

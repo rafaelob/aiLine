@@ -178,9 +178,7 @@ class SmartRouterAdapter:
         provider: ChatLLM = tier_provider if tier_provider is not None else self._fallback
         return decision, features, provider, is_fallback
 
-    def score_complexity(
-        self, messages: list[dict[str, Any]], **kwargs: Any
-    ) -> float:
+    def score_complexity(self, messages: list[dict[str, Any]], **kwargs: Any) -> float:
         """Score request complexity on [0, 1] scale."""
         features = self._extract_features(messages, **kwargs)
         decision = compute_route(features)
@@ -251,11 +249,7 @@ class SmartRouterAdapter:
         is_fallback: bool = False,
     ) -> None:
         """Structured log of the routing decision with all feature scores."""
-        breakdown = (
-            asdict(decision.score_breakdown)
-            if decision.score_breakdown
-            else None
-        )
+        breakdown = asdict(decision.score_breakdown) if decision.score_breakdown else None
         _log.info(
             event,
             tier=decision.tier,
@@ -301,9 +295,7 @@ class SmartRouterAdapter:
         max_tokens: int = 4096,
         **kwargs: Any,
     ) -> str:
-        decision, features, provider, is_fallback = self._route_and_resolve(
-            messages, **kwargs
-        )
+        decision, features, provider, is_fallback = self._route_and_resolve(messages, **kwargs)
         provider_name: str = provider.model_name
         self._log_route_decision(
             "smart_router.route",
@@ -315,7 +307,9 @@ class SmartRouterAdapter:
         token_est = estimate_tokens(messages)
 
         with trace_llm_call(
-            provider=provider_name, model=provider_name, tier=decision.tier,
+            provider=provider_name,
+            model=provider_name,
+            tier=decision.tier,
         ) as span_data:
             t0 = time.monotonic()
             result = await provider.generate(
@@ -328,9 +322,7 @@ class SmartRouterAdapter:
             span_data["latency_ms"] = latency_ms
             span_data["tokens_in"] = token_est
 
-        self._log_latency(
-            "smart_router.generate_done", provider_name, latency_ms
-        )
+        self._log_latency("smart_router.generate_done", provider_name, latency_ms)
         self._record_metrics(
             decision,
             features,
@@ -349,9 +341,7 @@ class SmartRouterAdapter:
         max_tokens: int = 4096,
         **kwargs: Any,
     ) -> AsyncIterator[str]:
-        decision, features, provider, is_fallback = self._route_and_resolve(
-            messages, **kwargs
-        )
+        decision, features, provider, is_fallback = self._route_and_resolve(messages, **kwargs)
         provider_name: str = provider.model_name
         self._log_route_decision(
             "smart_router.route_stream",
@@ -383,16 +373,16 @@ class SmartRouterAdapter:
             # Record OTel span for streaming (post-hoc since we cannot hold
             # a sync context manager open across async yields).
             with trace_llm_call(
-                provider=provider_name, model=provider_name, tier=decision.tier,
+                provider=provider_name,
+                model=provider_name,
+                tier=decision.tier,
             ) as span_data:
                 span_data["latency_ms"] = latency_ms
                 span_data["tokens_in"] = token_est
                 if error_occurred is not None:
                     span_data["error"] = str(error_occurred)
 
-            self._log_latency(
-                "smart_router.stream_done", provider_name, latency_ms
-            )
+            self._log_latency("smart_router.stream_done", provider_name, latency_ms)
             self._record_metrics(
                 decision,
                 features,
@@ -411,12 +401,8 @@ class SmartRouterAdapter:
     ) -> WebSearchResult:
         """Route web search to the first provider that supports it."""
         for provider in [self._primary, self._middle, self._cheap]:
-            if provider is not None and getattr(
-                provider, "capabilities", {}
-            ).get("web_search", False):
-                return await provider.generate_with_search(
-                    query, max_results=max_results, **kwargs
-                )
+            if provider is not None and getattr(provider, "capabilities", {}).get("web_search", False):
+                return await provider.generate_with_search(query, max_results=max_results, **kwargs)
         return WebSearchResult(
             text="Web search not available in any configured provider.",
             sources=[],

@@ -67,9 +67,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
     def __init__(self, app: ASGIApp, *, rpm: int | None = None) -> None:
         super().__init__(app)
-        self._rpm = rpm if rpm is not None else int(
-            os.getenv("AILINE_RATE_LIMIT_RPM", "60")
-        )
+        self._rpm = rpm if rpm is not None else int(os.getenv("AILINE_RATE_LIMIT_RPM", "60"))
         self._window_seconds = 60.0
         # client_key -> _SlidingWindowCounter
         self._counters: dict[str, _SlidingWindowCounter] = {}
@@ -99,9 +97,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             return f"ip:{request.client.host}"
         return "ip:unknown"
 
-    def _get_sliding_count(
-        self, counter: _SlidingWindowCounter, now: float
-    ) -> float:
+    def _get_sliding_count(self, counter: _SlidingWindowCounter, now: float) -> float:
         """Compute the weighted sliding window request count."""
         window = self._window_seconds
         window_start = now - (now % window)
@@ -130,11 +126,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         if self._request_count % _CLEANUP_INTERVAL != 0:
             return
         cutoff = now - 2 * self._window_seconds
-        stale_keys = [
-            k
-            for k, v in self._counters.items()
-            if v.curr_window_start < cutoff
-        ]
+        stale_keys = [k for k, v in self._counters.items() if v.curr_window_start < cutoff]
         for k in stale_keys:
             del self._counters[k]
         if stale_keys:

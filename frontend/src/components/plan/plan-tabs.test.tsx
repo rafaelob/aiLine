@@ -6,10 +6,10 @@ import type { StudyPlan } from '@/types/plan'
 
 vi.mock('motion/react', () => ({
   motion: {
-    div: ({ children, layout: _l, layoutId: _li, initial: _i, animate: _a, exit: _e, transition: _t, ...rest }: Record<string, unknown>) => {
+    div: ({ children, layout: _l, layoutId: _li, initial: _i, animate: _a, exit: _e, transition: _t, variants: _v, ...rest }: Record<string, unknown>) => {
       return <div {...rest}>{children as React.ReactNode}</div>
     },
-    span: ({ children, layout: _l, layoutId: _li, initial: _i, animate: _a, exit: _e, transition: _t, ...rest }: Record<string, unknown>) => {
+    span: ({ children, layout: _l, layoutId: _li, initial: _i, animate: _a, exit: _e, transition: _t, style: _s, variants: _v, ...rest }: Record<string, unknown>) => {
       return <span data-testid="tab-indicator" {...rest}>{children as React.ReactNode}</span>
     },
   },
@@ -29,6 +29,9 @@ vi.mock('./plan-exports', () => ({
 }))
 vi.mock('./session-summary', () => ({
   SessionSummary: () => <div data-testid="session-summary">Session Summary</div>,
+}))
+vi.mock('./trust-panel', () => ({
+  TrustPanel: () => <div data-testid="trust-panel">Trust Panel</div>,
 }))
 
 const mockPlan: StudyPlan = {
@@ -58,10 +61,10 @@ describe('PlanTabs', () => {
     expect(tablist).toBeInTheDocument()
   })
 
-  it('renders 5 tabs', () => {
+  it('renders 6 tabs', () => {
     render(<PlanTabs plan={mockPlan} qualityReport={null} score={null} />)
     const tabs = screen.getAllByRole('tab')
-    expect(tabs).toHaveLength(5)
+    expect(tabs).toHaveLength(6)
   })
 
   it('shows teacher tab as active by default', () => {
@@ -142,5 +145,20 @@ describe('PlanTabs', () => {
     // Indicator moved to student tab
     expect(studentTab.querySelector('[data-testid="tab-indicator"]')).toBeInTheDocument()
     expect(teacherTab.querySelector('[data-testid="tab-indicator"]')).not.toBeInTheDocument()
+  })
+
+  it('switches to trust tab and shows TrustPanel', async () => {
+    render(<PlanTabs plan={mockPlan} qualityReport={null} score={null} />)
+    const trustTab = screen.getByRole('tab', { name: 'plans.tabs.trust' })
+    await user.click(trustTab)
+
+    expect(trustTab).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByTestId('trust-panel')).toBeInTheDocument()
+  })
+
+  it('trust tab has proper ARIA controls', () => {
+    render(<PlanTabs plan={mockPlan} qualityReport={null} score={null} />)
+    const trustTab = screen.getByRole('tab', { name: 'plans.tabs.trust' })
+    expect(trustTab).toHaveAttribute('aria-controls', 'tabpanel-trust')
   })
 })

@@ -151,6 +151,7 @@ class TestTutorChatTurn:
         session = create_session(spec.tutor_id)
 
         from unittest.mock import MagicMock
+
         container_llm = FakeChatLLM(model="container-llm")
         container = MagicMock()
         container.llm = container_llm
@@ -188,6 +189,7 @@ class TestTutorChatTurn:
 
         # Pass a simple mock cfg with no container
         from unittest.mock import MagicMock
+
         cfg = MagicMock()
         cfg.executor_model = "anthropic:claude-opus-4-6"
         cfg._container = None

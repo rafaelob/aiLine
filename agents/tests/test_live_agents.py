@@ -244,9 +244,7 @@ class TestCrossProviderAgentConsistency:
             models.append(("gemini", _GEMINI_CHEAP))
         return models
 
-    def test_quality_gate_consistent_across_providers(
-        self, allow_model_requests, live_deps
-    ):
+    def test_quality_gate_consistent_across_providers(self, allow_model_requests, live_deps):
         models = self._available_models()
         if len(models) < 2:
             pytest.skip("Need at least 2 providers for cross-provider test")
@@ -262,9 +260,7 @@ class TestCrossProviderAgentConsistency:
             assert isinstance(result.output, QualityAssessment), (
                 f"{name}: expected QualityAssessment, got {type(result.output)}"
             )
-            assert 0 <= result.output.score <= 100, (
-                f"{name}: score {result.output.score} out of range"
-            )
+            assert 0 <= result.output.score <= 100, f"{name}: score {result.output.score} out of range"
 
 
 # =========================================================================

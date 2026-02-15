@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pydantic_ai import Agent
+from pydantic_ai.models import Model
 
 from ailine_agents.agents.quality_gate import (
     build_quality_gate_agent,
@@ -35,6 +36,7 @@ class TestBuildQualityGateAgent:
 
     def test_model_name(self) -> None:
         agent = build_quality_gate_agent()
+        assert isinstance(agent.model, Model)
         assert agent.model.model_name == "claude-sonnet-4-5"
 
     def test_no_tools(self) -> None:

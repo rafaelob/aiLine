@@ -7,10 +7,10 @@ import { cn } from '@/lib/cn'
 import { ExportViewer } from '@/components/exports/export-viewer'
 import { VisualSchedule } from '@/components/exports/visual-schedule'
 import { EXPORT_VARIANTS } from '@/lib/accessibility-data'
+import { PageTransition } from '@/components/ui/page-transition'
 import type { ExportVariant } from '@/types/accessibility'
 import type { ScheduleStep } from '@/types/exports'
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
+import { API_BASE } from '@/lib/api'
 
 interface ExportsApiResponse {
   plan_title: string
@@ -69,109 +69,111 @@ export default function ExportsPage() {
   const planTitle = fetchState.status === 'success' ? fetchState.data.plan_title : ''
 
   return (
-    <main className="flex min-h-screen flex-col gap-6 p-6">
-      <header>
-        <h1 className="text-3xl font-bold" style={{ color: 'var(--color-text)' }}>
-          {t('title')}
-        </h1>
-        <p className="mt-2" style={{ color: 'var(--color-muted)' }}>
-          {t('description')}
-        </p>
-      </header>
+    <PageTransition stagger>
+      <main className="flex min-h-screen flex-col gap-6 p-6">
+        <header>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--color-text)' }}>
+            {t('title')}
+          </h1>
+          <p className="mt-2" style={{ color: 'var(--color-muted)' }}>
+            {t('description')}
+          </p>
+        </header>
 
-      {/* Loading state */}
-      {fetchState.status === 'loading' && (
-        <div className="flex flex-1 items-center justify-center" role="status">
-          <p style={{ color: 'var(--color-muted)' }}>{tc('loading')}</p>
-        </div>
-      )}
+        {/* Loading state */}
+        {fetchState.status === 'loading' && (
+          <div className="flex flex-1 items-center justify-center" role="status">
+            <p style={{ color: 'var(--color-muted)' }}>{tc('loading')}</p>
+          </div>
+        )}
 
-      {/* Error state */}
-      {fetchState.status === 'error' && (
-        <div className="flex flex-1 flex-col items-center justify-center gap-4" role="alert">
-          <p className="text-[var(--color-error)]">{fetchState.message}</p>
-          {planId && (
-            <button
-              type="button"
-              onClick={() => fetchExports(planId)}
-              className="rounded-[var(--radius-md)] bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-[var(--color-on-primary)] hover:bg-[var(--color-primary-hover)] transition-colors"
-            >
-              {tc('retry')}
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* Empty state (no planId) */}
-      {fetchState.status === 'idle' && !planId && (
-        <div className="flex flex-1 items-center justify-center">
-          <p style={{ color: 'var(--color-muted)' }}>{t('no_plan')}</p>
-        </div>
-      )}
-
-      {/* Success state */}
-      {fetchState.status === 'success' && (
-        <div className="flex flex-1 gap-6">
-          {/* Sidebar: variant list */}
-          <aside
-            className={cn(
-              'w-64 shrink-0 rounded-[var(--radius-lg)] border border-[var(--color-border)] p-4',
-              isFullScreen && 'hidden',
-            )}
-            aria-label={t('variants_aria_label')}
-          >
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--color-muted)]">
-              {t('variants_heading')}
-            </h2>
-            <nav>
-              <ul className="flex flex-col gap-1" role="list">
-                {EXPORT_VARIANTS.map((variant) => {
-                  const isActive = sidebarVariant === variant.id
-                  const hasContent = !!exports[variant.id]
-                  return (
-                    <li key={variant.id}>
-                      <button
-                        onClick={() => setSidebarVariant(variant.id)}
-                        disabled={!hasContent}
-                        aria-current={isActive ? 'page' : undefined}
-                        className={cn(
-                          'w-full rounded-[var(--radius-md)] px-3 py-2 text-left text-sm transition-colors',
-                          'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]',
-                          isActive
-                            ? 'bg-[var(--color-primary)]/10 font-medium text-[var(--color-primary)]'
-                            : 'text-[var(--color-text)] hover:bg-[var(--color-surface-elevated)]',
-                          !hasContent && 'cursor-not-allowed opacity-40',
-                        )}
-                      >
-                        <span className="block">{tv(variant.label)}</span>
-                        <span className="block text-xs text-[var(--color-muted)]">
-                          {tv(variant.description)}
-                        </span>
-                      </button>
-                    </li>
-                  )
-                })}
-              </ul>
-            </nav>
-          </aside>
-
-          {/* Main content area */}
-          <div className="flex-1">
-            {isVisualSchedule ? (
-              <VisualSchedule
-                planTitle={planTitle}
-                steps={scheduleSteps}
-              />
-            ) : (
-              <ExportViewer
-                exports={exports}
-                fullScreen={isFullScreen}
-                onFullScreenToggle={() => setIsFullScreen((prev) => !prev)}
-              />
+        {/* Error state */}
+        {fetchState.status === 'error' && (
+          <div className="flex flex-1 flex-col items-center justify-center gap-4" role="alert">
+            <p className="text-[var(--color-error)]">{fetchState.message}</p>
+            {planId && (
+              <button
+                type="button"
+                onClick={() => fetchExports(planId)}
+                className="rounded-[var(--radius-md)] bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-[var(--color-on-primary)] hover:bg-[var(--color-primary-hover)] transition-colors"
+              >
+                {tc('retry')}
+              </button>
             )}
           </div>
-        </div>
-      )}
-    </main>
+        )}
+
+        {/* Empty state (no planId) */}
+        {fetchState.status === 'idle' && !planId && (
+          <div className="flex flex-1 items-center justify-center">
+            <p style={{ color: 'var(--color-muted)' }}>{t('no_plan')}</p>
+          </div>
+        )}
+
+        {/* Success state */}
+        {fetchState.status === 'success' && (
+          <div className="flex flex-1 gap-6">
+            {/* Sidebar: variant list */}
+            <aside
+              className={cn(
+                'w-64 shrink-0 rounded-[var(--radius-lg)] border border-[var(--color-border)] p-4',
+                isFullScreen && 'hidden',
+              )}
+              aria-label={t('variants_aria_label')}
+            >
+              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--color-muted)]">
+                {t('variants_heading')}
+              </h2>
+              <nav>
+                <ul className="flex flex-col gap-1" role="list">
+                  {EXPORT_VARIANTS.map((variant) => {
+                    const isActive = sidebarVariant === variant.id
+                    const hasContent = !!exports[variant.id]
+                    return (
+                      <li key={variant.id}>
+                        <button
+                          onClick={() => setSidebarVariant(variant.id)}
+                          disabled={!hasContent}
+                          aria-current={isActive ? 'page' : undefined}
+                          className={cn(
+                            'w-full rounded-[var(--radius-md)] px-3 py-2 text-left text-sm transition-colors',
+                            'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]',
+                            isActive
+                              ? 'bg-[var(--color-primary)]/10 font-medium text-[var(--color-primary)]'
+                              : 'text-[var(--color-text)] hover:bg-[var(--color-surface-elevated)]',
+                            !hasContent && 'cursor-not-allowed opacity-40',
+                          )}
+                        >
+                          <span className="block">{tv(variant.label)}</span>
+                          <span className="block text-xs text-[var(--color-muted)]">
+                            {tv(variant.description)}
+                          </span>
+                        </button>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </nav>
+            </aside>
+
+            {/* Main content area */}
+            <div className="flex-1">
+              {isVisualSchedule ? (
+                <VisualSchedule
+                  planTitle={planTitle}
+                  steps={scheduleSteps}
+                />
+              ) : (
+                <ExportViewer
+                  exports={exports}
+                  fullScreen={isFullScreen}
+                  onFullScreenToggle={() => setIsFullScreen((prev) => !prev)}
+                />
+              )}
+            </div>
+          </div>
+        )}
+      </main>
+    </PageTransition>
   )
 }

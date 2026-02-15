@@ -4,8 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type {
   InferenceOutMessage,
 } from '@/workers/libras-inference-worker'
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
+import { API_BASE } from '@/lib/api'
 const WS_BASE = API_BASE.replace(/^http/, 'ws')
 
 export interface CaptioningState {

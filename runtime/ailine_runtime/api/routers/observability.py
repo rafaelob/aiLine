@@ -37,7 +37,7 @@ router = APIRouter()
 def _compute_percentiles(values: list[float], percentiles: list[float]) -> dict[str, float]:
     """Compute percentile values from a sorted list."""
     if not values:
-        return {f"p{int(p*100)}": 0.0 for p in percentiles}
+        return {f"p{int(p * 100)}": 0.0 for p in percentiles}
     s = sorted(values)
     n = len(s)
     result = {}
@@ -82,10 +82,7 @@ async def observability_dashboard(teacher_id: str = Depends(require_authenticate
 
     # Circuit breaker state
     cb_data = circuit_breaker_state.collect()
-    cb_transitions = {
-        labels.get("transition", "unknown"): int(v)
-        for labels, v in cb_data
-    }
+    cb_transitions = {labels.get("transition", "unknown"): int(v) for labels, v in cb_data}
 
     # SSE event counts from observability store
     sse_counts = obs_store.get_sse_event_counts()
@@ -100,13 +97,15 @@ async def observability_dashboard(teacher_id: str = Depends(require_authenticate
     for trace in recent_traces:
         for node in trace.nodes:
             if node.route_rationale:
-                router_breakdowns.append({
-                    "run_id": trace.run_id,
-                    "node": node.node,
-                    "tier": node.route_rationale.tier,
-                    "model": node.route_rationale.model_selected,
-                    "scores": node.route_rationale.weighted_scores,
-                })
+                router_breakdowns.append(
+                    {
+                        "run_id": trace.run_id,
+                        "node": node.node,
+                        "tier": node.route_rationale.tier,
+                        "model": node.route_rationale.model_selected,
+                        "scores": node.route_rationale.weighted_scores,
+                    }
+                )
 
     # Provider status
     provider_info = obs_store.get_provider_status()

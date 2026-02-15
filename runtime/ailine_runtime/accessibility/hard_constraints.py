@@ -133,10 +133,24 @@ def _extract_student_text(draft: dict[str, Any]) -> str:
 # ---------------------------------------------------------------------------
 
 _ADAPTATION_KEYWORDS = (
-    "adaptação", "adaptacao", "adaptation", "acessibilidade",
-    "accessibility", "UDL", "COGA", "TEA", "TDAH", "ADHD",
-    "baixa visão", "low vision", "legenda", "transcrição",
-    "alt text", "texto alternativo", "pausa", "checkpoint",
+    "adaptação",
+    "adaptacao",
+    "adaptation",
+    "acessibilidade",
+    "accessibility",
+    "UDL",
+    "COGA",
+    "TEA",
+    "TDAH",
+    "ADHD",
+    "baixa visão",
+    "low vision",
+    "legenda",
+    "transcrição",
+    "alt text",
+    "texto alternativo",
+    "pausa",
+    "checkpoint",
 )
 
 
@@ -159,9 +173,13 @@ def check_accessibility_adaptation(
 
     needs = class_profile.needs
     has_any_need = (
-        needs.autism or needs.adhd or needs.learning
-        or needs.hearing or needs.visual
-        or needs.speech_language or needs.motor
+        needs.autism
+        or needs.adhd
+        or needs.learning
+        or needs.hearing
+        or needs.visual
+        or needs.speech_language
+        or needs.motor
     )
     if not has_any_need:
         return HardConstraintResult(
@@ -183,10 +201,7 @@ def check_accessibility_adaptation(
         "has_accessibility_pack": has_pack,
         "has_accessibility_notes": has_notes,
         "adaptation_keywords_found": keyword_found,
-        "needs_flagged": {
-            k: v for k, v in needs.model_dump().items()
-            if isinstance(v, bool) and v
-        },
+        "needs_flagged": {k: v for k, v in needs.model_dump().items() if isinstance(v, bool) and v},
     }
 
     if passed:
@@ -200,7 +215,10 @@ def check_accessibility_adaptation(
         reason = "Accessibility adaptation missing: " + "; ".join(missing)
 
     return HardConstraintResult(
-        name="accessibility_adaptation", passed=passed, reason=reason, details=details,
+        name="accessibility_adaptation",
+        passed=passed,
+        reason=reason,
+        details=details,
     )
 
 
@@ -241,13 +259,27 @@ def _collect_all_text(draft: dict[str, Any]) -> str:
 # ---------------------------------------------------------------------------
 
 _RAG_CITATION_KEYWORDS = (
-    "fonte", "source", "referência", "reference", "baseado em",
-    "based on", "de acordo com", "according to", "citação",
-    "material", "documento", "documento de apoio",
+    "fonte",
+    "source",
+    "referência",
+    "reference",
+    "baseado em",
+    "based on",
+    "de acordo com",
+    "according to",
+    "citação",
+    "material",
+    "documento",
+    "documento de apoio",
 )
 _NO_SOURCES_KEYWORDS = (
-    "sem fontes", "no sources", "nenhuma fonte", "não encontrado",
-    "not found", "sem materiais", "no materials",
+    "sem fontes",
+    "no sources",
+    "nenhuma fonte",
+    "não encontrado",
+    "not found",
+    "sem materiais",
+    "no materials",
 )
 
 
@@ -286,12 +318,14 @@ def check_rag_sources(
             reason = "Explicit 'no sources found' declaration present"
     else:
         reason = (
-            f"RAG retrieved {len(rag_results)} results but plan neither cites sources "
-            "nor declares 'no sources found'"
+            f"RAG retrieved {len(rag_results)} results but plan neither cites sources nor declares 'no sources found'"
         )
 
     return HardConstraintResult(
-        name="rag_sources_cited", passed=passed, reason=reason, details=details,
+        name="rag_sources_cited",
+        passed=passed,
+        reason=reason,
+        details=details,
     )
 
 
@@ -300,12 +334,30 @@ def check_rag_sources(
 # ---------------------------------------------------------------------------
 
 _ASSESSMENT_KEYWORDS = (
-    "avaliação", "avaliacao", "assessment", "autoavaliação",
-    "self-assessment", "quiz", "questão", "questao", "pergunta",
-    "verifique", "checkpoint", "reflexão", "reflita",
-    "responda", "marque", "classifique", "ordene",
-    "multiple choice", "multipla escolha", "verdadeiro ou falso",
-    "true or false", "checklist", "rubrica", "rubric",
+    "avaliação",
+    "avaliacao",
+    "assessment",
+    "autoavaliação",
+    "self-assessment",
+    "quiz",
+    "questão",
+    "questao",
+    "pergunta",
+    "verifique",
+    "checkpoint",
+    "reflexão",
+    "reflita",
+    "responda",
+    "marque",
+    "classifique",
+    "ordene",
+    "multiple choice",
+    "multipla escolha",
+    "verdadeiro ou falso",
+    "true or false",
+    "checklist",
+    "rubrica",
+    "rubric",
 )
 
 
@@ -345,7 +397,10 @@ def check_formative_assessment(
         )
 
     return HardConstraintResult(
-        name="formative_assessment", passed=passed, reason=reason, details=details,
+        name="formative_assessment",
+        passed=passed,
+        reason=reason,
+        details=details,
     )
 
 

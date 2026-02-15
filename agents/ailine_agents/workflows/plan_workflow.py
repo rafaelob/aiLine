@@ -34,6 +34,7 @@ from ._plan_nodes import (
     WorkflowTimeoutError,
     make_executor_node,
     make_planner_node,
+    make_scorecard_node,
     make_validate_node,
 )
 from ._sse_helpers import get_emitter_and_writer, try_emit
@@ -89,7 +90,7 @@ def build_plan_workflow(
                 "iteration": refine_iter,
             }
             try_emit(emitter, writer, SSEEventType.QUALITY_DECISION, "validate", decision_payload)
-            return {"quality_decision": decision_payload}
+            return {"quality_decision": decision_payload}  # type: ignore[typeddict-item,return-value]  # LangGraph partial state update
         except Exception as exc:
             log_event("decision.failed", run_id=state.get("run_id", ""), error=str(exc))
             try_emit(emitter, writer, SSEEventType.STAGE_FAILED, "decision", {"error": str(exc)})
@@ -98,7 +99,7 @@ def build_plan_workflow(
     def bump_refine_iter(state: RunState) -> RunState:
         new_iter = int(state.get("refine_iter") or 0) + 1
         log_event("refine.bump", run_id=state.get("run_id", ""), iteration=new_iter)
-        return {"refine_iter": new_iter}
+        return {"refine_iter": new_iter}  # type: ignore[typeddict-item,return-value]  # LangGraph partial state update
 
     def should_execute(state: RunState) -> str:
         """Route based on tiered quality gate (ADR-050)."""
@@ -117,6 +118,7 @@ def build_plan_workflow(
     graph.add_node("decision", decision_node)
     graph.add_node("bump_refine", bump_refine_iter)
     graph.add_node("executor", executor_node)
+    graph.add_node("scorecard", make_scorecard_node(deps))
 
     graph.set_entry_point("planner")
     graph.add_edge("planner", "validate")
@@ -127,7 +129,8 @@ def build_plan_workflow(
         {"refine": "bump_refine", "execute": "executor"},
     )
     graph.add_edge("bump_refine", "planner")
-    graph.add_edge("executor", END)
+    graph.add_edge("executor", "scorecard")
+    graph.add_edge("scorecard", END)
 
     return graph.compile()
 

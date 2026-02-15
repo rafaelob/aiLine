@@ -55,6 +55,10 @@ vi.mock('motion/react', () => ({
       const { initial: _i, animate: _a, transition: _t, ...safe } = rest
       return <div {...safe}>{children as React.ReactNode}</div>
     },
+    button: ({ children, ...rest }: Record<string, unknown>) => {
+      const { initial: _i, animate: _a, transition: _t, ...safe } = rest
+      return <button {...safe}>{children as React.ReactNode}</button>
+    },
   },
 }))
 

@@ -3,25 +3,7 @@
 import { useCallback, useRef, useEffect } from 'react'
 import { fetchEventSource } from '@microsoft/fetch-event-source'
 import { useTutorStore } from '@/stores/tutor-store'
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
-
-/** Build auth headers from available token sources. */
-function getAuthHeaders(): Record<string, string> {
-  const token =
-    typeof window !== 'undefined'
-      ? sessionStorage.getItem('ailine_token') ??
-        localStorage.getItem('ailine_token')
-      : null
-  if (token) {
-    return { Authorization: `Bearer ${token}` }
-  }
-  const devTeacherId = process.env.NEXT_PUBLIC_DEV_TEACHER_ID
-  if (devTeacherId) {
-    return { 'X-Teacher-ID': devTeacherId }
-  }
-  return {}
-}
+import { API_BASE, getAuthHeaders } from '@/lib/api'
 
 /**
  * SSE hook for tutor chat streaming.

@@ -58,6 +58,7 @@ def compute_rubric_score(dimensions: list[RubricDimension]) -> float:
 
 # --- Planner rubric ---
 
+
 def score_planner_output(output: Any, scenario: dict[str, Any]) -> RubricResult:
     """Score a Planner agent output against a golden scenario.
 
@@ -136,6 +137,7 @@ def score_planner_output(output: Any, scenario: dict[str, Any]) -> RubricResult:
 
 # --- QualityGate rubric ---
 
+
 def score_quality_gate_output(output: Any, scenario: dict[str, Any]) -> RubricResult:
     """Score a QualityGate agent output against a golden scenario."""
     dims: list[RubricDimension] = []
@@ -197,6 +199,7 @@ def score_quality_gate_output(output: Any, scenario: dict[str, Any]) -> RubricRe
 
 # --- Tutor rubric ---
 
+
 def score_tutor_output(output: Any, scenario: dict[str, Any]) -> RubricResult:
     """Score a Tutor agent output against a golden scenario."""
     dims: list[RubricDimension] = []
@@ -257,6 +260,7 @@ def score_tutor_output(output: Any, scenario: dict[str, Any]) -> RubricResult:
 
 # --- Regression detection ---
 
+
 @dataclass(frozen=True)
 class RegressionReport:
     """Comparison of current vs. baseline rubric scores."""
@@ -293,14 +297,16 @@ def detect_regressions(
             continue  # new scenario, no baseline to compare
 
         delta = current.final_score - baseline.final_score
-        reports.append(RegressionReport(
-            scenario_id=current.scenario_id,
-            agent_type=current.agent_type,
-            current_score=current.final_score,
-            baseline_score=baseline.final_score,
-            delta=round(delta, 2),
-            regressed=delta < -tolerance,
-            tolerance=tolerance,
-        ))
+        reports.append(
+            RegressionReport(
+                scenario_id=current.scenario_id,
+                agent_type=current.agent_type,
+                current_score=current.final_score,
+                baseline_score=baseline.final_score,
+                delta=round(delta, 2),
+                regressed=delta < -tolerance,
+                tolerance=tolerance,
+            )
+        )
 
     return reports

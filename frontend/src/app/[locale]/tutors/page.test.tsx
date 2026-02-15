@@ -33,8 +33,9 @@ describe('TutorsPage', () => {
   it('wraps content in a max-width container', async () => {
     const page = await TutorsPage({ params: defaultParams })
     const { container } = render(page)
-    const wrapper = container.firstChild as HTMLElement
-    expect(wrapper.className).toContain('max-w-4xl')
+    // PageTransition is the outermost wrapper, max-w-4xl is inside
+    const maxWContainer = container.querySelector('.max-w-4xl')
+    expect(maxWContainer).toBeInTheDocument()
   })
 
   it('renders a header element', async () => {

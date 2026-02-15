@@ -47,8 +47,8 @@ graph TB
 
     subgraph Adapters["Adapter Implementations"]
         Anthropic["Anthropic<br/>Claude Opus/Sonnet/Haiku"]
-        OpenAI["OpenAI<br/>GPT-4o / GPT-4o-mini"]
-        GeminiLLM["Gemini<br/>2.5 Flash / Pro"]
+        OpenAI["OpenAI<br/>GPT-5.2 / GPT-5 mini"]
+        GeminiLLM["Gemini<br/>3 Flash / Pro"]
         GeminiEmbed["Gemini Embedding<br/>gemini-embedding-001<br/>1536d MRL"]
         PGVector["pgvector HNSW"]
         ChromaDB["ChromaDB"]
@@ -203,9 +203,9 @@ graph TB
 
     Score --> Route{{"Route Decision"}}
 
-    Route -- "<= 0.40" --> Cheap["Cheap Tier<br/>Haiku 4.5 / GPT-4o-mini<br/>Gemini 2.5 Flash"]
-    Route -- "0.41 - 0.70" --> Middle["Middle Tier<br/>Sonnet 4.5 / GPT-4o<br/>Gemini 2.5 Flash"]
-    Route -- ">= 0.71" --> Primary["Primary Tier<br/>Opus 4.6 / GPT-4o<br/>Gemini 2.5 Pro"]
+    Route -- "<= 0.40" --> Cheap["Cheap Tier<br/>Haiku 4.5 / GPT-5 mini<br/>Gemini 3 Flash"]
+    Route -- "0.41 - 0.70" --> Middle["Middle Tier<br/>Sonnet 4.5 / GPT-5.2<br/>Gemini 3 Flash"]
+    Route -- ">= 0.71" --> Primary["Primary Tier<br/>Opus 4.6 / GPT-5.2<br/>Gemini 3 Pro"]
 
     subgraph Overrides["Hard Overrides"]
         HO1["tools_required -> skip cheap"]

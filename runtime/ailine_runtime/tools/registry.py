@@ -41,6 +41,7 @@ class ToolDef:
 # Domain tools (MVP stubs / local)
 # ----------------------------
 
+
 class RagSearchArgs(BaseModel):
     query: str = Field(..., description="Texto de busca (pergunta ou trecho).")
     k: int = Field(5, ge=1, le=20, description="Quantidade de trechos a retornar.")
@@ -91,6 +92,7 @@ class SavePlanArgs(BaseModel):
 # ----------------------------
 # Handlers
 # ----------------------------
+
 
 async def rag_search_handler(args: RagSearchArgs) -> dict[str, Any]:
     # Segurança (MVP):

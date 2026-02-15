@@ -26,6 +26,7 @@ from ailine_runtime.shared.tracing import (
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture(autouse=True)
 def _reset_tracing_state():
     """Reset tracing module globals before and after each test."""
@@ -53,6 +54,7 @@ def _make_mock_tracer():
 # init_tracing with OTEL enabled
 # ---------------------------------------------------------------------------
 
+
 class TestInitTracingEnabled:
     def test_init_with_otel_sdk_console(self, monkeypatch: pytest.MonkeyPatch):
         """When OTEL is enabled and SDK is available, uses console exporter."""
@@ -69,14 +71,17 @@ class TestInitTracingEnabled:
         mock_sdk_trace.TracerProvider.return_value = mock_provider
         mock_trace.get_tracer.return_value = MagicMock()
 
-        with patch.dict(sys.modules, {
-            "opentelemetry": MagicMock(trace=mock_trace),
-            "opentelemetry.trace": mock_trace,
-            "opentelemetry.sdk": MagicMock(),
-            "opentelemetry.sdk.resources": mock_resource,
-            "opentelemetry.sdk.trace": mock_sdk_trace,
-            "opentelemetry.sdk.trace.export": mock_export,
-        }):
+        with patch.dict(
+            sys.modules,
+            {
+                "opentelemetry": MagicMock(trace=mock_trace),
+                "opentelemetry.trace": mock_trace,
+                "opentelemetry.sdk": MagicMock(),
+                "opentelemetry.sdk.resources": mock_resource,
+                "opentelemetry.sdk.trace": mock_sdk_trace,
+                "opentelemetry.sdk.trace.export": mock_export,
+            },
+        ):
             result = tracing_mod.init_tracing(service_name="test-service")
             assert result is True
             mock_sdk_trace.TracerProvider.assert_called_once()
@@ -96,19 +101,22 @@ class TestInitTracingEnabled:
         mock_provider = MagicMock()
         mock_sdk_trace.TracerProvider.return_value = mock_provider
 
-        with patch.dict(sys.modules, {
-            "opentelemetry": MagicMock(trace=mock_trace),
-            "opentelemetry.trace": mock_trace,
-            "opentelemetry.sdk": MagicMock(),
-            "opentelemetry.sdk.resources": mock_resource,
-            "opentelemetry.sdk.trace": mock_sdk_trace,
-            "opentelemetry.sdk.trace.export": mock_export,
-            "opentelemetry.exporter": MagicMock(),
-            "opentelemetry.exporter.otlp": MagicMock(),
-            "opentelemetry.exporter.otlp.proto": MagicMock(),
-            "opentelemetry.exporter.otlp.proto.grpc": MagicMock(),
-            "opentelemetry.exporter.otlp.proto.grpc.trace_exporter": mock_otlp_exporter,
-        }):
+        with patch.dict(
+            sys.modules,
+            {
+                "opentelemetry": MagicMock(trace=mock_trace),
+                "opentelemetry.trace": mock_trace,
+                "opentelemetry.sdk": MagicMock(),
+                "opentelemetry.sdk.resources": mock_resource,
+                "opentelemetry.sdk.trace": mock_sdk_trace,
+                "opentelemetry.sdk.trace.export": mock_export,
+                "opentelemetry.exporter": MagicMock(),
+                "opentelemetry.exporter.otlp": MagicMock(),
+                "opentelemetry.exporter.otlp.proto": MagicMock(),
+                "opentelemetry.exporter.otlp.proto.grpc": MagicMock(),
+                "opentelemetry.exporter.otlp.proto.grpc.trace_exporter": mock_otlp_exporter,
+            },
+        ):
             result = tracing_mod.init_tracing()
             assert result is True
 
@@ -117,14 +125,17 @@ class TestInitTracingEnabled:
         monkeypatch.setenv("AILINE_OTEL_ENABLED", "true")
 
         # Block the OTEL imports
-        with patch.dict(sys.modules, {
-            "opentelemetry": None,
-            "opentelemetry.trace": None,
-            "opentelemetry.sdk": None,
-            "opentelemetry.sdk.resources": None,
-            "opentelemetry.sdk.trace": None,
-            "opentelemetry.sdk.trace.export": None,
-        }):
+        with patch.dict(
+            sys.modules,
+            {
+                "opentelemetry": None,
+                "opentelemetry.trace": None,
+                "opentelemetry.sdk": None,
+                "opentelemetry.sdk.resources": None,
+                "opentelemetry.sdk.trace": None,
+                "opentelemetry.sdk.trace.export": None,
+            },
+        ):
             result = tracing_mod.init_tracing()
             assert result is False
 
@@ -141,6 +152,7 @@ class TestInitTracingEnabled:
 # instrument_fastapi / instrument_sqlalchemy when enabled
 # ---------------------------------------------------------------------------
 
+
 class TestInstrumentEnabled:
     def test_instrument_fastapi_when_enabled(self, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.setenv("AILINE_OTEL_ENABLED", "true")
@@ -148,10 +160,13 @@ class TestInstrumentEnabled:
         mock_fastapi_mod = MagicMock()
         mock_fastapi_mod.FastAPIInstrumentor = mock_instrumentor
 
-        with patch.dict(sys.modules, {
-            "opentelemetry.instrumentation": MagicMock(),
-            "opentelemetry.instrumentation.fastapi": mock_fastapi_mod,
-        }):
+        with patch.dict(
+            sys.modules,
+            {
+                "opentelemetry.instrumentation": MagicMock(),
+                "opentelemetry.instrumentation.fastapi": mock_fastapi_mod,
+            },
+        ):
             mock_app = MagicMock()
             tracing_mod.instrument_fastapi(mock_app)
             mock_instrumentor.instrument_app.assert_called_once_with(mock_app)
@@ -159,9 +174,12 @@ class TestInstrumentEnabled:
     def test_instrument_fastapi_import_error(self, monkeypatch: pytest.MonkeyPatch):
         """When instrumentation package missing, should not raise."""
         monkeypatch.setenv("AILINE_OTEL_ENABLED", "true")
-        with patch.dict(sys.modules, {
-            "opentelemetry.instrumentation.fastapi": None,
-        }):
+        with patch.dict(
+            sys.modules,
+            {
+                "opentelemetry.instrumentation.fastapi": None,
+            },
+        ):
             # Should not raise
             tracing_mod.instrument_fastapi(MagicMock())
 
@@ -172,10 +190,13 @@ class TestInstrumentEnabled:
         mock_sqla_mod = MagicMock()
         mock_sqla_mod.SQLAlchemyInstrumentor = mock_instrumentor_cls
 
-        with patch.dict(sys.modules, {
-            "opentelemetry.instrumentation": MagicMock(),
-            "opentelemetry.instrumentation.sqlalchemy": mock_sqla_mod,
-        }):
+        with patch.dict(
+            sys.modules,
+            {
+                "opentelemetry.instrumentation": MagicMock(),
+                "opentelemetry.instrumentation.sqlalchemy": mock_sqla_mod,
+            },
+        ):
             mock_engine = MagicMock()
             tracing_mod.instrument_sqlalchemy(mock_engine)
             mock_instrumentor_instance.instrument.assert_called_once_with(engine=mock_engine)
@@ -183,15 +204,19 @@ class TestInstrumentEnabled:
     def test_instrument_sqlalchemy_import_error(self, monkeypatch: pytest.MonkeyPatch):
         """When instrumentation package missing, should not raise."""
         monkeypatch.setenv("AILINE_OTEL_ENABLED", "true")
-        with patch.dict(sys.modules, {
-            "opentelemetry.instrumentation.sqlalchemy": None,
-        }):
+        with patch.dict(
+            sys.modules,
+            {
+                "opentelemetry.instrumentation.sqlalchemy": None,
+            },
+        ):
             tracing_mod.instrument_sqlalchemy(MagicMock())
 
 
 # ---------------------------------------------------------------------------
 # trace_pipeline_node with active tracer
 # ---------------------------------------------------------------------------
+
 
 class TestTracePipelineNodeWithTracer:
     def test_sets_status_attribute(self):
@@ -234,6 +259,7 @@ class TestTracePipelineNodeWithTracer:
 # ---------------------------------------------------------------------------
 # trace_tool_call with active tracer
 # ---------------------------------------------------------------------------
+
 
 class TestTraceToolCallWithTracer:
     def test_sets_latency_attribute(self):
@@ -283,6 +309,7 @@ class TestTraceToolCallWithTracer:
 # ---------------------------------------------------------------------------
 # trace_llm_call: tokens_out attribute
 # ---------------------------------------------------------------------------
+
 
 class TestTraceLLMCallTokensOut:
     def test_sets_tokens_out_attribute(self):

@@ -65,9 +65,7 @@ class TestRFC7807ErrorFormat:
         assert "detail" in body
         assert resp.headers.get("content-type", "").startswith("application/problem+json")
 
-    async def test_422_validation_error_has_errors_field(
-        self, client: AsyncClient
-    ) -> None:
+    async def test_422_validation_error_has_errors_field(self, client: AsyncClient) -> None:
         """POST with invalid body should return 422 with errors array."""
         resp = await client.post(
             "/materials",

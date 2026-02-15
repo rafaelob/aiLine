@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-import yaml
+import yaml  # type: ignore[import-untyped]  # types-PyYAML not installed in agents env
 
 from .registry import SkillDefinition
 

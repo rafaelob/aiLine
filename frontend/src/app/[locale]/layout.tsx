@@ -12,6 +12,8 @@ import { RouteAnnouncer } from '@/components/accessibility/route-announcer'
 import { ServiceWorkerRegistrar } from '@/components/pwa/sw-registrar'
 import { InstallPrompt } from '@/components/pwa/install-prompt'
 import { ToastProvider } from '@/components/ui/toast-provider'
+import { DemoTooltip } from '@/components/shared/demo-tooltip'
+import { CommandPalette } from '@/components/shared/command-palette'
 import '@/styles/globals.css'
 
 /**
@@ -102,7 +104,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.svg" />
       </head>
-      <body data-theme="standard" className="antialiased" suppressHydrationWarning>
+      <body data-theme="standard" className="antialiased bg-[var(--color-bg)]" suppressHydrationWarning>
         <NextIntlClientProvider messages={messages}>
           <A11yHydrator />
           <CognitiveCurtain />
@@ -138,6 +140,8 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
           <MobileNav />
           <InstallPrompt />
           <ToastProvider />
+          <DemoTooltip />
+          <CommandPalette />
         </NextIntlClientProvider>
       </body>
     </html>

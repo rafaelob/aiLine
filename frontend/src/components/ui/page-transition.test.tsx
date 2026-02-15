@@ -5,7 +5,7 @@ import { PageTransition } from './page-transition'
 vi.mock('motion/react', () => ({
   motion: {
     div: ({ children, ...rest }: Record<string, unknown>) => {
-      const { initial: _i, animate: _a, transition: _t, ...safe } = rest
+      const { initial: _i, animate: _a, transition: _t, variants: _v, ...safe } = rest
       return <div {...safe}>{children as React.ReactNode}</div>
     },
   },

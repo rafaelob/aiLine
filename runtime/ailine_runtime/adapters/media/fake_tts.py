@@ -25,15 +25,15 @@ def _create_silent_wav(*, duration_ms: int = 100, sample_rate: int = 16000) -> b
     block_align = num_channels * bytes_per_sample
 
     header = struct.pack(
-        "<4sI4s"    # RIFF header
+        "<4sI4s"  # RIFF header
         "4sIHHIIHH"  # fmt chunk
-        "4sI",       # data chunk header
+        "4sI",  # data chunk header
         b"RIFF",
         36 + data_size,  # file size - 8
         b"WAVE",
         b"fmt ",
-        16,              # fmt chunk size (PCM)
-        1,               # audio format: PCM
+        16,  # fmt chunk size (PCM)
+        1,  # audio format: PCM
         num_channels,
         sample_rate,
         byte_rate,
@@ -55,8 +55,6 @@ class FakeTTS:
     def __init__(self, *, duration_ms: int = 100) -> None:
         self._duration_ms = duration_ms
 
-    async def synthesize(
-        self, text: str, *, locale: str = "pt-BR", speed: float = 1.0
-    ) -> bytes:
+    async def synthesize(self, text: str, *, locale: str = "pt-BR", speed: float = 1.0) -> bytes:
         """Return a minimal valid WAV file containing silence."""
         return _create_silent_wav(duration_ms=self._duration_ms)

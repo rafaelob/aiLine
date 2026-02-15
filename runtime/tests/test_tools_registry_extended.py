@@ -48,9 +48,7 @@ class TestRagSearchHandler:
     @pytest.mark.asyncio
     async def test_with_empty_filters(self, tmp_path, monkeypatch):
         monkeypatch.setenv("AILINE_LOCAL_STORE", str(tmp_path))
-        args = RagSearchArgs(
-            query="test", teacher_id="t1", material_ids=[], tags=[]
-        )
+        args = RagSearchArgs(query="test", teacher_id="t1", material_ids=[], tags=[])
         result = await rag_search_handler(args)
         assert "chunks" in result
 

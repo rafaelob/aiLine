@@ -24,7 +24,8 @@ router = APIRouter()
 
 @router.get("/diagnostics/recent")
 async def list_recent_diagnostics(
-    limit: int = 20, teacher_id: str = Depends(require_authenticated),
+    limit: int = 20,
+    teacher_id: str = Depends(require_authenticated),
 ) -> list[dict[str, Any]]:
     """List recent RAG diagnostics (lightweight summary).
 

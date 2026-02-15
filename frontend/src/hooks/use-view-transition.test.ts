@@ -57,4 +57,50 @@ describe('useViewTransition', () => {
     expect(mockStartViewTransition).toHaveBeenCalledOnce()
     expect(callback).toHaveBeenCalledOnce()
   })
+
+  it('sets data-vt-type and CSS variables for theme transitions', async () => {
+    const mockStartViewTransition = vi.fn((cb: () => void) => {
+      // Check attributes are set BEFORE callback
+      expect(document.documentElement.getAttribute('data-vt-type')).toBe('theme')
+      expect(document.documentElement.style.getPropertyValue('--vt-x')).toBe('100px')
+      expect(document.documentElement.style.getPropertyValue('--vt-y')).toBe('200px')
+      cb()
+      return { finished: Promise.resolve() }
+    })
+    ;(document as unknown as Record<string, unknown>).startViewTransition =
+      mockStartViewTransition
+
+    const callback = vi.fn()
+    const { result } = renderHook(() => useViewTransition())
+
+    act(() => {
+      result.current.startTransition(callback, { type: 'theme', x: 100, y: 200 })
+    })
+
+    expect(mockStartViewTransition).toHaveBeenCalledOnce()
+
+    // After transition finishes, attributes should be cleaned up
+    await vi.waitFor(() => {
+      expect(document.documentElement.getAttribute('data-vt-type')).toBeNull()
+    })
+  })
+
+  it('defaults to route transition type', () => {
+    const mockStartViewTransition = vi.fn((cb: () => void) => {
+      expect(document.documentElement.getAttribute('data-vt-type')).toBe('route')
+      cb()
+      return { finished: Promise.resolve() }
+    })
+    ;(document as unknown as Record<string, unknown>).startViewTransition =
+      mockStartViewTransition
+
+    const callback = vi.fn()
+    const { result } = renderHook(() => useViewTransition())
+
+    act(() => {
+      result.current.startTransition(callback)
+    })
+
+    expect(mockStartViewTransition).toHaveBeenCalledOnce()
+  })
 })

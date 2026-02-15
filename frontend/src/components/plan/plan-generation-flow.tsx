@@ -2,27 +2,19 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
-import { motion, AnimatePresence } from 'motion/react'
+import { motion } from 'motion/react'
 import { cn } from '@/lib/cn'
 import { usePipelineSSE } from '@/hooks/use-pipeline-sse'
 import { PipelineViewer } from '@/components/pipeline/pipeline-viewer'
-import { PlanTabs } from './plan-tabs'
+import { WizardSteps } from './wizard-steps'
+import { PlanResultDisplay } from './plan-result-display'
 import type { PlanGenerationRequest } from '@/types/plan'
-
-const ACCESSIBILITY_PROFILES = [
-  'standard',
-  'tea',
-  'tdah',
-  'dyslexia',
-  'low_vision',
-  'hearing',
-  'motor',
-] as const
+import { DEMO_PROMPT, DEMO_GRADE, DEMO_SUBJECT, DEMO_PROFILE } from '@/lib/demo-data'
+import { useDemoStore } from '@/stores/demo-store'
 
 type WizardStep = 0 | 1 | 2 | 3
 
 const STEP_COUNT = 4
-const PROMPT_MAX_LENGTH = 2000
 
 /**
  * Plan generation multi-step wizard.
@@ -31,18 +23,18 @@ const PROMPT_MAX_LENGTH = 2000
  */
 export function PlanGenerationFlow() {
   const t = useTranslations('plans')
-  const tForm = useTranslations('plans.form')
-  const tProfiles = useTranslations('plans.form.accessibility_profiles')
   const tWizard = useTranslations('plans.wizard')
   const tWizardShort = useTranslations('wizard_short')
 
   const {
     startGeneration,
     cancel,
+    runId,
     stages,
     plan,
     qualityReport,
     score,
+    scorecard,
     isRunning,
     error,
   } = usePipelineSSE()
@@ -56,7 +48,6 @@ export function PlanGenerationFlow() {
     locale: 'pt-BR',
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [showSuccess, setShowSuccess] = useState(false)
   const stepContentRef = useRef<HTMLDivElement>(null)
 
   const resetWizard = useCallback(() => {
@@ -69,7 +60,6 @@ export function PlanGenerationFlow() {
       locale: 'pt-BR',
     })
     setErrors({})
-    setShowSuccess(false)
   }, [])
 
   const handleSubmit = useCallback(
@@ -94,7 +84,7 @@ export function PlanGenerationFlow() {
     }
   }
 
-  function validateStep(s: WizardStep): boolean {
+  function validateStep(s: number): boolean {
     const newErrors: Record<string, string> = {}
     if (s === 0) {
       if (!formData.subject.trim()) newErrors.subject = tWizard('required')
@@ -128,14 +118,30 @@ export function PlanGenerationFlow() {
     }
   }, [step])
 
-  const showForm = !isRunning && !plan && !showSuccess
+  // Auto-fill from demo mode (deferred to avoid React Compiler cascading-render warning)
+  const demoInitRef = useRef(false)
+  useEffect(() => {
+    if (demoInitRef.current) return
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('demo') === 'true') {
+      demoInitRef.current = true
+      queueMicrotask(() => {
+        setFormData((prev) => ({
+          ...prev,
+          subject: DEMO_SUBJECT,
+          grade: DEMO_GRADE,
+          accessibility_profile: DEMO_PROFILE,
+          prompt: DEMO_PROMPT,
+        }))
+        setStep(3 as WizardStep)
+        useDemoStore.getState().startDemo()
+      })
+    }
+  }, [])
+
+  const showForm = !isRunning && !plan
   const showPipeline = isRunning
   const showResult = !isRunning && plan !== null
-
-  // After generation completes show success briefly
-  if (showResult && !showSuccess) {
-    setShowSuccess(true)
-  }
 
   const stepLabels = [
     tWizard('step_subject'),
@@ -150,8 +156,7 @@ export function PlanGenerationFlow() {
       {showForm && (
         <div
           className={cn(
-            'rounded-[var(--radius-lg)] border',
-            'bg-[var(--color-surface)] border-[var(--color-border)]',
+            'rounded-xl glass',
             'overflow-hidden'
           )}
           role="group"
@@ -169,28 +174,38 @@ export function PlanGenerationFlow() {
                     aria-current={i === step ? 'step' : undefined}
                   >
                     <div className="flex items-center gap-2 min-w-0">
-                      <motion.div
-                        className={cn(
-                          'flex items-center justify-center w-8 h-8 rounded-full',
-                          'text-xs font-bold shrink-0 transition-colors'
+                      <div className="relative flex items-center justify-center w-8 h-8 shrink-0">
+                        {i === step && (
+                          <span
+                            className="absolute inset-0 rounded-full bg-[var(--color-primary)] animate-ring-pulse motion-reduce:hidden"
+                            aria-hidden="true"
+                          />
                         )}
-                        animate={{
-                          backgroundColor:
-                            i < step
-                              ? 'var(--color-success)'
-                              : i === step
-                                ? 'var(--color-primary)'
-                                : 'var(--color-surface-elevated)',
-                          color:
-                            i <= step
-                              ? 'var(--color-on-primary)'
-                              : 'var(--color-muted)',
-                        }}
-                        transition={{ duration: 0.2 }}
-                        aria-hidden="true"
-                      >
-                        {i < step ? <StepCheckIcon /> : i + 1}
-                      </motion.div>
+                        <motion.div
+                          className={cn(
+                            'relative flex items-center justify-center w-8 h-8 rounded-full',
+                            'text-xs font-bold',
+                            i === step && 'shadow-[var(--shadow-glow)]'
+                          )}
+                          animate={{
+                            backgroundColor:
+                              i < step
+                                ? 'var(--color-success)'
+                                : i === step
+                                  ? 'var(--color-primary)'
+                                  : 'var(--color-surface-elevated)',
+                            color:
+                              i <= step
+                                ? 'var(--color-on-primary)'
+                                : 'var(--color-muted)',
+                            scale: i === step ? 1.1 : 1,
+                          }}
+                          transition={{ duration: 0.3, type: 'spring', stiffness: 300 }}
+                          aria-hidden="true"
+                        >
+                          {i < step ? <StepCheckIcon /> : i + 1}
+                        </motion.div>
+                      </div>
                       <span
                         className={cn(
                           'text-xs font-medium truncate',
@@ -205,14 +220,17 @@ export function PlanGenerationFlow() {
                     </div>
                     {i < STEP_COUNT - 1 && (
                       <div
-                        className={cn(
-                          'flex-1 h-0.5 mx-2 rounded-full transition-colors',
-                          i < step
-                            ? 'bg-[var(--color-success)]'
-                            : 'bg-[var(--color-border)]'
-                        )}
+                        className="flex-1 h-0.5 mx-2 rounded-full bg-[var(--color-border)] overflow-hidden"
                         aria-hidden="true"
-                      />
+                      >
+                        <motion.div
+                          className="h-full rounded-full"
+                          style={{ background: 'linear-gradient(90deg, var(--color-success), var(--color-primary))' }}
+                          initial={{ width: '0%' }}
+                          animate={{ width: i < step ? '100%' : '0%' }}
+                          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                        />
+                      </div>
                     )}
                   </li>
                 ))}
@@ -226,214 +244,13 @@ export function PlanGenerationFlow() {
 
           {/* Step content */}
           <div ref={stepContentRef} tabIndex={-1} className="px-6 pb-6 outline-none">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={step}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.2 }}
-              >
-                {/* Step 0: Subject & Grade */}
-                {step === 0 && (
-                  <div className="space-y-5">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label
-                          htmlFor="plan-subject"
-                          className="block text-sm font-semibold text-[var(--color-text)] mb-2"
-                        >
-                          {tForm('subject')}
-                        </label>
-                        <input
-                          id="plan-subject"
-                          type="text"
-                          value={formData.subject}
-                          onChange={(e) => updateField('subject', e.target.value)}
-                          onBlur={() => validateStep(0)}
-                          placeholder={tForm('subject_placeholder')}
-                          autoComplete="off"
-                          aria-required={true}
-                          aria-invalid={!!errors.subject}
-                          aria-describedby={errors.subject ? 'subject-error' : undefined}
-                          className={cn(
-                            'w-full rounded-[var(--radius-md)] border p-3',
-                            'bg-[var(--color-bg)] border-[var(--color-border)]',
-                            'text-[var(--color-text)] text-sm',
-                            'placeholder:text-[var(--color-muted)]',
-                            errors.subject && 'border-[var(--color-error)]'
-                          )}
-                        />
-                        <FieldError id="subject-error" message={errors.subject} />
-                      </div>
-                      <div>
-                        <label
-                          htmlFor="plan-grade"
-                          className="block text-sm font-semibold text-[var(--color-text)] mb-2"
-                        >
-                          {tForm('grade')}
-                        </label>
-                        <input
-                          id="plan-grade"
-                          type="text"
-                          value={formData.grade}
-                          onChange={(e) => updateField('grade', e.target.value)}
-                          onBlur={() => validateStep(0)}
-                          placeholder={tForm('grade_placeholder')}
-                          autoComplete="off"
-                          aria-required={true}
-                          aria-invalid={!!errors.grade}
-                          aria-describedby={errors.grade ? 'grade-error' : undefined}
-                          className={cn(
-                            'w-full rounded-[var(--radius-md)] border p-3',
-                            'bg-[var(--color-bg)] border-[var(--color-border)]',
-                            'text-[var(--color-text)] text-sm',
-                            'placeholder:text-[var(--color-muted)]',
-                            errors.grade && 'border-[var(--color-error)]'
-                          )}
-                        />
-                        <FieldError id="grade-error" message={errors.grade} />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Step 1: Accessibility Profile */}
-                {step === 1 && (
-                  <div className="space-y-4">
-                    <p className="text-sm text-[var(--color-muted)]">
-                      {tWizard('profile_description')}
-                    </p>
-                    <div
-                      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
-                      role="radiogroup"
-                      aria-label={tForm('accessibility_profile')}
-                      onKeyDown={(e) => {
-                        const keys = ['ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft']
-                        if (!keys.includes(e.key)) return
-                        e.preventDefault()
-                        const idx = ACCESSIBILITY_PROFILES.indexOf(
-                          formData.accessibility_profile as typeof ACCESSIBILITY_PROFILES[number]
-                        )
-                        const dir = e.key === 'ArrowDown' || e.key === 'ArrowRight' ? 1 : -1
-                        const next = (idx + dir + ACCESSIBILITY_PROFILES.length) % ACCESSIBILITY_PROFILES.length
-                        updateField('accessibility_profile', ACCESSIBILITY_PROFILES[next])
-                        // Focus the newly selected radio
-                        const container = e.currentTarget
-                        const radios = container.querySelectorAll<HTMLElement>('[role="radio"]')
-                        radios[next]?.focus()
-                      }}
-                    >
-                      {ACCESSIBILITY_PROFILES.map((profile) => {
-                        const selected = formData.accessibility_profile === profile
-                        return (
-                          <button
-                            key={profile}
-                            type="button"
-                            role="radio"
-                            aria-checked={selected}
-                            tabIndex={selected ? 0 : -1}
-                            onClick={() => updateField('accessibility_profile', profile)}
-                            className={cn(
-                              'flex items-center gap-3 p-4 rounded-[var(--radius-md)]',
-                              'border text-left transition-all',
-                              selected
-                                ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/5 shadow-[var(--shadow-sm)]'
-                                : 'border-[var(--color-border)] hover:border-[var(--color-primary)]/40'
-                            )}
-                          >
-                            <PersonaAvatar profile={profile} selected={selected} />
-                            <span
-                              className={cn(
-                                'text-sm font-medium',
-                                selected
-                                  ? 'text-[var(--color-primary)]'
-                                  : 'text-[var(--color-text)]'
-                              )}
-                            >
-                              {tProfiles(profile)}
-                            </span>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Step 2: Content/Prompt */}
-                {step === 2 && (
-                  <div className="space-y-4">
-                    <label
-                      htmlFor="plan-prompt"
-                      className="block text-sm font-semibold text-[var(--color-text)] mb-2"
-                    >
-                      {tForm('prompt')}
-                    </label>
-                    <textarea
-                      id="plan-prompt"
-                      value={formData.prompt}
-                      onChange={(e) => updateField('prompt', e.target.value)}
-                      onBlur={() => validateStep(2)}
-                      placeholder={tForm('prompt_placeholder')}
-                      rows={6}
-                      maxLength={PROMPT_MAX_LENGTH}
-                      aria-required={true}
-                      aria-invalid={!!errors.prompt}
-                      aria-describedby={errors.prompt ? 'prompt-error' : undefined}
-                      className={cn(
-                        'w-full rounded-[var(--radius-md)] border p-3',
-                        'bg-[var(--color-bg)] border-[var(--color-border)]',
-                        'text-[var(--color-text)] text-sm',
-                        'placeholder:text-[var(--color-muted)]',
-                        'resize-y',
-                        errors.prompt && 'border-[var(--color-error)]'
-                      )}
-                    />
-                    <div className="flex items-center justify-between mt-1.5">
-                      <FieldError id="prompt-error" message={errors.prompt} />
-                      <span
-                        className={cn(
-                          'text-xs ml-auto',
-                          formData.prompt.length > PROMPT_MAX_LENGTH * 0.9
-                            ? 'text-[var(--color-warning)]'
-                            : 'text-[var(--color-muted)]'
-                        )}
-                        aria-live="polite"
-                      >
-                        {formData.prompt.length} / {PROMPT_MAX_LENGTH}
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Step 3: Review & Generate */}
-                {step === 3 && (
-                  <div className="space-y-4">
-                    <h3 className="text-base font-semibold text-[var(--color-text)]">
-                      {tWizard('review_title')}
-                    </h3>
-                    <div
-                      className={cn(
-                        'rounded-[var(--radius-md)] border border-[var(--color-border)]',
-                        'divide-y divide-[var(--color-border)]'
-                      )}
-                    >
-                      <ReviewRow label={tForm('subject')} value={formData.subject} />
-                      <ReviewRow label={tForm('grade')} value={formData.grade} />
-                      <ReviewRow
-                        label={tForm('accessibility_profile')}
-                        value={tProfiles(formData.accessibility_profile)}
-                      />
-                      <ReviewRow
-                        label={tForm('prompt')}
-                        value={formData.prompt}
-                        multiline
-                      />
-                    </div>
-                  </div>
-                )}
-              </motion.div>
-            </AnimatePresence>
+            <WizardSteps
+              step={step}
+              formData={formData}
+              errors={errors}
+              onUpdateField={updateField}
+              onValidateStep={validateStep}
+            />
 
             {/* Navigation buttons */}
             <div className="flex items-center justify-between mt-6">
@@ -445,7 +262,7 @@ export function PlanGenerationFlow() {
                   'px-5 py-2.5 rounded-[var(--radius-md)]',
                   'text-sm font-medium text-[var(--color-text)]',
                   'border border-[var(--color-border)]',
-                  'hover:bg-[var(--color-surface-elevated)] transition-colors',
+                  'hover:bg-[var(--color-surface-elevated)] transition-colors active:scale-95',
                   'disabled:opacity-40 disabled:cursor-not-allowed'
                 )}
               >
@@ -460,7 +277,7 @@ export function PlanGenerationFlow() {
                     'px-5 py-2.5 rounded-[var(--radius-md)]',
                     'bg-[var(--color-primary)] text-[var(--color-on-primary)]',
                     'text-sm font-medium',
-                    'hover:bg-[var(--color-primary-hover)] transition-colors'
+                    'hover:bg-[var(--color-primary-hover)] transition-colors active:scale-95'
                   )}
                 >
                   {tWizard('next')}
@@ -471,10 +288,10 @@ export function PlanGenerationFlow() {
                   onClick={handleSubmit}
                   disabled={isRunning}
                   className={cn(
-                    'px-6 py-2.5 rounded-[var(--radius-md)]',
+                    'px-6 py-2.5 rounded-[var(--radius-md)] btn-shimmer',
                     'bg-[var(--color-primary)] text-[var(--color-on-primary)]',
                     'text-sm font-semibold',
-                    'hover:bg-[var(--color-primary-hover)] transition-colors',
+                    'hover:bg-[var(--color-primary-hover)] transition-colors active:scale-95',
                     'disabled:opacity-50 disabled:cursor-not-allowed'
                   )}
                 >
@@ -508,52 +325,14 @@ export function PlanGenerationFlow() {
 
       {/* Plan result with celebration */}
       {showResult && plan && (
-        <div className="space-y-6">
-          {/* Success celebration */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            role="status"
-            aria-live="polite"
-            className={cn(
-              'flex items-center gap-3 p-4 rounded-[var(--radius-lg)]',
-              'bg-[var(--color-success)]/10 border border-[var(--color-success)]/20'
-            )}
-          >
-            <div
-              className="flex items-center justify-center w-10 h-10 rounded-full bg-[var(--color-success)]"
-              aria-hidden="true"
-            >
-              <SuccessCheckIcon />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-[var(--color-success)]">
-                {t('generation_complete')}
-              </p>
-              {score !== null && (
-                <p className="text-xs text-[var(--color-muted)] mt-0.5">
-                  {t('quality_score')}: {score}/100
-                </p>
-              )}
-            </div>
-          </motion.div>
-
-          <PlanTabs plan={plan} qualityReport={qualityReport} score={score} />
-
-          <div className="flex justify-center">
-            <button
-              type="button"
-              onClick={resetWizard}
-              className={cn(
-                'px-6 py-2 rounded-[var(--radius-md)]',
-                'border border-[var(--color-border)] text-[var(--color-text)]',
-                'text-sm font-medium hover:bg-[var(--color-surface-elevated)]'
-              )}
-            >
-              {t('create')}
-            </button>
-          </div>
-        </div>
+        <PlanResultDisplay
+          plan={plan}
+          qualityReport={qualityReport}
+          score={score}
+          scorecard={scorecard}
+          runId={runId}
+          onReset={resetWizard}
+        />
       )}
 
       {/* Error state when not running and no plan */}
@@ -583,91 +362,7 @@ export function PlanGenerationFlow() {
   )
 }
 
-/* ===== Sub-components ===== */
-
-function FieldError({ id, message }: { id?: string; message?: string }) {
-  return (
-    <AnimatePresence>
-      {message && (
-        <motion.p
-          id={id}
-          initial={{ opacity: 0, y: -4, height: 0 }}
-          animate={{ opacity: 1, y: 0, height: 'auto' }}
-          exit={{ opacity: 0, y: -4, height: 0 }}
-          className="text-xs text-[var(--color-error)] mt-1.5"
-          role="alert"
-        >
-          {message}
-        </motion.p>
-      )}
-    </AnimatePresence>
-  )
-}
-
-function ReviewRow({
-  label,
-  value,
-  multiline = false,
-}: {
-  label: string
-  value: string
-  multiline?: boolean
-}) {
-  return (
-    <div className="flex gap-4 px-4 py-3">
-      <span className="text-sm font-medium text-[var(--color-muted)] w-32 shrink-0">
-        {label}
-      </span>
-      <span
-        className={cn(
-          'text-sm text-[var(--color-text)]',
-          multiline && 'whitespace-pre-wrap'
-        )}
-      >
-        {value}
-      </span>
-    </div>
-  )
-}
-
-/** CSS-based persona avatar using theme custom properties for high-contrast compliance */
-function PersonaAvatar({
-  profile,
-  selected,
-}: {
-  profile: string
-  selected: boolean
-}) {
-  const colors: Record<string, string> = {
-    standard: 'var(--color-primary)',
-    tea: 'var(--color-success)',
-    tdah: 'var(--color-warning)',
-    dyslexia: 'var(--color-primary)',
-    low_vision: 'var(--color-primary)',
-    hearing: 'var(--color-secondary)',
-    motor: 'var(--color-primary)',
-  }
-  const color = colors[profile] ?? 'var(--color-primary)'
-
-  return (
-    <div
-      className={cn(
-        'flex items-center justify-center w-10 h-10 rounded-full',
-        'text-xs font-bold transition-transform',
-        selected && 'scale-110'
-      )}
-      style={{
-        backgroundColor: `color-mix(in srgb, ${color} 15%, transparent)`,
-        color: color,
-      }}
-      aria-hidden="true"
-    >
-      {profile.slice(0, 2).toUpperCase()}
-    </div>
-  )
-}
-
-/** Short labels for mobile display -- resolved from i18n at render time via tWizardShort */
+/* ===== Local Sub-components ===== */
 
 function StepCheckIcon() {
   return (
@@ -676,20 +371,6 @@ function StepCheckIcon() {
         d="M3 7l3 3 5-5"
         stroke="currentColor"
         strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  )
-}
-
-function SuccessCheckIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-      <path
-        d="M5 10l3.5 3.5L15 7"
-        stroke="white"
-        strokeWidth="2.5"
         strokeLinecap="round"
         strokeLinejoin="round"
       />

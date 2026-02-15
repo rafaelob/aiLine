@@ -5,6 +5,8 @@ import { PersonaToggle } from '@/components/accessibility/persona-toggle'
 import { AccessibilityTwin } from '@/components/accessibility/accessibility-twin'
 import { SimulateDisability } from '@/components/accessibility/simulate-disability'
 import { ColorBlindFilters } from '@/components/accessibility/color-blind-filters'
+import { CognitiveLoadMeter } from '@/components/cognitive/cognitive-load-meter'
+import { PersonaHUD } from '@/components/accessibility/persona-hud'
 
 /**
  * Accessibility page combining:
@@ -73,6 +75,28 @@ export default function AccessibilityPage() {
 
       {/* Section 3: Simulate Disability */}
       <SimulateDisability />
+
+      {/* Divider */}
+      <hr className="border-[var(--color-border)]" />
+
+      {/* Section 4: Cognitive Load Meter */}
+      <section aria-labelledby="cognitive-heading" className="flex flex-col gap-4">
+        <h2
+          id="cognitive-heading"
+          className="text-xl font-semibold text-[var(--color-text)]"
+        >
+          {t('cognitive_heading')}
+        </h2>
+        <p className="text-sm text-[var(--color-muted)]">
+          {t('cognitive_description')}
+        </p>
+        <CognitiveLoadMeter
+          factors={{ uiDensity: 35, readingLevel: 45, interactionCount: 6 }}
+        />
+      </section>
+
+      {/* Persona HUD */}
+      <PersonaHUD className="mt-4" />
     </main>
   )
 }

@@ -172,10 +172,12 @@ class TestRedisReplayStore:
         mock_redis.pipeline.assert_called_once_with(transaction=True)
         pipeline.zadd.assert_called_once_with(
             "test:run-1:events",
-            {"5|{\"type\":\"stage.started\"}": 5.0},
+            {'5|{"type":"stage.started"}': 5.0},
         )
         pipeline.zremrangebyrank.assert_called_once_with(
-            "test:run-1:events", 0, -51  # -(keep_last + 1)
+            "test:run-1:events",
+            0,
+            -51,  # -(keep_last + 1)
         )
         # Two expire calls: events key and seq key
         assert pipeline.expire.call_count == 2
@@ -204,9 +206,7 @@ class TestRedisReplayStore:
 
         result = await store.replay("run-1")
 
-        mock_redis.zrange.assert_awaited_once_with(
-            "test:run-1:events", 0, -1, withscores=True
-        )
+        mock_redis.zrange.assert_awaited_once_with("test:run-1:events", 0, -1, withscores=True)
         assert len(result) == 3
         assert result[0] == (1, '{"type":"run.started"}')
         assert result[1] == (2, '{"type":"stage.started"}')
@@ -229,9 +229,7 @@ class TestRedisReplayStore:
 
         result = await store.replay("run-1", after_seq=3)
 
-        mock_redis.zrangebyscore.assert_awaited_once_with(
-            "test:run-1:events", min="(3", max="+inf", withscores=True
-        )
+        mock_redis.zrangebyscore.assert_awaited_once_with("test:run-1:events", min="(3", max="+inf", withscores=True)
         assert len(result) == 2
         assert result[0] == (4, '{"seq":4}')
         assert result[1] == (5, '{"seq":5}')
@@ -360,9 +358,7 @@ class TestRedisReplayStore:
         fake_redis.asyncio = fake_redis_asyncio
 
         # Inject into sys.modules so the local import resolves
-        saved = {
-            k: sys.modules.get(k) for k in ("redis", "redis.asyncio")
-        }
+        saved = {k: sys.modules.get(k) for k in ("redis", "redis.asyncio")}
         sys.modules["redis"] = fake_redis
         sys.modules["redis.asyncio"] = fake_redis_asyncio
         try:
@@ -370,9 +366,7 @@ class TestRedisReplayStore:
                 redis_url="redis://myhost:6380/2",
                 config=ReplayConfig(prefix="prod", keep_last=200),
             )
-            mock_redis_cls.from_url.assert_called_once_with(
-                "redis://myhost:6380/2", decode_responses=True
-            )
+            mock_redis_cls.from_url.assert_called_once_with("redis://myhost:6380/2", decode_responses=True)
             assert s._redis is mock_redis_instance
             assert s._config.keep_last == 200
             assert s._prefix == "prod"

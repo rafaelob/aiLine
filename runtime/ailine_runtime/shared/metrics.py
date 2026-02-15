@@ -72,9 +72,7 @@ class Histogram:
         self._data: dict[tuple[tuple[str, str], ...], dict[str, Any]] = {}
         self._lock = threading.Lock()
 
-    def _ensure_entry(
-        self, key: tuple[tuple[str, str], ...]
-    ) -> dict[str, Any]:
+    def _ensure_entry(self, key: tuple[tuple[str, str], ...]) -> dict[str, Any]:
         if key not in self._data:
             self._data[key] = {
                 "buckets": {b: 0 for b in self.buckets},
@@ -170,23 +168,13 @@ def render_metrics() -> str:
             for bucket_le, count in sorted(data["buckets"].items()):
                 bucket_lbl: dict[str, str] = dict(labels)
                 bucket_lbl["le"] = str(bucket_le)
-                lines.append(
-                    f"{histogram.name}_bucket{_format_labels(bucket_lbl)} {count}"
-                )
+                lines.append(f"{histogram.name}_bucket{_format_labels(bucket_lbl)} {count}")
             # +Inf bucket
             inf_labels: dict[str, str] = dict(labels)
             inf_labels["le"] = "+Inf"
-            lines.append(
-                f"{histogram.name}_bucket{_format_labels(inf_labels)} "
-                f"{data['_count']}"
-            )
-            lines.append(
-                f"{histogram.name}_sum{_format_labels(labels)} {data['_sum']}"
-            )
-            lines.append(
-                f"{histogram.name}_count{_format_labels(labels)} "
-                f"{data['_count']}"
-            )
+            lines.append(f"{histogram.name}_bucket{_format_labels(inf_labels)} {data['_count']}")
+            lines.append(f"{histogram.name}_sum{_format_labels(labels)} {data['_sum']}")
+            lines.append(f"{histogram.name}_count{_format_labels(labels)} {data['_count']}")
         lines.append("")
 
     return "\n".join(lines) + "\n"

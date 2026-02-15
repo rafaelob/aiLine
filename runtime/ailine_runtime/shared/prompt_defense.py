@@ -176,16 +176,20 @@ def build_hierarchical_prompt(
     ]
 
     if retrieved_context:
-        parts.extend([
-            "",
-            _BOUNDARY_RETRIEVAL,
-            retrieved_context.strip(),
-        ])
+        parts.extend(
+            [
+                "",
+                _BOUNDARY_RETRIEVAL,
+                retrieved_context.strip(),
+            ]
+        )
 
-    parts.extend([
-        "",
-        _BOUNDARY_USER,
-        user_message.strip(),
-    ])
+    parts.extend(
+        [
+            "",
+            _BOUNDARY_USER,
+            user_message.strip(),
+        ]
+    )
 
     return "\n".join(parts)

@@ -34,8 +34,10 @@ def mock_session():
 @pytest.fixture
 def session_factory(mock_session):
     """Return a callable that produces an async context manager yielding mock_session."""
+
     def factory():
         return _mock_session_ctx(mock_session)
+
     return factory
 
 

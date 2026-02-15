@@ -42,9 +42,7 @@ class TestFallbackToEnglish:
         locale_dir.mkdir()
         # Create the custom locale file with only one key
         custom_data = {"custom.key": "Custom value"}
-        (locale_dir / "zz-TEST.json").write_text(
-            json.dumps(custom_data), encoding="utf-8"
-        )
+        (locale_dir / "zz-TEST.json").write_text(json.dumps(custom_data), encoding="utf-8")
         # Create the English fallback file
         en_data = {"error.generic": "An unexpected error occurred.", "custom.key": "EN custom"}
         (locale_dir / "en.json").write_text(json.dumps(en_data), encoding="utf-8")

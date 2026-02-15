@@ -55,12 +55,14 @@ def log_auth_success(
         issuer: JWT issuer claim if applicable.
         ip: Client IP address.
     """
-    data = _enrich({
-        "teacher_id": teacher_id,
-        "method": method,
-        "issuer": issuer,
-        "ip": ip,
-    })
+    data = _enrich(
+        {
+            "teacher_id": teacher_id,
+            "method": method,
+            "issuer": issuer,
+            "ip": ip,
+        }
+    )
     _log.info("audit.auth.success", **data)
 
 
@@ -79,12 +81,14 @@ def log_auth_failure(
         ip: Client IP address.
         token_hint: First 8 chars of the token (for correlation, not security).
     """
-    data = _enrich({
-        "reason": reason,
-        "method": method,
-        "ip": ip,
-        "token_hint": token_hint,
-    })
+    data = _enrich(
+        {
+            "reason": reason,
+            "method": method,
+            "ip": ip,
+            "token_hint": token_hint,
+        }
+    )
     _log.warning("audit.auth.failure", **data)
 
 
@@ -108,12 +112,14 @@ def log_admin_action(
         resource_id: ID of the affected resource.
         detail: Optional extra detail.
     """
-    data = _enrich({
-        "action": action,
-        "resource_type": resource_type,
-        "resource_id": resource_id,
-        "detail": detail,
-    })
+    data = _enrich(
+        {
+            "action": action,
+            "resource_type": resource_type,
+            "resource_id": resource_id,
+            "detail": detail,
+        }
+    )
     _log.info("audit.admin.action", **data)
 
 
@@ -135,11 +141,13 @@ def log_content_access(
         resource_id: ID of the resource.
         access_type: Type of access ("read", "download", "stream").
     """
-    data = _enrich({
-        "resource_type": resource_type,
-        "resource_id": resource_id,
-        "access_type": access_type,
-    })
+    data = _enrich(
+        {
+            "resource_type": resource_type,
+            "resource_id": resource_id,
+            "access_type": access_type,
+        }
+    )
     _log.info("audit.content.access", **data)
 
 
@@ -173,16 +181,18 @@ def log_llm_call(
         success: Whether the call succeeded.
         error: Error message if the call failed.
     """
-    data = _enrich({
-        "provider": provider,
-        "model": model,
-        "tier": tier,
-        "latency_ms": round(latency_ms, 2),
-        "input_tokens": input_tokens,
-        "output_tokens": output_tokens,
-        "cost_usd": round(cost_usd, 6) if cost_usd is not None else None,
-        "success": success,
-    })
+    data = _enrich(
+        {
+            "provider": provider,
+            "model": model,
+            "tier": tier,
+            "latency_ms": round(latency_ms, 2),
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "cost_usd": round(cost_usd, 6) if cost_usd is not None else None,
+            "success": success,
+        }
+    )
     if error is not None:
         data["error"] = error
     if success:

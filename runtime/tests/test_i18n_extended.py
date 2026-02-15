@@ -8,9 +8,7 @@ from ailine_runtime.shared.i18n import _load_messages, t
 class TestLoadMessagesEdgeCases:
     def test_nonexistent_locale_and_nonexistent_fallback(self, tmp_path, monkeypatch):
         """When both the locale file and the fallback file are missing, return {}."""
-        monkeypatch.setattr(
-            "ailine_runtime.shared.i18n._DATA_DIR", tmp_path
-        )
+        monkeypatch.setattr("ailine_runtime.shared.i18n._DATA_DIR", tmp_path)
         # Clear the LRU cache so it picks up the new _DATA_DIR
         _load_messages.cache_clear()
         result = _load_messages("xx-MISSING")

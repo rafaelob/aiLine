@@ -347,14 +347,10 @@ class TestScoringFunctions:
     def test_intent_score_two_signals(self):
         """Exactly 2 complexity signals yields 0.6 (line 250)."""
         # "analise" matches the first pattern, "complexa" matches the second
-        assert SmartRouterAdapter._score_intent(
-            [_user_msg("analise complexa")]
-        ) == 0.6
+        assert SmartRouterAdapter._score_intent([_user_msg("analise complexa")]) == 0.6
 
     def test_intent_score_multiple_signals(self):
-        assert SmartRouterAdapter._score_intent(
-            [_user_msg("analise detalhada curriculo BNCC acessibilidade")]
-        ) == 1.0
+        assert SmartRouterAdapter._score_intent([_user_msg("analise detalhada curriculo BNCC acessibilidade")]) == 1.0
 
     def test_intent_score_empty(self):
         assert SmartRouterAdapter._score_intent([]) == 0.0
@@ -652,9 +648,7 @@ class TestRouteMetrics:
         assert len(metrics) == 3
 
     @pytest.mark.asyncio
-    async def test_metrics_include_score_breakdown(
-        self, router: SmartRouterAdapter
-    ):
+    async def test_metrics_include_score_breakdown(self, router: SmartRouterAdapter):
         await router.generate([_user_msg("Oi")])
         m = router.get_recent_metrics()[0]
         assert m.score_breakdown is not None
@@ -681,9 +675,7 @@ class TestFallbackLogging:
     async def test_fallback_sets_flag_in_metrics(self):
         # Only primary configured -- cheap tier request triggers fallback
         config = SmartRouterConfig(
-            primary_provider=FakeChatLLM(
-                model="primary", responses=["fallback"]
-            ),
+            primary_provider=FakeChatLLM(model="primary", responses=["fallback"]),
         )
         router = SmartRouterAdapter(config)
         result = await router.generate([_user_msg("Oi")])
@@ -694,9 +686,7 @@ class TestFallbackLogging:
         assert metrics[0].provider_name == "primary"
 
     @pytest.mark.asyncio
-    async def test_no_fallback_flag_when_tier_matches(
-        self, router: SmartRouterAdapter
-    ):
+    async def test_no_fallback_flag_when_tier_matches(self, router: SmartRouterAdapter):
         await router.generate([_user_msg("Oi")])
         metrics = router.get_recent_metrics()
         assert len(metrics) == 1
@@ -706,9 +696,7 @@ class TestFallbackLogging:
     @pytest.mark.asyncio
     async def test_stream_fallback_sets_flag(self):
         config = SmartRouterConfig(
-            primary_provider=FakeChatLLM(
-                model="primary", responses=["fallback"]
-            ),
+            primary_provider=FakeChatLLM(model="primary", responses=["fallback"]),
         )
         router = SmartRouterAdapter(config)
         chunks = []

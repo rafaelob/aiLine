@@ -1,7 +1,9 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
+import { motion } from 'motion/react'
 import { cn } from '@/lib/cn'
+import { containerVariants, itemVariants } from '@/lib/motion-variants'
 import { MarkdownWithMermaid } from '@/components/shared/markdown-with-mermaid'
 import type { StudyPlan } from '@/types/plan'
 
@@ -18,17 +20,25 @@ export function StudentPlan({ plan }: StudentPlanProps) {
   const t = useTranslations('student_plan')
 
   return (
-    <article aria-label={t('aria_label', { title: plan.title })} className="space-y-6">
+    <motion.article
+      aria-label={t('aria_label', { title: plan.title })}
+      className="space-y-6"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
       {/* Header */}
-      <header className="text-center">
-        <h2 className="text-2xl font-bold text-[var(--color-text)]">{plan.title}</h2>
-        <p className="text-base text-[var(--color-muted)] mt-1">
-          {plan.subject} &mdash; {plan.grade}
-        </p>
-      </header>
+      <motion.section variants={itemVariants}>
+        <header className="text-center">
+          <h2 className="text-2xl font-bold gradient-text-animated">{plan.title}</h2>
+          <p className="text-base text-[var(--color-muted)] mt-1">
+            {plan.subject} &mdash; {plan.grade}
+          </p>
+        </header>
+      </motion.section>
 
       {/* What you will learn */}
-      <section aria-labelledby="student-objectives">
+      <motion.section variants={itemVariants} aria-labelledby="student-objectives">
         <h3
           id="student-objectives"
           className={cn(
@@ -36,7 +46,13 @@ export function StudentPlan({ plan }: StudentPlanProps) {
             'flex items-center gap-2'
           )}
         >
-          <TargetIcon />
+          <div
+            className="flex items-center justify-center w-8 h-8 icon-orb shrink-0"
+            style={{ background: 'linear-gradient(135deg, var(--color-primary), var(--color-secondary))' }}
+            aria-hidden="true"
+          >
+            <span className="text-white"><TargetIcon /></span>
+          </div>
           {t('what_you_will_learn')}
         </h3>
         <ul className="space-y-3">
@@ -45,16 +61,17 @@ export function StudentPlan({ plan }: StudentPlanProps) {
               key={i}
               className={cn(
                 'flex items-start gap-3 text-base text-[var(--color-text)]',
-                'p-3 rounded-[var(--radius-md)]',
-                'bg-[var(--color-surface-elevated)]'
+                'p-3 rounded-xl',
+                'glass card-hover',
+                'border-l-3 border-[var(--color-primary)]'
               )}
             >
               <span
                 className={cn(
-                  'flex items-center justify-center w-7 h-7 rounded-full shrink-0',
-                  'bg-[var(--color-primary)] text-[var(--color-on-primary)]',
-                  'text-xs font-bold'
+                  'flex items-center justify-center w-7 h-7 rounded-full shrink-0 icon-orb',
+                  'text-xs font-bold text-white'
                 )}
+                style={{ background: 'linear-gradient(135deg, var(--color-primary), var(--color-secondary))' }}
                 aria-hidden="true"
               >
                 {i + 1}
@@ -63,10 +80,10 @@ export function StudentPlan({ plan }: StudentPlanProps) {
             </li>
           ))}
         </ul>
-      </section>
+      </motion.section>
 
       {/* Activities */}
-      <section aria-labelledby="student-activities">
+      <motion.section variants={itemVariants} aria-labelledby="student-activities">
         <h3
           id="student-activities"
           className={cn(
@@ -74,25 +91,28 @@ export function StudentPlan({ plan }: StudentPlanProps) {
             'flex items-center gap-2'
           )}
         >
-          <ActivityIcon />
+          <div
+            className="flex items-center justify-center w-8 h-8 icon-orb shrink-0"
+            style={{ background: 'linear-gradient(135deg, var(--color-primary), var(--color-secondary))' }}
+            aria-hidden="true"
+          >
+            <span className="text-white"><ActivityIcon /></span>
+          </div>
           {t('activities')}
         </h3>
         <div className="space-y-4">
           {plan.activities.map((activity, i) => (
             <div
               key={i}
-              className={cn(
-                'rounded-[var(--radius-lg)] border-2 p-5',
-                'border-[var(--color-border)] bg-[var(--color-surface)]'
-              )}
+              className="gradient-border-glass rounded-2xl glass card-hover p-5"
             >
               <div className="flex items-center gap-3 mb-2">
                 <span
                   className={cn(
                     'flex items-center justify-center w-8 h-8',
-                    'rounded-[var(--radius-md)] text-sm font-bold',
-                    'bg-[var(--color-secondary)]/10 text-[var(--color-secondary)]'
+                    'rounded-lg text-sm font-bold icon-orb text-white'
                   )}
+                  style={{ background: 'linear-gradient(135deg, var(--color-secondary), var(--color-primary))' }}
                   aria-hidden="true"
                 >
                   {i + 1}
@@ -108,20 +128,22 @@ export function StudentPlan({ plan }: StudentPlanProps) {
                 />
               </div>
               <div className="mt-3 flex items-center gap-2 text-sm text-[var(--color-muted)]">
-                <ClockIcon />
-                <span>{t('duration', { minutes: activity.duration_minutes })}</span>
+                <span className="glass rounded-full px-3 py-1 flex items-center gap-1.5">
+                  <ClockIcon />
+                  <span>{t('duration', { minutes: activity.duration_minutes })}</span>
+                </span>
               </div>
             </div>
           ))}
         </div>
-      </section>
-    </article>
+      </motion.section>
+    </motion.article>
   )
 }
 
 function TargetIcon() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <circle cx="12" cy="12" r="10" />
       <circle cx="12" cy="12" r="6" />
       <circle cx="12" cy="12" r="2" />
@@ -131,7 +153,7 @@ function TargetIcon() {
 
 function ActivityIcon() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
     </svg>
   )

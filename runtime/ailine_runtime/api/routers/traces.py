@@ -25,7 +25,8 @@ router = APIRouter()
 
 @router.get("/recent")
 async def list_recent_traces(
-    limit: int = 20, teacher_id: str = Depends(require_authenticated),
+    limit: int = 20,
+    teacher_id: str = Depends(require_authenticated),
 ) -> list[dict[str, Any]]:
     """List recent pipeline traces (lightweight summary).
 

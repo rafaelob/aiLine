@@ -24,7 +24,7 @@ router = APIRouter()
 # -- File upload size limits ---------------------------------------------------
 
 MAX_AUDIO_SIZE = 10 * 1024 * 1024  # 10 MB
-MAX_IMAGE_SIZE = 5 * 1024 * 1024   # 5 MB
+MAX_IMAGE_SIZE = 5 * 1024 * 1024  # 5 MB
 MAX_DOCUMENT_SIZE = 50 * 1024 * 1024  # 50 MB
 
 
@@ -107,9 +107,7 @@ async def synthesize_speech(
         speed=body.speed,
         text_length=len(body.text),
     )
-    audio_bytes = await tts.synthesize(
-        body.text, locale=body.locale, speed=body.speed
-    )
+    audio_bytes = await tts.synthesize(body.text, locale=body.locale, speed=body.speed)
     return Response(
         content=audio_bytes,
         media_type="audio/wav",

@@ -1,7 +1,9 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
+import { motion } from 'motion/react'
 import { cn } from '@/lib/cn'
+import { containerVariants, itemVariants } from '@/lib/motion-variants'
 import { MarkdownWithMermaid } from '@/components/shared/markdown-with-mermaid'
 import type { StudyPlan } from '@/types/plan'
 
@@ -17,19 +19,27 @@ export function TeacherPlan({ plan }: TeacherPlanProps) {
   const t = useTranslations('teacher_plan')
 
   return (
-    <article aria-label={plan.title} className="space-y-6">
+    <motion.article
+      aria-label={plan.title}
+      className="space-y-6"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
       {/* Header */}
-      <header>
-        <h2 className="text-xl font-bold text-[var(--color-text)]">{plan.title}</h2>
-        <div className="flex gap-4 mt-2 text-sm text-[var(--color-muted)]">
-          <span>{plan.subject}</span>
-          <span aria-hidden="true">|</span>
-          <span>{plan.grade}</span>
-        </div>
-      </header>
+      <motion.section variants={itemVariants}>
+        <header className="gradient-border-glass rounded-2xl glass p-5">
+          <h2 className="text-xl font-bold gradient-text-animated">{plan.title}</h2>
+          <div className="flex gap-4 mt-2 text-sm text-[var(--color-muted)]">
+            <span>{plan.subject}</span>
+            <span aria-hidden="true">|</span>
+            <span>{plan.grade}</span>
+          </div>
+        </header>
+      </motion.section>
 
       {/* Objectives */}
-      <section aria-labelledby="objectives-heading">
+      <motion.section variants={itemVariants} aria-labelledby="objectives-heading">
         <h3
           id="objectives-heading"
           className="text-base font-semibold text-[var(--color-text)] mb-3"
@@ -41,18 +51,29 @@ export function TeacherPlan({ plan }: TeacherPlanProps) {
             <li
               key={i}
               className={cn(
-                'flex items-start gap-2 text-sm text-[var(--color-text)]',
-                'pl-4 border-l-2 border-[var(--color-primary)] py-1'
+                'flex items-start gap-3 text-sm text-[var(--color-text)]',
+                'p-3 rounded-xl glass card-hover',
+                'border-l-3 border-[var(--color-primary)]'
               )}
             >
+              <span
+                className={cn(
+                  'flex items-center justify-center w-6 h-6 rounded-full shrink-0 icon-orb',
+                  'text-xs font-bold text-white'
+                )}
+                style={{ background: 'linear-gradient(135deg, var(--color-primary), var(--color-secondary))' }}
+                aria-hidden="true"
+              >
+                {i + 1}
+              </span>
               {obj}
             </li>
           ))}
         </ul>
-      </section>
+      </motion.section>
 
       {/* Activities */}
-      <section aria-labelledby="activities-heading">
+      <motion.section variants={itemVariants} aria-labelledby="activities-heading">
         <h3
           id="activities-heading"
           className="text-base font-semibold text-[var(--color-text)] mb-3"
@@ -63,16 +84,13 @@ export function TeacherPlan({ plan }: TeacherPlanProps) {
           {plan.activities.map((activity, i) => (
             <div
               key={i}
-              className={cn(
-                'rounded-[var(--radius-md)] border p-4',
-                'bg-[var(--color-surface)] border-[var(--color-border)]'
-              )}
+              className="gradient-border-glass rounded-2xl glass card-hover p-4"
             >
               <div className="flex items-center justify-between mb-2">
                 <h4 className="font-medium text-[var(--color-text)]">
                   {activity.title}
                 </h4>
-                <span className="text-xs text-[var(--color-muted)] px-2 py-1 bg-[var(--color-surface-elevated)] rounded-full">
+                <span className="text-xs text-[var(--color-muted)] px-2 py-1 glass rounded-full">
                   {activity.duration_minutes} min
                 </span>
               </div>
@@ -93,7 +111,7 @@ export function TeacherPlan({ plan }: TeacherPlanProps) {
                     {activity.materials.map((mat, j) => (
                       <span
                         key={j}
-                        className="text-xs px-2 py-1 bg-[var(--color-surface-elevated)] rounded-[var(--radius-sm)] text-[var(--color-text)]"
+                        className="text-xs px-2 py-1 glass rounded-full text-[var(--color-text)]"
                       >
                         {mat}
                       </span>
@@ -112,9 +130,15 @@ export function TeacherPlan({ plan }: TeacherPlanProps) {
                     {activity.adaptations.map((adapt, j) => (
                       <li
                         key={j}
-                        className="text-xs text-[var(--color-text)] flex gap-2"
+                        className="text-xs text-[var(--color-text)] flex items-center gap-2"
                       >
-                        <span className="font-medium text-[var(--color-secondary)] shrink-0">
+                        <span
+                          className={cn(
+                            'inline-flex items-center justify-center px-1.5 py-0.5 rounded icon-orb',
+                            'text-[10px] font-bold text-white shrink-0'
+                          )}
+                          style={{ background: 'linear-gradient(135deg, var(--color-secondary), var(--color-primary))' }}
+                        >
                           [{adapt.profile}]
                         </span>
                         {adapt.description}
@@ -126,11 +150,11 @@ export function TeacherPlan({ plan }: TeacherPlanProps) {
             </div>
           ))}
         </div>
-      </section>
+      </motion.section>
 
       {/* Assessments */}
       {plan.assessments.length > 0 && (
-        <section aria-labelledby="assessments-heading">
+        <motion.section variants={itemVariants} aria-labelledby="assessments-heading">
           <h3
             id="assessments-heading"
             className="text-base font-semibold text-[var(--color-text)] mb-3"
@@ -141,10 +165,7 @@ export function TeacherPlan({ plan }: TeacherPlanProps) {
             {plan.assessments.map((assessment, i) => (
               <div
                 key={i}
-                className={cn(
-                  'rounded-[var(--radius-md)] border p-4',
-                  'bg-[var(--color-surface)] border-[var(--color-border)]'
-                )}
+                className="glass card-hover rounded-xl p-4"
               >
                 <h4 className="font-medium text-[var(--color-text)] mb-1">
                   {assessment.title}
@@ -165,16 +186,26 @@ export function TeacherPlan({ plan }: TeacherPlanProps) {
               </div>
             ))}
           </div>
-        </section>
+        </motion.section>
       )}
 
       {/* Accessibility Notes */}
       {plan.accessibility_notes.length > 0 && (
-        <section aria-labelledby="a11y-notes-heading">
+        <motion.section variants={itemVariants} aria-labelledby="a11y-notes-heading">
           <h3
             id="a11y-notes-heading"
-            className="text-base font-semibold text-[var(--color-secondary)] mb-3"
+            className={cn(
+              'text-base font-semibold text-[var(--color-secondary)] mb-3',
+              'flex items-center gap-2'
+            )}
           >
+            <div
+              className="flex items-center justify-center w-7 h-7 icon-orb shrink-0"
+              style={{ background: 'linear-gradient(135deg, var(--color-secondary), var(--color-primary))' }}
+              aria-hidden="true"
+            >
+              <span className="text-white"><A11yIcon /></span>
+            </div>
             {t('accessibility_notes')}
           </h3>
           <ul className="space-y-2">
@@ -183,7 +214,7 @@ export function TeacherPlan({ plan }: TeacherPlanProps) {
                 key={i}
                 className={cn(
                   'text-sm text-[var(--color-text)] p-3',
-                  'bg-[var(--color-secondary)]/5 rounded-[var(--radius-md)]',
+                  'glass card-hover rounded-xl',
                   'border-l-3 border-[var(--color-secondary)]'
                 )}
               >
@@ -191,8 +222,19 @@ export function TeacherPlan({ plan }: TeacherPlanProps) {
               </li>
             ))}
           </ul>
-        </section>
+        </motion.section>
       )}
-    </article>
+    </motion.article>
+  )
+}
+
+function A11yIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="4" r="2" />
+      <path d="M12 8v6" />
+      <path d="M6 10l6 2 6-2" />
+      <path d="M8 22l4-6 4 6" />
+    </svg>
   )
 }

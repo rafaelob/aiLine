@@ -15,9 +15,7 @@ from .train import TrainConfig, train
 
 def main(argv: list[str] | None = None) -> None:
     """Parse arguments and run training."""
-    parser = argparse.ArgumentParser(
-        description="Train Libras sign language recognition model"
-    )
+    parser = argparse.ArgumentParser(description="Train Libras sign language recognition model")
     parser.add_argument(
         "--data-dir",
         type=Path,

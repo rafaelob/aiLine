@@ -6,6 +6,7 @@ import { VLibrasWidget } from '@/components/sign-language/vlibras-widget'
 import { GestureList } from '@/components/sign-language/gesture-list'
 import { LibrasCaptioning } from '@/components/sign-language/libras-captioning'
 import { SkeletonCard } from '@/components/ui/skeleton'
+import { PageTransition } from '@/components/ui/page-transition'
 
 const WebcamCapture = lazy(() => import('@/components/sign-language/webcam-capture'))
 
@@ -23,44 +24,46 @@ export default function SignLanguagePage() {
   const t = useTranslations('sign_language')
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8 px-4 py-8">
-      {/* Page header */}
-      <div>
-        <h1 className="text-2xl font-bold text-[var(--color-text)]">
-          {t('title')}
-        </h1>
-        <p className="mt-1 text-sm text-[var(--color-muted)]">
-          {t('subtitle')}
-        </p>
+    <PageTransition stagger>
+      <div className="mx-auto max-w-5xl space-y-8 px-4 py-8">
+        {/* Page header */}
+        <div>
+          <h1 className="text-2xl font-bold text-[var(--color-text)]">
+            {t('title')}
+          </h1>
+          <p className="mt-1 text-sm text-[var(--color-muted)]">
+            {t('subtitle')}
+          </p>
+        </div>
+
+        {/* Webcam capture and recognition */}
+        <section aria-label={t('webcam_section')}>
+          <Suspense fallback={<SkeletonCard />}>
+            <WebcamCapture />
+          </Suspense>
+        </section>
+
+        {/* Libras captioning */}
+        <section aria-label={t('captioning_title')}>
+          <LibrasCaptioning />
+        </section>
+
+        {/* Supported gestures */}
+        <section aria-label={t('supported_gestures')}>
+          <GestureList />
+        </section>
+
+        {/* VLibras widget */}
+        <section aria-label="VLibras">
+          <h3 className="mb-3 text-lg font-semibold text-[var(--color-text)]">
+            {t('vlibras_title')}
+          </h3>
+          <p className="mb-4 text-sm text-[var(--color-muted)]">
+            {t('vlibras_description')}
+          </p>
+          <VLibrasWidget />
+        </section>
       </div>
-
-      {/* Webcam capture and recognition */}
-      <section aria-label={t('webcam_section')}>
-        <Suspense fallback={<SkeletonCard />}>
-          <WebcamCapture />
-        </Suspense>
-      </section>
-
-      {/* Libras captioning */}
-      <section aria-label={t('captioning_title')}>
-        <LibrasCaptioning />
-      </section>
-
-      {/* Supported gestures */}
-      <section aria-label={t('supported_gestures')}>
-        <GestureList />
-      </section>
-
-      {/* VLibras widget */}
-      <section aria-label="VLibras">
-        <h3 className="mb-3 text-lg font-semibold text-[var(--color-text)]">
-          {t('vlibras_title')}
-        </h3>
-        <p className="mb-4 text-sm text-[var(--color-muted)]">
-          {t('vlibras_description')}
-        </p>
-        <VLibrasWidget />
-      </section>
-    </div>
+    </PageTransition>
   )
 }

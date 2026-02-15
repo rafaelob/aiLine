@@ -230,9 +230,7 @@ class TestEmbedBatch:
             resp.embeddings = embeddings
             return resp
 
-        emb._client.aio.models.embed_content = AsyncMock(
-            side_effect=[make_response(2), make_response(1)]
-        )
+        emb._client.aio.models.embed_content = AsyncMock(side_effect=[make_response(2), make_response(1)])
 
         result = await emb.embed_batch(["a", "b", "c"])
 

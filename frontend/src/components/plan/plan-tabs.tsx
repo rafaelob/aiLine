@@ -9,16 +9,19 @@ import { StudentPlan } from './student-plan'
 import { PlanReport } from './plan-report'
 import { PlanExports } from './plan-exports'
 import { SessionSummary } from './session-summary'
+import { TrustPanel } from './trust-panel'
 import type { StudyPlan, QualityReport } from '@/types/plan'
+import type { ScorecardData } from './transformation-scorecard'
 
-type TabKey = 'teacher' | 'student' | 'report' | 'exports' | 'summary'
+type TabKey = 'teacher' | 'student' | 'report' | 'exports' | 'summary' | 'trust'
 
-const TAB_KEYS: TabKey[] = ['teacher', 'student', 'report', 'exports', 'summary']
+const TAB_KEYS: TabKey[] = ['teacher', 'student', 'report', 'exports', 'summary', 'trust']
 
 interface PlanTabsProps {
   plan: StudyPlan
   qualityReport: QualityReport | null
   score: number | null
+  scorecard?: ScorecardData | null
 }
 
 /**
@@ -26,7 +29,7 @@ interface PlanTabsProps {
  * Teacher | Student | Report | Exports
  * Keyboard accessible with proper ARIA tabpanel pattern.
  */
-export function PlanTabs({ plan, qualityReport, score }: PlanTabsProps) {
+export function PlanTabs({ plan, qualityReport, score, scorecard }: PlanTabsProps) {
   const t = useTranslations('plans.tabs')
   const [activeTab, setActiveTab] = useState<TabKey>('teacher')
 
@@ -51,7 +54,6 @@ export function PlanTabs({ plan, qualityReport, score }: PlanTabsProps) {
 
       if (nextIndex !== currentIndex) {
         setActiveTab(TAB_KEYS[nextIndex])
-        // Focus the new tab button
         const tabEl = document.getElementById(`tab-${TAB_KEYS[nextIndex]}`)
         tabEl?.focus()
       }
@@ -64,11 +66,11 @@ export function PlanTabs({ plan, qualityReport, score }: PlanTabsProps) {
       {/* Tab list with scroll indicators */}
       <div className="relative">
         <div
-          className="pointer-events-none absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-[var(--color-bg)] to-transparent z-10 sm:hidden"
+          className="pointer-events-none absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-[var(--color-surface)] to-transparent z-10 sm:hidden"
           aria-hidden="true"
         />
         <div
-          className="pointer-events-none absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-[var(--color-bg)] to-transparent z-10 sm:hidden"
+          className="pointer-events-none absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-[var(--color-surface)] to-transparent z-10 sm:hidden"
           aria-hidden="true"
         />
         <div
@@ -76,43 +78,44 @@ export function PlanTabs({ plan, qualityReport, score }: PlanTabsProps) {
           aria-label={t('tabs_label')}
           onKeyDown={handleKeyDown}
           className={cn(
-            'flex border-b border-[var(--color-border)]',
+            'glass rounded-xl p-1 inline-flex',
             'overflow-x-auto scrollbar-none'
           )}
         >
-        {TAB_KEYS.map((key) => (
-          <button
-            key={key}
-            id={`tab-${key}`}
-            type="button"
-            role="tab"
-            aria-selected={activeTab === key}
-            aria-controls={`tabpanel-${key}`}
-            tabIndex={activeTab === key ? 0 : -1}
-            onClick={() => setActiveTab(key)}
-            className={cn(
-              'relative whitespace-nowrap px-4 py-3 text-sm font-medium',
-              'transition-colors',
-              activeTab === key
-                ? 'text-[var(--color-primary)]'
-                : 'text-[var(--color-muted)] hover:text-[var(--color-text)]'
-            )}
-          >
-            {t(key)}
-            {activeTab === key && (
-              <motion.span
-                layoutId="active-tab-indicator"
-                className="absolute inset-x-0 bottom-0 h-0.5 bg-[var(--color-primary)]"
-                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-              />
-            )}
-          </button>
-        ))}
+          {TAB_KEYS.map((key) => (
+            <button
+              key={key}
+              id={`tab-${key}`}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === key}
+              aria-controls={`tabpanel-${key}`}
+              tabIndex={activeTab === key ? 0 : -1}
+              onClick={() => setActiveTab(key)}
+              className={cn(
+                'relative whitespace-nowrap px-4 py-2.5 text-sm font-medium rounded-lg',
+                'transition-colors',
+                activeTab === key
+                  ? 'text-[var(--color-primary)]'
+                  : 'text-[var(--color-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface)]/50'
+              )}
+            >
+              {t(key)}
+              {activeTab === key && (
+                <motion.span
+                  layoutId="active-tab-indicator"
+                  className="absolute inset-0 rounded-lg glass"
+                  style={{ zIndex: -1 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                />
+              )}
+            </button>
+          ))}
         </div>
       </div>
 
       {/* Tab panels */}
-      <div className="mt-6">
+      <div className="mt-6 glass rounded-2xl p-6">
         <div
           id="tabpanel-teacher"
           role="tabpanel"
@@ -158,6 +161,22 @@ export function PlanTabs({ plan, qualityReport, score }: PlanTabsProps) {
           hidden={activeTab !== 'summary'}
         >
           {activeTab === 'summary' && <SessionSummary plan={plan} />}
+        </div>
+
+        <div
+          id="tabpanel-trust"
+          role="tabpanel"
+          aria-labelledby="tab-trust"
+          hidden={activeTab !== 'trust'}
+        >
+          {activeTab === 'trust' && (
+            <TrustPanel
+              qualityReport={qualityReport}
+              score={score}
+              scorecard={scorecard ?? null}
+              plan={plan}
+            />
+          )}
         </div>
       </div>
     </div>

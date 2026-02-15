@@ -23,9 +23,7 @@ class ValidationError(AiLineError):
 
 class ProviderError(AiLineError):
     def __init__(self, message: str, *, provider: str = "", code: str = "PROVIDER_ERROR", **kwargs):
-        super().__init__(
-            message, code=code, details={"provider": provider, **(kwargs.get("details") or {})}
-        )
+        super().__init__(message, code=code, details={"provider": provider, **(kwargs.get("details") or {})})
 
 
 class RateLimitError(ProviderError):

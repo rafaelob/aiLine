@@ -121,10 +121,7 @@ QUALITY_GATE_GOLDEN: list[dict[str, Any]] = [
     },
     {
         "id": "qg-003-incomplete-plan",
-        "prompt": (
-            "Avalie: Titulo: Historia. Sem objetivos. "
-            "Passos: nao definidos. Grade: nao especificada."
-        ),
+        "prompt": ("Avalie: Titulo: Historia. Sem objetivos. Passos: nao definidos. Grade: nao especificada."),
         "expected_score_range": (0, 50),
         "expected_status": "must-refine",
         "threshold": 50.0,

@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/cn'
+import { API_BASE } from '@/lib/api'
 
 type FailureType = 'redis' | 'llm'
 
@@ -24,7 +25,6 @@ export function DegradationPanel() {
   })
 
   const isDegraded = failures.redis || failures.llm
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
 
   const toggleFailure = useCallback(
     async (type: FailureType) => {
@@ -41,7 +41,7 @@ export function DegradationPanel() {
         // Demo mode: failures are simulated locally even if API is unreachable
       }
     },
-    [failures, API_BASE]
+    [failures]
   )
 
   const resetAll = useCallback(async () => {
@@ -51,7 +51,7 @@ export function DegradationPanel() {
     } catch {
       // Demo mode: reset locally
     }
-  }, [API_BASE])
+  }, [])
 
   return (
     <div className="space-y-4">

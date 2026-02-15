@@ -22,6 +22,7 @@ from ailine_runtime.ml.vocabulary import LABEL_TO_ID
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _create_data_dir(tmp_path: Path, labels: list[str], n_samples: int = 2, seq_len: int = 20) -> Path:
     """Create a mock data directory with .npy landmark files."""
     data_dir = tmp_path / "libras_data"
@@ -38,6 +39,7 @@ def _create_data_dir(tmp_path: Path, labels: list[str], n_samples: int = 2, seq_
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 class TestLandmarkDataset:
     def test_nonexistent_dir_yields_empty_dataset(self, tmp_path: Path):

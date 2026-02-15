@@ -111,12 +111,8 @@ def _valid_payload(**overrides: Any) -> dict[str, Any]:
 
 def _make_unsigned_jwt(payload: dict[str, Any]) -> str:
     """Create an unsigned JWT with alg=none (attack vector)."""
-    header = base64.urlsafe_b64encode(
-        json.dumps({"alg": "none", "typ": "JWT"}).encode()
-    ).rstrip(b"=").decode()
-    body = base64.urlsafe_b64encode(
-        json.dumps(payload, default=str).encode()
-    ).rstrip(b"=").decode()
+    header = base64.urlsafe_b64encode(json.dumps({"alg": "none", "typ": "JWT"}).encode()).rstrip(b"=").decode()
+    body = base64.urlsafe_b64encode(json.dumps(payload, default=str).encode()).rstrip(b"=").decode()
     return f"{header}.{body}."
 
 
@@ -148,9 +144,7 @@ class TestJWTForgedSignature:
             payload_b64 += "=" * padding
         payload = json.loads(base64.urlsafe_b64decode(payload_b64))
         payload["sub"] = "teacher-attacker"
-        new_payload = base64.urlsafe_b64encode(
-            json.dumps(payload, default=str).encode()
-        ).rstrip(b"=").decode()
+        new_payload = base64.urlsafe_b64encode(json.dumps(payload, default=str).encode()).rstrip(b"=").decode()
         tampered = f"{parts[0]}.{new_payload}.{parts[2]}"
         teacher_id, _error = _extract_teacher_id_from_jwt(tampered)
         assert teacher_id is None
@@ -249,9 +243,7 @@ class TestJWTAlgorithmNone:
 class TestJWTAlgorithmConfusion:
     """Test algorithm confusion attack (presenting RS256 token to HS256 verifier)."""
 
-    def test_algorithm_pinning_prevents_confusion(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_algorithm_pinning_prevents_confusion(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
         monkeypatch.setenv("AILINE_JWT_ALGORITHMS", "HS256")
         # Try to use RS256 algorithm in the header (algorithm confusion)
@@ -260,9 +252,7 @@ class TestJWTAlgorithmConfusion:
             from cryptography.hazmat.primitives import serialization
             from cryptography.hazmat.primitives.asymmetric import rsa
 
-            private_key = rsa.generate_private_key(
-                public_exponent=65537, key_size=2048
-            )
+            private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
             private_pem = private_key.private_bytes(
                 serialization.Encoding.PEM,
                 serialization.PrivateFormat.PKCS8,
@@ -303,9 +293,7 @@ class TestJWTMissingSub:
 class TestJWTReplayAttack:
     """Test behavior around token reuse (replay attack surface)."""
 
-    def test_same_valid_token_accepted_multiple_times(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_same_valid_token_accepted_multiple_times(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """A valid token should be accepted on each request (stateless JWT).
         Replay protection requires server-side jti tracking (out of scope for MVP)."""
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
@@ -328,18 +316,14 @@ class TestJWTReplayAttack:
 class TestJWTTenantImpersonation:
     """Test that JWT sub claim is the only source of teacher_id."""
 
-    def test_jwt_sub_determines_teacher_id(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_jwt_sub_determines_teacher_id(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
         payload = _valid_payload(sub="teacher-real")
         token = _make_signed_jwt(payload)
         teacher_id, _ = _extract_teacher_id_from_jwt(token)
         assert teacher_id == "teacher-real"
 
-    def test_cannot_impersonate_via_custom_claim(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_cannot_impersonate_via_custom_claim(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Extra claims like 'teacher_id' in payload should be ignored."""
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
         payload = _valid_payload(sub="teacher-real", teacher_id="teacher-attacker")
@@ -360,18 +344,20 @@ class TestJWTRS256Asymmetric:
             pytest.skip("cryptography not installed")
             return
 
-        private_key = rsa.generate_private_key(
-            public_exponent=65537, key_size=2048
-        )
+        private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
         private_pem = private_key.private_bytes(
             serialization.Encoding.PEM,
             serialization.PrivateFormat.PKCS8,
             serialization.NoEncryption(),
         )
-        public_pem = private_key.public_key().public_bytes(
-            serialization.Encoding.PEM,
-            serialization.PublicFormat.SubjectPublicKeyInfo,
-        ).decode()
+        public_pem = (
+            private_key.public_key()
+            .public_bytes(
+                serialization.Encoding.PEM,
+                serialization.PublicFormat.SubjectPublicKeyInfo,
+            )
+            .decode()
+        )
 
         monkeypatch.setenv("AILINE_JWT_PUBLIC_KEY", public_pem)
         monkeypatch.delenv("AILINE_JWT_SECRET", raising=False)
@@ -390,21 +376,21 @@ class TestJWTRS256Asymmetric:
             return
 
         # Generate two different key pairs
-        private_key1 = rsa.generate_private_key(
-            public_exponent=65537, key_size=2048
-        )
-        private_key2 = rsa.generate_private_key(
-            public_exponent=65537, key_size=2048
-        )
+        private_key1 = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+        private_key2 = rsa.generate_private_key(public_exponent=65537, key_size=2048)
         private_pem1 = private_key1.private_bytes(
             serialization.Encoding.PEM,
             serialization.PrivateFormat.PKCS8,
             serialization.NoEncryption(),
         )
-        public_pem2 = private_key2.public_key().public_bytes(
-            serialization.Encoding.PEM,
-            serialization.PublicFormat.SubjectPublicKeyInfo,
-        ).decode()
+        public_pem2 = (
+            private_key2.public_key()
+            .public_bytes(
+                serialization.Encoding.PEM,
+                serialization.PublicFormat.SubjectPublicKeyInfo,
+            )
+            .decode()
+        )
 
         # Sign with key1, verify with key2's public key
         monkeypatch.setenv("AILINE_JWT_PUBLIC_KEY", public_pem2)
@@ -418,9 +404,7 @@ class TestJWTRS256Asymmetric:
 class TestJWTDevModeFallback:
     """Test dev mode fallback behavior."""
 
-    def test_dev_mode_allows_unverified_jwt(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_dev_mode_allows_unverified_jwt(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("AILINE_DEV_MODE", "true")
         monkeypatch.delenv("AILINE_JWT_SECRET", raising=False)
         monkeypatch.delenv("AILINE_JWT_PUBLIC_KEY", raising=False)
@@ -428,9 +412,7 @@ class TestJWTDevModeFallback:
         teacher_id, _error = _extract_teacher_id_from_jwt(token)
         assert teacher_id == "teacher-dev"
 
-    def test_no_dev_mode_rejects_unverified(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_no_dev_mode_rejects_unverified(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv("AILINE_DEV_MODE", raising=False)
         monkeypatch.delenv("AILINE_JWT_SECRET", raising=False)
         monkeypatch.delenv("AILINE_JWT_PUBLIC_KEY", raising=False)
@@ -439,9 +421,7 @@ class TestJWTDevModeFallback:
         assert teacher_id is None
         assert error == "no_key_material"
 
-    def test_secret_set_but_dev_mode_does_not_bypass(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_secret_set_but_dev_mode_does_not_bypass(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """When secret is set, dev mode should NOT bypass signature verification."""
         monkeypatch.setenv("AILINE_DEV_MODE", "true")
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
@@ -733,10 +713,14 @@ class TestEnvironmentValidation:
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
         # Clear all possible API key env vars that pydantic-settings may pick up
         for key in (
-            "ANTHROPIC_API_KEY", "AILINE_ANTHROPIC_API_KEY",
-            "OPENAI_API_KEY", "AILINE_OPENAI_API_KEY",
-            "GOOGLE_API_KEY", "AILINE_GOOGLE_API_KEY",
-            "OPENROUTER_API_KEY", "AILINE_OPENROUTER_API_KEY",
+            "ANTHROPIC_API_KEY",
+            "AILINE_ANTHROPIC_API_KEY",
+            "OPENAI_API_KEY",
+            "AILINE_OPENAI_API_KEY",
+            "GOOGLE_API_KEY",
+            "AILINE_GOOGLE_API_KEY",
+            "OPENROUTER_API_KEY",
+            "AILINE_OPENROUTER_API_KEY",
         ):
             monkeypatch.delenv(key, raising=False)
         s = Settings(
@@ -807,9 +791,7 @@ class TestEnvironmentValidation:
 class TestJWTMiddlewareIntegration:
     """End-to-end tests through the FastAPI app."""
 
-    async def test_valid_jwt_sets_context(
-        self, client: AsyncClient, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    async def test_valid_jwt_sets_context(self, client: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
         token = _make_signed_jwt(_valid_payload(sub="teacher-e2e"))
         resp = await client.get(
@@ -819,9 +801,7 @@ class TestJWTMiddlewareIntegration:
         # Materials endpoint should process (may return empty list)
         assert resp.status_code in (200, 404)
 
-    async def test_expired_jwt_through_middleware(
-        self, client: AsyncClient, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    async def test_expired_jwt_through_middleware(self, client: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
         payload = _valid_payload(exp=datetime.now(UTC) - timedelta(hours=1))
         token = _make_signed_jwt(payload)

@@ -34,7 +34,8 @@ class TestTracesAPI:
     @pytest.mark.asyncio
     async def test_get_trace_not_found(self, app) -> None:
         async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test",
+            transport=ASGITransport(app=app),
+            base_url="http://test",
             headers=_AUTH,
         ) as client:
             resp = await client.get("/traces/nonexistent")
@@ -51,7 +52,8 @@ class TestTracesAPI:
         await store.update_run("run-42", status="completed", total_time_ms=200.0)
 
         async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test",
+            transport=ASGITransport(app=app),
+            base_url="http://test",
             headers=_AUTH,
         ) as client:
             resp = await client.get("/traces/run-42")
@@ -84,7 +86,8 @@ class TestTracesAPI:
         )
 
         async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test",
+            transport=ASGITransport(app=app),
+            base_url="http://test",
             headers=_AUTH,
         ) as client:
             resp = await client.get("/traces/run-99")
@@ -98,7 +101,8 @@ class TestTracesAPI:
     @pytest.mark.asyncio
     async def test_list_recent_empty(self, app) -> None:
         async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test",
+            transport=ASGITransport(app=app),
+            base_url="http://test",
             headers=_AUTH,
         ) as client:
             resp = await client.get("/traces/recent")
@@ -114,7 +118,8 @@ class TestTracesAPI:
         await store.update_run("run-2", status="completed", total_time_ms=200.0, final_score=72)
 
         async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test",
+            transport=ASGITransport(app=app),
+            base_url="http://test",
             headers=_AUTH,
         ) as client:
             resp = await client.get("/traces/recent?limit=10")

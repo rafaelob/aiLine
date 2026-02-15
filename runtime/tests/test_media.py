@@ -62,9 +62,7 @@ def app(monkeypatch):
     settings = Settings()
     application = create_app(settings)
     # Override container media adapters with fakes
-    application.state.container = _make_container_with_fakes(
-        application.state.container
-    )
+    application.state.container = _make_container_with_fakes(application.state.container)
     return application
 
 
@@ -244,10 +242,7 @@ class TestFakeImageDescriberProtocol:
 
 
 class TestFakeImageDescriberBehavior:
-
-    async def test_default_response_includes_byte_count(
-        self, fake_describer: FakeImageDescriber
-    ):
+    async def test_default_response_includes_byte_count(self, fake_describer: FakeImageDescriber):
         result = await fake_describer.describe(b"\x00" * 200)
         assert "200 bytes" in result
 
@@ -318,7 +313,6 @@ class TestOCRProcessorPDF:
 
 
 class TestOCRProcessorDefaults:
-
     async def test_default_file_type_is_pdf(self, ocr: OCRProcessor):
         """Ensure the default file_type parameter is 'pdf'."""
         # We just verify the signature default; actual extraction may fail
@@ -335,7 +329,6 @@ class TestOCRProcessorDefaults:
 
 
 class TestMediaTranscribeEndpoint:
-
     async def test_transcribe_success(self, client: AsyncClient):
         response = await client.post(
             "/media/transcribe",
@@ -365,7 +358,6 @@ class TestMediaTranscribeEndpoint:
 
 
 class TestMediaSynthesizeEndpoint:
-
     async def test_synthesize_success(self, client: AsyncClient):
         response = await client.post(
             "/media/synthesize",
@@ -392,7 +384,6 @@ class TestMediaSynthesizeEndpoint:
 
 
 class TestMediaDescribeImageEndpoint:
-
     async def test_describe_image_success(self, client: AsyncClient):
         response = await client.post(
             "/media/describe-image",
@@ -413,7 +404,6 @@ class TestMediaDescribeImageEndpoint:
 
 
 class TestMediaExtractTextEndpoint:
-
     async def test_extract_text_pdf(self, client: AsyncClient):
         """Extract text with a PDF content type (routes to PDF extractor)."""
         response = await client.post(

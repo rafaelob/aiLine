@@ -6,6 +6,7 @@ import type {
   StageStatus,
 } from '@/types/pipeline'
 import type { StudyPlan, QualityReport } from '@/types/plan'
+import type { ScorecardData } from '@/components/plan/transformation-scorecard'
 
 /**
  * Pipeline state store (Zustand 5.x).
@@ -40,6 +41,7 @@ export interface PipelineState {
   plan: StudyPlan | null
   qualityReport: QualityReport | null
   score: number | null
+  scorecard: ScorecardData | null
   isRunning: boolean
   error: string | null
 
@@ -49,6 +51,7 @@ export interface PipelineState {
   setPlan: (plan: StudyPlan) => void
   setQualityReport: (report: QualityReport) => void
   setScore: (score: number) => void
+  setScorecard: (scorecard: ScorecardData) => void
   setError: (error: string) => void
   reset: () => void
 }
@@ -90,6 +93,7 @@ export const usePipelineStore = create<PipelineState>((set) => ({
   plan: null,
   qualityReport: null,
   score: null,
+  scorecard: null,
   isRunning: false,
   error: null,
 
@@ -102,6 +106,7 @@ export const usePipelineStore = create<PipelineState>((set) => ({
       plan: null,
       qualityReport: null,
       score: null,
+      scorecard: null,
       isRunning: true,
       error: null,
     }),
@@ -173,6 +178,8 @@ export const usePipelineStore = create<PipelineState>((set) => ({
 
   setScore: (score: number) => set({ score }),
 
+  setScorecard: (scorecard: ScorecardData) => set({ scorecard }),
+
   setError: (error: string) => set({ error, isRunning: false }),
 
   reset: () =>
@@ -184,6 +191,7 @@ export const usePipelineStore = create<PipelineState>((set) => ({
       plan: null,
       qualityReport: null,
       score: null,
+      scorecard: null,
       isRunning: false,
       error: null,
     }),

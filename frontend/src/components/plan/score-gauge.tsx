@@ -4,6 +4,7 @@ import { useEffect, useSyncExternalStore, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { motion, useSpring, useTransform } from 'motion/react'
 import { useThemeContext } from '@/hooks/use-theme-context'
+import { cn } from '@/lib/cn'
 
 interface ScoreGaugeProps {
   score: number
@@ -63,6 +64,9 @@ export function ScoreGauge({ score, size = 160 }: ScoreGaugeProps) {
   // Color interpolation: red(0) -> yellow(50) -> green(100)
   const color = scoreToColor(clampedScore)
 
+  // Quality tier based on score
+  const tier = getTierLabel(clampedScore, t)
+
   return (
     <div
       className="relative inline-flex items-center justify-center"
@@ -73,6 +77,29 @@ export function ScoreGauge({ score, size = 160 }: ScoreGaugeProps) {
       aria-label={t('gauge_label', { score: clampedScore })}
     >
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        {/* SVG filter for neon glow */}
+        <defs>
+          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="4" result="coloredBlur" />
+            <feMerge>
+              <feMergeNode in="coloredBlur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+
+        {/* Decorative outer ring */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius + 8}
+          fill="none"
+          stroke="var(--color-border)"
+          strokeWidth={0.5}
+          strokeDasharray="2 4"
+          opacity={0.4}
+        />
+
         {/* Background track */}
         <circle
           cx={size / 2}
@@ -81,6 +108,24 @@ export function ScoreGauge({ score, size = 160 }: ScoreGaugeProps) {
           fill="none"
           stroke="var(--color-border)"
           strokeWidth={strokeWidth}
+        />
+
+        {/* Glow arc (behind main arc) */}
+        <motion.circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={color}
+          strokeWidth={strokeWidth + 4}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          initial={{ strokeDashoffset: circumference }}
+          animate={{ strokeDashoffset: dashOffset }}
+          transition={{ type: 'spring', stiffness: 40, damping: 12, delay: 0.2 }}
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+          filter="url(#glow)"
+          opacity={0.4}
         />
 
         {/* Progress arc */}
@@ -98,6 +143,19 @@ export function ScoreGauge({ score, size = 160 }: ScoreGaugeProps) {
           transition={{ type: 'spring', stiffness: 40, damping: 12, delay: 0.2 }}
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
         />
+
+        {/* Subtle endpoint dot */}
+        {clampedScore > 0 && (
+          <motion.circle
+            cx={size / 2 + radius * Math.cos(((-90 + 360 * progress) * Math.PI) / 180)}
+            cy={size / 2 + radius * Math.sin(((-90 + 360 * progress) * Math.PI) / 180)}
+            r={3}
+            fill={color}
+            initial={{ scale: 0 }}
+            animate={{ scale: [0, 1.5, 1] }}
+            transition={{ delay: 0.8, duration: 0.4, ease: 'easeOut' }}
+          />
+        )}
       </svg>
 
       {/* Centered score number */}
@@ -108,7 +166,10 @@ export function ScoreGauge({ score, size = 160 }: ScoreGaugeProps) {
         >
           {mounted ? <MotionNumber value={displayScore} /> : '0'}
         </motion.span>
-        <span className="text-xs text-[var(--color-muted)] mt-1">/ 100</span>
+        <span className="text-xs text-[var(--color-muted)] mt-0.5">/ 100</span>
+        <span className={cn('text-[10px] font-semibold mt-1 tracking-wider uppercase', tier.className)}>
+          {tier.label}
+        </span>
       </div>
     </div>
   )
@@ -146,4 +207,34 @@ function scoreToColor(score: number): string {
   const g = Math.round(119 + (150 - 119) * t)
   const b = Math.round(6 + (105 - 6) * t)
   return `rgb(${r}, ${g}, ${b})`
+}
+
+/**
+ * Get quality tier label and styling based on score thresholds.
+ */
+function getTierLabel(score: number, t: (key: string) => string): { label: string; className: string } {
+  try {
+    if (score < 40) {
+      return { label: t('tier_poor'), className: 'text-[rgb(220,38,38)]' }
+    }
+    if (score < 60) {
+      return { label: t('tier_fair'), className: 'text-[rgb(217,119,6)]' }
+    }
+    if (score < 80) {
+      return { label: t('tier_good'), className: 'text-[rgb(22,163,74)]' }
+    }
+    return { label: t('tier_excellent'), className: 'text-[rgb(5,150,105)]' }
+  } catch {
+    // Fallback to English strings if i18n keys are missing
+    if (score < 40) {
+      return { label: 'Poor', className: 'text-[rgb(220,38,38)]' }
+    }
+    if (score < 60) {
+      return { label: 'Fair', className: 'text-[rgb(217,119,6)]' }
+    }
+    if (score < 80) {
+      return { label: 'Good', className: 'text-[rgb(22,163,74)]' }
+    }
+    return { label: 'Excellent', className: 'text-[rgb(5,150,105)]' }
+  }
 }

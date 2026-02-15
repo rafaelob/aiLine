@@ -1,8 +1,10 @@
 'use client'
+'use no memo'
 
 import { useTranslations } from 'next-intl'
 import { useParams } from 'next/navigation'
 import { useEffect, useState, useCallback, useRef } from 'react'
+import { motion } from 'motion/react'
 import { cn } from '@/lib/cn'
 
 /**
@@ -98,25 +100,26 @@ export default function ErrorPage({
   }, [])
 
   return (
-    <div
+    <motion.div
       className="flex min-h-[60vh] items-center justify-center p-6"
       role="alert"
       aria-live="assertive"
+      initial={{ opacity: 0, y: 20, filter: 'blur(8px)' }}
+      animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+      transition={{ type: 'spring', stiffness: 200, damping: 24 }}
     >
       <div
         className={cn(
           'flex w-full max-w-lg flex-col items-center gap-6 text-center',
           'rounded-[var(--radius-lg)] border border-[var(--color-border)]',
-          'bg-[var(--color-surface)] p-8',
+          'glass p-8',
           'shadow-[var(--shadow-lg)]',
         )}
       >
         {/* Error icon */}
         <div
-          className={cn(
-            'flex h-16 w-16 items-center justify-center rounded-full',
-            'bg-[var(--color-error)]/10',
-          )}
+          className="icon-orb flex h-16 w-16 items-center justify-center rounded-full"
+          style={{ background: 'linear-gradient(135deg, var(--color-error), color-mix(in srgb, var(--color-error) 60%, var(--color-warning)))' }}
           aria-hidden="true"
         >
           <svg
@@ -124,7 +127,7 @@ export default function ErrorPage({
             height="32"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="var(--color-error)"
+            stroke="white"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -150,12 +153,12 @@ export default function ErrorPage({
           <div
             className={cn(
               'flex w-full items-center gap-3 rounded-[var(--radius-md)] px-4 py-3',
-              'border text-sm',
+              'border text-sm glass',
               sseState === 'reconnecting'
-                ? 'border-[var(--color-warning)]/30 bg-[var(--color-warning)]/10 text-[var(--color-text)]'
+                ? 'border-[var(--color-warning)]/30 text-[var(--color-text)]'
                 : sseState === 'failed'
-                  ? 'border-[var(--color-error)]/30 bg-[var(--color-error)]/10 text-[var(--color-text)]'
-                  : 'border-[var(--color-warning)]/30 bg-[var(--color-warning)]/10 text-[var(--color-text)]',
+                  ? 'border-[var(--color-error)]/30 text-[var(--color-text)]'
+                  : 'border-[var(--color-warning)]/30 text-[var(--color-text)]',
             )}
             role="status"
             aria-live="polite"
@@ -220,7 +223,7 @@ export default function ErrorPage({
               'rounded-[var(--radius-md)] border border-[var(--color-border)]',
               'px-4 py-2 text-xs font-medium',
               'text-[var(--color-muted)]',
-              'hover:bg-[var(--color-surface-elevated)]',
+              'hover:glass hover:bg-[var(--color-surface-elevated)]',
               'focus-visible:outline-2 focus-visible:outline-offset-2',
               'focus-visible:outline-[var(--color-primary)]',
               'transition-colors',
@@ -248,13 +251,15 @@ export default function ErrorPage({
             onClick={reset}
             className={cn(
               'rounded-[var(--radius-md)] px-5 py-2.5',
-              'bg-[var(--color-primary)] text-[var(--color-on-primary)]',
+              'text-[var(--color-on-primary)]',
               'text-sm font-semibold',
-              'hover:bg-[var(--color-primary-hover)]',
+              'btn-shimmer',
+              'hover:brightness-110',
               'focus-visible:outline-2 focus-visible:outline-offset-2',
               'focus-visible:outline-[var(--color-primary)]',
-              'transition-colors',
+              'transition-all',
             )}
+            style={{ background: 'var(--gradient-hero)' }}
           >
             {t('retry')}
           </button>
@@ -274,7 +279,6 @@ export default function ErrorPage({
             {t('reload')}
           </button>
 
-          {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- Error boundaries must use <a> to work when the router is broken */}
           <a
             href={`/${params.locale ?? 'en'}`}
             className={cn(
@@ -291,7 +295,7 @@ export default function ErrorPage({
           </a>
         </div>
       </div>
-    </div>
+    </motion.div>
   )
 }
 

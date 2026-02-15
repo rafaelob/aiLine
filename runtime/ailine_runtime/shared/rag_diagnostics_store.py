@@ -76,10 +76,7 @@ class RAGDiagnosticsStore:
 
     def _evict_expired(self) -> None:
         now = time.monotonic()
-        expired = [
-            k for k, ts in self._timestamps.items()
-            if now - ts > self._ttl
-        ]
+        expired = [k for k, ts in self._timestamps.items() if now - ts > self._ttl]
         for k in expired:
             self._store.pop(k, None)
             self._timestamps.pop(k, None)

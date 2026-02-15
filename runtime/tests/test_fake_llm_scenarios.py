@@ -9,11 +9,13 @@ from ailine_runtime.adapters.llm.fake_llm import FakeChatLLM
 
 class TestFakeLLMResponseMap:
     async def test_response_map_keyword_match(self):
-        llm = FakeChatLLM(response_map={
-            "plan": '{"type": "plan_response"}',
-            "refine": '{"type": "refine_response"}',
-            "execute": '{"type": "execute_response"}',
-        })
+        llm = FakeChatLLM(
+            response_map={
+                "plan": '{"type": "plan_response"}',
+                "refine": '{"type": "refine_response"}',
+                "execute": '{"type": "execute_response"}',
+            }
+        )
         messages = [{"role": "user", "content": "Create a plan for math class"}]
         result = await llm.generate(messages)
         assert json.loads(result) == {"type": "plan_response"}
@@ -57,10 +59,12 @@ class TestFakeLLMResponseMap:
         assert "".join(chunks) == "streamed-plan"
 
     async def test_response_map_first_keyword_wins(self):
-        llm = FakeChatLLM(response_map={
-            "plan": "plan_wins",
-            "aula": "aula_wins",
-        })
+        llm = FakeChatLLM(
+            response_map={
+                "plan": "plan_wins",
+                "aula": "aula_wins",
+            }
+        )
         messages = [{"role": "user", "content": "create a plan de aula"}]
         result = await llm.generate(messages)
         # "plan" is checked first, so it should match

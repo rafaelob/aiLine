@@ -24,7 +24,7 @@ from ..deps import AgentDeps
 try:
     from ailine_runtime.shared.tracing import trace_tool_call as _trace_tool_call
 except ImportError:
-    _trace_tool_call = None
+    _trace_tool_call = None  # type: ignore[assignment]
 
 # Pydantic JSON Schema type -> Python annotation mapping (fallback)
 _TYPE_MAP: dict[str, type] = {
@@ -149,8 +149,7 @@ def _build_typed_wrapper(tool_def: Any) -> Any:
         typing.get_type_hints(_tool_fn, include_extras=True)
     except Exception as exc:
         raise RuntimeError(
-            f"Tool bridge self-check failed for '{tool_def.name}': {exc}. "
-            f"Pydantic AI inspection may have changed."
+            f"Tool bridge self-check failed for '{tool_def.name}': {exc}. Pydantic AI inspection may have changed."
         ) from exc
 
     return _tool_fn

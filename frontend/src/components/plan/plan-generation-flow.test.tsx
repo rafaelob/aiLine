@@ -30,6 +30,8 @@ let mockHookState = {
   stages: [],
   qualityReport: null,
   score: null as number | null,
+  scorecard: null as unknown,
+  runId: null as string | null,
 }
 
 vi.mock('@/hooks/use-pipeline-sse', () => ({
@@ -48,6 +50,14 @@ vi.mock('./plan-tabs', () => ({
   PlanTabs: () => <div data-testid="plan-tabs">Plan Tabs</div>,
 }))
 
+vi.mock('./transformation-scorecard', () => ({
+  TransformationScorecard: () => <div data-testid="scorecard">Scorecard</div>,
+}))
+
+vi.mock('./teacher-review-panel', () => ({
+  TeacherReviewPanel: () => <div data-testid="review-panel">Review Panel</div>,
+}))
+
 describe('PlanGenerationFlow', () => {
   const user = userEvent.setup()
 
@@ -60,6 +70,8 @@ describe('PlanGenerationFlow', () => {
       stages: [],
       qualityReport: null,
       score: null,
+      scorecard: null,
+      runId: null,
     }
   })
 

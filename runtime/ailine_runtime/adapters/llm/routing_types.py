@@ -132,13 +132,7 @@ def compute_route(features: RouteFeatures) -> RouteDecision:
         intent=W_INTENT * features.intent_score,
     )
 
-    score = (
-        breakdown.token
-        + breakdown.structured
-        + breakdown.tool
-        + breakdown.history
-        + breakdown.intent
-    )
+    score = breakdown.token + breakdown.structured + breakdown.tool + breakdown.history + breakdown.intent
     score = min(1.0, max(0.0, score))
 
     if score <= TIER_CHEAP_MAX:
@@ -212,9 +206,7 @@ def score_intent(messages: list[dict[str, Any]]) -> float:
     if not messages:
         return 0.0
     last_content = str(messages[-1].get("content", ""))
-    matches = sum(
-        1 for pat in _COMPLEXITY_SIGNALS if pat.search(last_content)
-    )
+    matches = sum(1 for pat in _COMPLEXITY_SIGNALS if pat.search(last_content))
     if matches >= 3:
         return 1.0
     if matches >= 2:

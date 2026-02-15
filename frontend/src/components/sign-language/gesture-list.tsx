@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import { cn } from '@/lib/cn'
 import type { GestureInfo, GestureListResponse } from '@/types/sign-language'
+import { API_BASE } from '@/lib/api'
 
 /**
  * Displays the list of supported Libras gestures (ADR-026).
@@ -11,8 +12,6 @@ import type { GestureInfo, GestureListResponse } from '@/types/sign-language'
  * Fetches from GET /sign-language/gestures and renders a card grid
  * with gesture name in the current locale and the canonical ID.
  */
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
 
 interface GestureListProps {
   className?: string

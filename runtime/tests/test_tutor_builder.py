@@ -46,6 +46,7 @@ from ailine_runtime.tutoring.session import (
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture(autouse=True)
 def _use_tmp_store(tmp_path: Any) -> Any:
     """Redirect local store to a temporary directory for all tests."""
@@ -75,6 +76,7 @@ class FakeSettings:
 # ---------------------------------------------------------------------------
 # Playbook tests
 # ---------------------------------------------------------------------------
+
 
 class TestPlaybooks:
     """Tests for the accessibility playbooks module."""
@@ -130,6 +132,7 @@ class TestPlaybooks:
 # System prompt builder tests
 # ---------------------------------------------------------------------------
 
+
 class TestBuildTutorSystemPrompt:
     """Tests for the system prompt builder function."""
 
@@ -141,9 +144,7 @@ class TestBuildTutorSystemPrompt:
             subject="Matematica",
             grade="6o ano",
             student_profile=LearnerProfile(name="Ana"),
-            materials_scope=TutorMaterialsScope(
-                teacher_id="teach1", subject="Matematica"
-            ),
+            materials_scope=TutorMaterialsScope(teacher_id="teach1", subject="Matematica"),
             persona=TutorPersona(system_prompt=""),
         )
         prompt = build_tutor_system_prompt(spec)
@@ -162,9 +163,7 @@ class TestBuildTutorSystemPrompt:
                 needs=["autism", "hearing"],
                 strengths=["leitura"],
             ),
-            materials_scope=TutorMaterialsScope(
-                teacher_id="teach1", subject="Ciencias"
-            ),
+            materials_scope=TutorMaterialsScope(teacher_id="teach1", subject="Ciencias"),
             persona=TutorPersona(system_prompt=""),
         )
         prompt = build_tutor_system_prompt(spec)
@@ -181,9 +180,7 @@ class TestBuildTutorSystemPrompt:
             subject="Historia",
             grade="7o ano",
             student_profile=LearnerProfile(name="Maria"),
-            materials_scope=TutorMaterialsScope(
-                teacher_id="teach1", subject="Historia"
-            ),
+            materials_scope=TutorMaterialsScope(teacher_id="teach1", subject="Historia"),
             persona=TutorPersona(system_prompt=""),
         )
         prompt = build_tutor_system_prompt(spec)
@@ -200,9 +197,7 @@ class TestBuildTutorSystemPrompt:
             tone="divertido e motivador",
             style="coach",
             student_profile=LearnerProfile(name="Joao"),
-            materials_scope=TutorMaterialsScope(
-                teacher_id="teach1", subject="Portugues"
-            ),
+            materials_scope=TutorMaterialsScope(teacher_id="teach1", subject="Portugues"),
             persona=TutorPersona(system_prompt=""),
         )
         prompt = build_tutor_system_prompt(spec)
@@ -213,6 +208,7 @@ class TestBuildTutorSystemPrompt:
 # ---------------------------------------------------------------------------
 # Builder tests
 # ---------------------------------------------------------------------------
+
 
 class TestCreateTutorAgent:
     """Tests for create_tutor_agent."""
@@ -239,10 +235,12 @@ class TestCreateTutorAgent:
 
     @pytest.mark.asyncio
     async def test_create_with_auto_persona_and_fake_llm(self) -> None:
-        persona_json = json.dumps({
-            "system_prompt": "Voce e um tutor gerado por IA.",
-            "notes": ["Gerado automaticamente."],
-        })
+        persona_json = json.dumps(
+            {
+                "system_prompt": "Voce e um tutor gerado por IA.",
+                "notes": ["Gerado automaticamente."],
+            }
+        )
         llm = FakeChatLLM(responses=[persona_json])
 
         spec = await create_tutor_agent(
@@ -309,6 +307,7 @@ class TestCreateTutorAgent:
 # Save/Load spec tests
 # ---------------------------------------------------------------------------
 
+
 class TestSaveLoadSpec:
     """Tests for spec persistence."""
 
@@ -320,9 +319,7 @@ class TestSaveLoadSpec:
             subject="Geografia",
             grade="9o ano",
             student_profile=LearnerProfile(name="Teste"),
-            materials_scope=TutorMaterialsScope(
-                teacher_id="teach1", subject="Geografia"
-            ),
+            materials_scope=TutorMaterialsScope(teacher_id="teach1", subject="Geografia"),
             persona=TutorPersona(system_prompt="prompt teste"),
         )
 
@@ -343,6 +340,7 @@ class TestSaveLoadSpec:
 # ---------------------------------------------------------------------------
 # Session tests
 # ---------------------------------------------------------------------------
+
 
 class TestSessionManagement:
     """Tests for session create/save/load."""
@@ -387,6 +385,7 @@ class TestSessionManagement:
 # Chat turn tests (with FakeLLM)
 # ---------------------------------------------------------------------------
 
+
 class TestTutorChatTurn:
     """Tests for the tutor_chat_turn function."""
 
@@ -405,14 +404,16 @@ class TestTutorChatTurn:
         save_session(session)
 
         # Create a valid tutor output for FakeLLM
-        tutor_output = json.dumps({
-            "answer_markdown": "2+2 e igual a 4.",
-            "step_by_step": ["Passo 1"],
-            "check_for_understanding": ["Entendeu?"],
-            "options_to_respond": ["Sim", "Nao"],
-            "citations": [],
-            "flags": [],
-        })
+        tutor_output = json.dumps(
+            {
+                "answer_markdown": "2+2 e igual a 4.",
+                "step_by_step": ["Passo 1"],
+                "check_for_understanding": ["Entendeu?"],
+                "options_to_respond": ["Sim", "Nao"],
+                "citations": [],
+                "flags": [],
+            }
+        )
         llm = FakeChatLLM(responses=[tutor_output])
 
         result = await tutor_chat_turn(
@@ -440,14 +441,16 @@ class TestTutorChatTurn:
         session = create_session(spec.tutor_id)
         save_session(session)
 
-        tutor_output = json.dumps({
-            "answer_markdown": "A Revolucao Francesa foi em 1789.",
-            "step_by_step": [],
-            "check_for_understanding": [],
-            "options_to_respond": [],
-            "citations": [],
-            "flags": [],
-        })
+        tutor_output = json.dumps(
+            {
+                "answer_markdown": "A Revolucao Francesa foi em 1789.",
+                "step_by_step": [],
+                "check_for_understanding": [],
+                "options_to_respond": [],
+                "citations": [],
+                "flags": [],
+            }
+        )
         llm = FakeChatLLM(responses=[tutor_output])
 
         await tutor_chat_turn(

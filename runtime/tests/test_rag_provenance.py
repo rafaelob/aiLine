@@ -37,9 +37,7 @@ def app(monkeypatch: pytest.MonkeyPatch):
 _AUTH = {"X-Teacher-ID": "teacher-test"}
 
 
-def _make_result(
-    score: float, chunk_id: str = "chunk-1"
-) -> RetrievalResult:
+def _make_result(score: float, chunk_id: str = "chunk-1") -> RetrievalResult:
     """Helper to create a RetrievalResult with a given score."""
     return RetrievalResult(
         chunk_id=chunk_id,
@@ -210,7 +208,8 @@ class TestDiagnosticsAPIEndpoint:
     @pytest.mark.asyncio
     async def test_get_not_found(self, app) -> None:
         async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test",
+            transport=ASGITransport(app=app),
+            base_url="http://test",
             headers=_AUTH,
         ) as client:
             resp = await client.get("/rag/diagnostics/nonexistent")
@@ -228,7 +227,8 @@ class TestDiagnosticsAPIEndpoint:
         await store.save(diag)
 
         async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test",
+            transport=ASGITransport(app=app),
+            base_url="http://test",
             headers=_AUTH,
         ) as client:
             resp = await client.get("/rag/diagnostics/prov-test-1")

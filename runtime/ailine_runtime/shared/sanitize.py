@@ -76,10 +76,7 @@ def validate_teacher_id(teacher_id: str) -> str:
 
     # Fallback: simple identifier (letters, digits, hyphens, underscores)
     if not re.match(r"^[a-zA-Z0-9_-]+$", tid):
-        raise ValueError(
-            "teacher_id must be a UUID or contain only alphanumeric "
-            "characters, hyphens, and underscores"
-        )
+        raise ValueError("teacher_id must be a UUID or contain only alphanumeric characters, hyphens, and underscores")
     return tid
 
 
@@ -150,7 +147,7 @@ def _sanitize_value(
             )
         return cleaned
     # Scalars: int, float, bool, None — pass through
-    if isinstance(value, (int, float, bool, type(None))):
+    if isinstance(value, int | float | bool | type(None)):
         return value
     # Unknown types: convert to string representation
     return _sanitize_short_string(str(value), max_len=1_000)

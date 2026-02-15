@@ -2,7 +2,10 @@
 
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { motion } from 'motion/react'
 import { cn } from '@/lib/cn'
+import { containerVariants, itemVariants } from '@/lib/motion-variants'
+import { API_BASE } from '@/lib/api'
 
 const EXPORT_VARIANTS = [
   'teacher_plan',
@@ -40,9 +43,8 @@ export function PlanExports({ planId }: PlanExportsProps) {
     setContent(null)
 
     try {
-      const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
       const res = await fetch(
-        `${apiBase}/plans/${planId}/exports/${variant}`
+        `${API_BASE}/plans/${planId}/exports/${variant}`
       )
       if (!res.ok) throw new Error(`Export fetch failed: ${res.status}`)
       const data = await res.json()
@@ -55,48 +57,93 @@ export function PlanExports({ planId }: PlanExportsProps) {
   }
 
   return (
-    <div className="space-y-6">
-      <h3 className="text-base font-semibold text-[var(--color-text)]">
-        {t('title')}
-      </h3>
+    <motion.div
+      className="space-y-6"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      {/* Title with icon-orb */}
+      <motion.div className="flex items-center gap-3" variants={itemVariants}>
+        <div
+          className="flex items-center justify-center w-8 h-8 icon-orb shrink-0"
+          style={{ background: 'linear-gradient(135deg, var(--color-primary), var(--color-secondary))' }}
+          aria-hidden="true"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="white"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+        </div>
+        <h3 className="text-base font-semibold text-[var(--color-text)]">
+          {t('title')}
+        </h3>
+      </motion.div>
 
       {/* Variant grid */}
-      <div
-        className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3"
-        role="listbox"
-        aria-label={t('select')}
-      >
-        {EXPORT_VARIANTS.map((variant) => (
-          <button
-            key={variant}
-            type="button"
-            role="option"
-            aria-selected={selected === variant}
-            onClick={() => handleSelect(variant)}
-            className={cn(
-              'flex flex-col items-center gap-2 p-4',
-              'rounded-[var(--radius-md)] border text-center',
-              'transition-all text-sm',
-              selected === variant
-                ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/5 text-[var(--color-primary)]'
-                : 'border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-surface-elevated)]'
-            )}
-          >
-            <ExportIcon variant={variant} />
-            <span className="text-xs font-medium">
-              {t(`variants.${variant}`)}
-            </span>
-          </button>
-        ))}
-      </div>
+      <motion.div className="glass rounded-2xl p-4" variants={itemVariants}>
+        <div
+          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3"
+          role="listbox"
+          aria-label={t('select')}
+        >
+          {EXPORT_VARIANTS.map((variant) => (
+            <button
+              key={variant}
+              type="button"
+              role="option"
+              aria-selected={selected === variant}
+              onClick={() => handleSelect(variant)}
+              className={cn(
+                'flex flex-col items-center gap-2 p-4',
+                'rounded-xl glass card-hover text-center',
+                'transition-all text-sm',
+                selected === variant
+                  ? 'gradient-border-glass text-[var(--color-primary)]'
+                  : 'text-[var(--color-text)]'
+              )}
+            >
+              <div
+                className={cn(
+                  'flex items-center justify-center w-10 h-10 rounded-lg',
+                  selected === variant
+                    ? 'icon-orb'
+                    : 'text-[var(--color-muted)]'
+                )}
+                style={
+                  selected === variant
+                    ? { background: 'linear-gradient(135deg, var(--color-primary), var(--color-secondary))' }
+                    : undefined
+                }
+              >
+                <ExportIcon variant={variant} selected={selected === variant} />
+              </div>
+              <span className="text-xs font-medium">
+                {t(`variants.${variant}`)}
+              </span>
+            </button>
+          ))}
+        </div>
+      </motion.div>
 
       {/* Preview area */}
       {selected && (
-        <div
-          className={cn(
-            'rounded-[var(--radius-lg)] border p-6',
-            'bg-[var(--color-surface)] border-[var(--color-border)]'
-          )}
+        <motion.div
+          className="glass rounded-2xl gradient-border-glass p-6"
+          variants={itemVariants}
+          initial="hidden"
+          animate="visible"
         >
           <div className="flex items-center justify-between mb-4">
             <h4 className="font-medium text-[var(--color-text)]">
@@ -105,7 +152,8 @@ export function PlanExports({ planId }: PlanExportsProps) {
           </div>
 
           {loading ? (
-            <div className="flex items-center justify-center py-12" role="status">
+            <div className="flex flex-col items-center justify-center py-12 gap-3" role="status">
+              <div className="w-6 h-6 border-2 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
               <span className="text-sm text-[var(--color-muted)]">
                 {tpe('loading')}
               </span>
@@ -115,20 +163,19 @@ export function PlanExports({ planId }: PlanExportsProps) {
               className={cn(
                 'whitespace-pre-wrap text-sm text-[var(--color-text)]',
                 'max-h-96 overflow-y-auto p-4',
-                'bg-[var(--color-surface-elevated)] rounded-[var(--radius-md)]'
+                'glass rounded-xl'
               )}
             >
               {content}
             </pre>
           )}
-        </div>
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   )
 }
 
-function ExportIcon({ variant }: { variant: ExportVariant }) {
-  // Simple icon differentiation based on variant type
+function ExportIcon({ variant, selected }: { variant: ExportVariant; selected: boolean }) {
   const iconMap: Record<string, string> = {
     teacher_plan: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z',
     student_plan: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2',
@@ -148,7 +195,7 @@ function ExportIcon({ variant }: { variant: ExportVariant }) {
       height="24"
       viewBox="0 0 24 24"
       fill="none"
-      stroke="currentColor"
+      stroke={selected ? 'white' : 'currentColor'}
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"

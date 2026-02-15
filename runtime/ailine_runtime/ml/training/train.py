@@ -66,10 +66,7 @@ def train(config: TrainConfig) -> TrainResult:
     try:
         import torch  # noqa: F401
     except ImportError:
-        logger.warning(
-            "PyTorch not installed — training scaffold only. "
-            "Install with: pip install torch"
-        )
+        logger.warning("PyTorch not installed — training scaffold only. Install with: pip install torch")
         return _placeholder_train(config)
 
     return _placeholder_train(config)
@@ -91,11 +88,13 @@ def _placeholder_train(config: TrainConfig) -> TrainResult:
         train_loss = 2.0 * np.exp(-0.3 * epoch) + rng.uniform(0, 0.1)
         val_loss = 2.2 * np.exp(-0.25 * epoch) + rng.uniform(0, 0.15)
 
-        history.append({
-            "epoch": epoch,
-            "train_loss": float(train_loss),
-            "val_loss": float(val_loss),
-        })
+        history.append(
+            {
+                "epoch": epoch,
+                "train_loss": float(train_loss),
+                "val_loss": float(val_loss),
+            }
+        )
 
         if val_loss < best_val_loss:
             best_val_loss = val_loss

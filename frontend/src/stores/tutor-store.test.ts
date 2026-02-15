@@ -3,6 +3,10 @@ import { useTutorStore } from './tutor-store'
 
 beforeEach(() => {
   useTutorStore.getState().reset()
+  // Clear persisted state between tests
+  if (typeof localStorage !== 'undefined') {
+    localStorage.removeItem('ailine-tutor-chat')
+  }
 })
 
 describe('useTutorStore', () => {
@@ -75,5 +79,23 @@ describe('useTutorStore', () => {
     useTutorStore.getState().setError('Old error')
     useTutorStore.getState().addUserMessage('New message')
     expect(useTutorStore.getState().error).toBeNull()
+  })
+
+  describe('persistence', () => {
+    it('persists messages and sessionId only', () => {
+      useTutorStore.getState().addUserMessage('Hello')
+      useTutorStore.getState().setSessionId('s-1')
+      useTutorStore.getState().startStreaming()
+
+      const stored = localStorage.getItem('ailine-tutor-chat')
+      expect(stored).toBeTruthy()
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        expect(parsed.state.messages).toHaveLength(2)
+        expect(parsed.state.sessionId).toBe('s-1')
+        expect(parsed.state.isStreaming).toBeUndefined()
+        expect(parsed.state.error).toBeUndefined()
+      }
+    })
   })
 })

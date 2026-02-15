@@ -31,7 +31,7 @@ export function SmartRouterCard({ rationale, className }: SmartRouterCardProps) 
         aria-expanded={isExpanded}
         className={cn(
           'inline-flex items-center gap-1.5 px-2 py-1',
-          'rounded-full text-[10px] font-semibold',
+          'rounded-full text-[10px] font-semibold glass',
           'bg-[var(--color-secondary)]/10 text-[var(--color-secondary)]',
           'hover:bg-[var(--color-secondary)]/20 transition-colors',
           'focus-visible:outline-2 focus-visible:outline-offset-2',
@@ -68,9 +68,9 @@ export function SmartRouterCard({ rationale, className }: SmartRouterCardProps) 
           >
             <div
               className={cn(
-                'mt-1 p-3 rounded-[var(--radius-md)]',
-                'border border-[var(--color-border)]',
-                'bg-[var(--color-surface)] shadow-[var(--shadow-md)]',
+                'mt-1 p-3 rounded-xl',
+                'glass card-hover',
+                'shadow-[var(--shadow-md)]',
                 'text-xs'
               )}
               role="tooltip"
@@ -90,8 +90,11 @@ export function SmartRouterCard({ rationale, className }: SmartRouterCardProps) 
                     <span className="text-[var(--color-muted)] w-16 shrink-0">{t(key)}</span>
                     <div className="flex-1 h-1.5 rounded-full bg-[var(--color-border)]">
                       <div
-                        className="h-full rounded-full bg-[var(--color-secondary)] transition-all"
-                        style={{ width: `${Math.min(100, rationale.weighted_scores[key] * 100)}%` }}
+                        className="h-full rounded-full transition-all"
+                        style={{
+                          width: `${Math.min(100, rationale.weighted_scores[key] * 100)}%`,
+                          background: 'linear-gradient(90deg, var(--color-secondary), var(--color-primary))',
+                        }}
                       />
                     </div>
                     <span className="font-mono text-[10px] text-[var(--color-muted)] w-8 text-right">
@@ -100,7 +103,7 @@ export function SmartRouterCard({ rationale, className }: SmartRouterCardProps) 
                   </div>
                 ))}
 
-                <div className="flex justify-between pt-1 border-t border-[var(--color-border)]">
+                <div className="flex justify-between pt-2 mt-1 border-t border-[var(--color-border)] glass rounded-lg px-2 py-1">
                   <span className="font-semibold text-[var(--color-text)]">{t('total')}</span>
                   <span className="font-mono font-semibold text-[var(--color-text)]">
                     {(rationale.total_score * 100).toFixed(0)}
@@ -117,20 +120,27 @@ export function SmartRouterCard({ rationale, className }: SmartRouterCardProps) 
 
 function ModelIcon() {
   return (
-    <svg
-      width="10"
-      height="10"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+    <div
+      className="flex items-center justify-center w-4 h-4 rounded-full icon-orb"
+      style={{
+        background: 'linear-gradient(135deg, var(--color-secondary), var(--color-primary))',
+      }}
       aria-hidden="true"
     >
-      <path d="M12 2L2 7l10 5 10-5-10-5z" />
-      <path d="M2 17l10 5 10-5" />
-      <path d="M2 12l10 5 10-5" />
-    </svg>
+      <svg
+        width="8"
+        height="8"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="white"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M12 2L2 7l10 5 10-5-10-5z" />
+        <path d="M2 17l10 5 10-5" />
+        <path d="M2 12l10 5 10-5" />
+      </svg>
+    </div>
   )
 }

@@ -186,10 +186,7 @@ def chunk_text(
         ValueError: If ``chunk_overlap >= chunk_size``.
     """
     if chunk_overlap >= chunk_size:
-        raise ValueError(
-            f"chunk_overlap ({chunk_overlap}) must be less than "
-            f"chunk_size ({chunk_size})"
-        )
+        raise ValueError(f"chunk_overlap ({chunk_overlap}) must be less than chunk_size ({chunk_size})")
 
     words = text.split()
     if not words:

@@ -9,10 +9,10 @@ Hackathon: "Built with Opus 4.6" | Feb 10-16, 2026
 
 | Metric | Value |
 |--------|-------|
-| Features shipped | 120 |
-| Backend tests | 1,993+ (1,743 runtime + 250 agents) |
-| Frontend tests | 770+ (90 suites) |
-| **Total tests** | **2,800+** |
+| Features shipped | 145 |
+| Backend tests | 2,125 (1,875 runtime + 250 agents) |
+| Frontend tests | 962 (110 suites) |
+| **Total tests** | **3,087** |
 | E2E Playwright tests | 35+ (3 golden paths + 8 visual regression + a11y) |
 | Live API integration tests | 65 (real Anthropic/OpenAI/Gemini) |
 | Architecture Decision Records | 60 |
@@ -92,13 +92,13 @@ All 4 services (PostgreSQL + pgvector, Redis, FastAPI API, Next.js 16 frontend) 
 |-------|-----------|
 | Backend | Python 3.13, FastAPI 0.129, SQLAlchemy 2.x async, LangGraph 1.0.8 |
 | AI Agents | Pydantic AI 1.58 (Planner, Executor, QualityGate, Tutor) |
-| LLMs | Anthropic (Claude), OpenAI (GPT-4o), Google (Gemini 2.5) |
+| LLMs | Anthropic (Claude), OpenAI (GPT-5.2), Google (Gemini 3) |
 | Embeddings | gemini-embedding-001 @ 1536d (Matryoshka truncation) |
 | Vector Store | pgvector 0.8 (HNSW index) on PostgreSQL 16 |
 | Frontend | Next.js 16, React 19, Tailwind 4, React Compiler 1.0 |
 | Accessibility | 9 CSS themes, VLibras, MediaPipe, ElevenLabs TTS, Whisper STT |
 | Infrastructure | Docker Compose, Redis 7.x, GitHub Actions CI |
-| Testing | pytest (1,993+), Vitest (770+), Playwright E2E (35+), axe-core a11y |
+| Testing | pytest (2,125), Vitest (962), Playwright E2E (35+), axe-core a11y |
 
 ---
 
@@ -108,7 +108,7 @@ All 4 services (PostgreSQL + pgvector, Redis, FastAPI API, Next.js 16 frontend) 
 
 2. **True Inclusivity** -- Not an afterthought. 9 disability-specific themes, Brazilian Sign Language (Libras) support, Empathy Bridge simulator for educator training.
 
-3. **Production Engineering** -- Hexagonal architecture, 2,800+ tests, 60 ADRs, circuit breaker, retry with backoff, SSE replay, tenant isolation. Built to run, not just to demo.
+3. **Production Engineering** -- Hexagonal architecture, 3,087 tests, 60 ADRs, circuit breaker, retry with backoff, SSE replay, tenant isolation. Built to run, not just to demo.
 
 4. **Multi-LLM Resilience** -- SmartRouter picks the optimal model per request. If one provider fails, automatic escalation. No single point of AI failure.
 

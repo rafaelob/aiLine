@@ -92,11 +92,7 @@ class USProvider:
         allowed = _resolve_systems(system)
         if allowed is not None and not allowed:
             return []
-        return [
-            obj.code
-            for obj in self._objectives
-            if allowed is None or obj.system.value in allowed
-        ]
+        return [obj.code for obj in self._objectives if allowed is None or obj.system.value in allowed]
 
 
 def _resolve_systems(system: str | None) -> set[str] | None:

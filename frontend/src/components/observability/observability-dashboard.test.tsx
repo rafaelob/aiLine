@@ -3,6 +3,21 @@ import { render, screen, waitFor } from '@testing-library/react'
 import ObservabilityDashboardContent from './observability-dashboard'
 import type { ObservabilityDashboard } from '@/types/trace'
 
+vi.mock('motion/react', () => ({
+  motion: {
+    div: ({ children, ...rest }: Record<string, unknown>) => {
+      const {
+        initial: _i,
+        animate: _a,
+        transition: _t,
+        variants: _v,
+        ...safe
+      } = rest
+      return <div {...safe}>{children as React.ReactNode}</div>
+    },
+  },
+}))
+
 const mockData: ObservabilityDashboard = {
   provider: 'Anthropic',
   model: 'claude-haiku-4-5-20251001',

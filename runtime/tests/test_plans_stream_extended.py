@@ -87,9 +87,7 @@ class TestRunPipelineError:
 
         # Patch AgentDepsFactory.from_container to raise during pipeline
         mock_factory = MagicMock()
-        mock_factory.from_container = MagicMock(
-            side_effect=RuntimeError("test explosion")
-        )
+        mock_factory.from_container = MagicMock(side_effect=RuntimeError("test explosion"))
         with patch(
             "ailine_runtime.api.routers.plans_stream.AgentDepsFactory",
             mock_factory,
@@ -106,11 +104,7 @@ class TestRunPipelineError:
                 break  # sentinel
 
         # The run.failed event should be present
-        failed_events = [
-            json.loads(e["data"])
-            for e in events
-            if "data" in e and "run.failed" in e["data"]
-        ]
+        failed_events = [json.loads(e["data"]) for e in events if "data" in e and "run.failed" in e["data"]]
         assert len(failed_events) >= 1
 
 
@@ -224,7 +218,7 @@ def _parse_sse_events(raw: str) -> list[dict[str, Any]]:
     for line in raw.split("\n"):
         line = line.strip()
         if line.startswith("data:"):
-            json_str = line[len("data:"):].strip()
+            json_str = line[len("data:") :].strip()
             if json_str:
                 with contextlib.suppress(json.JSONDecodeError):
                     events.append(json.loads(json_str))

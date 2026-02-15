@@ -25,6 +25,7 @@ from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
 
 from ...app.authz import require_authenticated
+from ...shared.review_store import get_review_store
 from ...shared.sanitize import sanitize_prompt
 from ...shared.trace_store import get_trace_store
 from ...workflow.plan_workflow import DEFAULT_RECURSION_LIMIT, RunState
@@ -53,9 +54,7 @@ class PlanStreamIn(BaseModel):
     user_prompt: str = Field(..., min_length=1, description="Teacher's natural-language request.")
     teacher_id: str | None = Field(None, description="Optional: teacher ID (needed for RAG).")
     subject: str | None = Field(None, description="Optional: subject (RAG filter).")
-    class_accessibility_profile: dict[str, Any] | None = Field(
-        None, description="Accessibility profile for the class."
-    )
+    class_accessibility_profile: dict[str, Any] | None = Field(None, description="Accessibility profile for the class.")
     learner_profiles: list[dict[str, Any]] | None = Field(
         None, description="Anonymous learner profiles for differentiation."
     )
@@ -145,14 +144,24 @@ async def _run_pipeline(
                 final_payload["score"] = parsed.get("score")
                 final_payload["human_review_required"] = parsed.get("human_review_required")
 
+        # Include scorecard in run.completed payload
+        scorecard = final_state.get("scorecard")
+        if scorecard:
+            final_payload["scorecard"] = scorecard
+
         complete_event = emitter.run_complete(final_payload)
         await queue.put({"data": complete_event.to_sse_data()})
 
-        # Finalize trace
+        # Auto-create pending review for new plans (HITL gate)
+        review_store = get_review_store()
+        review_store.create_review(body.run_id, teacher_id)
+
+        # Finalize trace (including scorecard for later retrieval)
         await trace_store.update_run(
             body.run_id,
             status="completed",
             final_score=final_payload.get("score"),
+            scorecard=scorecard,
         )
 
     except Exception as exc:
@@ -201,12 +210,8 @@ async def plans_generate_stream(body: PlanStreamIn, request: Request) -> EventSo
 
     async def event_generator() -> AsyncIterator[dict[str, str]]:
         # Start the pipeline and heartbeat as background tasks
-        pipeline_task = asyncio.create_task(
-            _run_pipeline(body, teacher_id, settings, container, emitter, queue)
-        )
-        heartbeat_task = asyncio.create_task(
-            _heartbeat_loop(emitter, queue)
-        )
+        pipeline_task = asyncio.create_task(_run_pipeline(body, teacher_id, settings, container, emitter, queue))
+        heartbeat_task = asyncio.create_task(_heartbeat_loop(emitter, queue))
 
         try:
             while True:

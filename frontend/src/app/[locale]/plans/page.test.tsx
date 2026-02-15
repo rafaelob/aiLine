@@ -5,7 +5,7 @@ import PlansPage from './page'
 vi.mock('motion/react', () => ({
   motion: {
     div: ({ children, ...rest }: Record<string, unknown>) => {
-      const { initial: _i, animate: _a, transition: _t, ...safe } = rest
+      const { initial: _i, animate: _a, transition: _t, variants: _v, ...safe } = rest
       return <div {...safe}>{children as React.ReactNode}</div>
     },
   },
@@ -15,6 +15,12 @@ vi.mock('motion/react', () => ({
 vi.mock('@/components/plan/plan-generation-flow', () => ({
   PlanGenerationFlow: () => (
     <div data-testid="plan-generation-flow">Plan Flow</div>
+  ),
+}))
+
+vi.mock('@/components/plan/pending-reviews-badge', () => ({
+  PendingReviewsBadge: () => (
+    <div data-testid="pending-reviews-badge">Pending Reviews</div>
   ),
 }))
 
@@ -64,16 +70,20 @@ describe('PlansPage', () => {
   it('wraps content in a max-width container', async () => {
     const page = await PlansPage({ params: defaultParams })
     const { container } = render(page)
-    const wrapper = container.firstChild as HTMLElement
-    expect(wrapper.className).toContain('max-w-5xl')
-    expect(wrapper.className).toContain('mx-auto')
+    // PageTransition wraps the content
+    const pageTransition = container.firstChild as HTMLElement
+    const innerDiv = pageTransition.firstChild as HTMLElement
+    expect(innerDiv.className).toContain('max-w-5xl')
+    expect(innerDiv.className).toContain('mx-auto')
   })
 
   it('includes spacing between header and plan flow', async () => {
     const page = await PlansPage({ params: defaultParams })
     const { container } = render(page)
-    const wrapper = container.firstChild as HTMLElement
-    expect(wrapper.className).toContain('space-y')
+    // PageTransition wraps the content
+    const pageTransition = container.firstChild as HTMLElement
+    const innerDiv = pageTransition.firstChild as HTMLElement
+    expect(innerDiv.className).toContain('space-y')
   })
 
   it('renders a single root element', async () => {

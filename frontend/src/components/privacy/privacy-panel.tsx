@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/cn'
+import { API_BASE } from '@/lib/api'
 
 interface DataSummary {
   plans: number
@@ -21,8 +22,6 @@ export function PrivacyPanel() {
   const [loading, setLoading] = useState(true)
   const [actionState, setActionState] = useState<'idle' | 'exporting' | 'deleting' | 'confirm_delete'>('idle')
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
-
   useEffect(() => {
     async function fetchSummary() {
       try {
@@ -38,7 +37,7 @@ export function PrivacyPanel() {
       }
     }
     fetchSummary()
-  }, [API_BASE])
+  }, [])
 
   const handleExport = useCallback(async () => {
     setActionState('exporting')
@@ -49,7 +48,7 @@ export function PrivacyPanel() {
     } finally {
       setActionState('idle')
     }
-  }, [API_BASE])
+  }, [])
 
   const handleDelete = useCallback(async () => {
     if (actionState !== 'confirm_delete') {
@@ -65,7 +64,7 @@ export function PrivacyPanel() {
     } finally {
       setActionState('idle')
     }
-  }, [actionState, API_BASE])
+  }, [actionState])
 
   const retentionPolicies = [
     t('retention_plans'),

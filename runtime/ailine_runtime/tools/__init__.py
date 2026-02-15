@@ -1,1 +1,1 @@
-__all__ = ['adapters_langchain', 'registry']
+__all__ = ["adapters_langchain", "registry"]

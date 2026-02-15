@@ -11,11 +11,14 @@ interface StageCardProps {
   isLast: boolean
 }
 
-const STATUS_COLORS: Record<StageStatus, string> = {
-  pending: 'bg-[var(--color-border)]',
-  active: 'bg-[var(--color-warning)]',
-  completed: 'bg-[var(--color-success)]',
-  failed: 'bg-[var(--color-error)]',
+const CIRCLE_GRADIENT: Record<StageStatus, string> = {
+  pending: '',
+  active:
+    'linear-gradient(135deg, var(--color-warning), color-mix(in srgb, var(--color-warning) 60%, var(--color-primary)))',
+  completed:
+    'linear-gradient(135deg, var(--color-success), color-mix(in srgb, var(--color-success) 70%, var(--color-primary)))',
+  failed:
+    'linear-gradient(135deg, var(--color-error), color-mix(in srgb, var(--color-error) 60%, var(--color-warning)))',
 }
 
 const STATUS_RING: Record<StageStatus, string> = {
@@ -31,6 +34,7 @@ const STATUS_RING: Record<StageStatus, string> = {
  */
 export function StageCard({ stage, index, isLast }: StageCardProps) {
   const t = useTranslations('pipeline')
+  const hasGradient = stage.status !== 'pending'
 
   return (
     <div className="flex items-start gap-4" role="listitem">
@@ -41,9 +45,15 @@ export function StageCard({ stage, index, isLast }: StageCardProps) {
           className={cn(
             'relative flex items-center justify-center',
             'w-10 h-10 rounded-full ring-2',
-            STATUS_COLORS[stage.status],
+            hasGradient && 'icon-orb',
+            !hasGradient && 'bg-[var(--color-border)]',
             STATUS_RING[stage.status]
           )}
+          style={
+            hasGradient
+              ? { background: CIRCLE_GRADIENT[stage.status] }
+              : undefined
+          }
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: index * 0.1, type: 'spring', stiffness: 200 }}
@@ -53,6 +63,11 @@ export function StageCard({ stage, index, isLast }: StageCardProps) {
           {stage.status === 'failed' && <XIcon />}
           {stage.status === 'active' && (
             <>
+              <div
+                className="aurora-thinking absolute inset-[-4px] rounded-full"
+                style={{ filter: 'blur(10px)', opacity: 0.4 }}
+                aria-hidden="true"
+              />
               <LoadingSpinner />
               <motion.div
                 className="absolute inset-0 rounded-full ring-2 ring-[var(--color-warning)]"
@@ -74,9 +89,16 @@ export function StageCard({ stage, index, isLast }: StageCardProps) {
             className={cn(
               'w-0.5 flex-1 min-h-[24px]',
               stage.status === 'completed'
-                ? 'bg-[var(--color-success)]'
-                : 'bg-[var(--color-border)]'
+                ? 'bg-gradient-to-b from-[var(--color-success)] to-[color-mix(in_srgb,var(--color-success)_50%,var(--color-primary))]'
+                : stage.status === 'active'
+                  ? 'bg-[var(--color-warning)]/40'
+                  : 'bg-[var(--color-border)]'
             )}
+            style={
+              stage.status === 'active'
+                ? { animation: 'aurora-shift 2s ease infinite' }
+                : undefined
+            }
             aria-hidden="true"
           />
         )}
@@ -92,42 +114,49 @@ export function StageCard({ stage, index, isLast }: StageCardProps) {
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: index * 0.1 + 0.05 }}
       >
-        <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold text-[var(--color-text)]">
-            {t(`stages.${stage.id}`)}
-          </h3>
-          <span
-            className={cn(
-              'text-xs px-2 py-0.5 rounded-full',
-              stage.status === 'active' && 'bg-[var(--color-warning)]/20 text-[var(--color-warning)]',
-              stage.status === 'completed' && 'bg-[var(--color-success)]/20 text-[var(--color-success)]',
-              stage.status === 'failed' && 'bg-[var(--color-error)]/20 text-[var(--color-error)]',
-              stage.status === 'pending' && 'bg-[var(--color-border)] text-[var(--color-muted)]'
-            )}
-            aria-label={t(`status.${stage.status}`)}
-          >
-            {t(`status.${stage.status}`)}
-          </span>
-        </div>
-
-        {/* Progress bar for active stages */}
-        {stage.status === 'active' && stage.progress > 0 && (
-          <div
-            className="mt-2 h-1.5 w-full rounded-full bg-[var(--color-border)]"
-            role="progressbar"
-            aria-valuenow={stage.progress}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-label={`${t(`stages.${stage.id}`)} ${stage.progress}%`}
-          >
-            <motion.div
-              className="h-full rounded-full bg-[var(--color-warning)]"
-              initial={{ width: 0 }}
-              animate={{ width: `${stage.progress}%` }}
-              transition={{ type: 'spring', stiffness: 100 }}
-            />
+        <div className="glass rounded-xl p-4 card-hover">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-[var(--color-text)]">
+              {t(`stages.${stage.id}`)}
+            </h3>
+            <span
+              className={cn(
+                'text-xs px-2 py-0.5 rounded-full glass backdrop-blur-sm',
+                stage.status === 'active' && 'text-[var(--color-warning)]',
+                stage.status === 'completed' && 'text-[var(--color-success)]',
+                stage.status === 'failed' && 'text-[var(--color-error)]',
+                stage.status === 'pending' && 'text-[var(--color-muted)]'
+              )}
+              aria-label={t(`status.${stage.status}`)}
+            >
+              {t(`status.${stage.status}`)}
+            </span>
           </div>
-        )}
+
+          {/* Progress bar for active stages */}
+          {stage.status === 'active' && stage.progress > 0 && (
+            <div
+              className="mt-2 h-1.5 w-full rounded-full bg-[var(--color-border)]"
+              role="progressbar"
+              aria-valuenow={stage.progress}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={`${t(`stages.${stage.id}`)} ${stage.progress}%`}
+            >
+              <motion.div
+                className="h-full rounded-full"
+                style={{
+                  background:
+                    'linear-gradient(90deg, var(--color-warning), var(--color-primary))',
+                  boxShadow: '0 0 8px var(--color-warning)',
+                }}
+                initial={{ width: 0 }}
+                animate={{ width: `${stage.progress}%` }}
+                transition={{ type: 'spring', stiffness: 100 }}
+              />
+            </div>
+          )}
+        </div>
       </motion.div>
     </div>
   )
@@ -165,6 +194,7 @@ function LoadingSpinner() {
       animate={{ rotate: 360 }}
       transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
       aria-hidden="true"
+      className="relative z-10"
     >
       <circle
         cx="8"

@@ -211,8 +211,7 @@ class Container:
 
         if env == "production" and missing_critical:
             raise ValueError(
-                f"Container validation failed in production: "
-                f"missing critical ports: {', '.join(missing_critical)}"
+                f"Container validation failed in production: missing critical ports: {', '.join(missing_critical)}"
             )
 
         # Optional ports -- degraded operation when missing.

@@ -93,14 +93,10 @@ class AgentDepsFactory:
             subject=subject,
             default_variants=default_variants or settings.default_variants,
             max_refinement_iters=(
-                max_refinement_iters
-                if max_refinement_iters is not None
-                else settings.max_refinement_iters
+                max_refinement_iters if max_refinement_iters is not None else settings.max_refinement_iters
             ),
             max_workflow_duration_seconds=(
-                max_workflow_duration_seconds
-                if max_workflow_duration_seconds is not None
-                else 300
+                max_workflow_duration_seconds if max_workflow_duration_seconds is not None else 300
             ),
             llm=container.llm,
             embeddings=container.embeddings,

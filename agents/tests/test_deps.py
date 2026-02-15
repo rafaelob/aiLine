@@ -125,7 +125,9 @@ class TestAgentDepsFactory:
 
     @patch("ailine_runtime.tools.registry.build_tool_registry")
     def test_from_container_shared_circuit_breaker(
-        self, mock_build_registry: MagicMock, mock_container: MagicMock,
+        self,
+        mock_build_registry: MagicMock,
+        mock_container: MagicMock,
     ) -> None:
         """All deps from the same factory share the same circuit breaker."""
         mock_build_registry.return_value = []
@@ -137,7 +139,9 @@ class TestAgentDepsFactory:
 
     @patch("ailine_runtime.tools.registry.build_tool_registry")
     def test_from_container_custom_timeout(
-        self, mock_build_registry: MagicMock, mock_container: MagicMock,
+        self,
+        mock_build_registry: MagicMock,
+        mock_container: MagicMock,
     ) -> None:
         mock_build_registry.return_value = []
 

@@ -8,6 +8,7 @@ import os
 class TestAiLineConfig:
     def test_default_creation(self):
         from ailine_runtime.config import AiLineConfig
+
         cfg = AiLineConfig()
         # Env vars may override defaults; check against actual env or default
         expected_planner = os.getenv("AILINE_PLANNER_MODEL", "anthropic:claude-opus-4-6")
@@ -18,12 +19,14 @@ class TestAiLineConfig:
 
     def test_skill_source_paths(self):
         from ailine_runtime.config import AiLineConfig
+
         cfg = AiLineConfig()
         paths = cfg.skill_source_paths()
         assert isinstance(paths, list)
 
     def test_skill_source_paths_from_env(self):
         from ailine_runtime.config import AiLineConfig
+
         cfg = AiLineConfig(skill_sources_env="/path/a,/path/b")
         paths = cfg.skill_source_paths()
         assert "/path/a" in paths
@@ -31,6 +34,7 @@ class TestAiLineConfig:
 
     def test_get_config(self):
         from ailine_runtime.config import get_config
+
         cfg = get_config()
         assert cfg is not None
         # The default is ".local_store", but AILINE_LOCAL_STORE env var

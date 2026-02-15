@@ -45,18 +45,13 @@ class OpenAISTT:
         try:
             from openai import AsyncOpenAI
         except ImportError as exc:
-            raise ImportError(
-                "openai is required for OpenAISTT. "
-                "Install with: pip install 'openai>=2.11'"
-            ) from exc
+            raise ImportError("openai is required for OpenAISTT. Install with: pip install 'openai>=2.11'") from exc
         if self._api_key:
             self._client = AsyncOpenAI(api_key=self._api_key)
         else:
             self._client = AsyncOpenAI()
 
-    async def transcribe(
-        self, audio_bytes: bytes, *, language: str = "pt"
-    ) -> str:
+    async def transcribe(self, audio_bytes: bytes, *, language: str = "pt") -> str:
         """Transcribe audio bytes via the OpenAI Transcriptions API."""
         self._ensure_client()
         audio_file = io.BytesIO(audio_bytes)

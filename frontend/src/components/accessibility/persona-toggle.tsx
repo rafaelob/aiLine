@@ -21,10 +21,18 @@ export function PersonaToggle() {
   const tp = useTranslations('personas')
 
   const handleSelect = useCallback(
-    (personaId: PersonaId) => {
-      startTransition(() => {
-        switchTheme(personaId)
-      })
+    (personaId: PersonaId, e?: React.MouseEvent | React.KeyboardEvent) => {
+      let x: number | undefined
+      let y: number | undefined
+      if (e) {
+        const rect = e.currentTarget.getBoundingClientRect()
+        x = rect.left + rect.width / 2
+        y = rect.top + rect.height / 2
+      }
+      startTransition(
+        () => { switchTheme(personaId) },
+        { type: 'theme', x, y },
+      )
     },
     [switchTheme, startTransition],
   )
@@ -45,11 +53,11 @@ export function PersonaToggle() {
             role="radio"
             aria-checked={isActive}
             aria-label={`${personaLabel}: ${personaDesc}`}
-            onClick={() => handleSelect(persona.id)}
+            onClick={(e) => handleSelect(persona.id, e)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault()
-                handleSelect(persona.id)
+                handleSelect(persona.id, e)
               }
             }}
             className={cn(

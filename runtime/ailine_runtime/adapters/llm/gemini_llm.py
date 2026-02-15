@@ -53,7 +53,7 @@ class GeminiChatLLM:
         contents = _convert_messages(messages)
         response = await self._client.aio.models.generate_content(
             model=self._model,
-            contents=contents,
+            contents=contents,  # type: ignore[arg-type]  # google-genai accepts dict format
             config=genai.types.GenerateContentConfig(
                 temperature=temperature,
                 max_output_tokens=max_tokens,
@@ -74,7 +74,7 @@ class GeminiChatLLM:
         contents = _convert_messages(messages)
         response_stream = await self._client.aio.models.generate_content_stream(
             model=self._model,
-            contents=contents,
+            contents=contents,  # type: ignore[arg-type]  # google-genai accepts dict format
             config=genai.types.GenerateContentConfig(
                 temperature=temperature,
                 max_output_tokens=max_tokens,

@@ -21,6 +21,7 @@ from ailine_runtime.ml.training.train import TrainConfig, TrainResult, train
 # TrainConfig
 # ---------------------------------------------------------------------------
 
+
 class TestTrainConfig:
     def test_defaults(self):
         config = TrainConfig()
@@ -49,6 +50,7 @@ class TestTrainConfig:
 # TrainResult
 # ---------------------------------------------------------------------------
 
+
 class TestTrainResult:
     def test_defaults(self):
         result = TrainResult()
@@ -61,6 +63,7 @@ class TestTrainResult:
 # ---------------------------------------------------------------------------
 # train()
 # ---------------------------------------------------------------------------
+
 
 class TestTrain:
     def test_missing_data_dir_returns_placeholder(self, tmp_path: Path):
@@ -125,6 +128,7 @@ class TestTrain:
 # CLI
 # ---------------------------------------------------------------------------
 
+
 class TestCLI:
     def test_default_args(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]):
         cli_main(["--data-dir", str(tmp_path / "nonexistent"), "--output-dir", str(tmp_path / "out")])
@@ -134,16 +138,25 @@ class TestCLI:
     def test_custom_args(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]):
         data_dir = tmp_path / "data"
         data_dir.mkdir()
-        cli_main([
-            "--data-dir", str(data_dir),
-            "--output-dir", str(tmp_path / "out"),
-            "--epochs", "3",
-            "--batch-size", "8",
-            "--lr", "0.01",
-            "--patience", "5",
-            "--no-augment",
-            "--seed", "123",
-        ])
+        cli_main(
+            [
+                "--data-dir",
+                str(data_dir),
+                "--output-dir",
+                str(tmp_path / "out"),
+                "--epochs",
+                "3",
+                "--batch-size",
+                "8",
+                "--lr",
+                "0.01",
+                "--patience",
+                "5",
+                "--no-augment",
+                "--seed",
+                "123",
+            ]
+        )
         captured = capsys.readouterr()
         assert "Training complete" in captured.out
         assert "Best epoch" in captured.out
@@ -153,8 +166,12 @@ class TestCLI:
         # This is implicitly tested through the CLI running without errors
         data_dir = tmp_path / "data"
         data_dir.mkdir()
-        cli_main([
-            "--data-dir", str(data_dir),
-            "--output-dir", str(tmp_path / "out"),
-            "--no-augment",
-        ])
+        cli_main(
+            [
+                "--data-dir",
+                str(data_dir),
+                "--output-dir",
+                str(tmp_path / "out"),
+                "--no-augment",
+            ]
+        )

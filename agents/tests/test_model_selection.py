@@ -13,7 +13,7 @@ from ailine_agents.model_selection.bridge import PydanticAIModelSelector
 def _make_mock_model(name: str = "mock") -> Model:
     """Create a mock that passes isinstance checks for Model."""
     m = MagicMock(spec=Model)
-    m.__str__ = lambda self: name
+    m.__str__ = lambda self: name  # type: ignore[method-assign,misc,assignment]
     return m
 
 

@@ -1,6 +1,6 @@
 # AiLine Feature Map
 
-**120 features** organized into 8 capability areas. Each feature links to its ID in `control_docs/FEATURES.md`.
+**145 features** organized into 12 capability areas. Each feature links to its ID in `control_docs/FEATURES.md`.
 
 ---
 
@@ -99,7 +99,7 @@ Full-stack internationalization (3 languages), curriculum standard alignment (4 
 
 ## F. Developer Experience and Operations (15 features)
 
-Docker Compose stack, 2,800+ tests, CI pipeline, observability, health checks, and documentation.
+Docker Compose stack, 3,087 tests, CI pipeline, observability, health checks, and documentation.
 
 | ID | Feature | Key Details |
 |----|---------|-------------|
@@ -108,7 +108,7 @@ Docker Compose stack, 2,800+ tests, CI pipeline, observability, health checks, a
 | F-014 | Frontend Dashboard | Next.js 16, Glass Box pipeline viewer |
 | F-030 | Docker Compose Stack | One-command local dev (4 services) |
 | F-032 | React Compiler 1.0 | Auto-memoization enabled |
-| F-040 | Full Test Coverage | 1,993+ backend + 770+ frontend tests |
+| F-040 | Full Test Coverage | 2,125 backend + 962 frontend tests |
 | F-041 | Docker Compose Full Stack | API + DB + Redis + Frontend, healthchecks |
 | F-042 | GitHub Actions CI | lint, typecheck, test pipeline |
 | F-052 | Live API Integration Tests | 65 live_llm tests (Anthropic/OpenAI/Gemini) |
@@ -180,6 +180,59 @@ Security, observability, agent evaluation, and production readiness.
 | F-119 | Recharts Keyboard Accessibility | Tab through data, aria-live |
 | F-120 | Optimistic UI | useOptimistic hook |
 
+## I. Sprint 16 -- Hackathon Victory Sprint (5 features)
+
+Transformation scorecard, teacher review workflow, student progress tracking, UX micro-polish, and conversation review.
+
+| ID | Feature | Key Details |
+|----|---------|-------------|
+| F-121 | Transformation Scorecard | 9-metric trust card computed as LangGraph terminal node |
+| F-122 | HITL Teacher Review Panel | Approve/reject/revision workflow + pending reviews badge |
+| F-123 | Student Progress Dashboard | Mastery tracking, standards heatmap, class overview |
+| F-124 | UX Micro-Polish | 8 nav items, "Powered by Claude Opus 4.6" badge, empty state + skeleton components |
+| F-125 | Conversation Review | Scrollable tutor transcript with per-turn flagging |
+
+## J. Sprint 17 -- Hackathon Final Push (10 features)
+
+Settings page, guided demo mode, trust panel, materials upload, live dashboard, tutor persistence, system status, lint cleanup, and dead code removal.
+
+| ID | Feature | Key Details |
+|----|---------|-------------|
+| F-126 | Settings Page | AI model, language, accessibility, about with glass morphism |
+| F-127 | Guided Demo Mode | ?demo=true, auto-fill wizard, tooltip overlay, 3 guided steps |
+| F-128 | Trust & Transparency Panel | Quality report, scorecard, model provenance, decision badge |
+| F-129 | Materials Upload Page | File upload, material listing with tags, glass card grid |
+| F-130 | Live Dashboard Stats | API-wired stats, plan history, loading skeleton |
+| F-131 | Tutor Persistence & Review | Zustand persist, ConversationReview tab |
+| F-132 | System Status Indicator | TopBar health check badge with dropdown |
+| F-133 | Ruff Lint Zero | Fixed 11 lint errors (RUF009 + UP038) |
+| F-134 | Orphan Component Integration | Wired 4 orphaned components into pages |
+| F-135 | Dead Code Cleanup | Removed 5 duplicate/unused components |
+
+## K. Sprint 18 -- Impact Sweep & State-of-the-Art Polish (5 features)
+
+View Transitions, loading skeletons, mobile navigation, and HITL API test coverage.
+
+| ID | Feature | Key Details |
+|----|---------|-------------|
+| F-136 | View Transition Theme Morphing | Circular clip-path reveal from click origin on persona/theme switch |
+| F-137 | Loading Skeletons for All Pages | 8 loading.tsx files with page-specific skeleton layouts |
+| F-138 | Mobile Nav Overflow Menu | "More" popover with 4 overflow items, AnimatePresence animation |
+| F-139 | HITL API Test Coverage | 51 new tests: Progress (16), Plan Review (18), Tutor Transcript/Flag (17) |
+| F-140 | PreferencesPanel View Transition | Theme switch uses View Transitions API for circular reveal |
+
+## L. Sprint 19 — State-of-the-Art Final Sweep (5 features)
+
+Command palette, code refactoring, motion dedup, and type safety improvements.
+
+| ID | Feature | Key Details |
+|----|---------|-------------|
+| F-141 | Command Palette (Cmd+K) | Fuzzy search, 9 navigation pages, quick actions, theme/language switching, ARIA combobox |
+| F-142 | Plan Nodes Refactor | 764 LOC split into 5 focused modules with barrel re-export |
+| F-143 | Plan Flow Refactor | 757 LOC split into orchestrator + wizard-steps + result-display |
+| F-144 | Shared Motion Variants | Extracted stagger animations from 9 components into shared lib |
+| F-145 | SSE Type Safety | Replaced `as never` casts with proper domain type assertions |
+
 ---
 
 ## Summary
@@ -191,7 +244,11 @@ Security, observability, agent evaluation, and production readiness.
 | C. Real-Time Pipeline | 10 | 14 SSE event types, replay, terminal guarantee |
 | D. Data and Security | 14 | Tenant isolation, circuit breaker, rate limiting, LGPD/FERPA |
 | E. Multi-Language | 5 | 3 languages, BNCC/CCSS/NGSS/ELA standards |
-| F. Developer Experience | 15 | 2,800+ tests, Docker, CI, observability, 60 ADRs |
+| F. Developer Experience | 15 | 3,087 tests, Docker, CI, observability, 60 ADRs |
 | G. Sprint 13 Polish | 26 | Pipeline transparency, observability UI, UX animations |
 | H. Sprint 14 Hardening | 21 | JWT security, OTel tracing, agent eval, visual regression |
-| **Total** | **120** | |
+| I. Sprint 16 Victory | 5 | Scorecard, teacher review, progress dashboard, UX polish |
+| J. Sprint 17 Final Push | 10 | Settings, demo mode, trust panel, materials, live stats |
+| K. Sprint 18 Impact Sweep | 5 | View Transitions, loading skeletons, mobile nav, HITL tests |
+| L. Sprint 19 Final Sweep | 5 | Command Palette, code refactoring, motion dedup, type safety |
+| **Total** | **145** | |

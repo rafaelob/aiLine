@@ -14,16 +14,35 @@ from typing import Any
 # ----------------------------
 
 BREAK_KEYWORDS = (
-    "pausa", "intervalo", "break", "movimento",
-    "alongamento", "respiração", "relax", "hidrata",
+    "pausa",
+    "intervalo",
+    "break",
+    "movimento",
+    "alongamento",
+    "respiração",
+    "relax",
+    "hidrata",
 )
 TRANSITION_KEYWORDS = (
-    "agora", "em seguida", "próximo", "depois",
-    "transição", "mudança", "vamos", "a seguir",
+    "agora",
+    "em seguida",
+    "próximo",
+    "depois",
+    "transição",
+    "mudança",
+    "vamos",
+    "a seguir",
 )
 CHECKPOINT_KEYWORDS = (
-    "checkpoint", "verifique", "confira", "checagem", "feito", "ok",
-    "\u2713", "autoavalia", "responda 1",
+    "checkpoint",
+    "verifique",
+    "confira",
+    "checagem",
+    "feito",
+    "ok",
+    "\u2713",
+    "autoavalia",
+    "responda 1",
 )
 EXAMPLE_KEYWORDS = ("exemplo", "modelo", "mostre", "demonstre", "veja", "como fazer")
 GLOSSARY_KEYWORDS = ("glossário", "vocabulário", "termos", "palavras-chave")
@@ -33,8 +52,17 @@ TRANSCRIPT_KEYWORDS = ("transcrição", "transcript")
 AUDIO_DESC_KEYWORDS = ("audiodescrição", "audio description", "descrição do vídeo")
 
 MEDIA_MENTION_KEYWORDS = (
-    "vídeo", "video", "áudio", "audio", "podcast",
-    "gravação", "imagem", "figura", "slide", "foto", "ilustração",
+    "vídeo",
+    "video",
+    "áudio",
+    "audio",
+    "podcast",
+    "gravação",
+    "imagem",
+    "figura",
+    "slide",
+    "foto",
+    "ilustração",
 )
 
 

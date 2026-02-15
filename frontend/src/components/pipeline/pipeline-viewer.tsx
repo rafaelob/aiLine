@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl'
 import { motion, AnimatePresence } from 'motion/react'
 import { cn } from '@/lib/cn'
+import { containerVariants, itemVariants } from '@/lib/motion-variants'
 import { StageCard } from './stage-card'
 import type { StageInfo } from '@/types/pipeline'
 
@@ -24,15 +25,20 @@ export function PipelineViewer({ stages, isRunning, error }: PipelineViewerProps
     <section
       aria-label={t('title')}
       className={cn(
-        'rounded-[var(--radius-lg)] border p-6',
-        'bg-[var(--color-surface)] border-[var(--color-border)]'
+        'glass rounded-2xl p-6 shadow-[var(--shadow-lg)]',
+        'gradient-border-glass'
       )}
     >
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
+      <motion.div
+        className="flex items-center gap-3 mb-6"
+        variants={itemVariants}
+        initial="hidden"
+        animate="visible"
+      >
         <div
           className={cn(
-            'flex items-center gap-2 px-3 py-1.5',
+            'relative flex items-center gap-2 px-3 py-1.5',
             'rounded-full text-xs font-semibold',
             isRunning
               ? 'bg-[var(--color-warning)]/15 text-[var(--color-warning)]'
@@ -40,19 +46,33 @@ export function PipelineViewer({ stages, isRunning, error }: PipelineViewerProps
           )}
         >
           {isRunning && (
-            <motion.span
-              className="inline-block w-2 h-2 rounded-full bg-current"
-              animate={{ opacity: [1, 0.3, 1] }}
-              transition={{ duration: 1.2, repeat: Infinity }}
-              aria-hidden="true"
-            />
+            <>
+              <div
+                className="aurora-thinking absolute inset-0 rounded-full"
+                style={{ filter: 'blur(8px)', opacity: 0.3 }}
+                aria-hidden="true"
+              />
+              <motion.span
+                className="relative inline-block w-2 h-2 rounded-full bg-current"
+                animate={{ opacity: [1, 0.3, 1] }}
+                transition={{ duration: 1.2, repeat: Infinity }}
+                aria-hidden="true"
+              />
+            </>
           )}
-          {t('glass_box')}
+          <span className="relative">{t('glass_box')}</span>
         </div>
-        <h2 className="text-base font-bold text-[var(--color-text)]">
+        <h2
+          className={cn(
+            'text-base font-bold',
+            isRunning
+              ? 'gradient-text-animated'
+              : 'text-[var(--color-text)]'
+          )}
+        >
           {t('title')}
         </h2>
-      </div>
+      </motion.div>
 
       {/* SR-only live region for pipeline progress */}
       <div className="sr-only" aria-live="polite" aria-atomic="true">
@@ -65,7 +85,13 @@ export function PipelineViewer({ stages, isRunning, error }: PipelineViewerProps
       </div>
 
       {/* Stage stepper */}
-      <div role="list" aria-label={t('title')}>
+      <motion.div
+        role="list"
+        aria-label={t('title')}
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
         {stages.map((stage, i) => (
           <StageCard
             key={stage.id}
@@ -74,7 +100,7 @@ export function PipelineViewer({ stages, isRunning, error }: PipelineViewerProps
             isLast={i === stages.length - 1}
           />
         ))}
-      </div>
+      </motion.div>
 
       {/* Error display */}
       <AnimatePresence>
@@ -85,9 +111,10 @@ export function PipelineViewer({ stages, isRunning, error }: PipelineViewerProps
             exit={{ opacity: 0, height: 0 }}
             role="alert"
             className={cn(
-              'mt-4 rounded-[var(--radius-md)] p-4',
-              'bg-[var(--color-error)]/10 border border-[var(--color-error)]/30',
-              'text-sm text-[var(--color-error)]'
+              'mt-4 glass rounded-[var(--radius-md)] p-4',
+              'border border-[var(--color-error)]/30',
+              'text-sm text-[var(--color-error)]',
+              'shadow-[0_0_12px_color-mix(in_srgb,var(--color-error)_20%,transparent)]'
             )}
           >
             {error}

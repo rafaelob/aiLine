@@ -93,9 +93,7 @@ class CaptionOrchestrator:
         if self._debounce_task and not self._debounce_task.done():
             self._debounce_task.cancel()
 
-        self._debounce_task = asyncio.create_task(
-            self._debounced_translate_partial()
-        )
+        self._debounce_task = asyncio.create_task(self._debounced_translate_partial())
 
     async def _handle_final(self, message: dict[str, Any]) -> None:
         """Handle a gloss_final message: translate immediately."""
@@ -132,12 +130,14 @@ class CaptionOrchestrator:
 
         try:
             translation = await self._translator.translate(partial)
-            await self._emit({
-                "type": MSG_CAPTION_DRAFT,
-                "text": translation,
-                "glosses": partial,
-                "confidence": self._buffer.partial_confidence,
-            })
+            await self._emit(
+                {
+                    "type": MSG_CAPTION_DRAFT,
+                    "text": translation,
+                    "glosses": partial,
+                    "confidence": self._buffer.partial_confidence,
+                }
+            )
         except Exception:
             logger.exception("caption_orchestrator.partial_translate_error")
 
@@ -156,12 +156,14 @@ class CaptionOrchestrator:
             separator = " " if self._committed_text else ""
             self._committed_text += separator + translation
 
-            await self._emit({
-                "type": MSG_CAPTION_FINAL,
-                "text": translation,
-                "full_text": self._committed_text,
-                "glosses": glosses,
-            })
+            await self._emit(
+                {
+                    "type": MSG_CAPTION_FINAL,
+                    "text": translation,
+                    "full_text": self._committed_text,
+                    "glosses": glosses,
+                }
+            )
         except Exception:
             logger.exception("caption_orchestrator.final_translate_error")
 

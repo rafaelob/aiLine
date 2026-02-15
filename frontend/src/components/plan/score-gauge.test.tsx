@@ -76,10 +76,24 @@ describe('ScoreGauge', () => {
     expect(svg).toHaveAttribute('height', '160')
   })
 
-  it('renders two circles (background track + progress arc)', () => {
+  it('renders all visual elements (outer ring, background, glow, progress, endpoint)', () => {
     render(<ScoreGauge score={50} />)
 
     const circles = document.querySelectorAll('circle')
-    expect(circles.length).toBe(2)
+    // Outer ring (1) + background (1) + glow arc (1) + progress arc (1) + endpoint dot (1) = 5
+    expect(circles.length).toBe(5)
+  })
+
+  it('renders tier label', () => {
+    render(<ScoreGauge score={85} />)
+    // Should show "Good" tier (80-99 range)
+    const tierLabel = document.querySelector('.text-\\[10px\\]')
+    expect(tierLabel).toBeInTheDocument()
+  })
+
+  it('renders glow filter definition', () => {
+    render(<ScoreGauge score={50} />)
+    const filter = document.querySelector('filter#glow')
+    expect(filter).toBeInTheDocument()
   })
 })

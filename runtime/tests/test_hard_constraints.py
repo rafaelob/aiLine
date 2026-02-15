@@ -130,9 +130,7 @@ class TestCheckAccessibilityAdaptation:
         profile = _make_profile(autism=True)
         draft = {
             "accessibility_pack_draft": {
-                "applied_adaptations": [
-                    {"strategies": ["adaptação TEA: agenda visual"]}
-                ],
+                "applied_adaptations": [{"strategies": ["adaptação TEA: agenda visual"]}],
             },
             "steps": [
                 {"title": "Math", "instructions": ["Veja a adaptação UDL."]},
@@ -165,9 +163,7 @@ class TestCheckRagSources:
 
     def test_rag_with_citation_passes(self) -> None:
         draft = {
-            "steps": [
-                {"title": "Lesson", "instructions": ["Baseado em fonte oficial."]}
-            ],
+            "steps": [{"title": "Lesson", "instructions": ["Baseado em fonte oficial."]}],
         }
         rag = [{"content": "...", "score": 0.8}]
         result = check_rag_sources(draft, rag)
@@ -176,9 +172,7 @@ class TestCheckRagSources:
 
     def test_rag_with_no_sources_declaration_passes(self) -> None:
         draft = {
-            "steps": [
-                {"title": "Lesson", "instructions": ["Sem fontes encontradas."]}
-            ],
+            "steps": [{"title": "Lesson", "instructions": ["Sem fontes encontradas."]}],
         }
         rag = [{"content": "...", "score": 0.3}]
         result = check_rag_sources(draft, rag)
@@ -186,9 +180,7 @@ class TestCheckRagSources:
 
     def test_rag_without_citation_fails(self) -> None:
         draft = {
-            "steps": [
-                {"title": "Lesson", "instructions": ["Just do the math."]}
-            ],
+            "steps": [{"title": "Lesson", "instructions": ["Just do the math."]}],
         }
         rag = [{"content": "...", "score": 0.9}]
         result = check_rag_sources(draft, rag)

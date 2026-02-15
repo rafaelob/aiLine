@@ -95,10 +95,7 @@ def build_tutor_agent(
         result = await ctx.deps.llm.generate_with_search(query)
         return {
             "text": result.text,
-            "sources": [
-                {"url": s.url, "title": s.title, "snippet": s.snippet}
-                for s in result.sources
-            ],
+            "sources": [{"url": s.url, "title": s.title, "snippet": s.snippet} for s in result.sources],
         }
 
     return agent

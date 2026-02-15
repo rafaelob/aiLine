@@ -99,9 +99,7 @@ def install_error_handlers(app: FastAPI) -> None:
     """
 
     @app.exception_handler(StarletteHTTPException)
-    async def http_exception_handler(
-        request: Request, exc: StarletteHTTPException
-    ) -> JSONResponse:
+    async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
         detail = exc.detail if isinstance(exc.detail, str) else str(exc.detail)
         problem = _build_problem(
             status=exc.status_code,
@@ -121,17 +119,17 @@ def install_error_handlers(app: FastAPI) -> None:
         )
 
     @app.exception_handler(RequestValidationError)
-    async def validation_error_handler(
-        request: Request, exc: RequestValidationError
-    ) -> JSONResponse:
+    async def validation_error_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
         errors = []
         for err in exc.errors():
             loc = " -> ".join(str(part) for part in err.get("loc", []))
-            errors.append({
-                "field": loc,
-                "message": err.get("msg", ""),
-                "type": err.get("type", ""),
-            })
+            errors.append(
+                {
+                    "field": loc,
+                    "message": err.get("msg", ""),
+                    "type": err.get("type", ""),
+                }
+            )
         problem = _build_problem(
             status=422,
             detail="Request validation failed.",
@@ -150,9 +148,7 @@ def install_error_handlers(app: FastAPI) -> None:
         )
 
     @app.exception_handler(DomainError)
-    async def domain_exception_handler(
-        request: Request, exc: DomainError
-    ) -> JSONResponse:
+    async def domain_exception_handler(request: Request, exc: DomainError) -> JSONResponse:
         status = _DOMAIN_STATUS_MAP.get(type(exc), 400)
         problem = _build_problem(
             status=status,
@@ -173,9 +169,7 @@ def install_error_handlers(app: FastAPI) -> None:
         )
 
     @app.exception_handler(Exception)
-    async def unhandled_exception_handler(
-        request: Request, exc: Exception
-    ) -> JSONResponse:
+    async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
         _log.exception(
             "unhandled_error",
             path=request.url.path,

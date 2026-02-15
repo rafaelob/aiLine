@@ -113,10 +113,7 @@ class TraceStore:
     def _evict_expired(self) -> None:
         """Remove entries older than TTL (call under lock)."""
         now = time.monotonic()
-        expired = [
-            rid for rid, ts in self._timestamps.items()
-            if now - ts > self._ttl
-        ]
+        expired = [rid for rid, ts in self._timestamps.items() if now - ts > self._ttl]
         for rid in expired:
             del self._traces[rid]
             del self._timestamps[rid]

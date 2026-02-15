@@ -151,7 +151,7 @@ def _sanitize_metadata(meta: dict[str, Any]) -> dict[str, str | int | float | bo
 
     sanitized: dict[str, str | int | float | bool] = {}
     for key, value in meta.items():
-        if isinstance(value, (str, int, float, bool)):
+        if isinstance(value, str | int | float | bool):
             sanitized[key] = value
         else:
             sanitized[key] = json.dumps(value, ensure_ascii=False, default=str)

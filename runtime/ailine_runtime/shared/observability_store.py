@@ -98,12 +98,8 @@ class ObservabilityStore:
             out = self._token_usage["output_tokens"]
             model = self._cost_model
 
-            input_cost = (inp / 1000) * _COST_PER_1K_INPUT.get(
-                model, _COST_PER_1K_INPUT["default"]
-            )
-            output_cost = (out / 1000) * _COST_PER_1K_OUTPUT.get(
-                model, _COST_PER_1K_OUTPUT["default"]
-            )
+            input_cost = (inp / 1000) * _COST_PER_1K_INPUT.get(model, _COST_PER_1K_INPUT["default"])
+            output_cost = (out / 1000) * _COST_PER_1K_OUTPUT.get(model, _COST_PER_1K_OUTPUT["default"])
 
             return {
                 "input_tokens": inp,
@@ -172,11 +168,14 @@ class ObservabilityStore:
     def get_standards_evidence(self, run_id: str) -> dict[str, Any]:
         """Return standards evidence for a run, or empty defaults."""
         with self._lock:
-            return self._standards_evidence.get(run_id, {
-                "standards": [],
-                "bloom_level": None,
-                "alignment_explanation": "Standards evidence not yet captured for this run.",
-            })
+            return self._standards_evidence.get(
+                run_id,
+                {
+                    "standards": [],
+                    "bloom_level": None,
+                    "alignment_explanation": "Standards evidence not yet captured for this run.",
+                },
+            )
 
 
 # Module-level singleton

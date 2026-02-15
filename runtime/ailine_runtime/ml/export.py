@@ -71,9 +71,7 @@ def create_placeholder_onnx(
 
     # Random projection weights (input_size -> vocab_size)
     rng = np.random.default_rng(42)
-    weight_data = (rng.standard_normal((input_size, vocab_size)) * 0.01).astype(
-        np.float32
-    )
+    weight_data = (rng.standard_normal((input_size, vocab_size)) * 0.01).astype(np.float32)
     bias_data = np.zeros(vocab_size, dtype=np.float32)
 
     # Build ONNX graph

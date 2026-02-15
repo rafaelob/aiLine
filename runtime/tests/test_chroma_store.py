@@ -134,9 +134,7 @@ class TestChromaVectorStoreSearch:
             from ailine_runtime.adapters.vectorstores.chroma_store import ChromaVectorStore
 
             store = ChromaVectorStore()
-            results = await store.search(
-                query_embedding=[0.1], k=1, filters={"subject": "math"}
-            )
+            results = await store.search(query_embedding=[0.1], k=1, filters={"subject": "math"})
             assert len(results) == 1
             call_kwargs = mock_collection.query.call_args
             assert call_kwargs.kwargs["where"] == {"subject": "math"}

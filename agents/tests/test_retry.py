@@ -149,11 +149,13 @@ class TestWithRetry:
 
     async def test_backoff_delay_increases(self) -> None:
         """Verify delays increase with backoff_factor."""
-        fn = AsyncMock(side_effect=[
-            ConnectionError("1"),
-            ConnectionError("2"),
-            "success",
-        ])
+        fn = AsyncMock(
+            side_effect=[
+                ConnectionError("1"),
+                ConnectionError("2"),
+                "success",
+            ]
+        )
         with patch("ailine_agents.workflows._retry.asyncio.sleep") as mock_sleep:
             mock_sleep.return_value = None
             result = await with_retry(

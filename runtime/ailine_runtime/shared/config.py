@@ -27,7 +27,7 @@ class EmbeddingConfig(BaseSettings):
 
 class VectorStoreConfig(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="AILINE_VECTORSTORE_")
-    provider: Literal["pgvector", "qdrant", "chroma"] = "pgvector"
+    provider: Literal["pgvector", "chroma"] = "pgvector"
 
 
 class DatabaseConfig(BaseSettings):
@@ -131,17 +131,18 @@ class Settings(BaseSettings):
             # Production must not use SQLite
             if "sqlite" in self.db.url.lower():
                 errors.append(
-                    "SQLite is not allowed in production. "
-                    "Set AILINE_DB__URL to a PostgreSQL connection string."
+                    "SQLite is not allowed in production. Set AILINE_DB__URL to a PostgreSQL connection string."
                 )
 
             # At least one LLM API key in production
-            has_llm_key = any([
-                self.anthropic_api_key,
-                self.openai_api_key,
-                self.google_api_key,
-                self.openrouter_api_key,
-            ])
+            has_llm_key = any(
+                [
+                    self.anthropic_api_key,
+                    self.openai_api_key,
+                    self.google_api_key,
+                    self.openrouter_api_key,
+                ]
+            )
             if not has_llm_key:
                 errors.append(
                     "At least one LLM API key is required in production. "
@@ -162,10 +163,7 @@ class Settings(BaseSettings):
                 )
 
         if errors and is_prod:
-            raise OSError(
-                "Production environment validation failed:\n"
-                + "\n".join(f"  - {e}" for e in errors)
-            )
+            raise OSError("Production environment validation failed:\n" + "\n".join(f"  - {e}" for e in errors))
 
         return errors + warnings
 

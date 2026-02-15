@@ -114,7 +114,7 @@ class GeminiEmbeddings:
             batch = texts[offset : offset + _BATCH_LIMIT]
             response = await self._client.aio.models.embed_content(
                 model=self._model,
-                contents=batch,
+                contents=batch,  # type: ignore[arg-type]  # google-genai accepts list[str]
                 config=config,
             )
             for emb in response.embeddings or []:

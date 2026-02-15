@@ -22,6 +22,7 @@ from ailine_runtime.ml.training.augment import (
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_sequence(n_frames: int = 30, n_dims: int = 162) -> np.ndarray:
     """Create a deterministic landmark sequence for tests."""
     rng = np.random.default_rng(42)
@@ -31,6 +32,7 @@ def _make_sequence(n_frames: int = 30, n_dims: int = 162) -> np.ndarray:
 # ---------------------------------------------------------------------------
 # speed_variation
 # ---------------------------------------------------------------------------
+
 
 class TestSpeedVariation:
     def test_output_shape_dims_preserved(self):
@@ -71,6 +73,7 @@ class TestSpeedVariation:
 # spatial_noise
 # ---------------------------------------------------------------------------
 
+
 class TestSpatialNoise:
     def test_output_shape_matches_input(self):
         seq = _make_sequence(20, 6)
@@ -101,6 +104,7 @@ class TestSpatialNoise:
 # ---------------------------------------------------------------------------
 # mirror_horizontal
 # ---------------------------------------------------------------------------
+
 
 class TestMirrorHorizontal:
     def test_x_coords_negated(self):
@@ -133,6 +137,7 @@ class TestMirrorHorizontal:
 # ---------------------------------------------------------------------------
 # random_rotation
 # ---------------------------------------------------------------------------
+
 
 class TestRandomRotation:
     def test_output_shape_preserved(self):

@@ -9,9 +9,13 @@
     "materials": "Materials",
     "tutors": "Tutors",
     "sign_language": "Sign Language",
+    "progress": "Progress",
+    "observability": "Observability",
     "settings": "Settings",
     "collapse": "Collapse menu",
     "expand": "Expand menu",
+    "more": "More",
+    "more_menu_label": "More navigation options",
     "mobile_nav_label": "Mobile navigation",
     "main_nav_label": "Main navigation"
   },
@@ -19,7 +23,12 @@
     "locale_label": "Language",
     "accessibility": "Accessibility",
     "profile": "Profile",
-    "breadcrumbs": "Breadcrumb navigation"
+    "breadcrumbs": "Breadcrumb navigation",
+    "system_status": "System Status",
+    "api_healthy": "All systems operational",
+    "api_degraded": "Service degraded",
+    "privacy_note": "Privacy: Data stays local",
+    "model_label": "AI Model"
   },
   "dashboard": {
     "title": "Welcome to AiLine",
@@ -32,12 +41,25 @@
     "start_tutor": "Start Tutor",
     "start_tutor_hint": "Chat with the AI tutor",
     "recent_plans": "Recent Plans",
-    "no_plans": "No plans created yet. Start by creating your first study plan!",
+    "no_plans": "No plans created yet",
+    "empty_hint": "Create an AI-powered inclusive study plan in minutes",
     "empty_cta": "Create First Plan",
     "view_all": "View all",
     "stat_plans": "Total Plans",
     "stat_students": "Active Students",
-    "stat_score": "Average Score"
+    "stat_score": "Average Score",
+    "plan_status_completed": "Completed",
+    "plan_status_failed": "Failed",
+    "plan_model": "Model",
+    "plan_time": "Time",
+    "plan_score": "Score",
+    "loading": "Loading...",
+    "demo": {
+      "title": "Guided Demo",
+      "description": "Experience AiLine in 2 minutes — see AI-powered inclusive education in action",
+      "start": "Start Demo",
+      "dismiss": "Don't show again"
+    }
   },
   "plans": {
     "title": "Study Plans",
@@ -84,6 +106,7 @@
       "report": "Quality Report",
       "exports": "Exports",
       "summary": "Session Summary",
+      "trust": "Trust",
       "tabs_label": "Plan view tabs"
     }
   },
@@ -228,7 +251,9 @@
     "ttsPlay": "Read Aloud",
     "ttsPause": "Pause",
     "ttsStop": "Stop",
-    "ttsSpeed": "Speed"
+    "ttsSpeed": "Speed",
+    "cognitive_heading": "Cognitive Load Meter",
+    "cognitive_description": "Monitor the cognitive complexity of generated content. Our 3-factor heuristic evaluates UI density, reading level, and interaction count."
   },
   "sign_language": {
     "title": "Sign Language",
@@ -348,7 +373,11 @@
     "stop_generating": "Stop generating",
     "just_now": "just now",
     "copy": "Copy",
-    "copied": "Copied!"
+    "copied": "Copied!",
+    "tab_chat": "Chat",
+    "tab_review": "Review",
+    "tabs_label": "Tutor view tabs",
+    "no_session_review": "Start a chat session to review the conversation."
   },
   "simulate": {
     "title": "Empathy Bridge",
@@ -558,6 +587,70 @@
     "suggestion_medium": "Consider simplifying visuals or reducing active elements.",
     "suggestion_high": "Reduce content density or switch to a simpler accessibility persona."
   },
+  "progress": {
+    "title": "Student Progress",
+    "dashboard_title": "Class Overview",
+    "empty_title": "No progress data yet",
+    "empty_description": "Record student progress after tutor sessions to see mastery tracking here.",
+    "mastery_levels": {
+      "not_started": "Not Started",
+      "developing": "Developing",
+      "proficient": "Proficient",
+      "mastered": "Mastered"
+    },
+    "standards_heatmap": "Standards Heatmap",
+    "student_details": "Student Details",
+    "record_progress": "Record Progress",
+    "total_students": "Total Students",
+    "total_standards": "Standards Tracked",
+    "last_activity": "Last Activity"
+  },
+  "review": {
+    "title": "Plan Review",
+    "pending": "Pending Review",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "needs_revision": "Needs Revision",
+    "approve": "Approve Plan",
+    "reject": "Reject Plan",
+    "request_revision": "Request Revision",
+    "notes_placeholder": "Add your review notes...",
+    "empty_title": "No plans to review",
+    "empty_description": "Plans will appear here after generation for your approval.",
+    "submit_review": "Submit Review",
+    "transcript": "Conversation Transcript",
+    "flag_turn": "Flag this message",
+    "flag_reason": "Reason for flagging"
+  },
+  "scorecard": {
+    "title": "Trust & Transformation Scorecard",
+    "reading_level": "Reading Level",
+    "before": "Before",
+    "after": "After",
+    "standards_aligned": "Standards Aligned",
+    "accessibility": "Accessibility Adaptations",
+    "rag_groundedness": "RAG Groundedness",
+    "quality_score": "Quality Score",
+    "model_used": "Model Used",
+    "time_saved": "Time Saved",
+    "pipeline_time": "Pipeline Time",
+    "export_variants": "Export Variants"
+  },
+  "trust": {
+    "title": "Trust & Transparency",
+    "quality_section": "Quality Assessment",
+    "standards_section": "Metrics & Standards",
+    "reasoning_section": "AI Reasoning",
+    "no_data": "Generate a plan to see trust metrics",
+    "standards_count": "Standards Aligned",
+    "adaptations_count": "Accessibility Adaptations",
+    "reading_level": "Reading Level",
+    "rag_groundedness": "RAG Groundedness",
+    "export_variants": "Export Variants",
+    "pipeline_time": "Pipeline Time",
+    "model_chosen": "Model: {model}",
+    "suggestions": "Improvement Suggestions"
+  },
   "common": {
     "loading": "Loading...",
     "error": "An error occurred",
@@ -629,6 +722,69 @@
     "sign_language_title": "Sign Language",
     "sign_language_description": "Libras gesture recognition, real-time captioning, and VLibras translation",
     "observability_title": "Observability",
-    "observability_description": "Monitor LLM providers, latency, errors, and resource usage in real time"
+    "observability_description": "Monitor LLM providers, latency, errors, and resource usage in real time",
+    "progress_title": "Student Progress",
+    "progress_description": "Track student mastery across curriculum standards",
+    "materials_title": "Teaching Materials",
+    "materials_description": "Upload and manage teaching materials for AI-powered lesson planning",
+    "settings_title": "Settings",
+    "settings_description": "Platform configuration and preferences"
+  },
+  "settings": {
+    "title": "Settings",
+    "description": "Platform configuration and preferences",
+    "ai_model": "AI Model",
+    "ai_model_desc": "The model used for lesson plan generation",
+    "auto_routed": "Auto-routed via SmartRouter",
+    "language": "Language",
+    "language_desc": "Use the locale switcher in the top bar to change language",
+    "current_language": "Current: {locale}",
+    "accessibility_settings": "Accessibility",
+    "accessibility_desc": "Customize personas, themes, and display preferences",
+    "open_preferences": "Open Preferences",
+    "about": "About AiLine",
+    "version": "Version",
+    "built_with": "Built with Claude Opus 4.6",
+    "hackathon": "Built with Opus 4.6 Hackathon — Feb 2026",
+    "privacy": "Privacy & Data",
+    "privacy_desc": "Manage your data, retention policies, and export options. LGPD/FERPA compliant."
+  },
+  "materials": {
+    "title": "Teaching Materials",
+    "upload": "Upload Material",
+    "upload_desc": "Add teaching materials for AI-powered lesson planning",
+    "field_title": "Title",
+    "field_subject": "Subject",
+    "field_content": "Content",
+    "field_tags": "Tags (comma-separated)",
+    "submit": "Upload",
+    "uploading": "Uploading...",
+    "cancel": "Cancel",
+    "success": "Material uploaded successfully!",
+    "empty": "No materials yet",
+    "empty_hint": "Upload teaching materials to enhance AI lesson plans",
+    "empty_cta": "Upload First Material",
+    "error": "Failed to upload material"
+  },
+  "demo": {
+    "title": "Guided Demo",
+    "description": "Experience AiLine in 2 minutes — see AI-powered inclusive education in action",
+    "start": "Start Demo",
+    "skip": "Skip Demo",
+    "next": "Next",
+    "complete": "Start Creating!",
+    "dismiss": "Don't show again",
+    "step_1": "Watch the AI generate an inclusive lesson plan in real-time with Glass Box transparency",
+    "step_2": "Try switching accessibility personas to see how content adapts for different learners",
+    "step_3": "Check the Trust Scorecard — quality score, standards alignment, and teacher controls"
+  },
+  "commandPalette": {
+    "placeholder": "Search or jump to...",
+    "navigation": "Navigation",
+    "quickActions": "Quick Actions",
+    "accessibility": "Accessibility",
+    "language": "Language",
+    "noResults": "No results found",
+    "hint": "Cmd+K"
   }
 }

@@ -6,13 +6,16 @@ RouteRationale domain model, and OpenTelemetry spans.
 
 from __future__ import annotations
 
+import logging
 from typing import Any
+
+_log = logging.getLogger(__name__)
 
 # OTEL tracing -- optional; no-op when runtime tracing is unavailable
 try:
     from ailine_runtime.shared.tracing import trace_pipeline_node as _trace_pipeline_node
 except ImportError:
-    _trace_pipeline_node = None
+    _trace_pipeline_node = None  # type: ignore[assignment]
 
 
 def build_route_rationale(
@@ -46,10 +49,7 @@ def build_route_rationale(
             "history": 0.15,
             "intent": 0.10,
         }
-        rationale["reason"] = (
-            f"SmartRouter selected '{tier}' tier -> {model_name} "
-            f"(weights: 0.25/0.25/0.25/0.15/0.10)"
-        )
+        rationale["reason"] = f"SmartRouter selected '{tier}' tier -> {model_name} (weights: 0.25/0.25/0.25/0.15/0.10)"
 
     return rationale
 
@@ -78,9 +78,8 @@ def _emit_otel_node_span(
                 span_data["quality_score"] = quality_score
             if error:
                 span_data["error"] = error
-    except Exception:
-        # Never let tracing break the pipeline
-        pass
+    except Exception as exc:
+        _log.debug("otel_span_suppressed: node=%s error=%s", node_name, exc)
 
 
 async def capture_node_trace(
@@ -128,9 +127,8 @@ async def capture_node_trace(
     except ImportError:
         # Runtime not available (isolated agents tests) -- skip
         pass
-    except Exception:
-        # Never let trace capture break the pipeline
-        pass
+    except Exception as exc:
+        _log.debug("trace_capture_suppressed: node=%s error=%s", node_name, exc)
 
     # Emit OTEL span for the pipeline node (post-hoc, not wrapping)
     _emit_otel_node_span(

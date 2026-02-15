@@ -64,17 +64,11 @@ class TeacherRow(Base):
     email: Mapped[str] = mapped_column(String(320), unique=True, nullable=False)
     display_name: Mapped[str] = mapped_column(String(200), nullable=False)
     locale: Mapped[str] = mapped_column(String(10), default="pt-BR")
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=_utcnow
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=_utcnow)
 
     # Relationships
-    courses: Mapped[list[CourseRow]] = relationship(
-        back_populates="teacher", cascade="all, delete-orphan"
-    )
+    courses: Mapped[list[CourseRow]] = relationship(back_populates="teacher", cascade="all, delete-orphan")
 
 
 # ---------------------------------------------------------------------------
@@ -98,15 +92,11 @@ class CourseRow(Base):
     subject: Mapped[str] = mapped_column(String(100), nullable=False)
     grade: Mapped[str] = mapped_column(String(50), nullable=False)
     standard: Mapped[str] = mapped_column(String(20), default="BNCC")
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
     teacher: Mapped[TeacherRow] = relationship(back_populates="courses")
-    lessons: Mapped[list[LessonRow]] = relationship(
-        back_populates="course", cascade="all, delete-orphan"
-    )
+    lessons: Mapped[list[LessonRow]] = relationship(back_populates="course", cascade="all, delete-orphan")
 
 
 # ---------------------------------------------------------------------------
@@ -136,12 +126,8 @@ class LessonRow(Base):
     accessibility_json: Mapped[dict] = mapped_column(JSON, default=dict)
     score: Mapped[float | None] = mapped_column(Float, nullable=True)
     status: Mapped[str] = mapped_column(String(20), default="draft")
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=_utcnow
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=_utcnow)
 
     # Relationships
     course: Mapped[CourseRow] = relationship(back_populates="lessons")
@@ -168,9 +154,7 @@ class MaterialRow(Base):
     title: Mapped[str] = mapped_column(String(300), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     tags: Mapped[list] = mapped_column(JSON, default=list)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 # ---------------------------------------------------------------------------
@@ -240,15 +224,9 @@ class PipelineRunRow(Base):
     input_json: Mapped[dict] = mapped_column(JSON, default=dict)
     output_json: Mapped[dict] = mapped_column(JSON, default=dict)
     status: Mapped[str] = mapped_column(String(20), default="pending")
-    started_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
-    completed_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 # ---------------------------------------------------------------------------
@@ -272,9 +250,7 @@ class TutorAgentRow(Base):
     grade: Mapped[str] = mapped_column(String(50), nullable=False)
     config_json: Mapped[dict] = mapped_column(JSON, default=dict)
     persona_json: Mapped[dict] = mapped_column(JSON, default=dict)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 # ---------------------------------------------------------------------------
@@ -303,12 +279,8 @@ class TutorSessionRow(Base):
     teacher_id: Mapped[str] = mapped_column(String(36), nullable=False)
     tutor_id: Mapped[str] = mapped_column(String(36), nullable=False)
     messages_json: Mapped[list] = mapped_column(JSON, default=list)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=_utcnow
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=_utcnow)
 
 
 # ---------------------------------------------------------------------------
@@ -352,9 +324,7 @@ class RunEventRow(Base):
     stage: Mapped[str] = mapped_column(String(30), nullable=False)
     event_type: Mapped[str] = mapped_column(String(30), nullable=False)
     data_json: Mapped[dict] = mapped_column(JSON, default=dict)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 # ---------------------------------------------------------------------------
@@ -378,6 +348,4 @@ class AccessibilityProfileRow(Base):
     needs_json: Mapped[dict] = mapped_column(JSON, default=dict)
     supports_json: Mapped[dict] = mapped_column(JSON, default=dict)
     ui_prefs_json: Mapped[dict] = mapped_column(JSON, default=dict)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

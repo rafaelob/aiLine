@@ -64,33 +64,42 @@ def validate_draft_accessibility(
     has_examples = contains_any(combined_text, EXAMPLE_KEYWORDS)
     has_glossary = contains_any(combined_text, GLOSSARY_KEYWORDS)
 
-    has_accessibility_section = bool(
-        draft.get("accessibility_pack_draft")
-    ) or bool(draft.get("accessibility_notes"))
+    has_accessibility_section = bool(draft.get("accessibility_pack_draft")) or bool(draft.get("accessibility_notes"))
 
     # ----- 3) chunking por tempo (TDAH / aprendizagem)
     step_minutes = [
-        step["minutes"]
-        for step in steps
-        if isinstance(step, dict) and isinstance(step.get("minutes"), int)
+        step["minutes"] for step in steps if isinstance(step, dict) and isinstance(step.get("minutes"), int)
     ]
     total_minutes = sum(step_minutes) if step_minutes else 0
     max_step_minutes = max(step_minutes) if step_minutes else 0
     chunked_for_attention = _check_chunking(
-        class_profile, max_step_minutes, warnings, recommendations,
+        class_profile,
+        max_step_minutes,
+        warnings,
+        recommendations,
     )
 
     # ----- 4) requisitos de mídia (auditiva/visual)
     media_check = _check_media_requirements(
-        draft, combined_text, class_profile, warnings, recommendations,
+        draft,
+        combined_text,
+        class_profile,
+        warnings,
+        recommendations,
     )
 
     # ----- 5) necessidades específicas (TEA/TDAH/learning)
     _check_specific_needs(
-        class_profile, combined_text, draft,
-        has_transitions, has_breaks, has_checkpoints,
-        has_examples, has_glossary,
-        warnings, recommendations,
+        class_profile,
+        combined_text,
+        draft,
+        has_transitions,
+        has_breaks,
+        has_checkpoints,
+        has_examples,
+        has_glossary,
+        warnings,
+        recommendations,
     )
 
     # ----- 6) speech/language and motor (optional extras)
@@ -132,7 +141,10 @@ def validate_draft_accessibility(
 
     # ----- Scoring (heuristic)
     score = _compute_score(
-        checklist, cog_bucket, class_profile, media_check["mentions_media"],
+        checklist,
+        cog_bucket,
+        class_profile,
+        media_check["mentions_media"],
     )
 
     pass_threshold = 70
@@ -185,7 +197,8 @@ def validate_draft_accessibility(
 
 
 def _check_instructions(
-    steps: list[Any], warnings: list[str],
+    steps: list[Any],
+    warnings: list[str],
 ) -> dict[str, Any]:
     """Check instruction presence and quality across steps."""
     has_instructions = True
@@ -199,11 +212,11 @@ def _check_instructions(
         instr = step.get("instructions") if isinstance(step, dict) else None
         if not instr or not isinstance(instr, list):
             has_instructions = False
-            warnings.append(f"Step {i+1} sem instructions em lista.")
+            warnings.append(f"Step {i + 1} sem instructions em lista.")
             continue
 
         if len(instr) > max_instr_items:
-            warnings.append(f"Step {i+1} tem muitas instruções ({len(instr)}). Considere chunking.")
+            warnings.append(f"Step {i + 1} tem muitas instruções ({len(instr)}). Considere chunking.")
             instructions_short = False
 
         for line in instr:
@@ -212,7 +225,7 @@ def _check_instructions(
             total_instr_items += 1
             if len(line) > max_instr_chars:
                 instructions_short = False
-                warnings.append(f"Instrução muito longa (> {max_instr_chars} chars) no step {i+1}.")
+                warnings.append(f"Instrução muito longa (> {max_instr_chars} chars) no step {i + 1}.")
             if line.count(";") >= 1 or line.lower().count(" e ") >= 3:
                 instructions_single_actionish = False
 
@@ -248,9 +261,7 @@ def _check_chunking(
             f"(acima da janela de foco ~{focus_window} min). "
             "Considere quebrar etapas longas."
         )
-        recommendations.append(
-            "Quebrar etapas longas em blocos de 5-10 min com checkpoints."
-        )
+        recommendations.append("Quebrar etapas longas em blocos de 5-10 min com checkpoints.")
         return False
     return True
 
@@ -263,9 +274,7 @@ def _check_media_requirements(
     recommendations: list[str],
 ) -> dict[str, Any]:
     """Check media accessibility requirements (captions, alt text, etc.)."""
-    needs_media_req = bool(
-        class_profile and (class_profile.needs.hearing or class_profile.needs.visual)
-    )
+    needs_media_req = bool(class_profile and (class_profile.needs.hearing or class_profile.needs.visual))
     media_req = None
     ap = draft.get("accessibility_pack_draft")
     if isinstance(ap, dict):
@@ -273,27 +282,17 @@ def _check_media_requirements(
     if not media_req:
         media_req = draft.get("media_requirements")
 
-    media_req_text = (
-        " ".join(media_req) if isinstance(media_req, list) else str(media_req or "")
-    )
+    media_req_text = " ".join(media_req) if isinstance(media_req, list) else str(media_req or "")
     media_lower = media_req_text.lower()
 
     mentions_media = contains_any(combined_text, MEDIA_MENTION_KEYWORDS)
-    captions_present = (
-        contains_any(media_lower, CAPTION_KEYWORDS)
-        or contains_any(combined_text, CAPTION_KEYWORDS)
+    captions_present = contains_any(media_lower, CAPTION_KEYWORDS) or contains_any(combined_text, CAPTION_KEYWORDS)
+    transcript_present = contains_any(media_lower, TRANSCRIPT_KEYWORDS) or contains_any(
+        combined_text, TRANSCRIPT_KEYWORDS
     )
-    transcript_present = (
-        contains_any(media_lower, TRANSCRIPT_KEYWORDS)
-        or contains_any(combined_text, TRANSCRIPT_KEYWORDS)
-    )
-    alt_text_present = (
-        contains_any(media_lower, ALT_TEXT_KEYWORDS)
-        or contains_any(combined_text, ALT_TEXT_KEYWORDS)
-    )
-    audio_desc_present = (
-        contains_any(media_lower, AUDIO_DESC_KEYWORDS)
-        or contains_any(combined_text, AUDIO_DESC_KEYWORDS)
+    alt_text_present = contains_any(media_lower, ALT_TEXT_KEYWORDS) or contains_any(combined_text, ALT_TEXT_KEYWORDS)
+    audio_desc_present = contains_any(media_lower, AUDIO_DESC_KEYWORDS) or contains_any(
+        combined_text, AUDIO_DESC_KEYWORDS
     )
 
     has_media_requirements = bool(media_req_text.strip())
@@ -312,17 +311,13 @@ def _check_media_requirements(
         if not alt_text_present:
             warnings.append("Visual: faltou exigir texto alternativo (alt text) para imagens/figuras.")
             recommendations.append(
-                "Garantir: imagens/figuras -> texto alternativo; "
-                "exports compativeis com leitor de tela."
+                "Garantir: imagens/figuras -> texto alternativo; exports compativeis com leitor de tela."
             )
-        require_ad = getattr(
-            class_profile.supports.visual, "require_audio_description", False
-        )
+        require_ad = getattr(class_profile.supports.visual, "require_audio_description", False)
         if require_ad and not audio_desc_present:
             warnings.append("Visual: perfil exige audiodescrição mas não foi mencionada.")
             recommendations.append(
-                "Adicionar audiodescricao (ou sinalizar revisao humana) "
-                "para midia visual relevante."
+                "Adicionar audiodescricao (ou sinalizar revisao humana) para midia visual relevante."
             )
 
     return {
@@ -363,9 +358,7 @@ def _check_specific_needs(
             recommendations.append("Adicionar checkpoints (ex.: 'marque ✓ quando terminar') e micro-met as por etapa.")
         if not has_breaks:
             warnings.append("TDAH: faltou pausa/movimento explícito.")
-            recommendations.append(
-                "Inserir pausas de movimento e reset de atencao a cada ~10-15 min."
-            )
+            recommendations.append("Inserir pausas de movimento e reset de atencao a cada ~10-15 min.")
 
     if class_profile and class_profile.needs.learning:
         if not has_examples:
@@ -373,12 +366,8 @@ def _check_specific_needs(
             recommendations.append("Adicionar exemplo curto (modelo) antes da atividade principal.")
         if not has_glossary:
             warnings.append("Aprendizagem: faltou glossário/vocabulário de termos difíceis.")
-            recommendations.append(
-                "Gerar um mini-glossario (3-8 termos) com definicao simples."
-            )
-        has_student_plan = isinstance(draft.get("student_plan"), dict) or bool(
-            draft.get("student_friendly_summary")
-        )
+            recommendations.append("Gerar um mini-glossario (3-8 termos) com definicao simples.")
+        has_student_plan = isinstance(draft.get("student_plan"), dict) or bool(draft.get("student_friendly_summary"))
         if not has_student_plan:
             warnings.append("Aprendizagem: faltou versão aluno (linguagem simples + passos curtos).")
             recommendations.append("Gerar versão aluno com frases curtas e instruções 1-ação-por-item.")
@@ -392,33 +381,15 @@ def _check_speech_motor(
 ) -> None:
     """Check speech/language and motor accessibility needs."""
     aac_kw = ("pictograma", "aac", "comunicacao alternativa", "cartao", "prancha")
-    if (
-        class_profile
-        and class_profile.needs.speech_language
-        and not contains_any(combined_text, aac_kw)
-    ):
-        warnings.append(
-            "Fala/linguagem: considerar suporte AAC/pictogramas "
-            "e opcoes de resposta alternativa."
-        )
-        recommendations.append(
-            "Oferecer opcoes de resposta: "
-            "apontar/selecionar/imagem/oral (conforme contexto)."
-        )
+    if class_profile and class_profile.needs.speech_language and not contains_any(combined_text, aac_kw):
+        warnings.append("Fala/linguagem: considerar suporte AAC/pictogramas e opcoes de resposta alternativa.")
+        recommendations.append("Oferecer opcoes de resposta: apontar/selecionar/imagem/oral (conforme contexto).")
 
     motor_kw = ("ditado", "oral", "alternativa", "teclado", "assistivo")
-    if (
-        class_profile
-        and class_profile.needs.motor
-        and not contains_any(combined_text, motor_kw)
-    ):
-        warnings.append(
-            "Motora: considerar alternativas a escrita manual "
-            "(oral/teclado/selecao)."
-        )
+    if class_profile and class_profile.needs.motor and not contains_any(combined_text, motor_kw):
+        warnings.append("Motora: considerar alternativas a escrita manual (oral/teclado/selecao).")
         recommendations.append(
-            "Oferecer alternativas de entrega "
-            "(oral/teclado/multipla escolha) para reduzir barreira motora."
+            "Oferecer alternativas de entrega (oral/teclado/multipla escolha) para reduzir barreira motora."
         )
 
 

@@ -101,7 +101,10 @@ class UnifiedCurriculumProvider:
         if system is None or system.lower() == "bncc":
             results.extend(
                 await self._bncc.search(
-                    query, grade=grade, subject=subject, system=system,
+                    query,
+                    grade=grade,
+                    subject=subject,
+                    system=system,
                     bloom_level=bloom_level,
                 )
             )
@@ -109,7 +112,10 @@ class UnifiedCurriculumProvider:
         if system is None or system.lower() in ("ccss", "ccss_ela", "ngss"):
             results.extend(
                 await self._us.search(
-                    query, grade=grade, subject=subject, system=system,
+                    query,
+                    grade=grade,
+                    subject=subject,
+                    system=system,
                     bloom_level=bloom_level,
                 )
             )

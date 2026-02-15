@@ -53,8 +53,7 @@ class WhisperSTT:
             from faster_whisper import WhisperModel
         except ImportError as exc:
             raise ImportError(
-                "faster-whisper is required for WhisperSTT. "
-                "Install with: pip install 'faster-whisper>=1.2.1'"
+                "faster-whisper is required for WhisperSTT. Install with: pip install 'faster-whisper>=1.2.1'"
             ) from exc
         self._model = WhisperModel(
             self._model_size,
@@ -62,9 +61,7 @@ class WhisperSTT:
             compute_type=self._compute_type,
         )
 
-    async def transcribe(
-        self, audio_bytes: bytes, *, language: str = "pt"
-    ) -> str:
+    async def transcribe(self, audio_bytes: bytes, *, language: str = "pt") -> str:
         """Transcribe audio bytes to text.
 
         Delegates to a thread-pool executor because faster-whisper is
@@ -72,24 +69,18 @@ class WhisperSTT:
         """
         self._ensure_model()
         loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(
-            None, self._sync_transcribe, audio_bytes, language
-        )
+        return await loop.run_in_executor(None, self._sync_transcribe, audio_bytes, language)
 
     def _sync_transcribe(self, audio_bytes: bytes, language: str) -> str:
         """Blocking transcription called from the executor."""
         tmp_path: str | None = None
         try:
-            with tempfile.NamedTemporaryFile(
-                suffix=".wav", delete=False
-            ) as tmp:
+            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
                 tmp.write(audio_bytes)
                 tmp.flush()
                 tmp_path = tmp.name
 
-            segments, _info = self._model.transcribe(
-                tmp_path, language=language
-            )
+            segments, _info = self._model.transcribe(tmp_path, language=language)
             return " ".join(seg.text for seg in segments).strip()
         finally:
             if tmp_path is not None:

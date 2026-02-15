@@ -33,9 +33,7 @@ _log = structlog.get_logger("ailine.api.app")
 
 # Regex patterns for normalizing path parameters in metrics labels.
 # Matches UUID v4/v7 (with or without hyphens) and pure numeric IDs.
-_UUID_RE = re.compile(
-    r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
-)
+_UUID_RE = re.compile(r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
 _NUMERIC_RE = re.compile(r"^[0-9]+$")
 
 
@@ -106,9 +104,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     # CORS — restrict in production via AILINE_CORS_ORIGINS env var
     cors_origins = [
-        o.strip()
-        for o in os.getenv("AILINE_CORS_ORIGINS", "http://localhost:3000").split(",")
-        if o.strip()
+        o.strip() for o in os.getenv("AILINE_CORS_ORIGINS", "http://localhost:3000").split(",") if o.strip()
     ]
     if not cors_origins:
         cors_origins = ["http://localhost:3000"]
@@ -252,6 +248,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         observability,
         plans,
         plans_stream,
+        progress,
         rag_diagnostics,
         sign_language,
         traces,
@@ -264,17 +261,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(tutors.router, prefix="/tutors", tags=["tutors"])
     app.include_router(curriculum.router, prefix="/curriculum", tags=["curriculum"])
     app.include_router(media.router, prefix="/media", tags=["media"])
-    app.include_router(
-        sign_language.router, prefix="/sign-language", tags=["sign-language"]
-    )
+    app.include_router(sign_language.router, prefix="/sign-language", tags=["sign-language"])
     app.include_router(demo.router, prefix="/demo", tags=["demo"])
     app.include_router(traces.router, prefix="/traces", tags=["traces"])
-    app.include_router(
-        rag_diagnostics.router, prefix="/rag", tags=["rag-diagnostics"]
-    )
-    app.include_router(
-        observability.router, prefix="/observability", tags=["observability"]
-    )
+    app.include_router(rag_diagnostics.router, prefix="/rag", tags=["rag-diagnostics"])
+    app.include_router(observability.router, prefix="/observability", tags=["observability"])
+    app.include_router(progress.router, prefix="/progress", tags=["progress"])
 
     return app
 

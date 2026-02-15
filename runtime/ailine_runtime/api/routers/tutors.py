@@ -12,6 +12,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from ...app.authz import require_authenticated, require_tenant_access
+from ...shared.review_store import get_review_store
 from ...shared.sanitize import sanitize_prompt
 from ...tutoring.builder import create_tutor_agent, load_tutor_spec
 from ...tutoring.session import create_session, load_session, save_session
@@ -158,3 +159,60 @@ async def tutor_chat(tutor_id: str, body: TutorChatIn, request: Request):
         "session_id": session.session_id,
         "error": result.get("error"),
     }
+
+
+# ---------------------------------------------------------------------------
+# HITL Transcript & Flag endpoints
+# ---------------------------------------------------------------------------
+
+
+@router.get("/{tutor_id}/sessions/{session_id}/transcript")
+async def tutor_session_transcript(tutor_id: str, session_id: str):
+    """Get full conversation transcript for teacher review."""
+    spec = load_tutor_spec(tutor_id)
+    if not spec:
+        raise HTTPException(status_code=404, detail="Tutor not found")
+    require_tenant_access(spec.teacher_id, action="read", resource="tutor transcript")
+
+    session = load_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    if session.tutor_id != tutor_id:
+        raise HTTPException(status_code=400, detail="Session does not belong to this tutor")
+
+    store = get_review_store()
+    flags = store.get_flags(session_id)
+
+    return {
+        "session_id": session.session_id,
+        "tutor_id": tutor_id,
+        "messages": [m.model_dump() for m in session.messages],
+        "flags": [f.model_dump() for f in flags],
+        "created_at": session.created_at,
+    }
+
+
+class TurnFlagIn(BaseModel):
+    turn_index: int = Field(..., ge=0)
+    reason: str = Field("", max_length=500)
+
+
+@router.post("/{tutor_id}/sessions/{session_id}/flag")
+async def tutor_flag_turn(tutor_id: str, session_id: str, body: TurnFlagIn):
+    """Flag a specific turn in a tutor conversation for review."""
+    spec = load_tutor_spec(tutor_id)
+    if not spec:
+        raise HTTPException(status_code=404, detail="Tutor not found")
+    ctx = require_tenant_access(spec.teacher_id, action="flag", resource="tutor turn")
+
+    session = load_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    if session.tutor_id != tutor_id:
+        raise HTTPException(status_code=400, detail="Session does not belong to this tutor")
+    if body.turn_index >= len(session.messages):
+        raise HTTPException(status_code=422, detail="turn_index out of range")
+
+    store = get_review_store()
+    flag = store.add_flag(session_id, body.turn_index, ctx.teacher_id, body.reason)
+    return flag.model_dump()

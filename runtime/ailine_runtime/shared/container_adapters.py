@@ -29,9 +29,7 @@ from .config import Settings
 _log = logging.getLogger("ailine.container")
 
 
-def build_vectorstore(
-    settings: Settings, cleanup: list[Any]
-) -> VectorStore | None:
+def build_vectorstore(settings: Settings, cleanup: list[Any]) -> VectorStore | None:
     """Build vector store adapter based on provider setting.
 
     Returns None when the required database URL is not configured (e.g. SQLite dev).
@@ -90,10 +88,7 @@ def build_event_bus(settings: Settings) -> EventBus:
     explicit_provider = os.getenv("AILINE_EVENT_BUS_PROVIDER", "").lower()
     redis_url = settings.redis.url
 
-    use_redis = (
-        explicit_provider == "redis"
-        or (explicit_provider == "" and bool(redis_url))
-    )
+    use_redis = explicit_provider == "redis" or (explicit_provider == "" and bool(redis_url))
 
     if use_redis and redis_url:
         try:
@@ -101,9 +96,7 @@ def build_event_bus(settings: Settings) -> EventBus:
 
             return RedisEventBus(redis_url=redis_url)
         except ImportError:
-            _log.warning(
-                "container.redis_import_failed: falling back to InMemoryEventBus"
-            )
+            _log.warning("container.redis_import_failed: falling back to InMemoryEventBus")
 
     from ..adapters.events.inmemory_bus import InMemoryEventBus
 
@@ -232,10 +225,7 @@ def build_sign_recognition(settings: Settings) -> SignRecognition:
 
             return MediaPipeSignRecognition(model_path=model_path)
         except ImportError:
-            _log.warning(
-                "container.sign_recognition_import_failed: "
-                "falling back to FakeSignRecognition"
-            )
+            _log.warning("container.sign_recognition_import_failed: falling back to FakeSignRecognition")
 
     from ..adapters.media.fake_sign_recognition import FakeSignRecognition
 

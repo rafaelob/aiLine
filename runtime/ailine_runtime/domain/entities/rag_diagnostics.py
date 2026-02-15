@@ -15,46 +15,46 @@ class RAGChunkProvenance(BaseModel):
     """Provenance metadata for a single retrieved chunk."""
 
     chunk_id: str = Field(..., description="Unique chunk identifier")
-    doc_title: str = Field("", description="Source document title")
-    doc_id: str = Field("", description="Source document ID")
-    page: int | None = Field(None, description="Page number if available")
-    section: str = Field("", description="Section/heading within the document")
-    retrieval_score: float = Field(0.0, ge=0.0, le=1.0, description="Cosine similarity score")
-    text_preview: str = Field("", description="First 200 chars of chunk text")
+    doc_title: str = Field(default="", description="Source document title")
+    doc_id: str = Field(default="", description="Source document ID")
+    page: int | None = Field(default=None, description="Page number if available")
+    section: str = Field(default="", description="Section/heading within the document")
+    retrieval_score: float = Field(default=0.0, ge=0.0, le=1.0, description="Cosine similarity score")
+    text_preview: str = Field(default="", description="First 200 chars of chunk text")
 
 
 class AnswerabilityCheck(BaseModel):
     """Result of checking whether retrieval results can answer the query."""
 
-    answerable: bool = Field(True, description="Whether the query is answerable from retrieved chunks")
-    confidence: str = Field("high", description="high | medium | low")
-    top_score: float = Field(0.0, description="Highest retrieval score")
-    score_threshold: float = Field(0.7, description="Minimum score for answerability")
-    reason: str = Field("", description="Human-readable explanation")
+    answerable: bool = Field(default=True, description="Whether the query is answerable from retrieved chunks")
+    confidence: str = Field(default="high", description="high | medium | low")
+    top_score: float = Field(default=0.0, description="Highest retrieval score")
+    score_threshold: float = Field(default=0.7, description="Minimum score for answerability")
+    reason: str = Field(default="", description="Human-readable explanation")
 
 
 class RAGDiagnostics(BaseModel):
     """Complete RAG diagnostics report for a single query/run."""
 
     run_id: str = Field(..., description="Pipeline run ID or query ID")
-    teacher_id: str = Field("", description="Owning teacher for tenant isolation")
-    query: str = Field("", description="Original query text")
+    teacher_id: str = Field(default="", description="Owning teacher for tenant isolation")
+    query: str = Field(default="", description="Original query text")
     chunks: list[RAGChunkProvenance] = Field(
         default_factory=list,
         description="Retrieved chunks with provenance",
     )
-    top_k_requested: int = Field(5, description="Number of candidates requested")
-    top_k_returned: int = Field(0, description="Number of candidates returned before threshold")
+    top_k_requested: int = Field(default=5, description="Number of candidates requested")
+    top_k_returned: int = Field(default=0, description="Number of candidates returned before threshold")
     filters_applied: dict[str, Any] = Field(
         default_factory=dict,
         description="Metadata filters applied to the search",
     )
     answerability: AnswerabilityCheck = Field(
-        default_factory=AnswerabilityCheck,
+        default_factory=lambda: AnswerabilityCheck(),
         description="Answerability assessment",
     )
     selection_rationale: str = Field(
-        "",
+        default="",
         description="Why these documents were selected (threshold, score gap, etc.)",
     )
 
@@ -126,15 +126,17 @@ def build_diagnostics(
         preview = text[:200] if len(text) > 200 else text
 
         metadata = r.get("metadata") or {}
-        chunks.append(RAGChunkProvenance(
-            chunk_id=str(r.get("id") or r.get("chunk_id") or ""),
-            doc_title=str(r.get("title") or metadata.get("title") or r.get("doc_title") or ""),
-            doc_id=str(r.get("doc_id") or metadata.get("doc_id") or ""),
-            page=r.get("page") or metadata.get("page"),
-            section=str(r.get("section") or metadata.get("section") or r.get("heading") or ""),
-            retrieval_score=round(score, 4),
-            text_preview=preview,
-        ))
+        chunks.append(
+            RAGChunkProvenance(
+                chunk_id=str(r.get("id") or r.get("chunk_id") or ""),
+                doc_title=str(r.get("title") or metadata.get("title") or r.get("doc_title") or ""),
+                doc_id=str(r.get("doc_id") or metadata.get("doc_id") or ""),
+                page=r.get("page") or metadata.get("page"),
+                section=str(r.get("section") or metadata.get("section") or r.get("heading") or ""),
+                retrieval_score=round(score, 4),
+                text_preview=preview,
+            )
+        )
 
     answerability = check_answerability(scores, threshold=threshold)
 
@@ -150,6 +152,7 @@ def build_diagnostics(
 
     return RAGDiagnostics(
         run_id=run_id,
+        teacher_id="",
         query=query,
         chunks=chunks,
         top_k_requested=k_requested,

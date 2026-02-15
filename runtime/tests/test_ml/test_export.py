@@ -46,6 +46,7 @@ class TestExportToOnnx:
             import importlib
 
             import ailine_runtime.ml.export as export_mod
+
             importlib.reload(export_mod)
 
             with pytest.raises(ImportError, match="onnx"):

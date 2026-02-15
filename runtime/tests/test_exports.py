@@ -19,6 +19,7 @@ from ailine_runtime.accessibility.exports import (
 # Fixtures / helpers
 # ---------------------------------------------------------------------------
 
+
 def _sample_plan() -> dict:
     """Full plan with all optional sections populated."""
     return {
@@ -70,8 +71,8 @@ def _minimal_plan() -> dict:
 # _css_for_variant
 # ---------------------------------------------------------------------------
 
-class TestCssForVariant:
 
+class TestCssForVariant:
     def test_standard_html_returns_base_only(self):
         css = _css_for_variant("standard_html")
         assert "color-scheme" in css
@@ -125,8 +126,8 @@ class TestCssForVariant:
 # _safe
 # ---------------------------------------------------------------------------
 
-class TestSafe:
 
+class TestSafe:
     def test_escapes_html(self):
         assert _safe("<script>") == "&lt;script&gt;"
 
@@ -141,8 +142,8 @@ class TestSafe:
 # _plan_steps
 # ---------------------------------------------------------------------------
 
-class TestPlanSteps:
 
+class TestPlanSteps:
     def test_returns_dicts_only(self):
         plan = {"steps": [{"title": "A"}, "not a dict", 42, {"title": "B"}]}
         result = _plan_steps(plan)
@@ -161,8 +162,8 @@ class TestPlanSteps:
 # render_visual_schedule_json
 # ---------------------------------------------------------------------------
 
-class TestRenderVisualScheduleJson:
 
+class TestRenderVisualScheduleJson:
     def test_basic_structure(self):
         plan = _sample_plan()
         raw = render_visual_schedule_json(plan)
@@ -207,8 +208,8 @@ class TestRenderVisualScheduleJson:
 # render_plan_html
 # ---------------------------------------------------------------------------
 
-class TestRenderPlanHtml:
 
+class TestRenderPlanHtml:
     def test_standard_html_has_basic_structure(self):
         html = render_plan_html(_sample_plan())
         assert "<!doctype html>" in html
@@ -328,9 +329,7 @@ class TestRenderPlanHtml:
     def test_step_without_activities(self):
         plan = {
             "title": "Test",
-            "steps": [
-                {"title": "S", "minutes": 3, "instructions": ["Do X."]}
-            ],
+            "steps": [{"title": "S", "minutes": 3, "instructions": ["Do X."]}],
         }
         html = render_plan_html(plan)
         assert "Atividades" not in html
@@ -338,9 +337,7 @@ class TestRenderPlanHtml:
     def test_step_without_assessment(self):
         plan = {
             "title": "Test",
-            "steps": [
-                {"title": "S", "minutes": 3, "instructions": ["Do X."]}
-            ],
+            "steps": [{"title": "S", "minutes": 3, "instructions": ["Do X."]}],
         }
         html = render_plan_html(plan)
         assert "checagem" not in html.lower()
@@ -380,8 +377,8 @@ class TestRenderPlanHtml:
 # render_audio_script
 # ---------------------------------------------------------------------------
 
-class TestRenderAudioScript:
 
+class TestRenderAudioScript:
     def test_basic_output(self):
         text = render_audio_script(_sample_plan())
         assert "Plano Exemplo" in text
@@ -447,8 +444,8 @@ class TestRenderAudioScript:
 # render_student_plain_text
 # ---------------------------------------------------------------------------
 
-class TestRenderStudentPlainText:
 
+class TestRenderStudentPlainText:
     def test_with_student_plan(self):
         text = render_student_plain_text(_sample_plan())
         assert "Plano Exemplo" in text
@@ -535,8 +532,8 @@ class TestRenderStudentPlainText:
 # render_export (dispatcher)
 # ---------------------------------------------------------------------------
 
-class TestRenderExport:
 
+class TestRenderExport:
     def test_audio_script_variant(self):
         text = render_export(_sample_plan(), "audio_script")
         assert "Plano Exemplo" in text

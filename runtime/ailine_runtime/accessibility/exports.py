@@ -65,8 +65,7 @@ def _css_for_variant(variant: str) -> str:
 
     if variant == "screen_reader_html":
         return (
-            base
-            + "\n.skip-link { position: absolute; left: -999px; top: -999px; }\n"
+            base + "\n.skip-link { position: absolute; left: -999px; top: -999px; }\n"
             ".skip-link:focus { left: 1rem; top: 1rem; background: #ff0;"
             " color: #000; padding: 0.5rem 0.75rem; border-radius: 8px; }\n"
         )
@@ -171,9 +170,11 @@ def render_plan_html(plan: dict[str, Any], variant: str = "standard_html") -> st
         parts.append("<div class='schedule-grid'>")
         for idx, s in enumerate(steps, start=1):
             parts.append("<div class='schedule-card'>")
-            parts.append(f"<div class='schedule-title'>{idx}. {_safe(s.get('title','Etapa'))}</div>")
-            parts.append(f"<div class='schedule-meta'><span class='kpi'>{_safe(s.get('minutes','?'))} min</span></div>")
-            preview = (s.get('instructions') or [])[:2]
+            parts.append(f"<div class='schedule-title'>{idx}. {_safe(s.get('title', 'Etapa'))}</div>")
+            parts.append(
+                f"<div class='schedule-meta'><span class='kpi'>{_safe(s.get('minutes', '?'))} min</span></div>"
+            )
+            preview = (s.get("instructions") or [])[:2]
             if preview:
                 parts.append("<ol>")
                 for line in preview:
@@ -186,8 +187,8 @@ def render_plan_html(plan: dict[str, Any], variant: str = "standard_html") -> st
     parts.append("<section aria-label='Sequência'><h2>Sequência</h2>")
     for idx, s in enumerate(steps, start=1):
         parts.append("<div class='card'>")
-        parts.append(f"<h3>{idx}. {_safe(s.get('title','Etapa'))}</h3>")
-        parts.append(f"<p><strong>Duração:</strong> {_safe(s.get('minutes','?'))} min</p>")
+        parts.append(f"<h3>{idx}. {_safe(s.get('title', 'Etapa'))}</h3>")
+        parts.append(f"<p><strong>Duração:</strong> {_safe(s.get('minutes', '?'))} min</p>")
         instr = s.get("instructions") or []
         if instr:
             parts.append("<h4>Passo a passo</h4><ol>")
@@ -244,7 +245,7 @@ def render_audio_script(plan: dict[str, Any]) -> str:
             lines.append(f"- {s}")
 
     for i, s in enumerate(steps, start=1):
-        lines.append(f"Etapa {i}: {s.get('title','')}. Duração aproximada: {s.get('minutes','?')} minutos.")
+        lines.append(f"Etapa {i}: {s.get('title', '')}. Duração aproximada: {s.get('minutes', '?')} minutos.")
         for j, inst in enumerate(s.get("instructions") or [], start=1):
             lines.append(f"Passo {j}: {inst}")
 
@@ -273,7 +274,7 @@ def render_student_plain_text(plan: dict[str, Any]) -> str:
         for i, step in enumerate(student_plan.get("steps") or [], start=1):
             if not isinstance(step, dict):
                 continue
-            lines.append(f"Etapa {i}: {step.get('title','')}")
+            lines.append(f"Etapa {i}: {step.get('title', '')}")
             for j, inst in enumerate(step.get("instructions") or [], start=1):
                 lines.append(f"  {j}. {inst}")
             lines.append("")

@@ -70,9 +70,9 @@ _EMBED_TIMEOUT = 30  # seconds
 def _assert_brazilian_answer(text: str) -> None:
     """Loose assertion that the response mentions Brasilia."""
     lowered = text.lower()
-    assert any(
-        w in lowered for w in ("bras\u00edlia", "brasilia")
-    ), f"Expected 'Bras\u00edlia' in response, got: {text!r}"
+    assert any(w in lowered for w in ("bras\u00edlia", "brasilia")), (
+        f"Expected 'Bras\u00edlia' in response, got: {text!r}"
+    )
 
 
 # =========================================================================
@@ -374,8 +374,7 @@ class TestSmartRouterLive:
 
     def test_classify_tier_complex_is_higher(self, router):
         complex_messages: list[dict[str, Any]] = [
-            {"role": "user", "content": f"Analise detalhada msg{i} " + "x" * 500}
-            for i in range(25)
+            {"role": "user", "content": f"Analise detalhada msg{i} " + "x" * 500} for i in range(25)
         ]
         tier = router.classify_tier(
             complex_messages,
@@ -482,8 +481,7 @@ class TestOpenAIEmbeddingsLive:
         sim_ac = sum(a * c for a, c in zip(vec_a, vec_c, strict=True))
 
         assert sim_ab > sim_ac, (
-            f"Education sentences should be more similar ({sim_ab:.4f}) "
-            f"than education vs cat ({sim_ac:.4f})"
+            f"Education sentences should be more similar ({sim_ab:.4f}) than education vs cat ({sim_ac:.4f})"
         )
 
     def test_dimensions_property(self, embeddings):
@@ -575,8 +573,7 @@ class TestGeminiEmbeddingsLive:
         sim_ac = sum(a * c for a, c in zip(vec_a, vec_c, strict=True))
 
         assert sim_ab > sim_ac, (
-            f"Education sentences should be more similar ({sim_ab:.4f}) "
-            f"than education vs cat ({sim_ac:.4f})"
+            f"Education sentences should be more similar ({sim_ab:.4f}) than education vs cat ({sim_ac:.4f})"
         )
 
     def test_dimensions_property(self, embeddings):
@@ -611,29 +608,35 @@ class TestCrossProviderConsistency:
         if _HAS_OPENAI_KEY:
             from ailine_runtime.adapters.llm.openai_llm import OpenAIChatLLM
 
-            adapters.append((
-                "openai",
-                OpenAIChatLLM(model="gpt-4o-mini", api_key=os.environ["OPENAI_API_KEY"]),
-            ))
+            adapters.append(
+                (
+                    "openai",
+                    OpenAIChatLLM(model="gpt-4o-mini", api_key=os.environ["OPENAI_API_KEY"]),
+                )
+            )
 
         if _HAS_ANTHROPIC_KEY:
             from ailine_runtime.adapters.llm.anthropic_llm import AnthropicChatLLM
 
-            adapters.append((
-                "anthropic",
-                AnthropicChatLLM(
-                    model="claude-haiku-4-5-20251001",
-                    api_key=os.environ["ANTHROPIC_API_KEY"],
-                ),
-            ))
+            adapters.append(
+                (
+                    "anthropic",
+                    AnthropicChatLLM(
+                        model="claude-haiku-4-5-20251001",
+                        api_key=os.environ["ANTHROPIC_API_KEY"],
+                    ),
+                )
+            )
 
         if _HAS_GEMINI_KEY:
             from ailine_runtime.adapters.llm.gemini_llm import GeminiChatLLM
 
-            adapters.append((
-                "gemini",
-                GeminiChatLLM(model="gemini-2.0-flash", api_key=os.environ["GEMINI_API_KEY"]),
-            ))
+            adapters.append(
+                (
+                    "gemini",
+                    GeminiChatLLM(model="gemini-2.0-flash", api_key=os.environ["GEMINI_API_KEY"]),
+                )
+            )
 
         if len(adapters) < 2:
             pytest.skip("Need at least 2 LLM API keys for cross-provider tests")

@@ -61,21 +61,25 @@
   --letter-spacing-body: 0em;
   --word-spacing-body: 0em;
   /* Elevation tokens */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
+  --shadow-glow: 0 0 20px -5px var(--color-primary);
   /* Transition tokens */
   --transition-fast: 150ms ease;
   --transition-normal: 300ms ease;
   --transition-slow: 500ms ease;
+  --transition-bounce: cubic-bezier(0.22, 1, 0.36, 1);
   /* Gradient tokens */
   --gradient-hero: linear-gradient(135deg, #2563EB 0%, #7C3AED 100%);
   --gradient-surface: linear-gradient(180deg, var(--color-surface) 0%, var(--color-bg) 100%);
+  --gradient-card-hover: radial-gradient(ellipse at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(37, 99, 235, 0.08) 0%, transparent 70%);
+  --gradient-border: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
   /* Glass effect */
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-blur: blur(12px);
-  --glass-border: rgba(255, 255, 255, 0.2);
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-blur: blur(16px);
+  --glass-border: rgba(255, 255, 255, 0.18);
 }
 
 /* ===== 2. HIGH CONTRAST ===== */
@@ -635,6 +639,24 @@ textarea,
   border: 1px solid var(--glass-border);
 }
 
+/* Persona degradation: no glass/blur for TEA, low-vision, motor personas */
+[data-theme="tea"] .glass,
+[data-theme="low-vision"] .glass,
+[data-theme="motor"] .glass {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+
+[data-theme="high-contrast"] .glass {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: var(--color-surface);
+  border: 2px solid var(--color-border);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+}
+
 /* ===== GRADIENT SHIFT (Landing Hero) ===== */
 @keyframes gradientShift {
   0% { background-position: 0% 50%; }
@@ -715,7 +737,7 @@ textarea,
   }
 }
 
-/* ===== View Transitions API (experimental) ===== */
+/* ===== View Transitions API ===== */
 
 /* Default cross-fade for route changes */
 @view-transition {
@@ -751,12 +773,360 @@ main#main-content {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* ===== Theme Morph — Circular Reveal ===== */
+/* When data-vt-type="theme", use a clip-path circle expanding from click origin */
+html[data-vt-type="theme"]::view-transition-old(root) {
+  animation: theme-fade-out 350ms ease-in forwards;
+  z-index: 1;
+}
+
+html[data-vt-type="theme"]::view-transition-new(root) {
+  animation: theme-reveal 500ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  z-index: 2;
+  clip-path: circle(0% at var(--vt-x, 50%) var(--vt-y, 50%));
+}
+
+@keyframes theme-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0.3; }
+}
+
+@keyframes theme-reveal {
+  from {
+    clip-path: circle(0% at var(--vt-x, 50%) var(--vt-y, 50%));
+  }
+  to {
+    clip-path: circle(150% at var(--vt-x, 50%) var(--vt-y, 50%));
+  }
+}
+
+/* Theme transition: also morph the main content */
+html[data-vt-type="theme"]::view-transition-old(main-content) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+html[data-vt-type="theme"]::view-transition-new(main-content) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
 /* Disable transitions when user prefers reduced motion */
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-old(root),
   ::view-transition-new(root),
   ::view-transition-old(main-content),
   ::view-transition-new(main-content) {
-    animation: none;
+    animation: none !important;
+    clip-path: none !important;
   }
+}
+
+/* ===== FLOAT ANIMATION (Hero Decorative Elements) ===== */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+.animate-float-slow { animation: float 8s ease-in-out infinite; }
+.animate-float-medium { animation: float 6s ease-in-out infinite reverse; }
+
+/* ===== RING PULSE (Wizard Active Step) ===== */
+@keyframes ring-pulse {
+  0% { transform: scale(1); opacity: 0.5; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+.animate-ring-pulse { animation: ring-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+/* ===== CARD HOVER UTILITY ===== */
+.card-hover {
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+  transition-timing-function: var(--transition-bounce);
+}
+.card-hover:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+
+/* ===== BUTTON SHIMMER ===== */
+.btn-shimmer { position: relative; overflow: hidden; isolation: isolate; }
+.btn-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+  transition: transform 1s ease-in-out;
+}
+.btn-shimmer:hover::after { transform: translateX(100%); }
+
+/* ===== INPUT FOCUS RING ===== */
+.input-focus-ring { outline: none; transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+.input-focus-ring:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary) 10%, transparent);
+}
+
+/* ===== COUNT-UP NUMBER INTERPOLATION (CSS @property for animated stats) ===== */
+@property --num {
+  syntax: "<integer>";
+  initial-value: 0;
+  inherits: false;
+}
+.count-up {
+  transition: --num 1.5s var(--transition-bounce);
+  counter-reset: num var(--num);
+}
+.count-up::after { content: counter(num); }
+
+/* ===== HERO NOISE / GRAIN TEXTURE OVERLAY ===== */
+.hero-noise { position: relative; isolation: isolate; }
+.hero-noise::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.035;
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E") repeat;
+  background-size: 256px;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+/* ===== CSS @PROPERTY FOR ANIMATIONS ===== */
+@property --angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+/* ===== ANIMATED MESH GRADIENT HERO ===== */
+.mesh-gradient-hero {
+  background-image:
+    radial-gradient(at 20% 30%, color-mix(in srgb, var(--color-primary) 25%, transparent) 0px, transparent 50%),
+    radial-gradient(at 80% 20%, color-mix(in srgb, var(--color-secondary) 20%, transparent) 0px, transparent 50%),
+    radial-gradient(at 50% 80%, color-mix(in srgb, var(--color-primary) 15%, transparent) 0px, transparent 50%);
+  background-size: 180% 180%;
+  animation: mesh-breath 12s ease-in-out infinite alternate;
+}
+
+@keyframes mesh-breath {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 50% 100%; }
+}
+
+/* ===== ROTATING GRADIENT BORDER (Glass Cards) ===== */
+.gradient-border-glass {
+  position: relative;
+  z-index: 1;
+}
+.gradient-border-glass::before {
+  content: '';
+  position: absolute;
+  inset: -1.5px;
+  z-index: -1;
+  background: conic-gradient(from var(--angle), transparent 25%, var(--color-primary), var(--color-secondary), var(--color-primary), transparent 75%);
+  border-radius: inherit;
+  animation: rotate-border 4s linear infinite;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.gradient-border-glass:hover::before {
+  opacity: 0.7;
+}
+
+@keyframes rotate-border {
+  to { --angle: 360deg; }
+}
+
+/* ===== GRADIENT ANIMATED TEXT ===== */
+.gradient-text-animated {
+  background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-secondary) 50%, var(--color-primary) 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: text-shimmer 4s ease-in-out infinite;
+}
+
+@keyframes text-shimmer {
+  to { background-position: 200% center; }
+}
+
+/* ===== ICON ORB WITH 3D DEPTH ===== */
+.icon-orb {
+  border-radius: 14px;
+  box-shadow: inset 0 2px 4px rgba(255,255,255,0.3), 0 4px 12px color-mix(in srgb, var(--color-primary) 30%, transparent);
+}
+
+/* ===== EMPTY STATE ORBIT ANIMATION ===== */
+@keyframes spin-orbit {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.empty-state-orbit {
+  transform-origin: center;
+  animation: spin-orbit 12s linear infinite;
+}
+.empty-state-pulse-scale {
+  animation: pulse-scale 3s ease-in-out infinite;
+}
+@keyframes pulse-scale {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.2); opacity: 1; }
+}
+
+/* ===== REDUCED MOTION: All Custom Animations ===== */
+@media (prefers-reduced-motion: reduce) {
+  .animate-float-slow,
+  .animate-float-medium,
+  .animate-ring-pulse,
+  .btn-shimmer::after {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+  .card-hover,
+  .input-focus-ring,
+  .count-up { transition: none !important; }
+  .card-hover:hover { transform: none !important; }
+  .mesh-gradient-hero,
+  .gradient-border-glass::before,
+  .gradient-text-animated,
+  .empty-state-orbit,
+  .empty-state-pulse-scale {
+    animation: none !important;
+    transition: none !important;
+  }
+  .gradient-text-animated {
+    -webkit-text-fill-color: var(--color-primary);
+  }
+}
+
+/* ===== PERSONA DEGRADATION: Disable Decorative Motion ===== */
+/* TEA (autism), MOTOR, LOW VISION: no decorative animation */
+:is([data-theme="tea"], [data-theme="motor"], [data-theme="low-vision"]) :is(.animate-float-slow, .animate-float-medium, .animate-ring-pulse) {
+  animation: none !important;
+  transform: none !important;
+}
+:is([data-theme="tea"], [data-theme="motor"], [data-theme="low-vision"]) .card-hover:hover {
+  transform: none !important;
+}
+:is([data-theme="tea"], [data-theme="motor"], [data-theme="low-vision"]) .btn-shimmer::after {
+  transition: none !important;
+  transform: none !important;
+}
+:is([data-theme="tea"], [data-theme="motor"], [data-theme="low-vision"]) .count-up {
+  transition: none !important;
+}
+:is([data-theme="tea"], [data-theme="low-vision"]) .hero-noise::before {
+  display: none;
+}
+:is([data-theme="tea"], [data-theme="motor"], [data-theme="low-vision"]) :is(.mesh-gradient-hero, .gradient-border-glass::before, .gradient-text-animated, .empty-state-orbit, .empty-state-pulse-scale) {
+  animation: none !important;
+  transform: none !important;
+}
+:is([data-theme="tea"], [data-theme="motor"], [data-theme="low-vision"]) .gradient-text-animated {
+  -webkit-text-fill-color: var(--color-primary);
+}
+
+/* ===== PREMIUM CSS UTILITIES (Sprint 17 — State-of-the-Art) ===== */
+
+/* === 1. Aurora AI Thinking Gradient === */
+.aurora-thinking {
+  background: linear-gradient(-45deg,
+    color-mix(in srgb, var(--color-primary) 60%, transparent),
+    color-mix(in srgb, var(--color-secondary) 50%, transparent),
+    color-mix(in srgb, var(--color-success) 40%, transparent),
+    color-mix(in srgb, var(--color-primary) 60%, transparent)
+  );
+  background-size: 400% 400%;
+  animation: aurora-shift 3s ease infinite;
+  border-radius: 50%;
+  filter: blur(20px);
+}
+
+@keyframes aurora-shift {
+  0% { background-position: 0% 50%; opacity: 0.6; }
+  50% { background-position: 100% 50%; opacity: 1; }
+  100% { background-position: 0% 50%; opacity: 0.6; }
+}
+
+/* === 2. Neon Glow Ring (for score gauges) === */
+.neon-glow-ring {
+  filter: blur(6px);
+  opacity: 0.5;
+}
+
+/* === 3. Blur-in Page Transition === */
+@keyframes blur-in {
+  from { opacity: 0; filter: blur(8px); transform: translateY(12px); }
+  to { opacity: 1; filter: blur(0px); transform: translateY(0); }
+}
+
+.animate-blur-in {
+  animation: blur-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* === 4. Glass Chat Bubble === */
+.glass-bubble {
+  background: color-mix(in srgb, var(--color-surface-elevated) 85%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
+}
+
+.glass-bubble-ai {
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--color-primary) 5%, var(--color-surface-elevated)),
+    color-mix(in srgb, var(--color-secondary) 3%, var(--color-surface-elevated))
+  );
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 10%, var(--color-border));
+}
+
+/* === 5. 3D Perspective Tilt Container === */
+.perspective-tilt {
+  perspective: 800px;
+  transform-style: preserve-3d;
+}
+
+/* === 6. Stagger Blur-in for Children === */
+.stagger-blur-in > * {
+  animation: blur-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.stagger-blur-in > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger-blur-in > *:nth-child(2) { animation-delay: 0.1s; }
+.stagger-blur-in > *:nth-child(3) { animation-delay: 0.15s; }
+.stagger-blur-in > *:nth-child(4) { animation-delay: 0.2s; }
+.stagger-blur-in > *:nth-child(5) { animation-delay: 0.25s; }
+.stagger-blur-in > *:nth-child(6) { animation-delay: 0.3s; }
+.stagger-blur-in > *:nth-child(7) { animation-delay: 0.35s; }
+.stagger-blur-in > *:nth-child(8) { animation-delay: 0.4s; }
+
+/* ===== REDUCED MOTION: Premium Utilities ===== */
+@media (prefers-reduced-motion: reduce) {
+  .aurora-thinking,
+  .animate-blur-in,
+  .stagger-blur-in > * {
+    animation: none !important;
+    filter: none !important;
+    opacity: 1 !important;
+  }
+}
+
+/* ===== PERSONA DEGRADATION: Premium Utilities ===== */
+/* Disable animations for TEA, motor, low-vision */
+:is([data-theme="tea"], [data-theme="motor"], [data-theme="low-vision"]) :is(.aurora-thinking, .animate-blur-in, .stagger-blur-in > *) {
+  animation: none !important;
+  filter: none !important;
+  opacity: 1 !important;
+}
+
+/* Disable backdrop-filter for glass bubbles on accessibility personas */
+:is([data-theme="tea"], [data-theme="motor"], [data-theme="low-vision"]) :is(.glass-bubble, .glass-bubble-ai) {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background: var(--color-surface-elevated) !important;
+  border: 1px solid var(--color-border) !important;
 }

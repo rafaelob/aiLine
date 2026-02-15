@@ -28,7 +28,7 @@
 
 **AiLine** is a WCAG AAA educational platform that transforms classroom materials into adaptive, accessible lesson plans in real time. Teachers upload content, select student accessibility needs, and a multi-agent AI pipeline — powered by Claude Opus 4.6 — generates personalized study plans with 10 export variants. Every AI decision is visible, scored, and auditable through a Glass Box pipeline viewer.
 
-Built in one week. 120 features. 2,800+ tests. Zero shortcuts.
+Built in one week. 145 features. 3,087 tests. Zero shortcuts.
 
 ---
 
@@ -36,8 +36,8 @@ Built in one week. 120 features. 2,800+ tests. Zero shortcuts.
 
 | Metric | Value |
 |--------|-------|
-| **Features shipped** | 120 (across 15 sprints) |
-| **Total tests** | 2,800+ (1,743 runtime + 250 agents + 770 frontend) |
+| **Features shipped** | 145 (across 20 sprints) |
+| **Total tests** | 3,087 (1,875 runtime + 250 agents + 962 frontend) |
 | **E2E tests** | 35+ Playwright (golden paths + visual regression + a11y) |
 | **Live API tests** | 65 (real Anthropic / OpenAI / Gemini calls) |
 | **ADRs** | 60 architecture decision records |
@@ -66,7 +66,7 @@ SmartRouter uses weighted complexity scoring to pick the optimal model per reque
 
 ### 4. Production Engineering — Built to Run, Not Just to Demo
 
-Hexagonal architecture with zero framework imports in the domain core. 60 ADRs documenting every significant decision. Tenant isolation via JWT + composite foreign keys + vector store filtering. RFC 7807 error responses. OpenTelemetry tracing. SSE terminal guarantee (every pipeline run reaches a final state — no stuck spinners). 2,800+ tests across 4 layers.
+Hexagonal architecture with zero framework imports in the domain core. 60 ADRs documenting every significant decision. Tenant isolation via JWT + composite foreign keys + vector store filtering. RFC 7807 error responses. OpenTelemetry tracing. SSE terminal guarantee (every pipeline run reaches a final state — no stuck spinners). 3,087 tests across 4 layers.
 
 ### 5. Social Impact at Scale
 
@@ -128,8 +128,8 @@ graph TB
     subgraph Adapters["Adapter Layer"]
         SmartRouter[SmartRouter<br/>Weighted Complexity Scoring]
         Anthropic[Anthropic<br/>Claude Opus / Sonnet / Haiku]
-        OpenAI[OpenAI<br/>GPT-4o]
-        Gemini[Google Gemini<br/>Gemini 2.5]
+        OpenAI[OpenAI<br/>GPT-5.2]
+        Gemini[Google Gemini<br/>Gemini 3]
         PGVector[pgvector HNSW<br/>PostgreSQL 16]
         Redis[Redis 7.x<br/>SSE Replay + Cache]
     end
@@ -194,30 +194,38 @@ See [Architecture Diagrams](docs/architecture-diagram.md) (8 Mermaid diagrams) a
 |-------|-----------|---------|
 | **Backend** | Python 3.13, FastAPI 0.129, SQLAlchemy 2.x async | API, data access, SSE streaming |
 | **AI Agents** | Pydantic AI 1.58, LangGraph 1.0.8 | Typed agents with workflow orchestration |
-| **LLMs** | Claude (Opus/Sonnet/Haiku), GPT-4o, Gemini 2.5 | Multi-provider with SmartRouter |
+| **LLMs** | Claude (Opus/Sonnet/Haiku), GPT-5.2, Gemini 3 | Multi-provider with SmartRouter |
 | **Embeddings** | gemini-embedding-001 @ 1536d | Matryoshka truncation for RAG |
 | **Vector Store** | pgvector 0.8 (HNSW) on PostgreSQL 16 | Semantic search with tenant isolation |
 | **Frontend** | Next.js 16, React 19, Tailwind 4, React Compiler 1.0 | SSR, streaming, auto-memoization |
 | **Accessibility** | 9 CSS themes, VLibras, MediaPipe, ElevenLabs TTS | WCAG AAA universal design |
 | **i18n** | next-intl 4.8.2 | 3 locales (EN, PT-BR, ES) |
-| **Infrastructure** | Docker Compose, Redis 7.x, GitHub Actions CI | One-command deployment, 6-job CI |
-| **Testing** | pytest, Vitest, Playwright, axe-core | 2,800+ tests across 4 layers |
+| **Infrastructure** | Docker Compose, Redis 7.x, GitHub Actions CI | One-command deployment, 9-job CI |
+| **Testing** | pytest, Vitest, Playwright, axe-core | 3,087 tests across 4 layers |
 
 ---
 
 ## Screenshots
 
-> Screenshots will be added before final submission. Key screens:
+### Dashboard — Bento Grid with Live Stats
+<p align="center">
+  <img src="polished-dashboard-en.png" alt="AiLine Dashboard — English" width="800" />
+</p>
 
-| Screen | Description |
-|--------|-------------|
-| **Dashboard** | Bento grid layout with plan cards, staggered entrance animations |
-| **Pipeline Viewer** | Glass Box real-time SSE events, score gauge, SmartRouter badge |
-| **Accessibility Themes** | Side-by-side of 9 persona themes (hearing, dyslexia, ADHD, etc.) |
-| **Tutor Chat** | Socratic AI responses with RAG citations and confidence scores |
-| **Export Twin** | Side-by-side original vs adapted lesson with diff highlights |
-| **Sign Language** | VLibras 3D avatar + webcam gesture recognition |
-| **Observability** | Latency sparklines, circuit breaker state, token usage charts |
+### Plan Generation Wizard
+<p align="center">
+  <img src="polished-wizard-ptbr.png" alt="AiLine Plan Wizard — Portuguese" width="800" />
+</p>
+
+### Mobile Responsive
+<p align="center">
+  <img src="polished-mobile-ptbr.png" alt="AiLine Mobile View — Portuguese" width="400" />
+</p>
+
+### Multi-Language Support
+<p align="center">
+  <img src="new-dashboard-es.png" alt="AiLine Dashboard — Spanish" width="800" />
+</p>
 
 ---
 
@@ -230,13 +238,13 @@ docker compose exec api bash -c "cd /app && uv run pytest -v --cov"
 
 # Or run locally:
 
-# Backend — 1,743 tests
+# Backend — 1,875 tests
 cd runtime && uv run pytest -v --cov
 
 # Agents — 250 tests
 cd agents && uv run pytest -v
 
-# Frontend — 770+ tests
+# Frontend — 962 tests
 cd frontend && pnpm test
 
 # E2E — 35+ Playwright specs
@@ -254,7 +262,7 @@ cd runtime && uv run pytest -m live_llm -v --timeout=120
 |----------|-------------|
 | [Judge Packet](docs/judge-packet.md) | 1-page project summary for judges |
 | [Demo Script](docs/demo-script.md) | 3-minute "Meet Ana" demo narrative |
-| [Feature Map](docs/feature-map.md) | 120 features across 8 capability areas |
+| [Feature Map](docs/feature-map.md) | 145 features across 12 capability areas |
 | [Architecture Diagrams](docs/architecture-diagram.md) | 8 Mermaid diagrams |
 | [System Design](control_docs/SYSTEM_DESIGN.md) | Architecture, data flows, 60 ADR log |
 | [Test Strategy](control_docs/TEST.md) | Test matrix, coverage targets, how to run |
@@ -285,5 +293,5 @@ This project is licensed under the **MIT License** — see [LICENSE](LICENSE) fo
 
 <p align="center">
   <strong>AiLine: Every student deserves a lesson designed for them.</strong><br/>
-  <em>120 features. 2,800+ tests. 60 ADRs. 4 AI agents. 3 LLM providers. 9 accessibility themes. Built in one week.</em>
+  <em>145 features. 3,087 tests. 60 ADRs. 4 AI agents. 3 LLM providers. 9 accessibility themes. Built in one week.</em>
 </p>

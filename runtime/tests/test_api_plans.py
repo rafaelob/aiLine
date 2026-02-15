@@ -85,10 +85,12 @@ async def test_plans_generate_successful_execution(client: AsyncClient) -> None:
     from unittest.mock import AsyncMock, MagicMock, patch
 
     mock_workflow = MagicMock()
-    mock_workflow.ainvoke = AsyncMock(return_value={
-        "run_id": "test-run-success",
-        "final": {"parsed": {"plan_id": "test", "score": 90}},
-    })
+    mock_workflow.ainvoke = AsyncMock(
+        return_value={
+            "run_id": "test-run-success",
+            "final": {"parsed": {"plan_id": "test", "score": 90}},
+        }
+    )
 
     mock_factory = MagicMock()
     mock_factory.from_container = MagicMock(return_value=MagicMock())

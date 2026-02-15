@@ -40,8 +40,9 @@ export function TutorChat() {
     <div
       className={cn(
         'flex flex-col flex-1 min-h-0 max-h-[calc(100vh-10rem)] sm:max-h-[calc(100vh-8rem)]',
-        'rounded-[var(--radius-lg)] border border-[var(--color-border)]',
-        'bg-[var(--color-surface)] overflow-hidden'
+        'rounded-2xl',
+        'glass shadow-[var(--shadow-lg)]',
+        'overflow-hidden'
       )}
     >
       {/* Messages area */}
@@ -56,28 +57,35 @@ export function TutorChat() {
       >
         {isEmpty && (
           <div className="flex flex-col items-center justify-center h-full text-center px-8">
+            {/* Premium welcome icon with gradient orb */}
             <TutorWelcomeIcon />
-            <h2 className="text-lg font-semibold text-[var(--color-text)] mt-4">
+            <h2 className="text-lg font-semibold text-[var(--color-text)] mt-5">
               {t('welcome_title')}
             </h2>
             <p className="text-sm text-[var(--color-muted)] mt-2 max-w-md">
               {t('welcome_description')}
             </p>
             <div className="flex flex-wrap gap-2 mt-6 justify-center">
-              {(['example_1', 'example_2', 'example_3'] as const).map((key) => (
-                <button
+              {(['example_1', 'example_2', 'example_3'] as const).map((key, i) => (
+                <motion.button
                   key={key}
                   type="button"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 + i * 0.1, type: 'spring', stiffness: 200, damping: 24 }}
                   onClick={() => sendMessage(t(key))}
                   className={cn(
                     'px-4 py-2 text-xs rounded-full',
                     'border border-[var(--color-border)]',
                     'text-[var(--color-text)]',
-                    'hover:bg-[var(--color-surface-elevated)] transition-colors'
+                    'hover:bg-[var(--color-surface-elevated)]',
+                    'hover:border-[var(--color-primary)]/30',
+                    'hover:shadow-[0_0_12px_-3px_var(--color-primary)]',
+                    'transition-all duration-200'
                   )}
                 >
                   {t(key)}
-                </button>
+                </motion.button>
               ))}
             </div>
           </div>
@@ -86,9 +94,14 @@ export function TutorChat() {
         {messages.map((msg, i) => (
           <motion.div
             key={msg.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25, ease: 'easeOut' }}
+            initial={{ opacity: 0, y: 16, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{
+              type: 'spring',
+              stiffness: 200,
+              damping: 24,
+              delay: i === messages.length - 1 ? 0 : 0
+            }}
           >
             <ChatMessageBubble
               message={msg}
@@ -99,10 +112,7 @@ export function TutorChat() {
 
         {/* Thinking indicator */}
         {isStreaming && messages.length > 0 && messages[messages.length - 1].role === 'assistant' && messages[messages.length - 1].content === '' && (
-          <div className="flex items-center gap-2 text-sm text-[var(--color-muted)] pl-11" role="status" aria-label={t('thinking')}>
-            <ThinkingDots />
-            {t('thinking')}
-          </div>
+          <AuroraThinking />
         )}
       </div>
 
@@ -123,10 +133,13 @@ export function TutorChat() {
             type="button"
             onClick={cancel}
             className={cn(
-              'flex items-center gap-2 px-4 py-2 rounded-[var(--radius-md)]',
+              'flex items-center gap-2 px-4 py-2 rounded-xl',
               'border border-[var(--color-border)] text-sm font-medium',
-              'text-[var(--color-text)] hover:bg-[var(--color-surface-elevated)]',
-              'transition-colors'
+              'text-[var(--color-text)]',
+              'hover:bg-[var(--color-surface-elevated)]',
+              'hover:border-[var(--color-error)]/30',
+              'active:scale-95',
+              'transition-all duration-200'
             )}
           >
             <StopSquareIcon />
@@ -152,23 +165,28 @@ export function TutorChat() {
 
 function TutorWelcomeIcon() {
   return (
-    <div className="w-16 h-16 rounded-full bg-[var(--color-primary)]/10 flex items-center justify-center">
-      <svg
-        width="32"
-        height="32"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="var(--color-primary)"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
+    <div className="relative">
+      <div
+        className="w-20 h-20 rounded-2xl flex items-center justify-center icon-orb"
+        style={{ background: 'linear-gradient(135deg, var(--color-primary), var(--color-secondary))' }}
       >
-        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-        <circle cx="9" cy="10" r="1" fill="var(--color-primary)" />
-        <circle cx="12" cy="10" r="1" fill="var(--color-primary)" />
-        <circle cx="15" cy="10" r="1" fill="var(--color-primary)" />
-      </svg>
+        <svg
+          width="32"
+          height="32"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="white"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+          <circle cx="9" cy="10" r="1" fill="white" />
+          <circle cx="12" cy="10" r="1" fill="white" />
+          <circle cx="15" cy="10" r="1" fill="white" />
+        </svg>
+      </div>
     </div>
   )
 }
@@ -181,12 +199,31 @@ function StopSquareIcon() {
   )
 }
 
-function ThinkingDots() {
+function AuroraThinking() {
+  const t = useTranslations('tutor')
   return (
-    <span className="flex gap-1" aria-hidden="true">
-      <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-muted)] animate-bounce" style={{ animationDelay: '0ms' }} />
-      <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-muted)] animate-bounce" style={{ animationDelay: '150ms' }} />
-      <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-muted)] animate-bounce" style={{ animationDelay: '300ms' }} />
-    </span>
+    <div className="flex items-center gap-3 pl-11" role="status">
+      <div className="relative w-10 h-10">
+        {/* Aurora glow blob */}
+        <div
+          className="absolute inset-0 rounded-full"
+          style={{
+            background: 'linear-gradient(-45deg, var(--color-primary), var(--color-secondary), var(--color-success), var(--color-primary))',
+            backgroundSize: '400% 400%',
+            animation: 'aurora-shift 3s ease infinite',
+            filter: 'blur(12px)',
+            opacity: 0.7,
+          }}
+          aria-hidden="true"
+        />
+        {/* Inner solid dot */}
+        <div
+          className="absolute inset-2 rounded-full bg-[var(--color-primary)]"
+          style={{ animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}
+          aria-hidden="true"
+        />
+      </div>
+      <span className="text-sm text-[var(--color-muted)] italic">{t('thinking')}</span>
+    </div>
   )
 }

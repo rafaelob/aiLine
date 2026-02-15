@@ -34,7 +34,7 @@ def _build_model(provider: str, model: str, api_key: str) -> Model | None:
     if provider == "anthropic":
         from pydantic_ai.models.anthropic import AnthropicModel
 
-        return AnthropicModel(model, api_key=api_key)
+        return AnthropicModel(model, api_key=api_key)  # type: ignore[call-arg]  # pydantic-ai accepts api_key at runtime
 
     if provider in ("openai", "openrouter"):
         from pydantic_ai.models.openai import OpenAIModel
@@ -47,7 +47,7 @@ def _build_model(provider: str, model: str, api_key: str) -> Model | None:
     if provider == "gemini":
         from pydantic_ai.models.google import GoogleModel
 
-        return GoogleModel(model, api_key=api_key)
+        return GoogleModel(model, api_key=api_key)  # type: ignore[call-arg]  # pydantic-ai accepts api_key at runtime
 
     return None
 
@@ -57,6 +57,7 @@ def _resolve_key(settings: Any, provider: str) -> str:
 
     Delegates to the shared container utility to avoid duplication.
     """
-    from ailine_runtime.shared.container import _resolve_api_key
+    from ailine_runtime.shared.container_adapters import resolve_api_key
 
-    return _resolve_api_key(settings, provider)
+    result: str = resolve_api_key(settings, provider)
+    return result

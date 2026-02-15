@@ -26,6 +26,7 @@ TutorStyle = Literal["socratic", "coach", "direct", "explainer"]
 # Local persistence (MVP)
 # -----------------------------
 
+
 def _root_dir() -> Path:
     return Path(os.getenv("AILINE_LOCAL_STORE", ".local_store"))
 
@@ -63,7 +64,7 @@ async def _generate_persona_with_llm(llm: Any, draft_prompt: str) -> TutorPerson
                 "Produza um system prompt curto, operacional e seguro. "
                 "Não inclua dados sensíveis. Não diagnosticar. "
                 "Incorpore UDL/COGA e adaptações (TEA/TDAH/aprendizagem/auditiva/visual).\n\n"
-                "Responda com JSON: {\"system_prompt\": \"...\", \"notes\": [\"...\"]}\n\n"
+                'Responda com JSON: {"system_prompt": "...", "notes": ["..."]}\n\n'
                 f"{draft_prompt}"
             ),
         }

@@ -55,9 +55,7 @@ class TestWhisperSTTEnsureModel:
             assert stt._model is None
             stt._ensure_model()
             assert stt._model is not None
-            mock_module.WhisperModel.assert_called_once_with(
-                "turbo", device="cpu", compute_type="int8"
-            )
+            mock_module.WhisperModel.assert_called_once_with("turbo", device="cpu", compute_type="int8")
 
     def test_model_loaded_only_once(self, mock_faster_whisper):
         mock_module, _ = mock_faster_whisper

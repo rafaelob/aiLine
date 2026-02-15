@@ -48,18 +48,21 @@ class TestClassifyIntentViaAgents:
 
         assert callable(_classify_intent)
 
-    @pytest.mark.parametrize("msg,expected", [
-        ("oi", "greeting"),
-        ("Ola!", "greeting"),
-        ("bom dia", "greeting"),
-        ("hello", "greeting"),
-        ("me conta uma piada", "offtopic"),
-        ("voce viu o jogo de futebol?", "offtopic"),
-        ("nao entendi", "clarification"),
-        ("pode explicar de novo?", "clarification"),
-        ("Quanto e 2+2?", "question"),
-        ("", "question"),
-    ])
+    @pytest.mark.parametrize(
+        "msg,expected",
+        [
+            ("oi", "greeting"),
+            ("Ola!", "greeting"),
+            ("bom dia", "greeting"),
+            ("hello", "greeting"),
+            ("me conta uma piada", "offtopic"),
+            ("voce viu o jogo de futebol?", "offtopic"),
+            ("nao entendi", "clarification"),
+            ("pode explicar de novo?", "clarification"),
+            ("Quanto e 2+2?", "question"),
+            ("", "question"),
+        ],
+    )
     def test_intent_classification(self, msg: str, expected: str) -> None:
         from ailine_agents.workflows.tutor_workflow import _classify_intent
 

@@ -80,9 +80,9 @@ async def test_sse_load_50_concurrent() -> None:
     ttfbs = [r["ttfb"] for r in successes]
     totals = [r["total"] for r in successes]
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"SSE Load Test: {CONCURRENT} concurrent connections")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print(f"Successes: {len(successes)}/{CONCURRENT}")
     print(f"Errors:    {len(errors)}")
     if errors:
@@ -106,12 +106,10 @@ async def test_sse_load_50_concurrent() -> None:
     total_events = sum(r["events"] for r in successes)
     print(f"\nTotal SSE events received: {total_events}")
     print(f"Avg events per connection: {total_events / max(len(successes), 1):.1f}")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
     # Assertions
-    assert len(successes) >= CONCURRENT * 0.9, (
-        f"Too many failures: {len(errors)}/{CONCURRENT}"
-    )
+    assert len(successes) >= CONCURRENT * 0.9, f"Too many failures: {len(errors)}/{CONCURRENT}"
     if ttfbs:
         p95_ttfb = sorted(ttfbs)[int(len(ttfbs) * 0.95)]
         assert p95_ttfb < 5.0, f"p95 TTFB too high: {p95_ttfb:.3f}s"

@@ -2,9 +2,13 @@
 
 import { useCallback, useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { motion } from 'motion/react'
 import { cn } from '@/lib/cn'
+import { containerVariants, itemVariants } from '@/lib/motion-variants'
 import type { StudyPlan } from '@/types/plan'
 import { BloomCoverageChart } from './bloom-coverage-chart'
+
+/* ===== Component ===== */
 
 interface SessionSummaryProps {
   plan: StudyPlan
@@ -72,9 +76,9 @@ export function SessionSummary({ plan }: SessionSummaryProps) {
   }, [plan, coverageData, allAdaptations])
 
   return (
-    <div className="space-y-8">
+    <motion.div className="space-y-8" variants={containerVariants} initial="hidden" animate="visible">
       {/* Export buttons */}
-      <div className="flex items-center gap-3 justify-end">
+      <motion.div className="flex items-center gap-3 justify-end glass rounded-xl p-3" variants={itemVariants}>
         <button
           type="button"
           onClick={handleCopyMarkdown}
@@ -82,7 +86,7 @@ export function SessionSummary({ plan }: SessionSummaryProps) {
             'flex items-center gap-2 px-4 py-2 text-sm font-medium',
             'rounded-[var(--radius-md)] border border-[var(--color-border)]',
             'text-[var(--color-text)] hover:bg-[var(--color-surface-elevated)]',
-            'transition-colors'
+            'transition-colors glass'
           )}
           aria-label={t('copy_markdown')}
         >
@@ -96,63 +100,74 @@ export function SessionSummary({ plan }: SessionSummaryProps) {
             'flex items-center gap-2 px-4 py-2 text-sm font-medium',
             'rounded-[var(--radius-md)] border border-[var(--color-border)]',
             'text-[var(--color-text)] hover:bg-[var(--color-surface-elevated)]',
-            'transition-colors'
+            'transition-colors glass'
           )}
           aria-label={t('download_json')}
         >
           <DownloadIcon />
           {t('download_json')}
         </button>
-      </div>
+      </motion.div>
 
       {/* 1. Standards Coverage */}
-      <section aria-labelledby="standards-heading">
-        <h3
-          id="standards-heading"
-          className="text-base font-semibold text-[var(--color-text)] mb-4"
-        >
-          {t('standards_coverage')}
-        </h3>
+      <motion.section aria-labelledby="standards-heading" variants={itemVariants}>
+        <div className="flex items-center gap-3 mb-4">
+          <div
+            className="flex items-center justify-center w-8 h-8 icon-orb shrink-0"
+            style={{ background: 'linear-gradient(135deg, var(--color-primary), var(--color-secondary))' }}
+            aria-hidden="true"
+          >
+            <StandardsIcon />
+          </div>
+          <h3
+            id="standards-heading"
+            className="text-base font-semibold text-[var(--color-text)]"
+          >
+            {t('standards_coverage')}
+          </h3>
+        </div>
 
         {coverageData.length > 0 ? (
           <div className="space-y-4">
             <BloomCoverageChart data={coverageData} />
 
             {/* Standards table */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-[var(--color-border)]">
-                    <th className="text-left py-2 px-3 text-[var(--color-muted)] font-medium">
-                      {t('standard_code')}
-                    </th>
-                    <th className="text-left py-2 px-3 text-[var(--color-muted)] font-medium">
-                      {t('standard_name')}
-                    </th>
-                    <th className="text-left py-2 px-3 text-[var(--color-muted)] font-medium">
-                      {t('bloom_level')}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {coverageData.map((item, i) => (
-                    <tr
-                      key={i}
-                      className="border-b border-[var(--color-border)] last:border-0"
-                    >
-                      <td className="py-2 px-3 text-[var(--color-text)] font-mono text-xs">
-                        {item.standard}
-                      </td>
-                      <td className="py-2 px-3 text-[var(--color-text)]">
-                        {item.name}
-                      </td>
-                      <td className="py-2 px-3">
-                        <BloomBadge level={item.bloomLevel} />
-                      </td>
+            <div className="glass rounded-xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface)]/50">
+                      <th className="text-left py-2 px-3 text-[var(--color-muted)] font-medium">
+                        {t('standard_code')}
+                      </th>
+                      <th className="text-left py-2 px-3 text-[var(--color-muted)] font-medium">
+                        {t('standard_name')}
+                      </th>
+                      <th className="text-left py-2 px-3 text-[var(--color-muted)] font-medium">
+                        {t('bloom_level')}
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {coverageData.map((item, i) => (
+                      <tr
+                        key={i}
+                        className="border-b border-[var(--color-border)] last:border-0"
+                      >
+                        <td className="py-2 px-3 text-[var(--color-text)] font-mono text-xs">
+                          {item.standard}
+                        </td>
+                        <td className="py-2 px-3 text-[var(--color-text)]">
+                          {item.name}
+                        </td>
+                        <td className="py-2 px-3">
+                          <BloomBadge level={item.bloomLevel} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         ) : (
@@ -160,16 +175,25 @@ export function SessionSummary({ plan }: SessionSummaryProps) {
             {t('no_standards')}
           </p>
         )}
-      </section>
+      </motion.section>
 
       {/* 2. Accessibility Adaptations */}
-      <section aria-labelledby="adaptations-heading">
-        <h3
-          id="adaptations-heading"
-          className="text-base font-semibold text-[var(--color-text)] mb-4"
-        >
-          {t('adaptations_applied')}
-        </h3>
+      <motion.section aria-labelledby="adaptations-heading" variants={itemVariants}>
+        <div className="flex items-center gap-3 mb-4">
+          <div
+            className="flex items-center justify-center w-8 h-8 icon-orb shrink-0"
+            style={{ background: 'linear-gradient(135deg, var(--color-secondary), var(--color-primary))' }}
+            aria-hidden="true"
+          >
+            <AdaptationsIcon />
+          </div>
+          <h3
+            id="adaptations-heading"
+            className="text-base font-semibold text-[var(--color-text)]"
+          >
+            {t('adaptations_applied')}
+          </h3>
+        </div>
 
         {allAdaptations.length > 0 ? (
           <ul className="space-y-3">
@@ -177,13 +201,16 @@ export function SessionSummary({ plan }: SessionSummaryProps) {
               <li
                 key={i}
                 className={cn(
-                  'flex items-start gap-3 p-3 rounded-[var(--radius-md)]',
-                  'bg-[var(--color-secondary)]/5 border-l-3 border-[var(--color-secondary)]'
+                  'flex items-start gap-3 p-4 rounded-xl glass card-hover',
+                  'border-l-3 border-[var(--color-secondary)]'
                 )}
               >
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-semibold text-[var(--color-secondary)] uppercase">
+                    <span
+                      className="inline-flex items-center justify-center px-2 py-0.5 rounded icon-orb text-[10px] font-bold text-white shrink-0"
+                      style={{ background: 'linear-gradient(135deg, var(--color-secondary), var(--color-primary))' }}
+                    >
                       {adapt.profile}
                     </span>
                     <span className="text-xs text-[var(--color-muted)]">
@@ -202,16 +229,25 @@ export function SessionSummary({ plan }: SessionSummaryProps) {
             {t('no_adaptations')}
           </p>
         )}
-      </section>
+      </motion.section>
 
       {/* 3. Recommended Next Steps */}
-      <section aria-labelledby="next-steps-heading">
-        <h3
-          id="next-steps-heading"
-          className="text-base font-semibold text-[var(--color-text)] mb-4"
-        >
-          {t('next_steps')}
-        </h3>
+      <motion.section aria-labelledby="next-steps-heading" variants={itemVariants}>
+        <div className="flex items-center gap-3 mb-4">
+          <div
+            className="flex items-center justify-center w-8 h-8 icon-orb shrink-0"
+            style={{ background: 'linear-gradient(135deg, var(--color-primary), var(--color-secondary))' }}
+            aria-hidden="true"
+          >
+            <NextStepsIcon />
+          </div>
+          <h3
+            id="next-steps-heading"
+            className="text-base font-semibold text-[var(--color-text)]"
+          >
+            {t('next_steps')}
+          </h3>
+        </div>
         <div className="space-y-3">
           <NextStepCard
             icon={<AssessmentIcon />}
@@ -236,8 +272,8 @@ export function SessionSummary({ plan }: SessionSummaryProps) {
             })}
           />
         </div>
-      </section>
-    </div>
+      </motion.section>
+    </motion.div>
   )
 }
 
@@ -266,7 +302,7 @@ function BloomBadge({ level }: { level: string }) {
   const color = BLOOM_COLORS[level] ?? 'var(--color-muted)'
   return (
     <span
-      className="text-xs font-medium px-2 py-0.5 rounded-full"
+      className="text-xs font-medium px-2 py-0.5 rounded-full glass"
       style={{
         backgroundColor: `color-mix(in srgb, ${color} 15%, transparent)`,
         color,
@@ -289,18 +325,22 @@ function NextStepCard({
   return (
     <div
       className={cn(
-        'flex items-start gap-3 p-4 rounded-[var(--radius-md)]',
-        'bg-[var(--color-surface-elevated)] border border-[var(--color-border)]'
+        'flex items-start gap-4 p-4 rounded-xl',
+        'glass card-hover gradient-border-glass'
       )}
     >
-      <div className="text-[var(--color-primary)] shrink-0 mt-0.5">
-        {icon}
+      <div
+        className="flex items-center justify-center w-10 h-10 icon-orb shrink-0 rounded-xl"
+        style={{ background: 'linear-gradient(135deg, var(--color-primary), var(--color-secondary))' }}
+        aria-hidden="true"
+      >
+        <div className="text-white">{icon}</div>
       </div>
       <div>
-        <h4 className="text-sm font-medium text-[var(--color-text)]">
+        <h4 className="text-sm font-semibold text-[var(--color-text)]">
           {title}
         </h4>
-        <p className="text-xs text-[var(--color-muted)] mt-1">
+        <p className="text-xs text-[var(--color-muted)] mt-1 leading-relaxed">
           {description}
         </p>
       </div>
@@ -357,7 +397,38 @@ function generateMarkdown(
   return lines.join('\n')
 }
 
-/* ===== Icons ===== */
+/* ===== Section Heading Icons ===== */
+
+function StandardsIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M4 19.5A2.5 2.5 0 016.5 17H20" />
+      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" />
+    </svg>
+  )
+}
+
+function AdaptationsIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 00-3-3.87" />
+      <path d="M16 3.13a4 4 0 010 7.75" />
+    </svg>
+  )
+}
+
+function NextStepsIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="10" />
+      <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
+    </svg>
+  )
+}
+
+/* ===== Card Icons ===== */
 
 function CopyIcon() {
   return (

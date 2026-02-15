@@ -120,9 +120,9 @@ def test_histogram_observe() -> None:
     """Histogram should correctly distribute values into buckets."""
     h = Histogram("test_hist", "Test histogram", buckets=[0.1, 0.5, 1.0])
     h.observe(0.05, method="GET")  # fits in 0.1, 0.5, 1.0
-    h.observe(0.3, method="GET")   # fits in 0.5, 1.0
-    h.observe(0.8, method="GET")   # fits in 1.0
-    h.observe(2.0, method="GET")   # does not fit in any bucket
+    h.observe(0.3, method="GET")  # fits in 0.5, 1.0
+    h.observe(0.8, method="GET")  # fits in 1.0
+    h.observe(2.0, method="GET")  # does not fit in any bucket
 
     result = h.collect()
     assert len(result) == 1

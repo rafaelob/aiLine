@@ -33,9 +33,7 @@ class OCRProcessor:
     features).
     """
 
-    async def extract_text(
-        self, file_bytes: bytes, *, file_type: str = PDF_TYPE
-    ) -> str:
+    async def extract_text(self, file_bytes: bytes, *, file_type: str = PDF_TYPE) -> str:
         """Extract text from the given file bytes.
 
         Parameters
@@ -53,12 +51,8 @@ class OCRProcessor:
         """
         loop = asyncio.get_running_loop()
         if file_type == PDF_TYPE:
-            return await loop.run_in_executor(
-                None, self._extract_pdf, file_bytes
-            )
-        return await loop.run_in_executor(
-            None, self._extract_image, file_bytes
-        )
+            return await loop.run_in_executor(None, self._extract_pdf, file_bytes)
+        return await loop.run_in_executor(None, self._extract_image, file_bytes)
 
     # -- Private sync helpers (run in executor) ----------------------------
 

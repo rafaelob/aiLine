@@ -17,9 +17,7 @@ class FakeSTT:
         self._responses = responses or []
         self._call_count = 0
 
-    async def transcribe(
-        self, audio_bytes: bytes, *, language: str = "pt"
-    ) -> str:
+    async def transcribe(self, audio_bytes: bytes, *, language: str = "pt") -> str:
         """Return a deterministic transcription.
 
         If custom responses were provided at construction, they are
@@ -28,9 +26,6 @@ class FakeSTT:
         if self._responses:
             text = self._responses[self._call_count % len(self._responses)]
         else:
-            text = (
-                f"[Transcricao simulada: {len(audio_bytes)} bytes "
-                f"de audio em {language}]"
-            )
+            text = f"[Transcricao simulada: {len(audio_bytes)} bytes de audio em {language}]"
         self._call_count += 1
         return text

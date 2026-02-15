@@ -65,13 +65,13 @@ def extract_rag_quotes(
         if len(text) > 300:
             text = text[:297] + "..."
 
-        quotes.append({
-            "text": text,
-            "doc_title": r.get("title") or r.get("doc_title") or r.get("filename") or "",
-            "section": r.get("section") or r.get("heading") or "",
-            "relevance_score": float(
-                r.get("score") or r.get("relevance_score") or r.get("similarity") or 0.0
-            ),
-        })
+        quotes.append(
+            {
+                "text": text,
+                "doc_title": r.get("title") or r.get("doc_title") or r.get("filename") or "",
+                "section": r.get("section") or r.get("heading") or "",
+                "relevance_score": float(r.get("score") or r.get("relevance_score") or r.get("similarity") or 0.0),
+            }
+        )
 
     return quotes

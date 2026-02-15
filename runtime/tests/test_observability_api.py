@@ -38,7 +38,8 @@ class TestObservabilityDashboard:
     @pytest.mark.asyncio
     async def test_dashboard_empty(self, app) -> None:
         async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test",
+            transport=ASGITransport(app=app),
+            base_url="http://test",
             headers=_auth_headers(),
         ) as client:
             resp = await client.get("/observability/dashboard")
@@ -73,7 +74,8 @@ class TestObservabilityDashboard:
         await store.update_run("run-1", status="completed")
 
         async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test",
+            transport=ASGITransport(app=app),
+            base_url="http://test",
             headers=_auth_headers(),
         ) as client:
             resp = await client.get("/observability/dashboard")
@@ -94,7 +96,8 @@ class TestObservabilityDashboard:
         obs.record_tokens(input_tokens=500, output_tokens=200, model="claude-haiku-4-5")
 
         async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test",
+            transport=ASGITransport(app=app),
+            base_url="http://test",
             headers=_auth_headers(),
         ) as client:
             resp = await client.get("/observability/dashboard")
@@ -113,7 +116,8 @@ class TestStandardsEvidence:
     @pytest.mark.asyncio
     async def test_not_found(self, app) -> None:
         async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test",
+            transport=ASGITransport(app=app),
+            base_url="http://test",
             headers=_auth_headers(),
         ) as client:
             resp = await client.get("/observability/standards-evidence/nonexistent")
@@ -140,7 +144,8 @@ class TestStandardsEvidence:
         )
 
         async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test",
+            transport=ASGITransport(app=app),
+            base_url="http://test",
             headers=_auth_headers(),
         ) as client:
             resp = await client.get("/observability/standards-evidence/run-42")
@@ -160,7 +165,8 @@ class TestStandardsHandout:
     @pytest.mark.asyncio
     async def test_not_found(self, app) -> None:
         async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test",
+            transport=ASGITransport(app=app),
+            base_url="http://test",
             headers=_auth_headers(),
         ) as client:
             resp = await client.get("/observability/standards-evidence/nonexistent/handout")
@@ -172,8 +178,13 @@ class TestStandardsHandout:
         await store.get_or_create("run-99")
         await store.append_node(
             "run-99",
-            NodeTrace(node="validate", status="success", time_ms=50.0, quality_score=90,
-                      outputs_summary={"quality_status": "accept"}),
+            NodeTrace(
+                node="validate",
+                status="success",
+                time_ms=50.0,
+                quality_score=90,
+                outputs_summary={"quality_status": "accept"},
+            ),
         )
         await store.update_run("run-99", status="completed")
 
@@ -186,7 +197,8 @@ class TestStandardsHandout:
         )
 
         async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test",
+            transport=ASGITransport(app=app),
+            base_url="http://test",
             headers=_auth_headers(),
         ) as client:
             resp = await client.get("/observability/standards-evidence/run-99/handout")

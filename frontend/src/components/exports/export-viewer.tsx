@@ -66,7 +66,7 @@ export function ExportViewer({
       )}
     >
       {/* Toolbar */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between glass rounded-xl p-3">
         <div className="flex items-center gap-3">
           <label
             htmlFor="variant-select"
@@ -79,7 +79,7 @@ export function ExportViewer({
             value={selectedVariant}
             onChange={handleVariantChange}
             className={cn(
-              'rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]',
+              'rounded-lg glass px-3 py-2 text-sm text-[var(--color-text)]',
               'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]',
             )}
             aria-label={t('variant_aria')}
@@ -96,7 +96,7 @@ export function ExportViewer({
           <button
             onClick={onFullScreenToggle}
             className={cn(
-              'rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm font-medium text-[var(--color-text)]',
+              'rounded-lg glass px-3 py-2 text-sm font-medium text-[var(--color-text)]',
               'hover:bg-[var(--color-surface)] focus-visible:outline-2 focus-visible:outline-offset-2',
               'focus-visible:outline-[var(--color-primary)] transition-colors',
             )}
@@ -150,10 +150,10 @@ function ExportPanel({ title, html, panelId, contentLabel, noContentLabel }: Exp
       initial={{ opacity: 0, rotateY: -8 }}
       animate={{ opacity: 1, rotateY: 0 }}
       transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-      className="flex flex-col overflow-hidden rounded-lg border border-[var(--color-border)]"
+      className="flex flex-col overflow-hidden rounded-2xl glass card-hover"
       style={{ perspective: '800px', transformStyle: 'preserve-3d' }}
     >
-      <header className="border-b border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3">
+      <header className="border-b border-[var(--color-border)] glass px-4 py-3">
         <h3 className="text-sm font-semibold text-[var(--color-text)]">
           {title}
         </h3>
@@ -170,7 +170,7 @@ function ExportPanel({ title, html, panelId, contentLabel, noContentLabel }: Exp
             dangerouslySetInnerHTML={{ __html: html }}
           />
         ) : (
-          <p className="text-sm text-[var(--color-muted)] italic">
+          <p className="text-sm text-[var(--color-muted)] italic text-center py-8">
             {noContentLabel}
           </p>
         )}

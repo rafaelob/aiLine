@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import type { ChatMessage } from '@/types/tutor'
 
 export interface TutorState {
@@ -21,62 +22,73 @@ function nextId(): string {
   return `msg-${++messageCounter}-${Date.now()}`
 }
 
-export const useTutorStore = create<TutorState>((set) => ({
-  messages: [],
-  sessionId: null,
-  isStreaming: false,
-  error: null,
-
-  addUserMessage: (content) =>
-    set((state) => ({
-      messages: [
-        ...state.messages,
-        {
-          id: nextId(),
-          role: 'user',
-          content,
-          timestamp: new Date().toISOString(),
-        },
-      ],
-      error: null,
-    })),
-
-  startStreaming: () =>
-    set((state) => ({
-      isStreaming: true,
-      error: null,
-      messages: [
-        ...state.messages,
-        {
-          id: nextId(),
-          role: 'assistant',
-          content: '',
-          timestamp: new Date().toISOString(),
-        },
-      ],
-    })),
-
-  appendAssistantChunk: (chunk) =>
-    set((state) => {
-      const msgs = [...state.messages]
-      const last = msgs[msgs.length - 1]
-      if (last && last.role === 'assistant') {
-        msgs[msgs.length - 1] = { ...last, content: last.content + chunk }
-      }
-      return { messages: msgs }
-    }),
-
-  finalizeAssistant: () => set({ isStreaming: false }),
-
-  setSessionId: (id) => set({ sessionId: id }),
-
-  setError: (error) => set({ error, isStreaming: false }),
-
-  reset: () =>
-    set({
+export const useTutorStore = create<TutorState>()(
+  persist(
+    (set) => ({
       messages: [],
       sessionId: null,
       isStreaming: false,
       error: null,
+
+      addUserMessage: (content) =>
+        set((state) => ({
+          messages: [
+            ...state.messages,
+            {
+              id: nextId(),
+              role: 'user',
+              content,
+              timestamp: new Date().toISOString(),
+            },
+          ],
+          error: null,
+        })),
+
+      startStreaming: () =>
+        set((state) => ({
+          isStreaming: true,
+          error: null,
+          messages: [
+            ...state.messages,
+            {
+              id: nextId(),
+              role: 'assistant',
+              content: '',
+              timestamp: new Date().toISOString(),
+            },
+          ],
+        })),
+
+      appendAssistantChunk: (chunk) =>
+        set((state) => {
+          const msgs = [...state.messages]
+          const last = msgs[msgs.length - 1]
+          if (last && last.role === 'assistant') {
+            msgs[msgs.length - 1] = { ...last, content: last.content + chunk }
+          }
+          return { messages: msgs }
+        }),
+
+      finalizeAssistant: () => set({ isStreaming: false }),
+
+      setSessionId: (id) => set({ sessionId: id }),
+
+      setError: (error) => set({ error, isStreaming: false }),
+
+      reset: () =>
+        set({
+          messages: [],
+          sessionId: null,
+          isStreaming: false,
+          error: null,
+        }),
     }),
-}))
+    {
+      name: 'ailine-tutor-chat',
+      partialize: (state) => ({
+        messages: state.messages,
+        sessionId: state.sessionId,
+      }),
+    },
+  ),
+)

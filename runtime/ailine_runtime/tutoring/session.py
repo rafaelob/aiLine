@@ -108,7 +108,6 @@ async def tutor_chat_turn(
     # Resolve LLM from container or parameter
     if llm is None:
         llm_model = getattr(cfg, "executor_model", "anthropic:claude-opus-4-6")
-        getattr(cfg, "anthropic_api_key", "") or ""
         # Try to get from container if available
         container = getattr(cfg, "_container", None)
         if container and hasattr(container, "llm") and container.llm is not None:

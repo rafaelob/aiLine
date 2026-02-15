@@ -52,6 +52,7 @@ def pytest_configure(config: pytest.Config) -> None:
     except ImportError:
         pass
 
+
 # ---------------------------------------------------------------------------
 # Database fixtures (aiosqlite in-memory)
 # ---------------------------------------------------------------------------
