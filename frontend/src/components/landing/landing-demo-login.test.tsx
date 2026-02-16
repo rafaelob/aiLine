@@ -124,7 +124,7 @@ describe('LandingDemoLogin', () => {
     await user.click(teacherBtn)
 
     expect(mockPush).toHaveBeenCalledWith('/en/dashboard')
-    expect(sessionStorage.getItem('ailine_demo_profile')).toBe('teacher-sarah')
+    expect(sessionStorage.getItem('ailine_demo_profile')).toBe('teacher-ms-johnson')
     expect(sessionStorage.getItem('ailine_demo_role')).toBe('teacher')
   })
 
@@ -136,7 +136,7 @@ describe('LandingDemoLogin', () => {
     expect(mockSetTheme).toHaveBeenCalledWith('tea')
     expect(document.body.getAttribute('data-theme')).toBe('tea')
     expect(mockPush).toHaveBeenCalledWith('/en/tutors')
-    expect(sessionStorage.getItem('ailine_demo_profile')).toBe('student-alex')
+    expect(sessionStorage.getItem('ailine_demo_profile')).toBe('student-alex-tea')
   })
 
   it('clicking parent Enter navigates to progress page', async () => {

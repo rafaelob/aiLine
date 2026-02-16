@@ -153,10 +153,10 @@ async def plans_pending_review():
 @router.get("/{run_id}/scorecard")
 async def plans_scorecard(run_id: str):
     """Get the transformation scorecard for a completed plan run."""
-    _resolve_teacher_id()
+    teacher_id = _resolve_teacher_id()
 
     trace_store = get_trace_store()
-    trace = await trace_store.get(run_id)
+    trace = await trace_store.get(run_id, teacher_id=teacher_id)
     if not trace:
         raise HTTPException(status_code=404, detail="Run not found")
 

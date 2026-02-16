@@ -210,7 +210,7 @@ async def plans_generate_stream(body: PlanStreamIn, request: Request) -> EventSo
     teacher_id = _resolve_teacher_id()
 
     emitter = SSEEventEmitter(body.run_id)
-    queue: asyncio.Queue[dict[str, str] | None] = asyncio.Queue()
+    queue: asyncio.Queue[dict[str, str] | None] = asyncio.Queue(maxsize=500)
 
     async def event_generator() -> AsyncIterator[dict[str, str]]:
         # Start the pipeline and heartbeat as background tasks

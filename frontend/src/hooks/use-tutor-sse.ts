@@ -83,9 +83,6 @@ export function useTutorSSE() {
 
           openWhenHidden: true,
         })
-
-        // Stream completed
-        store.finalizeAssistant()
       } catch (err) {
         if (!ctrl.signal.aborted) {
           store.setError(

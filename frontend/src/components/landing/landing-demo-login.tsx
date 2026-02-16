@@ -41,7 +41,7 @@ interface LandingDemoLoginProps {
 
 const DEMO_PROFILES: DemoProfile[] = [
   {
-    key: 'teacher-sarah',
+    key: 'teacher-ms-johnson',
     name: '',
     description: '',
     role: 'teacher',
@@ -51,7 +51,7 @@ const DEMO_PROFILES: DemoProfile[] = [
     route: '/dashboard',
   },
   {
-    key: 'student-alex',
+    key: 'student-alex-tea',
     name: '',
     description: '',
     role: 'student',
@@ -62,7 +62,7 @@ const DEMO_PROFILES: DemoProfile[] = [
     route: '/tutors',
   },
   {
-    key: 'student-maya',
+    key: 'student-maya-adhd',
     name: '',
     description: '',
     role: 'student',
@@ -73,7 +73,7 @@ const DEMO_PROFILES: DemoProfile[] = [
     route: '/tutors',
   },
   {
-    key: 'student-lucas',
+    key: 'student-lucas-dyslexia',
     name: '',
     description: '',
     role: 'student',
@@ -84,7 +84,7 @@ const DEMO_PROFILES: DemoProfile[] = [
     route: '/tutors',
   },
   {
-    key: 'student-sofia',
+    key: 'student-sofia-hearing',
     name: '',
     description: '',
     role: 'student',
@@ -261,34 +261,34 @@ export function LandingDemoLogin(props: LandingDemoLoginProps) {
   // Hydrate profiles with translated text
   const hydratedProfiles = DEMO_PROFILES.map((p) => {
     switch (p.key) {
-      case 'teacher-sarah':
+      case 'teacher-ms-johnson':
         return {
           ...p,
           name: profiles.teacher.name,
           description: profiles.teacher.description,
         }
-      case 'student-alex':
+      case 'student-alex-tea':
         return {
           ...p,
           name: profiles.students.alex.name,
           description: profiles.students.alex.description,
           badge: profiles.students.alex.condition,
         }
-      case 'student-maya':
+      case 'student-maya-adhd':
         return {
           ...p,
           name: profiles.students.maya.name,
           description: profiles.students.maya.description,
           badge: profiles.students.maya.condition,
         }
-      case 'student-lucas':
+      case 'student-lucas-dyslexia':
         return {
           ...p,
           name: profiles.students.lucas.name,
           description: profiles.students.lucas.description,
           badge: profiles.students.lucas.condition,
         }
-      case 'student-sofia':
+      case 'student-sofia-hearing':
         return {
           ...p,
           name: profiles.students.sofia.name,

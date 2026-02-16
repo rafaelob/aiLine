@@ -44,7 +44,7 @@ class TestTracesAPI:
     @pytest.mark.asyncio
     async def test_get_trace_found(self, app) -> None:
         store = get_trace_store()
-        await store.get_or_create("run-42")
+        await store.get_or_create("run-42", teacher_id="teacher-test")
         await store.append_node(
             "run-42",
             NodeTrace(node="planner", status="success", time_ms=100.0),
@@ -68,6 +68,7 @@ class TestTracesAPI:
     @pytest.mark.asyncio
     async def test_get_trace_with_rationale(self, app) -> None:
         store = get_trace_store()
+        await store.get_or_create("run-99", teacher_id="teacher-test")
         await store.append_node(
             "run-99",
             NodeTrace(
@@ -112,9 +113,9 @@ class TestTracesAPI:
     @pytest.mark.asyncio
     async def test_list_recent_with_data(self, app) -> None:
         store = get_trace_store()
-        await store.get_or_create("run-1")
+        await store.get_or_create("run-1", teacher_id="teacher-test")
         await store.update_run("run-1", status="completed", total_time_ms=100.0, final_score=85)
-        await store.get_or_create("run-2")
+        await store.get_or_create("run-2", teacher_id="teacher-test")
         await store.update_run("run-2", status="completed", total_time_ms=200.0, final_score=72)
 
         async with AsyncClient(

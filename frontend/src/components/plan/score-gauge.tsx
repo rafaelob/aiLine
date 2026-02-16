@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useSyncExternalStore, useState } from 'react'
+import { useEffect, useId, useSyncExternalStore, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { motion, useSpring, useTransform } from 'motion/react'
 import { useThemeContext } from '@/hooks/use-theme-context'
@@ -36,6 +36,7 @@ function getServerSnapshotMounted() {
  */
 export function ScoreGauge({ score, size = 160 }: ScoreGaugeProps) {
   const t = useTranslations('quality')
+  const glowId = useId()
   // Subscribe to theme changes so Canvas/SVG redraws with correct colors (FINDING-18)
   useThemeContext()
 
@@ -79,7 +80,7 @@ export function ScoreGauge({ score, size = 160 }: ScoreGaugeProps) {
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
         {/* SVG filter for neon glow */}
         <defs>
-          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+          <filter id={glowId} x="-50%" y="-50%" width="200%" height="200%">
             <feGaussianBlur stdDeviation="4" result="coloredBlur" />
             <feMerge>
               <feMergeNode in="coloredBlur" />
@@ -124,7 +125,7 @@ export function ScoreGauge({ score, size = 160 }: ScoreGaugeProps) {
           animate={{ strokeDashoffset: dashOffset }}
           transition={{ type: 'spring', stiffness: 40, damping: 12, delay: 0.2 }}
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
-          filter="url(#glow)"
+          filter={`url(#${glowId})`}
           opacity={0.4}
         />
 

@@ -293,7 +293,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 import ctypes.wintypes
 
                 class ProcessMemoryCounters(ctypes.Structure):
-                    _fields_ = [  # noqa: RUF012
+                    _fields_ = [
                         ("cb", ctypes.wintypes.DWORD),
                         ("PageFaultCount", ctypes.wintypes.DWORD),
                         ("PeakWorkingSetSize", ctypes.c_size_t),

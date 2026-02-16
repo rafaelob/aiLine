@@ -56,7 +56,7 @@ class TestObservabilityDashboard:
     @pytest.mark.asyncio
     async def test_dashboard_with_trace_data(self, app) -> None:
         store = get_trace_store()
-        await store.get_or_create("run-1")
+        await store.get_or_create("run-1", teacher_id="teacher-test")
         await store.append_node(
             "run-1",
             NodeTrace(
@@ -126,7 +126,7 @@ class TestStandardsEvidence:
     @pytest.mark.asyncio
     async def test_with_evidence(self, app) -> None:
         store = get_trace_store()
-        await store.get_or_create("run-42")
+        await store.get_or_create("run-42", teacher_id="teacher-test")
         await store.update_run("run-42", status="completed", final_score=85)
 
         obs = get_observability_store()
@@ -175,7 +175,7 @@ class TestStandardsHandout:
     @pytest.mark.asyncio
     async def test_handout_format(self, app) -> None:
         store = get_trace_store()
-        await store.get_or_create("run-99")
+        await store.get_or_create("run-99", teacher_id="teacher-test")
         await store.append_node(
             "run-99",
             NodeTrace(

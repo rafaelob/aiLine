@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import threading
 from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
@@ -88,6 +89,7 @@ class SSEEventEmitter:
         self._run_id = run_id
         self._seq = 0
         self._lock = asyncio.Lock()
+        self._sync_lock = threading.Lock()
 
     @property
     def run_id(self) -> str:
@@ -107,17 +109,18 @@ class SSEEventEmitter:
         """Create the next SSEEvent with auto-incremented seq.
 
         For synchronous contexts (LangGraph node callbacks).
-        Thread-safe only within a single asyncio task. For concurrent
-        async emission, use ``async_emit`` instead.
+        Thread-safe via threading.Lock for concurrent emission from
+        parallel LangGraph branches.
         """
-        self._seq += 1
-        return SSEEvent(
-            run_id=self._run_id,
-            seq=self._seq,
-            type=event_type,
-            stage=stage,
-            payload=payload or {},
-        )
+        with self._sync_lock:
+            self._seq += 1
+            return SSEEvent(
+                run_id=self._run_id,
+                seq=self._seq,
+                type=event_type,
+                stage=stage,
+                payload=payload or {},
+            )
 
     async def async_emit(
         self,

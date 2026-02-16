@@ -93,7 +93,9 @@ describe('ScoreGauge', () => {
 
   it('renders glow filter definition', () => {
     render(<ScoreGauge score={50} />)
-    const filter = document.querySelector('filter#glow')
+    const filter = document.querySelector('filter')
     expect(filter).toBeInTheDocument()
+    // useId() generates a unique ID, so we just verify a filter exists with an id attribute
+    expect(filter).toHaveAttribute('id')
   })
 })

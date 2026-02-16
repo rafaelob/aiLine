@@ -46,7 +46,7 @@ class TraceStore:
             trace = self._traces.get(run_id)
             if trace is None:
                 return None
-            if teacher_id is not None and trace.teacher_id and trace.teacher_id != teacher_id:
+            if teacher_id is not None and trace.teacher_id != teacher_id:
                 return None
             return trace
 
@@ -103,7 +103,7 @@ class TraceStore:
             traces: list[RunTrace] = []
             for rid in sorted_ids:
                 t = self._traces[rid]
-                if teacher_id is not None and t.teacher_id and t.teacher_id != teacher_id:
+                if teacher_id is not None and t.teacher_id != teacher_id:
                     continue
                 traces.append(t)
                 if len(traces) >= limit:
