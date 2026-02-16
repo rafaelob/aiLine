@@ -62,8 +62,8 @@ export function ChatMessageBubble({
 
     const utterance = new SpeechSynthesisUtterance(message.content)
     // Use locale from document for correct TTS language
-    const docLang = typeof document !== 'undefined' ? document.documentElement.lang : 'pt-BR'
-    utterance.lang = docLang || 'pt-BR'
+    const docLang = typeof document !== 'undefined' ? document.documentElement.lang : 'en'
+    utterance.lang = docLang || 'en'
     utterance.rate = 0.9
     utterance.onend = () => setIsSpeaking(false)
     utterance.onerror = () => setIsSpeaking(false)
@@ -77,7 +77,7 @@ export function ChatMessageBubble({
         'flex gap-3 max-w-[85%]',
         isUser ? 'ml-auto flex-row-reverse' : 'mr-auto'
       )}
-      role="listitem"
+      role="article"
     >
       {/* Avatar */}
       {isUser ? (

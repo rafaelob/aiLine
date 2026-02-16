@@ -55,9 +55,9 @@ export default function SignLanguagePage() {
 
         {/* VLibras widget */}
         <section aria-label="VLibras">
-          <h3 className="mb-3 text-lg font-semibold text-[var(--color-text)]">
+          <h2 className="mb-3 text-lg font-semibold text-[var(--color-text)]">
             {t('vlibras_title')}
-          </h3>
+          </h2>
           <p className="mb-4 text-sm text-[var(--color-muted)]">
             {t('vlibras_description')}
           </p>

@@ -86,11 +86,11 @@ describe('ChatMessageBubble', () => {
     expect(screen.getByText('AI response')).toBeInTheDocument()
   })
 
-  it('renders with role="listitem" for accessibility', () => {
+  it('renders with role="article" for accessibility', () => {
     const { container } = render(
       <ChatMessageBubble message={makeMessage()} />
     )
-    expect(container.querySelector('[role="listitem"]')).toBeInTheDocument()
+    expect(container.querySelector('[role="article"]')).toBeInTheDocument()
   })
 
   it('shows streaming cursor when isStreaming is true for assistant', () => {

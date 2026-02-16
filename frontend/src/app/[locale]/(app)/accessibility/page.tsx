@@ -103,54 +103,54 @@ export default function AccessibilityPage() {
 
 /* --- Demo content for Accessibility Twin --- */
 
-const DEMO_ORIGINAL = `Título: Frações e Números Decimais
-Série: 5º ano do Ensino Fundamental
-Duração: 50 minutos
+const DEMO_ORIGINAL = `Title: Fractions and Decimal Numbers
+Grade: 5th Grade
+Duration: 50 minutes
 
-Objetivos:
-- Compreender a relação entre frações e decimais
-- Converter frações em decimais e vice-versa
-- Resolver problemas do cotidiano envolvendo frações
+Objectives:
+- Understand the relationship between fractions and decimals
+- Convert fractions to decimals and vice versa
+- Solve everyday problems involving fractions
 
-Introdução (15 min):
-Começar com uma discussão sobre onde encontramos frações no dia a dia.
-Exemplos: receitas de bolo, divisão de pizza, horários.
+Introduction (15 min):
+Begin with a discussion about where we find fractions in daily life.
+Examples: cake recipes, pizza slicing, time on a clock.
 
-Desenvolvimento (25 min):
-Atividade prática com material concreto.
-Alunos dividem círculos de papel em partes iguais.
-Exercícios de conversão no caderno.
+Development (25 min):
+Hands-on activity with concrete materials.
+Students divide paper circles into equal parts.
+Conversion exercises in their notebooks.
 
-Fechamento (10 min):
-Roda de conversa sobre o que aprenderam.
-Tarefa de casa: encontrar 3 exemplos de frações em casa.`
+Closing (10 min):
+Group discussion about what they learned.
+Homework: find 3 examples of fractions at home.`
 
-const DEMO_ADAPTED = `Título: Frações e Números Decimais
-Série: 5º ano do Ensino Fundamental
-Duração: 60 minutos (tempo estendido)
+const DEMO_ADAPTED = `Title: Fractions and Decimal Numbers
+Grade: 5th Grade
+Duration: 60 minutes (extended time)
 
-Objetivos:
-- Compreender a relação entre frações e decimais
-- Converter frações em decimais e vice-versa
-- Resolver problemas do cotidiano envolvendo frações
-- Usar representações visuais como suporte
+Objectives:
+- Understand the relationship between fractions and decimals
+- Convert fractions to decimals and vice versa
+- Solve everyday problems involving fractions
+- Use visual representations as support
 
-Introdução (20 min):
-Começar com uma discussão sobre onde encontramos frações no dia a dia.
-Usar AGENDA VISUAL com pictogramas para cada etapa da aula.
-Limitar a 3 exemplos concretos com imagens: pizza, relógio, régua.
-Antecipar transições com aviso de 2 minutos.
+Introduction (20 min):
+Begin with a discussion about where we find fractions in daily life.
+Use a VISUAL SCHEDULE with pictograms for each lesson phase.
+Limit to 3 concrete examples with images: pizza, clock, ruler.
+Announce transitions with a 2-minute warning.
 
-Desenvolvimento (25 min):
-Atividade prática com material concreto.
-Fornecer material pré-organizado em kits individuais.
-Alunos dividem círculos de papel em partes iguais.
-Incluir instruções passo-a-passo com suporte visual.
-Exercícios de conversão no caderno com gabarito parcial.
-Permitir uso de calculadora como apoio.
+Development (25 min):
+Hands-on activity with concrete materials.
+Provide pre-organized materials in individual kits.
+Students divide paper circles into equal parts.
+Include step-by-step instructions with visual support.
+Conversion exercises in notebooks with partial answer key.
+Allow calculator use as support.
 
-Fechamento (15 min):
-Roda de conversa sobre o que aprenderam.
-Aceitar resposta por desenho, gesto ou fala.
-Resumo visual da aula com 3 pontos principais.
-Tarefa de casa: encontrar 3 exemplos de frações em casa (com modelo).`
+Closing (15 min):
+Group discussion about what they learned.
+Accept responses via drawing, gesture, or speech.
+Visual summary of the lesson with 3 key points.
+Homework: find 3 examples of fractions at home (with template).`
