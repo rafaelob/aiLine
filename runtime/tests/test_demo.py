@@ -697,11 +697,11 @@ _SCENARIO_IDS = ("inclusive-math", "science-visual", "libras-demo")
 
 
 class TestRealDemoScenarios:
-    """Integration tests against the 3 curated demo scenario files."""
+    """Integration tests against the 5 curated demo scenario files."""
 
-    def test_real_data_dir_has_three_scenarios(self) -> None:
+    def test_real_data_dir_has_five_scenarios(self) -> None:
         svc = DemoService()
-        assert svc.scenario_count == 3
+        assert svc.scenario_count == 5
 
     def test_inclusive_math_scenario(self) -> None:
         svc = DemoService()
