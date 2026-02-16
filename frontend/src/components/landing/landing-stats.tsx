@@ -30,7 +30,7 @@ export function LandingStats({ personas, languages, models, standards, sectionLa
 
   return (
     <section
-      className="py-16 px-6 bg-[var(--color-surface)]"
+      className="py-8 md:py-12 px-6 bg-[var(--color-surface)]"
       aria-label={sectionLabel}
     >
       <div

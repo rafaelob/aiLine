@@ -1,7 +1,7 @@
 'use client'
 
-import { useRef, useCallback } from 'react'
-import { motion, useInView, useReducedMotion } from 'motion/react'
+import { useCallback } from 'react'
+import { motion, useReducedMotion } from 'motion/react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/cn'
 import { useAccessibilityStore } from '@/stores/accessibility-store'
@@ -118,8 +118,6 @@ function ProfileCard({
   enterAs: string
   roleLabel: string
 }) {
-  const ref = useRef<HTMLElement>(null)
-  const isInView = useInView(ref, { once: true, margin: '-30px' })
   const prefersReducedMotion = useReducedMotion()
   const noMotion = prefersReducedMotion ?? false
   const router = useRouter()
@@ -149,11 +147,11 @@ function ProfileCard({
 
   return (
     <motion.article
-      ref={ref}
       onMouseEnter={handlePrefetch}
       onFocus={handlePrefetch}
       initial={noMotion ? undefined : { opacity: 0, y: 20 }}
-      animate={noMotion ? undefined : isInView ? { opacity: 1, y: 0 } : undefined}
+      whileInView={noMotion ? undefined : { opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-30px' }}
       transition={noMotion ? undefined : { delay: index * 0.08, duration: 0.4 }}
       className={cn(
         'group relative overflow-hidden rounded-2xl p-5',
@@ -212,8 +210,8 @@ function ProfileCard({
               <span
                 className={cn(
                   'inline-flex items-center px-2 py-0.5 rounded-full',
-                  'text-[10px] font-semibold uppercase tracking-wider',
-                  'bg-gradient-to-r text-white',
+                  'text-[11px] font-bold uppercase tracking-wider',
+                  'bg-gradient-to-r text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]',
                   profile.color
                 )}
               >
@@ -321,7 +319,7 @@ export function LandingDemoLogin(props: LandingDemoLoginProps) {
 
   return (
     <section
-      className="py-20 px-6"
+      className="py-12 px-6"
       aria-labelledby="demo-login-heading"
     >
       <div className="max-w-5xl mx-auto">

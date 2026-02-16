@@ -8,6 +8,12 @@ vi.mock('@/components/dashboard/dashboard-content', () => ({
   ),
 }))
 
+vi.mock('@/components/ui/page-transition', () => ({
+  PageTransition: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="page-transition">{children}</div>
+  ),
+}))
+
 describe('DashboardPage', () => {
   it('renders the DashboardContent component', () => {
     render(<DashboardPage />)
@@ -16,14 +22,14 @@ describe('DashboardPage', () => {
 
   it('wraps content in a max-width container', () => {
     const { container } = render(<DashboardPage />)
-    const wrapper = container.firstChild as HTMLElement
-    expect(wrapper.className).toContain('max-w-5xl')
+    const inner = container.querySelector('.max-w-5xl')
+    expect(inner).toBeInTheDocument()
   })
 
   it('applies mx-auto for centering', () => {
     const { container } = render(<DashboardPage />)
-    const wrapper = container.firstChild as HTMLElement
-    expect(wrapper.className).toContain('mx-auto')
+    const inner = container.querySelector('.mx-auto')
+    expect(inner).toBeInTheDocument()
   })
 
   it('renders a single root element', () => {
@@ -31,10 +37,10 @@ describe('DashboardPage', () => {
     expect(container.children).toHaveLength(1)
   })
 
-  it('renders DashboardContent as the only child', () => {
+  it('renders DashboardContent inside the container', () => {
     const { container } = render(<DashboardPage />)
-    const wrapper = container.firstChild as HTMLElement
-    expect(wrapper.children).toHaveLength(1)
-    expect(wrapper.querySelector('[data-testid="dashboard-content"]')).toBeInTheDocument()
+    const inner = container.querySelector('.max-w-5xl')
+    expect(inner).toBeInTheDocument()
+    expect(inner?.querySelector('[data-testid="dashboard-content"]')).toBeInTheDocument()
   })
 })

@@ -119,6 +119,33 @@ async def observability_dashboard(
     provider_info = obs_store.get_provider_status()
 
     return {
+        # Flat fields expected by the frontend ObservabilityDashboard interface
+        "provider": provider_info.get("name", "unknown"),
+        "model": provider_info.get("model", "unknown"),
+        "scores": {
+            "quality_avg": round(
+                sum(1 for t in recent_traces if t.status == "completed")
+                / max(len(recent_traces), 1)
+                * 100,
+                1,
+            ),
+            "latency_p50_ms": round(latency_percentiles.get("p50", 0) * 1000, 1),
+            "latency_p95_ms": round(latency_percentiles.get("p95", 0) * 1000, 1),
+        },
+        "error_rate": error_rate,
+        "circuit_breaker_state": obs_store.get_circuit_breaker_state(),
+        "sse_event_counts": sse_counts,
+        "token_usage": {
+            "input_tokens": token_stats.get("input_tokens", 0),
+            "output_tokens": token_stats.get("output_tokens", 0),
+            "estimated_cost_usd": token_stats.get("estimated_cost_usd", 0.0),
+        },
+        "latency_history": [],
+        # Extended data (backward compat with existing tests + advanced views)
+        "sse": {
+            "event_counts": sse_counts,
+        },
+        "tokens": token_stats,
         "llm": {
             "total_calls": int(total_llm_calls),
             "error_calls": int(error_calls),
@@ -134,10 +161,6 @@ async def observability_dashboard(
             "total_requests": int(total_http_requests),
             "server_errors": int(http_errors),
         },
-        "sse": {
-            "event_counts": sse_counts,
-        },
-        "tokens": token_stats,
         "smart_router": {
             "recent_decisions": router_breakdowns[:10],
         },
