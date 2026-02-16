@@ -20,6 +20,7 @@ from ..domain.ports.media import (
     STT,
     TTS,
     ImageDescriber,
+    ImageGenerator,
     OCRProcessor,
     SignRecognition,
 )
@@ -230,6 +231,24 @@ def build_sign_recognition(settings: Settings) -> SignRecognition:
     from ..adapters.media.fake_sign_recognition import FakeSignRecognition
 
     return FakeSignRecognition()
+
+
+def build_image_generator(settings: Settings) -> ImageGenerator | None:
+    """Build image generator adapter when a Google API key is available.
+
+    Returns None when no key is configured or when the google-genai SDK
+    is not installed (graceful degradation per ADR-051).
+    """
+    api_key = settings.google_api_key
+    if not api_key:
+        return None
+    try:
+        from ..adapters.media.gemini_image_gen import GeminiImageGenerator
+
+        return GeminiImageGenerator(api_key=api_key)
+    except ImportError:
+        _log.warning("container.image_gen_import_failed: google-genai not installed")
+        return None
 
 
 def resolve_api_key(settings: Settings, provider: str) -> str:

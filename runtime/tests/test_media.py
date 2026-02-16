@@ -17,10 +17,11 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 
 from ailine_runtime.adapters.media.fake_image_describer import FakeImageDescriber
+from ailine_runtime.adapters.media.fake_image_gen import FakeImageGenerator
 from ailine_runtime.adapters.media.fake_stt import FakeSTT
 from ailine_runtime.adapters.media.fake_tts import FakeTTS, _create_silent_wav
 from ailine_runtime.adapters.media.ocr_processor import OCRProcessor
-from ailine_runtime.domain.ports.media import STT, TTS, ImageDescriber
+from ailine_runtime.domain.ports.media import STT, TTS, ImageDescriber, ImageGenerator
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -45,6 +46,11 @@ def fake_tts() -> FakeTTS:
 @pytest.fixture
 def fake_describer() -> FakeImageDescriber:
     return FakeImageDescriber()
+
+
+@pytest.fixture
+def fake_image_gen() -> FakeImageGenerator:
+    return FakeImageGenerator()
 
 
 @pytest.fixture
@@ -75,6 +81,7 @@ def _make_container_with_fakes(container):
         stt=FakeSTT(),
         tts=FakeTTS(),
         image_describer=FakeImageDescriber(),
+        image_generator=FakeImageGenerator(),
         ocr=OCRProcessor(),
     )
 
@@ -433,6 +440,109 @@ class TestMediaExtractTextEndpoint:
             files={"file": ("doc.pdf", b"", "application/pdf")},
         )
         assert response.status_code == 400
+
+
+# ===========================================================================
+# FakeImageGenerator Tests
+# ===========================================================================
+
+
+class TestFakeImageGeneratorProtocol:
+    """Verify FakeImageGenerator satisfies the ImageGenerator protocol."""
+
+    def test_is_runtime_checkable(self, fake_image_gen: FakeImageGenerator):
+        assert isinstance(fake_image_gen, ImageGenerator)
+
+    async def test_generate_returns_bytes(self, fake_image_gen: FakeImageGenerator):
+        result = await fake_image_gen.generate("a cat")
+        assert isinstance(result, bytes)
+
+
+class TestFakeImageGeneratorBehavior:
+    async def test_returns_png_signature(self, fake_image_gen: FakeImageGenerator):
+        result = await fake_image_gen.generate("test prompt")
+        assert result[:4] == b"\x89PNG"
+
+    async def test_increments_call_count(self, fake_image_gen: FakeImageGenerator):
+        assert fake_image_gen.call_count == 0
+        await fake_image_gen.generate("first")
+        assert fake_image_gen.call_count == 1
+        await fake_image_gen.generate("second")
+        assert fake_image_gen.call_count == 2
+
+    async def test_accepts_all_keyword_args(self, fake_image_gen: FakeImageGenerator):
+        result = await fake_image_gen.generate(
+            "diagram",
+            aspect_ratio="1:1",
+            style="diagram",
+            size="2K",
+        )
+        assert isinstance(result, bytes)
+
+
+# ===========================================================================
+# Media API Generate Image Endpoint Tests
+# ===========================================================================
+
+
+class TestMediaGenerateImageEndpoint:
+    async def test_generate_image_success(self, client: AsyncClient):
+        response = await client.post(
+            "/media/generate-image",
+            json={"prompt": "A diagram of photosynthesis"},
+        )
+        assert response.status_code == 200
+        assert response.headers["content-type"] == "image/png"
+        assert response.content[:4] == b"\x89PNG"
+
+    async def test_generate_image_with_options(self, client: AsyncClient):
+        response = await client.post(
+            "/media/generate-image",
+            json={
+                "prompt": "A cartoon of the water cycle",
+                "aspect_ratio": "1:1",
+                "style": "cartoon",
+                "size": "2K",
+            },
+        )
+        assert response.status_code == 200
+        assert response.content[:4] == b"\x89PNG"
+
+    async def test_generate_image_empty_prompt(self, client: AsyncClient):
+        response = await client.post(
+            "/media/generate-image",
+            json={"prompt": "ab"},  # min_length=3
+        )
+        assert response.status_code == 422
+
+    async def test_generate_image_returns_503_without_adapter(self):
+        """When image_generator is None, POST /media/generate-image returns 503."""
+        import os
+
+        os.environ["AILINE_DEV_MODE"] = "true"
+        from dataclasses import replace as dc_replace
+
+        from ailine_runtime.api.app import create_app
+        from ailine_runtime.shared.config import Settings
+
+        settings = Settings()
+        application = create_app(settings)
+        application.state.container = dc_replace(
+            application.state.container,
+            image_generator=None,
+        )
+        transport = ASGITransport(app=application)
+        async with AsyncClient(
+            transport=transport,
+            base_url="http://test",
+            headers={"X-Teacher-ID": "teacher-media-test"},
+        ) as c:
+            response = await c.post(
+                "/media/generate-image",
+                json={"prompt": "A diagram of photosynthesis"},
+            )
+            assert response.status_code == 503
+            assert "image_generator" in response.json()["detail"]
 
 
 class TestMediaAdapterNotConfigured:

@@ -35,6 +35,18 @@ vi.mock('./landing-stats', () => ({
   ),
 }))
 
+vi.mock('./landing-how-it-works', () => ({
+  LandingHowItWorks: ({ title }: { title: string }) => (
+    <section data-testid="landing-how-it-works">{title}</section>
+  ),
+}))
+
+vi.mock('./landing-demo-login', () => ({
+  LandingDemoLogin: ({ title }: { title: string }) => (
+    <section data-testid="landing-demo-login">{title}</section>
+  ),
+}))
+
 vi.mock('./landing-footer', () => ({
   LandingFooter: ({ builtWith }: { builtWith: string }) => (
     <footer data-testid="landing-footer">{builtWith}</footer>
@@ -43,9 +55,12 @@ vi.mock('./landing-footer', () => ({
 
 const defaultProps = {
   locale: 'en',
-  heroTitle: 'Hero Title',
+  heroTitle: 'AiLine',
   heroSubtitle: 'Hero Subtitle',
-  startDemo: 'Start Demo',
+  heroFullName: 'Adaptive Inclusive Learning',
+  startDemo: 'Try the Demo',
+  badgeOpenSource: 'Open Source',
+  badgeBuiltWith: 'Built with Claude Code',
   statsPersonas: 'Personas',
   statsLanguages: 'Languages',
   statsModels: 'Models',
@@ -65,6 +80,32 @@ const defaultProps = {
   featureCurriculum: 'Curriculum',
   featureCurriculumDesc: 'Curriculum desc',
   builtWith: 'Built with Claude',
+  howItWorksTitle: 'How It Works',
+  howItWorksSteps: [
+    { title: 'Step 1', description: 'Desc 1' },
+    { title: 'Step 2', description: 'Desc 2' },
+    { title: 'Step 3', description: 'Desc 3' },
+    { title: 'Step 4', description: 'Desc 4' },
+  ],
+  demoTitle: 'Try the Demo',
+  demoSubtitle: 'Choose a profile',
+  demoEnterAs: 'Enter',
+  demoTeacherLabel: 'Teacher',
+  demoStudentLabel: 'Student',
+  demoParentLabel: 'Parent',
+  demoProfiles: {
+    teacher: { name: 'Sarah', detail: '5th Grade', description: 'Desc' },
+    students: {
+      alex: { name: 'Alex', condition: 'ASD', description: 'Desc' },
+      maya: { name: 'Maya', condition: 'ADHD', description: 'Desc' },
+      lucas: { name: 'Lucas', condition: 'Dyslexia', description: 'Desc' },
+      sofia: { name: 'Sofia', condition: 'Hearing', description: 'Desc' },
+    },
+    parent: { name: 'David', description: 'Desc' },
+  },
+  footerOpenSource: 'Open Source — MIT',
+  footerCreatedWith: 'Created with Claude Code',
+  footerHackathon: 'Hackathon Feb 2026',
 }
 
 describe('LandingPage', () => {
@@ -74,6 +115,8 @@ describe('LandingPage', () => {
     expect(screen.getByTestId('landing-hero')).toBeInTheDocument()
     expect(screen.getByTestId('landing-features')).toBeInTheDocument()
     expect(screen.getByTestId('landing-stats')).toBeInTheDocument()
+    expect(screen.getByTestId('landing-how-it-works')).toBeInTheDocument()
+    expect(screen.getByTestId('landing-demo-login')).toBeInTheDocument()
     expect(screen.getByTestId('landing-footer')).toBeInTheDocument()
   })
 
@@ -91,7 +134,7 @@ describe('LandingPage', () => {
 
   it('passes hero props correctly', () => {
     render(<LandingPage {...defaultProps} />)
-    expect(screen.getByText('Hero Title')).toBeInTheDocument()
+    expect(screen.getByText('AiLine')).toBeInTheDocument()
     expect(screen.getByText('Hero Subtitle')).toBeInTheDocument()
   })
 
@@ -116,9 +159,19 @@ describe('LandingPage', () => {
     expect(screen.getByText('Built with Claude')).toBeInTheDocument()
   })
 
+  it('renders how-it-works section', () => {
+    render(<LandingPage {...defaultProps} />)
+    expect(screen.getByTestId('landing-how-it-works')).toHaveTextContent('How It Works')
+  })
+
+  it('renders demo login section', () => {
+    render(<LandingPage {...defaultProps} />)
+    expect(screen.getByTestId('landing-demo-login')).toHaveTextContent('Try the Demo')
+  })
+
   it('passes startDemo to nav CTA', () => {
     render(<LandingPage {...defaultProps} />)
-    expect(screen.getByTestId('landing-nav').textContent).toBe('Start Demo')
+    expect(screen.getByTestId('landing-nav').textContent).toBe('Try the Demo')
   })
 
   it('renders full-screen layout with min-h-screen', () => {

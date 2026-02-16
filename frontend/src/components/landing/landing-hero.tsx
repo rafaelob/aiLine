@@ -1,23 +1,45 @@
 'use client'
 
+import { useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
-import Link from 'next/link'
 import { cn } from '@/lib/cn'
+import { useAccessibilityStore } from '@/stores/accessibility-store'
 
 interface LandingHeroProps {
   locale: string
   title: string
   subtitle: string
   cta: string
+  fullName: string
+  badgeOpenSource: string
+  badgeBuiltWith: string
 }
+
+const PERSONA_PREVIEWS = [
+  { id: 'standard', label: 'Default', color: '#2563EB' },
+  { id: 'tea', label: 'ASD', color: '#2D8B6E' },
+  { id: 'tdah', label: 'ADHD', color: '#E07E34' },
+  { id: 'dyslexia', label: 'Dyslexia', color: '#3B7DD8' },
+  { id: 'high-contrast', label: 'High Contrast', color: '#5EEAD4' },
+] as const
 
 /**
  * Full-screen hero section with animated mesh gradient background,
- * animated tagline, and glass CTA button.
+ * animated tagline, persona preview toggle, and glass CTA button.
  */
-export function LandingHero({ locale, title, subtitle, cta }: LandingHeroProps) {
+export function LandingHero({ locale: _locale, title, subtitle, cta, fullName, badgeOpenSource, badgeBuiltWith }: LandingHeroProps) {
   const prefersReducedMotion = useReducedMotion()
   const noMotion = prefersReducedMotion ?? false
+  const setTheme = useAccessibilityStore((s) => s.setTheme)
+  const [activePersona, setActivePersona] = useState('standard')
+
+  function handlePersonaSwitch(id: string) {
+    setActivePersona(id)
+    setTheme(id)
+    if (typeof document !== 'undefined') {
+      document.body.setAttribute('data-theme', id)
+    }
+  }
 
   return (
     <section
@@ -76,6 +98,49 @@ export function LandingHero({ locale, title, subtitle, cta }: LandingHeroProps) 
           </div>
         </motion.div>
 
+        {/* Branding badges */}
+        <motion.div
+          initial={noMotion ? undefined : { opacity: 0, y: 12 }}
+          animate={noMotion ? undefined : { opacity: 1, y: 0 }}
+          transition={noMotion ? undefined : { delay: 0.12, duration: 0.4 }}
+          className="flex flex-wrap items-center justify-center gap-2 mb-4"
+        >
+          <span
+            className={cn(
+              'inline-flex items-center gap-1.5 px-3 py-1',
+              'rounded-full text-xs font-semibold',
+              'bg-white/15 text-white/95',
+              'border border-white/20'
+            )}
+            style={{ backdropFilter: 'blur(8px)' }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 2L2 7l10 5 10-5-10-5z" />
+              <path d="M2 17l10 5 10-5" />
+              <path d="M2 12l10 5 10-5" />
+            </svg>
+            {badgeOpenSource}
+          </span>
+          <span
+            className={cn(
+              'inline-flex items-center gap-1.5 px-3 py-1',
+              'rounded-full text-xs font-semibold',
+              'bg-white/15 text-white/95',
+              'border border-white/20'
+            )}
+            style={{ backdropFilter: 'blur(8px)' }}
+          >
+            <div
+              className="w-3 h-3 rounded-sm shrink-0"
+              style={{
+                background: 'linear-gradient(135deg, #CC785C, #D4A574)',
+              }}
+              aria-hidden="true"
+            />
+            {badgeBuiltWith}
+          </span>
+        </motion.div>
+
         <motion.h1
           id="hero-heading"
           initial={noMotion ? undefined : { opacity: 0, y: 20 }}
@@ -89,21 +154,78 @@ export function LandingHero({ locale, title, subtitle, cta }: LandingHeroProps) 
         <motion.p
           initial={noMotion ? undefined : { opacity: 0, y: 16 }}
           animate={noMotion ? undefined : { opacity: 1, y: 0 }}
+          transition={noMotion ? undefined : { delay: 0.25, duration: 0.5 }}
+          className="mt-3 text-base sm:text-lg max-w-xl mx-auto font-medium"
+          style={{ color: 'rgba(255, 255, 255, 0.8)' }}
+        >
+          {fullName}
+        </motion.p>
+
+        <motion.p
+          initial={noMotion ? undefined : { opacity: 0, y: 16 }}
+          animate={noMotion ? undefined : { opacity: 1, y: 0 }}
           transition={noMotion ? undefined : { delay: 0.3, duration: 0.5 }}
-          className="mt-6 text-lg sm:text-xl max-w-xl mx-auto"
+          className="mt-4 text-lg sm:text-xl max-w-xl mx-auto"
           style={{ color: 'rgba(255, 255, 255, 0.95)' }}
         >
           {subtitle}
         </motion.p>
 
+        {/* Persona preview toggle */}
+        <motion.div
+          initial={noMotion ? undefined : { opacity: 0, y: 12 }}
+          animate={noMotion ? undefined : { opacity: 1, y: 0 }}
+          transition={noMotion ? undefined : { delay: 0.38, duration: 0.5 }}
+          className="mt-6"
+        >
+          <div
+            role="radiogroup"
+            aria-label="Preview accessibility personas"
+            className="inline-flex flex-wrap items-center justify-center gap-2"
+          >
+            {PERSONA_PREVIEWS.map((persona) => (
+              <button
+                key={persona.id}
+                type="button"
+                role="radio"
+                aria-checked={activePersona === persona.id}
+                aria-label={`Switch to ${persona.label} theme`}
+                onClick={() => handlePersonaSwitch(persona.id)}
+                className={cn(
+                  'inline-flex items-center gap-1.5 px-3 py-1.5',
+                  'rounded-full text-xs font-medium',
+                  'transition-all duration-200',
+                  'focus-visible:ring-2 focus-visible:ring-white/70',
+                  activePersona === persona.id
+                    ? 'bg-white/25 text-white shadow-lg scale-105'
+                    : 'bg-white/10 text-white/80 hover:bg-white/18 hover:text-white'
+                )}
+                style={{
+                  backdropFilter: 'blur(8px)',
+                  border: activePersona === persona.id
+                    ? '1px solid rgba(255,255,255,0.4)'
+                    : '1px solid rgba(255,255,255,0.15)',
+                }}
+              >
+                <span
+                  className="w-2 h-2 rounded-full shrink-0"
+                  style={{ backgroundColor: persona.color }}
+                  aria-hidden="true"
+                />
+                {persona.label}
+              </button>
+            ))}
+          </div>
+        </motion.div>
+
         <motion.div
           initial={noMotion ? undefined : { opacity: 0, y: 16 }}
           animate={noMotion ? undefined : { opacity: 1, y: 0 }}
           transition={noMotion ? undefined : { delay: 0.45, duration: 0.5 }}
-          className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
+          className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4"
         >
-          <Link
-            href={`/${locale}/dashboard`}
+          <a
+            href="#demo-login-heading"
             className={cn(
               'inline-flex items-center gap-2 px-8 py-4',
               'rounded-2xl btn-shimmer btn-press border-beam',
@@ -118,7 +240,7 @@ export function LandingHero({ locale, title, subtitle, cta }: LandingHeroProps) 
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M5 10h10M12 5l5 5-5 5" />
             </svg>
-          </Link>
+          </a>
         </motion.div>
       </div>
 

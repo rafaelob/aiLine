@@ -22,6 +22,34 @@ import {
 } from './dashboard-icons'
 import { PlanHistoryCard, type TraceRecord } from './plan-history-card'
 
+/** Showcase plans displayed when the dashboard has no real data. */
+const SHOWCASE_PLANS = [
+  {
+    title: 'Calculus for Visual Learners',
+    icon: '\u{1F4D0}',
+    color: 'var(--color-primary)',
+    badges: ['Low Vision', 'Visual Schedule', 'Large Print'],
+    score: 94,
+    model: 'Claude Opus 4.6',
+  },
+  {
+    title: 'Brazilian History for ADHD',
+    icon: '\u{1F3AF}',
+    color: 'var(--color-warning)',
+    badges: ['ADHD', 'Focus Mode', 'Chunked Content'],
+    score: 91,
+    model: 'GPT-5.2',
+  },
+  {
+    title: 'Science for Hearing Impaired',
+    icon: '\u{1F91F}',
+    color: 'var(--color-secondary)',
+    badges: ['Sign Language', 'Captions', 'Visual Cues'],
+    score: 96,
+    model: 'Gemini 3 Pro',
+  },
+] as const
+
 /**
  * Dashboard content with mesh gradient hero, glass stat cards with rotating
  * gradient borders, spotlight quick-action cards, and premium empty state.
@@ -312,48 +340,63 @@ export function DashboardContent() {
             ))}
           </div>
         ) : (
-          /* Empty state with premium SVG illustration */
-          <div
-            className={cn(
-              'flex flex-col items-center justify-center py-12 gap-4',
-              'rounded-xl glass',
-              'border border-dashed border-[var(--color-border)]'
-            )}
-          >
-            <svg width="160" height="120" viewBox="0 0 160 120" fill="none" className="animate-float-slow" aria-hidden="true">
-              {/* Document */}
-              <rect x="50" y="15" width="60" height="80" rx="8" fill="var(--color-bg)" stroke="var(--color-primary)" strokeWidth="1.5" />
-              <line x1="65" y1="35" x2="95" y2="35" stroke="var(--color-muted)" strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
-              <line x1="65" y1="48" x2="95" y2="48" stroke="var(--color-muted)" strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
-              <line x1="65" y1="61" x2="85" y2="61" stroke="var(--color-muted)" strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
-              {/* Orbiting dots */}
-              <g className="empty-state-orbit" style={{ transformOrigin: '80px 55px' }}>
-                <circle cx="80" cy="5" r="4" fill="var(--color-primary)" opacity="0.6" />
-              </g>
-              <g className="empty-state-orbit" style={{ transformOrigin: '80px 55px', animationDuration: '8s', animationDirection: 'reverse' }}>
-                <circle cx="80" cy="105" r="3" fill="var(--color-secondary)" opacity="0.5" />
-              </g>
-              {/* Sparkles */}
-              <path d="M130 25L132 29L136 31L132 33L130 37L128 33L124 31L128 29Z" fill="var(--color-primary)" className="empty-state-pulse-scale" opacity="0.6" />
-              <path d="M25 75L26 77L28 78L26 79L25 81L24 79L22 78L24 77Z" fill="var(--color-secondary)" className="empty-state-pulse-scale" style={{ animationDelay: '1s' }} opacity="0.5" />
-            </svg>
-            <p className="mt-4 text-sm font-medium text-[var(--color-text)]">{t('no_plans')}</p>
-            <p className="mt-1 text-xs text-[var(--color-muted)]">{t('empty_hint')}</p>
-            <a
-              href={`${localePrefix}/plans`}
-              className={cn(
-                'inline-flex items-center gap-2 px-6 py-3',
-                'rounded-xl btn-shimmer btn-press',
-                'text-sm font-semibold',
-                'text-[var(--color-on-primary)]',
-                'shadow-[var(--shadow-md)]',
-                'hover:shadow-[var(--shadow-lg)] hover:scale-[1.02]',
-                'transition-all duration-300'
-              )}
-              style={{ background: 'var(--gradient-hero)' }}
-            >
-              {t('empty_cta')}
-            </a>
+          /* Showcase cards when no real plans exist */
+          <div className="relative">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 opacity-60">
+              {SHOWCASE_PLANS.map((plan) => (
+                <div
+                  key={plan.title}
+                  className="rounded-2xl glass p-5 flex flex-col gap-3"
+                  aria-hidden="true"
+                >
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm shrink-0"
+                      style={{ background: plan.color }}
+                    >
+                      {plan.icon}
+                    </div>
+                    <span className="text-sm font-semibold text-[var(--color-text)] truncate">
+                      {plan.title}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {plan.badges.map((badge) => (
+                      <span
+                        key={badge}
+                        className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[var(--color-surface-elevated)] text-[var(--color-muted)] border border-[var(--color-border)]"
+                      >
+                        {badge}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2 mt-auto">
+                    <span className="text-xs text-[var(--color-success)] font-medium">Score: {plan.score}</span>
+                    <span className="text-xs text-[var(--color-muted)]">{plan.model}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {/* Overlay CTA */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-[var(--color-bg)]/60 rounded-2xl backdrop-blur-[2px]">
+              <p className="text-sm font-semibold text-[var(--color-text)]">{t('no_plans')}</p>
+              <p className="mt-1 text-xs text-[var(--color-muted)]">{t('empty_hint')}</p>
+              <a
+                href={`${localePrefix}/plans`}
+                className={cn(
+                  'mt-4 inline-flex items-center gap-2 px-6 py-3',
+                  'rounded-xl btn-shimmer btn-press',
+                  'text-sm font-semibold',
+                  'text-[var(--color-on-primary)]',
+                  'shadow-[var(--shadow-md)]',
+                  'hover:shadow-[var(--shadow-lg)] hover:scale-[1.02]',
+                  'transition-all duration-300'
+                )}
+                style={{ background: 'var(--gradient-hero)' }}
+              >
+                {t('empty_cta')}
+              </a>
+            </div>
           </div>
         )}
       </motion.section>

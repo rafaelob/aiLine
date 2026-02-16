@@ -52,7 +52,6 @@ class PlanStreamIn(BaseModel):
 
     run_id: str = Field(..., description="Client-generated run ID for observability.")
     user_prompt: str = Field(..., min_length=1, description="Teacher's natural-language request.")
-    teacher_id: str | None = Field(None, description="Optional: teacher ID (needed for RAG).")
     subject: str | None = Field(None, description="Optional: subject (RAG filter).")
     class_accessibility_profile: dict[str, Any] | None = Field(None, description="Accessibility profile for the class.")
     learner_profiles: list[dict[str, Any]] | None = Field(
@@ -156,17 +155,25 @@ async def _run_pipeline(
         complete_event = emitter.run_complete(final_payload)
         await queue.put({"data": complete_event.to_sse_data()})
 
-        # Auto-create pending review for new plans (HITL gate)
-        review_store = get_review_store()
-        review_store.create_review(body.run_id, teacher_id)
+        # Post-completion side-effects: wrapped separately so a failure
+        # here does NOT trigger the outer except (which would emit a
+        # second terminal event — the "double-finalize" bug).
+        try:
+            review_store = get_review_store()
+            review_store.create_review(body.run_id, teacher_id)
 
-        # Finalize trace (including scorecard for later retrieval)
-        await trace_store.update_run(
-            body.run_id,
-            status="completed",
-            final_score=final_payload.get("score"),
-            scorecard=scorecard,
-        )
+            await trace_store.update_run(
+                body.run_id,
+                status="completed",
+                final_score=final_payload.get("score"),
+                scorecard=scorecard,
+            )
+        except Exception as side_exc:
+            logger.warning(
+                "post_completion_side_effect_failed",
+                run_id=body.run_id,
+                error=str(side_exc),
+            )
 
     except Exception as exc:
         logger.error("pipeline_failed", run_id=body.run_id, error=str(exc), tb=traceback.format_exc())
@@ -199,15 +206,8 @@ async def plans_generate_stream(body: PlanStreamIn, request: Request) -> EventSo
     if not body.user_prompt:
         raise HTTPException(status_code=422, detail="user_prompt must not be empty after sanitization")
 
-    # Resolve teacher_id: mandatory JWT auth
+    # Resolve teacher_id: mandatory JWT auth (never from request body)
     teacher_id = _resolve_teacher_id()
-
-    # Validate body.teacher_id matches authenticated teacher if provided
-    if body.teacher_id and body.teacher_id != teacher_id:
-        raise HTTPException(
-            status_code=403,
-            detail="teacher_id in request body does not match authenticated teacher",
-        )
 
     emitter = SSEEventEmitter(body.run_id)
     queue: asyncio.Queue[dict[str, str] | None] = asyncio.Queue()

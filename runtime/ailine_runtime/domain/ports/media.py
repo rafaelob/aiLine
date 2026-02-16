@@ -34,6 +34,20 @@ class ImageDescriber(Protocol):
 
 
 @runtime_checkable
+class ImageGenerator(Protocol):
+    """AI image generation for educational illustrations."""
+
+    async def generate(
+        self,
+        prompt: str,
+        *,
+        aspect_ratio: str = "16:9",
+        style: str = "educational_illustration",
+        size: str = "1K",
+    ) -> bytes: ...
+
+
+@runtime_checkable
 class OCRProcessor(Protocol):
     """OCR text extraction from PDF and image files.
 

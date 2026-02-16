@@ -1123,11 +1123,21 @@ html[data-vt-type="theme"]::view-transition-new(main-content) {
   50% { transform: scale(1.2); opacity: 1; }
 }
 
+/* ===== PERSONA BREATHING ANIMATION (TEA loading state) ===== */
+@keyframes persona-breathe {
+  0%, 100% { opacity: 0.4; transform: scale(0.9); }
+  50% { opacity: 0.9; transform: scale(1.1); }
+}
+.animate-persona-breathe {
+  animation: persona-breathe 3s ease-in-out infinite;
+}
+
 /* ===== REDUCED MOTION: All Custom Animations ===== */
 @media (prefers-reduced-motion: reduce) {
   .animate-float-slow,
   .animate-float-medium,
   .animate-ring-pulse,
+  .animate-persona-breathe,
   .btn-shimmer::after {
     animation: none !important;
     transition: none !important;
@@ -1158,6 +1168,11 @@ html[data-vt-type="theme"]::view-transition-new(main-content) {
 /* ===== PERSONA DEGRADATION: Disable Decorative Motion ===== */
 /* TEA (autism), MOTOR, LOW VISION: no decorative animation */
 :is([data-theme="tea"], [data-theme="motor"], [data-theme="low-vision"]) :is(.animate-float-slow, .animate-float-medium, .animate-ring-pulse) {
+  animation: none !important;
+  transform: none !important;
+}
+/* Persona-breathe is intentionally allowed for TEA (calm UX), but disabled for motor/low-vision */
+:is([data-theme="motor"], [data-theme="low-vision"]) .animate-persona-breathe {
   animation: none !important;
   transform: none !important;
 }

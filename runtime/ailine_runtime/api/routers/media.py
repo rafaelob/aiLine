@@ -45,6 +45,18 @@ class DescriptionResponse(BaseModel):
     description: str
 
 
+class ImageGenRequest(BaseModel):
+    prompt: str = Field(
+        ..., min_length=3, max_length=2000, description="Description of the image to generate."
+    )
+    aspect_ratio: str = Field("16:9", description="Aspect ratio: 1:1, 3:4, 4:3, 9:16, 16:9.")
+    style: str = Field(
+        "educational_illustration",
+        description="Style template: educational_illustration, infographic, diagram, cartoon, photo_realistic.",
+    )
+    size: str = Field("1K", description='Output resolution: "1K" or "2K".')
+
+
 class ExtractedTextResponse(BaseModel):
     text: str
     file_type: str
@@ -162,3 +174,34 @@ async def extract_text(
     )
     text = await ocr.extract_text(file_bytes, file_type=file_type)
     return ExtractedTextResponse(text=text, file_type=file_type)
+
+
+@router.post("/generate-image")
+async def generate_image(
+    request: Request,
+    body: ImageGenRequest,
+) -> Response:
+    """Generate an educational image from a text prompt (Imagen 4).
+
+    Returns raw PNG bytes. Requires image_generator adapter to be configured.
+    """
+    require_authenticated()
+    generator = _get_adapter(request, "image_generator")
+    logger.info(
+        "media.generate_image",
+        style=body.style,
+        aspect_ratio=body.aspect_ratio,
+        size=body.size,
+        prompt_length=len(body.prompt),
+    )
+    image_bytes = await generator.generate(
+        body.prompt,
+        aspect_ratio=body.aspect_ratio,
+        style=body.style,
+        size=body.size,
+    )
+    return Response(
+        content=image_bytes,
+        media_type="image/png",
+        headers={"Content-Disposition": "inline; filename=generated.png"},
+    )

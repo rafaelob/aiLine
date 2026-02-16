@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/cn'
+import { useAccessibilityStore } from '@/stores/accessibility-store'
 import type { StageInfo } from '@/types/pipeline'
 
 interface StreamingThoughtProps {
@@ -14,6 +15,7 @@ interface StreamingThoughtProps {
 /**
  * Collapsible AI "thinking" panel that shows processing steps during plan generation.
  * Each stage appears with a staggered animation and a pulsing dot indicator.
+ * The loading indicator adapts to the active accessibility persona.
  * Respects reduced-motion preferences.
  */
 export function StreamingThought({ stages, isRunning }: StreamingThoughtProps) {
@@ -22,8 +24,13 @@ export function StreamingThought({ stages, isRunning }: StreamingThoughtProps) {
   const [expanded, setExpanded] = useState(true)
   const prefersReducedMotion = useReducedMotion()
   const noMotion = prefersReducedMotion ?? false
+  const theme = useAccessibilityStore((s) => s.theme)
 
   if (stages.length === 0 && !isRunning) return null
+
+  const completedCount = stages.filter((s) => s.status === 'completed').length
+  const totalCount = stages.length
+  const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
 
   return (
     <div
@@ -47,12 +54,14 @@ export function StreamingThought({ stages, isRunning }: StreamingThoughtProps) {
       >
         <span className="flex items-center gap-2">
           {isRunning && (
-            <span className="relative flex h-2.5 w-2.5" aria-hidden="true">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--color-primary)] opacity-75 animate-ping motion-reduce:hidden" />
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[var(--color-primary)]" />
-            </span>
+            <PersonaIndicator theme={theme} noMotion={noMotion} />
           )}
           {isRunning ? tThought('thinking') : tThought('complete')}
+          {isRunning && theme === 'tdah' && totalCount > 0 && (
+            <span className="ml-1 text-xs text-[var(--color-muted)]">
+              {completedCount}/{totalCount} ({progressPct}%)
+            </span>
+          )}
         </span>
         <svg
           width="16"
@@ -68,6 +77,18 @@ export function StreamingThought({ stages, isRunning }: StreamingThoughtProps) {
           <path d="M4 6l4 4 4-4" />
         </svg>
       </button>
+
+      {/* ADHD progress bar */}
+      {isRunning && theme === 'tdah' && totalCount > 0 && (
+        <div className="px-4 pb-1" aria-hidden="true">
+          <div className="h-1.5 rounded-full bg-[var(--color-surface-elevated)] overflow-hidden">
+            <div
+              className="h-full rounded-full bg-[var(--color-primary)] transition-all duration-500"
+              style={{ width: `${progressPct}%` }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Collapsible content */}
       <AnimatePresence initial={false}>
@@ -102,7 +123,7 @@ export function StreamingThought({ stages, isRunning }: StreamingThoughtProps) {
                   animate={{ opacity: 1, x: 0 }}
                   className="flex items-center gap-2 py-1.5 pl-6"
                 >
-                  <ThinkingDots />
+                  <PersonaThinkingDots theme={theme} />
                 </motion.div>
               )}
             </div>
@@ -182,7 +203,129 @@ function ThoughtStep({
   )
 }
 
-function ThinkingDots() {
+/**
+ * Persona-adaptive loading indicator shown in the header.
+ * - TEA: calm slow-pulsing dot (no distracting ping)
+ * - ADHD: not shown (progress bar in header instead)
+ * - Dyslexia: simple static dot (no spinning)
+ * - High Contrast: neon glow dot
+ * - Default: standard pulsing dot with ping
+ */
+function PersonaIndicator({ theme, noMotion }: { theme: string; noMotion: boolean }) {
+  if (theme === 'tea') {
+    return (
+      <span className="relative flex h-2.5 w-2.5" aria-hidden="true">
+        <span
+          className={cn(
+            'relative inline-flex h-2.5 w-2.5 rounded-full bg-[var(--color-primary)]',
+            !noMotion && 'animate-persona-breathe'
+          )}
+        />
+      </span>
+    )
+  }
+
+  if (theme === 'dyslexia') {
+    return (
+      <span className="relative flex h-3 w-3" aria-hidden="true">
+        <span className="inline-flex h-3 w-3 rounded-sm bg-[var(--color-primary)]" />
+      </span>
+    )
+  }
+
+  if (theme === 'high-contrast') {
+    return (
+      <span className="relative flex h-2.5 w-2.5" aria-hidden="true">
+        <span
+          className="inline-flex h-2.5 w-2.5 rounded-full bg-[var(--color-primary)]"
+          style={{ boxShadow: '0 0 8px 2px var(--color-primary)' }}
+        />
+      </span>
+    )
+  }
+
+  // Default / ADHD / other
+  return (
+    <span className="relative flex h-2.5 w-2.5" aria-hidden="true">
+      <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--color-primary)] opacity-75 animate-ping motion-reduce:hidden" />
+      <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[var(--color-primary)]" />
+    </span>
+  )
+}
+
+/**
+ * Persona-adaptive thinking dots shown in the log area.
+ * - TEA: single slow-breathing circle
+ * - ADHD: fast bouncing dots with different colors
+ * - Dyslexia: simple block placeholders (no spinning)
+ * - High Contrast: neon glowing dots
+ * - Default: standard bouncing dots
+ */
+function PersonaThinkingDots({ theme }: { theme: string }) {
+  if (theme === 'tea') {
+    return (
+      <span className="flex gap-2" aria-hidden="true">
+        <span className="h-2 w-2 rounded-full bg-[var(--color-primary)] opacity-60 animate-persona-breathe" />
+      </span>
+    )
+  }
+
+  if (theme === 'tdah') {
+    return (
+      <span className="flex gap-1" aria-hidden="true">
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            className="h-1.5 w-1.5 rounded-full animate-bounce"
+            style={{
+              animationDelay: `${i * 100}ms`,
+              animationDuration: '0.6s',
+              backgroundColor: i === 0
+                ? 'var(--color-primary)'
+                : i === 1
+                  ? 'var(--color-secondary)'
+                  : 'var(--color-success)',
+            }}
+          />
+        ))}
+      </span>
+    )
+  }
+
+  if (theme === 'dyslexia') {
+    return (
+      <span className="flex gap-1.5" aria-hidden="true">
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            className="h-2 w-2 rounded-sm bg-[var(--color-muted)] animate-pulse"
+            style={{ animationDelay: `${i * 300}ms` }}
+          />
+        ))}
+      </span>
+    )
+  }
+
+  if (theme === 'high-contrast') {
+    return (
+      <span className="flex gap-1" aria-hidden="true">
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            className="h-1.5 w-1.5 rounded-full animate-bounce"
+            style={{
+              animationDelay: `${i * 150}ms`,
+              animationDuration: '1s',
+              backgroundColor: 'var(--color-primary)',
+              boxShadow: '0 0 6px 1px var(--color-primary)',
+            }}
+          />
+        ))}
+      </span>
+    )
+  }
+
+  // Default
   return (
     <span className="flex gap-1" aria-hidden="true">
       {[0, 1, 2].map((i) => (

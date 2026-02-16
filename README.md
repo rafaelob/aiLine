@@ -28,7 +28,7 @@
 
 **AiLine** is a WCAG AAA educational platform that transforms classroom materials into adaptive, accessible lesson plans in real time. Teachers upload content, select student accessibility needs, and a multi-agent AI pipeline — powered by Claude Opus 4.6 — generates personalized study plans with 10 export variants. Every AI decision is visible, scored, and auditable through a Glass Box pipeline viewer.
 
-Built in one week. 145 features. 3,087 tests. Zero shortcuts.
+Built in one week. 190+ features. 3,300+ tests. Zero shortcuts.
 
 ---
 
@@ -36,17 +36,18 @@ Built in one week. 145 features. 3,087 tests. Zero shortcuts.
 
 | Metric | Value |
 |--------|-------|
-| **Features shipped** | 145 (across 20 sprints) |
-| **Total tests** | 3,087 (1,875 runtime + 250 agents + 962 frontend) |
+| **Features shipped** | 190 (across 23 sprints) |
+| **Total tests** | 3,300+ (1,940 runtime + 277 agents + 1,096 frontend) |
 | **E2E tests** | 35+ Playwright (golden paths + visual regression + a11y) |
 | **Live API tests** | 65 (real Anthropic / OpenAI / Gemini calls) |
 | **ADRs** | 60 architecture decision records |
-| **AI agents** | 4 typed (Pydantic AI 1.58) |
-| **LLM providers** | 3 (Anthropic, OpenAI, Google Gemini) |
+| **AI agents** | 5 typed (Pydantic AI 1.58) + 17 agent skills |
+| **LLM providers** | 4 (Anthropic, OpenAI, Google Gemini, OpenRouter) |
 | **Accessibility themes** | 9 (WCAG AAA) |
 | **Curriculum standards** | 4 (BNCC, CCSS Math, CCSS ELA, NGSS) |
 | **Languages** | 3 (English, Portuguese, Spanish) |
 | **Docker services** | 4 (API + Frontend + PostgreSQL 16 + Redis) |
+| **Image generation** | Gemini Imagen 4 for educational illustrations |
 
 ---
 
@@ -170,7 +171,7 @@ graph LR
 ### Project Structure
 
 ```
-agents/              # ailine_agents package — 4 Pydantic AI agents + LangGraph workflows
+agents/              # ailine_agents package — 5 Pydantic AI agents + LangGraph workflows
 runtime/
   ailine_runtime/
     domain/          # Pure entities + port protocols (zero imports)
@@ -179,7 +180,7 @@ runtime/
     api/             # FastAPI routers + middleware + SSE streaming
     accessibility/   # Quality gate + 10 export variants
 frontend/            # Next.js 16, React 19, Tailwind 4, 9 WCAG AAA themes
-skills/              # 11 SKILL.md files (lesson-planner, socratic-tutor, etc.)
+skills/              # 17 SKILL.md files (agentskills.io spec-compliant)
 control_docs/        # 7 canonical engineering docs (498 lines total)
 docs/                # Judge packet, demo script, feature map, architecture diagrams
 ```
@@ -201,7 +202,7 @@ See [Architecture Diagrams](docs/architecture-diagram.md) (8 Mermaid diagrams) a
 | **Accessibility** | 9 CSS themes, VLibras, MediaPipe, ElevenLabs TTS | WCAG AAA universal design |
 | **i18n** | next-intl 4.8.2 | 3 locales (EN, PT-BR, ES) |
 | **Infrastructure** | Docker Compose, Redis 7.x, GitHub Actions CI | One-command deployment, 9-job CI |
-| **Testing** | pytest, Vitest, Playwright, axe-core | 3,087 tests across 4 layers |
+| **Testing** | pytest, Vitest, Playwright, axe-core | 3,300+ tests across 4 layers |
 
 ---
 
@@ -238,13 +239,13 @@ docker compose exec api bash -c "cd /app && uv run pytest -v --cov"
 
 # Or run locally:
 
-# Backend — 1,875 tests
+# Backend — 1,940+ tests
 cd runtime && uv run pytest -v --cov
 
-# Agents — 250 tests
+# Agents — 277 tests
 cd agents && uv run pytest -v
 
-# Frontend — 962 tests
+# Frontend — 1,096+ tests
 cd frontend && pnpm test
 
 # E2E — 35+ Playwright specs
@@ -293,5 +294,5 @@ This project is licensed under the **MIT License** — see [LICENSE](LICENSE) fo
 
 <p align="center">
   <strong>AiLine: Every student deserves a lesson designed for them.</strong><br/>
-  <em>145 features. 3,087 tests. 60 ADRs. 4 AI agents. 3 LLM providers. 9 accessibility themes. Built in one week.</em>
+  <em>190 features. 3,300+ tests. 60 ADRs. 5 AI agents. 17 skills. 4 LLM providers. 9 accessibility themes. Built in one week.</em>
 </p>

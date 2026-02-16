@@ -276,32 +276,14 @@ class TestPlansStreamEndpoint:
 # ---------------------------------------------------------------------------
 
 
-class TestPlansStreamTenantMismatch:
-    """Verify that body.teacher_id != JWT teacher_id returns 403."""
+class TestPlansStreamTenantAuth:
+    """Verify teacher_id resolved from JWT only (no body field)."""
 
     def _make_app(self) -> Any:
         return create_app(_test_settings())
 
-    def test_stream_tenant_mismatch_returns_403(self) -> None:
-        """POST /plans/generate/stream with body.teacher_id != JWT teacher returns 403."""
-        app = self._make_app()
-
-        with TestClient(app) as client:
-            response = client.post(
-                "/plans/generate/stream",
-                headers={"X-Teacher-ID": "teacher-jwt-001"},
-                json={
-                    "run_id": "mismatch-run",
-                    "user_prompt": "Plano de teste",
-                    "teacher_id": "teacher-impersonator-999",
-                },
-            )
-            assert response.status_code == 403
-            body = response.json()
-            assert "does not match" in body.get("detail", "")
-
-    def test_stream_teacher_id_none_does_not_403(self) -> None:
-        """When body.teacher_id is null/absent, no 403 is raised."""
+    def test_stream_no_body_teacher_id_succeeds(self) -> None:
+        """POST /plans/generate/stream without teacher_id in body succeeds."""
         app = self._make_app()
         mock_wf = _make_mock_workflow()
 
@@ -314,25 +296,21 @@ class TestPlansStreamTenantMismatch:
                     "user_prompt": "Plano sem teacher_id no body",
                 },
             )
-            # Should proceed normally (200 SSE stream), not 403
             assert response.status_code == 200
 
-    def test_stream_teacher_id_matches_jwt_succeeds(self) -> None:
-        """When body.teacher_id == JWT teacher_id, the request succeeds."""
+    def test_stream_rejects_unauthenticated(self) -> None:
+        """POST /plans/generate/stream without auth header returns 401/403."""
         app = self._make_app()
-        mock_wf = _make_mock_workflow()
 
-        with _patch_build_workflow(mock_wf), _patch_agent_deps_factory(), TestClient(app) as client:
+        with TestClient(app) as client:
             response = client.post(
                 "/plans/generate/stream",
-                headers=_AUTH,
                 json={
-                    "run_id": "match-run",
-                    "user_prompt": "Plano com teacher_id correto",
-                    "teacher_id": "teacher-test",
+                    "run_id": "no-auth-run",
+                    "user_prompt": "Plano sem auth",
                 },
             )
-            assert response.status_code == 200
+            assert response.status_code in (401, 403)
 
 
 # ---------------------------------------------------------------------------

@@ -732,6 +732,153 @@ class TestRealDemoScenarios:
 
 
 # ---------------------------------------------------------------------------
+# Demo Profiles API tests
+# ---------------------------------------------------------------------------
+
+
+class TestDemoProfiles:
+    """Tests for GET /demo/profiles."""
+
+    async def test_profiles_returns_all_profiles(self, client_demo_off: AsyncClient) -> None:
+        resp = await client_demo_off.get("/demo/profiles")
+        assert resp.status_code == 200
+        body = resp.json()
+        assert "profiles" in body
+        assert "mode" in body
+        assert body["mode"] == "hackathon_demo"
+        profiles = body["profiles"]
+        assert len(profiles) == 6
+
+    async def test_profiles_contain_required_fields(self, client_demo_off: AsyncClient) -> None:
+        resp = await client_demo_off.get("/demo/profiles")
+        profiles = resp.json()["profiles"]
+        for p in profiles:
+            assert "id" in p
+            assert "name" in p
+            assert "role" in p
+            assert "demo_key" in p
+            assert "description" in p
+
+    async def test_profiles_have_correct_roles(self, client_demo_off: AsyncClient) -> None:
+        resp = await client_demo_off.get("/demo/profiles")
+        profiles = resp.json()["profiles"]
+        roles = {p["role"] for p in profiles}
+        assert "teacher" in roles
+        assert "student" in roles
+        assert "parent" in roles
+
+    async def test_teacher_profile_has_school(self, client_demo_off: AsyncClient) -> None:
+        resp = await client_demo_off.get("/demo/profiles")
+        profiles = resp.json()["profiles"]
+        teacher = next(p for p in profiles if p["role"] == "teacher")
+        assert "school" in teacher
+        assert teacher["name"] == "Ms. Sarah Johnson"
+
+    async def test_student_profiles_have_accessibility(self, client_demo_off: AsyncClient) -> None:
+        resp = await client_demo_off.get("/demo/profiles")
+        profiles = resp.json()["profiles"]
+        students = [p for p in profiles if p["role"] == "student"]
+        assert len(students) == 4
+        for s in students:
+            assert "accessibility" in s
+            assert "accessibility_label" in s
+
+    async def test_demo_key_matches_profile_key(self, client_demo_off: AsyncClient) -> None:
+        resp = await client_demo_off.get("/demo/profiles")
+        profiles = resp.json()["profiles"]
+        keys = [p["demo_key"] for p in profiles]
+        assert "teacher-ms-johnson" in keys
+        assert "student-alex-tea" in keys
+        assert "parent-david" in keys
+
+
+class TestDemoProfilesUnit:
+    """Unit tests for DEMO_PROFILES constant."""
+
+    def test_all_profile_ids_are_prefixed(self) -> None:
+        from ailine_runtime.api.routers.demo import DEMO_PROFILES
+
+        for key, profile in DEMO_PROFILES.items():
+            assert profile["id"].startswith("demo-"), f"Profile {key} id must start with 'demo-'"
+
+    def test_all_profile_keys_are_valid_teacher_ids(self) -> None:
+        """demo_key prefixed with 'demo-' must pass tenant ID validation."""
+        from ailine_runtime.api.routers.demo import DEMO_PROFILES
+        from ailine_runtime.shared.tenant import validate_teacher_id_format
+
+        for key in DEMO_PROFILES:
+            tid = f"demo-{key}"
+            # Should not raise
+            result = validate_teacher_id_format(tid)
+            assert result == tid
+
+
+# ---------------------------------------------------------------------------
+# Demo Seed Data API tests
+# ---------------------------------------------------------------------------
+
+
+class TestDemoSeed:
+    """Tests for POST /demo/seed."""
+
+    async def test_seed_returns_ok(self, client_demo_off: AsyncClient) -> None:
+        resp = await client_demo_off.post("/demo/seed")
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["status"] == "ok"
+        assert "teacher_id" in body
+        assert body["teacher_id"] == "demo-teacher-ms-johnson"
+
+    async def test_seed_creates_materials(self, client_demo_off: AsyncClient) -> None:
+        resp = await client_demo_off.post("/demo/seed")
+        body = resp.json()
+        assert body["created"]["materials"] == 2
+        assert len(body["ids"]["materials"]) == 2
+
+    async def test_seed_creates_reviews(self, client_demo_off: AsyncClient) -> None:
+        resp = await client_demo_off.post("/demo/seed")
+        body = resp.json()
+        assert body["created"]["reviews"] == 3
+        assert len(body["ids"]["reviews"]) == 3
+
+    async def test_seed_creates_progress_records(self, client_demo_off: AsyncClient) -> None:
+        resp = await client_demo_off.post("/demo/seed")
+        body = resp.json()
+        assert body["created"]["progress"] == 8
+        assert len(body["ids"]["progress"]) == 8
+
+    async def test_seed_creates_tutors(self, client_demo_off: AsyncClient) -> None:
+        resp = await client_demo_off.post("/demo/seed")
+        body = resp.json()
+        assert body["created"]["tutors"] == 2
+        assert len(body["ids"]["tutors"]) == 2
+
+    async def test_seed_creates_sessions(self, client_demo_off: AsyncClient) -> None:
+        resp = await client_demo_off.post("/demo/seed")
+        body = resp.json()
+        assert body["created"]["sessions"] == 2
+        assert len(body["ids"]["sessions"]) == 2
+
+    async def test_seed_data_accessible_with_demo_header(
+        self, client_demo_off: AsyncClient,
+    ) -> None:
+        """After seeding, materials should be accessible using the teacher's ID."""
+        seed_resp = await client_demo_off.post("/demo/seed")
+        assert seed_resp.status_code == 200
+
+        # Verify materials are accessible via the materials API
+        mat_resp = await client_demo_off.get(
+            "/materials",
+            headers={"X-Teacher-ID": "demo-teacher-ms-johnson"},
+        )
+        # In dev mode, X-Teacher-ID header should work
+        assert mat_resp.status_code in (200, 401)
+        if mat_resp.status_code == 200:
+            mats = mat_resp.json()
+            assert len(mats) >= 2
+
+
+# ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 

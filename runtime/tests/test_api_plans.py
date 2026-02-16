@@ -72,7 +72,6 @@ async def test_plans_generate_accepts_valid_payload(client: AsyncClient) -> None
         json={
             "run_id": "test-run-001",
             "user_prompt": "Crie um plano sobre fracoes para 5o ano",
-            "teacher_id": "teacher-001",
             "subject": "Matematica",
         },
     )
@@ -126,7 +125,6 @@ async def test_plans_generate_with_accessibility_profile(client: AsyncClient) ->
         json={
             "run_id": "test-run-002",
             "user_prompt": "Plano inclusivo sobre ecossistemas",
-            "teacher_id": "teacher-001",
             "class_accessibility_profile": {
                 "needs": {"autism": True, "adhd": True},
                 "ui_prefs": {"low_distraction": True},

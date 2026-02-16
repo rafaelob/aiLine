@@ -36,7 +36,6 @@ _SAFE_RESPONSE_FIELDS = frozenset(
 class PlanGenerateIn(BaseModel):
     run_id: str = Field(..., description="Run ID for observability.")
     user_prompt: str
-    teacher_id: str | None = Field(None, description="Optional: teacher ID (needed for RAG).")
     subject: str | None = Field(None, description="Optional: subject (RAG filter).")
     class_accessibility_profile: dict[str, Any] | None = None
     learner_profiles: list[dict[str, Any]] | None = None

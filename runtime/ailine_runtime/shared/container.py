@@ -17,6 +17,7 @@ from ..domain.ports.media import (
     STT,
     TTS,
     ImageDescriber,
+    ImageGenerator,
     OCRProcessor,
     SignRecognition,
 )
@@ -56,11 +57,12 @@ class Container:
     Graceful degradation:
         Required ports (``llm``, ``event_bus``) must be present in production
         (validated at startup). Optional ports (``vectorstore``, ``embeddings``,
-        ``stt``, ``tts``, ``image_describer``, ``ocr``, ``sign_recognition``)
-        default to None or fake adapters (ADR-051). Callers must check for
-        None before using optional adapters. The ``close()`` method is
-        idempotent and safe to call multiple times; it logs but does not
-        raise on cleanup errors, ensuring all resources are attempted.
+        ``stt``, ``tts``, ``image_describer``, ``image_generator``, ``ocr``,
+        ``sign_recognition``) default to None or fake adapters (ADR-051).
+        Callers must check for None before using optional adapters.
+        The ``close()`` method is idempotent and safe to call multiple times;
+        it logs but does not raise on cleanup errors, ensuring all resources
+        are attempted.
     """
 
     settings: Settings
@@ -71,10 +73,11 @@ class Container:
     vectorstore: VectorStore | None = None
     event_bus: EventBus | None = None
 
-    # Media adapters (STT, TTS, image description, OCR, sign recognition)
+    # Media adapters (STT, TTS, image description/generation, OCR, sign recognition)
     stt: STT | None = None
     tts: TTS | None = None
     image_describer: ImageDescriber | None = None
+    image_generator: ImageGenerator | None = None
     ocr: OCRProcessor | None = None
     sign_recognition: SignRecognition | None = None
 
@@ -89,6 +92,7 @@ class Container:
         from .container_adapters import (
             build_embeddings,
             build_event_bus,
+            build_image_generator,
             build_llm,
             build_media,
             build_sign_recognition,
@@ -102,6 +106,7 @@ class Container:
         vectorstore = build_vectorstore(settings, cleanup)
         stt, tts, image_describer, ocr = build_media(settings)
         sign_recognition = build_sign_recognition(settings)
+        image_generator = build_image_generator(settings)
         container = cls(
             settings=settings,
             llm=llm,
@@ -111,6 +116,7 @@ class Container:
             stt=stt,
             tts=tts,
             image_describer=image_describer,
+            image_generator=image_generator,
             ocr=ocr,
             sign_recognition=sign_recognition,
             _cleanup=cleanup,
@@ -221,6 +227,7 @@ class Container:
             ("stt", self.stt, "speech-to-text unavailable"),
             ("tts", self.tts, "text-to-speech unavailable"),
             ("image_describer", self.image_describer, "image description unavailable"),
+            ("image_generator", self.image_generator, "image generation unavailable"),
             ("ocr", self.ocr, "OCR text extraction unavailable"),
             ("sign_recognition", self.sign_recognition, "sign recognition unavailable"),
         ]
@@ -265,6 +272,7 @@ class Container:
             ("stt", self.stt),
             ("tts", self.tts),
             ("image_describer", self.image_describer),
+            ("image_generator", self.image_generator),
             ("ocr", self.ocr),
             ("sign_recognition", self.sign_recognition),
         ]

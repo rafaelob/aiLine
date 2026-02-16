@@ -13,8 +13,8 @@ describe('i18n routing configuration', () => {
     expect(routing.locales).toHaveLength(3)
   })
 
-  it('has pt-BR as the default locale', () => {
-    expect(routing.defaultLocale).toBe('pt-BR')
+  it('has en as the default locale', () => {
+    expect(routing.defaultLocale).toBe('en')
   })
 
   it('includes English locale', () => {

@@ -16,6 +16,12 @@ vi.mock('motion/react', () => {
   }
 })
 
+let mockTheme = 'standard'
+vi.mock('@/stores/accessibility-store', () => ({
+  useAccessibilityStore: (selector: (s: Record<string, unknown>) => unknown) =>
+    selector({ theme: mockTheme }),
+}))
+
 const STAGES: StageInfo[] = [
   { id: 'planning', label: 'planning', description: '', status: 'completed', progress: 100, startedAt: '2026-02-15T00:00:00Z', completedAt: '2026-02-15T00:00:01Z' },
   { id: 'validation', label: 'validation', description: '', status: 'active', progress: 50, startedAt: '2026-02-15T00:00:01Z', completedAt: null },
@@ -29,6 +35,7 @@ describe('StreamingThought', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    mockTheme = 'standard'
   })
 
   it('renders nothing when no stages and not running', () => {
@@ -65,5 +72,26 @@ describe('StreamingThought', () => {
   it('has a log role for accessibility', () => {
     render(<StreamingThought stages={STAGES} isRunning={true} />)
     expect(screen.getByRole('log')).toBeInTheDocument()
+  })
+
+  // --- Persona-adaptive loading tests ---
+
+  it('shows progress bar and percentage for ADHD theme', () => {
+    mockTheme = 'tdah'
+    render(<StreamingThought stages={STAGES} isRunning={true} />)
+    // 1 of 5 completed = 20%
+    expect(screen.getByText(/1\/5.*20%/)).toBeInTheDocument()
+  })
+
+  it('does not show progress bar for standard theme', () => {
+    mockTheme = 'standard'
+    render(<StreamingThought stages={STAGES} isRunning={true} />)
+    expect(screen.queryByText(/1\/5/)).toBeNull()
+  })
+
+  it('does not show progress bar when not running', () => {
+    mockTheme = 'tdah'
+    render(<StreamingThought stages={STAGES} isRunning={false} />)
+    expect(screen.queryByText(/1\/5/)).toBeNull()
   })
 })
