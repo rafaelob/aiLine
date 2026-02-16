@@ -18,7 +18,9 @@ class TestFakeToolDispatcher:
 
     @pytest.mark.asyncio
     async def test_dispatch_returns_configured_response(self):
-        dispatcher = FakeToolDispatcher(responses={"rag_search": {"chunks": ["chunk1"], "note": "fake"}})
+        dispatcher = FakeToolDispatcher(
+            responses={"rag_search": {"chunks": ["chunk1"], "note": "fake"}}
+        )
         result = await dispatcher.dispatch("rag_search", {"query": "test"})
         assert result == {"chunks": ["chunk1"], "note": "fake"}
 

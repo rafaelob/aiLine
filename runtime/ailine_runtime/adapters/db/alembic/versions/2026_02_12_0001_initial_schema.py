@@ -38,8 +38,12 @@ def upgrade() -> None:
         sa.Column("email", sa.String(320), unique=True, nullable=False),
         sa.Column("display_name", sa.String(200), nullable=False),
         sa.Column("locale", sa.String(10), server_default="pt-BR"),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now()
+        ),
+        sa.Column(
+            "updated_at", sa.DateTime(timezone=True), server_default=sa.func.now()
+        ),
     )
 
     # --- courses -----------------------------------------------------------
@@ -57,7 +61,9 @@ def upgrade() -> None:
         sa.Column("subject", sa.String(100), nullable=False),
         sa.Column("grade", sa.String(50), nullable=False),
         sa.Column("standard", sa.String(20), server_default="BNCC"),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now()
+        ),
     )
 
     # --- lessons (composite FK for tenant safety, ADR-053) -----------------
@@ -72,8 +78,12 @@ def upgrade() -> None:
         sa.Column("accessibility_json", sa.JSON, server_default="{}"),
         sa.Column("score", sa.Float, nullable=True),
         sa.Column("status", sa.String(20), server_default="draft"),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now()
+        ),
+        sa.Column(
+            "updated_at", sa.DateTime(timezone=True), server_default=sa.func.now()
+        ),
         sa.ForeignKeyConstraint(
             ["teacher_id", "course_id"],
             ["courses.teacher_id", "courses.id"],
@@ -97,7 +107,9 @@ def upgrade() -> None:
         sa.Column("title", sa.String(300), nullable=False),
         sa.Column("content", sa.Text, nullable=False),
         sa.Column("tags", sa.JSON, server_default="[]"),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now()
+        ),
     )
 
     # --- chunks ------------------------------------------------------------
@@ -118,7 +130,9 @@ def upgrade() -> None:
     # pgvector embedding column (Postgres only)
     if bind.dialect.name == "postgresql":
         op.execute("ALTER TABLE chunks ADD COLUMN embedding vector(1536)")
-        op.execute("CREATE INDEX ix_chunks_embedding ON chunks USING hnsw (embedding vector_cosine_ops)")
+        op.execute(
+            "CREATE INDEX ix_chunks_embedding ON chunks USING hnsw (embedding vector_cosine_ops)"
+        )
 
     # --- pipeline_runs -----------------------------------------------------
     op.create_table(
@@ -142,7 +156,9 @@ def upgrade() -> None:
         sa.Column("status", sa.String(20), server_default="pending"),
         sa.Column("started_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("completed_at", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now()
+        ),
     )
 
     # --- tutor_agents ------------------------------------------------------
@@ -160,7 +176,9 @@ def upgrade() -> None:
         sa.Column("grade", sa.String(50), nullable=False),
         sa.Column("config_json", sa.JSON, server_default="{}"),
         sa.Column("persona_json", sa.JSON, server_default="{}"),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now()
+        ),
     )
 
     # --- tutor_sessions ----------------------------------------------------
@@ -175,8 +193,12 @@ def upgrade() -> None:
             index=True,
         ),
         sa.Column("messages_json", sa.JSON, server_default="[]"),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now()
+        ),
+        sa.Column(
+            "updated_at", sa.DateTime(timezone=True), server_default=sa.func.now()
+        ),
     )
 
     # --- curriculum_objectives ---------------------------------------------
@@ -191,7 +213,9 @@ def upgrade() -> None:
         sa.Column("description", sa.Text, nullable=False),
         sa.Column("keywords", sa.JSON, server_default="[]"),
     )
-    op.create_index("ix_curriculum_system_grade", "curriculum_objectives", ["system", "grade"])
+    op.create_index(
+        "ix_curriculum_system_grade", "curriculum_objectives", ["system", "grade"]
+    )
 
     # --- run_events --------------------------------------------------------
     op.create_table(
@@ -207,7 +231,9 @@ def upgrade() -> None:
         sa.Column("stage", sa.String(30), nullable=False),
         sa.Column("event_type", sa.String(30), nullable=False),
         sa.Column("data_json", sa.JSON, server_default="{}"),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now()
+        ),
     )
 
     # --- accessibility_profiles --------------------------------------------
@@ -225,7 +251,9 @@ def upgrade() -> None:
         sa.Column("needs_json", sa.JSON, server_default="{}"),
         sa.Column("supports_json", sa.JSON, server_default="{}"),
         sa.Column("ui_prefs_json", sa.JSON, server_default="{}"),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now()
+        ),
     )
 
 

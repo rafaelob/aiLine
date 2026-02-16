@@ -25,7 +25,9 @@ class TestAnthropicChatLLM:
         ):
             from ailine_runtime.adapters.llm.anthropic_llm import AnthropicChatLLM
 
-            llm = AnthropicChatLLM(model="claude-sonnet-4-5-20250929", api_key="sk-test")
+            llm = AnthropicChatLLM(
+                model="claude-sonnet-4-5-20250929", api_key="sk-test"
+            )
             assert llm.model_name == "claude-sonnet-4-5-20250929"
             assert llm.capabilities["provider"] == "anthropic"
 
@@ -206,7 +208,9 @@ class TestGeminiChatLLM:
 
     def test_init(self, mock_genai):
         mock_google, mock_genai_mod, _ = mock_genai
-        with patch.dict("sys.modules", {"google": mock_google, "google.genai": mock_genai_mod}):
+        with patch.dict(
+            "sys.modules", {"google": mock_google, "google.genai": mock_genai_mod}
+        ):
             from ailine_runtime.adapters.llm.gemini_llm import GeminiChatLLM
 
             llm = GeminiChatLLM(model="gemini-2.5-flash", api_key="gk-test")
@@ -220,7 +224,9 @@ class TestGeminiChatLLM:
         mock_response.text = "Hello from Gemini"
         mock_client.aio.models.generate_content = AsyncMock(return_value=mock_response)
 
-        with patch.dict("sys.modules", {"google": mock_google, "google.genai": mock_genai_mod}):
+        with patch.dict(
+            "sys.modules", {"google": mock_google, "google.genai": mock_genai_mod}
+        ):
             from ailine_runtime.adapters.llm.gemini_llm import GeminiChatLLM
 
             llm = GeminiChatLLM(api_key="gk-test")
@@ -234,7 +240,9 @@ class TestGeminiChatLLM:
         mock_response.text = None
         mock_client.aio.models.generate_content = AsyncMock(return_value=mock_response)
 
-        with patch.dict("sys.modules", {"google": mock_google, "google.genai": mock_genai_mod}):
+        with patch.dict(
+            "sys.modules", {"google": mock_google, "google.genai": mock_genai_mod}
+        ):
             from ailine_runtime.adapters.llm.gemini_llm import GeminiChatLLM
 
             llm = GeminiChatLLM(api_key="gk-test")
@@ -261,7 +269,9 @@ class TestGeminiChatLLM:
 
         mock_client.aio.models.generate_content_stream = mock_stream_coro
 
-        with patch.dict("sys.modules", {"google": mock_google, "google.genai": mock_genai_mod}):
+        with patch.dict(
+            "sys.modules", {"google": mock_google, "google.genai": mock_genai_mod}
+        ):
             from ailine_runtime.adapters.llm.gemini_llm import GeminiChatLLM
 
             llm = GeminiChatLLM(api_key="gk-test")
@@ -295,7 +305,9 @@ class TestWebSearchDataClasses:
     """Test WebSearchResult and WebSearchSource data classes."""
 
     def test_web_search_source(self):
-        src = WebSearchSource(url="https://example.com", title="Example", snippet="A snippet")
+        src = WebSearchSource(
+            url="https://example.com", title="Example", snippet="A snippet"
+        )
         assert src.url == "https://example.com"
         assert src.title == "Example"
         assert src.snippet == "A snippet"
@@ -456,7 +468,9 @@ class TestGeminiWebSearch:
 
         mock_client.aio.models.generate_content = AsyncMock(return_value=mock_response)
 
-        with patch.dict("sys.modules", {"google": mock_google, "google.genai": mock_genai}):
+        with patch.dict(
+            "sys.modules", {"google": mock_google, "google.genai": mock_genai}
+        ):
             from ailine_runtime.adapters.llm.gemini_llm import GeminiChatLLM
 
             llm = GeminiChatLLM(api_key="gk-test")

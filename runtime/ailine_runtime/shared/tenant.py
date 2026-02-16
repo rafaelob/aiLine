@@ -32,7 +32,9 @@ from ..domain.exceptions import (
 # Context variable: populated by TenantContextMiddleware
 # ---------------------------------------------------------------------------
 
-_tenant_id_var: contextvars.ContextVar[str | None] = contextvars.ContextVar("ailine_tenant_id", default=None)
+_tenant_id_var: contextvars.ContextVar[str | None] = contextvars.ContextVar(
+    "ailine_tenant_id", default=None
+)
 
 # Precompiled patterns for validation.
 _UUID_RE = re.compile(
@@ -66,7 +68,9 @@ def validate_teacher_id_format(teacher_id: str) -> str:
     if not tid:
         raise InvalidTenantIdError("teacher_id must not be empty.")
     if len(tid) > 128:
-        raise InvalidTenantIdError("teacher_id exceeds maximum length (128 characters).")
+        raise InvalidTenantIdError(
+            "teacher_id exceeds maximum length (128 characters)."
+        )
     if _UUID_RE.match(tid):
         return tid
     if _SIMPLE_ID_RE.match(tid):
@@ -100,7 +104,9 @@ def get_current_teacher_id() -> str:
     """
     tid = _tenant_id_var.get()
     if tid is None:
-        raise TenantNotFoundError("Authentication required: no teacher_id in request context.")
+        raise TenantNotFoundError(
+            "Authentication required: no teacher_id in request context."
+        )
     return tid
 
 
@@ -133,7 +139,9 @@ class TenantContext:
             UnauthorizedAccessError: If the resource belongs to a different tenant.
         """
         if resource_teacher_id != self.teacher_id:
-            raise UnauthorizedAccessError("Access denied: resource belongs to a different tenant.")
+            raise UnauthorizedAccessError(
+                "Access denied: resource belongs to a different tenant."
+            )
 
     def __repr__(self) -> str:
         return f"TenantContext(teacher_id={self.teacher_id!r})"

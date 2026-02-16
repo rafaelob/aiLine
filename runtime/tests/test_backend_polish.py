@@ -98,7 +98,11 @@ def _make_jwt_hs256(payload: dict, secret: str = "test-secret") -> str:
 
 def _make_unsigned_jwt(payload: dict) -> str:
     """Create an unsigned JWT (alg: none) for testing unverified decode."""
-    header = base64.urlsafe_b64encode(json.dumps({"alg": "none"}).encode()).rstrip(b"=").decode()
+    header = (
+        base64.urlsafe_b64encode(json.dumps({"alg": "none"}).encode())
+        .rstrip(b"=")
+        .decode()
+    )
     body = base64.urlsafe_b64encode(json.dumps(payload).encode()).rstrip(b"=").decode()
     return f"{header}.{body}."
 
@@ -172,7 +176,9 @@ class TestVerifiedJwtDecode:
             "exp": int(time.time()) + 3600,
         }
         token = _make_jwt_hs256(payload, "correct-secret-key-32bytes-long!")
-        result, _error = _verified_jwt_decode(token, self._make_cfg(secret="wrong-secret-key-32-bytes-longer!"))
+        result, _error = _verified_jwt_decode(
+            token, self._make_cfg(secret="wrong-secret-key-32-bytes-longer!")
+        )
         assert result is None
 
     def test_issuer_mismatch_returns_none(self) -> None:
@@ -183,7 +189,9 @@ class TestVerifiedJwtDecode:
             "iss": "wrong-issuer",
         }
         token = _make_jwt_hs256(payload, secret)
-        result, error = _verified_jwt_decode(token, self._make_cfg(secret=secret, issuer="expected-issuer"))
+        result, error = _verified_jwt_decode(
+            token, self._make_cfg(secret=secret, issuer="expected-issuer")
+        )
         assert result is None
         assert error == "invalid_issuer"
 
@@ -195,7 +203,9 @@ class TestVerifiedJwtDecode:
             "iss": "ailine-auth",
         }
         token = _make_jwt_hs256(payload, secret)
-        result, error = _verified_jwt_decode(token, self._make_cfg(secret=secret, issuer="ailine-auth"))
+        result, error = _verified_jwt_decode(
+            token, self._make_cfg(secret=secret, issuer="ailine-auth")
+        )
         assert result == "teacher-iss-ok"
         assert error is None
 
@@ -232,7 +242,9 @@ class TestExtractTeacherIdFromJwt:
     Note: _extract_teacher_id_from_jwt now returns (teacher_id, error_reason).
     """
 
-    def test_unverified_mode_no_secret_dev_mode(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_unverified_mode_no_secret_dev_mode(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Without AILINE_JWT_SECRET but with dev mode, unverified decode is used."""
         monkeypatch.delenv("AILINE_JWT_SECRET", raising=False)
         monkeypatch.delenv("AILINE_JWT_PUBLIC_KEY", raising=False)
@@ -245,7 +257,9 @@ class TestExtractTeacherIdFromJwt:
         teacher_id, _error = _extract_teacher_id_from_jwt(token)
         assert teacher_id == "teacher-unverified"
 
-    def test_unverified_mode_no_secret_no_dev_mode_rejects(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_unverified_mode_no_secret_no_dev_mode_rejects(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Without AILINE_JWT_SECRET and without dev mode, JWT is rejected."""
         monkeypatch.delenv("AILINE_JWT_SECRET", raising=False)
         monkeypatch.delenv("AILINE_JWT_PUBLIC_KEY", raising=False)
@@ -276,7 +290,9 @@ class TestExtractTeacherIdFromJwt:
         teacher_id, _error = _extract_teacher_id_from_jwt(token)
         assert teacher_id == "teacher-verified"
 
-    def test_verified_mode_expired_rejects(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_verified_mode_expired_rejects(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """With AILINE_JWT_SECRET, expired tokens are rejected (no fallback)."""
         secret = "integration-test-secret-32bytes!"
         monkeypatch.setenv("AILINE_JWT_SECRET", secret)
@@ -360,7 +376,9 @@ class TestContainerValidation:
 
     def test_validation_result_tuple_unpacking(self) -> None:
         """ValidationResult should support tuple unpacking."""
-        result = ValidationResult(ok=True, missing_critical=[], missing_optional=["ocr"])
+        result = ValidationResult(
+            ok=True, missing_critical=[], missing_optional=["ocr"]
+        )
         ok, critical, optional = result
         assert ok is True
         assert critical == []

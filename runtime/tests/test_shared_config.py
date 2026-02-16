@@ -11,7 +11,9 @@ class TestLLMConfig:
         from ailine_runtime.shared.config import LLMConfig
 
         # Clear env vars that may override LLM defaults (e.g., Docker sets AILINE_LLM_PROVIDER).
-        clean_env = {k: v for k, v in os.environ.items() if not k.startswith("AILINE_LLM_")}
+        clean_env = {
+            k: v for k, v in os.environ.items() if not k.startswith("AILINE_LLM_")
+        }
         with patch.dict(os.environ, clean_env, clear=True):
             cfg = LLMConfig()
             assert cfg.provider == "anthropic"
@@ -21,7 +23,9 @@ class TestLLMConfig:
     def test_env_override(self):
         from ailine_runtime.shared.config import LLMConfig
 
-        with patch.dict(os.environ, {"AILINE_LLM_PROVIDER": "openai", "AILINE_LLM_MODEL": "gpt-4o"}):
+        with patch.dict(
+            os.environ, {"AILINE_LLM_PROVIDER": "openai", "AILINE_LLM_MODEL": "gpt-4o"}
+        ):
             cfg = LLMConfig()
             assert cfg.provider == "openai"
             assert cfg.model == "gpt-4o"
@@ -33,7 +37,9 @@ class TestEmbeddingConfig:
 
         # Build a clean env snapshot without AILINE_EMBEDDING_* keys so
         # pydantic-settings falls back to the field defaults.
-        clean_env = {k: v for k, v in os.environ.items() if not k.startswith("AILINE_EMBEDDING_")}
+        clean_env = {
+            k: v for k, v in os.environ.items() if not k.startswith("AILINE_EMBEDDING_")
+        }
         with patch.dict(os.environ, clean_env, clear=True):
             cfg = EmbeddingConfig()
             assert cfg.provider == "gemini"
@@ -43,7 +49,13 @@ class TestEmbeddingConfig:
     def test_env_override(self):
         from ailine_runtime.shared.config import EmbeddingConfig
 
-        with patch.dict(os.environ, {"AILINE_EMBEDDING_PROVIDER": "openai", "AILINE_EMBEDDING_DIMENSIONS": "1536"}):
+        with patch.dict(
+            os.environ,
+            {
+                "AILINE_EMBEDDING_PROVIDER": "openai",
+                "AILINE_EMBEDDING_DIMENSIONS": "1536",
+            },
+        ):
             cfg = EmbeddingConfig()
             assert cfg.provider == "openai"
             assert cfg.dimensions == 1536
@@ -54,7 +66,9 @@ class TestDatabaseConfig:
         from ailine_runtime.shared.config import DatabaseConfig
 
         # Clear env vars that may override defaults (e.g., AILINE_DB_URL inside Docker).
-        clean_env = {k: v for k, v in os.environ.items() if not k.startswith("AILINE_DB_")}
+        clean_env = {
+            k: v for k, v in os.environ.items() if not k.startswith("AILINE_DB_")
+        }
         with patch.dict(os.environ, clean_env, clear=True):
             cfg = DatabaseConfig()
             assert "sqlite" in cfg.url
@@ -76,7 +90,9 @@ class TestSettings:
     def test_env_override(self):
         from ailine_runtime.shared.config import Settings
 
-        with patch.dict(os.environ, {"AILINE_DEMO_MODE": "true", "AILINE_MAX_REFINEMENT_ITERS": "5"}):
+        with patch.dict(
+            os.environ, {"AILINE_DEMO_MODE": "true", "AILINE_MAX_REFINEMENT_ITERS": "5"}
+        ):
             settings = Settings()
             assert settings.demo_mode is True
             assert settings.max_refinement_iters == 5

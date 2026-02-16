@@ -68,8 +68,7 @@ DEMO_PROFILES: dict[str, dict[str, Any]] = {
         "accessibility_label": "ADHD",
         "avatar_emoji": "\U0001f467",
         "description": (
-            "Creative and energetic, benefits from focus mode "
-            "and chunked activities"
+            "Creative and energetic, benefits from focus mode " "and chunked activities"
         ),
     },
     "student-lucas-dyslexia": {
@@ -81,8 +80,7 @@ DEMO_PROFILES: dict[str, dict[str, Any]] = {
         "accessibility_label": "Dyslexia",
         "avatar_emoji": "\U0001f466",
         "description": (
-            "Strong verbal skills, needs large print and "
-            "bionic reading support"
+            "Strong verbal skills, needs large print and " "bionic reading support"
         ),
     },
     "student-sofia-hearing": {
@@ -94,8 +92,7 @@ DEMO_PROFILES: dict[str, dict[str, Any]] = {
         "accessibility_label": "Hearing Impairment",
         "avatar_emoji": "\U0001f467",
         "description": (
-            "Uses sign language, excels with visual content "
-            "and captions"
+            "Uses sign language, excels with visual content " "and captions"
         ),
     },
     "parent-david": {
@@ -104,9 +101,7 @@ DEMO_PROFILES: dict[str, dict[str, Any]] = {
         "role": "parent",
         "child": "Alex Rivera",
         "avatar_emoji": "\U0001f468",
-        "description": (
-            "Alex's father, actively involved in education planning"
-        ),
+        "description": ("Alex's father, actively involved in education planning"),
     },
 }
 
@@ -253,33 +248,73 @@ async def seed_demo_data(request: Request) -> dict[str, Any]:
     progress_store = get_progress_store()
     progress_data = [
         # Alex (TEA) - strong in math, developing in science
-        ("demo-student-alex-tea", "Alex Rivera", "NGSS.5-LS1-1",
-         "Photosynthesis and plant growth", MasteryLevel.DEVELOPING,
-         "Responds well to visual schedule format"),
-        ("demo-student-alex-tea", "Alex Rivera", "CCSS.MATH.5.NF.A.1",
-         "Add and subtract fractions", MasteryLevel.MASTERED,
-         "Excellent with fraction manipulatives"),
+        (
+            "demo-student-alex-tea",
+            "Alex Rivera",
+            "NGSS.5-LS1-1",
+            "Photosynthesis and plant growth",
+            MasteryLevel.DEVELOPING,
+            "Responds well to visual schedule format",
+        ),
+        (
+            "demo-student-alex-tea",
+            "Alex Rivera",
+            "CCSS.MATH.5.NF.A.1",
+            "Add and subtract fractions",
+            MasteryLevel.MASTERED,
+            "Excellent with fraction manipulatives",
+        ),
         # Maya (ADHD) - creative, needs focus support
-        ("demo-student-maya-adhd", "Maya Chen", "CCSS.MATH.5.NF.A.1",
-         "Add and subtract fractions", MasteryLevel.PROFICIENT,
-         "Best with 5-minute chunked activities"),
-        ("demo-student-maya-adhd", "Maya Chen", "NGSS.5-ESS2-1",
-         "Water cycle and weather", MasteryLevel.DEVELOPING,
-         "Engaged when activities include movement"),
+        (
+            "demo-student-maya-adhd",
+            "Maya Chen",
+            "CCSS.MATH.5.NF.A.1",
+            "Add and subtract fractions",
+            MasteryLevel.PROFICIENT,
+            "Best with 5-minute chunked activities",
+        ),
+        (
+            "demo-student-maya-adhd",
+            "Maya Chen",
+            "NGSS.5-ESS2-1",
+            "Water cycle and weather",
+            MasteryLevel.DEVELOPING,
+            "Engaged when activities include movement",
+        ),
         # Lucas (Dyslexia) - strong verbal, needs reading support
-        ("demo-student-lucas-dyslexia", "Lucas Thompson", "NGSS.5-LS1-1",
-         "Photosynthesis and plant growth", MasteryLevel.PROFICIENT,
-         "Excels with audio descriptions and large print"),
-        ("demo-student-lucas-dyslexia", "Lucas Thompson", "CCSS.MATH.5.NF.A.1",
-         "Add and subtract fractions", MasteryLevel.DEVELOPING,
-         "Benefits from bionic reading format"),
+        (
+            "demo-student-lucas-dyslexia",
+            "Lucas Thompson",
+            "NGSS.5-LS1-1",
+            "Photosynthesis and plant growth",
+            MasteryLevel.PROFICIENT,
+            "Excels with audio descriptions and large print",
+        ),
+        (
+            "demo-student-lucas-dyslexia",
+            "Lucas Thompson",
+            "CCSS.MATH.5.NF.A.1",
+            "Add and subtract fractions",
+            MasteryLevel.DEVELOPING,
+            "Benefits from bionic reading format",
+        ),
         # Sofia (Hearing) - visual learner, uses sign language
-        ("demo-student-sofia-hearing", "Sofia Martinez", "NGSS.5-ESS2-1",
-         "Water cycle and weather", MasteryLevel.MASTERED,
-         "Outstanding with visual diagrams and captions"),
-        ("demo-student-sofia-hearing", "Sofia Martinez", "NGSS.5-LS1-1",
-         "Photosynthesis and plant growth", MasteryLevel.PROFICIENT,
-         "Benefits from Libras-annotated content"),
+        (
+            "demo-student-sofia-hearing",
+            "Sofia Martinez",
+            "NGSS.5-ESS2-1",
+            "Water cycle and weather",
+            MasteryLevel.MASTERED,
+            "Outstanding with visual diagrams and captions",
+        ),
+        (
+            "demo-student-sofia-hearing",
+            "Sofia Martinez",
+            "NGSS.5-LS1-1",
+            "Photosynthesis and plant growth",
+            MasteryLevel.PROFICIENT,
+            "Benefits from Libras-annotated content",
+        ),
     ]
     for student_id, name, code, desc, level, notes in progress_data:
         p = progress_store.record_progress(
@@ -337,7 +372,9 @@ async def seed_demo_data(request: Request) -> dict[str, Any]:
         tutor_id=tutor_id_alex,
         created_at=now,
         messages=[
-            TutorMessage(role="user", content="What is photosynthesis?", created_at=now),
+            TutorMessage(
+                role="user", content="What is photosynthesis?", created_at=now
+            ),
             TutorMessage(
                 role="assistant",
                 content=(
@@ -470,7 +507,9 @@ async def get_scenario(scenario_id: str, request: Request) -> dict[str, Any]:
     svc = _get_demo_service(request)
     scenario = svc.get_scenario(scenario_id)
     if scenario is None:
-        raise HTTPException(status_code=404, detail=f"Scenario '{scenario_id}' not found.")
+        raise HTTPException(
+            status_code=404, detail=f"Scenario '{scenario_id}' not found."
+        )
     return scenario
 
 
@@ -506,7 +545,9 @@ async def _execute_scenario(scenario_id: str, request: Request) -> dict[str, Any
     svc = _get_demo_service(request)
     cached_plan = svc.get_cached_plan(scenario_id)
     if cached_plan is None:
-        raise HTTPException(status_code=404, detail=f"Scenario '{scenario_id}' not found.")
+        raise HTTPException(
+            status_code=404, detail=f"Scenario '{scenario_id}' not found."
+        )
 
     score = svc.get_score(scenario_id)
     prompt = svc.get_prompt(scenario_id)
@@ -522,7 +563,9 @@ async def _execute_scenario(scenario_id: str, request: Request) -> dict[str, Any
 
 
 @router.post("/scenarios/{scenario_id}/stream")
-async def stream_demo_scenario(scenario_id: str, request: Request) -> EventSourceResponse:
+async def stream_demo_scenario(
+    scenario_id: str, request: Request
+) -> EventSourceResponse:
     """Stream a demo scenario with simulated delays for a realistic demo.
 
     Returns an SSE stream that replays the cached events with their
@@ -532,7 +575,9 @@ async def stream_demo_scenario(scenario_id: str, request: Request) -> EventSourc
     svc = _get_demo_service(request)
     scenario = svc.get_scenario(scenario_id)
     if scenario is None:
-        raise HTTPException(status_code=404, detail=f"Scenario '{scenario_id}' not found.")
+        raise HTTPException(
+            status_code=404, detail=f"Scenario '{scenario_id}' not found."
+        )
 
     cached_events = svc.get_cached_events(scenario_id)
     cached_plan = svc.get_cached_plan(scenario_id)

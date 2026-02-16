@@ -87,12 +87,16 @@ class TestRunPipelineError:
 
         # Patch AgentDepsFactory.from_container to raise during pipeline
         mock_factory = MagicMock()
-        mock_factory.from_container = MagicMock(side_effect=RuntimeError("test explosion"))
+        mock_factory.from_container = MagicMock(
+            side_effect=RuntimeError("test explosion")
+        )
         with patch(
             "ailine_runtime.api.routers.plans_stream.AgentDepsFactory",
             mock_factory,
         ):
-            await _run_pipeline(body, "teacher-001", settings, container, emitter, queue)
+            await _run_pipeline(
+                body, "teacher-001", settings, container, emitter, queue
+            )
 
         # Collect all events from queue
         events = []
@@ -104,7 +108,11 @@ class TestRunPipelineError:
                 break  # sentinel
 
         # The run.failed event should be present
-        failed_events = [json.loads(e["data"]) for e in events if "data" in e and "run.failed" in e["data"]]
+        failed_events = [
+            json.loads(e["data"])
+            for e in events
+            if "data" in e and "run.failed" in e["data"]
+        ]
         assert len(failed_events) >= 1
 
 
@@ -124,7 +132,13 @@ def _make_mock_workflow(
     else:
         state = final_state or {
             "run_id": "test-run",
-            "final": {"parsed": {"plan_id": "test-run", "score": 85, "human_review_required": False}},
+            "final": {
+                "parsed": {
+                    "plan_id": "test-run",
+                    "score": 85,
+                    "human_review_required": False,
+                }
+            },
         }
 
         async def _ainvoke(init_state: dict, config: dict | None = None) -> dict:
@@ -143,7 +157,10 @@ def _make_mock_workflow(
 def _patch_build_and_deps():
     """Context manager that patches both build_plan_workflow and AgentDepsFactory."""
     mock_wf = _make_mock_workflow()
-    p1 = patch("ailine_runtime.api.routers.plans_stream.build_plan_workflow", return_value=mock_wf)
+    p1 = patch(
+        "ailine_runtime.api.routers.plans_stream.build_plan_workflow",
+        return_value=mock_wf,
+    )
     mock_factory = MagicMock()
     mock_factory.from_container = MagicMock(return_value=MagicMock())
     p2 = patch("ailine_runtime.api.routers.plans_stream.AgentDepsFactory", mock_factory)
@@ -191,8 +208,13 @@ class TestEventGeneratorEdgeCases:
         mock_factory.from_container = MagicMock(return_value=MagicMock())
 
         with (
-            patch("ailine_runtime.api.routers.plans_stream.build_plan_workflow", return_value=mock_wf),
-            patch("ailine_runtime.api.routers.plans_stream.AgentDepsFactory", mock_factory),
+            patch(
+                "ailine_runtime.api.routers.plans_stream.build_plan_workflow",
+                return_value=mock_wf,
+            ),
+            patch(
+                "ailine_runtime.api.routers.plans_stream.AgentDepsFactory", mock_factory
+            ),
             TestClient(app) as client,
         ):
             response = client.post(

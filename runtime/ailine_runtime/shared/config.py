@@ -8,7 +8,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class LLMConfig(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="AILINE_LLM_")
-    provider: Literal["anthropic", "openai", "gemini", "openrouter", "fake"] = "anthropic"
+    provider: Literal["anthropic", "openai", "gemini", "openrouter", "fake"] = (
+        "anthropic"
+    )
     model: str = "claude-opus-4-6"
     api_key: str = ""
 
@@ -53,11 +55,21 @@ class Settings(BaseSettings):
     )
 
     # API keys (top-level for convenience; accept both ANTHROPIC_API_KEY and AILINE_ANTHROPIC_API_KEY)
-    anthropic_api_key: str = Field("", validation_alias=AliasChoices("ANTHROPIC_API_KEY", "AILINE_ANTHROPIC_API_KEY"))
-    openai_api_key: str = Field("", validation_alias=AliasChoices("OPENAI_API_KEY", "AILINE_OPENAI_API_KEY"))
-    google_api_key: str = Field("", validation_alias=AliasChoices("GOOGLE_API_KEY", "AILINE_GOOGLE_API_KEY"))
+    anthropic_api_key: str = Field(
+        "",
+        validation_alias=AliasChoices("ANTHROPIC_API_KEY", "AILINE_ANTHROPIC_API_KEY"),
+    )
+    openai_api_key: str = Field(
+        "", validation_alias=AliasChoices("OPENAI_API_KEY", "AILINE_OPENAI_API_KEY")
+    )
+    google_api_key: str = Field(
+        "", validation_alias=AliasChoices("GOOGLE_API_KEY", "AILINE_GOOGLE_API_KEY")
+    )
     openrouter_api_key: str = Field(
-        "", validation_alias=AliasChoices("OPENROUTER_API_KEY", "AILINE_OPENROUTER_API_KEY")
+        "",
+        validation_alias=AliasChoices(
+            "OPENROUTER_API_KEY", "AILINE_OPENROUTER_API_KEY"
+        ),
     )
 
     # Sub-configs
@@ -102,7 +114,9 @@ class Settings(BaseSettings):
     def skill_source_paths(self) -> list[str]:
         from ..skills.paths import parse_skill_source_paths
 
-        return parse_skill_source_paths(self.skill_sources if self.skill_sources else None)
+        return parse_skill_source_paths(
+            self.skill_sources if self.skill_sources else None
+        )
 
     def validate_environment(self) -> list[str]:
         """Validate that critical environment variables are set for the current env.
@@ -163,7 +177,10 @@ class Settings(BaseSettings):
                 )
 
         if errors and is_prod:
-            raise OSError("Production environment validation failed:\n" + "\n".join(f"  - {e}" for e in errors))
+            raise OSError(
+                "Production environment validation failed:\n"
+                + "\n".join(f"  - {e}" for e in errors)
+            )
 
         return errors + warnings
 

@@ -83,7 +83,9 @@ class TestAgentDepsFactory:
     """AgentDepsFactory.from_container() bridges runtime Container to AgentDeps."""
 
     @patch("ailine_runtime.tools.registry.build_tool_registry")
-    def test_from_container(self, mock_build_registry: MagicMock, mock_container: MagicMock) -> None:
+    def test_from_container(
+        self, mock_build_registry: MagicMock, mock_container: MagicMock
+    ) -> None:
         mock_build_registry.return_value = [MagicMock(), MagicMock()]
 
         deps = AgentDepsFactory.from_container(
@@ -108,7 +110,9 @@ class TestAgentDepsFactory:
         mock_build_registry.assert_called_once()
 
     @patch("ailine_runtime.tools.registry.build_tool_registry")
-    def test_from_container_with_emitter(self, mock_build_registry: MagicMock, mock_container: MagicMock) -> None:
+    def test_from_container_with_emitter(
+        self, mock_build_registry: MagicMock, mock_container: MagicMock
+    ) -> None:
         mock_build_registry.return_value = []
         emitter = MagicMock()
         writer = MagicMock()

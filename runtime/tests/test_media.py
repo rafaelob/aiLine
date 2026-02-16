@@ -68,7 +68,9 @@ def app(monkeypatch):
     settings = Settings()
     application = create_app(settings)
     # Override container media adapters with fakes
-    application.state.container = _make_container_with_fakes(application.state.container)
+    application.state.container = _make_container_with_fakes(
+        application.state.container
+    )
     return application
 
 
@@ -249,7 +251,9 @@ class TestFakeImageDescriberProtocol:
 
 
 class TestFakeImageDescriberBehavior:
-    async def test_default_response_includes_byte_count(self, fake_describer: FakeImageDescriber):
+    async def test_default_response_includes_byte_count(
+        self, fake_describer: FakeImageDescriber
+    ):
         result = await fake_describer.describe(b"\x00" * 200)
         assert "200 bytes" in result
 

@@ -62,7 +62,9 @@ async def plans_generate(body: PlanGenerateIn, request: Request):
     # --- Input sanitization ---
     user_prompt = sanitize_prompt(body.user_prompt)
     if not user_prompt:
-        raise HTTPException(status_code=422, detail="user_prompt must not be empty after sanitization")
+        raise HTTPException(
+            status_code=422, detail="user_prompt must not be empty after sanitization"
+        )
 
     teacher_id = _resolve_teacher_id()
 
@@ -108,14 +110,18 @@ async def plan_review(plan_id: str, body: PlanReviewIn):
 
     existing = store.get_review(plan_id)
     if existing and existing.teacher_id != teacher_id:
-        raise HTTPException(status_code=403, detail="Not authorized to review this plan")
+        raise HTTPException(
+            status_code=403, detail="Not authorized to review this plan"
+        )
     if not existing:
         store.create_review(plan_id, teacher_id)
 
     try:
         status = ReviewStatus(body.status)
     except ValueError as err:
-        raise HTTPException(status_code=422, detail=f"Invalid status: {body.status}") from err
+        raise HTTPException(
+            status_code=422, detail=f"Invalid status: {body.status}"
+        ) from err
 
     review = store.update_review(plan_id, status, body.notes)
     if not review:
@@ -132,7 +138,9 @@ async def plan_review_get(plan_id: str):
     if not review:
         raise HTTPException(status_code=404, detail="No review found for this plan")
     if review.teacher_id != teacher_id:
-        raise HTTPException(status_code=403, detail="Not authorized to access this review")
+        raise HTTPException(
+            status_code=403, detail="Not authorized to access this review"
+        )
     return review.model_dump()
 
 

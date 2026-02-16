@@ -135,7 +135,11 @@ def build_tutor_system_prompt(spec: TutorAgentSpec) -> str:
     student = spec.student_profile
     needs = ", ".join(student.needs) if student.needs else "(não informado)"
     strengths = ", ".join(student.strengths) if student.strengths else "(não informado)"
-    accommodations = ", ".join(student.accommodations) if student.accommodations else "(não informado)"
+    accommodations = (
+        ", ".join(student.accommodations)
+        if student.accommodations
+        else "(não informado)"
+    )
 
     return f"""Você é o Tutor do AiLine.
 

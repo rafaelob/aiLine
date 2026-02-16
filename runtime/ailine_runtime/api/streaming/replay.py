@@ -41,7 +41,9 @@ class InMemoryReplayStore:
         if len(entries) > self._config.keep_last:
             self._store[run_id] = entries[-self._config.keep_last :]
 
-    async def replay(self, run_id: str, after_seq: int | None = None) -> list[tuple[int, str]]:
+    async def replay(
+        self, run_id: str, after_seq: int | None = None
+    ) -> list[tuple[int, str]]:
         """Replay events after the given sequence number.
 
         Args:
@@ -116,12 +118,16 @@ class RedisReplayStore:
         pipe.expire(self._seq_key(run_id), self._config.ttl_seconds)
         await pipe.execute()
 
-    async def replay(self, run_id: str, after_seq: int | None = None) -> list[tuple[int, str]]:
+    async def replay(
+        self, run_id: str, after_seq: int | None = None
+    ) -> list[tuple[int, str]]:
         """Replay events from Redis ZSET."""
         key = self._events_key(run_id)
 
         if after_seq is not None:
-            items = await self._redis.zrangebyscore(key, min=f"({after_seq}", max="+inf", withscores=True)
+            items = await self._redis.zrangebyscore(
+                key, min=f"({after_seq}", max="+inf", withscores=True
+            )
         else:
             items = await self._redis.zrange(key, 0, -1, withscores=True)
 

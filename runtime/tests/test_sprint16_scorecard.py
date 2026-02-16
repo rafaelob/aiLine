@@ -143,7 +143,10 @@ class TestMakeScorecardNode:
                 ],
                 "accessibility_pack_draft": {
                     "applied_adaptations": [
-                        {"target": "autism", "strategies": ["visual schedule", "predictability"]},
+                        {
+                            "target": "autism",
+                            "strategies": ["visual schedule", "predictability"],
+                        },
                         {"target": "adhd", "strategies": ["short instructions"]},
                     ]
                 },

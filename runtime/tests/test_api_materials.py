@@ -59,7 +59,9 @@ async def test_add_material(client: AsyncClient, tmp_local_store: Path) -> None:
     assert body["material_id"]  # not empty
 
 
-async def test_add_material_without_tags(client: AsyncClient, tmp_local_store: Path) -> None:
+async def test_add_material_without_tags(
+    client: AsyncClient, tmp_local_store: Path
+) -> None:
     resp = await client.post(
         "/materials",
         json={
@@ -75,7 +77,9 @@ async def test_add_material_without_tags(client: AsyncClient, tmp_local_store: P
     assert body["tags"] == []
 
 
-async def test_add_material_missing_required_field(client: AsyncClient, tmp_local_store: Path) -> None:
+async def test_add_material_missing_required_field(
+    client: AsyncClient, tmp_local_store: Path
+) -> None:
     resp = await client.post(
         "/materials",
         json={
@@ -98,7 +102,9 @@ async def test_list_materials_empty(client: AsyncClient, tmp_local_store: Path) 
     assert resp.json() == []
 
 
-async def test_list_materials_after_add(client: AsyncClient, tmp_local_store: Path) -> None:
+async def test_list_materials_after_add(
+    client: AsyncClient, tmp_local_store: Path
+) -> None:
     # Add a material (auth context determines teacher_id)
     await client.post(
         "/materials",
@@ -119,7 +125,9 @@ async def test_list_materials_after_add(client: AsyncClient, tmp_local_store: Pa
     assert any(m["title"] == "Revolucao Industrial" for m in body)
 
 
-async def test_list_materials_filter_by_teacher(client: AsyncClient, tmp_local_store: Path) -> None:
+async def test_list_materials_filter_by_teacher(
+    client: AsyncClient, tmp_local_store: Path
+) -> None:
     # Add materials for two teachers (auth context determines ownership)
     await client.post(
         "/materials",
@@ -148,7 +156,9 @@ async def test_list_materials_filter_by_teacher(client: AsyncClient, tmp_local_s
     assert all(m["teacher_id"] == "teacher-A" for m in body)
 
 
-async def test_list_materials_filter_by_subject(client: AsyncClient, tmp_local_store: Path) -> None:
+async def test_list_materials_filter_by_subject(
+    client: AsyncClient, tmp_local_store: Path
+) -> None:
     await client.post(
         "/materials",
         json={

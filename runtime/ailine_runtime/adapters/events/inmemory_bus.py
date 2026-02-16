@@ -13,7 +13,9 @@ class InMemoryEventBus:
     """In-process async event bus for development."""
 
     def __init__(self) -> None:
-        self._handlers: dict[str, list[Callable[[dict[str, Any]], Awaitable[None]]]] = defaultdict(list)
+        self._handlers: dict[str, list[Callable[[dict[str, Any]], Awaitable[None]]]] = (
+            defaultdict(list)
+        )
 
     async def publish(self, event_type: str, data: dict[str, Any]) -> None:
         for handler in self._handlers.get(event_type, []):
@@ -22,5 +24,7 @@ class InMemoryEventBus:
             except Exception:
                 _log.exception("event_handler_failed", event_type=event_type)
 
-    def subscribe(self, event_type: str, handler: Callable[[dict[str, Any]], Awaitable[None]]) -> None:
+    def subscribe(
+        self, event_type: str, handler: Callable[[dict[str, Any]], Awaitable[None]]
+    ) -> None:
         self._handlers[event_type].append(handler)

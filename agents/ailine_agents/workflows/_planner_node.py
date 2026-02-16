@@ -16,7 +16,12 @@ from pydantic_ai import Agent
 
 from ..deps import AgentDeps
 from ..model_selection.bridge import PydanticAIModelSelector
-from ._node_shared import _check_timeout, _log_node_success, _run_agent_with_resilience, _select_model
+from ._node_shared import (
+    _check_timeout,
+    _log_node_success,
+    _run_agent_with_resilience,
+    _select_model,
+)
 from ._sse_helpers import get_emitter_and_writer, try_emit
 from ._state import RunState
 from ._trace_capture import build_route_rationale, capture_node_trace
@@ -93,7 +98,9 @@ def make_planner_node(
 
         _check_timeout(state, deps, "planner")
 
-        log_event("planner.start", run_id=run_id, stage="planner", refine_iter=refine_iter)
+        log_event(
+            "planner.start", run_id=run_id, stage="planner", refine_iter=refine_iter
+        )
 
         model_override, model_name = _select_model(model_selector)
         rationale = build_route_rationale(
@@ -157,7 +164,13 @@ def make_planner_node(
         )
 
         if refine_iter > 0:
-            try_emit(emitter, writer, SSEEventType.REFINEMENT_COMPLETE, "planner", {"iteration": refine_iter})
+            try_emit(
+                emitter,
+                writer,
+                SSEEventType.REFINEMENT_COMPLETE,
+                "planner",
+                {"iteration": refine_iter},
+            )
         else:
             try_emit(emitter, writer, SSEEventType.STAGE_COMPLETE, "planner")
 

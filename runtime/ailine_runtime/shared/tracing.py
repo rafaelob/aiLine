@@ -50,7 +50,9 @@ def init_tracing(*, service_name: str = "ailine-runtime") -> bool:
     _initialized = True
 
     if not _is_enabled():
-        _log.info("tracing_disabled", msg="AILINE_OTEL_ENABLED is not set, tracing disabled")
+        _log.info(
+            "tracing_disabled", msg="AILINE_OTEL_ENABLED is not set, tracing disabled"
+        )
         return False
 
     try:
@@ -108,7 +110,9 @@ def instrument_fastapi(app: Any) -> None:
         FastAPIInstrumentor.instrument_app(app)
         _log.info("tracing_fastapi_instrumented")
     except ImportError:
-        _log.debug("tracing_fastapi_skip", msg="FastAPI OTEL instrumentation not installed")
+        _log.debug(
+            "tracing_fastapi_skip", msg="FastAPI OTEL instrumentation not installed"
+        )
 
 
 def instrument_sqlalchemy(engine: Any) -> None:
@@ -121,7 +125,10 @@ def instrument_sqlalchemy(engine: Any) -> None:
         SQLAlchemyInstrumentor().instrument(engine=engine)
         _log.info("tracing_sqlalchemy_instrumented")
     except ImportError:
-        _log.debug("tracing_sqlalchemy_skip", msg="SQLAlchemy OTEL instrumentation not installed")
+        _log.debug(
+            "tracing_sqlalchemy_skip",
+            msg="SQLAlchemy OTEL instrumentation not installed",
+        )
 
 
 def get_tracer() -> Any:

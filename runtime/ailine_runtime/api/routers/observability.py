@@ -34,7 +34,9 @@ logger = structlog.get_logger("ailine.api.observability")
 router = APIRouter()
 
 
-def _compute_percentiles(values: list[float], percentiles: list[float]) -> dict[str, float]:
+def _compute_percentiles(
+    values: list[float], percentiles: list[float]
+) -> dict[str, float]:
     """Compute percentile values from a sorted list."""
     if not values:
         return {f"p{int(p * 100)}": 0.0 for p in percentiles}
@@ -49,7 +51,9 @@ def _compute_percentiles(values: list[float], percentiles: list[float]) -> dict[
 
 
 @router.get("/dashboard")
-async def observability_dashboard(teacher_id: str = Depends(require_authenticated)) -> dict[str, Any]:
+async def observability_dashboard(
+    teacher_id: str = Depends(require_authenticated),
+) -> dict[str, Any]:
     """System health and performance dashboard for judges.
 
     Returns current LLM provider info, SmartRouter breakdown,
@@ -78,11 +82,15 @@ async def observability_dashboard(teacher_id: str = Depends(require_authenticate
     # HTTP metrics
     http_data = http_requests_total.collect()
     total_http_requests = sum(v for _, v in http_data)
-    http_errors = sum(v for labels, v in http_data if labels.get("status", "").startswith("5"))
+    http_errors = sum(
+        v for labels, v in http_data if labels.get("status", "").startswith("5")
+    )
 
     # Circuit breaker state
     cb_data = circuit_breaker_state.collect()
-    cb_transitions = {labels.get("transition", "unknown"): int(v) for labels, v in cb_data}
+    cb_transitions = {
+        labels.get("transition", "unknown"): int(v) for labels, v in cb_data
+    }
 
     # SSE event counts from observability store
     sse_counts = obs_store.get_sse_event_counts()
@@ -142,7 +150,9 @@ async def observability_dashboard(teacher_id: str = Depends(require_authenticate
 
 
 @router.get("/standards-evidence/{run_id}")
-async def standards_evidence(run_id: str, teacher_id: str = Depends(require_authenticated)) -> dict[str, Any]:
+async def standards_evidence(
+    run_id: str, teacher_id: str = Depends(require_authenticated)
+) -> dict[str, Any]:
     """Standards alignment evidence for a specific plan run.
 
     Returns curriculum standard tags (BNCC/CCSS/NGSS), Bloom level,
@@ -183,7 +193,9 @@ async def standards_evidence(run_id: str, teacher_id: str = Depends(require_auth
 
 
 @router.get("/standards-evidence/{run_id}/handout")
-async def standards_handout(run_id: str, teacher_id: str = Depends(require_authenticated)) -> dict[str, Any]:
+async def standards_handout(
+    run_id: str, teacher_id: str = Depends(require_authenticated)
+) -> dict[str, Any]:
     """Export standards alignment as teacher handout format.
 
     Returns structured data suitable for rendering as a printable

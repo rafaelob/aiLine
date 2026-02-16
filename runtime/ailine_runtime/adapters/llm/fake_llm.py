@@ -81,26 +81,40 @@ class FakeChatLLM:
                     "title": f"Plano de Aula — {last_user[:50]}",
                     "grade": "6o ano",
                     "standard": "BNCC",
-                    "objectives": [{"id": "EF06MA01", "text": "Objetivo de aprendizagem gerado para teste."}],
+                    "objectives": [
+                        {
+                            "id": "EF06MA01",
+                            "text": "Objetivo de aprendizagem gerado para teste.",
+                        }
+                    ],
                     "steps": [
                         {
                             "minutes": 15,
                             "title": "Introdução",
-                            "instructions": ["Apresentar o tema.", "Ativar conhecimentos prévios."],
+                            "instructions": [
+                                "Apresentar o tema.",
+                                "Ativar conhecimentos prévios.",
+                            ],
                             "activities": ["Discussão em grupo."],
                             "assessment": ["Verificar compreensão inicial."],
                         },
                         {
                             "minutes": 25,
                             "title": "Desenvolvimento",
-                            "instructions": ["Explicar conceito.", "Praticar com exercícios."],
+                            "instructions": [
+                                "Explicar conceito.",
+                                "Praticar com exercícios.",
+                            ],
                             "activities": ["Exercício individual."],
                             "assessment": ["Checagem rápida."],
                         },
                         {
                             "minutes": 10,
                             "title": "Fechamento",
-                            "instructions": ["Resumir aprendizados.", "Tarefa para casa."],
+                            "instructions": [
+                                "Resumir aprendizados.",
+                                "Tarefa para casa.",
+                            ],
                             "activities": [],
                             "assessment": ["Autoavaliação."],
                         },
@@ -111,13 +125,19 @@ class FakeChatLLM:
                             {
                                 "minutes": 15,
                                 "title": "Introdução",
-                                "instructions": ["Vamos começar conversando sobre o tema."],
-                                "check_for_understanding": ["O que você já sabe sobre isso?"],
+                                "instructions": [
+                                    "Vamos começar conversando sobre o tema."
+                                ],
+                                "check_for_understanding": [
+                                    "O que você já sabe sobre isso?"
+                                ],
                                 "self_regulation_prompts": [],
                             }
                         ],
                         "glossary": ["termo: definição simples"],
-                        "alternative_response_options": ["Pode desenhar ou responder oralmente."],
+                        "alternative_response_options": [
+                            "Pode desenhar ou responder oralmente."
+                        ],
                     },
                     "accessibility_pack_draft": {
                         "applied_adaptations": [],

@@ -41,7 +41,9 @@ class ElevenLabsTTS:
         self._voice_id = voice_id
         self._model_id = model_id
 
-    async def synthesize(self, text: str, *, locale: str = "pt-BR", speed: float = 1.0) -> bytes:
+    async def synthesize(
+        self, text: str, *, locale: str = "pt-BR", speed: float = 1.0
+    ) -> bytes:
         """Synthesize text to audio bytes via ElevenLabs API.
 
         Returns raw audio bytes (mpeg by default from ElevenLabs).

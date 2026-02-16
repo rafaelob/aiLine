@@ -42,7 +42,9 @@ _GOOD_FINAL_STATE = {
     "user_prompt": "Plano de teste",
     "draft": {"title": "Plano"},
     "validation": {"score": 85, "status": "accept"},
-    "final": {"parsed": {"plan_id": "test-run", "score": 85, "human_review_required": False}},
+    "final": {
+        "parsed": {"plan_id": "test-run", "score": 85, "human_review_required": False}
+    },
     "refine_iter": 0,
 }
 
@@ -67,8 +69,20 @@ def _make_mock_workflow(
                 writer(emitter.emit(SSEEventType.STAGE_START, "planner"))
                 writer(emitter.emit(SSEEventType.STAGE_COMPLETE, "planner"))
                 writer(emitter.emit(SSEEventType.STAGE_START, "validate"))
-                writer(emitter.emit(SSEEventType.QUALITY_SCORED, "validate", {"score": 85, "status": "accept"}))
-                writer(emitter.emit(SSEEventType.QUALITY_DECISION, "validate", {"decision": "accept", "score": 85}))
+                writer(
+                    emitter.emit(
+                        SSEEventType.QUALITY_SCORED,
+                        "validate",
+                        {"score": 85, "status": "accept"},
+                    )
+                )
+                writer(
+                    emitter.emit(
+                        SSEEventType.QUALITY_DECISION,
+                        "validate",
+                        {"decision": "accept", "score": 85},
+                    )
+                )
                 writer(emitter.emit(SSEEventType.STAGE_COMPLETE, "validate"))
                 writer(emitter.emit(SSEEventType.STAGE_START, "executor"))
                 writer(emitter.emit(SSEEventType.STAGE_COMPLETE, "executor"))
@@ -112,11 +126,16 @@ class TestPlansStreamEndpoint:
         app = self._make_app()
         mock_wf = _make_mock_workflow()
 
-        with _patch_build_workflow(mock_wf), _patch_agent_deps_factory(), TestClient(app) as client:
+        with _patch_build_workflow(mock_wf), _patch_agent_deps_factory(), TestClient(
+            app
+        ) as client:
             response = client.post(
                 "/plans/generate/stream",
                 headers=_AUTH,
-                json={"run_id": "test-001", "user_prompt": "Crie um plano de matematica"},
+                json={
+                    "run_id": "test-001",
+                    "user_prompt": "Crie um plano de matematica",
+                },
             )
             assert response.status_code == 200
             assert "text/event-stream" in response.headers.get("content-type", "")
@@ -126,7 +145,9 @@ class TestPlansStreamEndpoint:
         app = self._make_app()
         mock_wf = _make_mock_workflow()
 
-        with _patch_build_workflow(mock_wf), _patch_agent_deps_factory(), TestClient(app) as client:
+        with _patch_build_workflow(mock_wf), _patch_agent_deps_factory(), TestClient(
+            app
+        ) as client:
             response = client.post(
                 "/plans/generate/stream",
                 headers=_AUTH,
@@ -143,7 +164,9 @@ class TestPlansStreamEndpoint:
         app = self._make_app()
         mock_wf = _make_mock_workflow()
 
-        with _patch_build_workflow(mock_wf), _patch_agent_deps_factory(), TestClient(app) as client:
+        with _patch_build_workflow(mock_wf), _patch_agent_deps_factory(), TestClient(
+            app
+        ) as client:
             response = client.post(
                 "/plans/generate/stream",
                 headers=_AUTH,
@@ -166,7 +189,9 @@ class TestPlansStreamEndpoint:
         app = self._make_app()
         mock_wf = _make_mock_workflow()
 
-        with _patch_build_workflow(mock_wf), _patch_agent_deps_factory(), TestClient(app) as client:
+        with _patch_build_workflow(mock_wf), _patch_agent_deps_factory(), TestClient(
+            app
+        ) as client:
             response = client.post(
                 "/plans/generate/stream",
                 headers=_AUTH,
@@ -183,7 +208,9 @@ class TestPlansStreamEndpoint:
         app = self._make_app()
         mock_wf = _make_mock_workflow()
 
-        with _patch_build_workflow(mock_wf), _patch_agent_deps_factory(), TestClient(app) as client:
+        with _patch_build_workflow(mock_wf), _patch_agent_deps_factory(), TestClient(
+            app
+        ) as client:
             response = client.post(
                 "/plans/generate/stream",
                 headers=_AUTH,
@@ -199,7 +226,9 @@ class TestPlansStreamEndpoint:
         app = self._make_app()
         mock_wf = _make_mock_workflow(side_effect=RuntimeError("Boom"))
 
-        with _patch_build_workflow(mock_wf), _patch_agent_deps_factory(), TestClient(app) as client:
+        with _patch_build_workflow(mock_wf), _patch_agent_deps_factory(), TestClient(
+            app
+        ) as client:
             response = client.post(
                 "/plans/generate/stream",
                 headers=_AUTH,
@@ -241,7 +270,9 @@ class TestPlansStreamEndpoint:
         app = self._make_app()
         mock_wf = _make_mock_workflow()
 
-        with _patch_build_workflow(mock_wf), _patch_agent_deps_factory(), TestClient(app) as client:
+        with _patch_build_workflow(mock_wf), _patch_agent_deps_factory(), TestClient(
+            app
+        ) as client:
             response = client.post(
                 "/plans/generate/stream",
                 headers=_AUTH,
@@ -258,7 +289,9 @@ class TestPlansStreamEndpoint:
         app = self._make_app()
         mock_wf = _make_mock_workflow()
 
-        with _patch_build_workflow(mock_wf), _patch_agent_deps_factory(), TestClient(app) as client:
+        with _patch_build_workflow(mock_wf), _patch_agent_deps_factory(), TestClient(
+            app
+        ) as client:
             response = client.post(
                 "/plans/generate/stream",
                 headers=_AUTH,
@@ -287,7 +320,9 @@ class TestPlansStreamTenantAuth:
         app = self._make_app()
         mock_wf = _make_mock_workflow()
 
-        with _patch_build_workflow(mock_wf), _patch_agent_deps_factory(), TestClient(app) as client:
+        with _patch_build_workflow(mock_wf), _patch_agent_deps_factory(), TestClient(
+            app
+        ) as client:
             response = client.post(
                 "/plans/generate/stream",
                 headers=_AUTH,

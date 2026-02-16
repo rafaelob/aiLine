@@ -79,7 +79,9 @@ def skill_dir(tmp_path: Path) -> Path:
 
     # legacy-skill
     (tmp_path / "legacy-skill").mkdir()
-    (tmp_path / "legacy-skill" / "SKILL.md").write_text(LEGACY_SKILL_MD, encoding="utf-8")
+    (tmp_path / "legacy-skill" / "SKILL.md").write_text(
+        LEGACY_SKILL_MD, encoding="utf-8"
+    )
 
     # minimal
     (tmp_path / "minimal").mkdir()

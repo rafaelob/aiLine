@@ -1,0 +1,24 @@
+Project Name: AiLine — Adaptive Inclusive Learning
+
+Selected Hackathon Track: Education & Accessibility
+
+Project Description:
+AiLine is an AI-powered educational platform that transforms classroom materials into adaptive, accessible lesson plans in real time. Teachers upload content, select student accessibility needs (autism, ADHD, dyslexia, hearing impairment), and a multi-agent pipeline generates personalized study plans with 10 export variants. Every AI decision is visible, scored, and auditable through a Glass Box pipeline viewer. The platform supports 4 curriculum standards (BNCC, CCSS Math, CCSS ELA, NGSS), 3 languages, and 9 WCAG AAA accessibility themes. It includes AI tutoring with Socratic method, sign language support via Libras/ASL, and parent-facing progress reports in plain language.
+
+Thoughts and feedback on building with Opus 4.6:
+
+I used two Claude Code Ultra 20 accounts to speed up development — running parallel workstreams on separate machines. That said, I lost three full days at the start of the hackathon because one account kept hitting a 500 error related to the Org ID. It took three days to get resolved, which ate into my timeline significantly.
+
+Once I got both accounts running, the agent team mode in Claude Code was the real game-changer. Being able to spin up teams of agents — one doing backend work, another doing frontend, another running tests — and having them coordinate through shared task lists was incredibly productive. I could delegate research to one agent, implementation to another, and code review to a third, all working in parallel.
+
+Opus 4.6 itself is excellent for planning and executing coding tasks. It handles complex multi-file refactors well, understands architectural patterns deeply, and produces clean, well-structured code. The model's ability to reason about hexagonal architecture, design patterns, and testing strategies made it genuinely useful as a development partner rather than just a code generator.
+
+That said, I learned to always double-check claims of completeness. Opus 4.6 sometimes reports tasks as done when there are still loose ends — missing edge cases, incomplete test coverage, or i18n keys only added to one locale. The fix was simple: after every major task, I'd explicitly ask it to verify its own work, run the test suite, and check for gaps. Once I built that verification step into my workflow, the output quality was consistently high.
+
+In the project itself, Opus 4.6 powers the core AI pipeline — it's the default model for the PlannerAgent (lesson plan generation) and is available as a tier in the SmartRouter for complex reasoning tasks. The QualityGateAgent scores every plan 0-100, and the system uses Opus for tasks that need deep understanding of accessibility requirements, curriculum standards, and pedagogical best practices. So the model isn't just building the project — it's running inside it.
+
+The combination of Claude Code's agent orchestration and Opus 4.6's reasoning capabilities let me ship 190+ features, 3,300+ tests, and 60 architecture decision records in one week. Not all of that was smooth — there were plenty of debugging sessions and reworks — but the throughput was genuinely something I couldn't have achieved alone.
+
+One concrete suggestion: it would help if Claude Code had better state persistence between sessions. When context gets compressed or a session ends, picking up where you left off requires re-establishing a lot of context. I worked around this with detailed SPRINT.md files and control docs, but native session continuity would save real time.
+
+Overall, Opus 4.6 is a strong model for software engineering work. It plans well, executes well, and when you set up proper verification loops, it delivers production-quality code consistently.

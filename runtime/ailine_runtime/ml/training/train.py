@@ -60,13 +60,18 @@ def train(config: TrainConfig) -> TrainResult:
 
     # Validate data directory
     if not config.data_dir.exists():
-        logger.warning("Data directory %s does not exist — returning placeholder result", config.data_dir)
+        logger.warning(
+            "Data directory %s does not exist — returning placeholder result",
+            config.data_dir,
+        )
         return TrainResult()
 
     try:
         import torch  # noqa: F401
     except ImportError:
-        logger.warning("PyTorch not installed — training scaffold only. Install with: pip install torch")
+        logger.warning(
+            "PyTorch not installed — training scaffold only. Install with: pip install torch"
+        )
         return _placeholder_train(config)
 
     return _placeholder_train(config)
@@ -100,7 +105,9 @@ def _placeholder_train(config: TrainConfig) -> TrainResult:
             best_val_loss = val_loss
             best_epoch = epoch
 
-        logger.info("Epoch %d: train_loss=%.4f, val_loss=%.4f", epoch, train_loss, val_loss)
+        logger.info(
+            "Epoch %d: train_loss=%.4f, val_loss=%.4f", epoch, train_loss, val_loss
+        )
 
     return TrainResult(
         best_epoch=best_epoch,

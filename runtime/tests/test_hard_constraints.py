@@ -130,7 +130,9 @@ class TestCheckAccessibilityAdaptation:
         profile = _make_profile(autism=True)
         draft = {
             "accessibility_pack_draft": {
-                "applied_adaptations": [{"strategies": ["adaptação TEA: agenda visual"]}],
+                "applied_adaptations": [
+                    {"strategies": ["adaptação TEA: agenda visual"]}
+                ],
             },
             "steps": [
                 {"title": "Math", "instructions": ["Veja a adaptação UDL."]},
@@ -163,7 +165,9 @@ class TestCheckRagSources:
 
     def test_rag_with_citation_passes(self) -> None:
         draft = {
-            "steps": [{"title": "Lesson", "instructions": ["Baseado em fonte oficial."]}],
+            "steps": [
+                {"title": "Lesson", "instructions": ["Baseado em fonte oficial."]}
+            ],
         }
         rag = [{"content": "...", "score": 0.8}]
         result = check_rag_sources(draft, rag)
@@ -257,8 +261,18 @@ class TestExtractRagQuotes:
 
     def test_extracts_quotes(self) -> None:
         rag = [
-            {"content": "Paragraph about fractions.", "title": "Math Guide", "section": "Ch 3", "score": 0.9},
-            {"content": "Another paragraph.", "title": "Algebra", "heading": "Intro", "score": 0.8},
+            {
+                "content": "Paragraph about fractions.",
+                "title": "Math Guide",
+                "section": "Ch 3",
+                "score": 0.9,
+            },
+            {
+                "content": "Another paragraph.",
+                "title": "Algebra",
+                "heading": "Intro",
+                "score": 0.8,
+            },
         ]
         quotes = extract_rag_quotes(rag)
         assert len(quotes) == 2
@@ -285,7 +299,12 @@ class TestRunAllHardConstraints:
         results = run_hard_constraints({"steps": []})
         assert len(results) == 4
         names = {r.name for r in results}
-        assert names == {"reading_level", "accessibility_adaptation", "rag_sources_cited", "formative_assessment"}
+        assert names == {
+            "reading_level",
+            "accessibility_adaptation",
+            "rag_sources_cited",
+            "formative_assessment",
+        }
 
     def test_all_pass_without_profile(self) -> None:
         draft = {

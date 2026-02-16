@@ -67,7 +67,9 @@ class TestTracingDisabled:
 class TestTracingInit:
     """Test init_tracing behavior."""
 
-    def test_init_returns_false_when_disabled(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_init_returns_false_when_disabled(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         monkeypatch.delenv("AILINE_OTEL_ENABLED", raising=False)
         # Reset global state for this test
         import ailine_runtime.shared.tracing as mod
@@ -131,7 +133,9 @@ class TestTraceLLMCallWithMockTracer:
         original = mod._tracer
         mod._tracer = mock_tracer
         try:
-            with trace_llm_call(provider="anthropic", model="haiku", tier="cheap") as data:
+            with trace_llm_call(
+                provider="anthropic", model="haiku", tier="cheap"
+            ) as data:
                 data["tokens_in"] = 50
                 data["latency_ms"] = 100.5
 
@@ -159,7 +163,9 @@ class TestTraceLLMCallWithMockTracer:
         original = mod._tracer
         mod._tracer = mock_tracer
         try:
-            with pytest.raises(ValueError, match="boom"), trace_llm_call(provider="x", model="y", tier="z"):
+            with pytest.raises(ValueError, match="boom"), trace_llm_call(
+                provider="x", model="y", tier="z"
+            ):
                 raise ValueError("boom")
 
             mock_span.set_attribute.assert_any_call("error", True)

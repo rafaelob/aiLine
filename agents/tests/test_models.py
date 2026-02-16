@@ -52,7 +52,9 @@ class TestQualityAssessment:
         assert qa.human_review_reasons == []
 
     def test_model_dump(self) -> None:
-        qa = QualityAssessment(score=75, status="refine-if-budget", errors=["missing steps"])
+        qa = QualityAssessment(
+            score=75, status="refine-if-budget", errors=["missing steps"]
+        )
         d = qa.model_dump()
         assert d["score"] == 75
         assert d["status"] == "refine-if-budget"

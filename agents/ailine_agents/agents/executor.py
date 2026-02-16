@@ -18,7 +18,9 @@ from ._tool_bridge import register_tools
 _DEFAULT_EXECUTOR_MODEL = "anthropic:claude-sonnet-4-5"
 
 
-def build_executor_agent(*, model: str | None = None) -> Agent[AgentDeps, ExecutorResult]:
+def build_executor_agent(
+    *, model: str | None = None
+) -> Agent[AgentDeps, ExecutorResult]:
     """Create the ExecutorAgent with typed output and tools.
 
     Args:
@@ -48,7 +50,9 @@ def build_executor_agent(*, model: str | None = None) -> Agent[AgentDeps, Execut
 
 
 @functools.lru_cache(maxsize=4)
-def _build_and_register_executor(model: str | None = None) -> Agent[AgentDeps, ExecutorResult]:
+def _build_and_register_executor(
+    model: str | None = None,
+) -> Agent[AgentDeps, ExecutorResult]:
     """Build executor agent with tools (cached, thread-safe via lru_cache)."""
     agent = build_executor_agent(model=model)
     from ailine_runtime.tools.registry import build_tool_registry

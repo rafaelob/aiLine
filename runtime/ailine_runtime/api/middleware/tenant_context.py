@@ -133,7 +133,11 @@ def _get_jwt_config() -> dict[str, Any]:
     # Determine algorithms based on what key material is available
     algorithms_env = os.getenv("AILINE_JWT_ALGORITHMS", "")
     if algorithms_env:
-        algorithms = [a.strip() for a in algorithms_env.split(",") if a.strip() in _ALLOWED_ALGORITHMS]
+        algorithms = [
+            a.strip()
+            for a in algorithms_env.split(",")
+            if a.strip() in _ALLOWED_ALGORITHMS
+        ]
     elif public_key:
         algorithms = ["RS256", "ES256"]
     elif secret:
@@ -183,7 +187,9 @@ def _extract_teacher_id_from_jwt(token: str) -> tuple[str | None, str | None]:
     return None, "no_key_material"
 
 
-def _verified_jwt_decode(token: str, cfg: dict[str, Any]) -> tuple[str | None, str | None]:
+def _verified_jwt_decode(
+    token: str, cfg: dict[str, Any]
+) -> tuple[str | None, str | None]:
     """Decode and verify a JWT using PyJWT.
 
     Supports HS256 (symmetric), RS256, and ES256 (asymmetric).

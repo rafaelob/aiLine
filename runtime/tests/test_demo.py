@@ -132,14 +132,18 @@ def app_demo_on(settings_demo_on: Settings):
 @pytest.fixture()
 async def client_demo_off(app_demo_off) -> AsyncGenerator[AsyncClient, None]:
     transport = ASGITransport(app=app_demo_off, raise_app_exceptions=False)
-    async with AsyncClient(transport=transport, base_url="http://test", timeout=10.0) as c:
+    async with AsyncClient(
+        transport=transport, base_url="http://test", timeout=10.0
+    ) as c:
         yield c
 
 
 @pytest.fixture()
 async def client_demo_on(app_demo_on) -> AsyncGenerator[AsyncClient, None]:
     transport = ASGITransport(app=app_demo_on, raise_app_exceptions=False)
-    async with AsyncClient(transport=transport, base_url="http://test", timeout=10.0) as c:
+    async with AsyncClient(
+        transport=transport, base_url="http://test", timeout=10.0
+    ) as c:
         yield c
 
 
@@ -189,7 +193,11 @@ class TestDemoServiceLoading:
         data_dir = tmp_path / "demo_multi"
         data_dir.mkdir()
         for i in range(3):
-            scenario = {"id": f"scenario-{i}", "title": f"Scenario {i}", "description": f"Desc {i}"}
+            scenario = {
+                "id": f"scenario-{i}",
+                "title": f"Scenario {i}",
+                "description": f"Desc {i}",
+            }
             (data_dir / f"s{i}.json").write_text(json.dumps(scenario), encoding="utf-8")
         svc = DemoService(data_dir=data_dir)
         assert svc.scenario_count == 3
@@ -207,7 +215,9 @@ class TestDemoServiceRetrieval:
         assert "description" in item
         assert item["title"] == "Test Scenario"
 
-    def test_list_scenarios_includes_optional_fields(self, demo_service: DemoService) -> None:
+    def test_list_scenarios_includes_optional_fields(
+        self, demo_service: DemoService
+    ) -> None:
         items = demo_service.list_scenarios()
         item = items[0]
         assert item["grade"] == "5th grade"
@@ -234,7 +244,9 @@ class TestDemoServiceRetrieval:
         assert "cached_plan" in scenario
         assert "cached_events" in scenario
 
-    def test_get_scenario_returns_none_for_missing(self, demo_service: DemoService) -> None:
+    def test_get_scenario_returns_none_for_missing(
+        self, demo_service: DemoService
+    ) -> None:
         assert demo_service.get_scenario("nonexistent") is None
 
     def test_get_cached_plan_returns_plan(self, demo_service: DemoService) -> None:
@@ -243,7 +255,9 @@ class TestDemoServiceRetrieval:
         assert plan["title"] == "Test Plan"
         assert len(plan["steps"]) == 1
 
-    def test_get_cached_plan_returns_none_for_missing(self, demo_service: DemoService) -> None:
+    def test_get_cached_plan_returns_none_for_missing(
+        self, demo_service: DemoService
+    ) -> None:
         assert demo_service.get_cached_plan("nonexistent") is None
 
     def test_get_cached_events_returns_events(self, demo_service: DemoService) -> None:
@@ -252,33 +266,51 @@ class TestDemoServiceRetrieval:
         assert events[0]["type"] == "run_start"
         assert events[-1]["type"] == "run_complete"
 
-    def test_get_cached_events_returns_empty_for_missing(self, demo_service: DemoService) -> None:
+    def test_get_cached_events_returns_empty_for_missing(
+        self, demo_service: DemoService
+    ) -> None:
         assert demo_service.get_cached_events("nonexistent") == []
 
     def test_get_score_returns_score(self, demo_service: DemoService) -> None:
         assert demo_service.get_score("test-scenario") == 85
 
-    def test_get_score_returns_none_for_missing(self, demo_service: DemoService) -> None:
+    def test_get_score_returns_none_for_missing(
+        self, demo_service: DemoService
+    ) -> None:
         assert demo_service.get_score("nonexistent") is None
 
     def test_get_prompt_returns_prompt(self, demo_service: DemoService) -> None:
         assert demo_service.get_prompt("test-scenario") == "Create a test lesson plan."
 
-    def test_get_prompt_returns_none_for_missing(self, demo_service: DemoService) -> None:
+    def test_get_prompt_returns_none_for_missing(
+        self, demo_service: DemoService
+    ) -> None:
         assert demo_service.get_prompt("nonexistent") is None
 
-    def test_get_cached_plan_returns_none_when_no_plan_field(self, tmp_path: Path) -> None:
+    def test_get_cached_plan_returns_none_when_no_plan_field(
+        self, tmp_path: Path
+    ) -> None:
         data_dir = tmp_path / "demo_no_plan"
         data_dir.mkdir()
-        scenario = {"id": "no-plan", "title": "No Plan", "description": "Missing cached_plan"}
+        scenario = {
+            "id": "no-plan",
+            "title": "No Plan",
+            "description": "Missing cached_plan",
+        }
         (data_dir / "no_plan.json").write_text(json.dumps(scenario), encoding="utf-8")
         svc = DemoService(data_dir=data_dir)
         assert svc.get_cached_plan("no-plan") is None
 
-    def test_get_cached_events_returns_empty_when_no_events_field(self, tmp_path: Path) -> None:
+    def test_get_cached_events_returns_empty_when_no_events_field(
+        self, tmp_path: Path
+    ) -> None:
         data_dir = tmp_path / "demo_no_events"
         data_dir.mkdir()
-        scenario = {"id": "no-events", "title": "No Events", "description": "Missing cached_events"}
+        scenario = {
+            "id": "no-events",
+            "title": "No Events",
+            "description": "Missing cached_events",
+        }
         (data_dir / "no_events.json").write_text(json.dumps(scenario), encoding="utf-8")
         svc = DemoService(data_dir=data_dir)
         assert svc.get_cached_events("no-events") == []
@@ -296,8 +328,14 @@ class TestDemoServiceReset:
     def test_reset_picks_up_new_files(self, demo_data_dir: Path) -> None:
         svc = DemoService(data_dir=demo_data_dir)
         assert svc.scenario_count == 1
-        new_scenario = {"id": "new-scenario", "title": "New", "description": "Added after init"}
-        (demo_data_dir / "new.json").write_text(json.dumps(new_scenario), encoding="utf-8")
+        new_scenario = {
+            "id": "new-scenario",
+            "title": "New",
+            "description": "Added after init",
+        }
+        (demo_data_dir / "new.json").write_text(
+            json.dumps(new_scenario), encoding="utf-8"
+        )
         svc.reset()
         assert svc.scenario_count == 2
 
@@ -330,7 +368,9 @@ class TestDemoAPIList:
             assert "title" in item
             assert "description" in item
 
-    async def test_list_includes_extended_fields(self, client_demo_off: AsyncClient) -> None:
+    async def test_list_includes_extended_fields(
+        self, client_demo_off: AsyncClient
+    ) -> None:
         resp = await client_demo_off.get("/demo/scenarios")
         body = resp.json()
         for item in body:
@@ -358,7 +398,9 @@ class TestDemoAPIGetScenario:
         assert body["id"] == scenario_id
         assert "cached_plan" in body
 
-    async def test_get_nonexistent_scenario_returns_404(self, client_demo_off: AsyncClient) -> None:
+    async def test_get_nonexistent_scenario_returns_404(
+        self, client_demo_off: AsyncClient
+    ) -> None:
         resp = await client_demo_off.get("/demo/scenarios/nonexistent-id")
         assert resp.status_code == 404
 
@@ -381,7 +423,9 @@ class TestDemoAPIRun:
         assert "plan" in body
         assert body["run_id"] == f"demo-{scenario_id}"
 
-    async def test_run_nonexistent_returns_404(self, client_demo_off: AsyncClient) -> None:
+    async def test_run_nonexistent_returns_404(
+        self, client_demo_off: AsyncClient
+    ) -> None:
         resp = await client_demo_off.post("/demo/scenarios/nonexistent-id/run")
         assert resp.status_code == 404
 
@@ -389,7 +433,9 @@ class TestDemoAPIRun:
 class TestDemoAPIExecute:
     """Tests for POST /demo/scenarios/{id}/execute."""
 
-    async def test_execute_returns_cached_plan(self, client_demo_off: AsyncClient) -> None:
+    async def test_execute_returns_cached_plan(
+        self, client_demo_off: AsyncClient
+    ) -> None:
         list_resp = await client_demo_off.get("/demo/scenarios")
         scenarios = list_resp.json()
         if not scenarios:
@@ -404,11 +450,15 @@ class TestDemoAPIExecute:
         assert "plan" in body
         assert body["run_id"] == f"demo-{scenario_id}"
 
-    async def test_execute_nonexistent_returns_404(self, client_demo_off: AsyncClient) -> None:
+    async def test_execute_nonexistent_returns_404(
+        self, client_demo_off: AsyncClient
+    ) -> None:
         resp = await client_demo_off.post("/demo/scenarios/nonexistent-id/execute")
         assert resp.status_code == 404
 
-    async def test_execute_matches_run_output(self, client_demo_off: AsyncClient) -> None:
+    async def test_execute_matches_run_output(
+        self, client_demo_off: AsyncClient
+    ) -> None:
         list_resp = await client_demo_off.get("/demo/scenarios")
         scenarios = list_resp.json()
         if not scenarios:
@@ -429,7 +479,9 @@ class TestDemoAPIReset:
         body = resp.json()
         assert body["status"] == "ok"
 
-    async def test_scenarios_available_after_reset(self, client_demo_off: AsyncClient) -> None:
+    async def test_scenarios_available_after_reset(
+        self, client_demo_off: AsyncClient
+    ) -> None:
         await client_demo_off.get("/demo/reset")
         resp = await client_demo_off.get("/demo/scenarios")
         assert resp.status_code == 200
@@ -439,7 +491,9 @@ class TestDemoAPIReset:
 class TestDemoAPIStream:
     """Tests for POST /demo/scenarios/{id}/stream."""
 
-    async def test_stream_returns_sse_events(self, client_demo_off: AsyncClient) -> None:
+    async def test_stream_returns_sse_events(
+        self, client_demo_off: AsyncClient
+    ) -> None:
         list_resp = await client_demo_off.get("/demo/scenarios")
         scenarios = list_resp.json()
         if not scenarios:
@@ -466,7 +520,9 @@ class TestDemoAPIStream:
         assert "plan" in last.get("payload", {})
         assert last["payload"]["demo_mode"] is True
 
-    async def test_stream_events_have_sequential_seq(self, client_demo_off: AsyncClient) -> None:
+    async def test_stream_events_have_sequential_seq(
+        self, client_demo_off: AsyncClient
+    ) -> None:
         list_resp = await client_demo_off.get("/demo/scenarios")
         scenarios = list_resp.json()
         if not scenarios:
@@ -479,7 +535,9 @@ class TestDemoAPIStream:
         seq_numbers = [e["seq"] for e in events]
         assert seq_numbers == list(range(1, len(events) + 1))
 
-    async def test_stream_nonexistent_returns_404(self, client_demo_off: AsyncClient) -> None:
+    async def test_stream_nonexistent_returns_404(
+        self, client_demo_off: AsyncClient
+    ) -> None:
         resp = await client_demo_off.post("/demo/scenarios/nonexistent-id/stream")
         assert resp.status_code == 404
 
@@ -532,7 +590,9 @@ class TestDemoAPIStream:
 class TestDemoModeMiddleware:
     """Tests for the demo mode middleware intercepting /plans/generate."""
 
-    async def test_middleware_inactive_when_demo_off(self, client_demo_off: AsyncClient) -> None:
+    async def test_middleware_inactive_when_demo_off(
+        self, client_demo_off: AsyncClient
+    ) -> None:
         """With demo_mode=False, the middleware does not intercept."""
         try:
             resp = await asyncio.wait_for(
@@ -555,7 +615,9 @@ class TestDemoModeMiddleware:
             body = resp.json()
             assert body.get("demo_mode") is not True
 
-    async def test_middleware_intercepts_with_demo_scenario_id(self, client_demo_on: AsyncClient) -> None:
+    async def test_middleware_intercepts_with_demo_scenario_id(
+        self, client_demo_on: AsyncClient
+    ) -> None:
         """With demo_mode=True + demo_scenario_id, the middleware returns cached plan."""
         resp = await client_demo_on.post(
             "/plans/generate",
@@ -572,7 +634,9 @@ class TestDemoModeMiddleware:
         assert "plan" in body
         assert body["run_id"] == "test-run-demo"
 
-    async def test_middleware_passes_through_without_demo_scenario_id(self, client_demo_on: AsyncClient) -> None:
+    async def test_middleware_passes_through_without_demo_scenario_id(
+        self, client_demo_on: AsyncClient
+    ) -> None:
         """With demo_mode=True but no demo_scenario_id, passes through."""
         try:
             resp = await asyncio.wait_for(
@@ -594,7 +658,9 @@ class TestDemoModeMiddleware:
             body = resp.json()
             assert body.get("demo_mode") is not True
 
-    async def test_middleware_returns_404_for_unknown_scenario(self, client_demo_on: AsyncClient) -> None:
+    async def test_middleware_returns_404_for_unknown_scenario(
+        self, client_demo_on: AsyncClient
+    ) -> None:
         """Unknown demo_scenario_id returns 404."""
         resp = await client_demo_on.post(
             "/plans/generate",
@@ -606,13 +672,17 @@ class TestDemoModeMiddleware:
         )
         assert resp.status_code == 404
 
-    async def test_middleware_ignores_non_post(self, client_demo_on: AsyncClient) -> None:
+    async def test_middleware_ignores_non_post(
+        self, client_demo_on: AsyncClient
+    ) -> None:
         """GET requests to /plans/generate are not intercepted."""
         resp = await client_demo_on.get("/plans/generate")
         # Should return 405 (method not allowed) from the real router
         assert resp.status_code == 405
 
-    async def test_middleware_ignores_other_paths(self, client_demo_on: AsyncClient) -> None:
+    async def test_middleware_ignores_other_paths(
+        self, client_demo_on: AsyncClient
+    ) -> None:
         """POST to other paths is not intercepted."""
         resp = await client_demo_on.get("/health")
         assert resp.status_code == 200
@@ -695,7 +765,9 @@ class TestRealDemoScenarios:
             # Plan required fields
             plan = scenario["cached_plan"]
             for field in ("title", "grade", "standard", "objectives", "steps"):
-                assert field in plan, f"Missing plan field '{field}' in scenario '{sid}'"
+                assert (
+                    field in plan
+                ), f"Missing plan field '{field}' in scenario '{sid}'"
             # Events must start with run_start and end with run_complete
             events = scenario["cached_events"]
             assert len(events) >= 2, f"Too few events in scenario '{sid}'"
@@ -728,7 +800,9 @@ class TestRealDemoScenarios:
         for sid in _SCENARIO_IDS:
             events = svc.get_cached_events(sid)
             delays = [e.get("delay_ms", 0) for e in events]
-            assert delays == sorted(delays), f"Events not in delay order for scenario '{sid}'"
+            assert delays == sorted(
+                delays
+            ), f"Events not in delay order for scenario '{sid}'"
 
 
 # ---------------------------------------------------------------------------
@@ -739,7 +813,9 @@ class TestRealDemoScenarios:
 class TestDemoProfiles:
     """Tests for GET /demo/profiles."""
 
-    async def test_profiles_returns_all_profiles(self, client_demo_off: AsyncClient) -> None:
+    async def test_profiles_returns_all_profiles(
+        self, client_demo_off: AsyncClient
+    ) -> None:
         resp = await client_demo_off.get("/demo/profiles")
         assert resp.status_code == 200
         body = resp.json()
@@ -749,7 +825,9 @@ class TestDemoProfiles:
         profiles = body["profiles"]
         assert len(profiles) == 6
 
-    async def test_profiles_contain_required_fields(self, client_demo_off: AsyncClient) -> None:
+    async def test_profiles_contain_required_fields(
+        self, client_demo_off: AsyncClient
+    ) -> None:
         resp = await client_demo_off.get("/demo/profiles")
         profiles = resp.json()["profiles"]
         for p in profiles:
@@ -759,7 +837,9 @@ class TestDemoProfiles:
             assert "demo_key" in p
             assert "description" in p
 
-    async def test_profiles_have_correct_roles(self, client_demo_off: AsyncClient) -> None:
+    async def test_profiles_have_correct_roles(
+        self, client_demo_off: AsyncClient
+    ) -> None:
         resp = await client_demo_off.get("/demo/profiles")
         profiles = resp.json()["profiles"]
         roles = {p["role"] for p in profiles}
@@ -767,14 +847,18 @@ class TestDemoProfiles:
         assert "student" in roles
         assert "parent" in roles
 
-    async def test_teacher_profile_has_school(self, client_demo_off: AsyncClient) -> None:
+    async def test_teacher_profile_has_school(
+        self, client_demo_off: AsyncClient
+    ) -> None:
         resp = await client_demo_off.get("/demo/profiles")
         profiles = resp.json()["profiles"]
         teacher = next(p for p in profiles if p["role"] == "teacher")
         assert "school" in teacher
         assert teacher["name"] == "Ms. Sarah Johnson"
 
-    async def test_student_profiles_have_accessibility(self, client_demo_off: AsyncClient) -> None:
+    async def test_student_profiles_have_accessibility(
+        self, client_demo_off: AsyncClient
+    ) -> None:
         resp = await client_demo_off.get("/demo/profiles")
         profiles = resp.json()["profiles"]
         students = [p for p in profiles if p["role"] == "student"]
@@ -783,7 +867,9 @@ class TestDemoProfiles:
             assert "accessibility" in s
             assert "accessibility_label" in s
 
-    async def test_demo_key_matches_profile_key(self, client_demo_off: AsyncClient) -> None:
+    async def test_demo_key_matches_profile_key(
+        self, client_demo_off: AsyncClient
+    ) -> None:
         resp = await client_demo_off.get("/demo/profiles")
         profiles = resp.json()["profiles"]
         keys = [p["demo_key"] for p in profiles]
@@ -799,7 +885,9 @@ class TestDemoProfilesUnit:
         from ailine_runtime.api.routers.demo import DEMO_PROFILES
 
         for key, profile in DEMO_PROFILES.items():
-            assert profile["id"].startswith("demo-"), f"Profile {key} id must start with 'demo-'"
+            assert profile["id"].startswith(
+                "demo-"
+            ), f"Profile {key} id must start with 'demo-'"
 
     def test_all_profile_keys_are_valid_teacher_ids(self) -> None:
         """demo_key prefixed with 'demo-' must pass tenant ID validation."""
@@ -841,7 +929,9 @@ class TestDemoSeed:
         assert body["created"]["reviews"] == 3
         assert len(body["ids"]["reviews"]) == 3
 
-    async def test_seed_creates_progress_records(self, client_demo_off: AsyncClient) -> None:
+    async def test_seed_creates_progress_records(
+        self, client_demo_off: AsyncClient
+    ) -> None:
         resp = await client_demo_off.post("/demo/seed")
         body = resp.json()
         assert body["created"]["progress"] == 8
@@ -860,7 +950,8 @@ class TestDemoSeed:
         assert len(body["ids"]["sessions"]) == 2
 
     async def test_seed_data_accessible_with_demo_header(
-        self, client_demo_off: AsyncClient,
+        self,
+        client_demo_off: AsyncClient,
     ) -> None:
         """After seeding, materials should be accessible using the teacher's ID."""
         seed_resp = await client_demo_off.post("/demo/seed")

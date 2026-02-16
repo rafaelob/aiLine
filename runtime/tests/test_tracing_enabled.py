@@ -199,7 +199,9 @@ class TestInstrumentEnabled:
         ):
             mock_engine = MagicMock()
             tracing_mod.instrument_sqlalchemy(mock_engine)
-            mock_instrumentor_instance.instrument.assert_called_once_with(engine=mock_engine)
+            mock_instrumentor_instance.instrument.assert_called_once_with(
+                engine=mock_engine
+            )
 
     def test_instrument_sqlalchemy_import_error(self, monkeypatch: pytest.MonkeyPatch):
         """When instrumentation package missing, should not raise."""
@@ -238,7 +240,11 @@ class TestTracePipelineNodeWithTracer:
                     raise RuntimeError("node fail")
             mock_span.set_attribute.assert_any_call("error", True)
             # Check error.message was set (partial match)
-            error_calls = [c for c in mock_span.set_attribute.call_args_list if c[0][0] == "error.message"]
+            error_calls = [
+                c
+                for c in mock_span.set_attribute.call_args_list
+                if c[0][0] == "error.message"
+            ]
             assert len(error_calls) == 1
             assert "node fail" in error_calls[0][0][1]
         finally:
@@ -276,7 +282,9 @@ class TestTraceToolCallWithTracer:
         mock_tracer, mock_span = _make_mock_tracer()
         tracing_mod._tracer = mock_tracer
         try:
-            with pytest.raises(TimeoutError, match="tool timeout"), trace_tool_call(tool_name="slow_tool"):
+            with pytest.raises(TimeoutError, match="tool timeout"), trace_tool_call(
+                tool_name="slow_tool"
+            ):
                 raise TimeoutError("tool timeout")
             mock_span.set_attribute.assert_any_call("error", True)
         finally:
@@ -300,7 +308,11 @@ class TestTraceToolCallWithTracer:
             with trace_tool_call(tool_name="quick"):
                 pass
             # latency_ms should NOT be set since we didn't add it to span_data
-            latency_calls = [c for c in mock_span.set_attribute.call_args_list if c[0][0] == "tool.latency_ms"]
+            latency_calls = [
+                c
+                for c in mock_span.set_attribute.call_args_list
+                if c[0][0] == "tool.latency_ms"
+            ]
             assert len(latency_calls) == 0
         finally:
             tracing_mod._tracer = None
@@ -316,7 +328,9 @@ class TestTraceLLMCallTokensOut:
         mock_tracer, mock_span = _make_mock_tracer()
         tracing_mod._tracer = mock_tracer
         try:
-            with trace_llm_call(provider="anthropic", model="haiku", tier="cheap") as data:
+            with trace_llm_call(
+                provider="anthropic", model="haiku", tier="cheap"
+            ) as data:
                 data["tokens_out"] = 200
             mock_span.set_attribute.assert_any_call("llm.tokens.output", 200)
         finally:

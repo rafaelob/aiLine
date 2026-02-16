@@ -33,7 +33,9 @@ class OCRProcessor:
     features).
     """
 
-    async def extract_text(self, file_bytes: bytes, *, file_type: str = PDF_TYPE) -> str:
+    async def extract_text(
+        self, file_bytes: bytes, *, file_type: str = PDF_TYPE
+    ) -> str:
         """Extract text from the given file bytes.
 
         Parameters

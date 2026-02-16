@@ -34,7 +34,9 @@ _HAS_ANTHROPIC = bool(os.environ.get("ANTHROPIC_API_KEY", "").strip())
 _HAS_OPENAI = bool(os.environ.get("OPENAI_API_KEY", "").strip())
 _HAS_GEMINI = bool(os.environ.get("GEMINI_API_KEY", "").strip())
 
-skip_no_anthropic = pytest.mark.skipif(not _HAS_ANTHROPIC, reason="ANTHROPIC_API_KEY not set")
+skip_no_anthropic = pytest.mark.skipif(
+    not _HAS_ANTHROPIC, reason="ANTHROPIC_API_KEY not set"
+)
 skip_no_openai = pytest.mark.skipif(not _HAS_OPENAI, reason="OPENAI_API_KEY not set")
 skip_no_gemini = pytest.mark.skipif(not _HAS_GEMINI, reason="GEMINI_API_KEY not set")
 
@@ -154,7 +156,9 @@ class TestTutorAgentAnthropicLive:
         assert isinstance(result.output, TutorTurnOutput)
         assert len(result.output.answer_markdown) > 0
 
-    def test_tutor_provides_check_for_understanding(self, allow_model_requests, live_deps):
+    def test_tutor_provides_check_for_understanding(
+        self, allow_model_requests, live_deps
+    ):
         from ailine_runtime.domain.entities.tutor import TutorTurnOutput
 
         agent = build_tutor_agent()
@@ -244,7 +248,9 @@ class TestCrossProviderAgentConsistency:
             models.append(("gemini", _GEMINI_CHEAP))
         return models
 
-    def test_quality_gate_consistent_across_providers(self, allow_model_requests, live_deps):
+    def test_quality_gate_consistent_across_providers(
+        self, allow_model_requests, live_deps
+    ):
         models = self._available_models()
         if len(models) < 2:
             pytest.skip("Need at least 2 providers for cross-provider test")
@@ -257,10 +263,12 @@ class TestCrossProviderAgentConsistency:
         )
         for name, model in models:
             result = agent.run_sync(prompt, deps=live_deps, model=model)
-            assert isinstance(result.output, QualityAssessment), (
-                f"{name}: expected QualityAssessment, got {type(result.output)}"
-            )
-            assert 0 <= result.output.score <= 100, f"{name}: score {result.output.score} out of range"
+            assert isinstance(
+                result.output, QualityAssessment
+            ), f"{name}: expected QualityAssessment, got {type(result.output)}"
+            assert (
+                0 <= result.output.score <= 100
+            ), f"{name}: score {result.output.score} out of range"
 
 
 # =========================================================================

@@ -380,7 +380,9 @@ class TestMaterialRepository:
         assert fetched.title == "Apostila Fracoes"
         assert fetched.tags == ["fracoes", "6o-ano"]
 
-    async def test_list_by_teacher_with_subject_filter(self, session: AsyncSession) -> None:
+    async def test_list_by_teacher_with_subject_filter(
+        self, session: AsyncSession
+    ) -> None:
         teacher = _make_teacher()
         session.add(teacher)
         await session.flush()
@@ -454,7 +456,9 @@ class TestPipelineRunRepository:
         assert fetched.status == "pending"
         assert fetched.input_json == {"subject": "Matematica"}
 
-    async def test_list_by_teacher_with_status_filter(self, session: AsyncSession) -> None:
+    async def test_list_by_teacher_with_status_filter(
+        self, session: AsyncSession
+    ) -> None:
         teacher = _make_teacher()
         session.add(teacher)
         await session.flush()
@@ -594,7 +598,9 @@ class TestCurriculumObjectiveRow:
         session.add(obj)
         await session.flush()
 
-        stmt = select(CurriculumObjectiveRow).where(CurriculumObjectiveRow.code == "EF06MA01")
+        stmt = select(CurriculumObjectiveRow).where(
+            CurriculumObjectiveRow.code == "EF06MA01"
+        )
         result = await session.execute(stmt)
         row = result.scalar_one()
         assert row.system == "bncc"
@@ -667,7 +673,9 @@ class TestAccessibilityProfileRow:
         session.add(profile)
         await session.flush()
 
-        stmt = select(AccessibilityProfileRow).where(AccessibilityProfileRow.teacher_id == teacher.id)
+        stmt = select(AccessibilityProfileRow).where(
+            AccessibilityProfileRow.teacher_id == teacher.id
+        )
         result = await session.execute(stmt)
         rows = result.scalars().all()
         assert len(rows) == 1
@@ -683,7 +691,9 @@ class TestAccessibilityProfileRow:
 class TestChunkCompositeFKTenantIsolation:
     """Verify chunk composite FK (teacher_id, material_id) prevents cross-tenant."""
 
-    async def test_chunk_with_matching_teacher_id_succeeds(self, session: AsyncSession) -> None:
+    async def test_chunk_with_matching_teacher_id_succeeds(
+        self, session: AsyncSession
+    ) -> None:
         teacher = _make_teacher()
         session.add(teacher)
         await session.flush()
@@ -743,7 +753,9 @@ class TestChunkCompositeFKTenantIsolation:
 class TestTutorSessionCompositeFKTenantIsolation:
     """Verify tutor_session composite FK (teacher_id, tutor_id) prevents cross-tenant."""
 
-    async def test_session_with_matching_teacher_succeeds(self, session: AsyncSession) -> None:
+    async def test_session_with_matching_teacher_succeeds(
+        self, session: AsyncSession
+    ) -> None:
         teacher = _make_teacher()
         session.add(teacher)
         await session.flush()
@@ -816,7 +828,9 @@ class TestPipelineRunCompositeFKTenantIsolation:
         assert run.lesson_id is None
         assert run.teacher_id == teacher.id
 
-    async def test_run_with_matching_lesson_succeeds(self, session: AsyncSession) -> None:
+    async def test_run_with_matching_lesson_succeeds(
+        self, session: AsyncSession
+    ) -> None:
         """Pipeline run referencing a lesson from the same teacher should work."""
         teacher = _make_teacher()
         session.add(teacher)

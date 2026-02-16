@@ -32,7 +32,9 @@ def _sessions_dir() -> Path:
 
 def save_session(session: TutorSession) -> dict[str, Any]:
     path = _sessions_dir() / f"{session.session_id}.json"
-    path.write_text(session.model_dump_json(indent=2, ensure_ascii=False), encoding="utf-8")
+    path.write_text(
+        session.model_dump_json(indent=2, ensure_ascii=False), encoding="utf-8"
+    )
     return {"session_id": session.session_id, "stored_at": str(path)}
 
 
@@ -152,7 +154,9 @@ async def tutor_chat_turn(
             out = None
 
     # Persist response in session
-    session.append("assistant", json.dumps(parsed, ensure_ascii=False) if parsed else full_text)
+    session.append(
+        "assistant", json.dumps(parsed, ensure_ascii=False) if parsed else full_text
+    )
     save_session(session)
 
     return {

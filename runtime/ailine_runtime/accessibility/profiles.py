@@ -16,9 +16,18 @@ class AccessibilityNeeds(BaseModel):
     """
 
     # Focos pedidos no hackathon (core)
-    autism: bool = Field(default=False, description="TEA / previsibilidade, comunicação clara e sensorial.")
-    adhd: bool = Field(default=False, description="TDAH / atenção, organização, tempo e autorregulação.")
-    learning: bool = Field(default=False, description="Dificuldades de aprendizagem (ex.: dislexia/defasagem).")
+    autism: bool = Field(
+        default=False,
+        description="TEA / previsibilidade, comunicação clara e sensorial.",
+    )
+    adhd: bool = Field(
+        default=False,
+        description="TDAH / atenção, organização, tempo e autorregulação.",
+    )
+    learning: bool = Field(
+        default=False,
+        description="Dificuldades de aprendizagem (ex.: dislexia/defasagem).",
+    )
     hearing: bool = Field(
         default=False,
         description="Deficiencia auditiva / precisa de legendas/transcricao, redundancia visual.",
@@ -41,7 +50,9 @@ class AccessibilityNeeds(BaseModel):
         description="Dificuldades motoras (escrita/fine motor). Pode exigir alternativas de input/entrega.",
     )
 
-    other: list[str] = Field(default_factory=list, description="Outras necessidades (curtas, sem PII).")
+    other: list[str] = Field(
+        default_factory=list, description="Outras necessidades (curtas, sem PII)."
+    )
 
 
 class UiPreferences(BaseModel):
@@ -53,7 +64,9 @@ class UiPreferences(BaseModel):
     )
     large_print: bool = Field(default=False, description="Fonte maior + espaçamento.")
     high_contrast: bool = Field(default=False, description="Contraste reforçado.")
-    dyslexia_friendly: bool = Field(default=False, description="Ajustes de tipografia/espacamento para leitura.")
+    dyslexia_friendly: bool = Field(
+        default=False, description="Ajustes de tipografia/espacamento para leitura."
+    )
     reduce_motion: bool = Field(
         default=True,
         description="Respeitar prefers-reduced-motion e evitar transições chamativas.",
@@ -69,7 +82,9 @@ class AutismSupportSettings(BaseModel):
         default="medium",
         description="Sensibilidade sensorial (luz/som/ruído).",
     )
-    require_visual_schedule: bool = Field(default=True, description="Gerar agenda/rotina e cronograma visual da aula.")
+    require_visual_schedule: bool = Field(
+        default=True, description="Gerar agenda/rotina e cronograma visual da aula."
+    )
     require_transition_scripts: bool = Field(
         default=True,
         description="Incluir scripts de transição (ex.: 'Agora vamos...').",
@@ -87,8 +102,12 @@ class AutismSupportSettings(BaseModel):
 
 
 class ADHDSupportSettings(BaseModel):
-    intensity: SupportIntensity = Field(default="medium", description="Intensidade de suportes de atenção/organização.")
-    focus_window_minutes: int = Field(default=8, ge=3, le=20, description="Janela de foco típica para chunking (min).")
+    intensity: SupportIntensity = Field(
+        default="medium", description="Intensidade de suportes de atenção/organização."
+    )
+    focus_window_minutes: int = Field(
+        default=8, ge=3, le=20, description="Janela de foco típica para chunking (min)."
+    )
     movement_break_every_minutes: int | None = Field(
         default=12,
         ge=5,
@@ -99,7 +118,9 @@ class ADHDSupportSettings(BaseModel):
         default=True,
         description="Incluir checkpoints do tipo 'feito' e checagem rápida.",
     )
-    require_timer_prompts: bool = Field(default=True, description="Incluir prompts de timer/tempo restante por etapa.")
+    require_timer_prompts: bool = Field(
+        default=True, description="Incluir prompts de timer/tempo restante por etapa."
+    )
 
 
 class LearningSupportSettings(BaseModel):
@@ -111,8 +132,12 @@ class LearningSupportSettings(BaseModel):
         default="simple",
         description="Nível alvo da versão aluno.",
     )
-    require_examples_first: bool = Field(default=True, description="Exemplo antes de abstração quando possível.")
-    require_glossary: bool = Field(default=True, description="Gerar glossário de termos difíceis (curto).")
+    require_examples_first: bool = Field(
+        default=True, description="Exemplo antes de abstração quando possível."
+    )
+    require_glossary: bool = Field(
+        default=True, description="Gerar glossário de termos difíceis (curto)."
+    )
     allow_alternative_outputs: bool = Field(
         default=True,
         description="Permitir respostas alternativas (oral/desenho/multipla escolha).",
@@ -120,9 +145,15 @@ class LearningSupportSettings(BaseModel):
 
 
 class HearingSupportSettings(BaseModel):
-    intensity: SupportIntensity = Field(default="medium", description="Intensidade de suportes auditivos.")
-    require_captions: bool = Field(default=True, description="Vídeo/áudio exige legendas.")
-    require_transcript: bool = Field(default=True, description="Áudio exige transcrição.")
+    intensity: SupportIntensity = Field(
+        default="medium", description="Intensidade de suportes auditivos."
+    )
+    require_captions: bool = Field(
+        default=True, description="Vídeo/áudio exige legendas."
+    )
+    require_transcript: bool = Field(
+        default=True, description="Áudio exige transcrição."
+    )
     sign_language: Literal["none", "libras", "asl", "other"] = Field(
         default="none",
         description="Preferencia por lingua de sinais.",
@@ -134,8 +165,12 @@ class HearingSupportSettings(BaseModel):
 
 
 class VisualSupportSettings(BaseModel):
-    intensity: SupportIntensity = Field(default="medium", description="Intensidade de suportes visuais.")
-    require_alt_text: bool = Field(default=True, description="Imagens/figuras exigem texto alternativo.")
+    intensity: SupportIntensity = Field(
+        default="medium", description="Intensidade de suportes visuais."
+    )
+    require_alt_text: bool = Field(
+        default=True, description="Imagens/figuras exigem texto alternativo."
+    )
     require_audio_description: bool = Field(
         default=False,
         description="Midia visual relevante exige descricao (quando possivel).",
@@ -144,7 +179,9 @@ class VisualSupportSettings(BaseModel):
         default=True,
         description="Exports com headings/landmarks compativeis com leitores de tela.",
     )
-    require_large_print: bool = Field(default=True, description="Gerar variante large print.")
+    require_large_print: bool = Field(
+        default=True, description="Gerar variante large print."
+    )
     braille_ready: bool = Field(
         default=False,
         description="Se true: requer revisão humana e pipeline para BRF/Braille-ready.",
@@ -152,11 +189,19 @@ class VisualSupportSettings(BaseModel):
 
 
 class SupportSettings(BaseModel):
-    autism: AutismSupportSettings = Field(default_factory=lambda: AutismSupportSettings())
+    autism: AutismSupportSettings = Field(
+        default_factory=lambda: AutismSupportSettings()
+    )
     adhd: ADHDSupportSettings = Field(default_factory=lambda: ADHDSupportSettings())
-    learning: LearningSupportSettings = Field(default_factory=lambda: LearningSupportSettings())
-    hearing: HearingSupportSettings = Field(default_factory=lambda: HearingSupportSettings())
-    visual: VisualSupportSettings = Field(default_factory=lambda: VisualSupportSettings())
+    learning: LearningSupportSettings = Field(
+        default_factory=lambda: LearningSupportSettings()
+    )
+    hearing: HearingSupportSettings = Field(
+        default_factory=lambda: HearingSupportSettings()
+    )
+    visual: VisualSupportSettings = Field(
+        default_factory=lambda: VisualSupportSettings()
+    )
 
 
 class ClassAccessibilityProfile(BaseModel):
@@ -172,7 +217,9 @@ class ClassAccessibilityProfile(BaseModel):
     # Ajustes finos (opcionais no MVP; úteis para "englobar tudo")
     supports: SupportSettings = Field(default_factory=lambda: SupportSettings())
 
-    notes: str | None = Field(default=None, description="Observações curtas (evitar PII).")
+    notes: str | None = Field(
+        default=None, description="Observações curtas (evitar PII)."
+    )
 
 
 class AnonymousLearnerProfile(BaseModel):
@@ -185,7 +232,9 @@ class AnonymousLearnerProfile(BaseModel):
     )
 
 
-def human_review_flags(class_profile: ClassAccessibilityProfile | None) -> tuple[bool, list[str]]:
+def human_review_flags(
+    class_profile: ClassAccessibilityProfile | None,
+) -> tuple[bool, list[str]]:
     """Indica quando é necessário revisão humana (AEE/IEP/apoios especializados)."""
     if not class_profile:
         return False, []
@@ -202,11 +251,15 @@ def human_review_flags(class_profile: ClassAccessibilityProfile | None) -> tuple
 
     # Braille/tátil: exige pipeline especializado
     if n.visual and s.visual.braille_ready:
-        reasons.append("Braille-ready indicado — exige revisão humana e pipeline especializado (BRF/material tátil).")
+        reasons.append(
+            "Braille-ready indicado — exige revisão humana e pipeline especializado (BRF/material tátil)."
+        )
 
     # Outros gatilhos do MVP
     if n.other:
-        reasons.append("Necessidades adicionais listadas — revisão humana recomendada para adequação fina.")
+        reasons.append(
+            "Necessidades adicionais listadas — revisão humana recomendada para adequação fina."
+        )
 
     return bool(reasons), reasons
 

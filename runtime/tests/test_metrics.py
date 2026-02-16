@@ -183,7 +183,9 @@ async def test_http_request_increments_counter(client: AsyncClient) -> None:
     resp = await client.get("/metrics")
     body = resp.text
     # Should contain a counter entry for GET /health with status 200.
-    assert 'ailine_http_requests_total{method="GET",path="/health",status="200"}' in body
+    assert (
+        'ailine_http_requests_total{method="GET",path="/health",status="200"}' in body
+    )
 
 
 # ---------------------------------------------------------------------------

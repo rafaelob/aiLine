@@ -59,7 +59,10 @@ skip_no_openrouter = pytest.mark.skipif(
 # ---------------------------------------------------------------------------
 
 _SIMPLE_PROMPT: list[dict[str, Any]] = [
-    {"role": "user", "content": "Responda em uma frase: qual \u00e9 a capital do Brasil?"},
+    {
+        "role": "user",
+        "content": "Responda em uma frase: qual \u00e9 a capital do Brasil?",
+    },
 ]
 
 _GENERATE_TIMEOUT = 30  # seconds
@@ -70,9 +73,9 @@ _EMBED_TIMEOUT = 30  # seconds
 def _assert_brazilian_answer(text: str) -> None:
     """Loose assertion that the response mentions Brasilia."""
     lowered = text.lower()
-    assert any(w in lowered for w in ("bras\u00edlia", "brasilia")), (
-        f"Expected 'Bras\u00edlia' in response, got: {text!r}"
-    )
+    assert any(
+        w in lowered for w in ("bras\u00edlia", "brasilia")
+    ), f"Expected 'Bras\u00edlia' in response, got: {text!r}"
 
 
 # =========================================================================
@@ -362,7 +365,9 @@ class TestSmartRouterLive:
     @pytest.mark.timeout(_STREAM_TIMEOUT)
     async def test_stream_simple(self, router):
         chunks: list[str] = []
-        async for chunk in router.stream(_SIMPLE_PROMPT, temperature=0.0, max_tokens=100):
+        async for chunk in router.stream(
+            _SIMPLE_PROMPT, temperature=0.0, max_tokens=100
+        ):
             chunks.append(chunk)
         assert len(chunks) >= 1
         full = "".join(chunks)
@@ -374,7 +379,8 @@ class TestSmartRouterLive:
 
     def test_classify_tier_complex_is_higher(self, router):
         complex_messages: list[dict[str, Any]] = [
-            {"role": "user", "content": f"Analise detalhada msg{i} " + "x" * 500} for i in range(25)
+            {"role": "user", "content": f"Analise detalhada msg{i} " + "x" * 500}
+            for i in range(25)
         ]
         tier = router.classify_tier(
             complex_messages,
@@ -388,7 +394,13 @@ class TestSmartRouterLive:
         for msgs in [
             _SIMPLE_PROMPT,
             [{"role": "user", "content": "x" * 5000}],
-            [{"role": "user", "content": "analise complexa BNCC acessibilidade " + "x" * 4000}] * 20,
+            [
+                {
+                    "role": "user",
+                    "content": "analise complexa BNCC acessibilidade " + "x" * 4000,
+                }
+            ]
+            * 20,
         ]:
             tier = router.classify_tier(msgs)
             assert tier in ("cheap", "middle", "primary"), f"Invalid tier: {tier}"
@@ -414,7 +426,9 @@ class TestOpenAIEmbeddingsLive:
 
     @pytest.fixture
     def embeddings(self):
-        from ailine_runtime.adapters.embeddings.openai_embeddings import OpenAIEmbeddings
+        from ailine_runtime.adapters.embeddings.openai_embeddings import (
+            OpenAIEmbeddings,
+        )
 
         return OpenAIEmbeddings(
             model="text-embedding-3-large",
@@ -472,7 +486,9 @@ class TestOpenAIEmbeddingsLive:
     @pytest.mark.timeout(_EMBED_TIMEOUT)
     async def test_semantic_similarity(self, embeddings):
         """Similar texts should have higher cosine similarity than dissimilar ones."""
-        vec_a = await embeddings.embed_text("A educacao e fundamental para o desenvolvimento.")
+        vec_a = await embeddings.embed_text(
+            "A educacao e fundamental para o desenvolvimento."
+        )
         vec_b = await embeddings.embed_text("O ensino e essencial para o crescimento.")
         vec_c = await embeddings.embed_text("O gato dormiu no telhado.")
 
@@ -480,9 +496,9 @@ class TestOpenAIEmbeddingsLive:
         sim_ab = sum(a * b for a, b in zip(vec_a, vec_b, strict=True))
         sim_ac = sum(a * c for a, c in zip(vec_a, vec_c, strict=True))
 
-        assert sim_ab > sim_ac, (
-            f"Education sentences should be more similar ({sim_ab:.4f}) than education vs cat ({sim_ac:.4f})"
-        )
+        assert (
+            sim_ab > sim_ac
+        ), f"Education sentences should be more similar ({sim_ab:.4f}) than education vs cat ({sim_ac:.4f})"
 
     def test_dimensions_property(self, embeddings):
         assert embeddings.dimensions == 1536
@@ -508,7 +524,9 @@ class TestGeminiEmbeddingsLive:
 
     @pytest.fixture
     def embeddings(self):
-        from ailine_runtime.adapters.embeddings.gemini_embeddings import GeminiEmbeddings
+        from ailine_runtime.adapters.embeddings.gemini_embeddings import (
+            GeminiEmbeddings,
+        )
 
         return GeminiEmbeddings(
             model="gemini-embedding-001",
@@ -565,16 +583,18 @@ class TestGeminiEmbeddingsLive:
     @pytest.mark.timeout(_EMBED_TIMEOUT)
     async def test_semantic_similarity(self, embeddings):
         """Similar texts should have higher cosine similarity than dissimilar ones."""
-        vec_a = await embeddings.embed_text("A educacao e fundamental para o desenvolvimento.")
+        vec_a = await embeddings.embed_text(
+            "A educacao e fundamental para o desenvolvimento."
+        )
         vec_b = await embeddings.embed_text("O ensino e essencial para o crescimento.")
         vec_c = await embeddings.embed_text("O gato dormiu no telhado.")
 
         sim_ab = sum(a * b for a, b in zip(vec_a, vec_b, strict=True))
         sim_ac = sum(a * c for a, c in zip(vec_a, vec_c, strict=True))
 
-        assert sim_ab > sim_ac, (
-            f"Education sentences should be more similar ({sim_ab:.4f}) than education vs cat ({sim_ac:.4f})"
-        )
+        assert (
+            sim_ab > sim_ac
+        ), f"Education sentences should be more similar ({sim_ab:.4f}) than education vs cat ({sim_ac:.4f})"
 
     def test_dimensions_property(self, embeddings):
         assert embeddings.dimensions == 1536
@@ -611,7 +631,9 @@ class TestCrossProviderConsistency:
             adapters.append(
                 (
                     "openai",
-                    OpenAIChatLLM(model="gpt-4o-mini", api_key=os.environ["OPENAI_API_KEY"]),
+                    OpenAIChatLLM(
+                        model="gpt-4o-mini", api_key=os.environ["OPENAI_API_KEY"]
+                    ),
                 )
             )
 
@@ -634,7 +656,9 @@ class TestCrossProviderConsistency:
             adapters.append(
                 (
                     "gemini",
-                    GeminiChatLLM(model="gemini-2.0-flash", api_key=os.environ["GEMINI_API_KEY"]),
+                    GeminiChatLLM(
+                        model="gemini-2.0-flash", api_key=os.environ["GEMINI_API_KEY"]
+                    ),
                 )
             )
 
@@ -655,7 +679,9 @@ class TestCrossProviderConsistency:
         """Every available provider should produce at least one streaming chunk."""
         for name, llm in available_llms:
             chunks: list[str] = []
-            async for chunk in llm.stream(_SIMPLE_PROMPT, temperature=0.0, max_tokens=100):
+            async for chunk in llm.stream(
+                _SIMPLE_PROMPT, temperature=0.0, max_tokens=100
+            ):
                 chunks.append(chunk)
                 if len(chunks) >= 1:
                     break

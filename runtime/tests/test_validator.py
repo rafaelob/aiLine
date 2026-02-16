@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from ailine_runtime.accessibility.profiles import AccessibilityNeeds, ClassAccessibilityProfile
+from ailine_runtime.accessibility.profiles import (
+    AccessibilityNeeds,
+    ClassAccessibilityProfile,
+)
 from ailine_runtime.accessibility.validator import validate_draft_accessibility
 from ailine_runtime.accessibility.validator_helpers import (
     cognitive_load_bucket as _cognitive_load_bucket,
@@ -145,7 +148,11 @@ class TestCollectText:
                     "media_requirements": ["legenda"],
                     "ui_recommendations": ["grande"],
                     "applied_adaptations": [
-                        {"strategies": ["strat1"], "do_not": ["dont"], "notes": ["nota"]},
+                        {
+                            "strategies": ["strat1"],
+                            "do_not": ["dont"],
+                            "notes": ["nota"],
+                        },
                     ],
                 }
             }
@@ -187,21 +194,46 @@ class TestReadabilityMetrics:
 
 class TestCognitiveLoadBucket:
     def test_low(self):
-        assert _cognitive_load_bucket({"avg_words_per_sentence": 8, "long_word_ratio": 0.10}) == "low"
+        assert (
+            _cognitive_load_bucket(
+                {"avg_words_per_sentence": 8, "long_word_ratio": 0.10}
+            )
+            == "low"
+        )
 
     def test_medium(self):
         """Line 117-118: medium bucket."""
-        assert _cognitive_load_bucket({"avg_words_per_sentence": 15, "long_word_ratio": 0.25}) == "medium"
+        assert (
+            _cognitive_load_bucket(
+                {"avg_words_per_sentence": 15, "long_word_ratio": 0.25}
+            )
+            == "medium"
+        )
 
     def test_high(self):
         """Line 120: high bucket."""
-        assert _cognitive_load_bucket({"avg_words_per_sentence": 25, "long_word_ratio": 0.40}) == "high"
+        assert (
+            _cognitive_load_bucket(
+                {"avg_words_per_sentence": 25, "long_word_ratio": 0.40}
+            )
+            == "high"
+        )
 
     def test_boundary_low_to_medium(self):
         # awps=12, long=0.20 is still low
-        assert _cognitive_load_bucket({"avg_words_per_sentence": 12, "long_word_ratio": 0.20}) == "low"
+        assert (
+            _cognitive_load_bucket(
+                {"avg_words_per_sentence": 12, "long_word_ratio": 0.20}
+            )
+            == "low"
+        )
         # awps=13 pushes to medium
-        assert _cognitive_load_bucket({"avg_words_per_sentence": 13, "long_word_ratio": 0.20}) == "medium"
+        assert (
+            _cognitive_load_bucket(
+                {"avg_words_per_sentence": 13, "long_word_ratio": 0.20}
+            )
+            == "medium"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -252,14 +284,18 @@ class TestValidatorNoProfile:
 
     def test_fail_instructions_not_list(self):
         """Lines 162-164: instructions present but not a list."""
-        draft = _full_draft(steps=[{"minutes": 5, "title": "S1", "instructions": "string"}])
+        draft = _full_draft(
+            steps=[{"minutes": 5, "title": "S1", "instructions": "string"}]
+        )
         report = validate_draft_accessibility(draft)
         assert any("sem instructions" in w.lower() for w in report["warnings"])
 
     def test_too_many_instructions(self):
         """Lines 167-168: more than max_instr_items instructions."""
         long_instr = [f"Instrucao {i}" for i in range(12)]
-        draft = _full_draft(steps=[{"minutes": 5, "title": "S1", "instructions": long_instr}])
+        draft = _full_draft(
+            steps=[{"minutes": 5, "title": "S1", "instructions": long_instr}]
+        )
         report = validate_draft_accessibility(draft)
         assert any("muitas" in w.lower() for w in report["warnings"])
 
@@ -511,9 +547,13 @@ class TestValidatorWithProfile:
 
         # Create a mock that raises when focus_window_minutes is accessed
         broken_adhd = unittest.mock.MagicMock()
-        broken_adhd.focus_window_minutes = unittest.mock.PropertyMock(side_effect=AttributeError("no such attr"))
+        broken_adhd.focus_window_minutes = unittest.mock.PropertyMock(
+            side_effect=AttributeError("no such attr")
+        )
         # Make int() on the property raise too
-        type(broken_adhd).focus_window_minutes = unittest.mock.PropertyMock(side_effect=AttributeError("broken"))
+        type(broken_adhd).focus_window_minutes = unittest.mock.PropertyMock(
+            side_effect=AttributeError("broken")
+        )
 
         broken_supports = unittest.mock.MagicMock()
         broken_supports.adhd = broken_adhd
@@ -564,7 +604,9 @@ class TestValidatorWithProfile:
         draft = _full_draft()
         # The full draft has "legenda/transcricao" in media_requirements
         report = validate_draft_accessibility(draft, profile)
-        hearing_warnings = [w for w in report["warnings"] if "legenda/transcri" in w.lower()]
+        hearing_warnings = [
+            w for w in report["warnings"] if "legenda/transcri" in w.lower()
+        ]
         assert len(hearing_warnings) == 0
 
     def test_visual_needs_no_alt_text(self):
@@ -600,7 +642,9 @@ class TestValidatorWithProfile:
             "steps": [{"minutes": 5, "title": "S", "instructions": ["Faca algo."]}],
         }
         report = validate_draft_accessibility(draft, profile)
-        audio_desc_warnings = [w for w in report["warnings"] if "audiodescri" in w.lower()]
+        audio_desc_warnings = [
+            w for w in report["warnings"] if "audiodescri" in w.lower()
+        ]
         assert len(audio_desc_warnings) == 0
 
     def test_autism_no_transitions_warning(self):
@@ -631,7 +675,9 @@ class TestValidatorWithProfile:
             "steps": [{"minutes": 5, "title": "Passo", "instructions": ["Faca x."]}],
         }
         report = validate_draft_accessibility(draft, profile)
-        assert any("agenda" in w.lower() or "roteiro" in w.lower() for w in report["warnings"])
+        assert any(
+            "agenda" in w.lower() or "roteiro" in w.lower() for w in report["warnings"]
+        )
 
     def test_autism_with_all_keywords_no_specific_warnings(self):
         """Autism with all required keywords: no autism-specific warnings."""
@@ -645,7 +691,8 @@ class TestValidatorWithProfile:
         autism_warnings = [
             w
             for w in report["warnings"]
-            if "tea" in w.lower() and ("transi" in w.lower() or "pausa" in w.lower() or "agenda" in w.lower())
+            if "tea" in w.lower()
+            and ("transi" in w.lower() or "pausa" in w.lower() or "agenda" in w.lower())
         ]
         assert len(autism_warnings) == 0
 
@@ -657,7 +704,10 @@ class TestValidatorWithProfile:
             "steps": [{"minutes": 5, "title": "Passo", "instructions": ["Faca algo."]}],
         }
         report = validate_draft_accessibility(draft, profile)
-        assert any("checkpoint" in w.lower() or "feito" in w.lower() for w in report["warnings"])
+        assert any(
+            "checkpoint" in w.lower() or "feito" in w.lower()
+            for w in report["warnings"]
+        )
 
     def test_adhd_no_breaks_warning(self):
         """Lines 304-305 (311-312 path): ADHD need but no break keywords."""
@@ -667,7 +717,9 @@ class TestValidatorWithProfile:
             "steps": [{"minutes": 5, "title": "Passo", "instructions": ["Faca algo."]}],
         }
         report = validate_draft_accessibility(draft, profile)
-        assert any("pausa" in w.lower() and "tdah" in w.lower() for w in report["warnings"])
+        assert any(
+            "pausa" in w.lower() and "tdah" in w.lower() for w in report["warnings"]
+        )
 
     def test_learning_no_examples_warning(self):
         """Lines 311-312: learning need but no example keywords."""
@@ -677,7 +729,9 @@ class TestValidatorWithProfile:
             "steps": [{"minutes": 5, "title": "Passo", "instructions": ["Faca algo."]}],
         }
         report = validate_draft_accessibility(draft, profile)
-        assert any("exemplo" in w.lower() or "modelo" in w.lower() for w in report["warnings"])
+        assert any(
+            "exemplo" in w.lower() or "modelo" in w.lower() for w in report["warnings"]
+        )
 
     def test_learning_no_glossary_warning(self):
         """Lines 314-315 (321-322 path): learning need but no glossary keywords."""
@@ -687,7 +741,9 @@ class TestValidatorWithProfile:
             "steps": [{"minutes": 5, "title": "Passo", "instructions": ["Faca algo."]}],
         }
         report = validate_draft_accessibility(draft, profile)
-        assert any("gloss" in w.lower() or "vocabul" in w.lower() for w in report["warnings"])
+        assert any(
+            "gloss" in w.lower() or "vocabul" in w.lower() for w in report["warnings"]
+        )
 
     def test_learning_no_student_plan_warning(self):
         """Lines 321-322: learning need but no student_plan or student_friendly_summary."""
@@ -697,7 +753,9 @@ class TestValidatorWithProfile:
             "steps": [{"minutes": 5, "title": "Passo", "instructions": ["Faca algo."]}],
         }
         report = validate_draft_accessibility(draft, profile)
-        assert any("vers" in w.lower() and "aluno" in w.lower() for w in report["warnings"])
+        assert any(
+            "vers" in w.lower() and "aluno" in w.lower() for w in report["warnings"]
+        )
 
     def test_learning_with_student_friendly_summary(self):
         """student_friendly_summary satisfies the student plan check."""
@@ -714,7 +772,11 @@ class TestValidatorWithProfile:
             "student_friendly_summary": ["Resumo facil."],
         }
         report = validate_draft_accessibility(draft, profile)
-        student_plan_warnings = [w for w in report["warnings"] if "vers" in w.lower() and "aluno" in w.lower()]
+        student_plan_warnings = [
+            w
+            for w in report["warnings"]
+            if "vers" in w.lower() and "aluno" in w.lower()
+        ]
         assert len(student_plan_warnings) == 0
 
     def test_speech_language_no_aac_warning(self):
@@ -725,7 +787,10 @@ class TestValidatorWithProfile:
             "steps": [{"minutes": 5, "title": "Passo", "instructions": ["Faca algo."]}],
         }
         report = validate_draft_accessibility(draft, profile)
-        assert any("fala" in w.lower() or "aac" in w.lower() or "pictograma" in w.lower() for w in report["warnings"])
+        assert any(
+            "fala" in w.lower() or "aac" in w.lower() or "pictograma" in w.lower()
+            for w in report["warnings"]
+        )
 
     def test_speech_language_with_aac_no_warning(self):
         """speech_language with AAC keywords: no specific warning."""
@@ -741,7 +806,9 @@ class TestValidatorWithProfile:
             ],
         }
         report = validate_draft_accessibility(draft, profile)
-        speech_warnings = [w for w in report["warnings"] if "fala" in w.lower() or "aac" in w.lower()]
+        speech_warnings = [
+            w for w in report["warnings"] if "fala" in w.lower() or "aac" in w.lower()
+        ]
         assert len(speech_warnings) == 0
 
     def test_motor_no_alternatives_warning(self):
@@ -815,7 +882,9 @@ class TestValidatorWithProfile:
         profile = _profile(hearing=True)
         draft = {
             "title": "Aula",
-            "steps": [{"minutes": 5, "title": "S", "instructions": ["legenda no video."]}],
+            "steps": [
+                {"minutes": 5, "title": "S", "instructions": ["legenda no video."]}
+            ],
             "media_requirements": ["legenda obrigatoria para video."],
         }
         report = validate_draft_accessibility(draft, profile)
@@ -847,7 +916,9 @@ class TestValidatorWithProfile:
         report = validate_draft_accessibility(draft, profile)
         assert report["status"] in ("pass", "fail")
         assert isinstance(report["score"], int)
-        assert report["human_review_required"] is False or isinstance(report["human_review_required"], bool)
+        assert report["human_review_required"] is False or isinstance(
+            report["human_review_required"], bool
+        )
 
     def test_human_review_reasons(self):
         """human_review_flags triggers when sign_language or braille are set."""

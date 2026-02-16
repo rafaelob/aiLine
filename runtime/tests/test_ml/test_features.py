@@ -159,7 +159,9 @@ class TestExtractFeatures:
         # Frame 0: pos=[0,0,0,0,0,0], vel=[0,0,0,0,0,0], acc=[0,0,0,0,0,0]
         np.testing.assert_allclose(result[0, :dim], [0.0] * dim)  # position
         np.testing.assert_allclose(result[0, dim : 2 * dim], [0.0] * dim)  # velocity
-        np.testing.assert_allclose(result[0, 2 * dim : 3 * dim], [0.0] * dim)  # acceleration
+        np.testing.assert_allclose(
+            result[0, 2 * dim : 3 * dim], [0.0] * dim
+        )  # acceleration
 
         # Frame 1: pos=[1,1,...], vel=[1,1,...], acc=[1,1,...]
         np.testing.assert_allclose(result[1, :dim], [1.0] * dim)  # position

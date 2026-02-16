@@ -43,7 +43,9 @@ class OpenAIEmbeddings:
 
         self._model = model
         self._dimensions = dimensions
-        self._client: AsyncOpenAI = AsyncOpenAI(api_key=api_key) if api_key else AsyncOpenAI()
+        self._client: AsyncOpenAI = (
+            AsyncOpenAI(api_key=api_key) if api_key else AsyncOpenAI()
+        )
 
     # -- Protocol properties --------------------------------------------------
 

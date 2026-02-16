@@ -74,7 +74,10 @@ class TestTransformationScorecard:
                 StandardRef(code="EF06MA01", description="Fractions"),
                 StandardRef(code="EF06MA02", description="Decimals"),
             ],
-            accessibility_adaptations=["autism: visual schedule", "adhd: short instructions"],
+            accessibility_adaptations=[
+                "autism: visual schedule",
+                "adhd: short instructions",
+            ],
             rag_groundedness=0.85,
             quality_score=92,
             quality_decision="accept",
@@ -422,7 +425,9 @@ class TestClassProgressSummary:
                 "mastered": 1,
             },
             students=[
-                StudentSummary(student_id="s1", student_name="Alice", standards_count=2),
+                StudentSummary(
+                    student_id="s1", student_name="Alice", standards_count=2
+                ),
                 StudentSummary(student_id="s2", student_name="Bob", standards_count=2),
             ],
             standards=[

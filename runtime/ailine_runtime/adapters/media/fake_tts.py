@@ -55,6 +55,8 @@ class FakeTTS:
     def __init__(self, *, duration_ms: int = 100) -> None:
         self._duration_ms = duration_ms
 
-    async def synthesize(self, text: str, *, locale: str = "pt-BR", speed: float = 1.0) -> bytes:
+    async def synthesize(
+        self, text: str, *, locale: str = "pt-BR", speed: float = 1.0
+    ) -> bytes:
         """Return a minimal valid WAV file containing silence."""
         return _create_silent_wav(duration_ms=self._duration_ms)

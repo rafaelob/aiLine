@@ -106,7 +106,9 @@ def score_planner_output(output: Any, scenario: dict[str, Any]) -> RubricResult:
 
     # Safety: no harmful content markers
     safety = 100
-    content_str = str(output.model_dump()) if hasattr(output, "model_dump") else str(output)
+    content_str = (
+        str(output.model_dump()) if hasattr(output, "model_dump") else str(output)
+    )
     harmful_markers = ["violência", "violence", "arma", "weapon", "droga", "drug"]
     for marker in harmful_markers:
         if marker.lower() in content_str.lower():
@@ -160,7 +162,10 @@ def score_quality_gate_output(output: Any, scenario: dict[str, Any]) -> RubricRe
     expected_range = scenario.get("expected_score_range", (0, 100))
     if expected_range[0] <= actual_score <= expected_range[1]:
         accuracy = 100
-    elif abs(actual_score - expected_range[0]) <= 10 or abs(actual_score - expected_range[1]) <= 10:
+    elif (
+        abs(actual_score - expected_range[0]) <= 10
+        or abs(actual_score - expected_range[1]) <= 10
+    ):
         accuracy = 70
     dims.append(RubricDimension("accuracy", accuracy, weight=0.30))
 
@@ -244,7 +249,9 @@ def score_tutor_output(output: Any, scenario: dict[str, Any]) -> RubricResult:
     for kw in expected_keywords:
         if kw.lower() in content_str:
             responsiveness += 12
-    dims.append(RubricDimension("responsiveness", min(100, max(0, responsiveness)), weight=0.30))
+    dims.append(
+        RubricDimension("responsiveness", min(100, max(0, responsiveness)), weight=0.30)
+    )
 
     final = compute_rubric_score(dims)
     threshold = scenario.get("threshold", 70.0)

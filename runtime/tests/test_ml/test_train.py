@@ -116,7 +116,9 @@ class TestTrain:
         """Placeholder train simulates decreasing losses."""
         data_dir = tmp_path / "data"
         data_dir.mkdir()
-        config = TrainConfig(data_dir=data_dir, output_dir=tmp_path / "out", epochs=5, seed=42)
+        config = TrainConfig(
+            data_dir=data_dir, output_dir=tmp_path / "out", epochs=5, seed=42
+        )
         result = train(config)
         if len(result.history) >= 2:
             first_train = result.history[0]["train_loss"]
@@ -131,7 +133,14 @@ class TestTrain:
 
 class TestCLI:
     def test_default_args(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]):
-        cli_main(["--data-dir", str(tmp_path / "nonexistent"), "--output-dir", str(tmp_path / "out")])
+        cli_main(
+            [
+                "--data-dir",
+                str(tmp_path / "nonexistent"),
+                "--output-dir",
+                str(tmp_path / "out"),
+            ]
+        )
         captured = capsys.readouterr()
         assert "Training complete" in captured.out
 

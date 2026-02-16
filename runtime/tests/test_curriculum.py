@@ -16,10 +16,15 @@ from ailine_runtime.adapters.curriculum.loader import (
     load_objectives_from_json,
     text_matches,
 )
-from ailine_runtime.adapters.curriculum.unified_provider import UnifiedCurriculumProvider
+from ailine_runtime.adapters.curriculum.unified_provider import (
+    UnifiedCurriculumProvider,
+)
 from ailine_runtime.adapters.curriculum.us_provider import USProvider
 from ailine_runtime.api.app import create_app
-from ailine_runtime.domain.entities.curriculum import CurriculumObjective, CurriculumSystem
+from ailine_runtime.domain.entities.curriculum import (
+    CurriculumObjective,
+    CurriculumSystem,
+)
 from ailine_runtime.shared.config import Settings
 
 # =====================================================================
@@ -105,7 +110,9 @@ class TestBNCCProvider:
         assert all(
             "fração" in r.description.lower()
             or "frações" in r.description.lower()
-            or any("fração" in kw.lower() or "frações" in kw.lower() for kw in r.keywords)
+            or any(
+                "fração" in kw.lower() or "frações" in kw.lower() for kw in r.keywords
+            )
             for r in results
         )
 
@@ -327,7 +334,9 @@ class TestUnifiedProvider:
     def provider(self) -> UnifiedCurriculumProvider:
         return UnifiedCurriculumProvider()
 
-    async def test_search_returns_mixed_systems(self, provider: UnifiedCurriculumProvider):
+    async def test_search_returns_mixed_systems(
+        self, provider: UnifiedCurriculumProvider
+    ):
         # "números" appears in BNCC; "number" appears in CCSS — search for "numer"
         # which is a common fragment. Use "frações" which is BNCC-only.
         bncc_results = await provider.search("frações", system="bncc")
@@ -402,11 +411,15 @@ class TestUnifiedProvider:
         assert provider.translate_grade("Grade 6") == "6º ano"
         assert provider.translate_grade("Grade 1") == "1º ano"
 
-    async def test_translate_grade_kindergarten(self, provider: UnifiedCurriculumProvider):
+    async def test_translate_grade_kindergarten(
+        self, provider: UnifiedCurriculumProvider
+    ):
         result = provider.translate_grade("Grade K")
         assert result == "Educação Infantil"
 
-    async def test_translate_grade_kindergarten_br_to_us(self, provider: UnifiedCurriculumProvider):
+    async def test_translate_grade_kindergarten_br_to_us(
+        self, provider: UnifiedCurriculumProvider
+    ):
         """Translate kindergarten from BR to US (line 75)."""
         result = provider.translate_grade("Educação Infantil")
         assert result == "Grade K"
@@ -430,7 +443,9 @@ class TestUnifiedProvider:
 class TestCurriculumAPIFallbackProvider:
     """Cover _get_provider both paths: fallback creation and cached return."""
 
-    async def test_fallback_provider_created_when_not_on_state(self, monkeypatch: pytest.MonkeyPatch):
+    async def test_fallback_provider_created_when_not_on_state(
+        self, monkeypatch: pytest.MonkeyPatch
+    ):
         """When curriculum_provider is not on app.state, a new one is created."""
         monkeypatch.setenv("AILINE_DEV_MODE", "true")
         settings = Settings()
@@ -449,7 +464,9 @@ class TestCurriculumAPIFallbackProvider:
             # After the call, the provider should be cached on app.state
             assert hasattr(app.state, "curriculum_provider")
 
-    async def test_cached_provider_returned_when_on_state(self, monkeypatch: pytest.MonkeyPatch):
+    async def test_cached_provider_returned_when_on_state(
+        self, monkeypatch: pytest.MonkeyPatch
+    ):
         """When curriculum_provider IS on app.state, return it (line 27)."""
         monkeypatch.setenv("AILINE_DEV_MODE", "true")
         settings = Settings()
@@ -700,7 +717,14 @@ class TestBloomTaxonomy:
         """Verify BNCC has reasonable Bloom distribution (all 6 levels present)."""
         objs = load_objectives_from_json("bncc.json")
         levels = {obj.bloom_level for obj in objs}
-        assert levels == {"remember", "understand", "apply", "analyze", "evaluate", "create"}
+        assert levels == {
+            "remember",
+            "understand",
+            "apply",
+            "analyze",
+            "evaluate",
+            "create",
+        }
 
 
 class TestBloomTaxonomyAPI:

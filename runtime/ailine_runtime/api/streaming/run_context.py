@@ -82,10 +82,14 @@ class RunContext:
         await self._push(event)
         return event
 
-    async def emit_stage_start(self, stage: str, payload: dict[str, Any] | None = None) -> SSEEvent:
+    async def emit_stage_start(
+        self, stage: str, payload: dict[str, Any] | None = None
+    ) -> SSEEvent:
         return await self.emit(SSEEventType.STAGE_START, stage, payload)
 
-    async def emit_stage_complete(self, stage: str, payload: dict[str, Any] | None = None) -> SSEEvent:
+    async def emit_stage_complete(
+        self, stage: str, payload: dict[str, Any] | None = None
+    ) -> SSEEvent:
         return await self.emit(SSEEventType.STAGE_COMPLETE, stage, payload)
 
     async def emit_stage_failed(self, stage: str, error: str) -> SSEEvent:
@@ -119,7 +123,9 @@ class RunContext:
         _log.info("run_context.started", run_id=self._run_id)
         return self
 
-    async def __aexit__(self, exc_type: type | None, exc: BaseException | None, tb: Any) -> bool | None:
+    async def __aexit__(
+        self, exc_type: type | None, exc: BaseException | None, tb: Any
+    ) -> bool | None:
         """Guarantee terminal event emission."""
         if exc is None:
             await self._finalize_ok()

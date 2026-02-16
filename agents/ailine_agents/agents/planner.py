@@ -79,7 +79,9 @@ def build_planner_agent(
 
 
 @functools.lru_cache(maxsize=4)
-def _build_and_register_planner(use_skills: bool, model: str | None = None) -> Agent[AgentDeps, StudyPlanDraft]:
+def _build_and_register_planner(
+    use_skills: bool, model: str | None = None
+) -> Agent[AgentDeps, StudyPlanDraft]:
     """Build planner agent with tools (cached, thread-safe via lru_cache)."""
     agent = build_planner_agent(use_skills=use_skills, model=model)
     from ailine_runtime.tools.registry import build_tool_registry

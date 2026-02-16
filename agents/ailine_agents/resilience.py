@@ -74,7 +74,9 @@ class CircuitBreaker:
                     "circuit_breaker.blocked",
                     failure_count=self._failure_count,
                     open_until=self._circuit_open_until,
-                    remaining_seconds=round((self._circuit_open_until or 0) - time.monotonic(), 1),
+                    remaining_seconds=round(
+                        (self._circuit_open_until or 0) - time.monotonic(), 1
+                    ),
                 )
                 return False
             return True

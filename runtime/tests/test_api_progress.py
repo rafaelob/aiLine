@@ -164,7 +164,9 @@ async def test_record_progress_empty_student_id(client: AsyncClient) -> None:
     assert resp.status_code == 422
 
 
-async def test_record_progress_unauthenticated(unauthenticated_client: AsyncClient) -> None:
+async def test_record_progress_unauthenticated(
+    unauthenticated_client: AsyncClient,
+) -> None:
     """Unauthenticated request returns 401."""
     resp = await unauthenticated_client.post(
         "/progress/record",
@@ -271,7 +273,9 @@ async def test_student_progress_not_found(client: AsyncClient) -> None:
     assert resp.status_code == 404
 
 
-async def test_student_progress_unauthenticated(unauthenticated_client: AsyncClient) -> None:
+async def test_student_progress_unauthenticated(
+    unauthenticated_client: AsyncClient,
+) -> None:
     """Unauthenticated request returns 401."""
     resp = await unauthenticated_client.get("/progress/student/any-student")
     assert resp.status_code == 401

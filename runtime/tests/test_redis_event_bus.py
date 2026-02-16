@@ -20,7 +20,9 @@ class TestRedisEventBus:
         mock_redis_mod.Redis = mock_redis_class
         mock_redis_mod.asyncio.Redis = mock_redis_class
 
-        with patch.dict(sys.modules, {"redis": mock_redis_mod, "redis.asyncio": mock_redis_mod}):
+        with patch.dict(
+            sys.modules, {"redis": mock_redis_mod, "redis.asyncio": mock_redis_mod}
+        ):
             from ailine_runtime.adapters.events.redis_bus import RedisEventBus
 
             bus = RedisEventBus(redis_url="redis://localhost:6379/0")
@@ -34,7 +36,9 @@ class TestRedisEventBus:
         mock_redis_instance = AsyncMock()
         mock_redis_mod.Redis.from_url.return_value = mock_redis_instance
 
-        with patch.dict(sys.modules, {"redis": mock_redis_mod, "redis.asyncio": mock_redis_mod}):
+        with patch.dict(
+            sys.modules, {"redis": mock_redis_mod, "redis.asyncio": mock_redis_mod}
+        ):
             from ailine_runtime.adapters.events.redis_bus import RedisEventBus
 
             bus = RedisEventBus(redis_url="redis://localhost:6379/0")
@@ -59,7 +63,9 @@ class TestRedisEventBus:
         mock_redis_instance = AsyncMock()
         mock_redis_mod.Redis.from_url.return_value = mock_redis_instance
 
-        with patch.dict(sys.modules, {"redis": mock_redis_mod, "redis.asyncio": mock_redis_mod}):
+        with patch.dict(
+            sys.modules, {"redis": mock_redis_mod, "redis.asyncio": mock_redis_mod}
+        ):
             from ailine_runtime.adapters.events.redis_bus import RedisEventBus
 
             bus = RedisEventBus(redis_url="redis://localhost:6379/0")
@@ -72,7 +78,9 @@ class TestRedisEventBus:
         mock_redis_instance = AsyncMock()
         mock_redis_mod.Redis.from_url.return_value = mock_redis_instance
 
-        with patch.dict(sys.modules, {"redis": mock_redis_mod, "redis.asyncio": mock_redis_mod}):
+        with patch.dict(
+            sys.modules, {"redis": mock_redis_mod, "redis.asyncio": mock_redis_mod}
+        ):
             from ailine_runtime.adapters.events.redis_bus import RedisEventBus
 
             bus = RedisEventBus(redis_url="redis://localhost:6379/0")
@@ -106,7 +114,9 @@ class TestEventBusSelection:
 
         settings = Settings(redis={"url": "redis://prod-redis:6379/1"})
 
-        with patch.dict(sys.modules, {"redis": mock_redis_mod, "redis.asyncio": mock_redis_mod}):
+        with patch.dict(
+            sys.modules, {"redis": mock_redis_mod, "redis.asyncio": mock_redis_mod}
+        ):
             bus = _build_event_bus(settings)
             assert type(bus).__name__ == "RedisEventBus"
 

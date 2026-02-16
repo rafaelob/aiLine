@@ -17,7 +17,9 @@ from ._prompts import QUALITY_GATE_SYSTEM_PROMPT
 _DEFAULT_QG_MODEL = "anthropic:claude-sonnet-4-5"
 
 
-def build_quality_gate_agent(*, model: str | None = None) -> Agent[AgentDeps, QualityAssessment]:
+def build_quality_gate_agent(
+    *, model: str | None = None
+) -> Agent[AgentDeps, QualityAssessment]:
     """Create the QualityGateAgent with typed output.
 
     Args:
@@ -34,12 +36,16 @@ def build_quality_gate_agent(*, model: str | None = None) -> Agent[AgentDeps, Qu
 
 
 @functools.lru_cache(maxsize=4)
-def _build_and_cache_qg(model: str | None = None) -> Agent[AgentDeps, QualityAssessment]:
+def _build_and_cache_qg(
+    model: str | None = None,
+) -> Agent[AgentDeps, QualityAssessment]:
     """Build quality gate agent (cached, thread-safe via lru_cache)."""
     return build_quality_gate_agent(model=model)
 
 
-def get_quality_gate_agent(*, model: str | None = None) -> Agent[AgentDeps, QualityAssessment]:
+def get_quality_gate_agent(
+    *, model: str | None = None
+) -> Agent[AgentDeps, QualityAssessment]:
     """Get or create the singleton QualityGateAgent."""
     if model is None:
         try:

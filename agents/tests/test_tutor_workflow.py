@@ -71,7 +71,10 @@ class TestClassifyIntent:
         assert _classify_intent("quanto e 2 + 2?") == "question"
 
     def test_question_complex(self) -> None:
-        assert _classify_intent("explique como calcular a area de um triangulo") == "question"
+        assert (
+            _classify_intent("explique como calcular a area de um triangulo")
+            == "question"
+        )
 
     def test_question_empty(self) -> None:
         assert _classify_intent("") == "question"

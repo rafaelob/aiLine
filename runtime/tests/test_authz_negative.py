@@ -114,7 +114,9 @@ class TestUnauthenticatedAccess:
 class TestCrossTenantAccess:
     """Tenant A must not access Tenant B's resources."""
 
-    def test_tutor_get_cross_tenant_denied(self, dev_mode_app, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_tutor_get_cross_tenant_denied(
+        self, dev_mode_app, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """GET /tutors/{id} as wrong tenant returns 403."""
         mock_spec = MagicMock()
         mock_spec.teacher_id = TENANT_B
@@ -133,7 +135,9 @@ class TestCrossTenantAccess:
             )
             assert resp.status_code == 403
 
-    def test_tutor_chat_cross_tenant_denied(self, dev_mode_app, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_tutor_chat_cross_tenant_denied(
+        self, dev_mode_app, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """POST /tutors/{id}/chat as wrong tenant returns 403."""
         mock_spec = MagicMock()
         mock_spec.teacher_id = TENANT_B
@@ -152,7 +156,9 @@ class TestCrossTenantAccess:
             )
             assert resp.status_code == 403
 
-    def test_materials_list_scoped_to_own_tenant(self, dev_mode_app, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_materials_list_scoped_to_own_tenant(
+        self, dev_mode_app, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """GET /materials as Tenant A returns only Tenant A's materials."""
         called_with: dict = {}
 
@@ -258,7 +264,9 @@ class TestCrossTenantVectorIsolation:
     def store(self) -> InMemoryVectorStore:
         return InMemoryVectorStore()
 
-    async def test_search_returns_only_own_tenant(self, store: InMemoryVectorStore) -> None:
+    async def test_search_returns_only_own_tenant(
+        self, store: InMemoryVectorStore
+    ) -> None:
         """Tenant A's search must not return Tenant B's embeddings."""
         embedding_a = [1.0, 0.0, 0.0]
         embedding_b = [0.9, 0.1, 0.0]
@@ -296,7 +304,9 @@ class TestCrossTenantVectorIsolation:
         assert len(results_b) == 1
         assert results_b[0].id == "chunk-b1"
 
-    async def test_search_without_tenant_returns_all(self, store: InMemoryVectorStore) -> None:
+    async def test_search_without_tenant_returns_all(
+        self, store: InMemoryVectorStore
+    ) -> None:
         """Search without tenant_id returns all chunks (backward compat)."""
         await store.upsert(
             ids=["c1"],
@@ -319,7 +329,9 @@ class TestCrossTenantVectorIsolation:
         )
         assert len(results) == 2
 
-    async def test_tenant_isolation_with_many_chunks(self, store: InMemoryVectorStore) -> None:
+    async def test_tenant_isolation_with_many_chunks(
+        self, store: InMemoryVectorStore
+    ) -> None:
         """Even with many chunks, only the correct tenant's data is returned."""
         for i in range(10):
             await store.upsert(

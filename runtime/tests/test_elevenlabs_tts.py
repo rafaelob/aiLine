@@ -18,7 +18,9 @@ from ailine_runtime.adapters.media.elevenlabs_tts import ElevenLabsTTS
 
 @pytest.fixture()
 def tts() -> ElevenLabsTTS:
-    return ElevenLabsTTS(api_key="test-key", voice_id="voice-123", model_id="eleven_multilingual_v2")
+    return ElevenLabsTTS(
+        api_key="test-key", voice_id="voice-123", model_id="eleven_multilingual_v2"
+    )
 
 
 # ===========================================================================

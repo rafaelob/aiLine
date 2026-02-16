@@ -132,7 +132,13 @@ def compute_route(features: RouteFeatures) -> RouteDecision:
         intent=W_INTENT * features.intent_score,
     )
 
-    score = breakdown.token + breakdown.structured + breakdown.tool + breakdown.history + breakdown.intent
+    score = (
+        breakdown.token
+        + breakdown.structured
+        + breakdown.tool
+        + breakdown.history
+        + breakdown.intent
+    )
     score = min(1.0, max(0.0, score))
 
     if score <= TIER_CHEAP_MAX:

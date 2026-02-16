@@ -25,7 +25,9 @@ class TestBuildPlanWorkflow:
 
     @patch("ailine_agents.workflows.plan_workflow.get_planner_agent")
     @patch("ailine_agents.workflows.plan_workflow.get_executor_agent")
-    def test_compiles_successfully(self, mock_executor: object, mock_planner: object) -> None:
+    def test_compiles_successfully(
+        self, mock_executor: object, mock_planner: object
+    ) -> None:
         deps = AgentDeps(teacher_id="t-1", run_id="r-1")
         graph = build_plan_workflow(deps)
         # Compiled graph should have an invoke method
@@ -34,7 +36,9 @@ class TestBuildPlanWorkflow:
 
     @patch("ailine_agents.workflows.plan_workflow.get_planner_agent")
     @patch("ailine_agents.workflows.plan_workflow.get_executor_agent")
-    def test_graph_has_expected_nodes(self, mock_executor: object, mock_planner: object) -> None:
+    def test_graph_has_expected_nodes(
+        self, mock_executor: object, mock_planner: object
+    ) -> None:
         deps = AgentDeps(teacher_id="t-1", run_id="r-1")
         graph = build_plan_workflow(deps)
         node_names = set(graph.get_graph().nodes.keys())
@@ -100,7 +104,12 @@ class TestBuildRefinementFeedback:
     """build_refinement_feedback() formats QG feedback for the planner."""
 
     def test_includes_score(self) -> None:
-        prev = {"score": 55, "errors": ["missing steps"], "warnings": ["too long"], "recommendations": ["shorten"]}
+        prev = {
+            "score": 55,
+            "errors": ["missing steps"],
+            "warnings": ["too long"],
+            "recommendations": ["shorten"],
+        }
         result = build_refinement_feedback(prev, refine_iter=1)
         assert "55" in result
         assert "missing steps" in result

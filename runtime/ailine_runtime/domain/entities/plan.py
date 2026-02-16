@@ -53,7 +53,9 @@ class PlanStep(BaseModel):
 
     minutes: int = Field(..., ge=1)
     title: str
-    instructions: list[str] = Field(..., description="Numbered instructions (1 action per item).")
+    instructions: list[str] = Field(
+        ..., description="Numbered instructions (1 action per item)."
+    )
     activities: list[str] = Field(default_factory=list)
     assessment: list[str] = Field(default_factory=list, description="Quick checks.")
 
@@ -113,7 +115,9 @@ class StudyPlanDraft(BaseModel):
     standard: str = Field(..., description="BNCC|US")
     objectives: list[Objective]
     steps: list[PlanStep]
-    accessibility_pack_draft: AccessibilityPackDraft = Field(default_factory=lambda: AccessibilityPackDraft())
+    accessibility_pack_draft: AccessibilityPackDraft = Field(
+        default_factory=lambda: AccessibilityPackDraft()
+    )
     student_plan: StudentPlan = Field(default_factory=lambda: StudentPlan())
     evidence_requests: list[str] = Field(default_factory=list)
 
@@ -121,8 +125,12 @@ class StudyPlanDraft(BaseModel):
 class StandardRef(BaseModel):
     """A curriculum standard reference."""
 
-    code: str = Field(..., description="Standard code (e.g. EF06MA01, CCSS.MATH.6.RP.A.1)")
-    description: str = Field(default="", description="Short description of the standard.")
+    code: str = Field(
+        ..., description="Standard code (e.g. EF06MA01, CCSS.MATH.6.RP.A.1)"
+    )
+    description: str = Field(
+        default="", description="Short description of the standard."
+    )
 
 
 class TransformationScorecard(BaseModel):
@@ -132,18 +140,40 @@ class TransformationScorecard(BaseModel):
     quality, and time savings. Judge candy for hackathon.
     """
 
-    reading_level_before: float = Field(default=0.0, description="Flesch-Kincaid grade level of input prompt.")
-    reading_level_after: float = Field(default=0.0, description="Flesch-Kincaid grade level of generated plan.")
-    standards_aligned: list[StandardRef] = Field(default_factory=list, description="BNCC/CCSS codes aligned.")
-    accessibility_adaptations: list[str] = Field(default_factory=list, description="Applied persona adaptations.")
-    rag_groundedness: float = Field(default=0.0, ge=0.0, le=1.0, description="RAG citation confidence (0-1).")
-    quality_score: int = Field(default=0, ge=0, le=100, description="QualityGate score (0-100).")
-    quality_decision: str = Field(default="pending", description="accept/refine/reject decision.")
+    reading_level_before: float = Field(
+        default=0.0, description="Flesch-Kincaid grade level of input prompt."
+    )
+    reading_level_after: float = Field(
+        default=0.0, description="Flesch-Kincaid grade level of generated plan."
+    )
+    standards_aligned: list[StandardRef] = Field(
+        default_factory=list, description="BNCC/CCSS codes aligned."
+    )
+    accessibility_adaptations: list[str] = Field(
+        default_factory=list, description="Applied persona adaptations."
+    )
+    rag_groundedness: float = Field(
+        default=0.0, ge=0.0, le=1.0, description="RAG citation confidence (0-1)."
+    )
+    quality_score: int = Field(
+        default=0, ge=0, le=100, description="QualityGate score (0-100)."
+    )
+    quality_decision: str = Field(
+        default="pending", description="accept/refine/reject decision."
+    )
     model_used: str = Field(default="", description="LLM model used for generation.")
-    router_rationale: str = Field(default="", description="SmartRouter reasoning for model selection.")
-    time_saved_estimate: str = Field(default="", description="Estimated time saved vs manual work.")
-    total_pipeline_time_ms: float = Field(default=0.0, description="Total pipeline execution time in ms.")
-    export_variants_count: int = Field(default=0, description="Number of export variants generated.")
+    router_rationale: str = Field(
+        default="", description="SmartRouter reasoning for model selection."
+    )
+    time_saved_estimate: str = Field(
+        default="", description="Estimated time saved vs manual work."
+    )
+    total_pipeline_time_ms: float = Field(
+        default=0.0, description="Total pipeline execution time in ms."
+    )
+    export_variants_count: int = Field(
+        default=0, description="Number of export variants generated."
+    )
 
 
 class ReviewStatus(StrEnum):
@@ -162,7 +192,11 @@ class PlanReview(BaseModel):
     review_id: str = Field(..., description="Unique review ID.")
     plan_id: str = Field(..., description="The plan run_id being reviewed.")
     teacher_id: str = Field(..., description="Teacher who reviewed.")
-    status: ReviewStatus = Field(default=ReviewStatus.DRAFT, description="Current review status.")
+    status: ReviewStatus = Field(
+        default=ReviewStatus.DRAFT, description="Current review status."
+    )
     notes: str = Field(default="", description="Teacher's review notes/feedback.")
-    approved_at: str | None = Field(default=None, description="ISO timestamp when approved/rejected.")
+    approved_at: str | None = Field(
+        default=None, description="ISO timestamp when approved/rejected."
+    )
     created_at: str = Field(..., description="ISO timestamp of review creation.")

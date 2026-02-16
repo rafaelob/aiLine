@@ -50,7 +50,9 @@ class TestReviewStoreReviews:
     def test_update_review_reject(self) -> None:
         store = ReviewStore()
         store.create_review("plan-1", "teacher-1")
-        updated = store.update_review("plan-1", ReviewStatus.REJECTED, "Needs more work")
+        updated = store.update_review(
+            "plan-1", ReviewStatus.REJECTED, "Needs more work"
+        )
         assert updated is not None
         assert updated.status == ReviewStatus.REJECTED
         assert updated.approved_at is not None  # set for REJECTED too
@@ -58,7 +60,9 @@ class TestReviewStoreReviews:
     def test_update_review_needs_revision(self) -> None:
         store = ReviewStore()
         store.create_review("plan-1", "teacher-1")
-        updated = store.update_review("plan-1", ReviewStatus.NEEDS_REVISION, "Fix objectives")
+        updated = store.update_review(
+            "plan-1", ReviewStatus.NEEDS_REVISION, "Fix objectives"
+        )
         assert updated is not None
         assert updated.status == ReviewStatus.NEEDS_REVISION
         assert updated.approved_at is None  # NOT set for NEEDS_REVISION
@@ -270,9 +274,15 @@ class TestProgressStoreDashboard:
 
     def test_dashboard_aggregation(self) -> None:
         store = ProgressStore()
-        store.record_progress("t1", "s1", "Alice", "C1", "Fractions", MasteryLevel.MASTERED)
-        store.record_progress("t1", "s1", "Alice", "C2", "Decimals", MasteryLevel.PROFICIENT)
-        store.record_progress("t1", "s2", "Bob", "C1", "Fractions", MasteryLevel.DEVELOPING)
+        store.record_progress(
+            "t1", "s1", "Alice", "C1", "Fractions", MasteryLevel.MASTERED
+        )
+        store.record_progress(
+            "t1", "s1", "Alice", "C2", "Decimals", MasteryLevel.PROFICIENT
+        )
+        store.record_progress(
+            "t1", "s2", "Bob", "C1", "Fractions", MasteryLevel.DEVELOPING
+        )
 
         dashboard = store.get_dashboard("t1")
         assert dashboard.total_students == 2
@@ -297,8 +307,12 @@ class TestProgressStoreDashboard:
 
     def test_dashboard_standard_summaries(self) -> None:
         store = ProgressStore()
-        store.record_progress("t1", "s1", "Alice", "C1", "Fractions", MasteryLevel.MASTERED)
-        store.record_progress("t1", "s2", "Bob", "C1", "Fractions", MasteryLevel.DEVELOPING)
+        store.record_progress(
+            "t1", "s1", "Alice", "C1", "Fractions", MasteryLevel.MASTERED
+        )
+        store.record_progress(
+            "t1", "s2", "Bob", "C1", "Fractions", MasteryLevel.DEVELOPING
+        )
 
         dashboard = store.get_dashboard("t1")
         assert len(dashboard.standards) == 1
@@ -396,7 +410,9 @@ class TestReviewStoreThreadSafety:
             except Exception as exc:
                 errors.append(exc)
 
-        threads = [threading.Thread(target=flagger, args=(f"sess-{i}",)) for i in range(5)]
+        threads = [
+            threading.Thread(target=flagger, args=(f"sess-{i}",)) for i in range(5)
+        ]
         for t in threads:
             t.start()
         for t in threads:

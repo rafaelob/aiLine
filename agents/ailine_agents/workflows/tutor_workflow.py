@@ -148,7 +148,9 @@ def build_tutor_workflow(
                 "started_at": time.monotonic(),
             }
 
-    async def rag_node(state: TutorGraphState) -> dict[str, list[dict[str, Any]] | str | None]:
+    async def rag_node(
+        state: TutorGraphState,
+    ) -> dict[str, list[dict[str, Any]] | str | None]:
         stage_start = time.monotonic()
         session_id = state.get("session_id", "")
 
@@ -190,7 +192,9 @@ def build_tutor_workflow(
             )
             return {"rag_results": [], "error": f"rag_search failed: {exc}"}
 
-    async def generate_node(state: TutorGraphState) -> dict[str, dict[str, Any] | str | None]:
+    async def generate_node(
+        state: TutorGraphState,
+    ) -> dict[str, dict[str, Any] | str | None]:
         """Use TutorAgent for generation with validated structured output."""
         session_id = state.get("session_id", "")
         stage_start = time.monotonic()
@@ -389,11 +393,15 @@ def _build_tutor_prompt(
 
     # Intent instruction
     if intent == "greeting":
-        parts.append("O aluno esta cumprimentando. Responda acolhedoramente e pergunte como ajudar.")
+        parts.append(
+            "O aluno esta cumprimentando. Responda acolhedoramente e pergunte como ajudar."
+        )
     elif intent == "offtopic":
         parts.append("O aluno fez pergunta fora do tema. Redirecione gentilmente.")
     elif intent == "clarification":
-        parts.append("O aluno pediu esclarecimento. Explique de forma diferente, com exemplos.")
+        parts.append(
+            "O aluno pediu esclarecimento. Explique de forma diferente, com exemplos."
+        )
 
     # RAG context
     if rag_results:

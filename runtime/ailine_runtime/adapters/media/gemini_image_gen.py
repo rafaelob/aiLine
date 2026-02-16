@@ -63,7 +63,9 @@ class GeminiImageGenerator:
     def __init__(self, *, api_key: str = "") -> None:
         from google import genai
 
-        self._client: Client = genai.Client(api_key=api_key) if api_key else genai.Client()
+        self._client: Client = (
+            genai.Client(api_key=api_key) if api_key else genai.Client()
+        )
 
     async def generate(
         self,
@@ -91,9 +93,13 @@ class GeminiImageGenerator:
                 f"Must be one of {sorted(_VALID_ASPECT_RATIOS)}."
             )
         if size not in _VALID_SIZES:
-            raise ValueError(f"Invalid size '{size}'. Must be one of {sorted(_VALID_SIZES)}.")
+            raise ValueError(
+                f"Invalid size '{size}'. Must be one of {sorted(_VALID_SIZES)}."
+            )
 
-        template = STYLE_TEMPLATES.get(style, STYLE_TEMPLATES["educational_illustration"])
+        template = STYLE_TEMPLATES.get(
+            style, STYLE_TEMPLATES["educational_illustration"]
+        )
         full_prompt = template.format(prompt=prompt)
 
         _log.info(
@@ -113,9 +119,7 @@ class GeminiImageGenerator:
 
     # -- private sync helper (runs in thread) ---------------------------------
 
-    def _sync_generate(
-        self, full_prompt: str, aspect_ratio: str, size: str
-    ) -> bytes:
+    def _sync_generate(self, full_prompt: str, aspect_ratio: str, size: str) -> bytes:
         from google.genai import types
 
         response = self._client.models.generate_images(

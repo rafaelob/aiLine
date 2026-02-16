@@ -35,7 +35,9 @@ class TraceStore:
         self._max_entries = max_entries
         self._lock = asyncio.Lock()
 
-    async def get(self, run_id: str, *, teacher_id: str | None = None) -> RunTrace | None:
+    async def get(
+        self, run_id: str, *, teacher_id: str | None = None
+    ) -> RunTrace | None:
         """Get a trace by run_id, or None if not found / expired.
 
         When *teacher_id* is provided, only returns the trace if it
@@ -87,7 +89,9 @@ class TraceStore:
                     setattr(trace, key, value)
             self._timestamps[run_id] = time.monotonic()
 
-    async def list_recent(self, limit: int = 20, *, teacher_id: str | None = None) -> list[RunTrace]:
+    async def list_recent(
+        self, limit: int = 20, *, teacher_id: str | None = None
+    ) -> list[RunTrace]:
         """List recent traces, newest first.
 
         When *teacher_id* is provided, only returns traces belonging to

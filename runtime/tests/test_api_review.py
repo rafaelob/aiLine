@@ -142,7 +142,9 @@ async def test_submit_review_update_existing(client: AsyncClient) -> None:
     assert resp2.json()["notes"] == "Revised and approved."
 
 
-async def test_submit_review_unauthenticated(unauthenticated_client: AsyncClient) -> None:
+async def test_submit_review_unauthenticated(
+    unauthenticated_client: AsyncClient,
+) -> None:
     """Unauthenticated review submission returns 401."""
     resp = await unauthenticated_client.post(
         "/plans/plan-006/review",
@@ -229,7 +231,9 @@ async def test_pending_review_excludes_approved(client: AsyncClient) -> None:
     assert "plan-approved-1" not in plan_ids
 
 
-async def test_pending_review_unauthenticated(unauthenticated_client: AsyncClient) -> None:
+async def test_pending_review_unauthenticated(
+    unauthenticated_client: AsyncClient,
+) -> None:
     """Unauthenticated request returns 401."""
     resp = await unauthenticated_client.get("/plans/pending-review")
     assert resp.status_code == 401

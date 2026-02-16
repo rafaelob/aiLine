@@ -30,7 +30,9 @@ class ArgsWithTeacherId(BaseModel):
 class _FakeToolDef:
     """Minimal stand-in for runtime ToolDef (dataclass)."""
 
-    def __init__(self, name: str, description: str, args_model: type[BaseModel], handler: Any) -> None:
+    def __init__(
+        self, name: str, description: str, args_model: type[BaseModel], handler: Any
+    ) -> None:
         self.name = name
         self.description = description
         self.args_model = args_model
@@ -75,11 +77,15 @@ class TestRegisterTools:
         return [
             _FakeToolDef("tool_a", "Tool A", SimpleArgs, AsyncMock(return_value={})),
             _FakeToolDef("tool_b", "Tool B", SimpleArgs, AsyncMock(return_value={})),
-            _FakeToolDef("tool_c", "Tool C", ArgsWithTeacherId, AsyncMock(return_value={})),
+            _FakeToolDef(
+                "tool_c", "Tool C", ArgsWithTeacherId, AsyncMock(return_value={})
+            ),
         ]
 
     def test_register_all(self) -> None:
-        agent: Agent[AgentDeps, str] = Agent("test", output_type=str, deps_type=AgentDeps)
+        agent: Agent[AgentDeps, str] = Agent(
+            "test", output_type=str, deps_type=AgentDeps
+        )
         tools = self._make_tools()
 
         register_tools(agent, tools)
@@ -88,7 +94,9 @@ class TestRegisterTools:
         assert "tool_c" in agent._function_toolset.tools
 
     def test_register_filtered(self) -> None:
-        agent: Agent[AgentDeps, str] = Agent("test", output_type=str, deps_type=AgentDeps)
+        agent: Agent[AgentDeps, str] = Agent(
+            "test", output_type=str, deps_type=AgentDeps
+        )
         tools = self._make_tools()
 
         register_tools(agent, tools, allowed_names=["tool_a", "tool_c"])
@@ -97,14 +105,18 @@ class TestRegisterTools:
         assert "tool_c" in agent._function_toolset.tools
 
     def test_register_empty_allowed_names(self) -> None:
-        agent: Agent[AgentDeps, str] = Agent("test", output_type=str, deps_type=AgentDeps)
+        agent: Agent[AgentDeps, str] = Agent(
+            "test", output_type=str, deps_type=AgentDeps
+        )
         tools = self._make_tools()
 
         register_tools(agent, tools, allowed_names=[])
         assert len(agent._function_toolset.tools) == 0
 
     def test_register_none_allowed_names_registers_all(self) -> None:
-        agent: Agent[AgentDeps, str] = Agent("test", output_type=str, deps_type=AgentDeps)
+        agent: Agent[AgentDeps, str] = Agent(
+            "test", output_type=str, deps_type=AgentDeps
+        )
         tools = self._make_tools()
 
         register_tools(agent, tools, allowed_names=None)

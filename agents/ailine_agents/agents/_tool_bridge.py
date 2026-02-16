@@ -81,7 +81,10 @@ def _build_typed_wrapper(tool_def: Any) -> Any:
 
     for field_name, field_info in model_fields.items():
         # Skip teacher_id — auto-injected from deps (only when optional)
-        if field_name == "teacher_id" and not getattr(field_info, "is_required", lambda: True)():
+        if (
+            field_name == "teacher_id"
+            and not getattr(field_info, "is_required", lambda: True)()
+        ):
             continue
 
         prop = properties.get(field_name, {})

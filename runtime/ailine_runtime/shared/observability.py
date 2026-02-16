@@ -26,8 +26,12 @@ import structlog
 # Request-scoped correlation via contextvars
 # ---------------------------------------------------------------------------
 
-_request_id_var: contextvars.ContextVar[str | None] = contextvars.ContextVar("ailine_request_id", default=None)
-_teacher_id_var: contextvars.ContextVar[str | None] = contextvars.ContextVar("ailine_teacher_id", default=None)
+_request_id_var: contextvars.ContextVar[str | None] = contextvars.ContextVar(
+    "ailine_request_id", default=None
+)
+_teacher_id_var: contextvars.ContextVar[str | None] = contextvars.ContextVar(
+    "ailine_teacher_id", default=None
+)
 
 
 def set_request_context(
@@ -105,7 +109,9 @@ def configure_logging(*, json_output: bool = True, level: str = "INFO") -> None:
     # Avoid accumulating handlers on repeated calls
     if not any(
         isinstance(h, logging.StreamHandler)
-        and isinstance(getattr(h, "formatter", None), structlog.stdlib.ProcessorFormatter)
+        and isinstance(
+            getattr(h, "formatter", None), structlog.stdlib.ProcessorFormatter
+        )
         for h in root_logger.handlers
     ):
         root_logger.addHandler(handler)

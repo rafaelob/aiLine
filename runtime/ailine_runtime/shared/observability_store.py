@@ -98,8 +98,12 @@ class ObservabilityStore:
             out = self._token_usage["output_tokens"]
             model = self._cost_model
 
-            input_cost = (inp / 1000) * _COST_PER_1K_INPUT.get(model, _COST_PER_1K_INPUT["default"])
-            output_cost = (out / 1000) * _COST_PER_1K_OUTPUT.get(model, _COST_PER_1K_OUTPUT["default"])
+            input_cost = (inp / 1000) * _COST_PER_1K_INPUT.get(
+                model, _COST_PER_1K_INPUT["default"]
+            )
+            output_cost = (out / 1000) * _COST_PER_1K_OUTPUT.get(
+                model, _COST_PER_1K_OUTPUT["default"]
+            )
 
             return {
                 "input_tokens": inp,
@@ -127,7 +131,11 @@ class ObservabilityStore:
                 "name": name,
                 "model": model,
                 "status": status,
-                "last_success": time.time() if status == "healthy" else self._provider_status.get("last_success"),
+                "last_success": (
+                    time.time()
+                    if status == "healthy"
+                    else self._provider_status.get("last_success")
+                ),
             }
 
     def get_provider_status(self) -> dict[str, Any]:

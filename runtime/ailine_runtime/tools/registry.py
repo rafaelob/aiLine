@@ -49,21 +49,31 @@ class RagSearchArgs(BaseModel):
     subject: str | None = Field(None, description="Filtro opcional (disciplina).")
 
     # Para tutoria e materiais do professor
-    teacher_id: str | None = Field(None, description="Opcional: filtra materiais de um professor específico.")
-    material_ids: list[str] = Field(default_factory=list, description="Opcional: filtra por material_id.")
-    tags: list[str] = Field(default_factory=list, description="Opcional: filtra por tags.")
+    teacher_id: str | None = Field(
+        None, description="Opcional: filtra materiais de um professor específico."
+    )
+    material_ids: list[str] = Field(
+        default_factory=list, description="Opcional: filtra por material_id."
+    )
+    tags: list[str] = Field(
+        default_factory=list, description="Opcional: filtra por tags."
+    )
 
 
 class CurriculumLookupArgs(BaseModel):
     standard: str = Field(..., description="BNCC|US")
     grade: str = Field(..., description="Série/ano")
     topic: str = Field(..., description="Tema/tópico")
-    teacher_id: str | None = Field(None, description="Opcional: teacher_id para escopo de tenant.")
+    teacher_id: str | None = Field(
+        None, description="Opcional: teacher_id para escopo de tenant."
+    )
 
 
 class AccessibilityChecklistArgs(BaseModel):
     draft_plan: dict[str, Any] = Field(..., description="Plano draft (JSON).")
-    class_profile: dict[str, Any] | None = Field(None, description="ClassAccessibilityProfile (dict).")
+    class_profile: dict[str, Any] | None = Field(
+        None, description="ClassAccessibilityProfile (dict)."
+    )
 
 
 class ExportVariantArgs(BaseModel):
@@ -77,7 +87,9 @@ class ExportVariantArgs(BaseModel):
             "visual_schedule_json|student_plain_text|audio_script"
         ),
     )
-    teacher_id: str | None = Field(None, description="Opcional: teacher_id para escopo de tenant.")
+    teacher_id: str | None = Field(
+        None, description="Opcional: teacher_id para escopo de tenant."
+    )
 
 
 class SavePlanArgs(BaseModel):
@@ -85,8 +97,12 @@ class SavePlanArgs(BaseModel):
         ...,
         description="Plano final (JSON), incluindo accessibility_pack, relatorio e exports.",
     )
-    metadata: dict[str, Any] = Field(default_factory=dict, description="Metadados (run_id, versão, etc).")
-    teacher_id: str | None = Field(None, description="Opcional: teacher_id para escopo de tenant.")
+    metadata: dict[str, Any] = Field(
+        default_factory=dict, description="Metadados (run_id, versão, etc)."
+    )
+    teacher_id: str | None = Field(
+        None, description="Opcional: teacher_id para escopo de tenant."
+    )
 
 
 # ----------------------------
@@ -109,7 +125,10 @@ async def rag_search_handler(args: RagSearchArgs) -> dict[str, Any]:
         material_ids=args.material_ids or None,
         tags=args.tags or None,
     )
-    return {"chunks": chunks, "note": "local_material_search (troque por pgvector em produção)"}
+    return {
+        "chunks": chunks,
+        "note": "local_material_search (troque por pgvector em produção)",
+    }
 
 
 async def curriculum_lookup_handler(args: CurriculumLookupArgs) -> dict[str, Any]:
@@ -133,7 +152,11 @@ async def curriculum_lookup_handler(args: CurriculumLookupArgs) -> dict[str, Any
         "objectives": [
             {
                 "code": obj.code,
-                "system": obj.system.value if hasattr(obj.system, "value") else str(obj.system),
+                "system": (
+                    obj.system.value
+                    if hasattr(obj.system, "value")
+                    else str(obj.system)
+                ),
                 "subject": obj.subject,
                 "grade": obj.grade,
                 "domain": obj.domain,
@@ -146,8 +169,12 @@ async def curriculum_lookup_handler(args: CurriculumLookupArgs) -> dict[str, Any
     }
 
 
-async def accessibility_checklist_handler(args: AccessibilityChecklistArgs) -> dict[str, Any]:
-    class_profile = ClassAccessibilityProfile(**args.class_profile) if args.class_profile else None
+async def accessibility_checklist_handler(
+    args: AccessibilityChecklistArgs,
+) -> dict[str, Any]:
+    class_profile = (
+        ClassAccessibilityProfile(**args.class_profile) if args.class_profile else None
+    )
     report = validate_draft_accessibility(args.draft_plan, class_profile)
     return report
 
@@ -177,7 +204,11 @@ async def save_plan_handler(args: SavePlanArgs) -> dict[str, Any]:
     out_path = out_dir / f"{plan_id}.json"
     stored_metadata = {**args.metadata, "teacher_id": teacher_id}
     out_path.write_text(
-        json.dumps({"plan": args.plan_json, "metadata": stored_metadata}, ensure_ascii=False, indent=2),
+        json.dumps(
+            {"plan": args.plan_json, "metadata": stored_metadata},
+            ensure_ascii=False,
+            indent=2,
+        ),
         encoding="utf-8",
     )
     return {"plan_id": plan_id, "stored_at": str(out_path), "teacher_id": teacher_id}

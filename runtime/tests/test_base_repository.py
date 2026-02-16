@@ -84,7 +84,9 @@ class TestBaseRepositoryCRUD:
         assert deleted is None
 
     @pytest.mark.asyncio
-    async def test_tenant_scoping_prevents_cross_tenant_access(self, session: AsyncSession):
+    async def test_tenant_scoping_prevents_cross_tenant_access(
+        self, session: AsyncSession
+    ):
         t1 = TeacherRow(email="t1@test.com", display_name="Teacher 1")
         t2 = TeacherRow(email="t2@test.com", display_name="Teacher 2")
         session.add_all([t1, t2])

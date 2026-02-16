@@ -51,9 +51,13 @@ class PlanStreamIn(BaseModel):
     """Request body for streaming plan generation."""
 
     run_id: str = Field(..., description="Client-generated run ID for observability.")
-    user_prompt: str = Field(..., min_length=1, description="Teacher's natural-language request.")
+    user_prompt: str = Field(
+        ..., min_length=1, description="Teacher's natural-language request."
+    )
     subject: str | None = Field(None, description="Optional: subject (RAG filter).")
-    class_accessibility_profile: dict[str, Any] | None = Field(None, description="Accessibility profile for the class.")
+    class_accessibility_profile: dict[str, Any] | None = Field(
+        None, description="Accessibility profile for the class."
+    )
     learner_profiles: list[dict[str, Any]] | None = Field(
         None, description="Anonymous learner profiles for differentiation."
     )
@@ -145,7 +149,9 @@ async def _run_pipeline(
             parsed = final_data.get("parsed")
             if isinstance(parsed, dict):
                 final_payload["score"] = parsed.get("score")
-                final_payload["human_review_required"] = parsed.get("human_review_required")
+                final_payload["human_review_required"] = parsed.get(
+                    "human_review_required"
+                )
 
         # Include scorecard in run.completed payload
         scorecard = final_state.get("scorecard")
@@ -176,7 +182,12 @@ async def _run_pipeline(
             )
 
     except Exception as exc:
-        logger.error("pipeline_failed", run_id=body.run_id, error=str(exc), tb=traceback.format_exc())
+        logger.error(
+            "pipeline_failed",
+            run_id=body.run_id,
+            error=str(exc),
+            tb=traceback.format_exc(),
+        )
         error_event = emitter.run_failed(str(exc), stage="pipeline")
         await queue.put({"data": error_event.to_sse_data()})
 
@@ -190,7 +201,9 @@ async def _run_pipeline(
 
 
 @router.post("/generate/stream")
-async def plans_generate_stream(body: PlanStreamIn, request: Request) -> EventSourceResponse:
+async def plans_generate_stream(
+    body: PlanStreamIn, request: Request
+) -> EventSourceResponse:
     """Stream plan generation progress as Server-Sent Events.
 
     The response is an SSE stream where each event carries the
@@ -204,7 +217,9 @@ async def plans_generate_stream(body: PlanStreamIn, request: Request) -> EventSo
     # --- Input sanitization ---
     body.user_prompt = sanitize_prompt(body.user_prompt)
     if not body.user_prompt:
-        raise HTTPException(status_code=422, detail="user_prompt must not be empty after sanitization")
+        raise HTTPException(
+            status_code=422, detail="user_prompt must not be empty after sanitization"
+        )
 
     # Resolve teacher_id: mandatory JWT auth (never from request body)
     teacher_id = _resolve_teacher_id()
@@ -214,7 +229,9 @@ async def plans_generate_stream(body: PlanStreamIn, request: Request) -> EventSo
 
     async def event_generator() -> AsyncIterator[dict[str, str]]:
         # Start the pipeline and heartbeat as background tasks
-        pipeline_task = asyncio.create_task(_run_pipeline(body, teacher_id, settings, container, emitter, queue))
+        pipeline_task = asyncio.create_task(
+            _run_pipeline(body, teacher_id, settings, container, emitter, queue)
+        )
         heartbeat_task = asyncio.create_task(_heartbeat_loop(emitter, queue))
 
         try:

@@ -32,7 +32,9 @@ def default_skill_source_paths(repo_root: Path | None = None) -> list[str]:
     return [c.as_posix() for c in candidates if c.is_dir()]
 
 
-def parse_skill_source_paths(raw: str | None, repo_root: Path | None = None) -> list[str]:
+def parse_skill_source_paths(
+    raw: str | None, repo_root: Path | None = None
+) -> list[str]:
     """Parse AILINE_SKILL_SOURCES env var.
 
     Format: comma-separated paths. Paths should be POSIX style, but we normalize '\\' to '/'.

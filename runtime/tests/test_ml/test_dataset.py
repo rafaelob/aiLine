@@ -23,7 +23,9 @@ from ailine_runtime.ml.vocabulary import LABEL_TO_ID
 # ---------------------------------------------------------------------------
 
 
-def _create_data_dir(tmp_path: Path, labels: list[str], n_samples: int = 2, seq_len: int = 20) -> Path:
+def _create_data_dir(
+    tmp_path: Path, labels: list[str], n_samples: int = 2, seq_len: int = 20
+) -> Path:
     """Create a mock data directory with .npy landmark files."""
     data_dir = tmp_path / "libras_data"
     data_dir.mkdir()
@@ -31,7 +33,11 @@ def _create_data_dir(tmp_path: Path, labels: list[str], n_samples: int = 2, seq_
         label_dir = data_dir / label
         label_dir.mkdir()
         for i in range(n_samples):
-            seq = np.random.default_rng(i).standard_normal((seq_len, 162)).astype(np.float32)
+            seq = (
+                np.random.default_rng(i)
+                .standard_normal((seq_len, 162))
+                .astype(np.float32)
+            )
             np.save(label_dir / f"sequence_{i:03d}.npy", seq)
     return data_dir
 

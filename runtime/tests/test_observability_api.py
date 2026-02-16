@@ -8,7 +8,10 @@ from httpx import ASGITransport, AsyncClient
 from ailine_runtime.api.app import create_app
 from ailine_runtime.domain.entities.trace import NodeTrace, RouteRationale
 from ailine_runtime.shared.config import Settings
-from ailine_runtime.shared.observability_store import get_observability_store, reset_observability_store
+from ailine_runtime.shared.observability_store import (
+    get_observability_store,
+    reset_observability_store,
+)
 from ailine_runtime.shared.trace_store import get_trace_store, reset_trace_store
 
 
@@ -134,7 +137,11 @@ class TestStandardsEvidence:
             run_id="run-42",
             standards=[
                 {"code": "EF06MA01", "system": "bncc", "description": "Fractions"},
-                {"code": "CCSS.MATH.6.NS.A.1", "system": "ccss", "description": "Division"},
+                {
+                    "code": "CCSS.MATH.6.NS.A.1",
+                    "system": "ccss",
+                    "description": "Division",
+                },
             ],
             bloom_level="apply",
             alignment_explanation=(
@@ -169,7 +176,9 @@ class TestStandardsHandout:
             base_url="http://test",
             headers=_auth_headers(),
         ) as client:
-            resp = await client.get("/observability/standards-evidence/nonexistent/handout")
+            resp = await client.get(
+                "/observability/standards-evidence/nonexistent/handout"
+            )
             assert resp.status_code == 404
 
     @pytest.mark.asyncio
@@ -225,7 +234,9 @@ class TestObservabilityStore:
 
     def test_token_cost_estimate(self) -> None:
         obs = get_observability_store()
-        obs.record_tokens(input_tokens=1000, output_tokens=500, model="claude-haiku-4-5")
+        obs.record_tokens(
+            input_tokens=1000, output_tokens=500, model="claude-haiku-4-5"
+        )
         stats = obs.get_token_stats()
         assert stats["input_tokens"] == 1000
         assert stats["output_tokens"] == 500

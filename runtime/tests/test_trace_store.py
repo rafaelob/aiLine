@@ -5,7 +5,11 @@ from __future__ import annotations
 import pytest
 
 from ailine_runtime.domain.entities.trace import NodeTrace, RouteRationale
-from ailine_runtime.shared.trace_store import TraceStore, get_trace_store, reset_trace_store
+from ailine_runtime.shared.trace_store import (
+    TraceStore,
+    get_trace_store,
+    reset_trace_store,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -54,9 +58,18 @@ class TestTraceStore:
     @pytest.mark.asyncio
     async def test_append_multiple_nodes(self) -> None:
         store = TraceStore()
-        await store.append_node("run-1", NodeTrace(node="planner", status="success", time_ms=100.0))
-        await store.append_node("run-1", NodeTrace(node="validate", status="success", time_ms=50.0, quality_score=85))
-        await store.append_node("run-1", NodeTrace(node="executor", status="success", time_ms=200.0))
+        await store.append_node(
+            "run-1", NodeTrace(node="planner", status="success", time_ms=100.0)
+        )
+        await store.append_node(
+            "run-1",
+            NodeTrace(
+                node="validate", status="success", time_ms=50.0, quality_score=85
+            ),
+        )
+        await store.append_node(
+            "run-1", NodeTrace(node="executor", status="success", time_ms=200.0)
+        )
         trace = await store.get("run-1")
         assert trace is not None
         assert len(trace.nodes) == 3
@@ -66,7 +79,9 @@ class TestTraceStore:
     async def test_update_run(self) -> None:
         store = TraceStore()
         await store.get_or_create("run-1")
-        await store.update_run("run-1", status="completed", total_time_ms=500.0, final_score=87)
+        await store.update_run(
+            "run-1", status="completed", total_time_ms=500.0, final_score=87
+        )
         trace = await store.get("run-1")
         assert trace is not None
         assert trace.status == "completed"

@@ -138,13 +138,22 @@ class TestComplexityScoring:
 
     def test_complexity_signals_increase_score(self, router: SmartRouterAdapter):
         simple = [_user_msg("Oi")]
-        complex_msg = [_user_msg("Analise detalhada do curriculo BNCC com acessibilidade TEA")]
+        complex_msg = [
+            _user_msg("Analise detalhada do curriculo BNCC com acessibilidade TEA")
+        ]
         assert router.score_complexity(complex_msg) > router.score_complexity(simple)
 
     def test_score_clamped_0_to_1(self, router: SmartRouterAdapter):
         # Even with all dimensions maxed
-        msgs = [_user_msg(f"analise complexa curriculo BNCC acessibilidade msg{i}" + "x" * 1000) for i in range(25)]
-        score = router.score_complexity(msgs, tools=[{"n": i} for i in range(10)], response_format={})
+        msgs = [
+            _user_msg(
+                f"analise complexa curriculo BNCC acessibilidade msg{i}" + "x" * 1000
+            )
+            for i in range(25)
+        ]
+        score = router.score_complexity(
+            msgs, tools=[{"n": i} for i in range(10)], response_format={}
+        )
         assert 0.0 <= score <= 1.0
 
     def test_empty_messages_score_zero(self, router: SmartRouterAdapter):
@@ -163,8 +172,13 @@ class TestTierClassification:
         assert router.classify_tier(msgs) == "cheap"
 
     def test_complex_gets_primary(self, router: SmartRouterAdapter):
-        msgs = [_user_msg(f"analise complexa BNCC acessibilidade msg{i}" + "x" * 500) for i in range(25)]
-        tier = router.classify_tier(msgs, tools=[{"n": i} for i in range(10)], response_format={})
+        msgs = [
+            _user_msg(f"analise complexa BNCC acessibilidade msg{i}" + "x" * 500)
+            for i in range(25)
+        ]
+        tier = router.classify_tier(
+            msgs, tools=[{"n": i} for i in range(10)], response_format={}
+        )
         assert tier == "primary"
 
     def test_medium_complexity_gets_middle(self, router: SmartRouterAdapter):
@@ -267,7 +281,9 @@ class TestProviderRouting:
     @pytest.mark.asyncio
     async def test_fallback_when_tier_provider_missing(self):
         # Only primary configured
-        config = SmartRouterConfig(primary_provider=FakeChatLLM(model="primary", responses=["only"]))
+        config = SmartRouterConfig(
+            primary_provider=FakeChatLLM(model="primary", responses=["only"])
+        )
         router = SmartRouterAdapter(config)
         # Simple message would want cheap, but falls back to primary
         result = await router.generate([_user_msg("Oi")])
@@ -350,7 +366,12 @@ class TestScoringFunctions:
         assert SmartRouterAdapter._score_intent([_user_msg("analise complexa")]) == 0.6
 
     def test_intent_score_multiple_signals(self):
-        assert SmartRouterAdapter._score_intent([_user_msg("analise detalhada curriculo BNCC acessibilidade")]) == 1.0
+        assert (
+            SmartRouterAdapter._score_intent(
+                [_user_msg("analise detalhada curriculo BNCC acessibilidade")]
+            )
+            == 1.0
+        )
 
     def test_intent_score_empty(self):
         assert SmartRouterAdapter._score_intent([]) == 0.0

@@ -168,7 +168,9 @@ class TestHumanReviewFlags:
     def test_hearing_with_libras_triggers_review(self) -> None:
         profile = ClassAccessibilityProfile(
             needs=AccessibilityNeeds(hearing=True),
-            supports=SupportSettings(hearing=HearingSupportSettings(sign_language="libras")),
+            supports=SupportSettings(
+                hearing=HearingSupportSettings(sign_language="libras")
+            ),
         )
         required, reasons = human_review_flags(profile)
         assert required is True
@@ -304,13 +306,18 @@ class TestProfileToPrompt:
     def test_profile_with_human_review_reasons(self) -> None:
         profile = ClassAccessibilityProfile(
             needs=AccessibilityNeeds(hearing=True),
-            supports=SupportSettings(hearing=HearingSupportSettings(sign_language="libras")),
+            supports=SupportSettings(
+                hearing=HearingSupportSettings(sign_language="libras")
+            ),
         )
         result = profile_to_prompt(profile)
         assert "revisão humana" in result
 
     def test_learners_capped_at_8(self) -> None:
-        learners = [AnonymousLearnerProfile(label=f"Aluno {i}", needs_json={"need": True}) for i in range(12)]
+        learners = [
+            AnonymousLearnerProfile(label=f"Aluno {i}", needs_json={"need": True})
+            for i in range(12)
+        ]
         result = profile_to_prompt(None, learners)
         # Should only include first 8
         assert "Aluno 7" in result

@@ -168,13 +168,19 @@ def render_metrics() -> str:
             for bucket_le, count in sorted(data["buckets"].items()):
                 bucket_lbl: dict[str, str] = dict(labels)
                 bucket_lbl["le"] = str(bucket_le)
-                lines.append(f"{histogram.name}_bucket{_format_labels(bucket_lbl)} {count}")
+                lines.append(
+                    f"{histogram.name}_bucket{_format_labels(bucket_lbl)} {count}"
+                )
             # +Inf bucket
             inf_labels: dict[str, str] = dict(labels)
             inf_labels["le"] = "+Inf"
-            lines.append(f"{histogram.name}_bucket{_format_labels(inf_labels)} {data['_count']}")
+            lines.append(
+                f"{histogram.name}_bucket{_format_labels(inf_labels)} {data['_count']}"
+            )
             lines.append(f"{histogram.name}_sum{_format_labels(labels)} {data['_sum']}")
-            lines.append(f"{histogram.name}_count{_format_labels(labels)} {data['_count']}")
+            lines.append(
+                f"{histogram.name}_count{_format_labels(labels)} {data['_count']}"
+            )
         lines.append("")
 
     return "\n".join(lines) + "\n"

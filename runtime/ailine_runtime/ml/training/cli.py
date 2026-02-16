@@ -15,7 +15,9 @@ from .train import TrainConfig, train
 
 def main(argv: list[str] | None = None) -> None:
     """Parse arguments and run training."""
-    parser = argparse.ArgumentParser(description="Train Libras sign language recognition model")
+    parser = argparse.ArgumentParser(
+        description="Train Libras sign language recognition model"
+    )
     parser.add_argument(
         "--data-dir",
         type=Path,
@@ -56,7 +58,9 @@ def main(argv: list[str] | None = None) -> None:
     )
 
     result = train(config)
-    print(f"\nTraining complete. Best epoch: {result.best_epoch}, Best val_loss: {result.best_val_loss:.4f}")
+    print(
+        f"\nTraining complete. Best epoch: {result.best_epoch}, Best val_loss: {result.best_val_loss:.4f}"
+    )
 
 
 if __name__ == "__main__":

@@ -92,11 +92,15 @@ def add_material(
     out_dir = _materials_dir() / teacher_id / _slug(subject)
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / f"{material_id}.json"
-    out_path.write_text(json.dumps(m.__dict__, ensure_ascii=False, indent=2), encoding="utf-8")
+    out_path.write_text(
+        json.dumps(m.__dict__, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     return m
 
 
-def load_material(material_id: str, *, teacher_id: str | None = None, subject: str | None = None) -> Material | None:
+def load_material(
+    material_id: str, *, teacher_id: str | None = None, subject: str | None = None
+) -> Material | None:
     # Busca simples por varredura (MVP). Em produção: lookup por índice/DB.
     for m in iter_materials(teacher_id=teacher_id, subject=subject):
         if m.material_id == material_id:
@@ -104,14 +108,22 @@ def load_material(material_id: str, *, teacher_id: str | None = None, subject: s
     return None
 
 
-def iter_materials(*, teacher_id: str | None = None, subject: str | None = None) -> Iterable[Material]:
+def iter_materials(
+    *, teacher_id: str | None = None, subject: str | None = None
+) -> Iterable[Material]:
     root = _materials_dir()
-    teacher_dirs = [root / teacher_id] if teacher_id else [p for p in root.iterdir() if p.is_dir()]
+    teacher_dirs = (
+        [root / teacher_id] if teacher_id else [p for p in root.iterdir() if p.is_dir()]
+    )
 
     for tdir in teacher_dirs:
         if not tdir.exists():
             continue
-        subj_dirs = [tdir / _slug(subject)] if subject else [p for p in tdir.iterdir() if p.is_dir()]
+        subj_dirs = (
+            [tdir / _slug(subject)]
+            if subject
+            else [p for p in tdir.iterdir() if p.is_dir()]
+        )
         for sdir in subj_dirs:
             if not sdir.exists():
                 continue

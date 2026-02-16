@@ -37,7 +37,11 @@ def make_scorecard_node(deps: AgentDeps):
 
             # Reading level heuristic
             prompt_text = state.get("user_prompt", "")
-            plan_text = draft.get("title", "") + " " + " ".join(s.get("title", "") for s in draft.get("steps", []))
+            plan_text = (
+                draft.get("title", "")
+                + " "
+                + " ".join(s.get("title", "") for s in draft.get("steps", []))
+            )
             reading_before = _estimate_reading_level(prompt_text)
             reading_after = _estimate_reading_level(plan_text)
 
@@ -80,10 +84,16 @@ def make_scorecard_node(deps: AgentDeps):
             time_saved = f"~{estimated_manual_minutes} min -> {pipeline_seconds:.0f}s"
 
             # Export variants
-            export_count = len(final.get("exports", {})) if isinstance(final.get("exports"), dict) else 0
+            export_count = (
+                len(final.get("exports", {}))
+                if isinstance(final.get("exports"), dict)
+                else 0
+            )
             if export_count == 0:
                 parsed_exports = final.get("parsed", {}).get("exports", {})
-                export_count = len(parsed_exports) if isinstance(parsed_exports, dict) else 10
+                export_count = (
+                    len(parsed_exports) if isinstance(parsed_exports, dict) else 10
+                )
 
             scorecard = {
                 "reading_level_before": round(reading_before, 1),
@@ -100,10 +110,16 @@ def make_scorecard_node(deps: AgentDeps):
                 "export_variants_count": export_count if export_count > 0 else 10,
             }
 
-            try_emit(emitter, writer, SSEEventType.STAGE_COMPLETE, "scorecard", scorecard)
+            try_emit(
+                emitter, writer, SSEEventType.STAGE_COMPLETE, "scorecard", scorecard
+            )
 
             # Emit AI Receipt — trust chain summary for the frontend
-            trust_level = "high" if quality_score >= 85 else ("medium" if quality_score >= 70 else "low")
+            trust_level = (
+                "high"
+                if quality_score >= 85
+                else ("medium" if quality_score >= 70 else "low")
+            )
             citations_count = len(state.get("rag_results") or [])
             accommodations = adaptations if adaptations else []
 
@@ -122,7 +138,13 @@ def make_scorecard_node(deps: AgentDeps):
             return {"scorecard": scorecard}  # type: ignore[typeddict-item,return-value]  # LangGraph partial state update
         except Exception as exc:
             log_event("scorecard.failed", run_id=run_id, error=str(exc))
-            try_emit(emitter, writer, SSEEventType.STAGE_FAILED, "scorecard", {"error": str(exc)[:200]})
+            try_emit(
+                emitter,
+                writer,
+                SSEEventType.STAGE_FAILED,
+                "scorecard",
+                {"error": str(exc)[:200]},
+            )
             fallback = {
                 "error": "scorecard_calculation_failed",
                 "details": str(exc)[:200],
@@ -143,7 +165,11 @@ def _estimate_reading_level(text: str) -> float:
     """
     if not text.strip():
         return 0.0
-    sentences = [s.strip() for s in text.replace("!", ".").replace("?", ".").split(".") if s.strip()]
+    sentences = [
+        s.strip()
+        for s in text.replace("!", ".").replace("?", ".").split(".")
+        if s.strip()
+    ]
     if not sentences:
         return 0.0
     words = text.split()

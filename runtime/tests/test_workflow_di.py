@@ -30,8 +30,14 @@ class TestWorkflowDI:
             default_variants="standard_html",
         )
         with (
-            patch("ailine_agents.workflows.plan_workflow.get_planner_agent", return_value=_mock_agent()),
-            patch("ailine_agents.workflows.plan_workflow.get_executor_agent", return_value=_mock_agent()),
+            patch(
+                "ailine_agents.workflows.plan_workflow.get_planner_agent",
+                return_value=_mock_agent(),
+            ),
+            patch(
+                "ailine_agents.workflows.plan_workflow.get_executor_agent",
+                return_value=_mock_agent(),
+            ),
         ):
             graph = build_plan_workflow(deps)
         assert graph is not None
@@ -40,8 +46,14 @@ class TestWorkflowDI:
         """build_plan_workflow works with minimal AgentDeps."""
         deps = AgentDeps()
         with (
-            patch("ailine_agents.workflows.plan_workflow.get_planner_agent", return_value=_mock_agent()),
-            patch("ailine_agents.workflows.plan_workflow.get_executor_agent", return_value=_mock_agent()),
+            patch(
+                "ailine_agents.workflows.plan_workflow.get_planner_agent",
+                return_value=_mock_agent(),
+            ),
+            patch(
+                "ailine_agents.workflows.plan_workflow.get_executor_agent",
+                return_value=_mock_agent(),
+            ),
         ):
             graph = build_plan_workflow(deps)
         assert graph is not None

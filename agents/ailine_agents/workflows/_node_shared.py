@@ -86,7 +86,12 @@ async def _handle_node_failure(
     """Record failure metrics, emit SSE, and capture trace for a failed node."""
     deps.circuit_breaker.record_failure()
     duration_ms = (time.monotonic() - stage_start) * 1000
-    log_event(f"{stage}.failed", run_id=run_id, error=str(exc), duration_ms=round(duration_ms, 2))
+    log_event(
+        f"{stage}.failed",
+        run_id=run_id,
+        error=str(exc),
+        duration_ms=round(duration_ms, 2),
+    )
     log_pipeline_stage(
         stage=stage,
         run_id=run_id,

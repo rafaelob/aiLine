@@ -17,7 +17,9 @@ class TestGeneratePersonaWithLLM:
     @pytest.mark.asyncio
     async def test_valid_json_response(self):
         llm = AsyncMock()
-        llm.generate = AsyncMock(return_value='{"system_prompt": "Be helpful.", "notes": ["note1"]}')
+        llm.generate = AsyncMock(
+            return_value='{"system_prompt": "Be helpful.", "notes": ["note1"]}'
+        )
         persona = await _generate_persona_with_llm(llm, "Create a tutor")
         assert persona.system_prompt == "Be helpful."
         assert "note1" in persona.notes
@@ -25,14 +27,18 @@ class TestGeneratePersonaWithLLM:
     @pytest.mark.asyncio
     async def test_json_embedded_in_text(self):
         llm = AsyncMock()
-        llm.generate = AsyncMock(return_value='Here is the result: {"system_prompt": "Embedded.", "notes": []} done.')
+        llm.generate = AsyncMock(
+            return_value='Here is the result: {"system_prompt": "Embedded.", "notes": []} done.'
+        )
         persona = await _generate_persona_with_llm(llm, "Create a tutor")
         assert persona.system_prompt == "Embedded."
 
     @pytest.mark.asyncio
     async def test_plain_text_response(self):
         llm = AsyncMock()
-        llm.generate = AsyncMock(return_value="Just a plain text system prompt without JSON.")
+        llm.generate = AsyncMock(
+            return_value="Just a plain text system prompt without JSON."
+        )
         persona = await _generate_persona_with_llm(llm, "Create a tutor")
         assert persona.system_prompt == "Just a plain text system prompt without JSON."
         assert persona.notes == []
@@ -51,7 +57,9 @@ class TestCreateTutorAgentAutoPersona:
         monkeypatch.setenv("AILINE_LOCAL_STORE", str(tmp_path))
 
         llm = AsyncMock()
-        llm.generate = AsyncMock(return_value='{"system_prompt": "AI generated prompt.", "notes": ["adaptive"]}')
+        llm.generate = AsyncMock(
+            return_value='{"system_prompt": "AI generated prompt.", "notes": ["adaptive"]}'
+        )
 
         spec = await create_tutor_agent(
             cfg=None,
@@ -83,7 +91,10 @@ class TestCreateTutorAgentAutoPersona:
 
         # Should have the deterministic template
         assert spec.persona.system_prompt != ""
-        assert "Math" in spec.persona.system_prompt or "Tutor" in spec.persona.system_prompt
+        assert (
+            "Math" in spec.persona.system_prompt
+            or "Tutor" in spec.persona.system_prompt
+        )
 
 
 class TestLoadTutorSpec:

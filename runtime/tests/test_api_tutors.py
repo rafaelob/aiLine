@@ -66,7 +66,9 @@ async def test_create_tutor(client: AsyncClient, tmp_local_store: Path) -> None:
     assert body["persona"]["system_prompt"]  # non-empty persona
 
 
-async def test_create_tutor_with_accessibility_profile(client: AsyncClient, tmp_local_store: Path) -> None:
+async def test_create_tutor_with_accessibility_profile(
+    client: AsyncClient, tmp_local_store: Path
+) -> None:
     payload = _tutor_payload()
     payload["class_accessibility_profile"] = {
         "needs": {"autism": True, "adhd": True},
@@ -78,7 +80,9 @@ async def test_create_tutor_with_accessibility_profile(client: AsyncClient, tmp_
     assert "tutor_id" in body
 
 
-async def test_create_tutor_missing_required_fields(client: AsyncClient, tmp_local_store: Path) -> None:
+async def test_create_tutor_missing_required_fields(
+    client: AsyncClient, tmp_local_store: Path
+) -> None:
     resp = await client.post("/tutors", json={"teacher_id": "t1"})
     assert resp.status_code == 422
 
@@ -119,7 +123,9 @@ async def test_create_session(client: AsyncClient, tmp_local_store: Path) -> Non
     assert body["session_id"]
 
 
-async def test_create_session_tutor_not_found(client: AsyncClient, tmp_local_store: Path) -> None:
+async def test_create_session_tutor_not_found(
+    client: AsyncClient, tmp_local_store: Path
+) -> None:
     resp = await client.post("/tutors/nonexistent-id/sessions")
     assert resp.status_code == 404
 
@@ -153,7 +159,9 @@ async def test_tutor_chat(client: AsyncClient, tmp_local_store: Path) -> None:
     assert "answer_markdown" in validated
 
 
-async def test_tutor_chat_session_not_found(client: AsyncClient, tmp_local_store: Path) -> None:
+async def test_tutor_chat_session_not_found(
+    client: AsyncClient, tmp_local_store: Path
+) -> None:
     create_resp = await client.post("/tutors", json=_tutor_payload())
     tutor_id = create_resp.json()["tutor_id"]
 
@@ -164,7 +172,9 @@ async def test_tutor_chat_session_not_found(client: AsyncClient, tmp_local_store
     assert resp.status_code == 404
 
 
-async def test_tutor_chat_session_wrong_tutor(client: AsyncClient, tmp_local_store: Path) -> None:
+async def test_tutor_chat_session_wrong_tutor(
+    client: AsyncClient, tmp_local_store: Path
+) -> None:
     # Create tutor A
     resp_a = await client.post("/tutors", json=_tutor_payload())
     tutor_a = resp_a.json()["tutor_id"]

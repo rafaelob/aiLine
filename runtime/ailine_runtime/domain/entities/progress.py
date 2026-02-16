@@ -29,8 +29,12 @@ class LearnerProgress(BaseModel):
     standard_code: str = Field(..., description="Curriculum standard code.")
     standard_description: str = Field("", description="Short description.")
     mastery_level: MasteryLevel = Field(MasteryLevel.NOT_STARTED)
-    session_count: int = Field(0, ge=0, description="Number of tutor sessions on this standard.")
-    last_activity: str | None = Field(None, description="ISO timestamp of last activity.")
+    session_count: int = Field(
+        0, ge=0, description="Number of tutor sessions on this standard."
+    )
+    last_activity: str | None = Field(
+        None, description="ISO timestamp of last activity."
+    )
     created_at: str = Field(..., description="ISO timestamp of creation.")
     notes: str = Field("", description="Teacher notes on progress.")
 

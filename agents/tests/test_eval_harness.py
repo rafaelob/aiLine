@@ -79,8 +79,12 @@ def _make_good_plan() -> StudyPlanDraft:
             Objective(id="EF05MA03", text="Comparar e ordenar fracoes"),
         ],
         steps=[
-            PlanStep(minutes=15, title="Introducao", instructions=["Explicar conceito"]),
-            PlanStep(minutes=20, title="Atividade", instructions=["Praticar em duplas"]),
+            PlanStep(
+                minutes=15, title="Introducao", instructions=["Explicar conceito"]
+            ),
+            PlanStep(
+                minutes=20, title="Atividade", instructions=["Praticar em duplas"]
+            ),
             PlanStep(minutes=10, title="Avaliacao", instructions=["Quiz formativo"]),
         ],
         accessibility_pack_draft=AccessibilityPackDraft(
@@ -118,7 +122,13 @@ class TestPlannerRubric:
         plan = _make_good_plan()
         result = score_planner_output(plan, PLANNER_GOLDEN[0])
         dim_names = {d.name for d in result.dimensions}
-        assert dim_names == {"structure", "completeness", "pedagogy", "safety", "accuracy"}
+        assert dim_names == {
+            "structure",
+            "completeness",
+            "pedagogy",
+            "safety",
+            "accuracy",
+        }
 
     def test_dimension_dict(self) -> None:
         plan = _make_good_plan()
@@ -127,7 +137,9 @@ class TestPlannerRubric:
         assert "structure" in dd
         assert 0 <= dd["structure"] <= 100
 
-    @pytest.mark.parametrize("scenario", PLANNER_GOLDEN, ids=[s["id"] for s in PLANNER_GOLDEN])
+    @pytest.mark.parametrize(
+        "scenario", PLANNER_GOLDEN, ids=[s["id"] for s in PLANNER_GOLDEN]
+    )
     def test_golden_scenarios_have_valid_config(self, scenario: dict) -> None:
         """Each golden scenario has required fields."""
         assert "id" in scenario
@@ -183,7 +195,9 @@ class TestQualityGateRubric:
         # Score is out of expected range and status mismatches
         assert result.final_score < 80
 
-    @pytest.mark.parametrize("scenario", QUALITY_GATE_GOLDEN, ids=[s["id"] for s in QUALITY_GATE_GOLDEN])
+    @pytest.mark.parametrize(
+        "scenario", QUALITY_GATE_GOLDEN, ids=[s["id"] for s in QUALITY_GATE_GOLDEN]
+    )
     def test_golden_scenarios_have_valid_config(self, scenario: dict) -> None:
         assert "id" in scenario
         assert "prompt" in scenario
@@ -247,7 +261,9 @@ class TestTutorRubric:
         result = score_tutor_output(output, TUTOR_GOLDEN[0])
         assert not result.passed
 
-    @pytest.mark.parametrize("scenario", TUTOR_GOLDEN, ids=[s["id"] for s in TUTOR_GOLDEN])
+    @pytest.mark.parametrize(
+        "scenario", TUTOR_GOLDEN, ids=[s["id"] for s in TUTOR_GOLDEN]
+    )
     def test_golden_scenarios_have_valid_config(self, scenario: dict) -> None:
         assert "id" in scenario
         assert "prompt" in scenario
@@ -336,7 +352,9 @@ class TestGoldenSetCompleteness:
 
     def test_all_ids_unique(self) -> None:
         all_ids = (
-            [s["id"] for s in PLANNER_GOLDEN] + [s["id"] for s in QUALITY_GATE_GOLDEN] + [s["id"] for s in TUTOR_GOLDEN]
+            [s["id"] for s in PLANNER_GOLDEN]
+            + [s["id"] for s in QUALITY_GATE_GOLDEN]
+            + [s["id"] for s in TUTOR_GOLDEN]
         )
         assert len(all_ids) == len(set(all_ids))
 

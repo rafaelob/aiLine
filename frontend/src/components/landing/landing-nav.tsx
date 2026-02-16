@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/cn'
 
 interface LandingNavProps {
@@ -19,6 +20,7 @@ export function LandingNav({ locale, startDemo }: LandingNavProps) {
   const [focusWithin, setFocusWithin] = useState(false)
   const prefersReducedMotion = useReducedMotion()
   const noMotion = prefersReducedMotion ?? false
+  const tNav = useTranslations('nav')
 
   useEffect(() => {
     function handleScroll() {
@@ -61,18 +63,33 @@ export function LandingNav({ locale, startDemo }: LandingNavProps) {
         <span className="font-bold text-lg gradient-text-animated">AiLine</span>
       </div>
 
-      <Link
-        href={`/${locale}/dashboard`}
-        tabIndex={visible ? 0 : -1}
-        className={cn(
-          'px-5 py-2.5 rounded-xl btn-shimmer btn-press',
-          'text-sm font-semibold text-[var(--color-on-primary)]',
-          'focus-visible:shadow-[var(--focus-ring)]'
-        )}
-        style={{ background: 'var(--gradient-hero)' }}
-      >
-        {startDemo}
-      </Link>
+      <div className="flex items-center gap-4">
+        <Link
+          href={`/${locale}/guide`}
+          tabIndex={visible ? 0 : -1}
+          className={cn(
+            'px-4 py-2 rounded-xl',
+            'text-sm font-semibold text-[var(--color-text)]',
+            'hover:bg-[var(--color-surface-hover)] transition-colors duration-200',
+            'focus-visible:shadow-[var(--focus-ring)]'
+          )}
+        >
+          {tNav('guide')}
+        </Link>
+
+        <Link
+          href={`/${locale}/dashboard`}
+          tabIndex={visible ? 0 : -1}
+          className={cn(
+            'px-5 py-2.5 rounded-xl btn-shimmer btn-press',
+            'text-sm font-semibold text-[var(--color-on-primary)]',
+            'focus-visible:shadow-[var(--focus-ring)]'
+          )}
+          style={{ background: 'var(--gradient-hero)' }}
+        >
+          {startDemo}
+        </Link>
+      </div>
     </motion.nav>
   )
 }

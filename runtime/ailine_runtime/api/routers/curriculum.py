@@ -36,10 +36,18 @@ def _get_provider(request: Request) -> UnifiedCurriculumProvider:
 async def curriculum_search(
     request: Request,
     response: Response,
-    q: str = Query(..., min_length=1, description="Search query (code, keyword, or text)."),
-    grade: str | None = Query(None, description="Grade filter (e.g. '6o ano', 'Grade 6')."),
-    subject: str | None = Query(None, description="Subject filter (e.g. 'Matematica', 'Science')."),
-    system: str | None = Query(None, description="System filter: bncc, ccss, ccss_ela, or ngss."),
+    q: str = Query(
+        ..., min_length=1, description="Search query (code, keyword, or text)."
+    ),
+    grade: str | None = Query(
+        None, description="Grade filter (e.g. '6o ano', 'Grade 6')."
+    ),
+    subject: str | None = Query(
+        None, description="Subject filter (e.g. 'Matematica', 'Science')."
+    ),
+    system: str | None = Query(
+        None, description="System filter: bncc, ccss, ccss_ela, or ngss."
+    ),
     bloom_level: str | None = Query(
         None,
         description="Bloom's Taxonomy filter: remember, understand, apply, analyze, evaluate, or create.",
@@ -90,7 +98,9 @@ async def curriculum_get_by_code(
 
 
 @router.get("/grade-mapping")
-async def grade_mapping(request: Request, _teacher_id: str = Depends(require_authenticated)) -> dict[str, Any]:
+async def grade_mapping(
+    request: Request, _teacher_id: str = Depends(require_authenticated)
+) -> dict[str, Any]:
     """Return the Brazil <-> US grade equivalency mapping."""
     provider = _get_provider(request)
     return provider.get_grade_mapping()
@@ -99,7 +109,9 @@ async def grade_mapping(request: Request, _teacher_id: str = Depends(require_aut
 @router.get("/grade-mapping/translate")
 async def grade_translate(
     request: Request,
-    grade: str = Query(..., description="Grade to translate (e.g. '6o ano' or 'Grade 6')."),
+    grade: str = Query(
+        ..., description="Grade to translate (e.g. '6o ano' or 'Grade 6')."
+    ),
     _teacher_id: str = Depends(require_authenticated),
 ) -> dict[str, str | None]:
     """Translate a grade label between Brazilian and US systems."""

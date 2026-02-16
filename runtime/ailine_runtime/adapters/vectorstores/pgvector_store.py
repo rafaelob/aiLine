@@ -50,7 +50,9 @@ class PgVectorStore:
         dimensions: int = 1536,
     ) -> None:
         if not _VALID_IDENT.match(table_name):
-            raise ValueError(f"Invalid table_name: {table_name!r} (must be a valid SQL identifier)")
+            raise ValueError(
+                f"Invalid table_name: {table_name!r} (must be a valid SQL identifier)"
+            )
         if not (1 <= dimensions <= 4000):
             raise ValueError(f"Invalid dimensions: {dimensions} (must be 1..4000)")
         self._session_factory = session_factory
@@ -231,7 +233,9 @@ class PgVectorStore:
             """
         )
 
-        _log.debug("search", table=self._table, k=k, filters=filters, tenant_id=tenant_id)
+        _log.debug(
+            "search", table=self._table, k=k, filters=filters, tenant_id=tenant_id
+        )
 
         async with self._session_factory() as session:
             result = await session.execute(query, params)

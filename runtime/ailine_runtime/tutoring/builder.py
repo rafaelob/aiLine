@@ -15,7 +15,12 @@ from typing import Any, Literal
 import structlog
 
 from ..accessibility.profiles import ClassAccessibilityProfile, human_review_flags
-from ..domain.entities.tutor import LearnerProfile, TutorAgentSpec, TutorMaterialsScope, TutorPersona
+from ..domain.entities.tutor import (
+    LearnerProfile,
+    TutorAgentSpec,
+    TutorMaterialsScope,
+    TutorPersona,
+)
 from .playbooks import build_tutor_system_prompt
 
 logger = structlog.get_logger("ailine.tutoring.builder")
@@ -39,7 +44,9 @@ def _tutors_dir() -> Path:
 
 def save_tutor_spec(spec: TutorAgentSpec) -> dict[str, Any]:
     path = _tutors_dir() / f"{spec.tutor_id}.json"
-    path.write_text(spec.model_dump_json(indent=2, ensure_ascii=False), encoding="utf-8")
+    path.write_text(
+        spec.model_dump_json(indent=2, ensure_ascii=False), encoding="utf-8"
+    )
     return {"tutor_id": spec.tutor_id, "stored_at": str(path)}
 
 
@@ -143,7 +150,11 @@ async def create_tutor_agent(
     )
 
     # Human review flags (e.g., Libras/Braille)
-    class_profile = ClassAccessibilityProfile(**class_accessibility_profile) if class_accessibility_profile else None
+    class_profile = (
+        ClassAccessibilityProfile(**class_accessibility_profile)
+        if class_accessibility_profile
+        else None
+    )
     human_req, reasons = human_review_flags(class_profile)
 
     # Persona generation

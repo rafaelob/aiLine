@@ -50,7 +50,9 @@ async def list_recent_diagnostics(
 
 
 @router.get("/diagnostics/{run_id}")
-async def get_diagnostics(run_id: str, teacher_id: str = Depends(require_authenticated)) -> dict[str, Any]:
+async def get_diagnostics(
+    run_id: str, teacher_id: str = Depends(require_authenticated)
+) -> dict[str, Any]:
     """Get full RAG diagnostics for a specific run.
 
     Returns chunk provenance (chunk IDs, document titles, page/section

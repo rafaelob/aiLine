@@ -19,7 +19,9 @@ class ProgressRecordIn(BaseModel):
     student_name: str = Field("", max_length=200)
     standard_code: str = Field(..., min_length=1)
     standard_description: str = Field("", max_length=500)
-    mastery_level: str = Field(..., description="not_started|developing|proficient|mastered")
+    mastery_level: str = Field(
+        ..., description="not_started|developing|proficient|mastered"
+    )
     notes: str = Field("", max_length=2000)
 
 

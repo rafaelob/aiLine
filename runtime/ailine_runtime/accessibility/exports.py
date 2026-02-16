@@ -140,7 +140,9 @@ def render_plan_html(plan: dict[str, Any], variant: str = "standard_html") -> st
 
     parts: list[str] = []
     parts.append("<!doctype html><html lang='pt-br'><head><meta charset='utf-8'/>")
-    parts.append(f"<title>{_safe(title)}</title><meta name='viewport' content='width=device-width, initial-scale=1'/>")
+    parts.append(
+        f"<title>{_safe(title)}</title><meta name='viewport' content='width=device-width, initial-scale=1'/>"
+    )
     parts.append(f"<style>{css}</style></head><body>")
     parts.append(skip)
     parts.append(main_open)
@@ -150,7 +152,9 @@ def render_plan_html(plan: dict[str, Any], variant: str = "standard_html") -> st
 
     # Student-facing summary if present
     student_plan = plan.get("student_plan")
-    if isinstance(student_plan, dict) and (student_plan.get("summary") or student_plan.get("steps")):
+    if isinstance(student_plan, dict) and (
+        student_plan.get("summary") or student_plan.get("steps")
+    ):
         parts.append("<section aria-label='Versão aluno (resumo)'>")
         parts.append("<h2>Versão aluno (resumo)</h2>")
         for line in student_plan.get("summary") or []:
@@ -166,11 +170,15 @@ def render_plan_html(plan: dict[str, Any], variant: str = "standard_html") -> st
 
     # Visual schedule variant
     if variant == "visual_schedule_html":
-        parts.append("<section aria-label='Cronograma visual'><h2>Cronograma visual</h2>")
+        parts.append(
+            "<section aria-label='Cronograma visual'><h2>Cronograma visual</h2>"
+        )
         parts.append("<div class='schedule-grid'>")
         for idx, s in enumerate(steps, start=1):
             parts.append("<div class='schedule-card'>")
-            parts.append(f"<div class='schedule-title'>{idx}. {_safe(s.get('title', 'Etapa'))}</div>")
+            parts.append(
+                f"<div class='schedule-title'>{idx}. {_safe(s.get('title', 'Etapa'))}</div>"
+            )
             parts.append(
                 f"<div class='schedule-meta'><span class='kpi'>{_safe(s.get('minutes', '?'))} min</span></div>"
             )
@@ -188,7 +196,9 @@ def render_plan_html(plan: dict[str, Any], variant: str = "standard_html") -> st
     for idx, s in enumerate(steps, start=1):
         parts.append("<div class='card'>")
         parts.append(f"<h3>{idx}. {_safe(s.get('title', 'Etapa'))}</h3>")
-        parts.append(f"<p><strong>Duração:</strong> {_safe(s.get('minutes', '?'))} min</p>")
+        parts.append(
+            f"<p><strong>Duração:</strong> {_safe(s.get('minutes', '?'))} min</p>"
+        )
         instr = s.get("instructions") or []
         if instr:
             parts.append("<h4>Passo a passo</h4><ol>")
@@ -245,7 +255,9 @@ def render_audio_script(plan: dict[str, Any]) -> str:
             lines.append(f"- {s}")
 
     for i, s in enumerate(steps, start=1):
-        lines.append(f"Etapa {i}: {s.get('title', '')}. Duração aproximada: {s.get('minutes', '?')} minutos.")
+        lines.append(
+            f"Etapa {i}: {s.get('title', '')}. Duração aproximada: {s.get('minutes', '?')} minutos."
+        )
         for j, inst in enumerate(s.get("instructions") or [], start=1):
             lines.append(f"Passo {j}: {inst}")
 
@@ -267,7 +279,9 @@ def render_student_plain_text(plan: dict[str, Any]) -> str:
     lines: list[str] = [f"{title}", ""]
 
     student_plan = plan.get("student_plan")
-    if isinstance(student_plan, dict) and (student_plan.get("summary") or student_plan.get("steps")):
+    if isinstance(student_plan, dict) and (
+        student_plan.get("summary") or student_plan.get("steps")
+    ):
         for s in student_plan.get("summary") or []:
             lines.append(f"- {s}")
         lines.append("")

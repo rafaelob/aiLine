@@ -42,7 +42,9 @@ class DemoModeMiddleware(BaseHTTPMiddleware):
     directly; this middleware only handles the synchronous generate path.
     """
 
-    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+    async def dispatch(
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
         # Only intercept POST to known paths
         if request.method != "POST" or request.url.path not in _INTERCEPTABLE_PATHS:
             return await call_next(request)

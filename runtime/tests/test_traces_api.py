@@ -114,9 +114,13 @@ class TestTracesAPI:
     async def test_list_recent_with_data(self, app) -> None:
         store = get_trace_store()
         await store.get_or_create("run-1", teacher_id="teacher-test")
-        await store.update_run("run-1", status="completed", total_time_ms=100.0, final_score=85)
+        await store.update_run(
+            "run-1", status="completed", total_time_ms=100.0, final_score=85
+        )
         await store.get_or_create("run-2", teacher_id="teacher-test")
-        await store.update_run("run-2", status="completed", total_time_ms=200.0, final_score=72)
+        await store.update_run(
+            "run-2", status="completed", total_time_ms=200.0, final_score=72
+        )
 
         async with AsyncClient(
             transport=ASGITransport(app=app),

@@ -11,8 +11,14 @@ from datetime import datetime
 import pytest
 from pydantic import ValidationError
 
-from ailine_runtime.domain.entities.accessibility import AccessibilityNeed, SupportIntensity
-from ailine_runtime.domain.entities.curriculum import CurriculumObjective, CurriculumSystem
+from ailine_runtime.domain.entities.accessibility import (
+    AccessibilityNeed,
+    SupportIntensity,
+)
+from ailine_runtime.domain.entities.curriculum import (
+    CurriculumObjective,
+    CurriculumSystem,
+)
 from ailine_runtime.domain.entities.material import Material, MaterialChunk
 from ailine_runtime.domain.entities.plan import (
     AccessibilityAdaptation,
@@ -216,7 +222,9 @@ class TestTutorAgentSpec:
             subject="Matematica",
             grade="6o ano",
             student_profile=LearnerProfile(name="Aluno X", needs=["adhd"]),
-            materials_scope=TutorMaterialsScope(teacher_id="teacher-1", subject="Matematica"),
+            materials_scope=TutorMaterialsScope(
+                teacher_id="teacher-1", subject="Matematica"
+            ),
             persona=TutorPersona(system_prompt="Be kind."),
         )
         assert spec.style == "socratic"
@@ -271,7 +279,9 @@ class TestTutorSession:
 
 class TestTutorMessage:
     def test_basic(self) -> None:
-        m = TutorMessage(role="user", content="Hello", created_at="2026-01-01T00:00:00Z")
+        m = TutorMessage(
+            role="user", content="Hello", created_at="2026-01-01T00:00:00Z"
+        )
         assert m.role == "user"
         assert m.content == "Hello"
 

@@ -60,7 +60,9 @@ def make_validate_node(
 
             # Hard constraints + RAG scoring
             rag_results = state.get("rag_results") or []
-            validation = _apply_hard_constraints(validation, draft, class_profile, rag_results)
+            validation = _apply_hard_constraints(
+                validation, draft, class_profile, rag_results
+            )
 
             det_score = validation["score"]
             final_score = det_score
@@ -93,7 +95,10 @@ def make_validate_node(
                 status="success",
                 time_ms=duration_ms,
                 inputs_summary={"draft_keys": list(draft.keys())[:10]},
-                outputs_summary={"score": final_score, "quality_status": validation["status"]},
+                outputs_summary={
+                    "score": final_score,
+                    "quality_status": validation["status"],
+                },
                 quality_score=final_score,
             )
 
@@ -137,7 +142,9 @@ def _apply_hard_constraints(
     rag_quotes = extract_rag_quotes(rag_results)
     validation["rag_confidence"] = rag_confidence
     validation["rag_quotes"] = rag_quotes
-    validation["rag_sources_cited"] = hard_constraints_dict.get("rag_sources_cited", False)
+    validation["rag_sources_cited"] = hard_constraints_dict.get(
+        "rag_sources_cited", False
+    )
 
     validation["score"] = max(0, validation.get("score", 0) - hard_penalty)
     return validation
@@ -242,7 +249,13 @@ async def _run_quality_gate_llm(
             "weights": "0.4*det+0.6*llm",
         }
         deps.circuit_breaker.record_success()
-        log_event("validate.llm_gate", run_id=run_id, det=det_score, llm=llm_score, final=final_score)
+        log_event(
+            "validate.llm_gate",
+            run_id=run_id,
+            det=det_score,
+            llm=llm_score,
+            final=final_score,
+        )
         return final_score
     except Exception as llm_exc:
         deps.circuit_breaker.record_failure()

@@ -85,14 +85,20 @@ class TestExtractImage:
 
         with patch.dict(
             "sys.modules",
-            {"pytesseract": mock_pytesseract, "PIL": mock_pil, "PIL.Image": mock_pil.Image},
+            {
+                "pytesseract": mock_pytesseract,
+                "PIL": mock_pil,
+                "PIL.Image": mock_pil.Image,
+            },
         ):
             result = await ocr.extract_text(b"image bytes", file_type="image")
             assert result == "Extracted image text"
 
     @pytest.mark.asyncio
     async def test_image_missing_library(self, ocr):
-        with patch.dict("sys.modules", {"pytesseract": None, "PIL": None, "PIL.Image": None}):
+        with patch.dict(
+            "sys.modules", {"pytesseract": None, "PIL": None, "PIL.Image": None}
+        ):
             result = await ocr.extract_text(b"image", file_type="image")
             assert "pytesseract" in result.lower() or "requer" in result.lower()
 
@@ -104,7 +110,11 @@ class TestExtractImage:
 
         with patch.dict(
             "sys.modules",
-            {"pytesseract": mock_pytesseract, "PIL": mock_pil, "PIL.Image": mock_pil.Image},
+            {
+                "pytesseract": mock_pytesseract,
+                "PIL": mock_pil,
+                "PIL.Image": mock_pil.Image,
+            },
         ):
             result = await ocr.extract_text(b"bad image", file_type="image")
             assert "falha" in result.lower() or "image" in result.lower()

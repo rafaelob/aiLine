@@ -282,6 +282,16 @@ cd runtime && uv run pytest -m live_llm -v --timeout=120
 
 ---
 
+## Author
+
+**Rafael Bittencourt** — Creator & Lead Engineer
+
+- Email: rafaelobitten@gmail.com
+- LinkedIn: [Rafael Bittencourt](https://www.linkedin.com/in/rafael-bittencourt-54236858)
+- X/Twitter: [@rafaelobitten](https://x.com/rafaelobitten)
+
+---
+
 ## License
 
 This project is licensed under the **MIT License** — see [LICENSE](LICENSE) for details.
@@ -294,5 +304,9 @@ This project is licensed under the **MIT License** — see [LICENSE](LICENSE) fo
 
 <p align="center">
   <strong>AiLine: Every student deserves a lesson designed for them.</strong><br/>
-  <em>190 features. 3,300+ tests. 60 ADRs. 5 AI agents. 17 skills. 4 LLM providers. 9 accessibility themes. Built in one week.</em>
+  <em>190+ features. 3,300+ tests. 60 ADRs. 5 AI agents. 17 skills. 4 LLM providers. 9 accessibility themes. Built in one week.</em>
+</p>
+
+<p align="center">
+  Created by <a href="https://www.linkedin.com/in/rafael-bittencourt-54236858">Rafael Bittencourt</a> for the <strong>"Built with Opus 4.6"</strong> Hackathon (Feb 10-16, 2026)
 </p>

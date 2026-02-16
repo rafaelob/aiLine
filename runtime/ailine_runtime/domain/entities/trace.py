@@ -14,12 +14,17 @@ from pydantic import BaseModel, Field
 class RouteRationale(BaseModel):
     """SmartRouter routing explanation for a single model selection."""
 
-    task_type: str = Field(default="", description="Task type that triggered routing (e.g. planner, executor)")
+    task_type: str = Field(
+        default="",
+        description="Task type that triggered routing (e.g. planner, executor)",
+    )
     weighted_scores: dict[str, float] = Field(
         default_factory=dict,
         description="Per-dimension weighted scores: token, structured, tool, history, intent",
     )
-    composite_score: float = Field(default=0.0, description="Final composite score [0,1]")
+    composite_score: float = Field(
+        default=0.0, description="Final composite score [0,1]"
+    )
     tier: str = Field(default="", description="Selected tier: cheap, middle, primary")
     model_selected: str = Field(default="", description="Final model ID used")
     reason: str = Field(default="", description="Human-readable routing explanation")
@@ -51,20 +56,30 @@ class NodeTrace(BaseModel):
         default=None,
         description="SmartRouter rationale (only for nodes that select a model)",
     )
-    error: str | None = Field(default=None, description="Error message if status=failed")
+    error: str | None = Field(
+        default=None, description="Error message if status=failed"
+    )
 
 
 class RunTrace(BaseModel):
     """Complete execution trace for a pipeline run."""
 
     run_id: str = Field(..., description="Pipeline run ID")
-    teacher_id: str = Field(default="", description="Owning teacher for tenant isolation")
+    teacher_id: str = Field(
+        default="", description="Owning teacher for tenant isolation"
+    )
     status: str = Field(default="running", description="running | completed | failed")
     total_time_ms: float = Field(default=0.0, description="Total wall-clock time")
-    nodes: list[NodeTrace] = Field(default_factory=list, description="Per-node traces in order")
-    final_score: int | None = Field(default=None, description="Final quality score if available")
+    nodes: list[NodeTrace] = Field(
+        default_factory=list, description="Per-node traces in order"
+    )
+    final_score: int | None = Field(
+        default=None, description="Final quality score if available"
+    )
     model_used: str = Field(default="", description="Primary model used")
-    refinement_count: int = Field(default=0, description="Number of refinement iterations")
+    refinement_count: int = Field(
+        default=0, description="Number of refinement iterations"
+    )
     scorecard: dict[str, Any] | None = Field(
         default=None, description="Transformation scorecard computed after executor"
     )

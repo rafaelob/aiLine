@@ -110,7 +110,9 @@ class TestFakeSignRecognitionProtocol:
 class TestFakeSignRecognitionBehavior:
     """Verify FakeSignRecognition deterministic output and cycling."""
 
-    async def test_deterministic_gesture_selection(self, fake_recognizer: FakeSignRecognition):
+    async def test_deterministic_gesture_selection(
+        self, fake_recognizer: FakeSignRecognition
+    ):
         """Gesture is determined by input byte length modulo number of gestures."""
         # 4 gestures: oi(0), obrigado(1), sim(2), nao(3)
         r0 = await fake_recognizer.recognize(b"\x00" * 4)  # 4 % 4 = 0 -> oi
@@ -152,7 +154,9 @@ class TestFakeSignRecognitionBehavior:
         result = await fake_recognizer.recognize(b"\x00")
         assert result["landmarks"] == []
 
-    async def test_custom_responses_cycle(self, fake_recognizer_custom: FakeSignRecognition):
+    async def test_custom_responses_cycle(
+        self, fake_recognizer_custom: FakeSignRecognition
+    ):
         r1 = await fake_recognizer_custom.recognize(b"\x00")
         r2 = await fake_recognizer_custom.recognize(b"\x00")
         r3 = await fake_recognizer_custom.recognize(b"\x00")
@@ -160,7 +164,9 @@ class TestFakeSignRecognitionBehavior:
         assert r2["gesture"] == "sim"
         assert r3["gesture"] == "oi"  # cycles back
 
-    async def test_custom_responses_preserve_all_fields(self, fake_recognizer_custom: FakeSignRecognition):
+    async def test_custom_responses_preserve_all_fields(
+        self, fake_recognizer_custom: FakeSignRecognition
+    ):
         result = await fake_recognizer_custom.recognize(b"\x00")
         assert result["confidence"] == 0.99
         assert result["model"] == "custom"
@@ -188,7 +194,9 @@ class TestMediaPipeSignRecognitionProtocol:
     def test_is_runtime_checkable(self, mediapipe_recognizer: MediaPipeSignRecognition):
         assert isinstance(mediapipe_recognizer, SignRecognition)
 
-    async def test_recognize_returns_dict(self, mediapipe_recognizer: MediaPipeSignRecognition):
+    async def test_recognize_returns_dict(
+        self, mediapipe_recognizer: MediaPipeSignRecognition
+    ):
         result = await mediapipe_recognizer.recognize(b"\x00" * 10)
         assert isinstance(result, dict)
 
@@ -196,15 +204,21 @@ class TestMediaPipeSignRecognitionProtocol:
 class TestMediaPipeSignRecognitionBehavior:
     """Verify the placeholder always returns 'unknown' with zero confidence."""
 
-    async def test_returns_unknown(self, mediapipe_recognizer: MediaPipeSignRecognition):
+    async def test_returns_unknown(
+        self, mediapipe_recognizer: MediaPipeSignRecognition
+    ):
         result = await mediapipe_recognizer.recognize(b"\x00" * 50)
         assert result["gesture"] == "unknown"
 
-    async def test_zero_confidence(self, mediapipe_recognizer: MediaPipeSignRecognition):
+    async def test_zero_confidence(
+        self, mediapipe_recognizer: MediaPipeSignRecognition
+    ):
         result = await mediapipe_recognizer.recognize(b"\x00" * 50)
         assert result["confidence"] == 0.0
 
-    async def test_model_identifier(self, mediapipe_recognizer: MediaPipeSignRecognition):
+    async def test_model_identifier(
+        self, mediapipe_recognizer: MediaPipeSignRecognition
+    ):
         result = await mediapipe_recognizer.recognize(b"\x00")
         assert result["model"] == "mediapipe-mlp-placeholder"
 
@@ -213,7 +227,9 @@ class TestMediaPipeSignRecognitionBehavior:
         assert "note" in result
         assert "training data" in result["note"]
 
-    async def test_empty_landmarks(self, mediapipe_recognizer: MediaPipeSignRecognition):
+    async def test_empty_landmarks(
+        self, mediapipe_recognizer: MediaPipeSignRecognition
+    ):
         result = await mediapipe_recognizer.recognize(b"\x00")
         assert result["landmarks"] == []
 
@@ -226,7 +242,9 @@ class TestMediaPipeSignRecognitionBehavior:
         recognizer = MediaPipeSignRecognition()
         assert recognizer._model_path is None
 
-    def test_model_path_stored(self, mediapipe_recognizer_with_path: MediaPipeSignRecognition):
+    def test_model_path_stored(
+        self, mediapipe_recognizer_with_path: MediaPipeSignRecognition
+    ):
         assert mediapipe_recognizer_with_path._model_path == "/fake/model.onnx"
 
     def test_try_load_model_exception_handled_gracefully(self):
@@ -248,7 +266,9 @@ class TestMediaPipeSignRecognitionBehavior:
         recognizer._model_loaded = False
 
         # Patch the logger.info call inside _try_load_model to raise
-        with patch("ailine_runtime.adapters.media.sign_recognition.logger") as mock_logger:
+        with patch(
+            "ailine_runtime.adapters.media.sign_recognition.logger"
+        ) as mock_logger:
             mock_logger.info.side_effect = OSError("unexpected error")
             # This should catch the exception and call logger.warning
             recognizer._try_load_model()

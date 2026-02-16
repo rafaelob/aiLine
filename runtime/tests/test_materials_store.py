@@ -272,7 +272,9 @@ class TestSearchMaterials:
             title="M2",
             content="Fractions other content.",
         )
-        results = search_materials(query="fractions", teacher_id="t1", material_ids=[m1.material_id])
+        results = search_materials(
+            query="fractions", teacher_id="t1", material_ids=[m1.material_id]
+        )
         assert len(results) == 1
         assert results[0]["material_id"] == m1.material_id
 

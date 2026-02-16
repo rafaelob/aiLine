@@ -93,7 +93,12 @@ class SkillPolicy:
 
     def __post_init__(self) -> None:
         """Validate that all referenced slugs are known skill slugs."""
-        all_referenced = set(self.must) | set(self.should) | set(self.nice) | set(self.human_review_triggers)
+        all_referenced = (
+            set(self.must)
+            | set(self.should)
+            | set(self.nice)
+            | set(self.human_review_triggers)
+        )
         unknown = all_referenced - ALL_SKILL_SLUGS
         if unknown:
             raise ValueError(
@@ -196,9 +201,7 @@ ACCESSIBILITY_SKILL_POLICY: Final[dict[str, SkillPolicy]] = {
             "quiz-generator",
             "rubric-writer",
         ),
-        human_review_triggers=(
-            "sign-language-interpreter",
-        ),
+        human_review_triggers=("sign-language-interpreter",),
     ),
     # ── Visual ────────────────────────────────────────────────────────────
     # Alt text, audio descriptions, screen-reader structure, large print.
@@ -341,7 +344,9 @@ def resolve_accessibility_skills(
     # Trim to budget.
     trimmed = sorted_entries[:max_skills]
 
-    result: list[tuple[str, str, int]] = [(slug, reason, priority) for slug, (reason, priority) in trimmed]
+    result: list[tuple[str, str, int]] = [
+        (slug, reason, priority) for slug, (reason, priority) in trimmed
+    ]
 
     # Human review is required if any *selected* skill is a trigger.
     selected_slugs = {slug for slug, _, _ in result}

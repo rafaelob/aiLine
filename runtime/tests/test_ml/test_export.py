@@ -29,7 +29,11 @@ class TestExportToOnnx:
         mock_onnx.TensorProto = MagicMock()
         mock_onnx.TensorProto.FLOAT = 1
 
-        modules = {"onnx": mock_onnx, "onnx.helper": mock_helper, "onnx.numpy_helper": mock_numpy_helper}
+        modules = {
+            "onnx": mock_onnx,
+            "onnx.helper": mock_helper,
+            "onnx.numpy_helper": mock_numpy_helper,
+        }
         with patch.dict(sys.modules, modules):
             from ailine_runtime.ml.export import export_to_onnx
 

@@ -157,7 +157,9 @@ class TestTenantFilteringCurriculumLookup:
 
     @pytest.mark.asyncio
     async def test_includes_teacher_id_in_response(self):
-        args = CurriculumLookupArgs(standard="BNCC", grade="4", topic="fracs", teacher_id="t-123")
+        args = CurriculumLookupArgs(
+            standard="BNCC", grade="4", topic="fracs", teacher_id="t-123"
+        )
         result = await curriculum_lookup_handler(args)
         assert result["teacher_id"] == "t-123"
 

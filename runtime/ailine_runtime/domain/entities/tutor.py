@@ -114,7 +114,9 @@ class TutorTurnFlag(BaseModel):
 
     flag_id: str
     session_id: str
-    turn_index: int = Field(..., ge=0, description="Index of the message in session.messages.")
+    turn_index: int = Field(
+        ..., ge=0, description="Index of the message in session.messages."
+    )
     teacher_id: str
     reason: str = Field("", description="Why this turn was flagged.")
     created_at: str

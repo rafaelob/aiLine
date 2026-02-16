@@ -137,8 +137,12 @@ class TestLangchainAdaptersAsyncRun:
             return {"tool": "b", "y": args.y}
 
         registry = [
-            ToolDef(name="tool_a", description="Tool A", args_model=ArgsA, handler=handler_a),
-            ToolDef(name="tool_b", description="Tool B", args_model=ArgsB, handler=handler_b),
+            ToolDef(
+                name="tool_a", description="Tool A", args_model=ArgsA, handler=handler_a
+            ),
+            ToolDef(
+                name="tool_b", description="Tool B", args_model=ArgsB, handler=handler_b
+            ),
         ]
 
         captured_coroutines = []

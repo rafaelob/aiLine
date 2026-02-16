@@ -11,8 +11,12 @@ class TestAiLineConfig:
 
         cfg = AiLineConfig()
         # Env vars may override defaults; check against actual env or default
-        expected_planner = os.getenv("AILINE_PLANNER_MODEL", "anthropic:claude-opus-4-6")
-        expected_executor = os.getenv("AILINE_EXECUTOR_MODEL", "google-gla:gemini-3-flash-preview")
+        expected_planner = os.getenv(
+            "AILINE_PLANNER_MODEL", "anthropic:claude-opus-4-6"
+        )
+        expected_executor = os.getenv(
+            "AILINE_EXECUTOR_MODEL", "google-gla:gemini-3-flash-preview"
+        )
         assert cfg.planner_model == expected_planner
         assert cfg.executor_model == expected_executor
         assert cfg.max_refinement_iters == 2

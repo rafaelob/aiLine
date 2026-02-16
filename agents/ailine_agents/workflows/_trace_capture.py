@@ -13,7 +13,9 @@ _log = logging.getLogger(__name__)
 
 # OTEL tracing -- optional; no-op when runtime tracing is unavailable
 try:
-    from ailine_runtime.shared.tracing import trace_pipeline_node as _trace_pipeline_node
+    from ailine_runtime.shared.tracing import (
+        trace_pipeline_node as _trace_pipeline_node,
+    )
 except ImportError:
     _trace_pipeline_node = None  # type: ignore[assignment]
 
@@ -49,7 +51,9 @@ def build_route_rationale(
             "history": 0.15,
             "intent": 0.10,
         }
-        rationale["reason"] = f"SmartRouter selected '{tier}' tier -> {model_name} (weights: 0.25/0.25/0.25/0.15/0.10)"
+        rationale["reason"] = (
+            f"SmartRouter selected '{tier}' tier -> {model_name} (weights: 0.25/0.25/0.25/0.15/0.10)"
+        )
 
     return rationale
 

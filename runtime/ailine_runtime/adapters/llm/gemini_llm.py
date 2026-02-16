@@ -18,7 +18,9 @@ _log = get_logger("ailine.adapters.llm.gemini")
 class GeminiChatLLM:
     """ChatLLM implementation backed by Gemini via google-genai."""
 
-    def __init__(self, *, model: str = "gemini-3-flash-preview", api_key: str = "") -> None:
+    def __init__(
+        self, *, model: str = "gemini-3-flash-preview", api_key: str = ""
+    ) -> None:
         from google import genai
 
         # Strip provider prefix if present (e.g. "google-gla:gemini-3-flash-preview" → "gemini-3-flash-preview")

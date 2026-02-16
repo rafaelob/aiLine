@@ -36,7 +36,9 @@ class TestFromOnnx:
 
     def test_from_onnx_raises_without_onnxruntime(self, tmp_path):
         """from_onnx should raise ImportError when onnxruntime is missing."""
-        with patch.dict(sys.modules, {"onnxruntime": None}), pytest.raises(ImportError, match="onnxruntime"):
+        with patch.dict(sys.modules, {"onnxruntime": None}), pytest.raises(
+            ImportError, match="onnxruntime"
+        ):
             LibrasRecognitionModel.from_onnx(tmp_path / "model.onnx")
 
 
@@ -70,7 +72,9 @@ class TestForwardOnnx:
         feeds = mock_session.run.call_args[0][1]
         assert "input" in feeds
         assert "lengths" in feeds
-        np.testing.assert_array_equal(feeds["lengths"], np.array([10, 8], dtype=np.int64))
+        np.testing.assert_array_equal(
+            feeds["lengths"], np.array([10, 8], dtype=np.int64)
+        )
 
     def test_forward_onnx_without_lengths(self):
         """ONNX forward should not include lengths when None."""

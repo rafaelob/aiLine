@@ -36,11 +36,15 @@ def upgrade() -> None:
         ["teacher_id", "id"],
         ondelete="CASCADE",
     )
-    op.create_index("ix_chunks_teacher_material", "chunks", ["teacher_id", "material_id"])
+    op.create_index(
+        "ix_chunks_teacher_material", "chunks", ["teacher_id", "material_id"]
+    )
 
     # --- pipeline_runs: replace simple lesson FK with composite ---
     # Drop old simple FK on lesson_id
-    op.drop_constraint("fk_pipeline_runs_lesson_id", "pipeline_runs", type_="foreignkey")
+    op.drop_constraint(
+        "fk_pipeline_runs_lesson_id", "pipeline_runs", type_="foreignkey"
+    )
     op.create_foreign_key(
         "fk_pipeline_runs_teacher_lesson",
         "pipeline_runs",
@@ -51,9 +55,13 @@ def upgrade() -> None:
     )
 
     # --- tutor_sessions: add teacher_id + composite FK ---
-    op.add_column("tutor_sessions", sa.Column("teacher_id", sa.String(36), nullable=False))
+    op.add_column(
+        "tutor_sessions", sa.Column("teacher_id", sa.String(36), nullable=False)
+    )
     # Drop old simple FK on tutor_id
-    op.drop_constraint("fk_tutor_sessions_tutor_id", "tutor_sessions", type_="foreignkey")
+    op.drop_constraint(
+        "fk_tutor_sessions_tutor_id", "tutor_sessions", type_="foreignkey"
+    )
     op.create_foreign_key(
         "fk_tutor_sessions_teacher_tutor",
         "tutor_sessions",
@@ -72,7 +80,9 @@ def upgrade() -> None:
 def downgrade() -> None:
     # --- tutor_sessions: revert to simple FK ---
     op.drop_index("ix_tutor_sessions_teacher_tutor", "tutor_sessions")
-    op.drop_constraint("fk_tutor_sessions_teacher_tutor", "tutor_sessions", type_="foreignkey")
+    op.drop_constraint(
+        "fk_tutor_sessions_teacher_tutor", "tutor_sessions", type_="foreignkey"
+    )
     op.create_foreign_key(
         "fk_tutor_sessions_tutor_id",
         "tutor_sessions",
@@ -84,7 +94,9 @@ def downgrade() -> None:
     op.drop_column("tutor_sessions", "teacher_id")
 
     # --- pipeline_runs: revert to simple lesson FK ---
-    op.drop_constraint("fk_pipeline_runs_teacher_lesson", "pipeline_runs", type_="foreignkey")
+    op.drop_constraint(
+        "fk_pipeline_runs_teacher_lesson", "pipeline_runs", type_="foreignkey"
+    )
     op.create_foreign_key(
         "fk_pipeline_runs_lesson_id",
         "pipeline_runs",

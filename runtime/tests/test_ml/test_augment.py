@@ -37,23 +37,31 @@ def _make_sequence(n_frames: int = 30, n_dims: int = 162) -> np.ndarray:
 class TestSpeedVariation:
     def test_output_shape_dims_preserved(self):
         seq = _make_sequence(30, 162)
-        result = speed_variation(seq, factor_range=(0.8, 1.2), rng=np.random.default_rng(0))
+        result = speed_variation(
+            seq, factor_range=(0.8, 1.2), rng=np.random.default_rng(0)
+        )
         assert result.ndim == 2
         assert result.shape[1] == 162
 
     def test_speed_up_reduces_length(self):
         seq = _make_sequence(30, 6)
-        result = speed_variation(seq, factor_range=(0.5, 0.5), rng=np.random.default_rng(0))
+        result = speed_variation(
+            seq, factor_range=(0.5, 0.5), rng=np.random.default_rng(0)
+        )
         assert result.shape[0] < 30
 
     def test_slow_down_increases_length(self):
         seq = _make_sequence(30, 6)
-        result = speed_variation(seq, factor_range=(1.5, 1.5), rng=np.random.default_rng(0))
+        result = speed_variation(
+            seq, factor_range=(1.5, 1.5), rng=np.random.default_rng(0)
+        )
         assert result.shape[0] > 30
 
     def test_minimum_length_2(self):
         seq = _make_sequence(3, 6)
-        result = speed_variation(seq, factor_range=(0.01, 0.01), rng=np.random.default_rng(0))
+        result = speed_variation(
+            seq, factor_range=(0.01, 0.01), rng=np.random.default_rng(0)
+        )
         assert result.shape[0] >= 2
 
     def test_reproducible_with_same_seed(self):

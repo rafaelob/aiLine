@@ -14,7 +14,9 @@ class RAGQuote(BaseModel):
     text: str = Field(..., description="Quoted text from the source document")
     doc_title: str = Field("", description="Source document title")
     section: str = Field("", description="Section within the source document")
-    relevance_score: float = Field(0.0, ge=0.0, le=1.0, description="Retrieval relevance score")
+    relevance_score: float = Field(
+        0.0, ge=0.0, le=1.0, description="Retrieval relevance score"
+    )
 
 
 class QualityAssessment(BaseModel):

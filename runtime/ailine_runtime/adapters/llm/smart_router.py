@@ -175,7 +175,9 @@ class SmartRouterAdapter:
                 reason=f"no provider configured for tier '{tier}'",
             )
 
-        provider: ChatLLM = tier_provider if tier_provider is not None else self._fallback
+        provider: ChatLLM = (
+            tier_provider if tier_provider is not None else self._fallback
+        )
         return decision, features, provider, is_fallback
 
     def score_complexity(self, messages: list[dict[str, Any]], **kwargs: Any) -> float:
@@ -249,7 +251,9 @@ class SmartRouterAdapter:
         is_fallback: bool = False,
     ) -> None:
         """Structured log of the routing decision with all feature scores."""
-        breakdown = asdict(decision.score_breakdown) if decision.score_breakdown else None
+        breakdown = (
+            asdict(decision.score_breakdown) if decision.score_breakdown else None
+        )
         _log.info(
             event,
             tier=decision.tier,
@@ -295,7 +299,9 @@ class SmartRouterAdapter:
         max_tokens: int = 4096,
         **kwargs: Any,
     ) -> str:
-        decision, features, provider, is_fallback = self._route_and_resolve(messages, **kwargs)
+        decision, features, provider, is_fallback = self._route_and_resolve(
+            messages, **kwargs
+        )
         provider_name: str = provider.model_name
         self._log_route_decision(
             "smart_router.route",
@@ -341,7 +347,9 @@ class SmartRouterAdapter:
         max_tokens: int = 4096,
         **kwargs: Any,
     ) -> AsyncIterator[str]:
-        decision, features, provider, is_fallback = self._route_and_resolve(messages, **kwargs)
+        decision, features, provider, is_fallback = self._route_and_resolve(
+            messages, **kwargs
+        )
         provider_name: str = provider.model_name
         self._log_route_decision(
             "smart_router.route_stream",
@@ -401,8 +409,12 @@ class SmartRouterAdapter:
     ) -> WebSearchResult:
         """Route web search to the first provider that supports it."""
         for provider in [self._primary, self._middle, self._cheap]:
-            if provider is not None and getattr(provider, "capabilities", {}).get("web_search", False):
-                return await provider.generate_with_search(query, max_results=max_results, **kwargs)
+            if provider is not None and getattr(provider, "capabilities", {}).get(
+                "web_search", False
+            ):
+                return await provider.generate_with_search(
+                    query, max_results=max_results, **kwargs
+                )
         return WebSearchResult(
             text="Web search not available in any configured provider.",
             sources=[],

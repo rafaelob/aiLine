@@ -48,7 +48,9 @@ class DemoService:
                 self._scenarios[scenario_id] = data
                 loaded += 1
             except (json.JSONDecodeError, OSError) as exc:
-                logger.error("demo_scenario_load_error", file=fpath.name, error=str(exc))
+                logger.error(
+                    "demo_scenario_load_error", file=fpath.name, error=str(exc)
+                )
 
         logger.info("demo_scenarios_loaded", count=loaded)
 
@@ -66,7 +68,13 @@ class DemoService:
                 "title": s["title"],
                 "description": s["description"],
             }
-            for optional in ("grade", "subject", "locale", "expected_skills", "demo_tags"):
+            for optional in (
+                "grade",
+                "subject",
+                "locale",
+                "expected_skills",
+                "demo_tags",
+            ):
                 if optional in s:
                     item[optional] = s[optional]
             summaries.append(item)

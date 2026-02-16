@@ -167,7 +167,9 @@ class TestRunContext:
             assert ctx.emitter is emitter
 
     @pytest.mark.asyncio
-    async def test_finalize_error_skipped_when_already_finalized(self, emitter, replay_store):
+    async def test_finalize_error_skipped_when_already_finalized(
+        self, emitter, replay_store
+    ):
         """_finalize_error is a no-op when _finalized is already True (line 107 coverage)."""
         queue: asyncio.Queue = asyncio.Queue()
 

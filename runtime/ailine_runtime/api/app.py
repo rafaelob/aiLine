@@ -12,7 +12,7 @@ import re
 import time
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Any
+from typing import Any, ClassVar
 
 import structlog
 from fastapi import FastAPI
@@ -34,7 +34,9 @@ _log = structlog.get_logger("ailine.api.app")
 
 # Regex patterns for normalizing path parameters in metrics labels.
 # Matches UUID v4/v7 (with or without hyphens) and pure numeric IDs.
-_UUID_RE = re.compile(r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
+_UUID_RE = re.compile(
+    r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
+)
 _NUMERIC_RE = re.compile(r"^[0-9]+$")
 
 
@@ -105,7 +107,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     # CORS — restrict in production via AILINE_CORS_ORIGINS env var
     cors_origins = [
-        o.strip() for o in os.getenv("AILINE_CORS_ORIGINS", "http://localhost:3000").split(",") if o.strip()
+        o.strip()
+        for o in os.getenv("AILINE_CORS_ORIGINS", "http://localhost:3000").split(",")
+        if o.strip()
     ]
     if not cors_origins:
         cors_origins = ["http://localhost:3000"]
@@ -156,7 +160,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # -----------------------------------------------------------------
 
     @app.middleware("http")
-    async def metrics_middleware(request: Request, call_next: RequestResponseEndpoint) -> Response:
+    async def metrics_middleware(
+        request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
         """Record HTTP request count and duration metrics."""
         start = time.monotonic()
         response = await call_next(request)
@@ -293,7 +299,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 import ctypes.wintypes
 
                 class ProcessMemoryCounters(ctypes.Structure):
-                    _fields_ = [
+                    _fields_: typing.ClassVar[list[tuple[str, type]]] = [
                         ("cb", ctypes.wintypes.DWORD),
                         ("PageFaultCount", ctypes.wintypes.DWORD),
                         ("PeakWorkingSetSize", ctypes.c_size_t),
@@ -310,7 +316,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 counters.cb = ctypes.sizeof(counters)
                 handle = ctypes.windll.kernel32.GetCurrentProcess()  # type: ignore[union-attr]
                 ctypes.windll.psapi.GetProcessMemoryInfo(  # type: ignore[union-attr]
-                    handle, ctypes.byref(counters), counters.cb,
+                    handle,
+                    ctypes.byref(counters),
+                    counters.cb,
                 )
                 mem["rss_mb"] = round(counters.WorkingSetSize / (1024 * 1024), 1)
             else:
@@ -334,10 +342,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         diagnostics["version"] = app.version
 
         # -- Overall status --
-        all_ok = all(
-            d.get("status") in ("ok", "skip")
-            for d in deps_status.values()
-        )
+        all_ok = all(d.get("status") in ("ok", "skip") for d in deps_status.values())
         diagnostics["status"] = "healthy" if all_ok else "degraded"
 
         status_code = 200 if all_ok else 503
@@ -395,11 +400,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(tutors.router, prefix="/tutors", tags=["tutors"])
     app.include_router(curriculum.router, prefix="/curriculum", tags=["curriculum"])
     app.include_router(media.router, prefix="/media", tags=["media"])
-    app.include_router(sign_language.router, prefix="/sign-language", tags=["sign-language"])
+    app.include_router(
+        sign_language.router, prefix="/sign-language", tags=["sign-language"]
+    )
     app.include_router(demo.router, prefix="/demo", tags=["demo"])
     app.include_router(traces.router, prefix="/traces", tags=["traces"])
     app.include_router(rag_diagnostics.router, prefix="/rag", tags=["rag-diagnostics"])
-    app.include_router(observability.router, prefix="/observability", tags=["observability"])
+    app.include_router(
+        observability.router, prefix="/observability", tags=["observability"]
+    )
     app.include_router(progress.router, prefix="/progress", tags=["progress"])
     app.include_router(skills.router, prefix="/skills", tags=["skills"])
 

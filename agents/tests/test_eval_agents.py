@@ -124,9 +124,9 @@ def _check_no_regressions(
     ]
     reports = detect_regressions(current, baseline_results, tolerance=5.0)
     regressions = [r for r in reports if r.regressed]
-    assert not regressions, (
-        f"{agent_type} regressions: {[(r.scenario_id, r.current_score, r.baseline_score) for r in regressions]}"
-    )
+    assert (
+        not regressions
+    ), f"{agent_type} regressions: {[(r.scenario_id, r.current_score, r.baseline_score) for r in regressions]}"
 
 
 # ---------------------------------------------------------------------------
@@ -138,7 +138,9 @@ class TestPlannerAgentEval:
     """Run all 5 Planner golden scenarios through TestModel agent."""
 
     @pytest.mark.asyncio
-    @pytest.mark.parametrize("scenario", PLANNER_GOLDEN, ids=[s["id"] for s in PLANNER_GOLDEN])
+    @pytest.mark.parametrize(
+        "scenario", PLANNER_GOLDEN, ids=[s["id"] for s in PLANNER_GOLDEN]
+    )
     async def test_scenario(self, planner_agent, eval_deps, scenario) -> None:
         result = await planner_agent.run(scenario["prompt"], deps=eval_deps)
         output = result.output
@@ -170,7 +172,9 @@ class TestQualityGateAgentEval:
     """Run all 5 QualityGate golden scenarios through TestModel agent."""
 
     @pytest.mark.asyncio
-    @pytest.mark.parametrize("scenario", QUALITY_GATE_GOLDEN, ids=[s["id"] for s in QUALITY_GATE_GOLDEN])
+    @pytest.mark.parametrize(
+        "scenario", QUALITY_GATE_GOLDEN, ids=[s["id"] for s in QUALITY_GATE_GOLDEN]
+    )
     async def test_scenario(self, qg_agent, eval_deps, scenario) -> None:
         result = await qg_agent.run(scenario["prompt"], deps=eval_deps)
         output = result.output
@@ -200,7 +204,9 @@ class TestTutorAgentEval:
     """Run all 5 Tutor golden scenarios through TestModel agent."""
 
     @pytest.mark.asyncio
-    @pytest.mark.parametrize("scenario", TUTOR_GOLDEN, ids=[s["id"] for s in TUTOR_GOLDEN])
+    @pytest.mark.parametrize(
+        "scenario", TUTOR_GOLDEN, ids=[s["id"] for s in TUTOR_GOLDEN]
+    )
     async def test_scenario(self, tutor_agent, eval_deps, scenario) -> None:
         result = await tutor_agent.run(scenario["prompt"], deps=eval_deps)
         output = result.output

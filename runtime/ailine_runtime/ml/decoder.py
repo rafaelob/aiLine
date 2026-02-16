@@ -105,7 +105,10 @@ def ctc_beam_search(
 
         # Keep top beam_width candidates
         sorted_candidates = sorted(candidates.items(), key=lambda x: x[1], reverse=True)
-        beams = [(prefix, last_tok, sc) for (prefix, last_tok), sc in sorted_candidates[:beam_width]]
+        beams = [
+            (prefix, last_tok, sc)
+            for (prefix, last_tok), sc in sorted_candidates[:beam_width]
+        ]
 
     # Convert token sequences to gloss labels
     results: list[tuple[list[str], float]] = []

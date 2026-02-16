@@ -105,7 +105,9 @@ async def tutor_chat(tutor_id: str, body: TutorChatIn, request: Request):
     # --- Input sanitization ---
     body.message = sanitize_prompt(body.message, max_length=4000)
     if not body.message:
-        raise HTTPException(status_code=422, detail="message must not be empty after sanitization")
+        raise HTTPException(
+            status_code=422, detail="message must not be empty after sanitization"
+        )
 
     spec = load_tutor_spec(tutor_id)
     if not spec:
@@ -118,14 +120,19 @@ async def tutor_chat(tutor_id: str, body: TutorChatIn, request: Request):
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     if session.tutor_id != tutor_id:
-        raise HTTPException(status_code=400, detail="Session does not belong to this tutor")
+        raise HTTPException(
+            status_code=400, detail="Session does not belong to this tutor"
+        )
 
     # Update session with user message
     session.append("user", body.message)
 
     # Build AgentDeps from container
     from ailine_agents.deps import AgentDepsFactory
-    from ailine_agents.workflows.tutor_workflow import build_tutor_workflow, run_tutor_turn
+    from ailine_agents.workflows.tutor_workflow import (
+        build_tutor_workflow,
+        run_tutor_turn,
+    )
 
     deps = AgentDepsFactory.from_container(
         container,
@@ -177,7 +184,9 @@ async def tutor_session_transcript(tutor_id: str, session_id: str):
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     if session.tutor_id != tutor_id:
-        raise HTTPException(status_code=400, detail="Session does not belong to this tutor")
+        raise HTTPException(
+            status_code=400, detail="Session does not belong to this tutor"
+        )
 
     store = get_review_store()
     flags = store.get_flags(session_id)
@@ -208,7 +217,9 @@ async def tutor_flag_turn(tutor_id: str, session_id: str, body: TurnFlagIn):
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     if session.tutor_id != tutor_id:
-        raise HTTPException(status_code=400, detail="Session does not belong to this tutor")
+        raise HTTPException(
+            status_code=400, detail="Session does not belong to this tutor"
+        )
     if body.turn_index >= len(session.messages):
         raise HTTPException(status_code=422, detail="turn_index out of range")
 

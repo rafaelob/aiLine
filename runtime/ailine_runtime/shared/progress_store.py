@@ -53,7 +53,9 @@ class ProgressStore:
                 existing.last_activity = now
                 existing.notes = notes or existing.notes
                 existing.student_name = student_name or existing.student_name
-                existing.standard_description = standard_description or existing.standard_description
+                existing.standard_description = (
+                    standard_description or existing.standard_description
+                )
                 return existing
 
             progress = LearnerProgress(
@@ -86,7 +88,9 @@ class ProgressStore:
         }
 
         for r in records:
-            mastery_dist[r.mastery_level.value] = mastery_dist.get(r.mastery_level.value, 0) + 1
+            mastery_dist[r.mastery_level.value] = (
+                mastery_dist.get(r.mastery_level.value, 0) + 1
+            )
 
             # Student summary
             if r.student_id not in students:
@@ -102,7 +106,9 @@ class ProgressStore:
                 s.proficient_count += 1
             elif r.mastery_level == MasteryLevel.DEVELOPING:
                 s.developing_count += 1
-            if r.last_activity and (s.last_activity is None or r.last_activity > s.last_activity):
+            if r.last_activity and (
+                s.last_activity is None or r.last_activity > s.last_activity
+            ):
                 s.last_activity = r.last_activity
 
             # Standard summary
@@ -131,7 +137,9 @@ class ProgressStore:
 
     def get_student(self, teacher_id: str, student_id: str) -> list[LearnerProgress]:
         """Get all progress records for a specific student under a teacher."""
-        return [r for r in self._records.get(teacher_id, []) if r.student_id == student_id]
+        return [
+            r for r in self._records.get(teacher_id, []) if r.student_id == student_id
+        ]
 
 
 _store: ProgressStore | None = None

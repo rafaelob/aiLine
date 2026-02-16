@@ -68,22 +68,25 @@ describe('LandingNav', () => {
 
   it('renders CTA link with startDemo text', () => {
     render(<LandingNav {...defaultProps} />)
-    // Link is inside aria-hidden nav, use hidden option
-    const link = screen.getByRole('link', { hidden: true })
-    expect(link.textContent).toBe('Start Demo')
+    // Multiple links now: Guide + CTA. Find the CTA by text.
+    const links = screen.getAllByRole('link', { hidden: true })
+    const ctaLink = links.find((l) => l.textContent === 'Start Demo')
+    expect(ctaLink).toBeDefined()
   })
 
   it('CTA link points to locale dashboard', () => {
     render(<LandingNav {...defaultProps} />)
-    const link = screen.getByRole('link', { hidden: true })
-    expect(link).toHaveAttribute('href', '/en/dashboard')
+    const links = screen.getAllByRole('link', { hidden: true })
+    const ctaLink = links.find((l) => l.getAttribute('href') === '/en/dashboard')
+    expect(ctaLink).toBeInTheDocument()
   })
 
   it('CTA link uses correct locale for pt-BR', () => {
     render(<LandingNav locale="pt-BR" startDemo="Iniciar Demo" />)
-    const link = screen.getByRole('link', { hidden: true })
-    expect(link).toHaveAttribute('href', '/pt-BR/dashboard')
-    expect(link.textContent).toBe('Iniciar Demo')
+    const links = screen.getAllByRole('link', { hidden: true })
+    const ctaLink = links.find((l) => l.getAttribute('href') === '/pt-BR/dashboard')
+    expect(ctaLink).toBeInTheDocument()
+    expect(ctaLink?.textContent).toBe('Iniciar Demo')
   })
 
   it('nav has glass styling class', () => {

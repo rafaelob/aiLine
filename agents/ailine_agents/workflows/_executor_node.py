@@ -16,7 +16,12 @@ from pydantic_ai import Agent
 
 from ..deps import AgentDeps
 from ..model_selection.bridge import PydanticAIModelSelector
-from ._node_shared import _check_timeout, _log_node_success, _run_agent_with_resilience, _select_model
+from ._node_shared import (
+    _check_timeout,
+    _log_node_success,
+    _run_agent_with_resilience,
+    _select_model,
+)
 from ._sse_helpers import get_emitter_and_writer, try_emit
 from ._state import RunState
 from ._trace_capture import build_route_rationale, capture_node_trace
@@ -109,7 +114,13 @@ def make_executor_node(
             duration_ms=duration_ms,
             metadata={"plan_id": run_id},
         )
-        try_emit(emitter, writer, SSEEventType.STAGE_COMPLETE, "executor", {"plan_id": run_id})
+        try_emit(
+            emitter,
+            writer,
+            SSEEventType.STAGE_COMPLETE,
+            "executor",
+            {"plan_id": run_id},
+        )
 
         await capture_node_trace(
             run_id=run_id,

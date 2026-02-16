@@ -43,7 +43,9 @@ class GeminiEmbeddings:
 
         self._model = model
         self._dimensions = dimensions
-        self._client: Client = genai.Client(api_key=api_key) if api_key else genai.Client()
+        self._client: Client = (
+            genai.Client(api_key=api_key) if api_key else genai.Client()
+        )
 
     # -- Protocol properties --------------------------------------------------
 

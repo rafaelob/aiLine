@@ -86,7 +86,9 @@ def check_reading_level(
     avg_wps = len(words) / n_sent
     long_ratio = sum(1 for w in words if len(w) >= 8) / n_words
 
-    passed = avg_wps <= _SIMPLE_MAX_AVG_WORDS and long_ratio <= _SIMPLE_MAX_LONG_WORD_RATIO
+    passed = (
+        avg_wps <= _SIMPLE_MAX_AVG_WORDS and long_ratio <= _SIMPLE_MAX_LONG_WORD_RATIO
+    )
     details = {
         "avg_words_per_sentence": round(avg_wps, 1),
         "long_word_ratio": round(long_ratio, 3),
@@ -103,10 +105,14 @@ def check_reading_level(
         if avg_wps > _SIMPLE_MAX_AVG_WORDS:
             parts.append(f"avg {avg_wps:.1f} words/sentence > {_SIMPLE_MAX_AVG_WORDS}")
         if long_ratio > _SIMPLE_MAX_LONG_WORD_RATIO:
-            parts.append(f"long word ratio {long_ratio:.1%} > {_SIMPLE_MAX_LONG_WORD_RATIO:.0%}")
+            parts.append(
+                f"long word ratio {long_ratio:.1%} > {_SIMPLE_MAX_LONG_WORD_RATIO:.0%}"
+            )
         reason = "Reading level too high: " + "; ".join(parts)
 
-    return HardConstraintResult(name="reading_level", passed=passed, reason=reason, details=details)
+    return HardConstraintResult(
+        name="reading_level", passed=passed, reason=reason, details=details
+    )
 
 
 def _extract_student_text(draft: dict[str, Any]) -> str:
@@ -201,7 +207,9 @@ def check_accessibility_adaptation(
         "has_accessibility_pack": has_pack,
         "has_accessibility_notes": has_notes,
         "adaptation_keywords_found": keyword_found,
-        "needs_flagged": {k: v for k, v in needs.model_dump().items() if isinstance(v, bool) and v},
+        "needs_flagged": {
+            k: v for k, v in needs.model_dump().items() if isinstance(v, bool) and v
+        },
     }
 
     if passed:
@@ -318,7 +326,8 @@ def check_rag_sources(
             reason = "Explicit 'no sources found' declaration present"
     else:
         reason = (
-            f"RAG retrieved {len(rag_results)} results but plan neither cites sources nor declares 'no sources found'"
+            f"RAG retrieved {len(rag_results)} results but plan neither "
+            "cites sources nor declares 'no sources found'"
         )
 
     return HardConstraintResult(

@@ -79,7 +79,9 @@ class TestListSkills:
         assert "skills" in body
         assert isinstance(body["skills"], list)
 
-    async def test_list_skills_has_expected_fields(self, auth_client: AsyncClient) -> None:
+    async def test_list_skills_has_expected_fields(
+        self, auth_client: AsyncClient
+    ) -> None:
         resp = await auth_client.get("/skills")
         body = resp.json()
         if body["count"] > 0:
@@ -96,7 +98,10 @@ class TestListSkills:
         body = resp.json()
         # All results should match the search term
         for skill in body["skills"]:
-            assert "accessibility" in skill["name"].lower() or "accessibility" in skill["description"].lower()
+            assert (
+                "accessibility" in skill["name"].lower()
+                or "accessibility" in skill["description"].lower()
+            )
 
     async def test_list_skills_requires_auth(self, client: AsyncClient) -> None:
         resp = await client.get("/skills")
@@ -107,10 +112,12 @@ class TestListSkills:
         assert "max-age" in resp.headers.get("cache-control", "")
 
     async def test_list_skills_graceful_when_registry_unavailable(
-        self, auth_client: AsyncClient,
+        self,
+        auth_client: AsyncClient,
     ) -> None:
         with patch(
-            "ailine_runtime.api.routers.skills._get_registry", return_value=None,
+            "ailine_runtime.api.routers.skills._get_registry",
+            return_value=None,
         ):
             resp = await auth_client.get("/skills")
             assert resp.status_code == 200
@@ -141,7 +148,9 @@ class TestGetSkillDetail:
         assert "instructions_length" in body
         assert "metadata" in body
 
-    async def test_get_nonexistent_skill_returns_404(self, auth_client: AsyncClient) -> None:
+    async def test_get_nonexistent_skill_returns_404(
+        self, auth_client: AsyncClient
+    ) -> None:
         resp = await auth_client.get("/skills/nonexistent-skill-xyz")
         assert resp.status_code == 404
 
@@ -170,7 +179,8 @@ class TestSkillPolicy:
         assert "accessibility-coach" in slugs
 
     async def test_policy_for_hearing_requires_human_review(
-        self, auth_client: AsyncClient,
+        self,
+        auth_client: AsyncClient,
     ) -> None:
         resp = await auth_client.get("/skills/policy/hearing")
         assert resp.status_code == 200
@@ -186,13 +196,22 @@ class TestSkillPolicy:
         assert body["skill_count"] <= 3
 
     async def test_policy_for_unknown_profile_returns_404(
-        self, auth_client: AsyncClient,
+        self,
+        auth_client: AsyncClient,
     ) -> None:
         resp = await auth_client.get("/skills/policy/nonexistent")
         assert resp.status_code == 404
 
     async def test_all_valid_profiles(self, auth_client: AsyncClient) -> None:
-        profiles = ["autism", "adhd", "learning", "hearing", "visual", "speech_language", "motor"]
+        profiles = [
+            "autism",
+            "adhd",
+            "learning",
+            "hearing",
+            "visual",
+            "speech_language",
+            "motor",
+        ]
         for profile in profiles:
             resp = await auth_client.get(f"/skills/policy/{profile}")
             assert resp.status_code == 200, f"Failed for profile: {profile}"
@@ -200,7 +219,9 @@ class TestSkillPolicy:
             assert body["profile"] == profile
             assert body["skill_count"] > 0
 
-    async def test_policy_skills_have_priority_field(self, auth_client: AsyncClient) -> None:
+    async def test_policy_skills_have_priority_field(
+        self, auth_client: AsyncClient
+    ) -> None:
         resp = await auth_client.get("/skills/policy/adhd")
         body = resp.json()
         for skill in body["skills"]:
@@ -222,7 +243,15 @@ class TestListAllPolicies:
         assert "profiles" in body
         profiles = body["profiles"]
         # Should have all 7 accessibility profiles
-        expected = {"autism", "adhd", "learning", "hearing", "visual", "speech_language", "motor"}
+        expected = {
+            "autism",
+            "adhd",
+            "learning",
+            "hearing",
+            "visual",
+            "speech_language",
+            "motor",
+        }
         assert set(profiles.keys()) == expected
 
     async def test_policy_structure(self, auth_client: AsyncClient) -> None:

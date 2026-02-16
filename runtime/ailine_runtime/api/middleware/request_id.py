@@ -18,7 +18,9 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 # Context variable accessible throughout the request lifecycle.
-request_id_var: contextvars.ContextVar[str] = contextvars.ContextVar("request_id", default="")
+request_id_var: contextvars.ContextVar[str] = contextvars.ContextVar(
+    "request_id", default=""
+)
 
 
 class RequestIDMiddleware(BaseHTTPMiddleware):

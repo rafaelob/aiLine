@@ -103,7 +103,9 @@ def _persist_tutor_spec(store_dir: Path, spec: TutorAgentSpec) -> None:
     tutors_dir = store_dir / "tutors"
     tutors_dir.mkdir(parents=True, exist_ok=True)
     path = tutors_dir / f"{spec.tutor_id}.json"
-    path.write_text(spec.model_dump_json(indent=2, ensure_ascii=False), encoding="utf-8")
+    path.write_text(
+        spec.model_dump_json(indent=2, ensure_ascii=False), encoding="utf-8"
+    )
 
 
 def _persist_session(store_dir: Path, session: TutorSession) -> None:
@@ -111,7 +113,9 @@ def _persist_session(store_dir: Path, session: TutorSession) -> None:
     sessions_dir = store_dir / "tutor_sessions"
     sessions_dir.mkdir(parents=True, exist_ok=True)
     path = sessions_dir / f"{session.session_id}.json"
-    path.write_text(session.model_dump_json(indent=2, ensure_ascii=False), encoding="utf-8")
+    path.write_text(
+        session.model_dump_json(indent=2, ensure_ascii=False), encoding="utf-8"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -164,7 +168,9 @@ async def client(app, seeded_store: Path) -> AsyncGenerator[AsyncClient, None]:
 
 
 @pytest.fixture()
-async def unauthenticated_client(app, seeded_store: Path) -> AsyncGenerator[AsyncClient, None]:
+async def unauthenticated_client(
+    app, seeded_store: Path
+) -> AsyncGenerator[AsyncClient, None]:
     """Client without authentication headers."""
     transport = ASGITransport(app=app, raise_app_exceptions=False)
     async with AsyncClient(
@@ -195,13 +201,17 @@ async def test_transcript_success(client: AsyncClient) -> None:
 
 async def test_transcript_tutor_not_found(client: AsyncClient) -> None:
     """Transcript for a non-existent tutor returns 404."""
-    resp = await client.get(f"/tutors/nonexistent-tutor/sessions/{_SESSION_ID}/transcript")
+    resp = await client.get(
+        f"/tutors/nonexistent-tutor/sessions/{_SESSION_ID}/transcript"
+    )
     assert resp.status_code == 404
 
 
 async def test_transcript_session_not_found(client: AsyncClient) -> None:
     """Transcript for a non-existent session returns 404."""
-    resp = await client.get(f"/tutors/{_TUTOR_ID}/sessions/nonexistent-session/transcript")
+    resp = await client.get(
+        f"/tutors/{_TUTOR_ID}/sessions/nonexistent-session/transcript"
+    )
     assert resp.status_code == 404
 
 
@@ -217,13 +227,17 @@ async def test_transcript_session_tutor_mismatch(
     )
     _persist_session(local_store, other_session)
 
-    resp = await client.get(f"/tutors/{_TUTOR_ID}/sessions/session-other-tutor/transcript")
+    resp = await client.get(
+        f"/tutors/{_TUTOR_ID}/sessions/session-other-tutor/transcript"
+    )
     assert resp.status_code == 400
 
 
 async def test_transcript_unauthenticated(unauthenticated_client: AsyncClient) -> None:
     """Unauthenticated transcript request returns 401."""
-    resp = await unauthenticated_client.get(f"/tutors/{_TUTOR_ID}/sessions/{_SESSION_ID}/transcript")
+    resp = await unauthenticated_client.get(
+        f"/tutors/{_TUTOR_ID}/sessions/{_SESSION_ID}/transcript"
+    )
     assert resp.status_code == 401
 
 
@@ -238,7 +252,9 @@ async def test_transcript_wrong_tenant(
         base_url="http://test",
         headers={"X-Teacher-ID": "another-teacher"},
     ) as other_client:
-        resp = await other_client.get(f"/tutors/{_TUTOR_ID}/sessions/{_SESSION_ID}/transcript")
+        resp = await other_client.get(
+            f"/tutors/{_TUTOR_ID}/sessions/{_SESSION_ID}/transcript"
+        )
         assert resp.status_code == 403
 
 

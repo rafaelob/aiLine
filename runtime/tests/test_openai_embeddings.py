@@ -202,7 +202,9 @@ class TestEmbedBatch:
             return resp
 
         # First batch: 2 items, second batch: 1 item
-        emb._client.embeddings.create = AsyncMock(side_effect=[make_response(["a", "b"]), make_response(["c"])])
+        emb._client.embeddings.create = AsyncMock(
+            side_effect=[make_response(["a", "b"]), make_response(["c"])]
+        )
 
         result = await emb.embed_batch(["a", "b", "c"])
 

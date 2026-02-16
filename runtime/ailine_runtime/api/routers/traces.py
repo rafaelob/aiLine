@@ -51,7 +51,9 @@ async def list_recent_traces(
 
 
 @router.get("/{run_id}")
-async def get_trace(run_id: str, teacher_id: str = Depends(require_authenticated)) -> dict[str, Any]:
+async def get_trace(
+    run_id: str, teacher_id: str = Depends(require_authenticated)
+) -> dict[str, Any]:
     """Get the full execution trace for a pipeline run.
 
     Returns the complete RunTrace with per-node detail:

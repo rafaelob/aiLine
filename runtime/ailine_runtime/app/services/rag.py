@@ -91,7 +91,11 @@ class RAGService:
             A ``RAGResult`` containing filtered, ranked results.
         """
         effective_k = k if k is not None else self._default_k
-        threshold = similarity_threshold if similarity_threshold is not None else self._threshold
+        threshold = (
+            similarity_threshold
+            if similarity_threshold is not None
+            else self._threshold
+        )
 
         _log.info(
             "rag_query_start",

@@ -76,7 +76,9 @@ def validate_teacher_id(teacher_id: str) -> str:
 
     # Fallback: simple identifier (letters, digits, hyphens, underscores)
     if not re.match(r"^[a-zA-Z0-9_-]+$", tid):
-        raise ValueError("teacher_id must be a UUID or contain only alphanumeric characters, hyphens, and underscores")
+        raise ValueError(
+            "teacher_id must be a UUID or contain only alphanumeric characters, hyphens, and underscores"
+        )
     return tid
 
 

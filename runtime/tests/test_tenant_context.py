@@ -78,7 +78,11 @@ async def client(app) -> AsyncGenerator[AsyncClient, None]:
 
 def _make_jwt(payload: dict) -> str:
     """Create a minimal JWT (unsigned) for testing."""
-    header = base64.urlsafe_b64encode(json.dumps({"alg": "none"}).encode()).rstrip(b"=").decode()
+    header = (
+        base64.urlsafe_b64encode(json.dumps({"alg": "none"}).encode())
+        .rstrip(b"=")
+        .decode()
+    )
     body = base64.urlsafe_b64encode(json.dumps(payload).encode()).rstrip(b"=").decode()
     return f"{header}.{body}."
 
@@ -350,7 +354,9 @@ class TestRouterBackwardCompat:
 
 
 class TestPlansRouterTenantContext:
-    async def test_plans_generate_with_jwt_teacher_id(self, client: AsyncClient) -> None:
+    async def test_plans_generate_with_jwt_teacher_id(
+        self, client: AsyncClient
+    ) -> None:
         """POST /plans/generate with JWT should pass teacher_id from JWT."""
         from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -480,7 +486,9 @@ class TestTutorsRouterTenantIsolation:
 
 
 class TestExcludedPaths:
-    async def test_health_excluded_from_tenant_enforcement(self, client: AsyncClient) -> None:
+    async def test_health_excluded_from_tenant_enforcement(
+        self, client: AsyncClient
+    ) -> None:
         """Health endpoint should work without any tenant context."""
         resp = await client.get("/health")
         assert resp.status_code == 200
@@ -510,7 +518,9 @@ class TestDevModeSafety:
         validate_dev_mode(env="development")
         validate_dev_mode(env="staging")
 
-    def test_dev_mode_in_production_raises_value_error(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_dev_mode_in_production_raises_value_error(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Dev mode in production must raise ValueError."""
         monkeypatch.setenv("AILINE_DEV_MODE", "true")
         from ailine_runtime.api.middleware.tenant_context import validate_dev_mode
@@ -518,7 +528,9 @@ class TestDevModeSafety:
         with pytest.raises(ValueError, match="FORBIDDEN in production"):
             validate_dev_mode(env="production")
 
-    def test_dev_mode_in_development_logs_warning(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_dev_mode_in_development_logs_warning(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Dev mode in development should not raise (but logs a warning)."""
         monkeypatch.setenv("AILINE_DEV_MODE", "true")
         from ailine_runtime.api.middleware.tenant_context import validate_dev_mode
@@ -526,7 +538,9 @@ class TestDevModeSafety:
         # Should not raise.
         validate_dev_mode(env="development")
 
-    def test_dev_mode_in_staging_logs_warning(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_dev_mode_in_staging_logs_warning(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Dev mode in staging should not raise (but logs a warning)."""
         monkeypatch.setenv("AILINE_DEV_MODE", "true")
         from ailine_runtime.api.middleware.tenant_context import validate_dev_mode
@@ -534,7 +548,9 @@ class TestDevModeSafety:
         # Should not raise.
         validate_dev_mode(env="staging")
 
-    def test_create_app_raises_in_production_with_dev_mode(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_create_app_raises_in_production_with_dev_mode(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """create_app() should fail if env=production and dev mode is on."""
         monkeypatch.setenv("AILINE_DEV_MODE", "true")
         prod_settings = Settings(
@@ -550,7 +566,9 @@ class TestDevModeSafety:
         with pytest.raises(ValueError, match="FORBIDDEN in production"):
             create_app(settings=prod_settings)
 
-    def test_create_app_succeeds_in_development_with_dev_mode(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_create_app_succeeds_in_development_with_dev_mode(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """create_app() should succeed in development even with dev mode on."""
         monkeypatch.setenv("AILINE_DEV_MODE", "true")
         dev_settings = Settings(

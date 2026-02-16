@@ -89,11 +89,23 @@ def build_plan_workflow(
                 "score": score,
                 "iteration": refine_iter,
             }
-            try_emit(emitter, writer, SSEEventType.QUALITY_DECISION, "validate", decision_payload)
+            try_emit(
+                emitter,
+                writer,
+                SSEEventType.QUALITY_DECISION,
+                "validate",
+                decision_payload,
+            )
             return {"quality_decision": decision_payload}  # type: ignore[typeddict-item,return-value]  # LangGraph partial state update
         except Exception as exc:
             log_event("decision.failed", run_id=state.get("run_id", ""), error=str(exc))
-            try_emit(emitter, writer, SSEEventType.STAGE_FAILED, "decision", {"error": str(exc)})
+            try_emit(
+                emitter,
+                writer,
+                SSEEventType.STAGE_FAILED,
+                "decision",
+                {"error": str(exc)},
+            )
             raise
 
     def bump_refine_iter(state: RunState) -> RunState:

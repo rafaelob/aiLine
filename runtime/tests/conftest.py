@@ -84,7 +84,9 @@ def session_factory(async_engine: AsyncEngine) -> async_sessionmaker[AsyncSessio
 
 
 @pytest.fixture()
-async def session(session_factory: async_sessionmaker[AsyncSession]) -> AsyncGenerator[AsyncSession, None]:
+async def session(
+    session_factory: async_sessionmaker[AsyncSession],
+) -> AsyncGenerator[AsyncSession, None]:
     """Provide a single async session, rolled back after the test."""
     async with session_factory() as sess:
         yield sess

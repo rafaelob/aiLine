@@ -4,7 +4,9 @@ from __future__ import annotations
 class AiLineError(Exception):
     """Base exception for all AiLine errors."""
 
-    def __init__(self, message: str, *, code: str = "AILINE_ERROR", details: dict | None = None):
+    def __init__(
+        self, message: str, *, code: str = "AILINE_ERROR", details: dict | None = None
+    ):
         super().__init__(message)
         self.code = code
         self.message = message
@@ -22,8 +24,19 @@ class ValidationError(AiLineError):
 
 
 class ProviderError(AiLineError):
-    def __init__(self, message: str, *, provider: str = "", code: str = "PROVIDER_ERROR", **kwargs):
-        super().__init__(message, code=code, details={"provider": provider, **(kwargs.get("details") or {})})
+    def __init__(
+        self,
+        message: str,
+        *,
+        provider: str = "",
+        code: str = "PROVIDER_ERROR",
+        **kwargs,
+    ):
+        super().__init__(
+            message,
+            code=code,
+            details={"provider": provider, **(kwargs.get("details") or {})},
+        )
 
 
 class RateLimitError(ProviderError):

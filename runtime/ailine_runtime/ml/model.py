@@ -54,7 +54,9 @@ class LibrasRecognitionModel:
 
         # Initialize random weights for demo/MVP (real weights loaded via from_onnx)
         rng = np.random.default_rng(42)
-        self._output_weight = rng.standard_normal((vocab_size, self.output_dim)).astype(np.float32) * 0.01
+        self._output_weight = (
+            rng.standard_normal((vocab_size, self.output_dim)).astype(np.float32) * 0.01
+        )
         self._output_bias = np.zeros(vocab_size, dtype=np.float32)
 
         self._onnx_session: Any = None
@@ -93,7 +95,9 @@ class LibrasRecognitionModel:
             return self._forward_onnx(x, lengths)
         return self._forward_numpy(x, lengths)
 
-    def _forward_onnx(self, x: np.ndarray, lengths: np.ndarray | None = None) -> np.ndarray:
+    def _forward_onnx(
+        self, x: np.ndarray, lengths: np.ndarray | None = None
+    ) -> np.ndarray:
         """Forward pass using ONNX runtime."""
         feeds: dict[str, Any] = {"input": x.astype(np.float32)}
         if lengths is not None:
@@ -102,7 +106,9 @@ class LibrasRecognitionModel:
         result: np.ndarray = outputs[0]
         return result
 
-    def _forward_numpy(self, x: np.ndarray, lengths: np.ndarray | None = None) -> np.ndarray:
+    def _forward_numpy(
+        self, x: np.ndarray, lengths: np.ndarray | None = None
+    ) -> np.ndarray:
         """Simplified forward pass using numpy (demo/placeholder).
 
         This applies a simple linear projection + log_softmax to simulate
@@ -117,7 +123,9 @@ class LibrasRecognitionModel:
         # Project input features down to output_dim, then to vocab
         # Use a simple hash of the input to produce somewhat varied output
         rng = np.random.default_rng(int(np.abs(x).sum() * 1000) % (2**31))
-        hidden = rng.standard_normal((batch_size, seq_len, self.output_dim)).astype(np.float32)
+        hidden = rng.standard_normal((batch_size, seq_len, self.output_dim)).astype(
+            np.float32
+        )
 
         # Output linear layer
         logits = hidden @ self._output_weight.T + self._output_bias

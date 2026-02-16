@@ -105,7 +105,9 @@ class TestDemoModeSettingsNone:
 
 
 class TestDemoModeInvalidBody:
-    async def test_malformed_json_body_passes_through(self, client_demo_on: AsyncClient):
+    async def test_malformed_json_body_passes_through(
+        self, client_demo_on: AsyncClient
+    ):
         """When the body is not valid JSON, the middleware passes through (lines 59-60)."""
         resp = await client_demo_on.post(
             "/plans/generate",
@@ -131,7 +133,9 @@ class TestDemoModeInvalidBody:
 
 
 class TestDemoModeEmptyScenarioId:
-    async def test_empty_demo_scenario_id_passes_through(self, client_demo_on: AsyncClient):
+    async def test_empty_demo_scenario_id_passes_through(
+        self, client_demo_on: AsyncClient
+    ):
         """When demo_scenario_id is empty string, pass through (line 63)."""
         try:
             resp = await asyncio.wait_for(
@@ -151,7 +155,9 @@ class TestDemoModeEmptyScenarioId:
         if resp.status_code == 200:
             assert resp.json().get("demo_mode") is not True
 
-    async def test_null_demo_scenario_id_passes_through(self, client_demo_on: AsyncClient):
+    async def test_null_demo_scenario_id_passes_through(
+        self, client_demo_on: AsyncClient
+    ):
         """When demo_scenario_id is null, pass through."""
         try:
             resp = await asyncio.wait_for(

@@ -298,7 +298,9 @@ class TestSSEEventEmitter:
 
         # Verify monotonically increasing sequence
         for i, event in enumerate(events):
-            assert event.seq == i + 1, f"Event {i} has seq {event.seq}, expected {i + 1}"
+            assert (
+                event.seq == i + 1
+            ), f"Event {i} has seq {event.seq}, expected {i + 1}"
             assert event.run_id == "run-full"
 
         # Verify terminal event

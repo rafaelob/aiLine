@@ -30,7 +30,9 @@ class TestChromaVectorStoreInit:
     def test_ephemeral_mode(self, mock_chromadb):
         mock_module, mock_client, _ = mock_chromadb
         with patch.dict("sys.modules", {"chromadb": mock_module}):
-            from ailine_runtime.adapters.vectorstores.chroma_store import ChromaVectorStore
+            from ailine_runtime.adapters.vectorstores.chroma_store import (
+                ChromaVectorStore,
+            )
 
             ChromaVectorStore(collection_name="test_chunks")
             mock_module.EphemeralClient.assert_called_once()
@@ -42,7 +44,9 @@ class TestChromaVectorStoreInit:
     def test_persistent_mode(self, mock_chromadb):
         mock_module, _mock_client, _ = mock_chromadb
         with patch.dict("sys.modules", {"chromadb": mock_module}):
-            from ailine_runtime.adapters.vectorstores.chroma_store import ChromaVectorStore
+            from ailine_runtime.adapters.vectorstores.chroma_store import (
+                ChromaVectorStore,
+            )
 
             ChromaVectorStore(
                 collection_name="test_chunks",
@@ -56,7 +60,9 @@ class TestChromaVectorStoreUpsert:
     async def test_upsert_empty_ids_noop(self, mock_chromadb):
         mock_module, _, mock_collection = mock_chromadb
         with patch.dict("sys.modules", {"chromadb": mock_module}):
-            from ailine_runtime.adapters.vectorstores.chroma_store import ChromaVectorStore
+            from ailine_runtime.adapters.vectorstores.chroma_store import (
+                ChromaVectorStore,
+            )
 
             store = ChromaVectorStore()
             await store.upsert(ids=[], embeddings=[], texts=[], metadatas=[])
@@ -66,7 +72,9 @@ class TestChromaVectorStoreUpsert:
     async def test_upsert_with_data(self, mock_chromadb):
         mock_module, _, mock_collection = mock_chromadb
         with patch.dict("sys.modules", {"chromadb": mock_module}):
-            from ailine_runtime.adapters.vectorstores.chroma_store import ChromaVectorStore
+            from ailine_runtime.adapters.vectorstores.chroma_store import (
+                ChromaVectorStore,
+            )
 
             store = ChromaVectorStore()
             await store.upsert(
@@ -95,7 +103,9 @@ class TestChromaVectorStoreSearch:
             "metadatas": [[{"k": "v1"}, {"k": "v2"}]],
         }
         with patch.dict("sys.modules", {"chromadb": mock_module}):
-            from ailine_runtime.adapters.vectorstores.chroma_store import ChromaVectorStore
+            from ailine_runtime.adapters.vectorstores.chroma_store import (
+                ChromaVectorStore,
+            )
 
             store = ChromaVectorStore()
             results = await store.search(query_embedding=[0.1, 0.2], k=2)
@@ -115,7 +125,9 @@ class TestChromaVectorStoreSearch:
             "metadatas": [[]],
         }
         with patch.dict("sys.modules", {"chromadb": mock_module}):
-            from ailine_runtime.adapters.vectorstores.chroma_store import ChromaVectorStore
+            from ailine_runtime.adapters.vectorstores.chroma_store import (
+                ChromaVectorStore,
+            )
 
             store = ChromaVectorStore()
             results = await store.search(query_embedding=[0.1], k=5)
@@ -131,10 +143,14 @@ class TestChromaVectorStoreSearch:
             "metadatas": [[{"subject": "math"}]],
         }
         with patch.dict("sys.modules", {"chromadb": mock_module}):
-            from ailine_runtime.adapters.vectorstores.chroma_store import ChromaVectorStore
+            from ailine_runtime.adapters.vectorstores.chroma_store import (
+                ChromaVectorStore,
+            )
 
             store = ChromaVectorStore()
-            results = await store.search(query_embedding=[0.1], k=1, filters={"subject": "math"})
+            results = await store.search(
+                query_embedding=[0.1], k=1, filters={"subject": "math"}
+            )
             assert len(results) == 1
             call_kwargs = mock_collection.query.call_args
             assert call_kwargs.kwargs["where"] == {"subject": "math"}
@@ -150,7 +166,9 @@ class TestChromaVectorStoreSearch:
             "metadatas": None,
         }
         with patch.dict("sys.modules", {"chromadb": mock_module}):
-            from ailine_runtime.adapters.vectorstores.chroma_store import ChromaVectorStore
+            from ailine_runtime.adapters.vectorstores.chroma_store import (
+                ChromaVectorStore,
+            )
 
             store = ChromaVectorStore()
             results = await store.search(query_embedding=[0.1], k=1)
@@ -165,7 +183,9 @@ class TestChromaVectorStoreDelete:
     async def test_delete_empty_noop(self, mock_chromadb):
         mock_module, _, mock_collection = mock_chromadb
         with patch.dict("sys.modules", {"chromadb": mock_module}):
-            from ailine_runtime.adapters.vectorstores.chroma_store import ChromaVectorStore
+            from ailine_runtime.adapters.vectorstores.chroma_store import (
+                ChromaVectorStore,
+            )
 
             store = ChromaVectorStore()
             await store.delete(ids=[])
@@ -175,7 +195,9 @@ class TestChromaVectorStoreDelete:
     async def test_delete_with_ids(self, mock_chromadb):
         mock_module, _, mock_collection = mock_chromadb
         with patch.dict("sys.modules", {"chromadb": mock_module}):
-            from ailine_runtime.adapters.vectorstores.chroma_store import ChromaVectorStore
+            from ailine_runtime.adapters.vectorstores.chroma_store import (
+                ChromaVectorStore,
+            )
 
             store = ChromaVectorStore()
             await store.delete(ids=["id1", "id2"])
@@ -185,14 +207,18 @@ class TestChromaVectorStoreDelete:
 class TestSanitizeMetadata:
     def test_primitives_pass_through(self):
         with patch.dict("sys.modules", {"chromadb": MagicMock()}):
-            from ailine_runtime.adapters.vectorstores.chroma_store import _sanitize_metadata
+            from ailine_runtime.adapters.vectorstores.chroma_store import (
+                _sanitize_metadata,
+            )
 
             result = _sanitize_metadata({"s": "hello", "i": 42, "f": 3.14, "b": True})
             assert result == {"s": "hello", "i": 42, "f": 3.14, "b": True}
 
     def test_complex_values_serialized(self):
         with patch.dict("sys.modules", {"chromadb": MagicMock()}):
-            from ailine_runtime.adapters.vectorstores.chroma_store import _sanitize_metadata
+            from ailine_runtime.adapters.vectorstores.chroma_store import (
+                _sanitize_metadata,
+            )
 
             result = _sanitize_metadata({"nested": {"a": [1, 2, 3]}})
             assert isinstance(result["nested"], str)

@@ -144,7 +144,9 @@ class TestBuildTutorSystemPrompt:
             subject="Matematica",
             grade="6o ano",
             student_profile=LearnerProfile(name="Ana"),
-            materials_scope=TutorMaterialsScope(teacher_id="teach1", subject="Matematica"),
+            materials_scope=TutorMaterialsScope(
+                teacher_id="teach1", subject="Matematica"
+            ),
             persona=TutorPersona(system_prompt=""),
         )
         prompt = build_tutor_system_prompt(spec)
@@ -163,7 +165,9 @@ class TestBuildTutorSystemPrompt:
                 needs=["autism", "hearing"],
                 strengths=["leitura"],
             ),
-            materials_scope=TutorMaterialsScope(teacher_id="teach1", subject="Ciencias"),
+            materials_scope=TutorMaterialsScope(
+                teacher_id="teach1", subject="Ciencias"
+            ),
             persona=TutorPersona(system_prompt=""),
         )
         prompt = build_tutor_system_prompt(spec)
@@ -180,7 +184,9 @@ class TestBuildTutorSystemPrompt:
             subject="Historia",
             grade="7o ano",
             student_profile=LearnerProfile(name="Maria"),
-            materials_scope=TutorMaterialsScope(teacher_id="teach1", subject="Historia"),
+            materials_scope=TutorMaterialsScope(
+                teacher_id="teach1", subject="Historia"
+            ),
             persona=TutorPersona(system_prompt=""),
         )
         prompt = build_tutor_system_prompt(spec)
@@ -197,7 +203,9 @@ class TestBuildTutorSystemPrompt:
             tone="divertido e motivador",
             style="coach",
             student_profile=LearnerProfile(name="Joao"),
-            materials_scope=TutorMaterialsScope(teacher_id="teach1", subject="Portugues"),
+            materials_scope=TutorMaterialsScope(
+                teacher_id="teach1", subject="Portugues"
+            ),
             persona=TutorPersona(system_prompt=""),
         )
         prompt = build_tutor_system_prompt(spec)
@@ -319,7 +327,9 @@ class TestSaveLoadSpec:
             subject="Geografia",
             grade="9o ano",
             student_profile=LearnerProfile(name="Teste"),
-            materials_scope=TutorMaterialsScope(teacher_id="teach1", subject="Geografia"),
+            materials_scope=TutorMaterialsScope(
+                teacher_id="teach1", subject="Geografia"
+            ),
             persona=TutorPersona(system_prompt="prompt teste"),
         )
 

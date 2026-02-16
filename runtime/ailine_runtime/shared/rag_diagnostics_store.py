@@ -37,7 +37,9 @@ class RAGDiagnosticsStore:
             self._timestamps[diagnostics.run_id] = time.monotonic()
             self._enforce_capacity()
 
-    async def get(self, run_id: str, *, teacher_id: str | None = None) -> RAGDiagnostics | None:
+    async def get(
+        self, run_id: str, *, teacher_id: str | None = None
+    ) -> RAGDiagnostics | None:
         """Get diagnostics by run_id, or None if not found/expired.
 
         When *teacher_id* is provided, only returns the diagnostics if
@@ -48,11 +50,17 @@ class RAGDiagnosticsStore:
             diag = self._store.get(run_id)
             if diag is None:
                 return None
-            if teacher_id is not None and diag.teacher_id and diag.teacher_id != teacher_id:
+            if (
+                teacher_id is not None
+                and diag.teacher_id
+                and diag.teacher_id != teacher_id
+            ):
                 return None
             return diag
 
-    async def list_recent(self, limit: int = 20, *, teacher_id: str | None = None) -> list[RAGDiagnostics]:
+    async def list_recent(
+        self, limit: int = 20, *, teacher_id: str | None = None
+    ) -> list[RAGDiagnostics]:
         """List recent diagnostics, newest first.
 
         When *teacher_id* is provided, only returns diagnostics belonging
@@ -67,7 +75,11 @@ class RAGDiagnosticsStore:
             )
             results: list[RAGDiagnostics] = []
             for _, v in items:
-                if teacher_id is not None and v.teacher_id and v.teacher_id != teacher_id:
+                if (
+                    teacher_id is not None
+                    and v.teacher_id
+                    and v.teacher_id != teacher_id
+                ):
                     continue
                 results.append(v)
                 if len(results) >= limit:

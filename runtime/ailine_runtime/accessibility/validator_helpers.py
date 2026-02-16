@@ -46,7 +46,12 @@ CHECKPOINT_KEYWORDS = (
 )
 EXAMPLE_KEYWORDS = ("exemplo", "modelo", "mostre", "demonstre", "veja", "como fazer")
 GLOSSARY_KEYWORDS = ("glossário", "vocabulário", "termos", "palavras-chave")
-ALT_TEXT_KEYWORDS = ("texto alternativo", "alt text", "descrição da imagem", "descrever a imagem")
+ALT_TEXT_KEYWORDS = (
+    "texto alternativo",
+    "alt text",
+    "descrição da imagem",
+    "descrever a imagem",
+)
 CAPTION_KEYWORDS = ("legenda", "legendado", "captions")
 TRANSCRIPT_KEYWORDS = ("transcrição", "transcript")
 AUDIO_DESC_KEYWORDS = ("audiodescrição", "audio description", "descrição do vídeo")

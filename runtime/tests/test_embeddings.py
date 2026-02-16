@@ -70,14 +70,18 @@ class TestDeterminism:
         batch2 = await fake_embeddings.embed_batch(texts)
         assert batch1 == batch2
 
-    async def test_embed_text_matches_batch_element(self, fake_embeddings: FakeEmbeddings):
+    async def test_embed_text_matches_batch_element(
+        self, fake_embeddings: FakeEmbeddings
+    ):
         """embed_text(x) must equal embed_batch([x])[0]."""
         text = "consistency check"
         single = await fake_embeddings.embed_text(text)
         batch = await fake_embeddings.embed_batch([text])
         assert single == batch[0]
 
-    async def test_different_texts_different_vectors(self, fake_embeddings: FakeEmbeddings):
+    async def test_different_texts_different_vectors(
+        self, fake_embeddings: FakeEmbeddings
+    ):
         v1 = await fake_embeddings.embed_text("cat")
         v2 = await fake_embeddings.embed_text("dog")
         assert v1 != v2

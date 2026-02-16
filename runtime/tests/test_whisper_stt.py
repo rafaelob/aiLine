@@ -40,7 +40,9 @@ class TestWhisperSTTInit:
         with patch.dict("sys.modules", {"faster_whisper": mock_module}):
             from ailine_runtime.adapters.media.whisper_stt import WhisperSTT
 
-            stt = WhisperSTT(model_size="large-v3", device="cuda", compute_type="float16")
+            stt = WhisperSTT(
+                model_size="large-v3", device="cuda", compute_type="float16"
+            )
             assert stt._model_size == "large-v3"
             assert stt._device == "cuda"
 
@@ -55,7 +57,9 @@ class TestWhisperSTTEnsureModel:
             assert stt._model is None
             stt._ensure_model()
             assert stt._model is not None
-            mock_module.WhisperModel.assert_called_once_with("turbo", device="cpu", compute_type="int8")
+            mock_module.WhisperModel.assert_called_once_with(
+                "turbo", device="cpu", compute_type="int8"
+            )
 
     def test_model_loaded_only_once(self, mock_faster_whisper):
         mock_module, _ = mock_faster_whisper

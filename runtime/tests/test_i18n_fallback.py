@@ -42,9 +42,14 @@ class TestFallbackToEnglish:
         locale_dir.mkdir()
         # Create the custom locale file with only one key
         custom_data = {"custom.key": "Custom value"}
-        (locale_dir / "zz-TEST.json").write_text(json.dumps(custom_data), encoding="utf-8")
+        (locale_dir / "zz-TEST.json").write_text(
+            json.dumps(custom_data), encoding="utf-8"
+        )
         # Create the English fallback file
-        en_data = {"error.generic": "An unexpected error occurred.", "custom.key": "EN custom"}
+        en_data = {
+            "error.generic": "An unexpected error occurred.",
+            "custom.key": "EN custom",
+        }
         (locale_dir / "en.json").write_text(json.dumps(en_data), encoding="utf-8")
 
         # Point i18n to our temp directory
@@ -68,8 +73,12 @@ class TestFallbackToEnglish:
 
         locale_dir = tmp_path / "i18n2"
         locale_dir.mkdir()
-        (locale_dir / "en.json").write_text(json.dumps({"only.key": "val"}), encoding="utf-8")
-        (locale_dir / "aa-BB.json").write_text(json.dumps({"other.key": "v"}), encoding="utf-8")
+        (locale_dir / "en.json").write_text(
+            json.dumps({"only.key": "val"}), encoding="utf-8"
+        )
+        (locale_dir / "aa-BB.json").write_text(
+            json.dumps({"other.key": "v"}), encoding="utf-8"
+        )
 
         monkeypatch.setattr("ailine_runtime.shared.i18n._DATA_DIR", locale_dir)
         _load_messages.cache_clear()

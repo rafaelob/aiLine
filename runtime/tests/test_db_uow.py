@@ -48,24 +48,32 @@ def _make_teacher(**overrides: str) -> TeacherRow:
 
 
 class TestUnitOfWorkLifecycle:
-    async def test_session_available_inside_context(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
+    async def test_session_available_inside_context(
+        self, session_factory: async_sessionmaker[AsyncSession]
+    ) -> None:
         uow = SqlAlchemyUnitOfWork(session_factory)
         async with uow:
             assert uow.session is not None
 
-    async def test_session_none_after_exit(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
+    async def test_session_none_after_exit(
+        self, session_factory: async_sessionmaker[AsyncSession]
+    ) -> None:
         uow = SqlAlchemyUnitOfWork(session_factory)
         async with uow:
             pass
         with pytest.raises(AssertionError, match="UoW not entered"):
             _ = uow.session
 
-    async def test_commit_outside_context_raises(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
+    async def test_commit_outside_context_raises(
+        self, session_factory: async_sessionmaker[AsyncSession]
+    ) -> None:
         uow = SqlAlchemyUnitOfWork(session_factory)
         with pytest.raises(AssertionError, match="UoW not entered"):
             await uow.commit()
 
-    async def test_rollback_outside_context_raises(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
+    async def test_rollback_outside_context_raises(
+        self, session_factory: async_sessionmaker[AsyncSession]
+    ) -> None:
         uow = SqlAlchemyUnitOfWork(session_factory)
         with pytest.raises(AssertionError, match="UoW not entered"):
             await uow.rollback()
@@ -77,7 +85,9 @@ class TestUnitOfWorkLifecycle:
 
 
 class TestUnitOfWorkCommitRollback:
-    async def test_commit_persists_data(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
+    async def test_commit_persists_data(
+        self, session_factory: async_sessionmaker[AsyncSession]
+    ) -> None:
         teacher = _make_teacher()
         async with SqlAlchemyUnitOfWork(session_factory) as uow:
             await uow.teachers.add(teacher)
@@ -91,7 +101,9 @@ class TestUnitOfWorkCommitRollback:
             assert row is not None
             assert row.display_name == "UoW Tester"
 
-    async def test_rollback_discards_data(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
+    async def test_rollback_discards_data(
+        self, session_factory: async_sessionmaker[AsyncSession]
+    ) -> None:
         teacher = _make_teacher(email="rollback@ailine.dev")
         async with SqlAlchemyUnitOfWork(session_factory) as uow:
             await uow.teachers.add(teacher)
@@ -103,7 +115,9 @@ class TestUnitOfWorkCommitRollback:
             result = await verify_session.execute(stmt)
             assert result.scalar_one_or_none() is None
 
-    async def test_exception_triggers_rollback(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
+    async def test_exception_triggers_rollback(
+        self, session_factory: async_sessionmaker[AsyncSession]
+    ) -> None:
         teacher = _make_teacher(email="exception@ailine.dev")
         with pytest.raises(ValueError, match="boom"):
             async with SqlAlchemyUnitOfWork(session_factory) as uow:
@@ -124,33 +138,47 @@ class TestUnitOfWorkCommitRollback:
 
 
 class TestUnitOfWorkRepositories:
-    async def test_teachers_repo_type(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
+    async def test_teachers_repo_type(
+        self, session_factory: async_sessionmaker[AsyncSession]
+    ) -> None:
         async with SqlAlchemyUnitOfWork(session_factory) as uow:
             assert isinstance(uow.teachers, TeacherRepository)
 
-    async def test_courses_repo_type(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
+    async def test_courses_repo_type(
+        self, session_factory: async_sessionmaker[AsyncSession]
+    ) -> None:
         async with SqlAlchemyUnitOfWork(session_factory) as uow:
             assert isinstance(uow.courses, CourseRepository)
 
-    async def test_lessons_repo_type(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
+    async def test_lessons_repo_type(
+        self, session_factory: async_sessionmaker[AsyncSession]
+    ) -> None:
         async with SqlAlchemyUnitOfWork(session_factory) as uow:
             assert isinstance(uow.lessons, LessonRepository)
 
-    async def test_materials_repo_type(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
+    async def test_materials_repo_type(
+        self, session_factory: async_sessionmaker[AsyncSession]
+    ) -> None:
         async with SqlAlchemyUnitOfWork(session_factory) as uow:
             assert isinstance(uow.materials, MaterialRepository)
 
-    async def test_pipeline_runs_repo_type(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
+    async def test_pipeline_runs_repo_type(
+        self, session_factory: async_sessionmaker[AsyncSession]
+    ) -> None:
         async with SqlAlchemyUnitOfWork(session_factory) as uow:
             assert isinstance(uow.pipeline_runs, PipelineRunRepository)
 
-    async def test_repo_cached_on_same_uow(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
+    async def test_repo_cached_on_same_uow(
+        self, session_factory: async_sessionmaker[AsyncSession]
+    ) -> None:
         async with SqlAlchemyUnitOfWork(session_factory) as uow:
             r1 = uow.teachers
             r2 = uow.teachers
             assert r1 is r2
 
-    async def test_repos_reset_after_exit(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
+    async def test_repos_reset_after_exit(
+        self, session_factory: async_sessionmaker[AsyncSession]
+    ) -> None:
         uow = SqlAlchemyUnitOfWork(session_factory)
         async with uow:
             _ = uow.teachers  # Access to populate cache
@@ -165,7 +193,9 @@ class TestUnitOfWorkRepositories:
 
 
 class TestUnitOfWorkMultiAggregate:
-    async def test_create_teacher_course_lesson(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
+    async def test_create_teacher_course_lesson(
+        self, session_factory: async_sessionmaker[AsyncSession]
+    ) -> None:
         """Full workflow: teacher -> course -> lesson in one UoW."""
         async with SqlAlchemyUnitOfWork(session_factory) as uow:
             teacher = _make_teacher(email="workflow@ailine.dev")
@@ -196,7 +226,9 @@ class TestUnitOfWorkMultiAggregate:
             assert lessons[0].title == "Celulas"
             assert lessons[0].course_id == course.id
 
-    async def test_create_material_and_pipeline_run(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
+    async def test_create_material_and_pipeline_run(
+        self, session_factory: async_sessionmaker[AsyncSession]
+    ) -> None:
         """Create material + pipeline run in one transaction."""
         async with SqlAlchemyUnitOfWork(session_factory) as uow:
             teacher = _make_teacher(email="mat-run@ailine.dev")
@@ -224,7 +256,9 @@ class TestUnitOfWorkMultiAggregate:
             mat_result = await verify_session.execute(mat_stmt)
             assert len(mat_result.scalars().all()) == 1
 
-            run_stmt = select(PipelineRunRow).where(PipelineRunRow.teacher_id == teacher.id)
+            run_stmt = select(PipelineRunRow).where(
+                PipelineRunRow.teacher_id == teacher.id
+            )
             run_result = await verify_session.execute(run_stmt)
             assert len(run_result.scalars().all()) == 1
 
@@ -235,7 +269,9 @@ class TestUnitOfWorkMultiAggregate:
 
 
 class TestSessionFactory:
-    async def test_create_session_factory(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
+    async def test_create_session_factory(
+        self, session_factory: async_sessionmaker[AsyncSession]
+    ) -> None:
         """Session factory should create valid sessions."""
         async with session_factory() as session:
             assert session is not None

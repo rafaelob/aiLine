@@ -69,7 +69,9 @@ class WhisperSTT:
         """
         self._ensure_model()
         loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(None, self._sync_transcribe, audio_bytes, language)
+        return await loop.run_in_executor(
+            None, self._sync_transcribe, audio_bytes, language
+        )
 
     def _sync_transcribe(self, audio_bytes: bytes, language: str) -> str:
         """Blocking transcription called from the executor."""

@@ -32,7 +32,9 @@ MAX_DOCUMENT_SIZE = 50 * 1024 * 1024  # 50 MB
 
 
 class SynthesizeRequest(BaseModel):
-    text: str = Field(..., min_length=1, max_length=5000, description="Text to synthesize.")
+    text: str = Field(
+        ..., min_length=1, max_length=5000, description="Text to synthesize."
+    )
     locale: str = Field("pt-BR", description="BCP-47 locale tag.")
     speed: float = Field(1.0, ge=0.25, le=4.0, description="Playback speed multiplier.")
 
@@ -47,9 +49,14 @@ class DescriptionResponse(BaseModel):
 
 class ImageGenRequest(BaseModel):
     prompt: str = Field(
-        ..., min_length=3, max_length=2000, description="Description of the image to generate."
+        ...,
+        min_length=3,
+        max_length=2000,
+        description="Description of the image to generate.",
     )
-    aspect_ratio: str = Field("16:9", description="Aspect ratio: 1:1, 3:4, 4:3, 9:16, 16:9.")
+    aspect_ratio: str = Field(
+        "16:9", description="Aspect ratio: 1:1, 3:4, 4:3, 9:16, 16:9."
+    )
     style: str = Field(
         "educational_illustration",
         description="Style template: educational_illustration, infographic, diagram, cartoon, photo_realistic.",
@@ -96,7 +103,9 @@ async def transcribe_audio(
     if not audio_bytes:
         raise HTTPException(status_code=400, detail="Empty audio file.")
     if len(audio_bytes) > MAX_AUDIO_SIZE:
-        raise HTTPException(status_code=413, detail="File too large. Maximum audio size: 10MB.")
+        raise HTTPException(
+            status_code=413, detail="File too large. Maximum audio size: 10MB."
+        )
     logger.info("media.transcribe", language=language, size=len(audio_bytes))
     text = await stt.transcribe(audio_bytes, language=language)
     return TranscriptionResponse(text=text)
@@ -140,7 +149,9 @@ async def describe_image(
     if not image_bytes:
         raise HTTPException(status_code=400, detail="Empty image file.")
     if len(image_bytes) > MAX_IMAGE_SIZE:
-        raise HTTPException(status_code=413, detail="File too large. Maximum image size: 5MB.")
+        raise HTTPException(
+            status_code=413, detail="File too large. Maximum image size: 5MB."
+        )
     logger.info("media.describe_image", locale=locale, size=len(image_bytes))
     description = await describer.describe(image_bytes, locale=locale)
     return DescriptionResponse(description=description)
@@ -161,7 +172,9 @@ async def extract_text(
     if not file_bytes:
         raise HTTPException(status_code=400, detail="Empty file.")
     if len(file_bytes) > MAX_DOCUMENT_SIZE:
-        raise HTTPException(status_code=413, detail="File too large. Maximum document size: 50MB.")
+        raise HTTPException(
+            status_code=413, detail="File too large. Maximum document size: 50MB."
+        )
 
     content_type = file.content_type or ""
     file_type = "pdf" if "pdf" in content_type else "image"

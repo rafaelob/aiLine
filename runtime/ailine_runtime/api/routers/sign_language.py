@@ -16,7 +16,14 @@ import json
 from typing import Any
 
 import structlog
-from fastapi import APIRouter, HTTPException, Request, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi import (
+    APIRouter,
+    HTTPException,
+    Request,
+    UploadFile,
+    WebSocket,
+    WebSocketDisconnect,
+)
 from pydantic import BaseModel, Field
 
 from ...accessibility.caption_orchestrator import CaptionOrchestrator
@@ -40,7 +47,9 @@ class RecognitionResult(BaseModel):
     """Result of a sign language gesture recognition."""
 
     gesture: str = Field(..., description="Predicted gesture label.")
-    confidence: float = Field(..., ge=0.0, le=1.0, description="Prediction confidence (0-1).")
+    confidence: float = Field(
+        ..., ge=0.0, le=1.0, description="Prediction confidence (0-1)."
+    )
     landmarks: list[Any] = Field(
         default_factory=list,
         description="Detected hand landmarks (empty in placeholder mode).",
@@ -138,7 +147,9 @@ async def recognize_sign(
     if not video_bytes:
         raise HTTPException(status_code=400, detail="Empty file uploaded.")
     if len(video_bytes) > MAX_SIGN_UPLOAD_SIZE:
-        raise HTTPException(status_code=413, detail="File too large. Maximum size: 10MB.")
+        raise HTTPException(
+            status_code=413, detail="File too large. Maximum size: 10MB."
+        )
 
     content_type = file.content_type or "unknown"
     logger.info(
@@ -195,7 +206,9 @@ async def libras_caption_ws(websocket: WebSocket) -> None:
         import os
 
         if os.getenv("AILINE_DEV_MODE", "").lower() not in ("true", "1", "yes"):
-            await websocket.close(code=4001, reason="Authentication required: pass ?token=<jwt>")
+            await websocket.close(
+                code=4001, reason="Authentication required: pass ?token=<jwt>"
+            )
             return
         teacher_id = None
 

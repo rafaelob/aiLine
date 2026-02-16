@@ -37,7 +37,9 @@ class ReviewStore:
     def get_review(self, plan_id: str) -> PlanReview | None:
         return self._reviews.get(plan_id)
 
-    def update_review(self, plan_id: str, status: ReviewStatus, notes: str = "") -> PlanReview | None:
+    def update_review(
+        self, plan_id: str, status: ReviewStatus, notes: str = ""
+    ) -> PlanReview | None:
         with self._lock:
             review = self._reviews.get(plan_id)
             if review is None:
@@ -53,13 +55,16 @@ class ReviewStore:
         return [
             r
             for r in self._reviews.values()
-            if r.teacher_id == teacher_id and r.status in (ReviewStatus.PENDING_REVIEW, ReviewStatus.DRAFT)
+            if r.teacher_id == teacher_id
+            and r.status in (ReviewStatus.PENDING_REVIEW, ReviewStatus.DRAFT)
         ]
 
     def list_all(self, teacher_id: str) -> list[PlanReview]:
         return [r for r in self._reviews.values() if r.teacher_id == teacher_id]
 
-    def add_flag(self, session_id: str, turn_index: int, teacher_id: str, reason: str) -> TutorTurnFlag:
+    def add_flag(
+        self, session_id: str, turn_index: int, teacher_id: str, reason: str
+    ) -> TutorTurnFlag:
         with self._lock:
             flag = TutorTurnFlag(
                 flag_id=str(uuid7()),

@@ -81,7 +81,9 @@ class TestHealthDiagnostics:
         assert "api_keys" in body
         keys = body["api_keys"]
         for provider, present in keys.items():
-            assert isinstance(present, bool), f"{provider} should be bool, got {type(present)}"
+            assert isinstance(
+                present, bool
+            ), f"{provider} should be bool, got {type(present)}"
 
     async def test_diagnostics_never_exposes_secrets(self, client: AsyncClient) -> None:
         """Ensure no actual API key values leak into diagnostics."""
@@ -132,7 +134,9 @@ class TestHealthDiagnostics:
         assert "status" in body
         assert body["status"] in ("healthy", "degraded")
 
-    async def test_diagnostics_healthy_with_skip_deps(self, client: AsyncClient) -> None:
+    async def test_diagnostics_healthy_with_skip_deps(
+        self, client: AsyncClient
+    ) -> None:
         """With test settings (SQLite dev, in-memory bus), status is healthy."""
         resp = await client.get("/health/diagnostics")
         body = resp.json()

@@ -68,9 +68,17 @@ def extract_rag_quotes(
         quotes.append(
             {
                 "text": text,
-                "doc_title": r.get("title") or r.get("doc_title") or r.get("filename") or "",
+                "doc_title": r.get("title")
+                or r.get("doc_title")
+                or r.get("filename")
+                or "",
                 "section": r.get("section") or r.get("heading") or "",
-                "relevance_score": float(r.get("score") or r.get("relevance_score") or r.get("similarity") or 0.0),
+                "relevance_score": float(
+                    r.get("score")
+                    or r.get("relevance_score")
+                    or r.get("similarity")
+                    or 0.0
+                ),
             }
         )
 

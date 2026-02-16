@@ -7,7 +7,12 @@ from .accessibility_policy import (
     SkillPolicy,
     resolve_accessibility_skills,
 )
-from .composer import ActivatedSkill, compose_skills_fragment, estimate_tokens, truncate_to_budget
+from .composer import (
+    ActivatedSkill,
+    compose_skills_fragment,
+    estimate_tokens,
+    truncate_to_budget,
+)
 from .loader import parse_skill_md
 from .registry import SkillDefinition, SkillRegistry
 from .spec import SkillSpecValidationResult, fix_metadata_values, validate_skill_spec

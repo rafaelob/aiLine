@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import pytest
 
-from ailine_agents.workflows._trace_capture import build_route_rationale, capture_node_trace
+from ailine_agents.workflows._trace_capture import (
+    build_route_rationale,
+    capture_node_trace,
+)
 
 
 class TestBuildRouteRationale:

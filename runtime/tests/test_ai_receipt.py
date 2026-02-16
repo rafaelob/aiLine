@@ -40,11 +40,13 @@ class TestAIReceiptEventType:
 class TestAIReceiptEmitter:
     def test_ai_receipt_convenience(self) -> None:
         emitter = SSEEventEmitter("run-receipt")
-        event = emitter.ai_receipt({
-            "model_used": "claude-opus-4-6",
-            "quality_score": 92,
-            "trust_level": "high",
-        })
+        event = emitter.ai_receipt(
+            {
+                "model_used": "claude-opus-4-6",
+                "quality_score": 92,
+                "trust_level": "high",
+            }
+        )
         assert event.type == SSEEventType.AI_RECEIPT
         assert event.stage == "receipt"
         assert event.payload["model_used"] == "claude-opus-4-6"
@@ -54,11 +56,13 @@ class TestAIReceiptEmitter:
 
     def test_ai_receipt_serializes_to_json(self) -> None:
         emitter = SSEEventEmitter("run-json")
-        event = emitter.ai_receipt({
-            "trust_level": "medium",
-            "citations_count": 5,
-            "accommodations_applied": ["autism: visual schedule"],
-        })
+        event = emitter.ai_receipt(
+            {
+                "trust_level": "medium",
+                "citations_count": 5,
+                "accommodations_applied": ["autism: visual schedule"],
+            }
+        )
         data = json.loads(event.to_sse_data())
         assert data["type"] == "ai_receipt"
         assert data["stage"] == "receipt"
@@ -84,11 +88,13 @@ class TestAIReceiptEmitter:
             emitter.stage_complete("validate"),
             emitter.stage_start("scorecard"),
             emitter.stage_complete("scorecard"),
-            emitter.ai_receipt({
-                "model_used": "claude-opus-4-6",
-                "trust_level": "high",
-                "quality_score": 88,
-            }),
+            emitter.ai_receipt(
+                {
+                    "model_used": "claude-opus-4-6",
+                    "trust_level": "high",
+                    "quality_score": 88,
+                }
+            ),
             emitter.run_complete({"plan_id": "run-full-receipt"}),
         ]
 

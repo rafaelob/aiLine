@@ -7,35 +7,65 @@ from dataclasses import dataclass, field
 @dataclass(frozen=True)
 class AiLineConfig:
     # NOTE: Runtime local. Em producao use secret manager.
-    anthropic_api_key: str | None = field(default_factory=lambda: os.getenv("ANTHROPIC_API_KEY"))
+    anthropic_api_key: str | None = field(
+        default_factory=lambda: os.getenv("ANTHROPIC_API_KEY")
+    )
 
     # Runtime models
-    planner_model: str = field(default_factory=lambda: os.getenv("AILINE_PLANNER_MODEL", "anthropic:claude-opus-4-6"))
-    executor_model: str = field(
-        default_factory=lambda: os.getenv("AILINE_EXECUTOR_MODEL", "google-gla:gemini-3-flash-preview"),
+    planner_model: str = field(
+        default_factory=lambda: os.getenv(
+            "AILINE_PLANNER_MODEL", "anthropic:claude-opus-4-6"
+        )
     )
-    qg_model: str = field(default_factory=lambda: os.getenv("AILINE_QG_MODEL", "anthropic:claude-sonnet-4-5"))
-    tutor_model: str = field(default_factory=lambda: os.getenv("AILINE_TUTOR_MODEL", "anthropic:claude-sonnet-4-5"))
+    executor_model: str = field(
+        default_factory=lambda: os.getenv(
+            "AILINE_EXECUTOR_MODEL", "google-gla:gemini-3-flash-preview"
+        ),
+    )
+    qg_model: str = field(
+        default_factory=lambda: os.getenv(
+            "AILINE_QG_MODEL", "anthropic:claude-sonnet-4-5"
+        )
+    )
+    tutor_model: str = field(
+        default_factory=lambda: os.getenv(
+            "AILINE_TUTOR_MODEL", "anthropic:claude-sonnet-4-5"
+        )
+    )
 
     # Effort costuma ser controlado via Claude Code settings/env; mantemos uma copia para o Planner (DeepAgents).
     # low|medium|high|max
-    planner_effort: str = field(default_factory=lambda: os.getenv("AILINE_PLANNER_EFFORT", "high"))
+    planner_effort: str = field(
+        default_factory=lambda: os.getenv("AILINE_PLANNER_EFFORT", "high")
+    )
 
     # Refinement loop
-    max_refinement_iters: int = field(default_factory=lambda: int(os.getenv("AILINE_MAX_REFINEMENT_ITERS", "2")))
+    max_refinement_iters: int = field(
+        default_factory=lambda: int(os.getenv("AILINE_MAX_REFINEMENT_ITERS", "2"))
+    )
 
     # Local store dir (materiais + planos persistidos no MVP)
-    local_store_dir: str = field(default_factory=lambda: os.getenv("AILINE_LOCAL_STORE", ".local_store"))
+    local_store_dir: str = field(
+        default_factory=lambda: os.getenv("AILINE_LOCAL_STORE", ".local_store")
+    )
 
     # DeepAgents skills (runtime)
     # Formato: caminhos separados por virgula. Ex.: "../.claude/skills,../skills"
     # Se vazio -> usa defaults (.claude/skills e skills/ no repo root).
-    skill_sources_env: str | None = field(default_factory=lambda: os.getenv("AILINE_SKILL_SOURCES"))
-    planner_use_skills: bool = field(default_factory=lambda: os.getenv("AILINE_PLANNER_USE_SKILLS", "1") == "1")
-    persona_use_skills: bool = field(default_factory=lambda: os.getenv("AILINE_PERSONA_USE_SKILLS", "1") == "1")
+    skill_sources_env: str | None = field(
+        default_factory=lambda: os.getenv("AILINE_SKILL_SOURCES")
+    )
+    planner_use_skills: bool = field(
+        default_factory=lambda: os.getenv("AILINE_PLANNER_USE_SKILLS", "1") == "1"
+    )
+    persona_use_skills: bool = field(
+        default_factory=lambda: os.getenv("AILINE_PERSONA_USE_SKILLS", "1") == "1"
+    )
 
     # Exports
-    enable_exports: bool = field(default_factory=lambda: os.getenv("AILINE_ENABLE_EXPORTS", "1") == "1")
+    enable_exports: bool = field(
+        default_factory=lambda: os.getenv("AILINE_ENABLE_EXPORTS", "1") == "1"
+    )
     default_variants: str = field(
         default_factory=lambda: os.getenv(
             "AILINE_DEFAULT_VARIANTS",

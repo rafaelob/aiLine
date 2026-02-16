@@ -25,11 +25,15 @@ class RedisEventBus:
 
         self._redis: Redis = Redis.from_url(redis_url, decode_responses=True)
         self._pubsub = self._redis.pubsub()
-        self._handlers: dict[str, list[Callable[[dict[str, Any]], Awaitable[None]]]] = defaultdict(list)
+        self._handlers: dict[str, list[Callable[[dict[str, Any]], Awaitable[None]]]] = (
+            defaultdict(list)
+        )
         self._listener_task: asyncio.Task[None] | None = None
 
     async def publish(self, event_type: str, data: dict[str, Any]) -> None:
-        payload = json.dumps({"event_type": event_type, "data": data}, ensure_ascii=False)
+        payload = json.dumps(
+            {"event_type": event_type, "data": data}, ensure_ascii=False
+        )
         await self._redis.publish(event_type, payload)
 
         # Also dispatch to local in-process handlers (same-node subscribers)

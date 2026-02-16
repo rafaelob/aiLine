@@ -33,14 +33,16 @@ import yaml  # type: ignore[import-untyped]
 
 _FRONTMATTER_RE = re.compile(r"^---\s*\n(.*?)\n---\s*\n?", re.DOTALL)
 
-_ALLOWED_FRONTMATTER_KEYS: frozenset[str] = frozenset({
-    "name",
-    "description",
-    "license",
-    "compatibility",
-    "allowed-tools",
-    "metadata",
-})
+_ALLOWED_FRONTMATTER_KEYS: frozenset[str] = frozenset(
+    {
+        "name",
+        "description",
+        "license",
+        "compatibility",
+        "allowed-tools",
+        "metadata",
+    }
+)
 
 _NAME_RE = re.compile(r"^[a-z0-9](?:[a-z0-9]|-(?=[a-z0-9]))*$")
 """Match a valid skill name: lowercase alnum + single hyphens, no start/end hyphen."""
@@ -102,7 +104,7 @@ def validate_skill_spec(content: str) -> SkillSpecValidationResult:
         return result
 
     raw_yaml_text = match.group(1)
-    body = content[match.end():]
+    body = content[match.end() :]
 
     # Parse YAML safely
     try:
@@ -151,7 +153,10 @@ def validate_skill_spec(content: str) -> SkillSpecValidationResult:
     # 6. compatibility: optional string (max 500 chars)
     # ------------------------------------------------------------------
     _validate_optional_string(
-        parsed, "compatibility", result, max_len=_COMPATIBILITY_MAX_LEN,
+        parsed,
+        "compatibility",
+        result,
+        max_len=_COMPATIBILITY_MAX_LEN,
     )
 
     # ------------------------------------------------------------------
@@ -283,7 +288,8 @@ def _validate_name(parsed: dict[str, Any], result: SkillSpecValidationResult) ->
 
 
 def _validate_description(
-    parsed: dict[str, Any], result: SkillSpecValidationResult,
+    parsed: dict[str, Any],
+    result: SkillSpecValidationResult,
 ) -> None:
     """Validate the ``description`` frontmatter field."""
     description = parsed.get("description")
@@ -330,13 +336,13 @@ def _validate_optional_string(
 
     if max_len is not None and len(value) > max_len:
         result.errors.append(
-            f"Field '{key}' is too long ({len(value)} chars). "
-            f"Maximum is {max_len}."
+            f"Field '{key}' is too long ({len(value)} chars). " f"Maximum is {max_len}."
         )
 
 
 def _validate_metadata(
-    parsed: dict[str, Any], result: SkillSpecValidationResult,
+    parsed: dict[str, Any],
+    result: SkillSpecValidationResult,
 ) -> None:
     """Validate the ``metadata`` frontmatter field.
 
@@ -367,7 +373,8 @@ def _validate_metadata(
 
 
 def _validate_allowed_tools(
-    parsed: dict[str, Any], result: SkillSpecValidationResult,
+    parsed: dict[str, Any],
+    result: SkillSpecValidationResult,
 ) -> None:
     """Validate the ``allowed-tools`` frontmatter field.
 

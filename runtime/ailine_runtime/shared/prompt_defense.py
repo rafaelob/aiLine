@@ -30,23 +30,53 @@ from dataclasses import dataclass, field
 # Each is a (pattern, severity_weight) tuple.
 _INJECTION_PATTERNS: list[tuple[re.Pattern[str], float, str]] = [
     # Direct role overrides
-    (re.compile(r"(?:you are|act as|pretend to be|your role is)\b", re.IGNORECASE), 0.3, "role_override"),
+    (
+        re.compile(r"(?:you are|act as|pretend to be|your role is)\b", re.IGNORECASE),
+        0.3,
+        "role_override",
+    ),
     # System prompt references
-    (re.compile(r"\b(?:system prompt|system message|system instruction)\b", re.IGNORECASE), 0.3, "system_ref"),
+    (
+        re.compile(
+            r"\b(?:system prompt|system message|system instruction)\b", re.IGNORECASE
+        ),
+        0.3,
+        "system_ref",
+    ),
     # Instruction markers
-    (re.compile(r"\bignore\b.{0,30}\binstructions\b", re.IGNORECASE), 0.5, "ignore_instructions"),
+    (
+        re.compile(r"\bignore\b.{0,30}\binstructions\b", re.IGNORECASE),
+        0.5,
+        "ignore_instructions",
+    ),
     # Prompt delimiters that try to escape context
-    (re.compile(r"```(?:system|assistant|instruction)", re.IGNORECASE), 0.4, "delimiter_escape"),
+    (
+        re.compile(r"```(?:system|assistant|instruction)", re.IGNORECASE),
+        0.4,
+        "delimiter_escape",
+    ),
     # "Do not" + safety bypass patterns
-    (re.compile(r"\bdo not (?:follow|obey|listen to)\b", re.IGNORECASE), 0.4, "safety_bypass"),
+    (
+        re.compile(r"\bdo not (?:follow|obey|listen to)\b", re.IGNORECASE),
+        0.4,
+        "safety_bypass",
+    ),
     # Hidden instruction markers
     (re.compile(r"\[(?:INST|SYS|SYSTEM)\]", re.IGNORECASE), 0.4, "hidden_markers"),
     # Base64-encoded payloads (long b64 strings may hide instructions)
     (re.compile(r"[A-Za-z0-9+/]{100,}={0,2}"), 0.2, "base64_payload"),
     # XML/HTML-like instruction tags
-    (re.compile(r"<(?:system|instruction|prompt|override)[^>]*>", re.IGNORECASE), 0.4, "xml_injection"),
+    (
+        re.compile(r"<(?:system|instruction|prompt|override)[^>]*>", re.IGNORECASE),
+        0.4,
+        "xml_injection",
+    ),
     # Jailbreak keywords
-    (re.compile(r"\b(?:DAN|jailbreak|bypass|exploit)\b", re.IGNORECASE), 0.3, "jailbreak_keyword"),
+    (
+        re.compile(r"\b(?:DAN|jailbreak|bypass|exploit)\b", re.IGNORECASE),
+        0.3,
+        "jailbreak_keyword",
+    ),
     # Unusual Unicode that might hide instructions
     (re.compile(r"[\u200b-\u200f\u2028-\u202f\ufeff]"), 0.2, "invisible_unicode"),
 ]
@@ -54,7 +84,9 @@ _INJECTION_PATTERNS: list[tuple[re.Pattern[str], float, str]] = [
 # Patterns to strip from retrieved content (sanitization).
 _STRIP_PATTERNS: list[re.Pattern[str]] = [
     # Role override attempts
-    re.compile(r"(?:you are|act as|pretend to be|your role is)[^\n.]{0,200}", re.IGNORECASE),
+    re.compile(
+        r"(?:you are|act as|pretend to be|your role is)[^\n.]{0,200}", re.IGNORECASE
+    ),
     # Ignore instruction attempts
     re.compile(r"ignore\b.{0,30}\binstructions[^\n.]{0,200}", re.IGNORECASE),
     # Instruction boundary markers

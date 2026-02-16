@@ -6,7 +6,11 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from ailine_runtime.api.streaming.replay import InMemoryReplayStore, RedisReplayStore, ReplayConfig
+from ailine_runtime.api.streaming.replay import (
+    InMemoryReplayStore,
+    RedisReplayStore,
+    ReplayConfig,
+)
 
 
 @pytest.fixture()
@@ -206,7 +210,9 @@ class TestRedisReplayStore:
 
         result = await store.replay("run-1")
 
-        mock_redis.zrange.assert_awaited_once_with("test:run-1:events", 0, -1, withscores=True)
+        mock_redis.zrange.assert_awaited_once_with(
+            "test:run-1:events", 0, -1, withscores=True
+        )
         assert len(result) == 3
         assert result[0] == (1, '{"type":"run.started"}')
         assert result[1] == (2, '{"type":"stage.started"}')
@@ -229,7 +235,9 @@ class TestRedisReplayStore:
 
         result = await store.replay("run-1", after_seq=3)
 
-        mock_redis.zrangebyscore.assert_awaited_once_with("test:run-1:events", min="(3", max="+inf", withscores=True)
+        mock_redis.zrangebyscore.assert_awaited_once_with(
+            "test:run-1:events", min="(3", max="+inf", withscores=True
+        )
         assert len(result) == 2
         assert result[0] == (4, '{"seq":4}')
         assert result[1] == (5, '{"seq":5}')
@@ -366,7 +374,9 @@ class TestRedisReplayStore:
                 redis_url="redis://myhost:6380/2",
                 config=ReplayConfig(prefix="prod", keep_last=200),
             )
-            mock_redis_cls.from_url.assert_called_once_with("redis://myhost:6380/2", decode_responses=True)
+            mock_redis_cls.from_url.assert_called_once_with(
+                "redis://myhost:6380/2", decode_responses=True
+            )
             assert s._redis is mock_redis_instance
             assert s._config.keep_last == 200
             assert s._prefix == "prod"

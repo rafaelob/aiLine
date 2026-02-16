@@ -103,7 +103,9 @@ async def list_skills(
         return {"count": 0, "categories": {}, "skills": []}
 
     skills_dict = registry.skills
-    summaries = [_skill_to_summary(name, skill) for name, skill in sorted(skills_dict.items())]
+    summaries = [
+        _skill_to_summary(name, skill) for name, skill in sorted(skills_dict.items())
+    ]
 
     # Apply category filter
     if category:
@@ -113,7 +115,9 @@ async def list_skills(
     if q:
         q_lower = q.lower()
         summaries = [
-            s for s in summaries if q_lower in s["name"].lower() or q_lower in s["description"].lower()
+            s
+            for s in summaries
+            if q_lower in s["name"].lower() or q_lower in s["description"].lower()
         ]
 
     # Build category breakdown
@@ -161,7 +165,8 @@ async def skill_policy_for_profile(
         )
 
     skills_list, needs_human_review = resolve_accessibility_skills(
-        [profile], max_skills=max_skills,
+        [profile],
+        max_skills=max_skills,
     )
 
     return {
@@ -192,7 +197,9 @@ async def list_all_policies(
             "should": list(policy.should),
             "nice": list(policy.nice),
             "human_review_triggers": list(policy.human_review_triggers),
-            "total_skills": len(set(policy.must) | set(policy.should) | set(policy.nice)),
+            "total_skills": len(
+                set(policy.must) | set(policy.should) | set(policy.nice)
+            ),
         }
 
     return {"profiles": profiles}

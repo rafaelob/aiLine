@@ -155,25 +155,35 @@ class SSEEventEmitter:
         """Convenience: emit RUN_FAILED with error message."""
         return self.emit(SSEEventType.RUN_FAILED, stage, {"error": error})
 
-    def stage_start(self, stage: str, payload: dict[str, Any] | None = None) -> SSEEvent:
+    def stage_start(
+        self, stage: str, payload: dict[str, Any] | None = None
+    ) -> SSEEvent:
         return self.emit(SSEEventType.STAGE_START, stage, payload)
 
-    def stage_progress(self, stage: str, payload: dict[str, Any] | None = None) -> SSEEvent:
+    def stage_progress(
+        self, stage: str, payload: dict[str, Any] | None = None
+    ) -> SSEEvent:
         return self.emit(SSEEventType.STAGE_PROGRESS, stage, payload)
 
-    def stage_complete(self, stage: str, payload: dict[str, Any] | None = None) -> SSEEvent:
+    def stage_complete(
+        self, stage: str, payload: dict[str, Any] | None = None
+    ) -> SSEEvent:
         return self.emit(SSEEventType.STAGE_COMPLETE, stage, payload)
 
     def stage_failed(self, stage: str, error: str) -> SSEEvent:
         return self.emit(SSEEventType.STAGE_FAILED, stage, {"error": error})
 
-    def quality_scored(self, score: int, payload: dict[str, Any] | None = None) -> SSEEvent:
+    def quality_scored(
+        self, score: int, payload: dict[str, Any] | None = None
+    ) -> SSEEvent:
         merged = {"score": score}
         if payload:
             merged.update(payload)
         return self.emit(SSEEventType.QUALITY_SCORED, "validate", merged)
 
-    def quality_decision(self, decision: str, payload: dict[str, Any] | None = None) -> SSEEvent:
+    def quality_decision(
+        self, decision: str, payload: dict[str, Any] | None = None
+    ) -> SSEEvent:
         merged = {"decision": decision}
         if payload:
             merged.update(payload)

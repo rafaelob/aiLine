@@ -107,7 +107,9 @@ class InMemoryVectorStore:
             if chunk_norm == 0:
                 continue
 
-            similarity = float(np.dot(query_vec, chunk.embedding) / (query_norm * chunk_norm))
+            similarity = float(
+                np.dot(query_vec, chunk.embedding) / (query_norm * chunk_norm)
+            )
             scored.append((similarity, chunk))
 
         # Sort by descending similarity
@@ -131,4 +133,6 @@ class InMemoryVectorStore:
 
 def _matches_filters(metadata: dict[str, Any], filters: dict[str, Any]) -> bool:
     """Check whether *metadata* satisfies all equality *filters*."""
-    return all(key in metadata and metadata[key] == value for key, value in filters.items())
+    return all(
+        key in metadata and metadata[key] == value for key, value in filters.items()
+    )

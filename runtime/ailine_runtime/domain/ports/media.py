@@ -16,7 +16,9 @@ class STT(Protocol):
 class TTS(Protocol):
     """Text-to-speech protocol."""
 
-    async def synthesize(self, text: str, *, locale: str = "pt-BR", speed: float = 1.0) -> bytes: ...
+    async def synthesize(
+        self, text: str, *, locale: str = "pt-BR", speed: float = 1.0
+    ) -> bytes: ...
 
 
 @runtime_checkable
@@ -56,4 +58,6 @@ class OCRProcessor(Protocol):
     diagnostic message instead of raising.
     """
 
-    async def extract_text(self, file_bytes: bytes, *, file_type: str = "pdf") -> str: ...
+    async def extract_text(
+        self, file_bytes: bytes, *, file_type: str = "pdf"
+    ) -> str: ...

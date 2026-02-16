@@ -95,14 +95,19 @@ def build_tutor_agent(
         result = await ctx.deps.llm.generate_with_search(query)
         return {
             "text": result.text,
-            "sources": [{"url": s.url, "title": s.title, "snippet": s.snippet} for s in result.sources],
+            "sources": [
+                {"url": s.url, "title": s.title, "snippet": s.snippet}
+                for s in result.sources
+            ],
         }
 
     return agent
 
 
 @functools.lru_cache(maxsize=4)
-def _build_and_register_tutor(use_skills: bool, model: str | None = None) -> Agent[AgentDeps, TutorTurnOutput]:
+def _build_and_register_tutor(
+    use_skills: bool, model: str | None = None
+) -> Agent[AgentDeps, TutorTurnOutput]:
     """Build tutor agent with tools (cached, thread-safe via lru_cache)."""
     agent = build_tutor_agent(use_skills=use_skills, model=model)
     from ailine_runtime.tools.registry import build_tool_registry
