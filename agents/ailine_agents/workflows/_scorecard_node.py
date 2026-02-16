@@ -17,8 +17,8 @@ from ._sse_helpers import get_emitter_and_writer, try_emit
 from ._state import RunState
 
 __all__ = [
-    "make_scorecard_node",
     "_estimate_reading_level",
+    "make_scorecard_node",
 ]
 
 
@@ -102,10 +102,35 @@ def make_scorecard_node(deps: AgentDeps):
 
             try_emit(emitter, writer, SSEEventType.STAGE_COMPLETE, "scorecard", scorecard)
 
+            # Emit AI Receipt — trust chain summary for the frontend
+            trust_level = "high" if quality_score >= 85 else ("medium" if quality_score >= 70 else "low")
+            citations_count = len(state.get("rag_results") or [])
+            accommodations = adaptations if adaptations else []
+
+            ai_receipt = {
+                "model_used": scorecard.get("model_used", ""),
+                "routing_reason": scorecard.get("router_rationale", ""),
+                "quality_score": quality_score,
+                "trust_level": trust_level,
+                "citations_count": citations_count,
+                "accommodations_applied": accommodations,
+                "locale": getattr(deps, "locale", "pt-BR"),
+                "total_pipeline_time_ms": round(pipeline_time_ms, 1),
+            }
+            try_emit(emitter, writer, SSEEventType.AI_RECEIPT, "receipt", ai_receipt)
+
             return {"scorecard": scorecard}  # type: ignore[typeddict-item,return-value]  # LangGraph partial state update
         except Exception as exc:
             log_event("scorecard.failed", run_id=run_id, error=str(exc))
-            return {"scorecard": None}  # type: ignore[typeddict-item,return-value]  # LangGraph partial state update
+            try_emit(emitter, writer, SSEEventType.STAGE_FAILED, "scorecard", {"error": str(exc)[:200]})
+            fallback = {
+                "error": "scorecard_calculation_failed",
+                "details": str(exc)[:200],
+                "quality_score": 0,
+                "quality_decision": "pending",
+                "total_pipeline_time_ms": 0.0,
+            }
+            return {"scorecard": fallback}  # type: ignore[typeddict-item,return-value]  # LangGraph partial state update
 
     return scorecard_node
 

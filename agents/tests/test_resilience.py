@@ -58,13 +58,13 @@ class TestCircuitBreaker:
 
     def test_success_after_half_open(self) -> None:
         """After cooldown, a success resets the circuit."""
-        cb = CircuitBreaker(failure_threshold=2, cooldown_seconds=0.01)
+        cb = CircuitBreaker(failure_threshold=2, cooldown_seconds=0.5)
         cb.record_failure()
         cb.record_failure()
         assert cb.is_open is True
 
         # Wait for cooldown
-        time.sleep(0.02)
+        time.sleep(0.6)
         assert cb.check() is True  # half-open
 
         cb.record_success()
@@ -73,10 +73,10 @@ class TestCircuitBreaker:
 
     def test_failure_after_half_open_reopens(self) -> None:
         """After cooldown, a failure reopens the circuit."""
-        cb = CircuitBreaker(failure_threshold=2, cooldown_seconds=0.01)
+        cb = CircuitBreaker(failure_threshold=2, cooldown_seconds=0.5)
         cb.record_failure()
         cb.record_failure()
-        time.sleep(0.02)
+        time.sleep(0.6)
 
         assert cb.check() is True  # half-open
         cb.record_failure()  # 3rd failure total, >= threshold -> reopens

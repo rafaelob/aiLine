@@ -11,13 +11,14 @@ export default defineConfig({
     pool: 'forks',
     poolOptions: {
       forks: {
-        maxForks: 1,
         minForks: 1,
-        execArgv: ['--max-old-space-size=8192'],
+        maxForks: 1,
+        execArgv: ['--max-old-space-size=4096'],
       },
     },
-    isolate: true,
     fileParallelism: false,
+    restoreMocks: true,
+    teardownTimeout: 5000,
     coverage: {
       provider: 'v8',
       include: ['src/**/*.{ts,tsx}'],

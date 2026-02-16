@@ -1,8 +1,10 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import { motion } from 'motion/react'
 import { cn } from '@/lib/cn'
+import { useConfetti } from '@/hooks/use-confetti'
 import { PlanTabs } from './plan-tabs'
 import { TransformationScorecard } from './transformation-scorecard'
 import { TeacherReviewPanel } from './teacher-review-panel'
@@ -21,6 +23,7 @@ interface PlanResultDisplayProps {
 /**
  * Displays the plan generation result with success celebration,
  * transformation scorecard, teacher review panel, and plan tabs.
+ * Fires confetti on mount to celebrate successful plan generation.
  */
 export function PlanResultDisplay({
   plan,
@@ -31,6 +34,15 @@ export function PlanResultDisplay({
   onReset,
 }: PlanResultDisplayProps) {
   const t = useTranslations('plans')
+  const { fire: fireConfetti } = useConfetti()
+  const confettiFired = useRef(false)
+
+  useEffect(() => {
+    if (!confettiFired.current) {
+      confettiFired.current = true
+      fireConfetti({ x: 0.5, y: 0.3 })
+    }
+  }, [fireConfetti])
 
   return (
     <div className="space-y-6">

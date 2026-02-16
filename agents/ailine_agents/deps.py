@@ -25,6 +25,18 @@ if TYPE_CHECKING:
 
 
 @dataclass(frozen=True)
+class SkillRequestContext:
+    """Per-request skill configuration for dynamic skill loading."""
+
+    selected_skill_names: tuple[str, ...] = ()
+    disabled_skill_names: tuple[str, ...] = ()
+    auto_suggest: bool = True
+    max_skills: int = 6
+    token_budget: int = 2500
+    agent_role: str = "planner"
+
+
+@dataclass(frozen=True)
 class AgentDeps:
     """Dependencies injected into every Pydantic AI agent via RunContext[AgentDeps].
 
@@ -49,6 +61,9 @@ class AgentDeps:
 
     # Tool registry
     tool_registry: list[ToolDef] = field(default_factory=list)
+
+    # Skills runtime context (dynamic skill loading per request)
+    skill_request: SkillRequestContext = field(default_factory=SkillRequestContext)
 
     # SSE streaming (only in streaming context)
     emitter: SSEEventEmitter | None = None
@@ -83,6 +98,7 @@ class AgentDepsFactory:
         emitter: Any = None,
         stream_writer: Any = None,
         circuit_breaker: CircuitBreaker | None = None,
+        skill_request: SkillRequestContext | None = None,
     ) -> AgentDeps:
         from ailine_runtime.tools.registry import build_tool_registry
 
@@ -106,4 +122,5 @@ class AgentDepsFactory:
             emitter=emitter,
             stream_writer=stream_writer,
             circuit_breaker=circuit_breaker or AgentDepsFactory._shared_circuit_breaker,
+            skill_request=skill_request or SkillRequestContext(),
         )

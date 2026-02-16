@@ -107,8 +107,12 @@ async def _run_pipeline(
         # Synchronous writer callback: puts events into the async queue.
         # Because LangGraph node functions are already async, this runs
         # inside the same event loop -- asyncio.Queue.put_nowait is safe.
+        # Wrapped in try/except to prevent QueueFull from crashing the pipeline.
         def stream_writer(event: Any) -> None:
-            queue.put_nowait({"data": event.to_sse_data()})
+            try:
+                queue.put_nowait({"data": event.to_sse_data()})
+            except asyncio.QueueFull:
+                logger.warning("sse_queue_full", run_id=body.run_id)
 
         init_state: RunState = {
             "run_id": body.run_id,

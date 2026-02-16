@@ -55,11 +55,29 @@ export function TopBar() {
           'glass'
         )}
       >
-        {/* Breadcrumbs */}
+        {/* Breadcrumbs — collapse to page title on mobile */}
         <nav aria-label={t('breadcrumbs')} className="flex items-center gap-1.5 text-sm min-w-0">
+          {/* Mobile: show only current page title */}
+          {segments.length > 0 ? (
+            <motion.span
+              key={pathname}
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.2 }}
+              className="text-[var(--color-text)] font-medium truncate sm:hidden"
+            >
+              {tNav.has(segments[segments.length - 1]) ? tNav(segments[segments.length - 1]) : segments[segments.length - 1]}
+            </motion.span>
+          ) : (
+            <span className="text-[var(--color-text)] font-medium sm:hidden">
+              {tNav('dashboard')}
+            </span>
+          )}
+
+          {/* Desktop: full breadcrumb trail */}
           <a
-            href={`/${currentLocale}`}
-            className="text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors shrink-0"
+            href={`/${currentLocale}/dashboard`}
+            className="hidden sm:inline text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors shrink-0"
           >
             {tNav('dashboard')}
           </a>
@@ -68,7 +86,7 @@ export function TopBar() {
             const isLast = i === segments.length - 1
             const label = tNav.has(segment) ? tNav(segment) : segment
             return (
-              <span key={href} className="flex items-center gap-1.5 min-w-0">
+              <span key={href} className="hidden sm:flex items-center gap-1.5 min-w-0">
                 <ChevronIcon />
                 {isLast ? (
                   <motion.span
@@ -154,7 +172,7 @@ export function TopBar() {
               'rounded-[var(--radius-md)]',
               'text-sm text-[var(--color-muted)]',
               'hover:bg-[var(--color-surface-elevated)] hover:text-[var(--color-text)]',
-              'transition-all duration-200',
+              'transition-all duration-200 btn-press',
               showA11y && 'bg-[var(--color-primary)]/5 text-[var(--color-primary)] shadow-[0_0_12px_var(--color-primary)]'
             )}
           >
@@ -166,10 +184,8 @@ export function TopBar() {
         </div>
       </header>
 
-      {/* Accessibility panel overlay */}
-      {showA11y && (
-        <PreferencesPanel onClose={() => setShowA11y(false)} />
-      )}
+      {/* Accessibility panel overlay (portal to body) */}
+      <PreferencesPanel open={showA11y} onClose={() => setShowA11y(false)} />
     </>
   )
 }

@@ -1,125 +1,26 @@
 'use client'
 
-import { useRef, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { usePathname } from 'next/navigation'
-import {
-  motion,
-  useMotionValue,
-  animate,
-  useInView,
-} from 'motion/react'
+import { motion } from 'motion/react'
 import { cn } from '@/lib/cn'
 import { containerVariants, itemVariants } from '@/lib/motion-variants'
+import { DEMO_TRACES, DEMO_STUDENT_COUNT } from '@/lib/demo-data'
 import { useDemoStore } from '@/stores/demo-store'
 import { API_BASE, getAuthHeaders } from '@/lib/api'
-
-/* ===== Types ===== */
-
-interface TraceRecord {
-  run_id: string
-  status: string
-  total_time_ms: number
-  node_count: number
-  final_score: number | null
-  model_used: string
-  refinement_count: number
-}
-
-/* ===== Animated Counter (spring physics count-up on scroll) ===== */
-
-function AnimatedCounter({
-  value,
-  suffix = '',
-}: {
-  value: number
-  suffix?: string
-}) {
-  const ref = useRef<HTMLSpanElement>(null)
-  const motionValue = useMotionValue(0)
-  const isInView = useInView(ref, { once: true, margin: '-10px' })
-
-  useEffect(() => {
-    if (isInView) {
-      const controls = animate(motionValue, value, {
-        type: 'spring',
-        stiffness: 100,
-        damping: 15,
-        mass: 0.5,
-      })
-      return () => controls.stop()
-    }
-  }, [value, isInView, motionValue])
-
-  useEffect(() => {
-    const unsubscribe = motionValue.on('change', (latest) => {
-      if (ref.current) {
-        ref.current.textContent = `${Math.round(latest)}${suffix}`
-      }
-    })
-    return unsubscribe
-  }, [motionValue, suffix])
-
-  return <span ref={ref}>{`${value}${suffix}`}</span>
-}
-
-/* ===== Stagger animation variants ===== */
-
-/* ===== Plan History Card ===== */
-
-function PlanHistoryCard({
-  trace,
-  localePrefix,
-  t,
-}: {
-  trace: TraceRecord
-  localePrefix: string
-  t: ReturnType<typeof useTranslations<'dashboard'>>
-}) {
-  const isCompleted = trace.status === 'completed'
-  const timeFormatted = `${(trace.total_time_ms / 1000).toFixed(1)}s`
-  const shortId = trace.run_id.slice(0, 8)
-
-  return (
-    <a
-      href={`${localePrefix}/plans`}
-      className="glass card-hover rounded-xl p-4 flex flex-col gap-2 group"
-    >
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-mono text-[var(--color-muted)] truncate">
-          {shortId}
-        </span>
-        <span
-          className={cn(
-            'text-[10px] font-semibold px-2 py-0.5 rounded-full',
-            isCompleted
-              ? 'bg-[color-mix(in_srgb,var(--color-success)_15%,transparent)] text-[var(--color-success)]'
-              : 'bg-[color-mix(in_srgb,var(--color-error,#ef4444)_15%,transparent)] text-[var(--color-error,#ef4444)]'
-          )}
-        >
-          {isCompleted ? t('plan_status_completed') : t('plan_status_failed')}
-        </span>
-      </div>
-
-      <div className="flex items-center gap-2 text-xs text-[var(--color-muted)]">
-        <span className="px-1.5 py-0.5 rounded bg-[var(--color-surface)] text-[10px] font-medium truncate max-w-[120px]">
-          {trace.model_used}
-        </span>
-      </div>
-
-      <div className="flex items-center justify-between mt-auto pt-1">
-        <span className="text-xs text-[var(--color-muted)]">
-          {t('plan_time')}: {timeFormatted}
-        </span>
-        {trace.final_score !== null && (
-          <span className="text-xs font-semibold text-[var(--color-text)]">
-            {t('plan_score')}: {trace.final_score}
-          </span>
-        )}
-      </div>
-    </a>
-  )
-}
+import { AnimatedCounter } from '@/components/shared/animated-counter'
+import {
+  StatPlansIcon,
+  StatStudentsIcon,
+  StatScoreIcon,
+  PlanIcon,
+  UploadIcon,
+  TutorIcon,
+  ArrowRightIcon,
+  PlayIcon,
+} from './dashboard-icons'
+import { PlanHistoryCard, type TraceRecord } from './plan-history-card'
 
 /**
  * Dashboard content with mesh gradient hero, glass stat cards with rotating
@@ -130,7 +31,7 @@ export function DashboardContent() {
   const t = useTranslations('dashboard')
   const pathname = usePathname()
   const [spotlightPos, setSpotlightPos] = useState<Record<string, { x: number; y: number }>>({})
-  const { dismissed, dismiss } = useDemoStore()
+  const { dismissed, dismiss, isApiOffline, setApiOffline } = useDemoStore()
 
   /* ===== Live data fetch ===== */
   const [traces, setTraces] = useState<TraceRecord[]>([])
@@ -154,13 +55,18 @@ export function DashboardContent() {
           setStudentCount(prog.students?.length ?? 0)
         }
       } catch {
-        // Silent fallback — show 0 values
+        if (!cancelled) {
+          setTraces([...DEMO_TRACES] as TraceRecord[])
+          setStudentCount(DEMO_STUDENT_COUNT)
+          setApiOffline(true)
+        }
       } finally {
         if (!cancelled) setLoading(false)
       }
     }
     fetchData()
     return () => { cancelled = true }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once on mount; setters are stable
   }, [])
 
   const localeMatch = pathname.match(/^\/([^/]+)/)
@@ -193,13 +99,23 @@ export function DashboardContent() {
 
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
+      {/* API offline demo mode banner */}
+      {isApiOffline && (
+        <motion.div variants={itemVariants} className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-[var(--color-surface-elevated)] border border-[var(--color-border)] text-xs text-[var(--color-muted)]">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0">
+            <circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" />
+          </svg>
+          <span className="truncate">{t('demo_mode')}</span>
+        </motion.div>
+      )}
+
       {/* Demo banner */}
       {!dismissed && (
         <motion.div
           variants={itemVariants}
           className={cn(
-            'relative overflow-hidden gradient-border-glass rounded-2xl p-5',
-            'flex items-center gap-4',
+            'relative overflow-hidden gradient-border-glass rounded-2xl p-4 sm:p-5',
+            'flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4',
           )}
         >
           <div
@@ -216,7 +132,7 @@ export function DashboardContent() {
           <a
             href={`${localePrefix}/plans?demo=true`}
             className={cn(
-              'shrink-0 px-4 py-2.5 rounded-xl btn-shimmer',
+              'shrink-0 px-4 py-2.5 rounded-xl btn-shimmer btn-press',
               'text-sm font-semibold text-[var(--color-on-primary)]',
             )}
             style={{ background: 'var(--gradient-hero)' }}
@@ -427,7 +343,7 @@ export function DashboardContent() {
               href={`${localePrefix}/plans`}
               className={cn(
                 'inline-flex items-center gap-2 px-6 py-3',
-                'rounded-xl btn-shimmer',
+                'rounded-xl btn-shimmer btn-press',
                 'text-sm font-semibold',
                 'text-[var(--color-on-primary)]',
                 'shadow-[var(--shadow-md)]',
@@ -442,84 +358,5 @@ export function DashboardContent() {
         )}
       </motion.section>
     </motion.div>
-  )
-}
-
-/* ===== Stat Icons ===== */
-
-function StatPlansIcon() {
-  return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <polyline points="14 2 14 8 20 8" />
-    </svg>
-  )
-}
-
-function StatStudentsIcon() {
-  return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-    </svg>
-  )
-}
-
-function StatScoreIcon() {
-  return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M12 20V10" />
-      <path d="M18 20V4" />
-      <path d="M6 20v-4" />
-    </svg>
-  )
-}
-
-/* ===== Quick Action Icons ===== */
-
-function PlanIcon() {
-  return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <polyline points="14 2 14 8 20 8" />
-      <line x1="12" y1="18" x2="12" y2="12" />
-      <line x1="9" y1="15" x2="15" y2="15" />
-    </svg>
-  )
-}
-
-function UploadIcon() {
-  return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-      <polyline points="17 8 12 3 7 8" />
-      <line x1="12" y1="3" x2="12" y2="15" />
-    </svg>
-  )
-}
-
-function TutorIcon() {
-  return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-    </svg>
-  )
-}
-
-function ArrowRightIcon({ className }: { className?: string }) {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
-      <path d="M6 3l5 5-5 5" />
-    </svg>
-  )
-}
-
-function PlayIcon() {
-  return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M8 5v14l11-7z" fill="white" />
-    </svg>
   )
 }

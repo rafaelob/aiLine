@@ -1,7 +1,6 @@
 /** Shared API configuration for all client-side fetch calls. */
 
-export const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
+export const API_BASE = '/api'
 
 /** Build auth headers from available token sources. */
 export function getAuthHeaders(): Record<string, string> {

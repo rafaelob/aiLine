@@ -7,8 +7,9 @@ Hexagonal (Ports-and-Adapters). Domain core has zero framework imports.
 - **Domain:** entities, value objects, domain services (pure Pydantic)
 - **Ports:** Protocol interfaces (ChatLLM, Embeddings, VectorStore, UnitOfWork, CurriculumProvider, EventBus, STT, TTS, SignRecognition, ObjectStorage)
 - **Adapters:** concrete implementations (Anthropic, OpenAI, Gemini, pgvector, ChromaDB, Qdrant, etc.)
-- **Application:** use cases orchestrating domain + ports (plan generation, tutor chat, material ingestion, RAG query, sign recognition, skill registry)
+- **Application:** use cases orchestrating domain + ports (plan generation, tutor chat, material ingestion, RAG query, sign recognition, skill runtime)
 - **Infrastructure:** FastAPI routers, SQLAlchemy repos, LangGraph workflows
+- **Frontend:** Next.js 16 App Router with route groups: `[locale]/` (public landing) + `[locale]/(app)/` (authenticated shell with sidebar/topbar)
 
 ## Data Flows
 
@@ -68,6 +69,17 @@ Format: `provider:model-name` (anthropic, google-gla, openai, openrouter).
 - **SSE:** 14 events, `{run_id, seq, ts, type, stage, payload}` envelope. Terminal guarantee via RunContext (ADR-055). Redis ZSET replay (ADR-054). asyncio.Lock for thread safety.
 - **Branch errors:** `safe_branch()` -> `{ok, payload, error}`. Fan-in on partial success.
 - **TenantContext:** `teacher_id` from JWT only, `TeacherId` NewType wrapper, all repos require it.
+
+### Skills Runtime (agentskills.io)
+
+17 skills loaded from filesystem, validated against agentskills.io spec. Per-request activation via SkillRequestContext:
+
+1. SkillRequestContext (selected/disabled/auto_suggest/max_skills/token_budget/agent_role)
+2. AccessibilityPolicy maps 7 profiles -> 17 skills (must/should/nice tiers + human_review_triggers)
+3. SkillPromptComposer: priority sort -> header -> soft-cap -> proportional truncate -> drop lowest
+4. SkillCrafter agent: multi-turn conversational skill creation by teachers -> CraftedSkillOutput
+
+Agents: Planner, Executor, QualityGate, Tutor, SkillCrafter (5 total, Pydantic AI 1.58.0)
 
 ## ADR Log
 

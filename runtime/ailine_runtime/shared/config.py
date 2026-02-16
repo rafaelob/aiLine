@@ -169,10 +169,13 @@ class Settings(BaseSettings):
 
 
 _settings: Settings | None = None
+_settings_lock = __import__("threading").Lock()
 
 
 def get_settings() -> Settings:
     global _settings
     if _settings is None:
-        _settings = Settings()  # type: ignore[call-arg]  # pydantic validation_alias vs mypy
+        with _settings_lock:
+            if _settings is None:
+                _settings = Settings()  # type: ignore[call-arg]  # pydantic validation_alias vs mypy
     return _settings

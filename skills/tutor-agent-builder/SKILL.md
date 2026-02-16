@@ -3,13 +3,12 @@ name: tutor-agent-builder
 description: >
   Ajuda o professor a configurar um Tutor Agent por aluno (ou grupo),
   com disciplina, materiais (RAG) e necessidades de acessibilidade.
+license: Apache-2.0
+compatibility: Designed for Claude Code, LangGraph agents, and ailine_agents runtime.
 metadata:
-  version: "0.1.0"
-  compatibility:
-    runtimes: [claude_code, claude_agent_sdk, deepagents, langgraph]
-    providers: [anthropic]
-  recommended_models:
-    - claude-opus-4-6
+  author: "ailine"
+  version: "1.0.0"
+allowed-tools: Read
 ---
 
 # Skill: Tutor Agent Builder (AiLine)

@@ -28,6 +28,7 @@ vi.mock('motion/react', () => ({
   useMotionValue: () => ({ get: () => 0, set: () => {}, on: () => () => {} }),
   animate: () => ({ stop: () => {} }),
   useInView: () => false,
+  useReducedMotion: () => false,
 }))
 
 /* ===== Fetch mock helpers ===== */
@@ -230,14 +231,25 @@ describe('DashboardContent', () => {
     })
   })
 
-  it('handles fetch error gracefully', async () => {
+  it('handles fetch error by showing demo data fallback', async () => {
+    vi.stubGlobal('fetch', mockFetchError())
+    const { container } = render(<DashboardContent />)
+    await waitFor(() => {
+      // Should still render stat cards — no crash
+      expect(screen.getByText('dashboard.stat_plans')).toBeInTheDocument()
+      // Demo traces should populate plan history grid (6 demo traces)
+      const grid = container.querySelector('[data-testid="plan-history-grid"]')
+      expect(grid).toBeInTheDocument()
+      const cards = grid?.querySelectorAll('.glass.card-hover')
+      expect(cards?.length).toBe(6)
+    })
+  })
+
+  it('shows demo mode banner when API is offline', async () => {
     vi.stubGlobal('fetch', mockFetchError())
     render(<DashboardContent />)
     await waitFor(() => {
-      // Should still render with 0 values — no crash
-      expect(screen.getByText('dashboard.stat_plans')).toBeInTheDocument()
-      // Empty state should show (0 traces)
-      expect(screen.getByText('dashboard.no_plans')).toBeInTheDocument()
+      expect(screen.getByText('dashboard.demo_mode')).toBeInTheDocument()
     })
   })
 

@@ -83,10 +83,10 @@ describe('MobileNav', () => {
     expect(within(menu).getByText('nav.settings')).toBeInTheDocument()
   })
 
-  it('marks dashboard as active on root path', () => {
+  it('dashboard link points to /dashboard', () => {
     render(<MobileNav />)
     const links = screen.getAllByRole('link')
-    expect(links[0]).toHaveAttribute('aria-current', 'page')
+    expect(links[0]).toHaveAttribute('href', '/pt-BR/dashboard')
   })
 
   it('toggles overflow menu closed on second click', async () => {

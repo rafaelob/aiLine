@@ -123,7 +123,7 @@ describe('MermaidRenderer', () => {
   })
 
   it('shows error when mermaid render fails', async () => {
-    mockRender.mockRejectedValueOnce(new Error('Invalid syntax'))
+    mockRender.mockRejectedValue(new Error('Invalid syntax'))
 
     render(<MermaidRenderer code="invalid mermaid code" />)
     await waitFor(() => {

@@ -108,6 +108,8 @@ async def plan_review(plan_id: str, body: PlanReviewIn):
     store = get_review_store()
 
     existing = store.get_review(plan_id)
+    if existing and existing.teacher_id != teacher_id:
+        raise HTTPException(status_code=403, detail="Not authorized to review this plan")
     if not existing:
         store.create_review(plan_id, teacher_id)
 
@@ -125,11 +127,13 @@ async def plan_review(plan_id: str, body: PlanReviewIn):
 @router.get("/{plan_id}/review")
 async def plan_review_get(plan_id: str):
     """Get the review status for a plan."""
-    _resolve_teacher_id()
+    teacher_id = _resolve_teacher_id()
     store = get_review_store()
     review = store.get_review(plan_id)
     if not review:
         raise HTTPException(status_code=404, detail="No review found for this plan")
+    if review.teacher_id != teacher_id:
+        raise HTTPException(status_code=403, detail="Not authorized to access this review")
     return review.model_dump()
 
 

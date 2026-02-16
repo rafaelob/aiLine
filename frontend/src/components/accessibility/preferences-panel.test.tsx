@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { PreferencesPanel } from './preferences-panel'
 
@@ -14,7 +14,16 @@ vi.mock('motion/react', () => ({
       )
     },
   },
+  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }))
+
+vi.mock('react-dom', async () => {
+  const actual = await vi.importActual('react-dom')
+  return {
+    ...actual,
+    createPortal: (node: React.ReactNode) => node,
+  }
+})
 
 const mockSetTheme = vi.fn()
 const mockSetFontSize = vi.fn()
@@ -45,60 +54,63 @@ describe('PreferencesPanel', () => {
     vi.clearAllMocks()
   })
 
-  it('renders as a dialog with aria-modal', () => {
-    render(<PreferencesPanel onClose={mockOnClose} />)
+  it('renders as a dialog with aria-modal when open', () => {
+    render(<PreferencesPanel open={true} onClose={mockOnClose} />)
     const dialog = screen.getByRole('dialog')
     expect(dialog).toBeInTheDocument()
     expect(dialog).toHaveAttribute('aria-modal', 'true')
   })
 
+  it('does not render dialog when closed', () => {
+    render(<PreferencesPanel open={false} onClose={mockOnClose} />)
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
   it('renders the title from translations', () => {
-    render(<PreferencesPanel onClose={mockOnClose} />)
+    render(<PreferencesPanel open={true} onClose={mockOnClose} />)
     expect(screen.getByText('accessibility.title')).toBeInTheDocument()
   })
 
   it('renders a close button', () => {
-    render(<PreferencesPanel onClose={mockOnClose} />)
+    render(<PreferencesPanel open={true} onClose={mockOnClose} />)
     const closeButton = screen.getByLabelText('accessibility.close')
     expect(closeButton).toBeInTheDocument()
   })
 
   it('calls onClose when close button is clicked', async () => {
-    render(<PreferencesPanel onClose={mockOnClose} />)
+    render(<PreferencesPanel open={true} onClose={mockOnClose} />)
     const closeButton = screen.getByLabelText('accessibility.close')
     await user.click(closeButton)
     expect(mockOnClose).toHaveBeenCalledTimes(1)
   })
 
   it('renders theme radio options', () => {
-    render(<PreferencesPanel onClose={mockOnClose} />)
+    render(<PreferencesPanel open={true} onClose={mockOnClose} />)
     const radioGroups = screen.getAllByRole('radiogroup')
     expect(radioGroups.length).toBeGreaterThanOrEqual(1)
   })
 
   it('renders font size options', () => {
-    render(<PreferencesPanel onClose={mockOnClose} />)
-    // Font sizes: small, medium, large, xlarge
+    render(<PreferencesPanel open={true} onClose={mockOnClose} />)
     const radios = screen.getAllByRole('radio')
     expect(radios.length).toBeGreaterThanOrEqual(4)
   })
 
   it('renders motion preference options', () => {
-    render(<PreferencesPanel onClose={mockOnClose} />)
+    render(<PreferencesPanel open={true} onClose={mockOnClose} />)
     expect(screen.getByText('accessibility.motion_full')).toBeInTheDocument()
     expect(screen.getByText('accessibility.motion_reduced')).toBeInTheDocument()
   })
 
-  it('calls onClose on Escape key', async () => {
-    render(<PreferencesPanel onClose={mockOnClose} />)
+  it('calls onClose on Escape key', () => {
+    render(<PreferencesPanel open={true} onClose={mockOnClose} />)
     const dialog = screen.getByRole('dialog')
-    dialog.focus()
-    await user.keyboard('{Escape}')
+    fireEvent.keyDown(dialog, { key: 'Escape' })
     expect(mockOnClose).toHaveBeenCalled()
   })
 
   it('renders focus mode and bionic reading toggle switches', () => {
-    render(<PreferencesPanel onClose={mockOnClose} />)
+    render(<PreferencesPanel open={true} onClose={mockOnClose} />)
     const switches = screen.getAllByRole('switch')
     expect(switches).toHaveLength(2)
     expect(switches[0]).toHaveAttribute('aria-checked', 'false')
@@ -106,14 +118,14 @@ describe('PreferencesPanel', () => {
   })
 
   it('calls toggleFocusMode when focus mode switch is clicked', async () => {
-    render(<PreferencesPanel onClose={mockOnClose} />)
+    render(<PreferencesPanel open={true} onClose={mockOnClose} />)
     const switches = screen.getAllByRole('switch')
     await user.click(switches[0])
     expect(mockToggleFocusMode).toHaveBeenCalledTimes(1)
   })
 
   it('calls toggleBionicReading when bionic reading switch is clicked', async () => {
-    render(<PreferencesPanel onClose={mockOnClose} />)
+    render(<PreferencesPanel open={true} onClose={mockOnClose} />)
     const switches = screen.getAllByRole('switch')
     await user.click(switches[1])
     expect(mockToggleBionicReading).toHaveBeenCalledTimes(1)

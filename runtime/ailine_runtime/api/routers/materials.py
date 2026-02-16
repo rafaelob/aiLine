@@ -14,7 +14,6 @@ router = APIRouter()
 
 
 class MaterialIn(BaseModel):
-    teacher_id: str
     subject: str
     title: str
     content: str

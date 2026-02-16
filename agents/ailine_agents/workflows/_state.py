@@ -42,6 +42,11 @@ class RunState(_RunStateRequired, total=False):
     # Transformation scorecard computed after executor.
     scorecard: dict[str, Any] | None
 
+    # Skills runtime (dynamic skill loading)
+    skill_request: dict[str, Any] | None
+    activated_skills: list[dict[str, Any]] | None
+    skill_prompt_fragment: str | None
+
 
 class _TutorGraphStateRequired(TypedDict):
     """Required fields for the tutor graph state."""
@@ -64,3 +69,8 @@ class TutorGraphState(_TutorGraphStateRequired, total=False):
 
     # Workflow timing: monotonic timestamp when the workflow started.
     started_at: float | None
+
+    # Skills runtime (dynamic skill loading)
+    skill_request: dict[str, Any] | None
+    activated_skills: list[dict[str, Any]] | None
+    skill_prompt_fragment: str | None

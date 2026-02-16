@@ -62,10 +62,10 @@ describe('Sidebar', () => {
     expect(links.length).toBeGreaterThanOrEqual(5)
   })
 
-  it('marks the dashboard as active on root path', () => {
+  it('dashboard link points to /dashboard', () => {
     render(<Sidebar />)
     const dashLink = screen.getAllByRole('link')[0]
-    expect(dashLink).toHaveAttribute('aria-current', 'page')
+    expect(dashLink).toHaveAttribute('href', '/pt-BR/dashboard')
   })
 
   it('renders collapse toggle button', () => {

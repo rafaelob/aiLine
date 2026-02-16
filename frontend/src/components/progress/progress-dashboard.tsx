@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
-import { motion, type Variants } from 'motion/react'
+import { motion } from 'motion/react'
 import { cn } from '@/lib/cn'
 import { EmptyState } from '@/components/shared/empty-state'
 import { SkeletonCard } from '@/components/shared/skeleton'

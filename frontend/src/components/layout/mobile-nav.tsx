@@ -33,7 +33,7 @@ export function MobileNav() {
 
   /** Primary items shown directly in the bottom bar. */
   const primaryItems: MobileNavItem[] = [
-    { key: 'dashboard', href: '', icon: <MobileDashboardIcon /> },
+    { key: 'dashboard', href: '/dashboard', icon: <MobileDashboardIcon /> },
     { key: 'plans', href: '/plans', icon: <MobilePlansIcon /> },
     { key: 'tutors', href: '/tutors', icon: <MobileTutorsIcon /> },
     { key: 'progress', href: '/progress', icon: <MobileProgressIcon /> },
@@ -49,8 +49,8 @@ export function MobileNav() {
 
   function isActive(href: string): boolean {
     const fullPath = `${localePrefix}${href}`
-    if (href === '') {
-      return pathname === localePrefix || pathname === `${localePrefix}/`
+    if (href === '/dashboard') {
+      return pathname === `${localePrefix}/dashboard` || pathname === `${localePrefix}/dashboard/`
     }
     return pathname.startsWith(fullPath)
   }
@@ -107,9 +107,10 @@ export function MobileNav() {
                   href={`${localePrefix}${item.href}` as any}
                   aria-current={active ? 'page' : undefined}
                   className={cn(
-                    'relative flex flex-col items-center gap-1 py-2.5 px-1',
+                    'relative flex flex-col items-center gap-1 py-3 px-1',
                     'text-[10px] font-semibold transition-colors duration-200',
                     'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]',
+                    'btn-press',
                     active
                       ? 'text-[var(--color-primary)]'
                       : 'text-[var(--color-muted)]'
@@ -145,9 +146,10 @@ export function MobileNav() {
               aria-haspopup="true"
               aria-label={t('more_menu_label')}
               className={cn(
-                'relative flex flex-col items-center gap-1 py-2.5 px-1 w-full',
+                'relative flex flex-col items-center gap-1 py-3 px-1 w-full',
                 'text-[10px] font-semibold transition-colors duration-200',
                 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]',
+                'btn-press',
                 overflowActive || moreOpen
                   ? 'text-[var(--color-primary)]'
                   : 'text-[var(--color-muted)]'

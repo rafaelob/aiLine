@@ -8,6 +8,7 @@ import { usePipelineSSE } from '@/hooks/use-pipeline-sse'
 import { PipelineViewer } from '@/components/pipeline/pipeline-viewer'
 import { WizardSteps } from './wizard-steps'
 import { PlanResultDisplay } from './plan-result-display'
+import { StreamingThought } from './streaming-thought'
 import type { PlanGenerationRequest } from '@/types/plan'
 import { DEMO_PROMPT, DEMO_GRADE, DEMO_SUBJECT, DEMO_PROFILE } from '@/lib/demo-data'
 import { useDemoStore } from '@/stores/demo-store'
@@ -306,6 +307,7 @@ export function PlanGenerationFlow() {
       {/* Pipeline viewer during generation */}
       {showPipeline && (
         <div className="space-y-4">
+          <StreamingThought stages={stages} isRunning={isRunning} />
           <PipelineViewer stages={stages} isRunning={isRunning} error={error} />
           <div className="flex justify-center">
             <button

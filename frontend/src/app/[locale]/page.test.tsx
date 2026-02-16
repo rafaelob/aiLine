@@ -1,49 +1,32 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import DashboardPage from './page'
+import HomePage from './page'
 
-vi.mock('motion/react', () => ({
-  motion: {
-    a: ({ children, ...rest }: Record<string, unknown>) => {
-      const { initial: _i, animate: _a, transition: _t, ...safe } = rest
-      return <a {...safe}>{children as React.ReactNode}</a>
-    },
-  },
-}))
-
-vi.mock('@/components/dashboard/dashboard-content', () => ({
-  DashboardContent: () => (
-    <div data-testid="dashboard-content">Dashboard Content</div>
+vi.mock('@/components/landing/landing-page', () => ({
+  LandingPage: (props: Record<string, string>) => (
+    <div data-testid="landing-page">
+      <span>{props.heroTitle}</span>
+      <span>{props.heroSubtitle}</span>
+    </div>
   ),
 }))
 
-describe('DashboardPage', () => {
-  it('renders the DashboardContent component', () => {
-    render(<DashboardPage />)
-    expect(screen.getByTestId('dashboard-content')).toBeInTheDocument()
+describe('HomePage (Landing)', () => {
+  it('renders the LandingPage component', async () => {
+    const page = await HomePage({ params: Promise.resolve({ locale: 'en' }) })
+    render(page)
+    expect(screen.getByTestId('landing-page')).toBeInTheDocument()
   })
 
-  it('wraps content in a max-width container', () => {
-    const { container } = render(<DashboardPage />)
-    const wrapper = container.firstChild as HTMLElement
-    expect(wrapper.className).toContain('max-w-5xl')
+  it('passes translated hero title', async () => {
+    const page = await HomePage({ params: Promise.resolve({ locale: 'en' }) })
+    render(page)
+    expect(screen.getByText('landing.hero_title')).toBeInTheDocument()
   })
 
-  it('applies mx-auto for centering', () => {
-    const { container } = render(<DashboardPage />)
-    const wrapper = container.firstChild as HTMLElement
-    expect(wrapper.className).toContain('mx-auto')
-  })
-
-  it('renders a single root element', () => {
-    const { container } = render(<DashboardPage />)
-    expect(container.children).toHaveLength(1)
-  })
-
-  it('renders DashboardContent as the only child', () => {
-    const { container } = render(<DashboardPage />)
-    const wrapper = container.firstChild as HTMLElement
-    expect(wrapper.children).toHaveLength(1)
-    expect(wrapper.querySelector('[data-testid="dashboard-content"]')).toBeInTheDocument()
+  it('passes translated hero subtitle', async () => {
+    const page = await HomePage({ params: Promise.resolve({ locale: 'en' }) })
+    render(page)
+    expect(screen.getByText('landing.hero_subtitle')).toBeInTheDocument()
   })
 })

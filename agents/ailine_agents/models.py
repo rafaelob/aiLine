@@ -60,3 +60,50 @@ class ExecutorResult(BaseModel):
     score: int = 0
     human_review_required: bool = False
     summary_bullets: list[str] = Field(default_factory=list)
+
+
+class CraftedSkillOutput(BaseModel):
+    """Output from the SkillCrafter agent (multi-turn conversation).
+
+    When ``done`` is False the agent is still gathering information and
+    ``clarifying_questions`` contains 1-5 follow-up questions for the
+    teacher.  When ``done`` is True, ``skill_md`` holds the complete
+    SKILL.md content ready for persistence.
+    """
+
+    done: bool = Field(
+        default=False,
+        description="True when skill is complete, False when more info needed",
+    )
+    clarifying_questions: list[str] = Field(
+        default_factory=list,
+        description="Questions to ask teacher (1-5)",
+    )
+    proposed_name: str = Field(
+        default="",
+        description="Slug: lowercase, digits, hyphens only, 3-64 chars",
+    )
+    description: str = Field(
+        default="",
+        description="Short skill description for frontmatter",
+    )
+    metadata: dict[str, str] = Field(
+        default_factory=dict,
+        description="String-only key-value metadata",
+    )
+    allowed_tools: list[str] = Field(
+        default_factory=list,
+        description="Pre-approved tool names",
+    )
+    disclosure_summary: str = Field(
+        default="",
+        description="~100 token summary for matching/preview",
+    )
+    skill_md: str = Field(
+        default="",
+        description="Complete SKILL.md content when done=True",
+    )
+    warnings: list[str] = Field(
+        default_factory=list,
+        description="Non-blocking validation warnings",
+    )

@@ -209,7 +209,7 @@ describe('SessionSummary', () => {
 
   it('has proper ARIA landmarks for each section', () => {
     render(<SessionSummary plan={mockPlanWithStandards} />)
-    const sections = screen.getAllByRole('region', { hidden: true }).length
+    screen.getAllByRole('region', { hidden: true })
     // At minimum, check named sections exist via their headings
     expect(screen.getByText('session.standards_coverage')).toBeInTheDocument()
     expect(screen.getByText('session.adaptations_applied')).toBeInTheDocument()

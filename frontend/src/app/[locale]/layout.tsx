@@ -3,9 +3,6 @@ import { NextIntlClientProvider } from 'next-intl'
 import { getMessages, getTranslations } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 import { routing } from '@/i18n/routing'
-import { Sidebar } from '@/components/layout/sidebar'
-import { TopBar } from '@/components/layout/topbar'
-import { MobileNav } from '@/components/layout/mobile-nav'
 import { A11yHydrator } from '@/components/accessibility/a11y-hydrator'
 import { CognitiveCurtain } from '@/components/accessibility/cognitive-curtain'
 import { RouteAnnouncer } from '@/components/accessibility/route-announcer'
@@ -83,8 +80,9 @@ export async function generateMetadata({
 }
 
 /**
- * Root layout with next-intl provider, sidebar, topbar, and mobile nav.
- * Locale extracted from dynamic route segment.
+ * Root locale layout — providers only.
+ * App shell (sidebar, topbar, mobile-nav) is in (app)/layout.tsx.
+ * Landing page renders without app shell.
  * params must be awaited (Next.js 16 requirement).
  */
 export default async function LocaleLayout({ children, params }: LocaleLayoutProps) {
@@ -95,7 +93,6 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
   }
 
   const messages = await getMessages()
-  const t = await getTranslations('common')
 
   return (
     <html lang={locale}>
@@ -110,34 +107,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
           <CognitiveCurtain />
           <RouteAnnouncer />
           <ServiceWorkerRegistrar />
-
-          {/* Skip navigation link for keyboard / screen reader users */}
-          <a href="#main-content" className="skip-link">
-            {t('skipToContent')}
-          </a>
-
-          <div className="flex h-screen overflow-hidden">
-            {/* Sidebar navigation (hidden on mobile) */}
-            <div className="hidden md:block">
-              <Sidebar />
-            </div>
-
-            {/* Main content area */}
-            <div className="flex flex-1 flex-col overflow-hidden">
-              <TopBar />
-
-              <main
-                id="main-content"
-                role="main"
-                className="flex-1 overflow-y-auto p-6 pb-20 md:pb-6"
-              >
-                {children}
-              </main>
-            </div>
-          </div>
-
-          {/* Mobile bottom navigation */}
-          <MobileNav />
+          {children}
           <InstallPrompt />
           <ToastProvider />
           <DemoTooltip />

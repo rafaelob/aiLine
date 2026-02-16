@@ -4,10 +4,12 @@ import userEvent from '@testing-library/user-event'
 import { TopBar } from './topbar'
 
 vi.mock('@/components/accessibility/preferences-panel', () => ({
-  PreferencesPanel: ({ onClose }: { onClose: () => void }) => (
-    <div data-testid="preferences-panel">
-      <button onClick={onClose}>Close Panel</button>
-    </div>
+  PreferencesPanel: ({ open, onClose }: { open: boolean; onClose: () => void }) => (
+    open ? (
+      <div data-testid="preferences-panel">
+        <button onClick={onClose}>Close Panel</button>
+      </div>
+    ) : null
   ),
 }))
 

@@ -121,7 +121,7 @@ export default function MermaidRenderer({ code, className }: MermaidRendererProp
     return () => {
       cancelled = true
     }
-  }, [code, theme, containerId])
+  }, [code, theme, containerId, t])
 
   const handleCopy = useCallback(async () => {
     try {

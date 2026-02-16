@@ -83,7 +83,7 @@ export function CommandPalette() {
   const items: CommandItem[] = useMemo(
     () => [
       // Navigation
-      { id: 'nav-dashboard', label: tNav('dashboard'), category: 'navigation', icon: <NavIcon d="M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z" />, action: () => navigate('') },
+      { id: 'nav-dashboard', label: tNav('dashboard'), category: 'navigation', icon: <NavIcon d="M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z" />, action: () => navigate('/dashboard') },
       { id: 'nav-plans', label: tNav('plans'), category: 'navigation', icon: <NavIcon d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />, action: () => navigate('/plans') },
       { id: 'nav-tutors', label: tNav('tutors'), category: 'navigation', icon: <NavIcon d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />, action: () => navigate('/tutors') },
       { id: 'nav-materials', label: tNav('materials'), category: 'navigation', icon: <NavIcon d="M4 19.5A2.5 2.5 0 016.5 17H20" />, action: () => navigate('/materials') },

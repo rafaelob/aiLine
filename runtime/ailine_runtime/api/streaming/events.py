@@ -45,6 +45,9 @@ class SSEEventType(StrEnum):
     TOOL_START = "tool.started"
     TOOL_COMPLETE = "tool.completed"
 
+    # AI Receipt (trust chain summary)
+    AI_RECEIPT = "ai_receipt"
+
     # Heartbeat
     HEARTBEAT = "heartbeat"
 
@@ -172,6 +175,10 @@ class SSEEventEmitter:
         if payload:
             merged.update(payload)
         return self.emit(SSEEventType.QUALITY_DECISION, "validate", merged)
+
+    def ai_receipt(self, payload: dict[str, Any] | None = None) -> SSEEvent:
+        """Convenience: emit AI_RECEIPT with trust chain summary."""
+        return self.emit(SSEEventType.AI_RECEIPT, "receipt", payload)
 
     def heartbeat(self) -> SSEEvent:
         return self.emit(SSEEventType.HEARTBEAT, "heartbeat", {"status": "alive"})

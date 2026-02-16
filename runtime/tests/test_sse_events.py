@@ -25,9 +25,9 @@ from ailine_runtime.api.streaming.events import SSEEvent, SSEEventEmitter, SSEEv
 class TestSSEEventType:
     """Verify all 14 event types are defined with correct values."""
 
-    def test_has_14_event_types(self) -> None:
+    def test_has_15_event_types(self) -> None:
         members = list(SSEEventType)
-        assert len(members) == 14
+        assert len(members) == 15
 
     def test_run_lifecycle_events(self) -> None:
         assert SSEEventType.RUN_START == "run.started"

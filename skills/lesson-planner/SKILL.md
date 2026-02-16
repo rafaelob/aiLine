@@ -3,16 +3,12 @@ name: lesson-planner
 description: >
   Gera planos de aula e trilhas de estudo estruturadas a partir de materiais reais,
   com objetivos, etapas cronometradas, atividades, avaliação e acessibilidade (TEA/TDAH/learning/auditiva/visual).
+license: Apache-2.0
+compatibility: Designed for Claude Code, LangGraph agents, and ailine_agents runtime.
 metadata:
-  version: "0.3.0"
-  compatibility:
-    runtimes: [claude_code, claude_agent_sdk, deepagents, langgraph]
-    providers: [anthropic]
-  recommended_models:
-    - claude-opus-4-6
-    - claude-opus-4-6[1m]
-  optional_models:
-    - claude-sonnet-4-5-20250929
+  author: "ailine"
+  version: "1.0.0"
+allowed-tools: Read
 ---
 
 # Skill: Lesson Planner (AiLine)

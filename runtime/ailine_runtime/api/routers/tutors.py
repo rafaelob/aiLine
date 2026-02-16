@@ -21,7 +21,6 @@ router = APIRouter()
 
 
 class TutorCreateIn(BaseModel):
-    teacher_id: str
     subject: str
     grade: str
     standard: str = "BNCC"

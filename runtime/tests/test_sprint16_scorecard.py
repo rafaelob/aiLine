@@ -241,5 +241,8 @@ class TestMakeScorecardNode:
         }
 
         result = node_fn(state, self._make_config())
-        # Should not crash, scorecard should be None
-        assert result["scorecard"] is None
+        # Should not crash; returns a structured fallback with error info
+        scorecard = result["scorecard"]
+        assert scorecard is not None
+        assert "error" in scorecard
+        assert scorecard["error"] == "scorecard_calculation_failed"

@@ -1,6 +1,57 @@
 # Changelog
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.8.0] - 2026-02-16 (Security Hardening & Expert Review)
+
+### Fixed
+- **CRITICAL:** Cross-tenant IDOR in plan review endpoints — POST/GET now enforce ownership check (F-179)
+- **HIGH:** Scorecard node silently swallowed exceptions — now emits STAGE_FAILED + structured fallback (F-181)
+- **HIGH:** SSE stream_writer could crash on QueueFull — wrapped in try/except (F-182)
+- Misleading teacher_id field removed from MaterialIn and TutorCreateIn request schemas (F-180)
+- CircuitBreaker test flakiness on Windows (timing increased to 0.5s cooldown) (F-186)
+
+### Added
+- Skills Discovery API — 4 endpoints: list+search, detail, policy per profile, all policies (F-187)
+- AI Receipt SSE event — trust chain summary for frontend transparency (F-188)
+- Streaming Thought UI — collapsible thinking panel with pulsing indicators, aria-live (F-189)
+- Confetti celebration hook — dynamic-import, reduced-motion respect, brand colors (F-190)
+
+### Improved
+- CORS: expanded allow_methods to include PUT/PATCH/DELETE for full REST surface (F-183)
+- Skills registry: thread-safe caching via functools.lru_cache (F-184)
+- Settings singleton: double-checked locking for ASGI worker safety (F-185)
+- Expert review by GPT-5.2 (architecture/backend) and Gemini-3-Pro (frontend/UX)
+- Total: 1,915 runtime + 287 agents + 1,064 frontend = **3,266 tests passing**
+
+## [0.7.0] - 2026-02-15 (Skills Runtime System)
+
+### Added
+- Skills Spec Validator — agentskills.io-compliant validation (F-167)
+- Accessibility Skill Policy — 7 profiles → 17 skills with must/should/nice tiers (F-168)
+- Skill Prompt Composer — token-budgeted composition with priority sort (F-169)
+- SkillCrafter Agent — conversational skill creation for teachers (F-170)
+- Dynamic Skill Loading — SkillRequestContext in AgentDeps (F-171)
+- Skills Runtime State — RunState/TutorGraphState with skill fields (F-172)
+- All 17 skills agentskills.io spec-compliant (F-173)
+- Docker CORS for localhost + 127.0.0.1 (F-174)
+
+## [0.6.0] - 2026-02-15 (Maturity & Polish)
+
+### Added
+- Public landing page — hero with mesh gradient, animated stat counters, feature cards, floating glass nav, "Built with Claude Opus 4.6" footer (F-146)
+- Route group `(app)/` — authenticated pages with sidebar/topbar isolated from public landing (F-147)
+- 86 new tests — landing page components, shared animated counter, extracted dashboard modules (F-153)
+- Shared AnimatedCounter component with configurable spring physics (F-150)
+
+### Improved
+- Dashboard refactored: 541→362 LOC — extracted icons, plan history card, animated counter (F-149)
+- All 327 ESLint warnings eliminated via config update + targeted fixes (F-148)
+- Landing page WCAG AAA compliance — focus rings, aria-live counters, proper headings, reduced-motion (F-151)
+- Landing UX premium polish — gradient text, scroll animations, hover depth effects (F-152)
+- Security review — 0 critical/high findings across all uncommitted changes (F-154)
+- Repository cleanup — .gitignore improvements, screenshot artifacts removed (F-155)
+- Total: 1,875 backend + 250 agents + 1,048 frontend = **3,173 tests passing**
+
 ## [0.5.0] - 2026-02-15 (State-of-the-Art Final Sweep)
 
 ### Added
@@ -59,26 +110,9 @@ All notable changes documented here. Format: [Keep a Changelog](https://keepacha
 - Total: 1,821 backend + 250 agents + 931 frontend = **3,002 tests passing**
 
 ## [0.2.0] - 2026-02-14 (Hackathon Victory Sprint)
-
-### Added
-- Transformation Scorecard — 9-metric trust card computed as LangGraph terminal node (F-121)
-- HITL Teacher Review Panel — approve/reject/revision workflow + pending reviews badge (F-122)
-- Student Progress Dashboard — mastery tracking, standards heatmap, class overview (F-123)
-- Conversation Review — scrollable tutor transcript with per-turn flagging (F-125)
-- Reusable EmptyState and Skeleton loading components
-- 3 new backend routers: progress (record/dashboard/student), review (approve/reject/pending), transcript (flag)
-- 115 new tests (81 backend + 34 frontend) covering all Sprint 16 features
-- i18n keys for all new features across 3 locales (en, pt-BR, es)
-- 8 sidebar nav items (was 5): added sign-language, progress, observability
-
-### Improved
-- "Powered by Claude Opus 4.6" badge in sidebar footer (F-124)
-- Sidebar and MobileNav expanded with progress, observability, sign-language routes
-- Pipeline store: scorecard field extracted from SSE `run.completed` payload
-- Total: 1,821 backend + 250 agents + 829 frontend = **2,900 tests passing**
+Scorecard (F-121), HITL Review (F-122), Progress Dashboard (F-123), Conversation Review (F-125), 115 new tests, 8 nav items. **2,900 tests.**
 
 ## [0.1.1] - 2026-02-14 (Excellence Sweep)
-114 mypy errors → 0, LangGraph state leak fixed, server-side getTranslations, a11y landmark fixes, Ruff 0 errors. Pydantic AI 1.58 model prefix compliance, Gemini 3 Flash default, README rewritten for judges.
+114 mypy → 0, LangGraph state leak fix, server-side translations, a11y landmarks, Ruff 0.
 
-## [0.1.0] - 2026-02-13 (Hackathon Release)
-Hexagonal arch, 4 Pydantic AI agents, LangGraph workflows, SmartRouter, 3 LLM adapters, FastAPI+SSE, SQLAlchemy+pgvector, RAG pipeline, Next.js 16, 9 WCAG themes, 3 locales, JWT+JWKS, OTel, Docker Compose. 120 features, 60 ADRs, 2700+ tests.
+## [0.1.0] - 2026-02-13 — Hackathon Release (120 features, 60 ADRs, 2700+ tests)

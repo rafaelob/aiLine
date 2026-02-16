@@ -52,7 +52,7 @@ describe('SkeletonCard', () => {
 describe('SkeletonCardGrid', () => {
   it('renders 4 cards by default', () => {
     const { container } = render(<SkeletonCardGrid />)
-    const cards = container.querySelectorAll('[aria-hidden="true"]')
+    container.querySelectorAll('[aria-hidden="true"]')
     // 1 grid container + 4 cards + inner aria-hidden elements
     // Check direct children of the grid
     const grid = container.firstChild as HTMLElement

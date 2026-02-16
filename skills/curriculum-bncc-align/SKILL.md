@@ -3,13 +3,12 @@ name: curriculum-bncc-align
 description: >
   Alinha objetivos e atividades à BNCC (códigos/habilidades),
   gerando mapa de cobertura e ajustes mínimos.
+license: Apache-2.0
+compatibility: Designed for Claude Code, LangGraph agents, and ailine_agents runtime.
 metadata:
-  version: "0.2.0"
-  compatibility:
-    runtimes: [claude_code, claude_agent_sdk, deepagents, langgraph]
-    providers: [anthropic]
-  recommended_models:
-    - claude-opus-4-6
+  author: "ailine"
+  version: "1.0.0"
+allowed-tools: Read
 ---
 
 # Skill: BNCC Align (AiLine)

@@ -12,6 +12,7 @@ import re
 import time
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from typing import Any
 
 import structlog
 from fastapi import FastAPI
@@ -122,7 +123,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         CORSMiddleware,
         allow_origins=cors_origins,
         allow_credentials=True,
-        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allow_headers=cors_headers,
     )
 
@@ -211,6 +212,138 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
 
     # -----------------------------------------------------------------
+    # Enhanced diagnostics endpoint
+    # -----------------------------------------------------------------
+
+    @app.get("/health/diagnostics")
+    async def health_diagnostics() -> Response:
+        """Comprehensive system diagnostics for the frontend Status Indicator.
+
+        Returns system status, available LLM models, skills count,
+        API key presence, dependency latency, memory usage, and uptime.
+        Unlike /health/ready, this endpoint is more detailed and intended
+        for the dashboard UI.
+        """
+        import os
+        import time as _time
+
+        diagnostics: dict[str, Any] = {}
+        app_start_time = getattr(app.state, "_start_time", None)
+        if app_start_time is None:
+            app.state._start_time = _time.monotonic()  # type: ignore[attr-defined]
+            app_start_time = app.state._start_time
+
+        # -- Dependencies --
+        deps_status: dict[str, Any] = {}
+
+        # DB
+        db_start = _time.monotonic()
+        db_check = await _check_db(container)
+        db_latency_ms = round((_time.monotonic() - db_start) * 1000, 1)
+        deps_status["db"] = {"status": db_check, "latency_ms": db_latency_ms}
+
+        # Redis
+        redis_start = _time.monotonic()
+        redis_check = await _check_redis(container)
+        redis_latency_ms = round((_time.monotonic() - redis_start) * 1000, 1)
+        deps_status["redis"] = {"status": redis_check, "latency_ms": redis_latency_ms}
+
+        diagnostics["dependencies"] = deps_status
+
+        # -- LLM models configured --
+        diagnostics["llm"] = {
+            "provider": settings.llm.provider,
+            "model": settings.llm.model,
+            "planner_model": settings.planner_model,
+            "executor_model": settings.executor_model,
+            "qg_model": settings.qg_model,
+            "tutor_model": settings.tutor_model,
+        }
+
+        # -- API key presence (never expose actual keys) --
+        diagnostics["api_keys"] = {
+            "anthropic": bool(settings.anthropic_api_key),
+            "openai": bool(settings.openai_api_key),
+            "google": bool(settings.google_api_key),
+            "openrouter": bool(settings.openrouter_api_key),
+        }
+
+        # -- Skills --
+        try:
+            from ailine_agents.skills.registry import SkillRegistry
+
+            registry = SkillRegistry()
+            skill_count = registry.scan_paths(settings.skill_source_paths())
+            diagnostics["skills"] = {
+                "loaded": True,
+                "count": skill_count,
+                "names": registry.list_names(),
+            }
+        except Exception:
+            diagnostics["skills"] = {"loaded": False, "count": 0, "names": []}
+
+        # -- Memory usage (stdlib only, no psutil dependency) --
+        import sys
+
+        mem: dict[str, Any] = {"pid": os.getpid()}
+        try:
+            # Windows: use ctypes to get working set size
+            if sys.platform == "win32":
+                import ctypes
+                import ctypes.wintypes
+
+                class ProcessMemoryCounters(ctypes.Structure):
+                    _fields_ = [  # noqa: RUF012
+                        ("cb", ctypes.wintypes.DWORD),
+                        ("PageFaultCount", ctypes.wintypes.DWORD),
+                        ("PeakWorkingSetSize", ctypes.c_size_t),
+                        ("WorkingSetSize", ctypes.c_size_t),
+                        ("QuotaPeakPagedPoolUsage", ctypes.c_size_t),
+                        ("QuotaPagedPoolUsage", ctypes.c_size_t),
+                        ("QuotaPeakNonPagedPoolUsage", ctypes.c_size_t),
+                        ("QuotaNonPagedPoolUsage", ctypes.c_size_t),
+                        ("PagefileUsage", ctypes.c_size_t),
+                        ("PeakPagefileUsage", ctypes.c_size_t),
+                    ]
+
+                counters = ProcessMemoryCounters()
+                counters.cb = ctypes.sizeof(counters)
+                handle = ctypes.windll.kernel32.GetCurrentProcess()  # type: ignore[union-attr]
+                ctypes.windll.psapi.GetProcessMemoryInfo(  # type: ignore[union-attr]
+                    handle, ctypes.byref(counters), counters.cb,
+                )
+                mem["rss_mb"] = round(counters.WorkingSetSize / (1024 * 1024), 1)
+            else:
+                # Unix/Linux: read /proc/self/status
+                import resource
+
+                usage = resource.getrusage(resource.RUSAGE_SELF)
+                # maxrss is in KB on Linux, bytes on macOS
+                divisor = 1024 if sys.platform == "linux" else 1
+                mem["rss_mb"] = round(usage.ru_maxrss / divisor / 1024, 1)
+        except Exception:
+            mem["rss_mb"] = -1
+        diagnostics["memory"] = mem
+
+        # -- Uptime --
+        uptime_seconds = round(_time.monotonic() - app_start_time, 1)
+        diagnostics["uptime_seconds"] = uptime_seconds
+
+        # -- Environment --
+        diagnostics["environment"] = settings.env
+        diagnostics["version"] = app.version
+
+        # -- Overall status --
+        all_ok = all(
+            d.get("status") in ("ok", "skip")
+            for d in deps_status.values()
+        )
+        diagnostics["status"] = "healthy" if all_ok else "degraded"
+
+        status_code = 200 if all_ok else 503
+        return JSONResponse(content=diagnostics, status_code=status_code)
+
+    # -----------------------------------------------------------------
     # Metrics endpoint (Prometheus text format)
     # -----------------------------------------------------------------
 
@@ -251,6 +384,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         progress,
         rag_diagnostics,
         sign_language,
+        skills,
         traces,
         tutors,
     )
@@ -267,6 +401,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(rag_diagnostics.router, prefix="/rag", tags=["rag-diagnostics"])
     app.include_router(observability.router, prefix="/observability", tags=["observability"])
     app.include_router(progress.router, prefix="/progress", tags=["progress"])
+    app.include_router(skills.router, prefix="/skills", tags=["skills"])
 
     return app
 

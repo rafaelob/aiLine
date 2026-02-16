@@ -58,6 +58,14 @@ vi.mock('./teacher-review-panel', () => ({
   TeacherReviewPanel: () => <div data-testid="review-panel">Review Panel</div>,
 }))
 
+vi.mock('./streaming-thought', () => ({
+  StreamingThought: () => <div data-testid="streaming-thought">Thinking</div>,
+}))
+
+vi.mock('@/hooks/use-confetti', () => ({
+  useConfetti: () => ({ fire: vi.fn() }),
+}))
+
 describe('PlanGenerationFlow', () => {
   const user = userEvent.setup()
 

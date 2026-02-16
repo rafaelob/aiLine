@@ -23,7 +23,7 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false)
 
   const navItems: NavItem[] = [
-    { key: 'dashboard', href: '', icon: <DashboardIcon /> },
+    { key: 'dashboard', href: '/dashboard', icon: <DashboardIcon /> },
     { key: 'plans', href: '/plans', icon: <PlansIcon /> },
     { key: 'materials', href: '/materials', icon: <MaterialsIcon /> },
     { key: 'tutors', href: '/tutors', icon: <TutorsIcon /> },
@@ -38,8 +38,8 @@ export function Sidebar() {
 
   function isActive(href: string): boolean {
     const fullPath = `${localePrefix}${href}`
-    if (href === '') {
-      return pathname === localePrefix || pathname === `${localePrefix}/`
+    if (href === '/dashboard') {
+      return pathname === `${localePrefix}/dashboard` || pathname === `${localePrefix}/dashboard/`
     }
     return pathname.startsWith(fullPath)
   }

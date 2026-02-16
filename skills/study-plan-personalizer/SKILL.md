@@ -3,15 +3,12 @@ name: study-plan-personalizer
 description: >
   Constrói uma trilha semanal/quinzenal por aluno (micro-metas, revisão espaçada,
   checkpoints) a partir de objetivos e materiais reais.
+license: Apache-2.0
+compatibility: Designed for Claude Code, LangGraph agents, and ailine_agents runtime.
 metadata:
-  version: "0.2.0"
-  compatibility:
-    runtimes: [claude_code, claude_agent_sdk, deepagents, langgraph]
-    providers: [anthropic]
-  recommended_models:
-    - claude-opus-4-6
-  optional_models:
-    - claude-sonnet-4-5-20250929
+  author: "ailine"
+  version: "1.0.0"
+allowed-tools: Read
 ---
 
 # Skill: Study Plan Personalizer (AiLine)
