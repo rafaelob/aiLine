@@ -55,12 +55,18 @@ export function DemoTooltip() {
         {/* Actions */}
         <div className="flex items-center justify-between mt-4">
           <button
+            type="button"
             onClick={exitDemo}
-            className="text-xs text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors"
+            className={cn(
+              'text-xs text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors',
+              'rounded-[var(--radius-sm)] px-2 py-1',
+              'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]',
+            )}
           >
             {t('skip')}
           </button>
           <button
+            type="button"
             onClick={() => {
               if (currentStep >= 3) exitDemo()
               else nextStep()
@@ -70,6 +76,7 @@ export function DemoTooltip() {
               'bg-[var(--color-primary)] text-[var(--color-on-primary)]',
               'hover:brightness-110 transition-all',
               'btn-shimmer',
+              'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]',
             )}
           >
             {currentStep >= 3 ? t('complete') : t('next')}

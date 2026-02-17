@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
+from ailine_agents.deps import AgentDepsFactory
+from ailine_agents.workflows.tutor_workflow import build_tutor_workflow, run_tutor_turn
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
@@ -126,13 +128,6 @@ async def tutor_chat(tutor_id: str, body: TutorChatIn, request: Request):
 
     # Update session with user message
     session.append("user", body.message)
-
-    # Build AgentDeps from container
-    from ailine_agents.deps import AgentDepsFactory
-    from ailine_agents.workflows.tutor_workflow import (
-        build_tutor_workflow,
-        run_tutor_turn,
-    )
 
     deps = AgentDepsFactory.from_container(
         container,

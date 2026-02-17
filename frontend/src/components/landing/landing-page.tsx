@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { LandingNav } from './landing-nav'
 import { LandingHero } from './landing-hero'
 import { LandingFeatures } from './landing-features'
@@ -63,10 +64,15 @@ interface LandingPageProps {
  * Renders hero, stats, how-it-works, features, demo login, and footer sections.
  */
 export function LandingPage(props: LandingPageProps) {
+  const tCommon = useTranslations('common')
+
   return (
     <div className="min-h-screen flex flex-col">
+      <a href="#main-content" className="skip-link">
+        {tCommon('skipToContent')}
+      </a>
       <LandingNav locale={props.locale} startDemo={props.startDemo} />
-      <main id="main-content">
+      <main id="main-content" role="main">
         <LandingHero
           locale={props.locale}
           title={props.heroTitle}

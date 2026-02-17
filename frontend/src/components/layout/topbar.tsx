@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import { usePathname, useRouter } from 'next/navigation'
 import { motion, LayoutGroup } from 'motion/react'
@@ -215,12 +215,31 @@ function SystemStatusButton() {
   const t = useTranslations('topbar')
   const [status, setStatus] = useState<'healthy' | 'degraded' | 'unknown'>('unknown')
   const [showDropdown, setShowDropdown] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetch(`${API_BASE}/health/ready`)
       .then((res) => setStatus(res.ok ? 'healthy' : 'degraded'))
       .catch(() => setStatus('degraded'))
   }, [])
+
+  useEffect(() => {
+    if (!showDropdown) return
+    function handleClick(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowDropdown(false)
+      }
+    }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setShowDropdown(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    document.addEventListener('keydown', handleKey)
+    return () => {
+      document.removeEventListener('mousedown', handleClick)
+      document.removeEventListener('keydown', handleKey)
+    }
+  }, [showDropdown])
 
   const dotColor =
     status === 'healthy'
@@ -230,7 +249,7 @@ function SystemStatusButton() {
         : 'bg-[var(--color-muted)]'
 
   return (
-    <div className="relative">
+    <div ref={dropdownRef} className="relative">
       <button
         type="button"
         onClick={() => setShowDropdown((s) => !s)}

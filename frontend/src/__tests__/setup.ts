@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom/vitest'
+import { createElement } from 'react'
 
 // Mock next-intl
 vi.mock('next-intl', () => ({
@@ -34,6 +35,12 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(),
   notFound: vi.fn(),
   redirect: vi.fn(),
+}))
+
+// Mock next/link (no JSX in .ts file -- use createElement)
+vi.mock('next/link', () => ({
+  default: ({ children, href, ...rest }: Record<string, unknown>) =>
+    createElement('a', { href, ...rest }, children as React.ReactNode),
 }))
 
 // Mock next/script

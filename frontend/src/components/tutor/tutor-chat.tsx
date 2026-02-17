@@ -100,7 +100,6 @@ export function TutorChat() {
               type: 'spring',
               stiffness: 200,
               damping: 24,
-              delay: i === messages.length - 1 ? 0 : 0
             }}
           >
             <ChatMessageBubble

@@ -513,7 +513,7 @@ async def get_scenario(scenario_id: str, request: Request) -> dict[str, Any]:
     return scenario
 
 
-@router.get("/reset")
+@router.post("/reset")
 async def reset_demo(request: Request) -> dict[str, str]:
     """Clear and reload demo session state."""
     svc = _get_demo_service(request)

@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { motion } from 'motion/react'
 import type { Variants } from 'motion/react'
 
@@ -41,25 +42,19 @@ const childVariants: Variants = {
  * Respects prefers-reduced-motion via motion's built-in support.
  */
 export function PageTransition({ children, stagger = false }: PageTransitionProps) {
-  if (!stagger) {
-    return (
-      <motion.div
-        initial="hidden"
-        animate="visible"
-        variants={pageVariants}
-      >
-        {children}
-      </motion.div>
-    )
-  }
-
   return (
     <motion.div
       initial="hidden"
       animate="visible"
       variants={pageVariants}
     >
-      {children}
+      {stagger
+        ? React.Children.map(children, (child) =>
+            child ? (
+              <motion.div variants={childVariants}>{child}</motion.div>
+            ) : null
+          )
+        : children}
     </motion.div>
   )
 }

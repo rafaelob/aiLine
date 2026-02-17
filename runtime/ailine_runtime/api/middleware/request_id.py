@@ -9,6 +9,7 @@ automatically via structlog's ``merge_contextvars`` processor.
 from __future__ import annotations
 
 import contextvars
+import re
 import uuid
 from collections.abc import Awaitable, Callable
 
@@ -21,6 +22,9 @@ from starlette.responses import Response
 request_id_var: contextvars.ContextVar[str] = contextvars.ContextVar(
     "request_id", default=""
 )
+
+# Max 128 chars, alphanumeric + hyphens + dots + underscores
+_VALID_RID = re.compile(r"^[a-zA-Z0-9._-]{1,128}$")
 
 
 class RequestIDMiddleware(BaseHTTPMiddleware):
@@ -40,7 +44,7 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
         call_next: Callable[[Request], Awaitable[Response]],
     ) -> Response:
         rid = request.headers.get("X-Request-ID", "").strip()
-        if not rid:
+        if not rid or not _VALID_RID.match(rid):
             rid = str(uuid.uuid4())
 
         # Store in contextvars for downstream access

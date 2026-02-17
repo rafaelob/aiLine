@@ -4,7 +4,7 @@ Covers:
 - DemoService: scenario loading, listing, retrieval, cached plan/events, reset
 - Demo API endpoints: GET /demo/scenarios, GET /demo/scenarios/{id},
   POST /demo/scenarios/{id}/run, POST /demo/scenarios/{id}/execute,
-  POST /demo/scenarios/{id}/stream, GET /demo/reset
+  POST /demo/scenarios/{id}/stream, POST /demo/reset
 - DemoModeMiddleware: interception of /plans/generate when demo_mode=true
 - Edge cases: missing scenarios, empty data dir, malformed JSON
 """
@@ -471,10 +471,10 @@ class TestDemoAPIExecute:
 
 
 class TestDemoAPIReset:
-    """Tests for GET /demo/reset."""
+    """Tests for POST /demo/reset."""
 
     async def test_reset_returns_ok(self, client_demo_off: AsyncClient) -> None:
-        resp = await client_demo_off.get("/demo/reset")
+        resp = await client_demo_off.post("/demo/reset")
         assert resp.status_code == 200
         body = resp.json()
         assert body["status"] == "ok"
@@ -482,7 +482,7 @@ class TestDemoAPIReset:
     async def test_scenarios_available_after_reset(
         self, client_demo_off: AsyncClient
     ) -> None:
-        await client_demo_off.get("/demo/reset")
+        await client_demo_off.post("/demo/reset")
         resp = await client_demo_off.get("/demo/scenarios")
         assert resp.status_code == 200
         assert len(resp.json()) >= 1

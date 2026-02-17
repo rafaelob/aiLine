@@ -54,48 +54,80 @@ export function RecordProgressForm({ onSuccess, className }: RecordProgressFormP
     >
       <h3 className="text-sm font-semibold text-[var(--color-text)]">{t('record_progress')}</h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <input
-          type="text"
-          placeholder="Student ID"
-          value={studentId}
-          onChange={(e) => setStudentId(e.target.value)}
-          required
-          className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)] p-2.5 text-sm text-[var(--color-text)]"
-        />
-        <input
-          type="text"
-          placeholder="Student Name"
-          value={studentName}
-          onChange={(e) => setStudentName(e.target.value)}
-          className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)] p-2.5 text-sm text-[var(--color-text)]"
-        />
-        <input
-          type="text"
-          placeholder="Standard Code (e.g. EF06MA01)"
-          value={standardCode}
-          onChange={(e) => setStandardCode(e.target.value)}
-          required
-          className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)] p-2.5 text-sm text-[var(--color-text)]"
-        />
-        <input
-          type="text"
-          placeholder="Standard Description"
-          value={standardDesc}
-          onChange={(e) => setStandardDesc(e.target.value)}
-          className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)] p-2.5 text-sm text-[var(--color-text)]"
-        />
+        <div>
+          <label htmlFor="rp-student-id" className="block text-xs font-medium text-[var(--color-muted)] mb-1">
+            {t('student_id_label')}
+          </label>
+          <input
+            id="rp-student-id"
+            type="text"
+            placeholder="Student ID"
+            value={studentId}
+            onChange={(e) => setStudentId(e.target.value)}
+            required
+            aria-required="true"
+            className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)] p-2.5 text-sm text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30 focus:border-[var(--color-primary)]"
+          />
+        </div>
+        <div>
+          <label htmlFor="rp-student-name" className="block text-xs font-medium text-[var(--color-muted)] mb-1">
+            {t('student_name_label')}
+          </label>
+          <input
+            id="rp-student-name"
+            type="text"
+            placeholder="Student Name"
+            value={studentName}
+            onChange={(e) => setStudentName(e.target.value)}
+            className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)] p-2.5 text-sm text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30 focus:border-[var(--color-primary)]"
+          />
+        </div>
+        <div>
+          <label htmlFor="rp-standard-code" className="block text-xs font-medium text-[var(--color-muted)] mb-1">
+            {t('standard_code_label')}
+          </label>
+          <input
+            id="rp-standard-code"
+            type="text"
+            placeholder="Standard Code (e.g. EF06MA01)"
+            value={standardCode}
+            onChange={(e) => setStandardCode(e.target.value)}
+            required
+            aria-required="true"
+            className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)] p-2.5 text-sm text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30 focus:border-[var(--color-primary)]"
+          />
+        </div>
+        <div>
+          <label htmlFor="rp-standard-desc" className="block text-xs font-medium text-[var(--color-muted)] mb-1">
+            {t('standard_desc_label')}
+          </label>
+          <input
+            id="rp-standard-desc"
+            type="text"
+            placeholder="Standard Description"
+            value={standardDesc}
+            onChange={(e) => setStandardDesc(e.target.value)}
+            className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)] p-2.5 text-sm text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30 focus:border-[var(--color-primary)]"
+          />
+        </div>
       </div>
       <div className="flex items-center gap-3">
-        <select
-          value={mastery}
-          onChange={(e) => setMastery(e.target.value)}
-          className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)] p-2.5 text-sm text-[var(--color-text)]"
-        >
+        <div>
+          <label htmlFor="rp-mastery" className="sr-only">
+            {t('mastery_level_label')}
+          </label>
+          <select
+            id="rp-mastery"
+            value={mastery}
+            onChange={(e) => setMastery(e.target.value)}
+            className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)] p-2.5 text-sm text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30 focus:border-[var(--color-primary)]"
+          >
           <option value="not_started">{t('mastery_levels.not_started')}</option>
           <option value="developing">{t('mastery_levels.developing')}</option>
           <option value="proficient">{t('mastery_levels.proficient')}</option>
           <option value="mastered">{t('mastery_levels.mastered')}</option>
-        </select>
+          </select>
+        </div>
         <button
           type="submit"
           disabled={submitting}

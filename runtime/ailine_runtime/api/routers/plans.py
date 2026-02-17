@@ -34,7 +34,13 @@ _SAFE_RESPONSE_FIELDS = frozenset(
 
 
 class PlanGenerateIn(BaseModel):
-    run_id: str = Field(..., description="Run ID for observability.")
+    run_id: str = Field(
+        ...,
+        min_length=1,
+        max_length=128,
+        pattern=r"^[a-zA-Z0-9_-]+$",
+        description="Run ID for observability (alphanumeric, hyphens, underscores).",
+    )
     user_prompt: str
     subject: str | None = Field(None, description="Optional: subject (RAG filter).")
     class_accessibility_profile: dict[str, Any] | None = None

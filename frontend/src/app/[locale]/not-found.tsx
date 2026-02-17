@@ -11,7 +11,7 @@ export default function NotFoundPage() {
   const t = useTranslations('common')
 
   return (
-    <div className="flex min-h-[60vh] items-center justify-center p-6">
+    <main role="main" className="flex min-h-[60vh] items-center justify-center p-6">
       <div
         className={cn(
           'flex max-w-md flex-col items-center gap-6 text-center',
@@ -61,6 +61,6 @@ export default function NotFoundPage() {
           {t('go_home')}
         </a>
       </div>
-    </div>
+    </main>
   )
 }

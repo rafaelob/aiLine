@@ -208,23 +208,15 @@ export function DashboardContent() {
         />
 
         <div className="relative z-10">
-          <motion.h1
+          <h1
             id="welcome-heading"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1, duration: 0.4 }}
             className="text-2xl md:text-3xl font-bold"
           >
             {t('title')}
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.4 }}
-            className="mt-2 text-base opacity-90 max-w-lg"
-          >
+          </h1>
+          <p className="mt-2 text-base opacity-90 max-w-lg">
             {t('subtitle')}
-          </motion.p>
+          </p>
         </div>
       </motion.section>
 

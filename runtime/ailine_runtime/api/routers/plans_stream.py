@@ -50,7 +50,13 @@ def _resolve_teacher_id() -> str:
 class PlanStreamIn(BaseModel):
     """Request body for streaming plan generation."""
 
-    run_id: str = Field(..., description="Client-generated run ID for observability.")
+    run_id: str = Field(
+        ...,
+        min_length=1,
+        max_length=128,
+        pattern=r"^[a-zA-Z0-9_-]+$",
+        description="Client-generated run ID for observability (alphanumeric, hyphens, underscores).",
+    )
     user_prompt: str = Field(
         ..., min_length=1, description="Teacher's natural-language request."
     )

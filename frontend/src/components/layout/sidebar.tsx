@@ -46,8 +46,7 @@ export function Sidebar() {
   }
 
   return (
-    <motion.aside
-      role="navigation"
+    <motion.nav
       aria-label={t('main_nav_label')}
       initial={false}
       animate={{ width: collapsed ? 76 : 264 }}
@@ -229,7 +228,7 @@ export function Sidebar() {
           </motion.svg>
         </button>
       </div>
-    </motion.aside>
+    </motion.nav>
   )
 }
 

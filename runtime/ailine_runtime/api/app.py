@@ -10,9 +10,10 @@ from __future__ import annotations
 import os
 import re
 import time
+import typing
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Any, ClassVar
+from typing import Any
 
 import structlog
 from fastapi import FastAPI

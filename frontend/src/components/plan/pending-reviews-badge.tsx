@@ -54,6 +54,7 @@ export function PendingReviewsBadge() {
         type="button"
         onClick={() => setExpanded((prev) => !prev)}
         aria-expanded={expanded}
+        aria-label={`${t('pending')}: ${reviews.length}`}
         className={cn(
           'w-full flex items-center justify-between px-5 py-3',
           'hover:bg-[var(--color-warning)]/10 transition-colors',

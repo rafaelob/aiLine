@@ -37,6 +37,12 @@ vi.mock('@/hooks/use-pipeline-sse', () => ({
   }),
 }))
 
+vi.mock('@/components/ui/page-transition', () => ({
+  PageTransition: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="page-transition">{children}</div>
+  ),
+}))
+
 const defaultParams = Promise.resolve({ locale: 'pt-BR' })
 
 describe('PlansPage', () => {

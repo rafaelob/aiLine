@@ -69,7 +69,7 @@ services:
       AILINE_REDIS_URL: redis://:${REDIS_PASSWORD:-ailine_redis_dev}@redis:6379/0
       AILINE_LLM_PROVIDER: ${AILINE_LLM_PROVIDER:-anthropic}
       AILINE_CORS_ORIGINS: "http://localhost:3011,http://127.0.0.1:3011,http://localhost:3000,http://127.0.0.1:3000,http://frontend:3000"
-      AILINE_DEV_MODE: "${AILINE_DEV_MODE:-true}"
+      AILINE_DEV_MODE: "${AILINE_DEV_MODE:-false}"
       AILINE_LOCAL_STORE: /app/.local_store
     env_file:
       - path: .env

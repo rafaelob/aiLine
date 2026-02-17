@@ -127,14 +127,16 @@ describe('LandingHero', () => {
 
   it('Default persona is checked initially', () => {
     render(<LandingHero {...defaultProps} />)
-    const defaultRadio = screen.getByRole('radio', { name: /default/i })
-    expect(defaultRadio).toHaveAttribute('aria-checked', 'true')
+    const radios = screen.getAllByRole('radio')
+    // First radio (Default) should be checked initially
+    expect(radios[0]).toHaveAttribute('aria-checked', 'true')
   })
 
   it('clicking a persona button calls setTheme and updates data-theme', async () => {
     render(<LandingHero {...defaultProps} />)
-    const adhdBtn = screen.getByRole('radio', { name: /adhd/i })
-    await user.click(adhdBtn)
+    const radios = screen.getAllByRole('radio')
+    // Click ADHD radio (index 2)
+    await user.click(radios[2])
 
     expect(mockSetTheme).toHaveBeenCalledWith('tdah')
     expect(document.body.getAttribute('data-theme')).toBe('tdah')
@@ -142,12 +144,12 @@ describe('LandingHero', () => {
 
   it('clicking a persona button updates aria-checked state', async () => {
     render(<LandingHero {...defaultProps} />)
-    const teaBtn = screen.getByRole('radio', { name: /asd/i })
-    await user.click(teaBtn)
+    const radios = screen.getAllByRole('radio')
+    // Click ASD radio (index 1)
+    await user.click(radios[1])
 
-    expect(teaBtn).toHaveAttribute('aria-checked', 'true')
-    const defaultBtn = screen.getByRole('radio', { name: /default/i })
-    expect(defaultBtn).toHaveAttribute('aria-checked', 'false')
+    expect(radios[1]).toHaveAttribute('aria-checked', 'true')
+    expect(radios[0]).toHaveAttribute('aria-checked', 'false')
   })
 
   it('persona buttons have aria-labels', () => {

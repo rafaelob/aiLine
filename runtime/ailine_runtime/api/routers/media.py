@@ -87,6 +87,21 @@ def _get_adapter(request: Request, name: str) -> Any:
     return adapter
 
 
+def _check_content_length(request: Request, max_size: int, label: str) -> None:
+    """Reject oversized uploads early using Content-Length header.
+
+    This prevents reading the full body into memory before discovering
+    it exceeds the limit. Falls through silently when the header is
+    missing (multipart uploads may not include it).
+    """
+    cl = request.headers.get("content-length")
+    if cl and cl.isdigit() and int(cl) > max_size:
+        raise HTTPException(
+            status_code=413,
+            detail=f"File too large. Maximum {label} size: {max_size // (1024 * 1024)}MB.",
+        )
+
+
 # -- Endpoints ----------------------------------------------------------------
 
 
@@ -98,6 +113,7 @@ async def transcribe_audio(
 ) -> TranscriptionResponse:
     """Transcribe an audio file to text (STT)."""
     require_authenticated()
+    _check_content_length(request, MAX_AUDIO_SIZE, "audio")
     stt = _get_adapter(request, "stt")
     audio_bytes = await file.read()
     if not audio_bytes:
@@ -144,6 +160,7 @@ async def describe_image(
 ) -> DescriptionResponse:
     """Generate an alt-text description for an uploaded image."""
     require_authenticated()
+    _check_content_length(request, MAX_IMAGE_SIZE, "image")
     describer = _get_adapter(request, "image_describer")
     image_bytes = await file.read()
     if not image_bytes:
@@ -167,6 +184,7 @@ async def extract_text(
     The file type is inferred from the upload's content type.
     """
     require_authenticated()
+    _check_content_length(request, MAX_DOCUMENT_SIZE, "document")
     ocr = _get_adapter(request, "ocr")
     file_bytes = await file.read()
     if not file_bytes:

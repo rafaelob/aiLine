@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { motion, useReducedMotion } from 'motion/react'
 import { cn } from '@/lib/cn'
 import { useAccessibilityStore } from '@/stores/accessibility-store'
@@ -32,6 +33,7 @@ export function LandingHero({ locale: _locale, title, subtitle, cta, fullName, b
   const noMotion = prefersReducedMotion ?? false
   const setTheme = useAccessibilityStore((s) => s.setTheme)
   const [activePersona, setActivePersona] = useState('standard')
+  const tA11y = useTranslations('landing')
 
   function handlePersonaSwitch(id: string) {
     setActivePersona(id)
@@ -180,7 +182,7 @@ export function LandingHero({ locale: _locale, title, subtitle, cta, fullName, b
         >
           <div
             role="radiogroup"
-            aria-label="Preview accessibility personas"
+            aria-label={tA11y('persona_group_label')}
             className="inline-flex flex-wrap items-center justify-center gap-2"
           >
             {PERSONA_PREVIEWS.map((persona) => (
@@ -189,7 +191,7 @@ export function LandingHero({ locale: _locale, title, subtitle, cta, fullName, b
                 type="button"
                 role="radio"
                 aria-checked={activePersona === persona.id}
-                aria-label={`Switch to ${persona.label} theme`}
+                aria-label={tA11y('persona_switch_label', { name: persona.label })}
                 onClick={() => handlePersonaSwitch(persona.id)}
                 className={cn(
                   'inline-flex items-center gap-1.5 px-3 py-1.5',

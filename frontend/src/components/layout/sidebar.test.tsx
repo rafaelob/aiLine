@@ -5,9 +5,9 @@ import { Sidebar } from './sidebar'
 
 vi.mock('motion/react', () => ({
   motion: {
-    aside: ({ children, ...rest }: Record<string, unknown>) => {
+    nav: ({ children, ...rest }: Record<string, unknown>) => {
       const { initial: _i, animate: _a, transition: _t, ...safe } = rest
-      return <aside {...safe}>{children as React.ReactNode}</aside>
+      return <nav {...safe}>{children as React.ReactNode}</nav>
     },
     span: ({ children, ...rest }: Record<string, unknown>) => {
       const { initial: _i, animate: _a, exit: _e, transition: _t, ...safe } = rest
