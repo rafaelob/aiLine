@@ -141,7 +141,7 @@ describe('ProgressDashboard', () => {
     mockFetch.mockResolvedValueOnce({ ok: false, status: 500 })
     render(<ProgressDashboard />)
     await waitFor(() => {
-      expect(screen.getByText('Retry')).toBeInTheDocument()
+      expect(screen.getByText('progress.retry')).toBeInTheDocument()
     })
   })
 

@@ -72,7 +72,7 @@ export function LandingPage(props: LandingPageProps) {
         {tCommon('skipToContent')}
       </a>
       <LandingNav locale={props.locale} startDemo={props.startDemo} />
-      <main id="main-content" role="main">
+      <main id="main-content">
         <LandingHero
           locale={props.locale}
           title={props.heroTitle}

@@ -16,12 +16,13 @@ from contextlib import asynccontextmanager
 from typing import Any
 
 import structlog
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import JSONResponse, PlainTextResponse, Response
 
+from ..app.authz import require_authenticated
 from ..shared.config import Settings, get_settings
 from ..shared.container import Container
 from ..shared.metrics import (
@@ -223,7 +224,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # -----------------------------------------------------------------
 
     @app.get("/health/diagnostics")
-    async def health_diagnostics() -> Response:
+    async def health_diagnostics(
+        _teacher_id: str = Depends(require_authenticated),
+    ) -> Response:
         """Comprehensive system diagnostics for the frontend Status Indicator.
 
         Returns system status, available LLM models, skills count,
@@ -389,11 +392,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         plans_stream,
         progress,
         rag_diagnostics,
+        setup,
         sign_language,
         skills,
         traces,
         tutors,
     )
+
+    # Setup wizard (no auth required, must be registered first)
+    app.include_router(setup.router, prefix="/setup", tags=["setup"])
 
     app.include_router(materials.router, prefix="/materials", tags=["materials"])
     app.include_router(plans.router, prefix="/plans", tags=["plans"])

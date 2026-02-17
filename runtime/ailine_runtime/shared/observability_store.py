@@ -188,13 +188,16 @@ class ObservabilityStore:
 
 # Module-level singleton
 _store: ObservabilityStore | None = None
+_store_lock = threading.Lock()
 
 
 def get_observability_store() -> ObservabilityStore:
     """Get or create the singleton observability store."""
     global _store
     if _store is None:
-        _store = ObservabilityStore()
+        with _store_lock:
+            if _store is None:
+                _store = ObservabilityStore()
     return _store
 
 

@@ -168,6 +168,7 @@ async def list_gestures() -> GestureListResponse:
 
     MVP scope: 4 basic Libras gestures (ADR-026).
     """
+    require_authenticated()
     return GestureListResponse(
         gestures=_SUPPORTED_GESTURES,
         model="mediapipe-mlp",

@@ -82,10 +82,13 @@ class ReviewStore:
 
 
 _store: ReviewStore | None = None
+_store_lock = threading.Lock()
 
 
 def get_review_store() -> ReviewStore:
     global _store
     if _store is None:
-        _store = ReviewStore()
+        with _store_lock:
+            if _store is None:
+                _store = ReviewStore()
     return _store

@@ -184,6 +184,18 @@ export function LandingHero({ locale: _locale, title, subtitle, cta, fullName, b
             role="radiogroup"
             aria-label={tA11y('persona_group_label')}
             className="inline-flex flex-wrap items-center justify-center gap-2"
+            onKeyDown={(e) => {
+              if (['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp'].includes(e.key)) {
+                e.preventDefault()
+                const idx = PERSONA_PREVIEWS.findIndex((p) => p.id === activePersona)
+                const dir = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : -1
+                const next = (idx + dir + PERSONA_PREVIEWS.length) % PERSONA_PREVIEWS.length
+                handlePersonaSwitch(PERSONA_PREVIEWS[next].id)
+                const container = e.currentTarget
+                const radios = container.querySelectorAll<HTMLElement>('[role="radio"]')
+                radios[next]?.focus()
+              }
+            }}
           >
             {PERSONA_PREVIEWS.map((persona) => (
               <button
@@ -191,6 +203,7 @@ export function LandingHero({ locale: _locale, title, subtitle, cta, fullName, b
                 type="button"
                 role="radio"
                 aria-checked={activePersona === persona.id}
+                tabIndex={activePersona === persona.id ? 0 : -1}
                 aria-label={tA11y('persona_switch_label', { name: persona.label })}
                 onClick={() => handlePersonaSwitch(persona.id)}
                 className={cn(

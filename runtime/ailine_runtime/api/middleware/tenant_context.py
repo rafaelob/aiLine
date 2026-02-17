@@ -34,6 +34,7 @@ Routes that are excluded from tenant enforcement:
 - ``/health``
 - ``/docs``, ``/openapi.json``, ``/redoc``
 - ``/demo/*``
+- ``/setup/*``
 """
 
 from __future__ import annotations
@@ -60,12 +61,17 @@ logger = structlog.get_logger("ailine.middleware.tenant_context")
 
 # Paths excluded from tenant context enforcement.
 _EXCLUDED_PREFIXES = (
-    "/health",
+    "/health/ready",
     "/docs",
     "/openapi.json",
     "/redoc",
     "/demo",
+    "/setup",
+    "/metrics",
 )
+
+# Exact-match excluded paths (not prefix-based).
+_EXCLUDED_EXACT = frozenset({"/health"})
 
 # Algorithms considered safe. "none" is explicitly excluded.
 _ALLOWED_ALGORITHMS = ("HS256", "RS256", "ES256")
@@ -317,7 +323,9 @@ class TenantContextMiddleware(BaseHTTPMiddleware):
     ) -> Response:
         # Skip excluded paths
         path = request.url.path
-        if any(path.startswith(prefix) for prefix in _EXCLUDED_PREFIXES):
+        if path in _EXCLUDED_EXACT or any(
+            path.startswith(prefix) for prefix in _EXCLUDED_PREFIXES
+        ):
             return await call_next(request)
 
         teacher_id: str | None = None

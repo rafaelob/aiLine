@@ -44,7 +44,7 @@ class TestEmbeddingConfig:
             cfg = EmbeddingConfig()
             assert cfg.provider == "gemini"
             assert cfg.model == "gemini-embedding-001"
-            assert cfg.dimensions == 1536
+            assert cfg.dimensions == 3072
 
     def test_env_override(self):
         from ailine_runtime.shared.config import EmbeddingConfig

@@ -41,7 +41,7 @@ export function LandingNav({ locale, startDemo }: LandingNavProps) {
       initial={noMotion ? undefined : { y: -80 }}
       animate={noMotion ? { opacity: visible ? 1 : 0 } : { y: visible ? 0 : -80 }}
       transition={noMotion ? { duration: 0 } : { type: 'spring', stiffness: 300, damping: 30 }}
-      aria-hidden={!visible}
+      {...(!visible ? { inert: true } : {})}
       onFocus={handleFocus}
       onBlur={handleBlur}
       className={cn(

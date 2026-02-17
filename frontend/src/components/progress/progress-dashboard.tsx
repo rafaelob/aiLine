@@ -79,7 +79,7 @@ export function ProgressDashboard() {
       <div role="alert" className="rounded-[var(--radius-md)] p-4 text-center bg-[var(--color-error)]/10 text-[var(--color-error)]">
         <p className="text-sm">{error}</p>
         <button type="button" onClick={fetchDashboard} className="mt-2 text-sm underline">
-          Retry
+          {t('retry')}
         </button>
       </div>
     )

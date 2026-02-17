@@ -88,7 +88,7 @@ class TestGeminiEmbeddingsProperties:
     def test_default_dimensions(self, gemini_env):
         gem_mod, _mock_client_cls, _ = gemini_env
         emb = gem_mod.GeminiEmbeddings(api_key="k")
-        assert emb.dimensions == 1536
+        assert emb.dimensions == 3072
 
     def test_default_model(self, gemini_env):
         gem_mod, _mock_client_cls, _ = gemini_env

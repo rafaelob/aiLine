@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import { motion, useReducedMotion } from 'motion/react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/cn'
@@ -122,6 +123,7 @@ function ProfileCard({
   const noMotion = prefersReducedMotion ?? false
   const router = useRouter()
   const setTheme = useAccessibilityStore((s) => s.setTheme)
+  const tLanding = useTranslations('landing')
 
   const handlePrefetch = useCallback(() => {
     router.prefetch(`/${locale}${profile.route}`)
@@ -171,7 +173,7 @@ function ProfileCard({
             'shadow-sm'
           )}
         >
-          Start Here
+          {tLanding('start_here')}
         </div>
       )}
 

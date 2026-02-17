@@ -168,6 +168,7 @@ export function DashboardContent() {
             {t('demo.start')}
           </a>
           <button
+            type="button"
             onClick={() => dismiss()}
             className="absolute top-2 right-2 p-1 text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors"
             aria-label={t('demo.dismiss')}
@@ -363,7 +364,7 @@ export function DashboardContent() {
                     ))}
                   </div>
                   <div className="flex items-center gap-2 mt-auto">
-                    <span className="text-xs text-[var(--color-success)] font-medium">Score: {plan.score}</span>
+                    <span className="text-xs text-[var(--color-success)] font-medium">{t('plan_score')}: {plan.score}</span>
                     <span className="text-xs text-[var(--color-muted)]">{plan.model}</span>
                   </div>
                 </div>

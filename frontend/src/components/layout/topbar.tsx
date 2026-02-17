@@ -48,7 +48,6 @@ export function TopBar() {
   return (
     <>
       <header
-        role="banner"
         className={cn(
           'flex items-center justify-between gap-4 px-6 py-2.5',
           'border-b border-[var(--color-border)]/50',
@@ -125,6 +124,28 @@ export function TopBar() {
               )}
               role="radiogroup"
               aria-label={t('locale_label')}
+              onKeyDown={(e) => {
+                const locales = Object.keys(LOCALE_LABELS) as Locale[]
+                if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                  e.preventDefault()
+                  const idx = locales.indexOf(currentLocale)
+                  const next = locales[(idx + 1) % locales.length]
+                  switchLocale(next)
+                  const container = e.currentTarget
+                  requestAnimationFrame(() => {
+                    container.querySelector<HTMLElement>('[aria-checked="true"]')?.focus()
+                  })
+                } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                  e.preventDefault()
+                  const idx = locales.indexOf(currentLocale)
+                  const prev = locales[(idx - 1 + locales.length) % locales.length]
+                  switchLocale(prev)
+                  const container = e.currentTarget
+                  requestAnimationFrame(() => {
+                    container.querySelector<HTMLElement>('[aria-checked="true"]')?.focus()
+                  })
+                }
+              }}
             >
               {(Object.entries(LOCALE_LABELS) as [Locale, string][]).map(([code, label]) => {
                 const isActive = code === currentLocale
@@ -134,6 +155,7 @@ export function TopBar() {
                     type="button"
                     role="radio"
                     aria-checked={isActive}
+                    tabIndex={isActive ? 0 : -1}
                     aria-label={LOCALE_FULL[code]}
                     onClick={() => switchLocale(code)}
                     className={cn(

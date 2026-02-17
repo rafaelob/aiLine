@@ -48,6 +48,7 @@ class AgentDeps:
     run_id: str = ""
     subject: str = ""
     default_variants: str = ""
+    locale: str = "en"
     max_refinement_iters: int = 2
 
     # Workflow timeout (seconds). Default: 5 minutes.
@@ -108,6 +109,7 @@ class AgentDepsFactory:
             run_id=run_id,
             subject=subject,
             default_variants=default_variants or settings.default_variants,
+            locale=getattr(settings, "default_locale", "en"),
             max_refinement_iters=(
                 max_refinement_iters
                 if max_refinement_iters is not None

@@ -74,6 +74,11 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         # client_key -> _SlidingWindowCounter
         self._counters: dict[str, _SlidingWindowCounter] = {}
         self._request_count = 0
+        # Only trust X-Forwarded-For from known proxy IPs (SEC-04)
+        _raw = os.getenv("AILINE_TRUSTED_PROXIES", "")
+        self._trusted_proxies: frozenset[str] = frozenset(
+            p.strip() for p in _raw.split(",") if p.strip()
+        )
 
     @property
     def rpm(self) -> int:
@@ -90,13 +95,14 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         teacher_id = try_get_current_teacher_id()
         if teacher_id is not None:
             return f"tid:{teacher_id}"
-        # Use the first entry in X-Forwarded-For if present, otherwise
-        # fall back to request.client.host.
-        forwarded = request.headers.get("X-Forwarded-For", "").strip()
-        if forwarded:
-            return f"ip:{forwarded.split(',')[0].strip()}"
-        if request.client is not None:
-            return f"ip:{request.client.host}"
+        # Only trust X-Forwarded-For when the direct client is a known proxy.
+        client_ip = request.client.host if request.client else None
+        if client_ip and client_ip in self._trusted_proxies:
+            forwarded = request.headers.get("X-Forwarded-For", "").strip()
+            if forwarded:
+                return f"ip:{forwarded.split(',')[0].strip()}"
+        if client_ip:
+            return f"ip:{client_ip}"
         return "ip:unknown"
 
     def _get_sliding_count(self, counter: _SlidingWindowCounter, now: float) -> float:

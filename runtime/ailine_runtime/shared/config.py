@@ -19,7 +19,7 @@ class EmbeddingConfig(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="AILINE_EMBEDDING_")
     provider: Literal["gemini", "openai", "local", "openrouter"] = "gemini"
     model: str = "gemini-embedding-001"
-    dimensions: int = 1536
+    dimensions: int = 3072
     api_key: str = ""
     batch_size: int = 100
     """Max embeddings per API call. Controls chunking of large embed requests
@@ -104,6 +104,9 @@ class Settings(BaseSettings):
 
     # Environment (development | staging | production)
     env: Literal["development", "staging", "production"] = "development"
+
+    # Setup
+    setup_complete: bool = False
 
     # Demo
     demo_mode: bool = False

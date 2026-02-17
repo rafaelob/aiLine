@@ -19,6 +19,7 @@ interface NavItem {
  */
 export function Sidebar() {
   const t = useTranslations('nav')
+  const tApp = useTranslations('app')
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
 
@@ -80,7 +81,7 @@ export function Sidebar() {
                 AiLine
               </span>
               <span className="text-[10px] text-[var(--color-muted)] -mt-0.5 whitespace-nowrap">
-                Adaptive Inclusive Learning
+                {tApp('tagline')}
               </span>
             </motion.div>
           )}
@@ -88,7 +89,7 @@ export function Sidebar() {
       </div>
 
       {/* Navigation items */}
-      <nav className="flex-1 py-2 overflow-y-auto">
+      <div className="flex-1 py-2 overflow-y-auto">
         <LayoutGroup>
           <ul role="list" className="space-y-1 px-3">
             {navItems.map((item) => {
@@ -165,7 +166,7 @@ export function Sidebar() {
             })}
           </ul>
         </LayoutGroup>
-      </nav>
+      </div>
 
       {/* Subtle divider */}
       <div className="h-px mx-4 my-2 bg-gradient-to-r from-transparent via-[var(--color-border)] to-transparent" aria-hidden="true" />
@@ -189,7 +190,7 @@ export function Sidebar() {
                 aria-hidden="true"
               />
               <span className="text-[9px] text-[var(--color-muted)]/70 leading-tight">
-                Powered by<br />Claude Opus 4.6
+                {t('powered_by')}
               </span>
             </motion.div>
           )}

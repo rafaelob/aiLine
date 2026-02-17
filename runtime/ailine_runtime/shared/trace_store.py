@@ -132,13 +132,16 @@ class TraceStore:
 
 # Module-level singleton
 _store: TraceStore | None = None
+_store_lock = __import__("threading").Lock()
 
 
 def get_trace_store() -> TraceStore:
     """Get or create the singleton trace store."""
     global _store
     if _store is None:
-        _store = TraceStore()
+        with _store_lock:
+            if _store is None:
+                _store = TraceStore()
     return _store
 
 

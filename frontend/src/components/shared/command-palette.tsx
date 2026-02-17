@@ -326,19 +326,19 @@ export function CommandPalette() {
                 <kbd className="px-1 rounded bg-[var(--color-surface-elevated)] border border-[var(--color-border)]/50 font-mono">
                   &uarr;&darr;
                 </kbd>
-                navigate
+                {t('hint_navigate')}
               </span>
               <span className="flex items-center gap-1">
                 <kbd className="px-1 rounded bg-[var(--color-surface-elevated)] border border-[var(--color-border)]/50 font-mono">
                   &crarr;
                 </kbd>
-                select
+                {t('hint_select')}
               </span>
               <span className="flex items-center gap-1">
                 <kbd className="px-1 rounded bg-[var(--color-surface-elevated)] border border-[var(--color-border)]/50 font-mono">
                   esc
                 </kbd>
-                close
+                {t('hint_close')}
               </span>
             </div>
           </motion.div>

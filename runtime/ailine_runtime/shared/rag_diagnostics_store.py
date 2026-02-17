@@ -102,11 +102,14 @@ class RAGDiagnosticsStore:
 
 # Singleton instance
 _store: RAGDiagnosticsStore | None = None
+_store_lock = __import__("threading").Lock()
 
 
 def get_rag_diagnostics_store() -> RAGDiagnosticsStore:
     """Get the global RAG diagnostics store singleton."""
     global _store
     if _store is None:
-        _store = RAGDiagnosticsStore()
+        with _store_lock:
+            if _store is None:
+                _store = RAGDiagnosticsStore()
     return _store
