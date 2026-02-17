@@ -50,6 +50,15 @@ export default function ErrorPage({
     retryButtonRef.current?.focus()
   }, [])
 
+  // Clean up copied timeout on unmount to avoid setState on unmounted component
+  useEffect(() => {
+    return () => {
+      if (copiedTimeoutRef.current) {
+        clearTimeout(copiedTimeoutRef.current)
+      }
+    }
+  }, [])
+
   // Build diagnostic info string
   const diagnosticInfo = useCallback(() => {
     const lines: string[] = [

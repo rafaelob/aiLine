@@ -4,20 +4,22 @@ Provides endpoints to check setup status, return provider defaults,
 validate API keys, and apply the initial configuration by writing
 a ``.env`` file to the project root.
 
-No authentication is required for these endpoints (the wizard runs
-before any auth infrastructure exists). Rate limiting is applied
-by the global middleware.
+Authentication: ``/setup/status`` and ``/setup/defaults`` are public
+(read-only, no secrets). ``/setup/validate`` and ``/setup/apply`` require
+a one-time setup token printed to the server console on first start, OR
+are locked entirely once ``AILINE_SETUP_COMPLETE=true`` is in the ``.env``.
 """
 
 from __future__ import annotations
 
+import os
 import re
 import secrets
 from pathlib import Path
 from typing import Any, Literal
 
 import structlog
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel, Field, field_validator
 
 _log = structlog.get_logger("ailine.api.setup")
@@ -26,6 +28,70 @@ router = APIRouter()
 
 # Project root: setup.py -> routers -> api -> ailine_runtime -> runtime -> aiLine
 _PROJECT_ROOT = Path(__file__).resolve().parents[4]
+
+# ---------------------------------------------------------------------------
+# Setup Token -- one-time auth for /setup/validate and /setup/apply
+# ---------------------------------------------------------------------------
+
+_SETUP_TOKEN: str | None = None
+
+
+def _get_or_create_setup_token() -> str:
+    """Return the current setup token, creating one on first call.
+
+    The token is printed to the server console so the deployer can copy it
+    into the setup wizard. It is also accepted via the ``AILINE_SETUP_TOKEN``
+    environment variable for automated/CI usage.
+    """
+    global _SETUP_TOKEN
+    if _SETUP_TOKEN is not None:
+        return _SETUP_TOKEN
+
+    env_token = os.getenv("AILINE_SETUP_TOKEN", "").strip()
+    if env_token:
+        _SETUP_TOKEN = env_token
+    else:
+        _SETUP_TOKEN = secrets.token_urlsafe(32)
+        # Print to stderr so the deployer can see it on first start.
+        # Use print() instead of structlog to avoid token appearing in
+        # JSON log aggregators. The token is ephemeral (new on each restart).
+        import sys
+        print(
+            f"\n{'=' * 60}\n"
+            f"  AILINE SETUP TOKEN: {_SETUP_TOKEN}\n"
+            f"  Use this in the X-Setup-Token header for /setup/apply\n"
+            f"{'=' * 60}\n",
+            file=sys.stderr,
+            flush=True,
+        )
+        _log.info("setup_token_generated", msg="Setup token printed to stderr")
+    return _SETUP_TOKEN
+
+
+def _require_setup_token(x_setup_token: str | None) -> None:
+    """Validate the setup token for write endpoints.
+
+    Raises HTTPException 403 if the token is missing/invalid, or 409 if
+    setup is already complete (write endpoints are locked).
+    """
+    if _is_setup_complete():
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Setup is already complete. To reconfigure, manually edit "
+                "the .env file or remove AILINE_SETUP_COMPLETE."
+            ),
+        )
+
+    expected = _get_or_create_setup_token()
+    if not x_setup_token or x_setup_token != expected:
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "Invalid or missing setup token. Provide the token shown "
+                "in the server console via the X-Setup-Token header."
+            ),
+        )
 
 # ---------------------------------------------------------------------------
 # Constants: provider catalogs
@@ -302,7 +368,7 @@ def _build_env_content(config: SetupConfig) -> str:
         "# === LLM Provider Keys ===",
         f'ANTHROPIC_API_KEY="{config.anthropic_api_key}"',
         f'OPENAI_API_KEY="{config.openai_api_key}"',
-        f'GEMINI_API_KEY="{config.google_api_key}"',
+        f'GOOGLE_API_KEY="{config.google_api_key}"',
         f'OPENROUTER_API_KEY="{config.openrouter_api_key}"',
         "",
         "# === Models ===",
@@ -374,11 +440,21 @@ def _build_env_content(config: SetupConfig) -> str:
 def _parse_pg_credentials(db_url: str) -> tuple[str, str, str]:
     """Extract user, password, and database name from a PostgreSQL URL.
 
+    Uses ``urllib.parse`` for correct handling of passwords containing
+    special characters (``@``, ``/``, URL-encoded sequences).
     Falls back to sensible defaults if the URL is unparseable.
     """
-    match = re.search(r"://([^:]+):([^@]+)@.+/(\w+)", db_url)
-    if match:
-        return match.group(1), match.group(2), match.group(3)
+    from urllib.parse import unquote, urlparse
+
+    try:
+        parsed = urlparse(db_url)
+        user = unquote(parsed.username or "")
+        password = unquote(parsed.password or "")
+        db_name = (parsed.path or "").lstrip("/") or ""
+        if user and password and db_name:
+            return user, password, db_name
+    except Exception:
+        pass
     return "ailine", "ailine_dev", "ailine"
 
 
@@ -432,13 +508,20 @@ async def get_setup_defaults() -> SetupDefaultsOut:
 
 
 @router.post("/validate", response_model=ValidateKeyOut)
-async def validate_api_key(body: ValidateKeyIn) -> ValidateKeyOut:
+async def validate_api_key(
+    body: ValidateKeyIn,
+    x_setup_token: str | None = Header(default=None),
+) -> ValidateKeyOut:
     """Validate an API key by checking its prefix format.
+
+    Requires a valid setup token (printed to the server console on first
+    start) via the ``X-Setup-Token`` header. Locked after setup is complete.
 
     This is a lightweight client-side-quality check. It does NOT
     make a real API call (the SDK may not be available during setup).
-    A future enhancement can add live validation behind a feature flag.
     """
+    _require_setup_token(x_setup_token)
+
     provider = body.provider
     api_key = body.api_key
 
@@ -469,8 +552,14 @@ async def validate_api_key(body: ValidateKeyIn) -> ValidateKeyOut:
 
 
 @router.post("/apply", response_model=SetupApplyOut)
-async def apply_setup(config: SetupConfig) -> SetupApplyOut:
+async def apply_setup(
+    config: SetupConfig,
+    x_setup_token: str | None = Header(default=None),
+) -> SetupApplyOut:
     """Apply the setup configuration by writing a ``.env`` file.
+
+    Requires a valid setup token (printed to the server console on first
+    start) via the ``X-Setup-Token`` header. Locked after setup is complete.
 
     Validates that the chosen LLM provider has a corresponding API key,
     generates a JWT secret if none is provided, and writes the complete
@@ -479,12 +568,26 @@ async def apply_setup(config: SetupConfig) -> SetupApplyOut:
     This endpoint does NOT run database migrations -- that is a
     separate step handled by the deploy/compose workflow.
     """
+    _require_setup_token(x_setup_token)
+
+    # Block re-application once setup is complete to prevent .env overwrites
+    # (including JWT secret, DB URL, CORS origins, etc.).
+    if _is_setup_complete():
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Setup already completed. To re-configure, "
+                "delete the .env file and restart the application."
+            ),
+        )
+
     # Validate that the selected LLM provider has a key.
     _validate_provider_key(config)
 
-    # If setup was already completed, protect locked fields.
-    if _is_setup_complete():
-        _enforce_locked_fields(config)
+    # Prevent changes to embedding configuration after first setup
+    # (embedding dimensions determine pgvector column size; changing
+    # them after data has been indexed requires a full re-index).
+    _enforce_locked_fields(config)
 
     env_content = _build_env_content(config)
     env_path = _env_file_path()

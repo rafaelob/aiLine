@@ -82,6 +82,45 @@ def validate_teacher_id(teacher_id: str) -> str:
     return tid
 
 
+def safe_path_component(value: str, *, label: str = "identifier") -> str:
+    """Validate that *value* is safe for use as a single filesystem path component.
+
+    Rejects values containing directory separators (``/``, ``\\``), parent
+    references (``..``), null bytes, or characters outside ``[a-zA-Z0-9_-]``.
+    This is a defense-in-depth measure -- callers should also validate the
+    semantic format of the value (UUID, etc.) at the API boundary.
+
+    Args:
+        value: The raw string to validate.
+        label: Human-readable label for error messages.
+
+    Raises:
+        ValueError: If the value is empty, too long, or contains
+            unsafe characters for a filesystem path component.
+
+    Returns:
+        The validated value (stripped).
+    """
+    cleaned = value.strip()
+    if not cleaned:
+        raise ValueError(f"{label} must not be empty")
+    if len(cleaned) > 256:
+        raise ValueError(f"{label} exceeds maximum length (256)")
+    # Reject directory separators and parent references
+    if "/" in cleaned or "\\" in cleaned:
+        raise ValueError(f"{label} must not contain path separators")
+    if ".." in cleaned:
+        raise ValueError(f"{label} must not contain parent directory references")
+    if "\x00" in cleaned:
+        raise ValueError(f"{label} must not contain null bytes")
+    # Allow only safe characters (alphanumeric, hyphens, underscores, dots)
+    if not re.match(r"^[a-zA-Z0-9_.\-]+$", cleaned):
+        raise ValueError(
+            f"{label} must contain only alphanumeric characters, hyphens, underscores, and dots"
+        )
+    return cleaned
+
+
 def sanitize_metadata(
     meta: dict,
     *,

@@ -286,6 +286,9 @@ function SystemStatusButton() {
         )}
       >
         <span className={cn('w-2 h-2 rounded-full', dotColor)} aria-hidden="true" />
+        <span className="sr-only">
+          {status === 'healthy' ? t('api_healthy') : status === 'degraded' ? t('api_degraded') : t('system_status')}
+        </span>
         <StatusIcon />
       </button>
 

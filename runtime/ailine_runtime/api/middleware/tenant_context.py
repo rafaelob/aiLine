@@ -307,6 +307,19 @@ def _unverified_jwt_decode(token: str) -> str | None:
         return None
 
 
+def extract_teacher_id_from_jwt(token: str) -> tuple[str | None, str | None]:
+    """Public API: extract teacher_id from a JWT token.
+
+    Returns a tuple of (teacher_id, error_reason). If teacher_id is not
+    None, error_reason is None and vice versa.
+
+    This is the public wrapper around the internal ``_extract_teacher_id_from_jwt``
+    function, intended for use by WebSocket endpoints and other code that
+    needs JWT verification outside the middleware pipeline.
+    """
+    return _extract_teacher_id_from_jwt(token)
+
+
 class TenantContextMiddleware(BaseHTTPMiddleware):
     """Extract teacher_id from request and store in contextvars.
 

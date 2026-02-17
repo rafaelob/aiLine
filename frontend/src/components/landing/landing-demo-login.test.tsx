@@ -124,7 +124,8 @@ describe('LandingDemoLogin', () => {
 
     expect(mockPush).toHaveBeenCalledWith('/en/dashboard')
     expect(sessionStorage.getItem('ailine_demo_profile')).toBe('teacher-ms-johnson')
-    expect(sessionStorage.getItem('ailine_demo_role')).toBe('teacher')
+    // setDemoProfile() also clears stale JWT tokens
+    expect(sessionStorage.getItem('ailine_token')).toBeNull()
   })
 
   it('clicking student Enter sets accessibility theme and navigates', async () => {
@@ -144,7 +145,7 @@ describe('LandingDemoLogin', () => {
     await user.click(parentBtn)
 
     expect(mockPush).toHaveBeenCalledWith('/en/progress')
-    expect(sessionStorage.getItem('ailine_demo_role')).toBe('parent')
+    expect(sessionStorage.getItem('ailine_demo_profile')).toBe('parent-david')
   })
 
   it('section has aria-labelledby pointing to heading', () => {

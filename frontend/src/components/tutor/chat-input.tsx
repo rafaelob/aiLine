@@ -86,7 +86,8 @@ export function ChatInput({ onSend, disabled = false }: ChatInputProps) {
               isListening
                 ? 'bg-[var(--color-error)] text-white animate-pulse'
                 : 'bg-[var(--color-surface-elevated)] text-[var(--color-muted)] hover:text-[var(--color-text)]',
-              'disabled:opacity-40 disabled:cursor-not-allowed'
+              'disabled:opacity-40 disabled:cursor-not-allowed',
+              'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]',
             )}
             aria-label={isListening ? t('stop_voice') : t('start_voice')}
           >
@@ -128,7 +129,8 @@ export function ChatInput({ onSend, disabled = false }: ChatInputProps) {
             'flex items-center justify-center w-10 h-10 rounded-full shrink-0',
             'bg-[var(--color-primary)] text-[var(--color-on-primary)]',
             'hover:bg-[var(--color-primary-hover)] transition-colors',
-            'disabled:opacity-40 disabled:cursor-not-allowed'
+            'disabled:opacity-40 disabled:cursor-not-allowed',
+            'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]',
           )}
           aria-label={t('send')}
         >

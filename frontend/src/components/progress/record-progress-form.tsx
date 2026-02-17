@@ -18,10 +18,12 @@ export function RecordProgressForm({ onSuccess, className }: RecordProgressFormP
   const [standardDesc, setStandardDesc] = useState('')
   const [mastery, setMastery] = useState('developing')
   const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setSubmitting(true)
+    setSubmitError(null)
     try {
       const res = await fetch(`${API_BASE}/progress/record`, {
         method: 'POST',
@@ -37,7 +39,7 @@ export function RecordProgressForm({ onSuccess, className }: RecordProgressFormP
       if (!res.ok) throw new Error(`Failed: ${res.status}`)
       onSuccess()
     } catch {
-      // Silent fail for MVP
+      setSubmitError(t('submit_error'))
     } finally {
       setSubmitting(false)
     }
@@ -53,6 +55,11 @@ export function RecordProgressForm({ onSuccess, className }: RecordProgressFormP
       )}
     >
       <h3 className="text-sm font-semibold text-[var(--color-text)]">{t('record_progress')}</h3>
+      {submitError && (
+        <p className="text-xs text-[var(--color-error)]" role="alert">
+          {submitError}
+        </p>
+      )}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label htmlFor="rp-student-id" className="block text-xs font-medium text-[var(--color-muted)] mb-1">
@@ -113,7 +120,7 @@ export function RecordProgressForm({ onSuccess, className }: RecordProgressFormP
       </div>
       <div className="flex items-center gap-3">
         <div>
-          <label htmlFor="rp-mastery" className="sr-only">
+          <label htmlFor="rp-mastery" className="block text-xs font-medium text-[var(--color-muted)] mb-1">
             {t('mastery_level_label')}
           </label>
           <select
@@ -131,14 +138,16 @@ export function RecordProgressForm({ onSuccess, className }: RecordProgressFormP
         <button
           type="submit"
           disabled={submitting}
+          aria-busy={submitting}
           className={cn(
             'px-5 py-2.5 rounded-[var(--radius-md)]',
             'bg-[var(--color-primary)] text-[var(--color-on-primary)]',
             'text-sm font-medium hover:bg-[var(--color-primary-hover)]',
-            'disabled:opacity-50'
+            'disabled:opacity-50',
+            'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]',
           )}
         >
-          {submitting ? '...' : t('record_progress')}
+          {submitting ? t('submitting') : t('record_progress')}
         </button>
       </div>
     </form>

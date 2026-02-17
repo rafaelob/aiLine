@@ -67,7 +67,7 @@ SmartRouter uses weighted complexity scoring to pick the optimal model per reque
 
 ### 4. Production Engineering — Built to Run, Not Just to Demo
 
-Hexagonal architecture with zero framework imports in the domain core. 60 ADRs documenting every significant decision. Tenant isolation via JWT + composite foreign keys + vector store filtering. RFC 7807 error responses. OpenTelemetry tracing. SSE terminal guarantee (every pipeline run reaches a final state — no stuck spinners). 3,087 tests across 4 layers.
+Hexagonal architecture with zero framework imports in the domain core. 60 ADRs documenting every significant decision. Tenant isolation via JWT + composite foreign keys + vector store filtering. RFC 7807 error responses. OpenTelemetry tracing. SSE terminal guarantee (every pipeline run reaches a final state — no stuck spinners). 3,300+ tests across 4 layers.
 
 ### 5. Social Impact at Scale
 
@@ -263,7 +263,7 @@ cd runtime && uv run pytest -m live_llm -v --timeout=120
 |----------|-------------|
 | [Judge Packet](docs/judge-packet.md) | 1-page project summary for judges |
 | [Demo Script](docs/demo-script.md) | 3-minute "Meet Ana" demo narrative |
-| [Feature Map](docs/feature-map.md) | 145 features across 12 capability areas |
+| [Feature Map](docs/feature-map.md) | 190+ features across 12 capability areas |
 | [Architecture Diagrams](docs/architecture-diagram.md) | 8 Mermaid diagrams |
 | [System Design](control_docs/SYSTEM_DESIGN.md) | Architecture, data flows, 60 ADR log |
 | [Test Strategy](control_docs/TEST.md) | Test matrix, coverage targets, how to run |

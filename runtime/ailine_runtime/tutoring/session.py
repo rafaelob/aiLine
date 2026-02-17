@@ -31,6 +31,9 @@ def _sessions_dir() -> Path:
 
 
 def save_session(session: TutorSession) -> dict[str, Any]:
+    from ..shared.sanitize import safe_path_component
+
+    safe_path_component(session.session_id, label="session_id")
     path = _sessions_dir() / f"{session.session_id}.json"
     path.write_text(
         session.model_dump_json(indent=2, ensure_ascii=False), encoding="utf-8"
@@ -39,6 +42,13 @@ def save_session(session: TutorSession) -> dict[str, Any]:
 
 
 def load_session(session_id: str) -> TutorSession | None:
+    from ..shared.sanitize import safe_path_component
+
+    try:
+        safe_path_component(session_id, label="session_id")
+    except ValueError:
+        logger.warning("load_session_invalid_id", session_id=session_id[:50])
+        return None
     path = _sessions_dir() / f"{session_id}.json"
     if not path.exists():
         return None

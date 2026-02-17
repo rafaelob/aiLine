@@ -37,7 +37,7 @@ export function LandingNav({ locale, startDemo }: LandingNavProps) {
 
   return (
     <motion.nav
-      aria-label="Landing navigation"
+      aria-label={tNav('landing_nav_label')}
       initial={noMotion ? undefined : { y: -80 }}
       animate={noMotion ? { opacity: visible ? 1 : 0 } : { y: visible ? 0 : -80 }}
       transition={noMotion ? { duration: 0 } : { type: 'spring', stiffness: 300, damping: 30 }}

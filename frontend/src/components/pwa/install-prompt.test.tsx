@@ -70,13 +70,13 @@ describe('InstallPrompt', () => {
       fireInstallPromptEvent()
     })
 
-    // The container div has role="banner" and aria-label
+    // The container div has role="alertdialog" and aria-label
     const containers = screen.getAllByLabelText('pwa.install_label')
     expect(containers.length).toBeGreaterThanOrEqual(1)
-    // One of them should be the banner container
-    const bannerContainer = containers.find(
-      (el) => el.getAttribute('role') === 'banner'
+    // One of them should be the alertdialog container
+    const alertDialogContainer = containers.find(
+      (el) => el.getAttribute('role') === 'alertdialog'
     )
-    expect(bannerContainer).toBeDefined()
+    expect(alertDialogContainer).toBeDefined()
   })
 })

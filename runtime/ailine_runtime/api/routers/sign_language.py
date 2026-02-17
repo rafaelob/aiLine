@@ -28,7 +28,7 @@ from pydantic import BaseModel, Field
 
 from ...accessibility.caption_orchestrator import CaptionOrchestrator
 from ...accessibility.gloss_translator import GlossToTextTranslator
-from ...api.middleware.tenant_context import _extract_teacher_id_from_jwt
+from ...api.middleware.tenant_context import extract_teacher_id_from_jwt
 from ...app.authz import require_authenticated
 
 logger = structlog.get_logger(__name__)
@@ -198,7 +198,7 @@ async def libras_caption_ws(websocket: WebSocket) -> None:
     # Authenticate via query parameter token before accepting the connection.
     token = websocket.query_params.get("token", "")
     if token:
-        teacher_id, _error = _extract_teacher_id_from_jwt(token)
+        teacher_id, _error = extract_teacher_id_from_jwt(token)
         if not teacher_id:
             await websocket.close(code=4001, reason="Authentication failed")
             return

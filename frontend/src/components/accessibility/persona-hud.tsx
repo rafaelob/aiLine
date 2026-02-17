@@ -59,11 +59,9 @@ export function PersonaHUD({ className }: PersonaHUDProps) {
       setRipple({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 })
       setTimeout(() => setRipple(null), 600)
 
-      // Apply theme via DOM (instant CSS swap)
+      // Apply theme via hook (instant CSS swap, persists in localStorage)
       startTransition(() => {
         switchTheme(persona.id)
-        // Also set data-theme directly for the CSS custom property swap
-        document.body.setAttribute('data-theme', THEME_MAP[persona.id] ?? persona.id)
       })
 
       // Show toast
@@ -117,6 +115,8 @@ export function PersonaHUD({ className }: PersonaHUDProps) {
 
         {/* Main HUD bar */}
         <div
+          role="radiogroup"
+          aria-label={t('hud_label')}
           className={cn(
             'glass rounded-full px-2 py-1.5',
             'shadow-[var(--shadow-lg)]',

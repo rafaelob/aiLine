@@ -84,7 +84,7 @@ class TestSettings:
         assert settings.planner_model == "anthropic:claude-opus-4-6"
         assert settings.max_refinement_iters == 2
         assert settings.demo_mode is False
-        assert settings.default_locale == "pt-BR"
+        assert settings.default_locale == "en"
         assert settings.enable_exports is True
 
     def test_env_override(self):

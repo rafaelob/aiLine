@@ -6,18 +6,19 @@ import { useRouter, usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'motion/react'
 import { cn } from '@/lib/cn'
 import { useAccessibilityStore } from '@/stores/accessibility-store'
+import { cssTheme } from '@/hooks/use-theme'
 import type { Locale } from '@/i18n/routing'
 
 const THEME_IDS = [
   'standard',
-  'high-contrast',
+  'high_contrast',
   'tea',
   'tdah',
   'dyslexia',
-  'low-vision',
+  'low_vision',
   'hearing',
   'motor',
-  'screen-reader',
+  'screen_reader',
 ] as const
 
 interface CommandItem {
@@ -70,10 +71,11 @@ export function CommandPalette() {
 
   const switchTheme = useCallback(
     (themeId: string) => {
+      const cssValue = cssTheme(themeId)
       setTheme(themeId)
       if (typeof document !== 'undefined') {
-        document.body.setAttribute('data-theme', themeId)
-        document.documentElement.setAttribute('data-theme', themeId)
+        document.body.setAttribute('data-theme', cssValue)
+        document.documentElement.setAttribute('data-theme', cssValue)
       }
       setOpen(false)
     },
@@ -157,6 +159,35 @@ export function CommandPalette() {
       // Small delay for animation
       requestAnimationFrame(() => inputRef.current?.focus())
     }
+  }, [open])
+
+  // Focus trap when dialog is open
+  useEffect(() => {
+    if (!open) return
+    function handleFocusTrap(e: KeyboardEvent) {
+      if (e.key !== 'Tab') return
+      const dialog = document.querySelector('[data-testid="command-palette"] [role="dialog"]')
+      if (!dialog) return
+      const focusableEls = dialog.querySelectorAll<HTMLElement>(
+        'input, button, [href], [tabindex]:not([tabindex="-1"]), [role="option"]'
+      )
+      if (focusableEls.length === 0) return
+      const first = focusableEls[0]
+      const last = focusableEls[focusableEls.length - 1]
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault()
+          last.focus()
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault()
+          first.focus()
+        }
+      }
+    }
+    document.addEventListener('keydown', handleFocusTrap)
+    return () => document.removeEventListener('keydown', handleFocusTrap)
   }, [open])
 
   // Scroll active item into view

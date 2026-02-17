@@ -24,7 +24,7 @@ _SECURITY_HEADERS: dict[str, str] = {
     "X-Frame-Options": "DENY",
     "Referrer-Policy": "strict-origin-when-cross-origin",
     "Permissions-Policy": "camera=(self), microphone=(), geolocation=()",
-    "Strict-Transport-Security": "max-age=63072000; includeSubDomains",
+    "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
     "Content-Security-Policy": (
         "default-src 'self'; "
         "script-src 'self' https://vlibras.gov.br; "
@@ -33,6 +33,7 @@ _SECURITY_HEADERS: dict[str, str] = {
         "connect-src 'self'; "
         "font-src 'self'; "
         "frame-src https://vlibras.gov.br; "
+        "frame-ancestors 'none'; "
         "object-src 'none'; "
         "base-uri 'self'"
     ),

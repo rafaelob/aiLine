@@ -12,7 +12,7 @@ from __future__ import annotations
 from typing import Any
 
 import structlog
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from ...app.authz import require_authenticated
 from ...shared.rag_diagnostics_store import get_rag_diagnostics_store
@@ -24,7 +24,7 @@ router = APIRouter()
 
 @router.get("/diagnostics/recent")
 async def list_recent_diagnostics(
-    limit: int = 20,
+    limit: int = Query(20, ge=1, le=50),
     teacher_id: str = Depends(require_authenticated),
 ) -> list[dict[str, Any]]:
     """List recent RAG diagnostics (lightweight summary).

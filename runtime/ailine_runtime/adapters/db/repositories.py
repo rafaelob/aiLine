@@ -48,8 +48,14 @@ class BaseRepository(Generic[T]):
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
-    async def get_by_id(self, entity_id: str) -> T | None:
-        """Fetch an entity by primary key (no tenant scoping)."""
+    async def get_by_id_unsafe(self, entity_id: str) -> T | None:
+        """Fetch an entity by primary key **without** tenant scoping.
+
+        WARNING: This bypasses tenant isolation. Only use for admin
+        operations, migrations, or internal lookups that have already
+        verified ownership. Prefer ``get_by_id_and_teacher()`` in
+        request-handling code.
+        """
         return await self._session.get(self._model, entity_id)
 
     async def get_by_id_and_teacher(self, entity_id: str, teacher_id: str) -> T | None:

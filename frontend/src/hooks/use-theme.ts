@@ -8,6 +8,27 @@ const THEME_STORAGE_KEY = 'ailine-persona-theme'
 const DEFAULT_PERSONA: PersonaId = 'standard'
 
 /**
+ * Map PersonaId (underscored TypeScript identifier) to the CSS
+ * data-theme value (hyphenated, as defined in globals.css).
+ * Only entries that differ from the PersonaId are listed.
+ */
+const PERSONA_TO_CSS_THEME: Partial<Record<PersonaId, string>> = {
+  high_contrast: 'high-contrast',
+  low_vision: 'low-vision',
+  screen_reader: 'screen-reader',
+}
+
+/**
+ * Resolve the CSS data-theme value for a given PersonaId or theme string.
+ *
+ * Exported so that other components can map underscored TypeScript
+ * identifiers to hyphenated CSS data-theme values consistently.
+ */
+export function cssTheme(persona: string): string {
+  return (PERSONA_TO_CSS_THEME as Record<string, string>)[persona] ?? persona
+}
+
+/**
  * Theme switching hook with localStorage persistence.
  * Applies data-theme attribute to document.body (ADR-019).
  * Uses useSyncExternalStore to read localStorage without setState-in-effect.
@@ -43,8 +64,10 @@ export function useTheme() {
 }
 
 /** Apply theme directly to the DOM without React re-render (ADR-019). */
-function applyTheme(persona: string): void {
-  document.body.setAttribute('data-theme', persona)
+function applyTheme(persona: PersonaId): void {
+  const theme = cssTheme(persona)
+  document.body.setAttribute('data-theme', theme)
+  document.documentElement.setAttribute('data-theme', theme)
 }
 
 const VALID_PERSONAS = new Set<string>([

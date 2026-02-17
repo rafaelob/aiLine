@@ -50,8 +50,10 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
         # Store in contextvars for downstream access
         token = request_id_var.set(rid)
         try:
-            # Bind to structlog so every log line includes request_id
-            structlog.contextvars.clear_contextvars()
+            # Bind request_id to structlog.  Do NOT call clear_contextvars()
+            # here -- that would erase the teacher_id binding set by the
+            # TenantContextMiddleware which runs earlier in the middleware
+            # chain (Starlette LIFO ordering).
             structlog.contextvars.bind_contextvars(request_id=rid)
 
             response = await call_next(request)

@@ -5,7 +5,9 @@ import { useTranslations } from 'next-intl'
 import { motion, useReducedMotion } from 'motion/react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/cn'
+import { setDemoProfile } from '@/lib/api'
 import { useAccessibilityStore } from '@/stores/accessibility-store'
+import { cssTheme } from '@/hooks/use-theme'
 
 interface DemoProfile {
   key: string
@@ -130,17 +132,18 @@ function ProfileCard({
   }, [locale, profile.route, router])
 
   const handleEnter = useCallback(() => {
-    // Store demo profile in sessionStorage for the app to read
+    // Use shared setDemoProfile() to persist profile, dispatch change event, and clear stale JWT
     if (typeof window !== 'undefined') {
-      sessionStorage.setItem('ailine_demo_profile', profile.key)
-      sessionStorage.setItem('ailine_demo_role', profile.role)
+      setDemoProfile(profile.key)
     }
 
     // Set accessibility theme for student profiles
     if (profile.accessibility) {
+      const css = cssTheme(profile.accessibility)
       setTheme(profile.accessibility)
       if (typeof document !== 'undefined') {
-        document.body.setAttribute('data-theme', profile.accessibility)
+        document.body.setAttribute('data-theme', css)
+        document.documentElement.setAttribute('data-theme', css)
       }
     }
 

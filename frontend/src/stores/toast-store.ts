@@ -21,6 +21,9 @@ interface ToastState {
 
 let nextId = 0
 
+/** Map of toast ID to its auto-dismiss timer, so we can cancel on manual removal. */
+const timerMap = new Map<string, ReturnType<typeof setTimeout>>()
+
 const DEFAULT_DURATIONS: Record<ToastVariant, number> = {
   success: 5000,
   info: 5000,
@@ -40,23 +43,35 @@ export const useToastStore = create<ToastState>((set) => ({
     }))
 
     if (finalDuration > 0) {
-      setTimeout(() => {
+      const timer = setTimeout(() => {
+        timerMap.delete(id)
         set((state) => ({
           toasts: state.toasts.filter((t) => t.id !== id),
         }))
       }, finalDuration)
+      timerMap.set(id, timer)
     }
 
     return id
   },
 
   removeToast: (id) => {
+    const timer = timerMap.get(id)
+    if (timer) {
+      clearTimeout(timer)
+      timerMap.delete(id)
+    }
     set((state) => ({
       toasts: state.toasts.filter((t) => t.id !== id),
     }))
   },
 
   clearAll: () => {
+    // Cancel all pending auto-dismiss timers
+    for (const timer of timerMap.values()) {
+      clearTimeout(timer)
+    }
+    timerMap.clear()
     set({ toasts: [] })
   },
 }))

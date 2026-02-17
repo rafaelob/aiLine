@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
-import { motion } from 'motion/react'
+import { motion, useReducedMotion } from 'motion/react'
 import DOMPurify from 'dompurify'
 import { cn } from '@/lib/cn'
 import { EXPORT_VARIANTS } from '@/lib/accessibility-data'
@@ -30,6 +30,8 @@ export function ExportViewer({
   const t = useTranslations('export_viewer')
   const tv = useTranslations('export_variants')
   const [selectedVariant, setSelectedVariant] = useState<ExportVariant>('low_distraction')
+  const prefersReducedMotion = useReducedMotion()
+  const noMotion = prefersReducedMotion ?? false
 
   const standardHtml = useMemo(
     () => sanitize(exports['standard'] ?? ''),
@@ -119,6 +121,7 @@ export function ExportViewer({
           panelId="standard-panel"
           contentLabel={t('content_label', { title: t('standard_panel') })}
           noContentLabel={t('no_content')}
+          noMotion={noMotion}
         />
         <ExportPanel
           title={selectedVariantLabel}
@@ -126,6 +129,7 @@ export function ExportViewer({
           panelId="variant-panel"
           contentLabel={t('content_label', { title: selectedVariantLabel })}
           noContentLabel={t('no_content')}
+          noMotion={noMotion}
         />
       </div>
     </div>
@@ -140,18 +144,19 @@ interface ExportPanelProps {
   panelId: string
   contentLabel: string
   noContentLabel: string
+  noMotion: boolean
 }
 
-function ExportPanel({ title, html, panelId, contentLabel, noContentLabel }: ExportPanelProps) {
+function ExportPanel({ title, html, panelId, contentLabel, noContentLabel, noMotion }: ExportPanelProps) {
   return (
     <motion.article
       id={panelId}
       layoutId={`export-panel-${panelId}`}
-      initial={{ opacity: 0, rotateY: -8 }}
-      animate={{ opacity: 1, rotateY: 0 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+      initial={noMotion ? undefined : { opacity: 0, rotateY: -8 }}
+      animate={noMotion ? undefined : { opacity: 1, rotateY: 0 }}
+      transition={noMotion ? undefined : { type: 'spring', stiffness: 300, damping: 25 }}
       className="flex flex-col overflow-hidden rounded-2xl glass card-hover"
-      style={{ perspective: '800px', transformStyle: 'preserve-3d' }}
+      style={noMotion ? undefined : { perspective: '800px', transformStyle: 'preserve-3d' }}
     >
       <header className="border-b border-[var(--color-border)] glass px-4 py-3">
         <h3 className="text-sm font-semibold text-[var(--color-text)]">
@@ -159,7 +164,7 @@ function ExportPanel({ title, html, panelId, contentLabel, noContentLabel }: Exp
         </h3>
       </header>
       <div
-        className="flex-1 overflow-auto p-4"
+        className="flex-1 overflow-auto p-4 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--color-primary)]"
         role="document"
         aria-label={contentLabel}
         tabIndex={0}
@@ -199,5 +204,6 @@ function sanitize(html: string): string {
       'img', 'figure', 'figcaption',
     ],
     ALLOWED_ATTR: ['class', 'id', 'alt', 'src', 'title', 'aria-label', 'role'],
+    FORBID_ATTR: ['style'],
   })
 }

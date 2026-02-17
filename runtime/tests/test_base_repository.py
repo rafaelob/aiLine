@@ -125,8 +125,8 @@ class TestBaseRepositoryCRUD:
         )
         await repo.add(course)
 
-        # get_by_id does NOT scope by teacher
-        fetched = await repo.get_by_id(course.id)
+        # get_by_id_unsafe does NOT scope by teacher (admin-only)
+        fetched = await repo.get_by_id_unsafe(course.id)
         assert fetched is not None
         assert fetched.title == "Admin View"
 

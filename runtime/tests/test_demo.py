@@ -473,17 +473,21 @@ class TestDemoAPIExecute:
 class TestDemoAPIReset:
     """Tests for POST /demo/reset."""
 
-    async def test_reset_returns_ok(self, client_demo_off: AsyncClient) -> None:
-        resp = await client_demo_off.post("/demo/reset")
+    async def test_reset_returns_ok(self, client_demo_on: AsyncClient) -> None:
+        resp = await client_demo_on.post("/demo/reset")
         assert resp.status_code == 200
         body = resp.json()
         assert body["status"] == "ok"
 
+    async def test_reset_requires_demo_mode(self, client_demo_off: AsyncClient) -> None:
+        resp = await client_demo_off.post("/demo/reset")
+        assert resp.status_code == 403
+
     async def test_scenarios_available_after_reset(
-        self, client_demo_off: AsyncClient
+        self, client_demo_on: AsyncClient
     ) -> None:
-        await client_demo_off.post("/demo/reset")
-        resp = await client_demo_off.get("/demo/scenarios")
+        await client_demo_on.post("/demo/reset")
+        resp = await client_demo_on.get("/demo/scenarios")
         assert resp.status_code == 200
         assert len(resp.json()) >= 1
 
@@ -909,56 +913,60 @@ class TestDemoProfilesUnit:
 class TestDemoSeed:
     """Tests for POST /demo/seed."""
 
-    async def test_seed_returns_ok(self, client_demo_off: AsyncClient) -> None:
+    async def test_seed_requires_demo_mode(self, client_demo_off: AsyncClient) -> None:
         resp = await client_demo_off.post("/demo/seed")
+        assert resp.status_code == 403
+
+    async def test_seed_returns_ok(self, client_demo_on: AsyncClient) -> None:
+        resp = await client_demo_on.post("/demo/seed")
         assert resp.status_code == 200
         body = resp.json()
         assert body["status"] == "ok"
         assert "teacher_id" in body
         assert body["teacher_id"] == "demo-teacher-ms-johnson"
 
-    async def test_seed_creates_materials(self, client_demo_off: AsyncClient) -> None:
-        resp = await client_demo_off.post("/demo/seed")
+    async def test_seed_creates_materials(self, client_demo_on: AsyncClient) -> None:
+        resp = await client_demo_on.post("/demo/seed")
         body = resp.json()
         assert body["created"]["materials"] == 2
         assert len(body["ids"]["materials"]) == 2
 
-    async def test_seed_creates_reviews(self, client_demo_off: AsyncClient) -> None:
-        resp = await client_demo_off.post("/demo/seed")
+    async def test_seed_creates_reviews(self, client_demo_on: AsyncClient) -> None:
+        resp = await client_demo_on.post("/demo/seed")
         body = resp.json()
         assert body["created"]["reviews"] == 3
         assert len(body["ids"]["reviews"]) == 3
 
     async def test_seed_creates_progress_records(
-        self, client_demo_off: AsyncClient
+        self, client_demo_on: AsyncClient
     ) -> None:
-        resp = await client_demo_off.post("/demo/seed")
+        resp = await client_demo_on.post("/demo/seed")
         body = resp.json()
         assert body["created"]["progress"] == 8
         assert len(body["ids"]["progress"]) == 8
 
-    async def test_seed_creates_tutors(self, client_demo_off: AsyncClient) -> None:
-        resp = await client_demo_off.post("/demo/seed")
+    async def test_seed_creates_tutors(self, client_demo_on: AsyncClient) -> None:
+        resp = await client_demo_on.post("/demo/seed")
         body = resp.json()
         assert body["created"]["tutors"] == 2
         assert len(body["ids"]["tutors"]) == 2
 
-    async def test_seed_creates_sessions(self, client_demo_off: AsyncClient) -> None:
-        resp = await client_demo_off.post("/demo/seed")
+    async def test_seed_creates_sessions(self, client_demo_on: AsyncClient) -> None:
+        resp = await client_demo_on.post("/demo/seed")
         body = resp.json()
         assert body["created"]["sessions"] == 2
         assert len(body["ids"]["sessions"]) == 2
 
     async def test_seed_data_accessible_with_demo_header(
         self,
-        client_demo_off: AsyncClient,
+        client_demo_on: AsyncClient,
     ) -> None:
         """After seeding, materials should be accessible using the teacher's ID."""
-        seed_resp = await client_demo_off.post("/demo/seed")
+        seed_resp = await client_demo_on.post("/demo/seed")
         assert seed_resp.status_code == 200
 
         # Verify materials are accessible via the materials API
-        mat_resp = await client_demo_off.get(
+        mat_resp = await client_demo_on.get(
             "/materials",
             headers={"X-Teacher-ID": "demo-teacher-ms-johnson"},
         )

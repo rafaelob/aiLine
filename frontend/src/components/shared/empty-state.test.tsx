@@ -1,16 +1,22 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import React from 'react'
 import { EmptyState } from './empty-state'
 
 // Mock motion/react to render static elements
-vi.mock('motion/react', () => ({
-  motion: {
-    div: ({ children, ...rest }: Record<string, unknown>) => {
-      const { initial: _i, animate: _a, exit: _e, transition: _t, variants: _v, ...safe } = rest
-      return <div {...safe}>{children as React.ReactNode}</div>
+vi.mock('motion/react', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('motion/react')>()
+  return {
+    ...actual,
+    motion: {
+      div: ({ children, ...rest }: Record<string, unknown>) => {
+        const { initial: _i, animate: _a, exit: _e, transition: _t, variants: _v, ...safe } = rest
+        return React.createElement('div', safe, children as React.ReactNode)
+      },
     },
-  },
-}))
+    useReducedMotion: () => false,
+  }
+})
 
 describe('EmptyState', () => {
   it('renders the title', () => {

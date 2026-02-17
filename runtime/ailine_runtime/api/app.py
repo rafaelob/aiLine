@@ -54,7 +54,7 @@ def normalize_metric_path(path: str) -> str:
     for part in parts:
         if not part:
             normalized.append(part)
-        elif _UUID_RE.fullmatch(part) or _NUMERIC_RE.match(part):
+        elif _UUID_RE.fullmatch(part) or _NUMERIC_RE.fullmatch(part):
             normalized.append(":id")
         else:
             normalized.append(part)

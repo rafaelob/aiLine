@@ -162,6 +162,7 @@ export function DashboardContent() {
             className={cn(
               'shrink-0 px-4 py-2.5 rounded-xl btn-shimmer btn-press',
               'text-sm font-semibold text-[var(--color-on-primary)]',
+              'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]',
             )}
             style={{ background: 'var(--gradient-hero)' }}
           >
@@ -222,7 +223,7 @@ export function DashboardContent() {
       </motion.section>
 
       {/* Stats row — rotating gradient border glass cards */}
-      <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <motion.section variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-4" aria-label={t('stats_section')}>
         {stats.map((stat) => (
           <div
             key={stat.key}
@@ -247,7 +248,7 @@ export function DashboardContent() {
             </div>
           </div>
         ))}
-      </motion.div>
+      </motion.section>
 
       {/* Quick actions — spotlight effect on hover */}
       <motion.section variants={itemVariants} aria-labelledby="quick-actions-heading">
@@ -261,7 +262,8 @@ export function DashboardContent() {
               href={action.href}
               className={cn(
                 'group relative overflow-hidden flex items-center gap-4 p-5',
-                'rounded-xl glass card-hover'
+                'rounded-xl glass card-hover',
+                'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]',
               )}
               onMouseMove={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect()
@@ -306,7 +308,13 @@ export function DashboardContent() {
           </h2>
           <a
             href={`${localePrefix}/plans`}
-            className={cn('text-sm text-[var(--color-primary)]', 'hover:underline underline-offset-4')}
+            aria-label={`${t('view_all')} ${t('recent_plans')}`}
+            className={cn(
+              'text-sm text-[var(--color-primary)]',
+              'hover:underline underline-offset-4',
+              'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]',
+              'rounded-[var(--radius-sm)]',
+            )}
           >
             {t('view_all')}
           </a>
@@ -314,7 +322,7 @@ export function DashboardContent() {
 
         {loading ? (
           /* Loading skeleton */
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4" data-testid="loading-skeleton">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4" data-testid="loading-skeleton" role="status" aria-label={t('loading_plans')}>
             {[0, 1, 2].map((i) => (
               <div
                 key={i}
@@ -383,7 +391,8 @@ export function DashboardContent() {
                   'text-[var(--color-on-primary)]',
                   'shadow-[var(--shadow-md)]',
                   'hover:shadow-[var(--shadow-lg)] hover:scale-[1.02]',
-                  'transition-all duration-300'
+                  'transition-all duration-300',
+                  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]',
                 )}
                 style={{ background: 'var(--gradient-hero)' }}
               >

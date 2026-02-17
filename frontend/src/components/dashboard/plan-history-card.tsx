@@ -27,7 +27,8 @@ export function PlanHistoryCard({
   return (
     <a
       href={`${localePrefix}/plans`}
-      className="glass card-hover rounded-xl p-4 flex flex-col gap-2 group"
+      aria-label={`${t('plan_run')} ${shortId} - ${isCompleted ? t('plan_status_completed') : t('plan_status_failed')}`}
+      className="glass card-hover rounded-xl p-4 flex flex-col gap-2 group focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]"
     >
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-mono text-[var(--color-muted)] truncate">

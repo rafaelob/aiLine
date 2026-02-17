@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { motion, useReducedMotion } from 'motion/react'
 import { cn } from '@/lib/cn'
 import { useAccessibilityStore } from '@/stores/accessibility-store'
+import { cssTheme } from '@/hooks/use-theme'
 
 interface LandingHeroProps {
   locale: string
@@ -21,7 +22,7 @@ const PERSONA_PREVIEWS = [
   { id: 'tea', label: 'ASD', color: '#2D8B6E' },
   { id: 'tdah', label: 'ADHD', color: '#E07E34' },
   { id: 'dyslexia', label: 'Dyslexia', color: '#3B7DD8' },
-  { id: 'high-contrast', label: 'High Contrast', color: '#5EEAD4' },
+  { id: 'high_contrast', label: 'High Contrast', color: '#5EEAD4' },
 ] as const
 
 /**
@@ -39,7 +40,9 @@ export function LandingHero({ locale: _locale, title, subtitle, cta, fullName, b
     setActivePersona(id)
     setTheme(id)
     if (typeof document !== 'undefined') {
-      document.body.setAttribute('data-theme', id)
+      const css = cssTheme(id)
+      document.body.setAttribute('data-theme', css)
+      document.documentElement.setAttribute('data-theme', css)
     }
   }
 

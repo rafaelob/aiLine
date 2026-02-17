@@ -7,12 +7,17 @@ Provides endpoints to:
 
 Designed for reliable hackathon presentations where latency and cost
 must be zero.
+
+All mutating demo endpoints (``seed``, ``reset``) require
+``AILINE_DEMO_MODE=1`` to be set in the environment. Read-only
+endpoints (``profiles``, ``scenarios``) are always available.
 """
 
 from __future__ import annotations
 
 import asyncio
 import json
+import os
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 from typing import Any
@@ -26,6 +31,30 @@ from ...app.services.demo import DemoService
 logger = structlog.get_logger("ailine.api.demo")
 
 router = APIRouter()
+
+
+def _require_demo_mode(request: Request) -> None:
+    """Raise 403 if demo mode is not enabled.
+
+    Checks ``app.state.settings.demo_mode`` first (set during app
+    creation from the ``AILINE_DEMO_MODE`` env var). Falls back to
+    reading the env var directly for robustness.
+    """
+    settings = getattr(request.app.state, "settings", None)
+    if settings is not None and getattr(settings, "demo_mode", False):
+        return
+
+    demo_env = os.getenv("AILINE_DEMO_MODE", "").strip()
+    if demo_env in ("1", "true", "yes"):
+        return
+
+    raise HTTPException(
+        status_code=403,
+        detail=(
+            "Demo mode is not enabled. Set AILINE_DEMO_MODE=1 "
+            "in the environment to use demo endpoints."
+        ),
+    )
 
 # ---------------------------------------------------------------------------
 # Demo profiles -- pre-configured personas for hackathon judges
@@ -137,13 +166,16 @@ async def get_demo_profiles() -> dict[str, Any]:
 async def seed_demo_data(request: Request) -> dict[str, Any]:
     """Populate stores with sample data for the demo teacher profile.
 
+    Requires ``AILINE_DEMO_MODE=1`` in the environment.
+
     Creates study plans (via review store), materials, progress records,
     and tutor conversations so that judges can immediately see a
     populated dashboard.
 
-    This endpoint is idempotent -- calling it multiple times adds
-    duplicate data, but the demo experience remains consistent.
+    **Not idempotent:** calling this endpoint multiple times will create
+    duplicate entries. For a clean demo, call ``POST /demo/reset`` first.
     """
+    _require_demo_mode(request)
     from uuid_utils import uuid7
 
     from ...domain.entities.plan import ReviewStatus
@@ -515,7 +547,11 @@ async def get_scenario(scenario_id: str, request: Request) -> dict[str, Any]:
 
 @router.post("/reset")
 async def reset_demo(request: Request) -> dict[str, str]:
-    """Clear and reload demo session state."""
+    """Clear and reload demo session state.
+
+    Requires ``AILINE_DEMO_MODE=1`` in the environment.
+    """
+    _require_demo_mode(request)
     svc = _get_demo_service(request)
     svc.reset()
     return {"status": "ok", "message": "Demo state reset."}

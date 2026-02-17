@@ -25,6 +25,7 @@ export function SettingsContent() {
       <motion.section
         variants={itemVariants}
         className="glass card-hover rounded-2xl p-6"
+        aria-labelledby="settings-ai-model"
       >
         <div className="flex items-start gap-4">
           <div
@@ -38,7 +39,7 @@ export function SettingsContent() {
             <ModelIcon />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="font-semibold text-sm text-[var(--color-text)]">
+            <h2 id="settings-ai-model" className="font-semibold text-sm text-[var(--color-text)]">
               {t('ai_model')}
             </h2>
             <p className="text-xs text-[var(--color-muted)] mt-1">
@@ -60,6 +61,7 @@ export function SettingsContent() {
       <motion.section
         variants={itemVariants}
         className="glass card-hover rounded-2xl p-6"
+        aria-labelledby="settings-language"
       >
         <div className="flex items-start gap-4">
           <div
@@ -73,7 +75,7 @@ export function SettingsContent() {
             <LanguageIcon />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="font-semibold text-sm text-[var(--color-text)]">
+            <h2 id="settings-language" className="font-semibold text-sm text-[var(--color-text)]">
               {t('language')}
             </h2>
             <p className="text-xs text-[var(--color-muted)] mt-1">
@@ -92,6 +94,7 @@ export function SettingsContent() {
       <motion.section
         variants={itemVariants}
         className="glass card-hover rounded-2xl p-6"
+        aria-labelledby="settings-accessibility"
       >
         <div className="flex items-start gap-4">
           <div
@@ -105,7 +108,7 @@ export function SettingsContent() {
             <AccessibilityIcon />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="font-semibold text-sm text-[var(--color-text)]">
+            <h2 id="settings-accessibility" className="font-semibold text-sm text-[var(--color-text)]">
               {t('accessibility_settings')}
             </h2>
             <p className="text-xs text-[var(--color-muted)] mt-1">
@@ -133,6 +136,7 @@ export function SettingsContent() {
       <motion.section
         variants={itemVariants}
         className="glass card-hover rounded-2xl p-6"
+        aria-labelledby="settings-privacy"
       >
         <div className="flex items-start gap-4">
           <div
@@ -146,7 +150,7 @@ export function SettingsContent() {
             <ShieldIcon />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="font-semibold text-sm text-[var(--color-text)]">
+            <h2 id="settings-privacy" className="font-semibold text-sm text-[var(--color-text)]">
               {t('privacy')}
             </h2>
             <p className="text-xs text-[var(--color-muted)] mt-1">
@@ -163,6 +167,7 @@ export function SettingsContent() {
       <motion.section
         variants={itemVariants}
         className="glass card-hover rounded-2xl p-6"
+        aria-labelledby="settings-about"
       >
         <div className="flex items-start gap-4">
           <div
@@ -176,7 +181,7 @@ export function SettingsContent() {
             <InfoIcon />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="font-semibold text-sm text-[var(--color-text)]">
+            <h2 id="settings-about" className="font-semibold text-sm text-[var(--color-text)]">
               {t('about')}
             </h2>
             <div className="mt-2 space-y-1">

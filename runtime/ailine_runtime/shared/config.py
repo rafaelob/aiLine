@@ -112,7 +112,7 @@ class Settings(BaseSettings):
     demo_mode: bool = False
 
     # i18n
-    default_locale: str = "pt-BR"
+    default_locale: str = "en"
 
     def skill_source_paths(self) -> list[str]:
         from ..skills.paths import parse_skill_source_paths

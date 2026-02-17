@@ -92,30 +92,41 @@ export function TeacherReviewPanel({
       <div className="p-6 space-y-4">
         {!isFinalized && (
           <>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder={t('notes_placeholder')}
-              rows={3}
-              maxLength={2000}
-              aria-label={t('notes_placeholder')}
-              className={cn(
-                'w-full rounded-[var(--radius-md)] border border-[var(--color-border)]',
-                'bg-[var(--color-bg)] p-3 text-sm text-[var(--color-text)]',
-                'placeholder:text-[var(--color-muted)] resize-y',
-              )}
-            />
+            <div>
+              <label
+                htmlFor="review-notes"
+                className="block text-xs font-medium text-[var(--color-muted)] mb-1"
+              >
+                {t('notes_placeholder')}
+              </label>
+              <textarea
+                id="review-notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder={t('notes_placeholder')}
+                rows={3}
+                maxLength={2000}
+                className={cn(
+                  'w-full rounded-[var(--radius-md)] border border-[var(--color-border)]',
+                  'bg-[var(--color-bg)] p-3 text-sm text-[var(--color-text)]',
+                  'placeholder:text-[var(--color-muted)] resize-y',
+                  'focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30 focus:border-[var(--color-primary)]',
+                )}
+              />
+            </div>
 
             <div className="flex flex-wrap gap-3">
               <button
                 type="button"
                 onClick={() => submitReview('approved')}
                 disabled={submitting}
+                aria-busy={submitting}
                 className={cn(
                   'px-5 py-2.5 rounded-[var(--radius-md)] text-sm font-medium',
                   'bg-[var(--color-success)] text-white',
                   'hover:opacity-90 transition-opacity',
                   'disabled:opacity-50',
+                  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-success)]',
                 )}
               >
                 {t('approve')}
@@ -124,11 +135,13 @@ export function TeacherReviewPanel({
                 type="button"
                 onClick={() => submitReview('needs_revision')}
                 disabled={submitting}
+                aria-busy={submitting}
                 className={cn(
                   'px-5 py-2.5 rounded-[var(--radius-md)] text-sm font-medium',
                   'border border-[var(--color-warning)] text-[var(--color-warning)]',
                   'hover:bg-[var(--color-warning)]/5 transition-colors',
                   'disabled:opacity-50',
+                  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-warning)]',
                 )}
               >
                 {t('request_revision')}
@@ -137,11 +150,13 @@ export function TeacherReviewPanel({
                 type="button"
                 onClick={() => submitReview('rejected')}
                 disabled={submitting}
+                aria-busy={submitting}
                 className={cn(
                   'px-5 py-2.5 rounded-[var(--radius-md)] text-sm font-medium',
                   'border border-[var(--color-error)] text-[var(--color-error)]',
                   'hover:bg-[var(--color-error)]/5 transition-colors',
                   'disabled:opacity-50',
+                  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-error)]',
                 )}
               >
                 {t('reject')}

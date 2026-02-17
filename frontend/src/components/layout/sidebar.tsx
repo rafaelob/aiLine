@@ -100,6 +100,7 @@ export function Sidebar() {
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic locale-prefixed paths
                     href={`${localePrefix}${item.href}` as any}
                     aria-current={active ? 'page' : undefined}
+                    aria-describedby={collapsed ? `tooltip-${item.key}` : undefined}
                     className={cn(
                       'group/item relative flex items-center gap-3 px-3 py-2.5 rounded-xl overflow-hidden',
                       'transition-all duration-200',
@@ -148,6 +149,7 @@ export function Sidebar() {
                     {/* Tooltip when collapsed */}
                     {collapsed && (
                       <span
+                        id={`tooltip-${item.key}`}
                         role="tooltip"
                         className={cn(
                           'absolute left-full ml-2 px-2 py-1 rounded-md',

@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'motion/react'
+import { motion, useReducedMotion } from 'motion/react'
 import { cn } from '@/lib/cn'
 
 interface EmptyStateProps {
@@ -16,10 +16,13 @@ interface EmptyStateProps {
  * Shows a friendly message when no data is available.
  */
 export function EmptyState({ icon, title, description, action, className }: EmptyStateProps) {
+  const prefersReducedMotion = useReducedMotion()
+  const noMotion = prefersReducedMotion ?? false
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={noMotion ? undefined : { opacity: 0, y: 8 }}
+      animate={noMotion ? undefined : { opacity: 1, y: 0 }}
       className={cn(
         'flex flex-col items-center justify-center py-16 px-6 text-center',
         className

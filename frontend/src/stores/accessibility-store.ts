@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { cssTheme } from '@/hooks/use-theme'
 
 /**
  * Accessibility preferences store.
@@ -122,9 +123,11 @@ export const useAccessibilityStore = create<AccessibilityState>((set, get) => ({
   hydrate: () => {
     const prefs = loadPrefs()
     set(prefs)
-    // Apply to DOM immediately
+    // Apply to DOM immediately — map underscored TypeScript IDs to hyphenated CSS values
     if (typeof document !== 'undefined') {
-      document.body.setAttribute('data-theme', prefs.theme)
+      const css = cssTheme(prefs.theme)
+      document.body.setAttribute('data-theme', css)
+      document.documentElement.setAttribute('data-theme', css)
       document.body.setAttribute('data-reduced-motion', String(prefs.reducedMotion))
       document.documentElement.style.setProperty(
         '--font-size-base',
