@@ -27,6 +27,8 @@ export function MobileNav() {
   const pathname = usePathname()
   const [moreOpen, setMoreOpen] = useState(false)
   const moreRef = useRef<HTMLLIElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
 
   const localeMatch = pathname.match(/^\/([^/]+)/)
   const localePrefix = localeMatch ? `/${localeMatch[1]}` : ''
@@ -58,10 +60,11 @@ export function MobileNav() {
   /** Whether any overflow item is currently active. */
   const overflowActive = overflowItems.some((item) => isActive(item.href))
 
-  /** Close overflow menu when clicking outside. */
+  /** Close overflow menu when clicking outside, returning focus to trigger. */
   const handleClickOutside = useCallback((e: MouseEvent) => {
     if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
       setMoreOpen(false)
+      triggerRef.current?.focus()
     }
   }, [])
 
@@ -72,11 +75,24 @@ export function MobileNav() {
     }
   }, [moreOpen, handleClickOutside])
 
-  /** Close overflow menu on Escape key. */
+  /** Focus first menu item when menu opens. */
+  useEffect(() => {
+    if (moreOpen) {
+      requestAnimationFrame(() => {
+        const firstItem = menuRef.current?.querySelector<HTMLElement>('[role="menuitem"]')
+        firstItem?.focus()
+      })
+    }
+  }, [moreOpen])
+
+  /** Close overflow menu on Escape key and return focus to trigger. */
   useEffect(() => {
     if (!moreOpen) return
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') setMoreOpen(false)
+      if (e.key === 'Escape') {
+        setMoreOpen(false)
+        triggerRef.current?.focus()
+      }
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
@@ -139,6 +155,7 @@ export function MobileNav() {
           {/* More overflow trigger */}
           <li ref={moreRef} className="flex-1 relative">
             <button
+              ref={triggerRef}
               type="button"
               onClick={() => setMoreOpen((prev) => !prev)}
               aria-expanded={moreOpen}
@@ -178,8 +195,29 @@ export function MobileNav() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 8, scale: 0.95 }}
                   transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                  ref={menuRef}
                   role="menu"
                   aria-label={t('more_menu_label')}
+                  onKeyDown={(e) => {
+                    const items = menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]')
+                    if (!items?.length) return
+                    const current = Array.from(items).indexOf(document.activeElement as HTMLElement)
+                    if (e.key === 'ArrowDown') {
+                      e.preventDefault()
+                      const next = current < items.length - 1 ? current + 1 : 0
+                      items[next].focus()
+                    } else if (e.key === 'ArrowUp') {
+                      e.preventDefault()
+                      const prev = current > 0 ? current - 1 : items.length - 1
+                      items[prev].focus()
+                    } else if (e.key === 'Home') {
+                      e.preventDefault()
+                      items[0].focus()
+                    } else if (e.key === 'End') {
+                      e.preventDefault()
+                      items[items.length - 1].focus()
+                    }
+                  }}
                   className={cn(
                     'absolute bottom-full right-0 mb-2 w-48',
                     'rounded-xl border border-[var(--color-border)]',
@@ -196,7 +234,7 @@ export function MobileNav() {
                         href={`${localePrefix}${item.href}` as any}
                         role="menuitem"
                         aria-current={active ? 'page' : undefined}
-                        onClick={() => setMoreOpen(false)}
+                        onClick={() => { setMoreOpen(false); triggerRef.current?.focus() }}
                         className={cn(
                           'flex items-center gap-3 px-4 py-3',
                           'text-sm font-medium transition-colors duration-150',
@@ -227,7 +265,7 @@ export function MobileNav() {
 
 function MobileDashboardIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <rect x="3" y="3" width="7" height="9" rx="1" />
       <rect x="14" y="3" width="7" height="5" rx="1" />
       <rect x="14" y="12" width="7" height="9" rx="1" />
@@ -238,7 +276,7 @@ function MobileDashboardIcon() {
 
 function MobilePlansIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
       <polyline points="14 2 14 8 20 8" />
     </svg>
@@ -247,7 +285,7 @@ function MobilePlansIcon() {
 
 function MobileMaterialsIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
       <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
     </svg>
@@ -256,7 +294,7 @@ function MobileMaterialsIcon() {
 
 function MobileTutorsIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
     </svg>
   )
@@ -264,7 +302,7 @@ function MobileTutorsIcon() {
 
 function MobileProgressIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <line x1="18" y1="20" x2="18" y2="10" />
       <line x1="12" y1="20" x2="12" y2="4" />
       <line x1="6" y1="20" x2="6" y2="14" />
@@ -274,7 +312,7 @@ function MobileProgressIcon() {
 
 function MobileSignLanguageIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M18 11V6a2 2 0 0 0-4 0v1" />
       <path d="M14 10V4a2 2 0 0 0-4 0v2" />
       <path d="M10 10.5V6a2 2 0 0 0-4 0v8" />
@@ -285,7 +323,7 @@ function MobileSignLanguageIcon() {
 
 function MobileObservabilityIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
     </svg>
   )
@@ -293,7 +331,7 @@ function MobileObservabilityIcon() {
 
 function MobileSettingsIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <circle cx="12" cy="12" r="3" />
       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
     </svg>
@@ -302,7 +340,7 @@ function MobileSettingsIcon() {
 
 function MobileMoreIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <circle cx="12" cy="5" r="1.5" fill="currentColor" />
       <circle cx="12" cy="12" r="1.5" fill="currentColor" />
       <circle cx="12" cy="19" r="1.5" fill="currentColor" />

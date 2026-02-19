@@ -58,7 +58,7 @@ async def curriculum_search(
 
     Returns a list of matching objectives as JSON objects.
     """
-    response.headers["Cache-Control"] = "public, max-age=3600"
+    response.headers["Cache-Control"] = "private, max-age=3600"
     provider = _get_provider(request)
     results = await provider.search(
         q,
@@ -78,7 +78,7 @@ async def curriculum_list_standards(
     _teacher_id: str = Depends(require_authenticated),
 ) -> list[str]:
     """List all available standard codes, optionally filtered by system."""
-    response.headers["Cache-Control"] = "public, max-age=3600"
+    response.headers["Cache-Control"] = "private, max-age=3600"
     provider = _get_provider(request)
     return await provider.list_standards(system=system)
 

@@ -2,21 +2,31 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { useTutorSSE } from './use-tutor-sse'
 
-// Mock the store
-const mockAddUserMessage = vi.fn()
-const mockStartStreaming = vi.fn()
-const mockAppendAssistantChunk = vi.fn()
-const mockFinalizeAssistant = vi.fn()
-const mockSetError = vi.fn()
-const mockSetSessionId = vi.fn()
-const mockReset = vi.fn()
-
-vi.mock('@/stores/tutor-store', () => ({
-  useTutorStore: () => ({
-    messages: [],
+// Hoist mock data so vi.mock factories can reference them
+const {
+  mockAddUserMessage,
+  mockStartStreaming,
+  mockAppendAssistantChunk: _mockAppendAssistantChunk,
+  mockFinalizeAssistant,
+  mockSetError,
+  mockSetSessionId: _mockSetSessionId,
+  mockReset,
+  mockStoreState: _mockStoreState,
+  mockFetchEventSource,
+  mockUseTutorStore,
+} = vi.hoisted(() => {
+  const mockAddUserMessage = vi.fn()
+  const mockStartStreaming = vi.fn()
+  const mockAppendAssistantChunk = vi.fn()
+  const mockFinalizeAssistant = vi.fn()
+  const mockSetError = vi.fn()
+  const mockSetSessionId = vi.fn()
+  const mockReset = vi.fn()
+  const mockStoreState = {
+    messages: [] as unknown[],
     isStreaming: false,
-    error: null,
-    sessionId: null,
+    error: null as string | null,
+    sessionId: null as string | null,
     addUserMessage: mockAddUserMessage,
     startStreaming: mockStartStreaming,
     appendAssistantChunk: mockAppendAssistantChunk,
@@ -24,11 +34,31 @@ vi.mock('@/stores/tutor-store', () => ({
     setError: mockSetError,
     setSessionId: mockSetSessionId,
     reset: mockReset,
-  }),
+  }
+  const mockFetchEventSource = vi.fn().mockResolvedValue(undefined)
+  const mockUseTutorStore = Object.assign(
+    (selector?: (s: typeof mockStoreState) => unknown) =>
+      selector ? selector(mockStoreState) : mockStoreState,
+    { getState: () => mockStoreState }
+  )
+  return {
+    mockAddUserMessage,
+    mockStartStreaming,
+    mockAppendAssistantChunk,
+    mockFinalizeAssistant,
+    mockSetError,
+    mockSetSessionId,
+    mockReset,
+    mockStoreState,
+    mockFetchEventSource,
+    mockUseTutorStore,
+  }
+})
+
+vi.mock('@/stores/tutor-store', () => ({
+  useTutorStore: mockUseTutorStore,
 }))
 
-// Mock fetchEventSource
-const mockFetchEventSource = vi.fn().mockResolvedValue(undefined)
 vi.mock('@microsoft/fetch-event-source', () => ({
   fetchEventSource: (...args: unknown[]) => mockFetchEventSource(...args),
 }))

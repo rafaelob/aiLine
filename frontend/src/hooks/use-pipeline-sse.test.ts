@@ -1,35 +1,41 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 
-// Mock @microsoft/fetch-event-source before importing the hook
-const mockFetchEventSource = vi.fn()
+// Hoist mock data so vi.mock factories can reference them
+const { mockFetchEventSource, mockStoreState } = vi.hoisted(() => {
+  const mockFetchEventSource = vi.fn()
+  const mockStoreState = {
+    runId: null as string | null,
+    currentStage: null as string | null,
+    stages: [] as unknown[],
+    events: [] as unknown[],
+    plan: null,
+    qualityReport: null,
+    score: null,
+    scorecard: null,
+    isRunning: false,
+    error: null as string | null,
+    startRun: vi.fn(),
+    addEvent: vi.fn(),
+    setPlan: vi.fn(),
+    setQualityReport: vi.fn(),
+    setScore: vi.fn(),
+    setScorecard: vi.fn(),
+    setError: vi.fn(),
+    reset: vi.fn(),
+  }
+  return { mockFetchEventSource, mockStoreState }
+})
+
 vi.mock('@microsoft/fetch-event-source', () => ({
   fetchEventSource: (...args: unknown[]) => mockFetchEventSource(...args),
 }))
 
-// Mock the pipeline store
-const mockStoreState = {
-  runId: null as string | null,
-  currentStage: null as string | null,
-  stages: [],
-  events: [],
-  plan: null,
-  qualityReport: null,
-  score: null,
-  isRunning: false,
-  error: null as string | null,
-  startRun: vi.fn(),
-  addEvent: vi.fn(),
-  setPlan: vi.fn(),
-  setQualityReport: vi.fn(),
-  setScore: vi.fn(),
-  setError: vi.fn(),
-  reset: vi.fn(),
-}
-
-vi.mock('@/stores/pipeline-store', () => ({
-  usePipelineStore: () => mockStoreState,
-}))
+vi.mock('@/stores/pipeline-store', () => {
+  const fn = () => mockStoreState
+  fn.getState = () => mockStoreState
+  return { usePipelineStore: fn }
+})
 
 // Import after mocks
 import { usePipelineSSE } from './use-pipeline-sse'

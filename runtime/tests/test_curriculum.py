@@ -83,6 +83,7 @@ class TestLoader:
             grade="1",
             description="Resolver problemas de adição",
             keywords=["adição", "subtração"],
+            bloom_level=None,
         )
         assert keyword_matches("adição", obj)
         assert keyword_matches("problemas", obj)
@@ -185,6 +186,7 @@ class TestBNCCProvider:
             domain="Dom",
             description="Something unrelated",
             keywords=["xyz_unique_keyword"],
+            bloom_level=None,
         )
         # This query does not appear in code/description/domain/subject
         assert _matches_query("xyz_unique_keyword", obj) is True
@@ -201,6 +203,7 @@ class TestBNCCProvider:
             domain="Nada",
             description="Texto completamente diferente",
             keywords=[],
+            bloom_level=None,
         )
         # Query matches subject but NOT code, description, or domain
         assert _matches_query("zoologia especial", obj) is True
@@ -295,6 +298,7 @@ class TestUSProvider:
             domain="Outro",
             description="Texto diferente",
             keywords=["xyz_special_kw_us"],
+            bloom_level=None,
         )
         assert _matches_query("xyz_special_kw_us", obj) is True
 
@@ -310,6 +314,7 @@ class TestUSProvider:
             domain="Nada",
             description="Texto completamente diferente",
             keywords=[],
+            bloom_level=None,
         )
         assert _matches_query("zoologia especial us", obj) is True
 
@@ -448,7 +453,12 @@ class TestCurriculumAPIFallbackProvider:
     ):
         """When curriculum_provider is not on app.state, a new one is created."""
         monkeypatch.setenv("AILINE_DEV_MODE", "true")
-        settings = Settings()
+        settings = Settings(
+            anthropic_api_key="",
+            openai_api_key="",
+            google_api_key="",
+            openrouter_api_key="",
+        )
         app = create_app(settings)
         # Remove the curriculum_provider from state if it exists
         if hasattr(app.state, "curriculum_provider"):
@@ -469,7 +479,12 @@ class TestCurriculumAPIFallbackProvider:
     ):
         """When curriculum_provider IS on app.state, return it (line 27)."""
         monkeypatch.setenv("AILINE_DEV_MODE", "true")
-        settings = Settings()
+        settings = Settings(
+            anthropic_api_key="",
+            openai_api_key="",
+            google_api_key="",
+            openrouter_api_key="",
+        )
         app = create_app(settings)
         # Pre-set the provider on state so line 27 is hit
         pre_set_provider = UnifiedCurriculumProvider()
@@ -490,7 +505,12 @@ class TestCurriculumAPI:
     @pytest.fixture()
     def app(self, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.setenv("AILINE_DEV_MODE", "true")
-        settings = Settings()
+        settings = Settings(
+            anthropic_api_key="",
+            openai_api_key="",
+            google_api_key="",
+            openrouter_api_key="",
+        )
         return create_app(settings)
 
     @pytest.fixture()
@@ -731,7 +751,12 @@ class TestBloomTaxonomyAPI:
     @pytest.fixture()
     def app(self, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.setenv("AILINE_DEV_MODE", "true")
-        settings = Settings()
+        settings = Settings(
+            anthropic_api_key="",
+            openai_api_key="",
+            google_api_key="",
+            openrouter_api_key="",
+        )
         return create_app(settings)
 
     @pytest.fixture()
@@ -876,7 +901,12 @@ class TestCCSSELAAPI:
     @pytest.fixture()
     def app(self, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.setenv("AILINE_DEV_MODE", "true")
-        settings = Settings()
+        settings = Settings(
+            anthropic_api_key="",
+            openai_api_key="",
+            google_api_key="",
+            openrouter_api_key="",
+        )
         return create_app(settings)
 
     @pytest.fixture()

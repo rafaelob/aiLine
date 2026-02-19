@@ -14,6 +14,7 @@ from datetime import UTC, datetime
 from typing import ClassVar
 
 from sqlalchemy import (
+    Boolean,
     DateTime,
     Float,
     ForeignKey,
@@ -22,6 +23,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
     func,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -380,4 +382,265 @@ class AccessibilityProfileRow(Base):
     ui_prefs_json: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
+    )
+
+
+# ---------------------------------------------------------------------------
+# RBAC: Organizations and Users
+# ---------------------------------------------------------------------------
+
+
+class OrganizationRow(Base):
+    """Organization (school/institution)."""
+
+    __tablename__ = "organizations"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid7_str)
+    name: Mapped[str] = mapped_column(String(300), nullable=False)
+    slug: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    type: Mapped[str] = mapped_column(String(20), default="school")
+    address: Mapped[str] = mapped_column(Text, default="")
+    contact_email: Mapped[str] = mapped_column(String(320), default="")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=_utcnow
+    )
+
+
+class UserRow(Base):
+    """User with role-based access."""
+
+    __tablename__ = "users"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid7_str)
+    email: Mapped[str] = mapped_column(String(320), unique=True, nullable=False)
+    display_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    role: Mapped[str] = mapped_column(String(20), nullable=False, default="teacher")
+    org_id: Mapped[str | None] = mapped_column(
+        String(36),
+        ForeignKey("organizations.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    locale: Mapped[str] = mapped_column(String(10), default="en")
+    avatar_url: Mapped[str] = mapped_column(String(500), default="")
+    accessibility_profile: Mapped[str] = mapped_column(String(50), default="")
+    hashed_password: Mapped[str] = mapped_column(String(256), default="")
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=_utcnow
+    )
+
+
+class StudentProfileRow(Base):
+    """Extended profile for student users."""
+
+    __tablename__ = "student_profiles"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid7_str)
+    user_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        unique=True,
+        nullable=False,
+    )
+    grade: Mapped[str] = mapped_column(String(50), default="")
+    accessibility_needs: Mapped[list] = mapped_column(JSON, default=list)
+    strengths: Mapped[list] = mapped_column(JSON, default=list)
+    accommodations: Mapped[list] = mapped_column(JSON, default=list)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
+class TeacherStudentRow(Base):
+    """Many-to-many: teacher <-> student relationship."""
+
+    __tablename__ = "teacher_students"
+    __table_args__ = (
+        UniqueConstraint("teacher_id", "student_id", name="uq_teacher_student"),
+        Index("ix_teacher_students_teacher", "teacher_id"),
+        Index("ix_teacher_students_student", "student_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid7_str)
+    teacher_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    student_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
+class ParentStudentRow(Base):
+    """Many-to-many: parent <-> student relationship."""
+
+    __tablename__ = "parent_students"
+    __table_args__ = (
+        UniqueConstraint("parent_id", "student_id", name="uq_parent_student"),
+        Index("ix_parent_students_parent", "parent_id"),
+        Index("ix_parent_students_student", "student_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid7_str)
+    parent_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    student_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
+# ---------------------------------------------------------------------------
+# Skills System (F-175)
+# ---------------------------------------------------------------------------
+
+
+class SkillRow(Base):
+    """Persisted skill definition (replaces SKILL.md files)."""
+
+    __tablename__ = "skills"
+    __table_args__ = (
+        # Composite unique allows different teachers to fork the same slug.
+        # System skills (teacher_id=NULL) still get global uniqueness via
+        # partial unique index in migration.
+        UniqueConstraint("teacher_id", "slug", name="uq_skills_teacher_slug"),
+        Index("ix_skills_teacher", "teacher_id"),
+        Index("ix_skills_is_active", "is_active"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid7_str)
+    slug: Mapped[str] = mapped_column(String(64), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    instructions_md: Mapped[str] = mapped_column(Text, nullable=False)
+    metadata_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    license: Mapped[str] = mapped_column(String(255), default="")
+    compatibility: Mapped[str] = mapped_column(String(500), default="")
+    allowed_tools: Mapped[str] = mapped_column(Text, default="")
+    teacher_id: Mapped[str | None] = mapped_column(
+        String(36),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    forked_from_id: Mapped[str | None] = mapped_column(
+        String(36),
+        ForeignKey("skills.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_system: Mapped[bool] = mapped_column(Boolean, default=False)
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    avg_rating: Mapped[float] = mapped_column(Float, default=0.0)
+    rating_count: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=_utcnow
+    )
+
+    # Note: embedding VECTOR(1536) column added via migration only
+    # (same pattern as ChunkRow -- keeps ORM portable to aiosqlite for tests)
+
+    # Relationships
+    versions: Mapped[list[SkillVersionRow]] = relationship(
+        back_populates="skill", cascade="all, delete-orphan"
+    )
+    ratings: Mapped[list[SkillRatingRow]] = relationship(
+        back_populates="skill", cascade="all, delete-orphan"
+    )
+
+
+class SkillVersionRow(Base):
+    """Version history for skill content changes."""
+
+    __tablename__ = "skill_versions"
+    __table_args__ = (
+        UniqueConstraint("skill_id", "version", name="uq_skill_version"),
+        Index("ix_skill_versions_skill", "skill_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid7_str)
+    skill_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("skills.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    instructions_md: Mapped[str] = mapped_column(Text, nullable=False)
+    metadata_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    change_summary: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    # Relationships
+    skill: Mapped[SkillRow] = relationship(back_populates="versions")
+
+
+class SkillRatingRow(Base):
+    """Teacher rating for a skill (1-5 stars)."""
+
+    __tablename__ = "skill_ratings"
+    __table_args__ = (
+        UniqueConstraint("skill_id", "user_id", name="uq_skill_user_rating"),
+        Index("ix_skill_ratings_skill", "skill_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid7_str)
+    skill_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("skills.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    user_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    score: Mapped[int] = mapped_column(Integer, nullable=False)
+    comment: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    # Relationships
+    skill: Mapped[SkillRow] = relationship(back_populates="ratings")
+
+
+class TeacherSkillSetRow(Base):
+    """Named collection of skills configured by a teacher (preset)."""
+
+    __tablename__ = "teacher_skill_sets"
+    __table_args__ = (
+        UniqueConstraint("teacher_id", "name", name="uq_teacher_skillset_name"),
+        Index("ix_teacher_skill_sets_teacher", "teacher_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid7_str)
+    teacher_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    description: Mapped[str] = mapped_column(Text, default="")
+    skill_slugs_json: Mapped[list] = mapped_column(JSON, default=list)
+    is_default: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=_utcnow
     )

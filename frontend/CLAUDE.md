@@ -11,11 +11,18 @@
 - DOMPurify 3.3.1 for XSS sanitization
 
 ## Commands
+
+**MANDATORY: Always run tests inside Docker Compose (never outside).**
+
 ```bash
+# Inside Docker (ALWAYS use these):
+docker compose exec frontend pnpm test        # Run tests
+docker compose exec frontend pnpm typecheck   # TypeScript check
+docker compose exec frontend pnpm lint        # ESLint check
+docker compose exec frontend pnpm build       # Production build
+
+# Local dev only (NOT for testing):
 pnpm dev          # Dev server (http://localhost:3000)
-pnpm build        # Production build (Turbopack)
-pnpm lint         # ESLint (flat config, eslint-config-next)
-pnpm typecheck    # TypeScript strict check
 ```
 
 ## Architecture

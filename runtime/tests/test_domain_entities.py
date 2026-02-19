@@ -62,8 +62,8 @@ class TestRunStage:
 
 
 class TestExportFormat:
-    def test_all_10_variants(self) -> None:
-        assert len(ExportFormat) == 10
+    def test_all_12_variants(self) -> None:
+        assert len(ExportFormat) == 12
 
     def test_standard_html(self) -> None:
         assert ExportFormat.STANDARD_HTML == "standard_html"
@@ -74,7 +74,7 @@ class TestExportFormat:
 
 class TestObjective:
     def test_basic_objective(self) -> None:
-        obj = Objective(text="Understand fractions")
+        obj = Objective(id=None, text="Understand fractions")
         assert obj.text == "Understand fractions"
         assert obj.id is None
 
@@ -150,7 +150,7 @@ class TestStudyPlanDraft:
             title="Fracoes",
             grade="5o ano",
             standard="BNCC",
-            objectives=[Objective(text="Learn fractions")],
+            objectives=[Objective(id=None, text="Learn fractions")],
             steps=[PlanStep(minutes=10, title="Intro", instructions=["Start."])],
         )
         assert draft.title == "Fracoes"
@@ -177,7 +177,7 @@ class TestStudyPlanDraft:
 
 class TestLearnerProfile:
     def test_basic(self) -> None:
-        lp = LearnerProfile(name="Aluno A")
+        lp = LearnerProfile(name="Aluno A", age=None, language="pt-BR")
         assert lp.name == "Aluno A"
         assert lp.language == "pt-BR"
         assert lp.needs == []
@@ -185,18 +185,18 @@ class TestLearnerProfile:
         assert lp.age is None
 
     def test_age_boundaries(self) -> None:
-        lp = LearnerProfile(name="A", age=3)
+        lp = LearnerProfile(name="A", age=3, language="pt-BR")
         assert lp.age == 3
-        lp = LearnerProfile(name="A", age=25)
+        lp = LearnerProfile(name="A", age=25, language="pt-BR")
         assert lp.age == 25
 
     def test_age_below_minimum(self) -> None:
         with pytest.raises(ValidationError):
-            LearnerProfile(name="A", age=2)
+            LearnerProfile(name="A", age=2, language="pt-BR")
 
     def test_age_above_maximum(self) -> None:
         with pytest.raises(ValidationError):
-            LearnerProfile(name="A", age=26)
+            LearnerProfile(name="A", age=26, language="pt-BR")
 
 
 class TestTutorPersona:
@@ -221,7 +221,7 @@ class TestTutorAgentSpec:
             teacher_id="teacher-1",
             subject="Matematica",
             grade="6o ano",
-            student_profile=LearnerProfile(name="Aluno X", needs=["adhd"]),
+            student_profile=LearnerProfile(name="Aluno X", age=None, needs=["adhd"], language="pt-BR"),
             materials_scope=TutorMaterialsScope(
                 teacher_id="teacher-1", subject="Matematica"
             ),
@@ -349,6 +349,7 @@ class TestCurriculumObjective:
             subject="Matematica",
             grade="6o ano",
             description="Understand fractions.",
+            bloom_level=None,
         )
         assert obj.code == "EF06MA01"
         assert obj.domain == ""

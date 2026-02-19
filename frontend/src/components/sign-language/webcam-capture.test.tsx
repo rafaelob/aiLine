@@ -4,9 +4,15 @@ import userEvent from '@testing-library/user-event'
 import WebcamCapture from './webcam-capture'
 
 vi.mock('motion/react', () => ({
+  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  useReducedMotion: () => false,
   motion: {
+    span: ({ children, ...rest }: Record<string, unknown>) => {
+      const { initial: _i, animate: _a, exit: _e, transition: _t, ...safe } = rest
+      return <span {...safe}>{children as React.ReactNode}</span>
+    },
     div: ({ children, ...rest }: Record<string, unknown>) => {
-      const { initial: _i, animate: _a, transition: _t, ...safe } = rest
+      const { initial: _i, animate: _a, exit: _e, transition: _t, ...safe } = rest
       return <div {...safe}>{children as React.ReactNode}</div>
     },
   },
@@ -18,7 +24,30 @@ vi.mock('@/hooks/use-sign-language-worker', () => ({
     ready: false,
     error: null,
     lastResult: null,
+    lastLandmarks: null,
     classify: vi.fn(),
+    extractLandmarks: vi.fn(),
+    setLandmarkListener: vi.fn(),
+  }),
+}))
+
+// Mock the captioning hook (Worker not available in jsdom)
+const mockStartCaptioning = vi.fn()
+const mockStopCaptioning = vi.fn()
+const mockFeedLandmarks = vi.fn()
+
+vi.mock('@/hooks/use-libras-captioning', () => ({
+  useLibrasCaptioning: () => ({
+    isRecording: false,
+    rawGlosses: [],
+    draftText: '',
+    committedText: '',
+    confidence: 0,
+    connectionStatus: 'disconnected' as const,
+    error: null,
+    startCaptioning: mockStartCaptioning,
+    stopCaptioning: mockStopCaptioning,
+    feedLandmarks: mockFeedLandmarks,
   }),
 }))
 
@@ -45,10 +74,9 @@ describe('WebcamCapture', () => {
     })
   })
 
-  it('renders webcam and result headings', () => {
+  it('renders webcam heading', () => {
     render(<WebcamCapture />)
     expect(screen.getByText('sign_language.webcam')).toBeInTheDocument()
-    expect(screen.getByText('sign_language.result')).toBeInTheDocument()
   })
 
   it('shows start camera button initially', () => {
@@ -61,11 +89,6 @@ describe('WebcamCapture', () => {
     expect(screen.getByText('sign_language.webcam_off')).toBeInTheDocument()
   })
 
-  it('shows no result message initially', () => {
-    render(<WebcamCapture />)
-    expect(screen.getByText('sign_language.no_result')).toBeInTheDocument()
-  })
-
   it('calls getUserMedia when start camera is clicked', async () => {
     render(<WebcamCapture />)
     await user.click(screen.getByText('sign_language.start_camera'))
@@ -76,50 +99,50 @@ describe('WebcamCapture', () => {
     })
   })
 
-  it('shows recognize and stop buttons after starting camera', async () => {
+  it('shows captioning and stop buttons after starting camera', async () => {
     render(<WebcamCapture />)
     await user.click(screen.getByText('sign_language.start_camera'))
 
-    expect(screen.getByText('sign_language.recognize')).toBeInTheDocument()
+    expect(screen.getByText('sign_language.continuous_start')).toBeInTheDocument()
     expect(screen.getByText('sign_language.stop_camera')).toBeInTheDocument()
   })
 
   it('shows error message on getUserMedia not_allowed error', async () => {
     mockGetUserMedia.mockRejectedValueOnce(
-      new DOMException('Permission denied', 'NotAllowedError')
+      new DOMException('Permission denied', 'NotAllowedError'),
     )
 
     render(<WebcamCapture />)
     await user.click(screen.getByText('sign_language.start_camera'))
 
     expect(
-      screen.getByText('sign_language.error_not_allowed')
+      screen.getByText('sign_language.error_not_allowed'),
     ).toBeInTheDocument()
   })
 
   it('shows error message on getUserMedia not_found error', async () => {
     mockGetUserMedia.mockRejectedValueOnce(
-      new DOMException('No camera', 'NotFoundError')
+      new DOMException('No camera', 'NotFoundError'),
     )
 
     render(<WebcamCapture />)
     await user.click(screen.getByText('sign_language.start_camera'))
 
     expect(
-      screen.getByText('sign_language.error_not_found')
+      screen.getByText('sign_language.error_not_found'),
     ).toBeInTheDocument()
   })
 
   it('shows error message on getUserMedia not_supported error', async () => {
     mockGetUserMedia.mockRejectedValueOnce(
-      new DOMException('Not supported', 'NotSupportedError')
+      new DOMException('Not supported', 'NotSupportedError'),
     )
 
     render(<WebcamCapture />)
     await user.click(screen.getByText('sign_language.start_camera'))
 
     expect(
-      screen.getByText('sign_language.error_not_supported')
+      screen.getByText('sign_language.error_not_supported'),
     ).toBeInTheDocument()
   })
 
@@ -130,7 +153,7 @@ describe('WebcamCapture', () => {
     await user.click(screen.getByText('sign_language.start_camera'))
 
     expect(
-      screen.getByText('sign_language.error_unknown')
+      screen.getByText('sign_language.error_unknown'),
     ).toBeInTheDocument()
   })
 
@@ -154,5 +177,46 @@ describe('WebcamCapture', () => {
     const canvas = container.querySelector('canvas')
     expect(canvas).toBeInTheDocument()
     expect(canvas).toHaveAttribute('aria-hidden', 'true')
+  })
+
+  it('shows captioning description when streaming', async () => {
+    render(<WebcamCapture />)
+    await user.click(screen.getByText('sign_language.start_camera'))
+
+    expect(screen.getByText('sign_language.continuous_description')).toBeInTheDocument()
+  })
+
+  it('shows caption display area with glosses label when streaming', async () => {
+    render(<WebcamCapture />)
+    await user.click(screen.getByText('sign_language.start_camera'))
+
+    expect(screen.getByText('sign_language.captioning_glosses')).toBeInTheDocument()
+    expect(screen.getByText('sign_language.captioning_translation')).toBeInTheDocument()
+  })
+
+  it('has an sr-only live region for captioning status announcements', () => {
+    render(<WebcamCapture />)
+    const liveRegion = document.querySelector('[aria-live="assertive"][aria-atomic="true"]')
+    expect(liveRegion).toBeInTheDocument()
+    expect(liveRegion).toHaveClass('sr-only')
+  })
+
+  it('stop camera button has focus-visible outline', async () => {
+    render(<WebcamCapture />)
+    await user.click(screen.getByText('sign_language.start_camera'))
+
+    const stopBtn = screen.getByText('sign_language.stop_camera').closest('button')
+    expect(stopBtn).toBeInTheDocument()
+    expect(stopBtn?.className).toContain('focus-visible:outline-2')
+  })
+
+  it('announces captioning status to screen reader when toggled', async () => {
+    render(<WebcamCapture />)
+    await user.click(screen.getByText('sign_language.start_camera'))
+
+    // Start captioning
+    await user.click(screen.getByText('sign_language.continuous_start'))
+    const liveRegion = document.querySelector('[aria-live="assertive"][aria-atomic="true"]')
+    expect(liveRegion?.textContent).toBe('sign_language.continuous_active')
   })
 })

@@ -162,8 +162,13 @@ export const usePipelineStore = create<PipelineState>((set) => ({
           break
       }
 
+      const MAX_EVENTS = 100
+      const cappedEvents = state.events.length >= MAX_EVENTS
+        ? [...state.events.slice(1), event]
+        : [...state.events, event]
+
       return {
-        events: [...state.events, event],
+        events: cappedEvents,
         stages,
         currentStage,
         score,

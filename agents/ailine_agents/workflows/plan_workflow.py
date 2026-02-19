@@ -37,13 +37,44 @@ from ._plan_nodes import (
     make_scorecard_node,
     make_validate_node,
 )
+from ._skills_node import make_skills_node
 from ._sse_helpers import get_emitter_and_writer, try_emit
 from ._state import RunState
 
-__all__ = ["WorkflowTimeoutError", "build_plan_workflow", "get_idempotency_guard"]
+__all__ = [
+    "WorkflowTimeoutError",
+    "build_plan_workflow",
+    "get_idempotency_guard",
+    "quality_gate_route",
+]
 
 # Module-level idempotency guard (single-process).
 _idempotency_guard = IdempotencyGuard()
+
+
+def quality_gate_route(score: int, refine_iter: int, max_iters: int) -> str:
+    """Tiered quality gate routing (ADR-050).
+
+    Args:
+        score: Quality gate score (0-100).
+        refine_iter: Current refinement iteration.
+        max_iters: Maximum refinement iterations allowed.
+
+    Returns:
+        "execute" or "refine".
+    """
+    has_budget = refine_iter < max_iters
+
+    if score >= 80:
+        return "execute"
+    if score < 60 and has_budget:
+        return "refine"
+    if score < 60 and not has_budget:
+        return "execute"
+    # 60-79: refine if budget, otherwise accept as-is
+    if has_budget:
+        return "refine"
+    return "execute"
 
 
 def build_plan_workflow(
@@ -118,13 +149,11 @@ def build_plan_workflow(
         v = state.get("validation") or {}
         score = int(v.get("score") or 0)
         refine_iter = int(state.get("refine_iter") or 0)
+        return quality_gate_route(score, refine_iter, deps.max_refinement_iters)
 
-        if score < 60 and refine_iter < deps.max_refinement_iters:
-            return "refine"
-        if score < 80 and refine_iter < deps.max_refinement_iters:
-            return "refine"
-        return "execute"
+    skills_node = make_skills_node()
 
+    graph.add_node("skills", skills_node)
     graph.add_node("planner", planner_node)
     graph.add_node("validate", validate_node)
     graph.add_node("decision", decision_node)
@@ -132,7 +161,8 @@ def build_plan_workflow(
     graph.add_node("executor", executor_node)
     graph.add_node("scorecard", make_scorecard_node(deps))
 
-    graph.set_entry_point("planner")
+    graph.set_entry_point("skills")
+    graph.add_edge("skills", "planner")
     graph.add_edge("planner", "validate")
     graph.add_edge("validate", "decision")
     graph.add_conditional_edges(

@@ -75,7 +75,7 @@ async function initModels(): Promise<void> {
           delegate: 'GPU',
         },
         numHands: 2,
-        runningMode: 'IMAGE',
+        runningMode: 'VIDEO',
       })
 
       mediaPipeAvailable = true
@@ -98,23 +98,27 @@ async function initModels(): Promise<void> {
  * Fallback: returns 'experimental' gesture with zero confidence so
  * downstream consumers know no real model is active.
  */
+/** Monotonic timestamp tracker for VIDEO mode (MediaPipe requires strictly increasing ts). */
+let lastVideoTs = 0
+
 function classify(
-  imageData: ImageData
+  imageData: ImageData,
+  timestamp?: number,
 ): { gesture: string; confidence: number } {
   if (!initialized) {
     throw new Error('Models not initialized')
   }
 
   if (mediaPipeAvailable && handLandmarker) {
-    const result = handLandmarker.detect(imageData)
+    const ts = Math.max(timestamp ?? performance.now(), lastVideoTs + 1)
+    lastVideoTs = ts
+    const result = handLandmarker.detectForVideo(imageData, ts)
     if (result.landmarks && result.landmarks.length > 0) {
-      // Real hand detected -- classification placeholder until MLP model ships
       return { gesture: 'hand_detected', confidence: 0.6 }
     }
     return { gesture: 'no_hand', confidence: 1.0 }
   }
 
-  // Fallback: signal that sign recognition is experimental
   return { gesture: 'experimental', confidence: 0 }
 }
 
@@ -127,7 +131,7 @@ function classify(
  * Fallback: derives low-fidelity landmarks from raw pixel data so the
  * downstream pipeline still receives structurally valid input.
  */
-function extractLandmarks(imageData: ImageData): number[] {
+function extractLandmarks(imageData: ImageData, timestamp?: number): number[] {
   if (!initialized) {
     throw new Error('Models not initialized')
   }
@@ -135,7 +139,9 @@ function extractLandmarks(imageData: ImageData): number[] {
   const NUM_DIMS = 162
 
   if (mediaPipeAvailable && handLandmarker) {
-    const result = handLandmarker.detect(imageData)
+    const ts = Math.max(timestamp ?? performance.now(), lastVideoTs + 1)
+    lastVideoTs = ts
+    const result = handLandmarker.detectForVideo(imageData, ts)
     const landmarks = new Array<number>(NUM_DIMS).fill(0)
 
     if (result.landmarks) {
@@ -232,7 +238,7 @@ ctx.onmessage = async (event: MessageEvent<WorkerInMessage>) => {
 
     case 'classify': {
       try {
-        const result = classify(msg.imageData)
+        const result = classify(msg.imageData, performance.now())
         ctx.postMessage({
           type: 'result',
           gesture: result.gesture,
@@ -247,7 +253,7 @@ ctx.onmessage = async (event: MessageEvent<WorkerInMessage>) => {
 
     case 'extract_landmarks': {
       try {
-        const raw = extractLandmarks(msg.imageData)
+        const raw = extractLandmarks(msg.imageData, msg.timestamp)
         const normalized = normalizeLandmarks(raw)
         ctx.postMessage({
           type: 'landmarks',

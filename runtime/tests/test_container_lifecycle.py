@@ -29,6 +29,10 @@ from ailine_runtime.shared.container import Container, ValidationResult
 def _make_container(**overrides: Any) -> Container:
     """Create a Container with test defaults."""
     settings = Settings(
+        anthropic_api_key="",
+        openai_api_key="",
+        google_api_key="",
+        openrouter_api_key="",
         llm=LLMConfig(provider="fake", api_key=""),
         redis=RedisConfig(url=""),
     )
@@ -91,12 +95,9 @@ class TestHealthCheck:
 
     @pytest.mark.asyncio
     async def test_redis_ping_ok(self):
-        """When Redis is available, reports ok."""
-        mock_redis = AsyncMock()
-        mock_redis.ping.return_value = True
-
-        mock_event_bus = MagicMock()
-        mock_event_bus._redis = mock_redis
+        """When event bus ping succeeds, reports ok."""
+        mock_event_bus = AsyncMock()
+        mock_event_bus.ping.return_value = True
 
         container = _make_container(event_bus=mock_event_bus, _cleanup=[])
         result = await container.health_check()
@@ -104,17 +105,24 @@ class TestHealthCheck:
 
     @pytest.mark.asyncio
     async def test_redis_ping_error(self):
-        """When Redis ping fails, reports error."""
-        mock_redis = AsyncMock()
-        mock_redis.ping.side_effect = ConnectionError("redis down")
-
-        mock_event_bus = MagicMock()
-        mock_event_bus._redis = mock_redis
+        """When event bus ping raises, reports error."""
+        mock_event_bus = AsyncMock()
+        mock_event_bus.ping.side_effect = ConnectionError("redis down")
 
         container = _make_container(event_bus=mock_event_bus, _cleanup=[])
         result = await container.health_check()
         assert result["redis"]["status"] == "error"
         assert "redis down" in result["redis"]["detail"]
+
+    @pytest.mark.asyncio
+    async def test_redis_ping_unreachable(self):
+        """When event bus ping returns False, reports unreachable."""
+        mock_event_bus = AsyncMock()
+        mock_event_bus.ping.return_value = False
+
+        container = _make_container(event_bus=mock_event_bus, _cleanup=[])
+        result = await container.health_check()
+        assert result["redis"]["status"] == "unreachable"
 
 
 # ---------------------------------------------------------------------------
@@ -219,6 +227,10 @@ class TestValidate:
     def test_validate_production_raises_on_missing_critical(self):
         """Production mode should raise ValueError on missing critical ports."""
         settings = Settings(
+            anthropic_api_key="",
+            openai_api_key="",
+            google_api_key="",
+            openrouter_api_key="",
             env="production",
             llm=LLMConfig(provider="fake", api_key=""),
             redis=RedisConfig(url=""),

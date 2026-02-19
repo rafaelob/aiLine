@@ -57,7 +57,7 @@ def _make_tutor_spec(
         standard="BNCC",
         style="socratic",
         tone="calmo, paciente",
-        student_profile=LearnerProfile(name="Aluno Teste"),
+        student_profile=LearnerProfile(name="Aluno Teste", age=10, language="pt-BR"),
         materials_scope=TutorMaterialsScope(
             teacher_id=teacher_id,
             subject="Matematica",

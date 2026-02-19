@@ -28,7 +28,6 @@ vi.mock('@/stores/accessibility-store', () => ({
 }))
 
 const defaultProps = {
-  locale: 'en',
   title: 'AI for Education',
   subtitle: 'Inclusive learning for everyone',
   cta: 'Start Demo',
@@ -92,8 +91,8 @@ describe('LandingHero', () => {
     expect(decorativeElements.length).toBeGreaterThanOrEqual(5)
   })
 
-  it('renders with different locale without breaking CTA', () => {
-    render(<LandingHero {...defaultProps} locale="pt-BR" />)
+  it('renders CTA link pointing to demo section', () => {
+    render(<LandingHero {...defaultProps} />)
     const link = screen.getByRole('link')
     expect(link).toHaveAttribute('href', '#demo-login-heading')
   })

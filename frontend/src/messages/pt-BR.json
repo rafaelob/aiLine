@@ -106,7 +106,9 @@
       "review_title": "Revise os dados antes de gerar",
       "back": "Voltar",
       "next": "Próximo",
-      "wizard_label": "Assistente de criação de plano"
+      "wizard_label": "Assistente de criação de plano",
+      "step_indicator": "Passo {current} de {total}",
+      "step_indicator_full": "Passo {current} de {total}: {label}"
     },
     "tabs": {
       "teacher": "Plano do Professor",
@@ -298,7 +300,12 @@
     "captioning_confidence": "Confiança",
     "captioning_no_signs": "Nenhum sinal detectado. Inicie as legendas e sinalize em frente à câmera.",
     "captioning_connecting": "Conectando...",
-    "captioning_error": "Erro nas legendas. Tente novamente."
+    "captioning_error": "Erro nas legendas. Tente novamente.",
+    "continuous_start": "Iniciar Legendas",
+    "continuous_stop": "Parar Legendas",
+    "continuous_description": "Reconhecimento contínuo de sinais pela webcam em tempo real.",
+    "continuous_active": "Legendas ativas",
+    "webcam_sr_instructions": "Use o botão Iniciar Câmera para ativar sua webcam. Quando a câmera estiver ativa, use Iniciar Legendas para começar o reconhecimento de língua de sinais em tempo real. Os sinais serão traduzidos para texto abaixo do vídeo."
   },
   "mermaid": {
     "visual_explanation": "Explicação Visual",
@@ -375,6 +382,11 @@
     "footer_hackathon": "Hackathon \"Built with Opus 4.6\" — Fevereiro 2026",
     "persona_group_label": "Visualizar personas de acessibilidade",
     "persona_switch_label": "Mudar para tema {name}",
+    "persona_default": "Padrão",
+    "persona_asd": "TEA",
+    "persona_adhd": "TDAH",
+    "persona_dyslexia": "Dislexia",
+    "persona_high_contrast": "Alto Contraste",
     "start_here": "Comece Aqui"
   },
   "session": {
@@ -479,7 +491,13 @@
     "fullscreen_exit_label": "Sair da tela cheia",
     "comparison_label": "Comparação de exportações",
     "content_label": "Conteúdo da exportação: {title}",
-    "no_content": "Nenhum conteúdo disponível para esta variante."
+    "no_content": "Nenhum conteúdo disponível para esta variante.",
+    "brf_download": "Braille (BRF)",
+    "brf_downloading": "Exportando...",
+    "brf_download_label": "Baixar arquivo Braille BRF",
+    "brf_error": "Falha ao exportar arquivo BRF. Tente novamente.",
+    "brf_preview_heading": "Visualização Braille (BRF)",
+    "brf_preview_label": "Seção de visualização Braille BRF"
   },
   "visual_schedule": {
     "subtitle": "Agenda Visual - {steps} etapas - {minutes} min total",
@@ -663,7 +681,10 @@
     "standard_column": "Padrão",
     "total_column": "Total",
     "submit_error": "Falha ao registrar progresso. Tente novamente.",
-    "submitting": "Enviando..."
+    "submitting": "Enviando...",
+    "parent_empty_title": "Nenhum filho vinculado ainda",
+    "parent_empty_description": "Peça ao administrador da escola para vincular seus filhos à sua conta para ver o progresso deles.",
+    "parent_subtitle": "Mostrando progresso de {count, plural, one {# filho} other {# filhos}}"
   },
   "review": {
     "title": "Revisão do Plano",
@@ -710,6 +731,34 @@
     "pipeline_time": "Tempo do Pipeline",
     "model_chosen": "Modelo: {model}",
     "suggestions": "Sugestões de Melhoria"
+  },
+  "login": {
+    "title": "Bem-vindo ao AiLine",
+    "subtitle": "Entre para acessar ferramentas de educação inclusiva com IA",
+    "choose_role": "Escolha seu papel para começar",
+    "role_teacher": "Professor(a)",
+    "role_teacher_desc": "Crie planos de aula inclusivos com IA",
+    "role_student": "Aluno(a)",
+    "role_student_desc": "Acesse aprendizado personalizado e tutoria com IA",
+    "role_parent": "Pai / Responsável",
+    "role_parent_desc": "Acompanhe o progresso do seu filho",
+    "role_school_admin": "Admin Escolar",
+    "role_school_admin_desc": "Gerencie professores, alunos e curriculo",
+    "role_super_admin": "Administrador",
+    "role_super_admin_desc": "Gerenciamento completo da plataforma",
+    "start_here": "Comece Aqui",
+    "demo_section_title": "Acesso Rápido ao Demo",
+    "or_sign_in": "ou entre com email",
+    "email_label": "Email",
+    "email_placeholder": "voce@escola.edu.br",
+    "password_label": "Senha",
+    "password_placeholder": "Digite sua senha",
+    "sign_in": "Entrar",
+    "signing_in": "Entrando...",
+    "back_to_roles": "Voltar aos papeis",
+    "back_to_home": "Voltar ao inicio",
+    "error_credentials": "Email ou senha inválidos",
+    "error_generic": "Algo deu errado. Tente novamente."
   },
   "common": {
     "loading": "Carregando...",
@@ -879,7 +928,7 @@
       "monitoring_desc": "Acompanhe os níveis de domínio (Não Iniciado, Em Desenvolvimento, Proficiente, Dominado) de cada aluno em todos os padrões curriculares.\n\nO mapa de calor de progresso mostra rapidamente as forças e lacunas da turma.",
       "tutoring": "Tutoria com IA",
       "tutoring_desc": "Configure tutores IA personalizados para cada aluno. Cada tutor tem sua própria persona, estilo (Socrático, Coach, Direto), tom de voz e acesso RAG aos seus materiais.\n\nO tutor adapta automaticamente suas respostas ao perfil de acessibilidade do aluno.",
-      "exports": "Formatos de Exportacao",
+      "exports": "Formatos de Exportação",
       "exports_desc": "Cada plano pode ser exportado em 10 variantes: padrão, cronograma visual (TEA), foco (TDAH), texto grande (Dislexia), legenda (Auditiva), alto contraste, impressão, Libras, descrição em áudio e formato de progresso."
     },
     "student": {
@@ -995,5 +1044,146 @@
     "reconfigure": "Reconfigurar",
     "field_required": "Este campo é obrigatório",
     "select_provider": "Selecione um provedor para continuar"
+  },
+  "thoughtPanel": {
+    "title": "Raciocínio do Agente",
+    "panel_label": "Etapas de raciocínio do agente de IA",
+    "steps_label": "Etapas de processamento",
+    "skills_label": "Habilidades Ativadas",
+    "quality_label": "Pontuação de Qualidade",
+    "citations_label": "Fontes"
+  },
+  "braille": {
+    "preview_label": "Visualização Braille BRF",
+    "content_label": "Conteúdo BRF, página {page} de {total}",
+    "braille_document": "Documento Braille",
+    "stat_chars": "caracteres",
+    "stat_lines": "linhas",
+    "stat_pages": "páginas",
+    "stat_cells_per_line": "células/linha",
+    "page_nav_label": "Navegação de páginas BRF",
+    "page_indicator": "Página {current} de {total}",
+    "prev": "Anterior",
+    "next": "Próxima",
+    "prev_page": "Ir para página anterior",
+    "next_page": "Ir para próxima página",
+    "download": "Baixar BRF",
+    "download_label": "Baixar arquivo Braille BRF",
+    "downloading": "Baixando...",
+    "copy": "Copiar BRF",
+    "copy_label": "Copiar conteúdo BRF para a área de transferência",
+    "copied": "Copiado!",
+    "copy_error": "Falha ao copiar"
+  },
+  "pipelineViz": {
+    "title": "Pipeline de Agentes",
+    "graph_label": "Grafo de fluxo do pipeline de IA mostrando etapas de processamento",
+    "opus_badge": "Opus 4.6 Core",
+    "refining": "Loop de qualidade: refinando plano...",
+    "nodes": {
+      "rag": "Busca RAG",
+      "profile": "Analisador de Perfil",
+      "planner": "Planejador",
+      "quality": "Portão de Qualidade",
+      "executor": "Executor",
+      "export": "Exportação"
+    },
+    "status": {
+      "idle": "Aguardando",
+      "active": "Processando",
+      "completed": "Concluído",
+      "failed": "Falhou"
+    }
+  },
+  "tts": {
+    "title": "Texto para Fala",
+    "player_label": "Reprodutor de áudio",
+    "play": "Reproduzir",
+    "pause": "Pausar",
+    "loading": "Gerando áudio...",
+    "error": "Falha ao gerar áudio. Tente novamente.",
+    "speed_label": "Velocidade de reprodução",
+    "language_label": "Idioma",
+    "voice_label": "Voz",
+    "voice_loading": "Carregando vozes...",
+    "voice_default": "Voz padrão",
+    "progress_label": "Progresso do áudio: {current} de {total}",
+    "speed_format": "{speed}x",
+    "lang_en": "Inglês",
+    "lang_pt_br": "Português (BR)",
+    "lang_es": "Espanhol"
+  },
+  "classroom": {
+    "title": "Modo Sala de Aula Inclusiva",
+    "subtitle": "Uma Aula, Quatro Planos Adaptados",
+    "description": "Veja como um plano de aula se adapta para quatro alunos únicos, cada um com necessidades diferentes.",
+    "card_adaptation": "Adaptação Principal",
+    "card_snippet": "Prévia do Plano",
+    "card_badges_label": "Acomodações para {name}",
+    "badge_visual_schedule": "Cronograma Visual",
+    "badge_timer": "Temporizador",
+    "badge_focus_mode": "Modo Foco",
+    "badge_chunked": "Tarefas Fragmentadas",
+    "badge_bionic_reading": "Leitura Biônica",
+    "badge_warm_tones": "Tons Quentes",
+    "badge_sign_language": "Língua de Sinais",
+    "badge_captions": "Legendas",
+    "badge_calm_colors": "Cores Calmas",
+    "badge_predictable": "Layout Previsível",
+    "badge_wide_spacing": "Espaçamento Amplo",
+    "badge_visual_cues": "Pistas Visuais",
+    "student_lucas": "Lucas",
+    "student_lucas_profile": "Transtorno do Espectro Autista (TEA)",
+    "student_lucas_adaptation": "Cronograma visual com cores calmas e layout previsível passo a passo",
+    "student_lucas_snippet": "Passo 1: Assista ao vídeo de 2 minutos sobre fotossíntese (temporizador visual). Passo 2: Combine as etiquetas do diagrama usando cartões de arrastar. Passo 3: Desenhe seu próprio diagrama do ciclo da planta.",
+    "student_sofia": "Sofia",
+    "student_sofia_profile": "TDAH",
+    "student_sofia_adaptation": "Atividades fragmentadas com temporizadores integrados e modo foco ativado",
+    "student_sofia_snippet": "Atividade 1 (5 min): Quiz rápido — nomeie 3 coisas que as plantas precisam. Atividade 2 (7 min): Leia a passagem curta, palavras-chave destacadas. Atividade 3 (8 min): Complete a ficha em duplas.",
+    "student_pedro": "Pedro",
+    "student_pedro_profile": "Dislexia",
+    "student_pedro_adaptation": "Leitura biônica com espaçamento amplo e tons de fundo quentes",
+    "student_pedro_snippet": "Fotossíntese é como as plantas produzem alimento. Elas usam luz solar, água e gás carbônico. O processo acontece nas folhas. A clorofila dá a cor verde às folhas.",
+    "student_ana": "Ana",
+    "student_ana_profile": "Deficiência Auditiva",
+    "student_ana_adaptation": "Glossário em Libras, legendas visuais e alertas por vibração",
+    "student_ana_snippet": "VÍDEO: [Legendas ativadas] Plantas usam luz solar para produzir alimento. ATIVIDADE: Combine imagens com palavras (sem áudio necessário). AVALIAÇÃO: Desenhe e rotule o ciclo da fotossíntese."
+  },
+  "adaptation": {
+    "section_label": "Visualização de comparação de adaptações",
+    "profile_tabs_label": "Selecione o perfil de acessibilidade para comparar",
+    "profiles": {
+      "standard": "Padrão",
+      "asd": "TEA (Autismo)",
+      "adhd": "TDAH",
+      "dyslexia": "Dislexia",
+      "hearing": "Auditivo"
+    },
+    "legend_label": "Legenda das diferenças",
+    "legend_addition": "Adição (nova acomodação)",
+    "legend_modification": "Modificação (conteúdo adaptado)",
+    "legend_removal": "Remoção (simplificado)",
+    "comparison_label": "Comparação lado a lado do plano",
+    "standard_title": "Plano Padrão",
+    "standard_content_label": "Conteúdo do plano padrão",
+    "adapted_title": "Adaptado para {profile}",
+    "adapted_content_label": "Conteúdo do plano adaptado",
+    "summary": "{additions} adições, {modifications} modificações, {removals} remoções"
+  },
+  "evidence": {
+    "section_label": "Painel de evidências e transparência da IA",
+    "title": "Evidências e Transparência da IA",
+    "model_title": "Modelo de IA",
+    "model_name": "Modelo",
+    "router_rationale": "Justificativa do Roteamento",
+    "quality_title": "Nota de Qualidade",
+    "standards_title": "Padrões Alinhados",
+    "rag_title": "Proveniência RAG",
+    "rag_description": "Percentual do conteúdo respaldado por materiais didáticos enviados e bases curriculares",
+    "accommodations_title": "Acomodações",
+    "processing_title": "Processamento",
+    "total_time": "Tempo Total",
+    "refinement_loops": "Ciclos de Refinamento",
+    "export_variants": "Variantes de Exportação"
   }
 }

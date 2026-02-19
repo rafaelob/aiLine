@@ -97,7 +97,7 @@ async def list_skills(
     Returns skill count, category breakdown, and a list of skill summaries.
     Supports optional filtering by category and text search.
     """
-    response.headers["Cache-Control"] = "public, max-age=300"
+    response.headers["Cache-Control"] = "private, max-age=300"
     registry = _get_registry()
     if registry is None:
         return {"count": 0, "categories": {}, "skills": []}

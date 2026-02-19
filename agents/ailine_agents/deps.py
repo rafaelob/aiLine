@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from .resilience import CircuitBreaker
 
@@ -78,13 +78,22 @@ class AgentDeps:
 class AgentDepsFactory:
     """Builds AgentDeps from the runtime Container + request context."""
 
-    # Shared circuit breaker across all AgentDeps instances from this factory.
-    _shared_circuit_breaker: CircuitBreaker = CircuitBreaker()
+    # Per-role circuit breakers to isolate blast radius across agent types.
+    _circuit_breakers: ClassVar[dict[str, CircuitBreaker]] = {}
+
+    @classmethod
+    def get_breaker(cls, role: str) -> CircuitBreaker:
+        """Get or create a circuit breaker for the given agent role."""
+        if role not in cls._circuit_breakers:
+            cls._circuit_breakers[role] = CircuitBreaker()
+        return cls._circuit_breakers[role]
 
     @classmethod
     def reset_shared_circuit_breaker(cls) -> None:
-        """Reset the shared circuit breaker state (for test isolation)."""
-        cls._shared_circuit_breaker.reset()
+        """Reset all circuit breaker states (for test isolation)."""
+        for breaker in cls._circuit_breakers.values():
+            breaker.reset()
+        cls._circuit_breakers.clear()
 
     @staticmethod
     def from_container(
@@ -127,6 +136,8 @@ class AgentDepsFactory:
             tool_registry=build_tool_registry(),
             emitter=emitter,
             stream_writer=stream_writer,
-            circuit_breaker=circuit_breaker or AgentDepsFactory._shared_circuit_breaker,
+            circuit_breaker=circuit_breaker or AgentDepsFactory.get_breaker(
+                skill_request.agent_role if skill_request else "default"
+            ),
             skill_request=skill_request or SkillRequestContext(),
         )

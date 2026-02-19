@@ -128,6 +128,7 @@ def settings() -> Settings:
         anthropic_api_key="fake-key-for-tests",
         openai_api_key="",
         google_api_key="",
+        openrouter_api_key="",
         db=DatabaseConfig(url="sqlite+aiosqlite:///:memory:"),
         llm=LLMConfig(provider="fake", api_key="fake"),
         embedding=EmbeddingConfig(provider="gemini", api_key=""),
@@ -147,3 +148,28 @@ def tmp_local_store(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     store_dir.mkdir()
     monkeypatch.setenv("AILINE_LOCAL_STORE", str(store_dir))
     return store_dir
+
+
+# ---------------------------------------------------------------------------
+# Dev-mode cache clearing (autouse)
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(autouse=True)
+def _clear_dev_mode_cache():
+    """Clear lru_cache on _is_dev_mode and _get_jwt_config before/after each test.
+
+    Ensures monkeypatch.setenv("AILINE_DEV_MODE", ...) and
+    monkeypatch.setenv("AILINE_JWT_SECRET", ...) take effect
+    even though the function results are cached via lru_cache.
+    """
+    from ailine_runtime.api.middleware.tenant_context import (
+        _get_jwt_config,
+        _is_dev_mode,
+    )
+
+    _is_dev_mode.cache_clear()
+    _get_jwt_config.cache_clear()
+    yield
+    _is_dev_mode.cache_clear()
+    _get_jwt_config.cache_clear()

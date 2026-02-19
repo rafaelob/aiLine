@@ -11,7 +11,6 @@ export default defineConfig({
     pool: 'forks',
     minForks: 1,
     maxForks: 1,
-    execArgv: ['--max-old-space-size=8192'],
     fileParallelism: false,
     restoreMocks: true,
     teardownTimeout: 5000,

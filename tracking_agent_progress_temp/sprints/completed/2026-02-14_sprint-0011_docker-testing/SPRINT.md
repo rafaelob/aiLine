@@ -1,6 +1,6 @@
 # Sprint 0011 — Docker + Testing
 
-**Status:** planned | **Date:** 2026-02-14
+**Status:** completed | **Date:** 2026-02-14
 **Goal:** Full Docker Compose stack (API + Frontend + Postgres/pgvector + Redis),
 comprehensive test suite (unit + integration + E2E), CI/CD with GitHub Actions.
 

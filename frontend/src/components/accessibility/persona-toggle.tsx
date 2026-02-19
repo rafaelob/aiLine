@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback } from 'react'
+import { useCallback, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import { motion } from 'motion/react'
 import { cn } from '@/lib/cn'
@@ -14,11 +14,17 @@ import type { PersonaId } from '@/types/accessibility'
  * Uses motion layoutId for smooth sliding indicator animation.
  * Uses View Transitions API for cross-fade theme morphing.
  * On select: sets data-theme on document.body and persists to localStorage.
+ *
+ * Implements WAI-ARIA radiogroup keyboard pattern:
+ * - ArrowRight/ArrowDown: focus and select next persona (wraps)
+ * - ArrowLeft/ArrowUp: focus and select previous persona (wraps)
+ * - Only the active radio is in the tab order (roving tabindex)
  */
 export function PersonaToggle() {
   const { activePersona, switchTheme } = useTheme()
   const { startTransition } = useViewTransition()
   const tp = useTranslations('personas')
+  const buttonRefs = useRef<(HTMLButtonElement | null)[]>([])
 
   const handleSelect = useCallback(
     (personaId: PersonaId, e?: React.MouseEvent | React.KeyboardEvent) => {
@@ -37,29 +43,52 @@ export function PersonaToggle() {
     [switchTheme, startTransition],
   )
 
+  const handleArrowNav = useCallback(
+    (e: React.KeyboardEvent, currentIndex: number) => {
+      const len = PERSONA_LIST.length
+      let nextIndex: number | null = null
+
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        e.preventDefault()
+        nextIndex = (currentIndex + 1) % len
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        e.preventDefault()
+        nextIndex = (currentIndex - 1 + len) % len
+      } else if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault()
+        handleSelect(PERSONA_LIST[currentIndex].id, e)
+        return
+      }
+
+      if (nextIndex !== null) {
+        const nextPersona = PERSONA_LIST[nextIndex]
+        buttonRefs.current[nextIndex]?.focus()
+        handleSelect(nextPersona.id, e)
+      }
+    },
+    [handleSelect],
+  )
+
   return (
-    <nav
+    <div
       role="radiogroup"
       aria-label={tp('select_label')}
       className="flex flex-wrap gap-2"
     >
-      {PERSONA_LIST.map((persona) => {
+      {PERSONA_LIST.map((persona, index) => {
         const isActive = activePersona === persona.id
         const personaLabel = tp(persona.label)
         const personaDesc = tp(persona.description)
         return (
           <button
             key={persona.id}
+            ref={(el) => { buttonRefs.current[index] = el }}
             role="radio"
             aria-checked={isActive}
+            tabIndex={isActive ? 0 : -1}
             aria-label={`${personaLabel}: ${personaDesc}`}
             onClick={(e) => handleSelect(persona.id, e)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault()
-                handleSelect(persona.id, e)
-              }
-            }}
+            onKeyDown={(e) => handleArrowNav(e, index)}
             className={cn(
               'relative flex items-center gap-2 rounded-full px-4 py-2',
               'text-sm font-medium transition-colors duration-200',
@@ -85,6 +114,6 @@ export function PersonaToggle() {
           </button>
         )
       })}
-    </nav>
+    </div>
   )
 }

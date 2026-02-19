@@ -103,13 +103,24 @@ class TestSavePlanHandler:
         args = SavePlanArgs(
             plan_json={"title": "Test Plan"},
             metadata={"run_id": "run-123"},
+            teacher_id="teacher-test-001",
         )
         result = await save_plan_handler(args)
         assert "plan_id" in result
         assert "stored_at" in result
+        assert result["teacher_id"] == "teacher-test-001"
         # Verify file was created
         stored_path = Path(result["stored_at"])
         assert stored_path.exists()
+
+    @pytest.mark.asyncio
+    async def test_save_plan_requires_teacher_id(self):
+        args = SavePlanArgs(
+            plan_json={"title": "Test Plan"},
+            metadata={"run_id": "run-123"},
+        )
+        with pytest.raises(ValueError, match="teacher_id is required"):
+            await save_plan_handler(args)
 
 
 class TestBuildToolRegistry:
@@ -203,14 +214,21 @@ class TestTenantFilteringSavePlan:
         assert teacher_uuid in str(stored_path)
 
     @pytest.mark.asyncio
-    async def test_anonymous_fallback(self, tmp_path, monkeypatch):
+    async def test_anonymous_rejected(self, tmp_path, monkeypatch):
         monkeypatch.setenv("AILINE_LOCAL_STORE", str(tmp_path))
         args = SavePlanArgs(
             plan_json={"title": "Plan"},
             metadata={},
+            teacher_id="anonymous",
         )
-        result = await save_plan_handler(args)
-        assert result["teacher_id"] == "anonymous"
-        stored_path = Path(result["stored_at"])
-        assert stored_path.exists()
-        assert "anonymous" in str(stored_path)
+        with pytest.raises(ValueError, match="anonymous"):
+            await save_plan_handler(args)
+
+    @pytest.mark.asyncio
+    async def test_missing_teacher_id_rejected(self):
+        args = SavePlanArgs(
+            plan_json={"title": "Plan"},
+            metadata={},
+        )
+        with pytest.raises(ValueError, match="teacher_id is required"):
+            await save_plan_handler(args)

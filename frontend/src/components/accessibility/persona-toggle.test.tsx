@@ -101,4 +101,47 @@ describe('PersonaToggle', () => {
     expect(teaRadio).toHaveAttribute('aria-checked', 'true')
     expect(teaRadio).toHaveClass('text-[var(--color-on-primary)]')
   })
+
+  it('uses roving tabindex: active radio has tabIndex 0, others -1', () => {
+    render(<PersonaToggle />)
+    const radios = screen.getAllByRole('radio')
+    const standardRadio = screen.getByRole('radio', { name: /personas\.standard/ })
+
+    expect(standardRadio).toHaveAttribute('tabindex', '0')
+    radios.filter((r) => r !== standardRadio).forEach((r) => {
+      expect(r).toHaveAttribute('tabindex', '-1')
+    })
+  })
+
+  it('navigates to next persona on ArrowRight key', async () => {
+    render(<PersonaToggle />)
+    const standardRadio = screen.getByRole('radio', { name: /personas\.standard/ })
+    standardRadio.focus()
+    await user.keyboard('{ArrowRight}')
+    expect(mockSwitchTheme).toHaveBeenCalledWith('tea')
+  })
+
+  it('navigates to previous persona on ArrowLeft key', async () => {
+    render(<PersonaToggle />)
+    const teaRadio = screen.getByRole('radio', { name: /personas\.tea/ })
+    teaRadio.focus()
+    await user.keyboard('{ArrowLeft}')
+    expect(mockSwitchTheme).toHaveBeenCalledWith('standard')
+  })
+
+  it('wraps around from last to first on ArrowRight', async () => {
+    render(<PersonaToggle />)
+    const dyslexiaRadio = screen.getByRole('radio', { name: /personas\.dyslexia/ })
+    dyslexiaRadio.focus()
+    await user.keyboard('{ArrowRight}')
+    expect(mockSwitchTheme).toHaveBeenCalledWith('standard')
+  })
+
+  it('wraps around from first to last on ArrowLeft', async () => {
+    render(<PersonaToggle />)
+    const standardRadio = screen.getByRole('radio', { name: /personas\.standard/ })
+    standardRadio.focus()
+    await user.keyboard('{ArrowLeft}')
+    expect(mockSwitchTheme).toHaveBeenCalledWith('dyslexia')
+  })
 })

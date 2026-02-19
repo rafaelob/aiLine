@@ -44,27 +44,32 @@ def build_refinement_feedback(prev: dict[str, Any], refine_iter: int) -> str:
     recs = prev.get("recommendations") or []
     score = prev.get("score")
     return (
-        f"\n\n## FEEDBACK DO QUALITY GATE (refinement #{refine_iter})\n"
-        f"- score_anterior: {score}\n"
-        f"- erros: {errors}\n"
+        f"\n\n## QUALITY GATE FEEDBACK (refinement #{refine_iter})\n"
+        f"- previous_score: {score}\n"
+        f"- errors: {errors}\n"
         f"- warnings: {warnings}\n"
-        f"- recomendacoes: {recs}\n\n"
-        "Ajuste o plano para enderecar os itens acima, mantendo o schema StudyPlanDraft."
+        f"- recommendations: {recs}\n\n"
+        "Adjust the plan to address the items above while keeping the StudyPlanDraft schema."
     )
 
 
 def _build_planner_prompt(state: RunState, refine_iter: int) -> str:
-    """Build the planner agent prompt with RAG context and refinement feedback."""
+    """Build the planner agent prompt with skills, RAG context, and refinement feedback."""
     prompt = state["user_prompt"]
+
+    # Inject activated skills fragment (from skills_node, F-177)
+    skill_fragment = state.get("skill_prompt_fragment") or ""
+    if skill_fragment:
+        prompt += f"\n\n{skill_fragment}"
 
     teacher_id = state.get("teacher_id")
     subject = state.get("subject")
     if teacher_id:
         prompt += (
-            f"\n\n## CONTEXTO DE MATERIAIS (RAG)\n"
+            f"\n\n## MATERIALS CONTEXT (RAG)\n"
             f"- teacher_id: {teacher_id}\n"
             f"- subject: {subject or ''}\n"
-            "Quando chamar rag_search, SEMPRE passe teacher_id.\n"
+            "When calling rag_search, ALWAYS pass teacher_id.\n"
         )
 
     if refine_iter > 0:

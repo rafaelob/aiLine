@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
-import { motion } from 'motion/react'
+import { motion, useReducedMotion } from 'motion/react'
 import { cn } from '@/lib/cn'
 import { useTutorSSE } from '@/hooks/use-tutor-sse'
 import { ChatMessageBubble } from './chat-message-bubble'
@@ -15,6 +15,8 @@ import { ChatInput } from './chat-input'
 export function TutorChat() {
   const t = useTranslations('tutor')
   const { sendMessage, cancel, messages, isStreaming, error } = useTutorSSE()
+  const prefersReducedMotion = useReducedMotion()
+  const noMotion = prefersReducedMotion ?? false
   const scrollRef = useRef<HTMLDivElement>(null)
   const userScrolledUp = useRef(false)
 
@@ -70,9 +72,10 @@ export function TutorChat() {
                 <motion.button
                   key={key}
                   type="button"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 + i * 0.1, type: 'spring', stiffness: 200, damping: 24 }}
+                  aria-label={t(key)}
+                  initial={noMotion ? undefined : { opacity: 0, y: 8 }}
+                  animate={noMotion ? undefined : { opacity: 1, y: 0 }}
+                  transition={noMotion ? undefined : { delay: 0.3 + i * 0.1, type: 'spring', stiffness: 200, damping: 24 }}
                   onClick={() => sendMessage(t(key))}
                   className={cn(
                     'px-4 py-2 text-xs rounded-full',
@@ -94,9 +97,9 @@ export function TutorChat() {
         {messages.map((msg, i) => (
           <motion.div
             key={msg.id}
-            initial={{ opacity: 0, y: 16, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{
+            initial={noMotion ? undefined : { opacity: 0, y: 16, scale: 0.97 }}
+            animate={noMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
+            transition={noMotion ? undefined : {
               type: 'spring',
               stiffness: 200,
               damping: 24,
@@ -148,7 +151,7 @@ export function TutorChat() {
       )}
 
       {/* SR-only live region for streaming status */}
-      <div className="sr-only" aria-live="assertive" aria-atomic="true">
+      <div className="sr-only" aria-live="polite" aria-atomic="true">
         {isStreaming && messages.length > 0
           ? t('typing')
           : error

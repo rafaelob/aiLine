@@ -8,7 +8,6 @@ import { useAccessibilityStore } from '@/stores/accessibility-store'
 import { cssTheme } from '@/hooks/use-theme'
 
 interface LandingHeroProps {
-  locale: string
   title: string
   subtitle: string
   cta: string
@@ -18,18 +17,18 @@ interface LandingHeroProps {
 }
 
 const PERSONA_PREVIEWS = [
-  { id: 'standard', label: 'Default', color: '#2563EB' },
-  { id: 'tea', label: 'ASD', color: '#2D8B6E' },
-  { id: 'tdah', label: 'ADHD', color: '#E07E34' },
-  { id: 'dyslexia', label: 'Dyslexia', color: '#3B7DD8' },
-  { id: 'high_contrast', label: 'High Contrast', color: '#5EEAD4' },
+  { id: 'standard', labelKey: 'persona_default', color: '#2563EB' },
+  { id: 'tea', labelKey: 'persona_asd', color: '#2D8B6E' },
+  { id: 'tdah', labelKey: 'persona_adhd', color: '#E07E34' },
+  { id: 'dyslexia', labelKey: 'persona_dyslexia', color: '#3B7DD8' },
+  { id: 'high_contrast', labelKey: 'persona_high_contrast', color: '#5EEAD4' },
 ] as const
 
 /**
  * Full-screen hero section with animated mesh gradient background,
  * animated tagline, persona preview toggle, and glass CTA button.
  */
-export function LandingHero({ locale: _locale, title, subtitle, cta, fullName, badgeOpenSource, badgeBuiltWith }: LandingHeroProps) {
+export function LandingHero({ title, subtitle, cta, fullName, badgeOpenSource, badgeBuiltWith }: LandingHeroProps) {
   const prefersReducedMotion = useReducedMotion()
   const noMotion = prefersReducedMotion ?? false
   const setTheme = useAccessibilityStore((s) => s.setTheme)
@@ -161,7 +160,7 @@ export function LandingHero({ locale: _locale, title, subtitle, cta, fullName, b
           animate={noMotion ? undefined : { opacity: 1, y: 0 }}
           transition={noMotion ? undefined : { delay: 0.25, duration: 0.5 }}
           className="mt-3 text-base sm:text-lg max-w-xl mx-auto font-medium"
-          style={{ color: 'rgba(255, 255, 255, 0.8)' }}
+          style={{ color: 'rgba(255, 255, 255, 0.95)' }}
         >
           {fullName}
         </motion.p>
@@ -207,11 +206,11 @@ export function LandingHero({ locale: _locale, title, subtitle, cta, fullName, b
                 role="radio"
                 aria-checked={activePersona === persona.id}
                 tabIndex={activePersona === persona.id ? 0 : -1}
-                aria-label={tA11y('persona_switch_label', { name: persona.label })}
+                aria-label={tA11y('persona_switch_label', { name: tA11y(persona.labelKey) })}
                 onClick={() => handlePersonaSwitch(persona.id)}
                 className={cn(
                   'inline-flex items-center gap-1.5 px-3 py-1.5',
-                  'rounded-full text-xs font-medium',
+                  'rounded-full text-xs font-medium min-h-[44px]',
                   'transition-all duration-200',
                   'focus-visible:ring-2 focus-visible:ring-white/70',
                   activePersona === persona.id
@@ -230,7 +229,7 @@ export function LandingHero({ locale: _locale, title, subtitle, cta, fullName, b
                   style={{ backgroundColor: persona.color }}
                   aria-hidden="true"
                 />
-                {persona.label}
+                {tA11y(persona.labelKey)}
               </button>
             ))}
           </div>
@@ -251,7 +250,7 @@ export function LandingHero({ locale: _locale, title, subtitle, cta, fullName, b
               'text-[var(--color-primary)] bg-white',
               'shadow-xl hover:shadow-2xl hover:scale-[1.02]',
               'transition-all duration-300',
-              'focus-visible:ring-4 focus-visible:ring-white/50'
+              'focus-visible:ring-4 focus-visible:ring-offset-2 focus-visible:ring-blue-600'
             )}
           >
             {cta}

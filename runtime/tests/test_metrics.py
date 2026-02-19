@@ -35,12 +35,19 @@ from ailine_runtime.shared.metrics import (
 # ---------------------------------------------------------------------------
 
 
+@pytest.fixture(autouse=True)
+def _enable_dev_mode(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Enable dev mode so X-Teacher-ID header works for /metrics auth."""
+    monkeypatch.setenv("AILINE_DEV_MODE", "true")
+
+
 @pytest.fixture()
 def settings() -> Settings:
     return Settings(
         anthropic_api_key="fake-key-for-tests",
         openai_api_key="",
         google_api_key="",
+        openrouter_api_key="",
         db=DatabaseConfig(url="sqlite+aiosqlite:///:memory:"),
         llm=LLMConfig(provider="fake", api_key="fake"),
         embedding=EmbeddingConfig(provider="gemini", api_key=""),
@@ -162,7 +169,7 @@ async def test_metrics_endpoint_returns_prometheus_text(
     client: AsyncClient,
 ) -> None:
     """/metrics should return Prometheus text format with correct content type."""
-    resp = await client.get("/metrics")
+    resp = await client.get("/metrics", headers={"X-Teacher-ID": "teacher-001"})
     assert resp.status_code == 200
     assert "text/plain" in resp.headers["content-type"]
     body = resp.text
@@ -180,7 +187,7 @@ async def test_http_request_increments_counter(client: AsyncClient) -> None:
     await client.get("/health")
 
     # Fetch metrics and verify the counter was incremented.
-    resp = await client.get("/metrics")
+    resp = await client.get("/metrics", headers={"X-Teacher-ID": "teacher-001"})
     body = resp.text
     # Should contain a counter entry for GET /health with status 200.
     assert (
@@ -197,7 +204,7 @@ async def test_http_request_duration_recorded(client: AsyncClient) -> None:
     """Making HTTP requests should record duration in the histogram."""
     await client.get("/health")
 
-    resp = await client.get("/metrics")
+    resp = await client.get("/metrics", headers={"X-Teacher-ID": "teacher-001"})
     body = resp.text
     # Should contain histogram bucket entries for /health.
     assert "ailine_http_request_duration_seconds_bucket" in body

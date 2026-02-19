@@ -15,6 +15,7 @@ export type PipelineEventType =
   | 'refinement.completed'
   | 'tool.started'
   | 'tool.completed'
+  | 'ai_receipt'
   | 'run.completed'
   | 'run.failed'
   | 'heartbeat'

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, within, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MobileNav } from './mobile-nav'
 
@@ -108,5 +108,43 @@ describe('MobileNav', () => {
     const allLinks = screen.getAllByRole('link')
     const menuItems = screen.getAllByRole('menuitem')
     expect(allLinks.length + menuItems.length).toBe(8)
+  })
+
+  it('supports ArrowDown key navigation within overflow menu', async () => {
+    render(<MobileNav />)
+    const moreButton = screen.getByRole('button', { name: /nav\.more_menu_label/i })
+    await user.click(moreButton)
+
+    const menu = screen.getByRole('menu')
+    const menuItems = within(menu).getAllByRole('menuitem')
+
+    // Focus first item
+    menuItems[0].focus()
+    expect(document.activeElement).toBe(menuItems[0])
+
+    // ArrowDown moves to second item (use fireEvent for deterministic focus)
+    fireEvent.keyDown(menuItems[0], { key: 'ArrowDown' })
+    expect(document.activeElement).toBe(menuItems[1])
+
+    // ArrowDown from last wraps to first
+    menuItems[menuItems.length - 1].focus()
+    fireEvent.keyDown(menuItems[menuItems.length - 1], { key: 'ArrowDown' })
+    expect(document.activeElement).toBe(menuItems[0])
+  })
+
+  it('supports ArrowUp key navigation within overflow menu', async () => {
+    render(<MobileNav />)
+    const moreButton = screen.getByRole('button', { name: /nav\.more_menu_label/i })
+    await user.click(moreButton)
+
+    const menu = screen.getByRole('menu')
+    const menuItems = within(menu).getAllByRole('menuitem')
+
+    // Focus last item and press ArrowUp via fireEvent (direct DOM event)
+    menuItems[menuItems.length - 1].focus()
+    expect(document.activeElement).toBe(menuItems[menuItems.length - 1])
+
+    fireEvent.keyDown(menuItems[menuItems.length - 1], { key: 'ArrowUp' })
+    expect(document.activeElement).toBe(menuItems[menuItems.length - 2])
   })
 })

@@ -17,3 +17,7 @@ class EventBus(Protocol):
         event_type: str,
         handler: Callable[[dict[str, Any]], Awaitable[None]],
     ) -> None: ...
+
+    async def ping(self) -> bool:
+        """Health check: return True if the bus is reachable."""
+        ...

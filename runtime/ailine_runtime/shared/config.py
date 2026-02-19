@@ -71,6 +71,12 @@ class Settings(BaseSettings):
             "OPENROUTER_API_KEY", "AILINE_OPENROUTER_API_KEY"
         ),
     )
+    elevenlabs_api_key: str = Field(
+        "",
+        validation_alias=AliasChoices(
+            "ELEVENLABS_API_KEY", "AILINE_ELEVENLABS_API_KEY"
+        ),
+    )
 
     # Sub-configs
     llm: LLMConfig = Field(default_factory=LLMConfig)

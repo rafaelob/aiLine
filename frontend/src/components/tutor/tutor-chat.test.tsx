@@ -1,3 +1,4 @@
+import React from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -48,18 +49,20 @@ vi.mock('@/hooks/use-theme-context', () => ({
   useThemeContext: () => 'standard',
 }))
 
-// Mock motion/react
+// Mock motion/react (includes useReducedMotion for a11y)
+// Use React.createElement to avoid JSX hoisting issues in Vitest 4
 vi.mock('motion/react', () => ({
   motion: {
     div: ({ children, ...rest }: Record<string, unknown>) => {
       const { initial: _i, animate: _a, transition: _t, ...safe } = rest
-      return <div {...safe}>{children as React.ReactNode}</div>
+      return React.createElement('div', safe, children as React.ReactNode)
     },
     button: ({ children, ...rest }: Record<string, unknown>) => {
       const { initial: _i, animate: _a, transition: _t, ...safe } = rest
-      return <button {...safe}>{children as React.ReactNode}</button>
+      return React.createElement('button', safe, children as React.ReactNode)
     },
   },
+  useReducedMotion: () => false,
 }))
 
 beforeEach(() => {

@@ -154,12 +154,11 @@ class Container:
                     result["db"] = {"status": "error", "detail": str(exc)}
                 break
 
-        # Redis connectivity
-        if self.event_bus is not None and hasattr(self.event_bus, "_redis"):
+        # Redis / event bus connectivity via public protocol method
+        if self.event_bus is not None:
             try:
-                redis_client = self.event_bus._redis
-                await redis_client.ping()
-                result["redis"] = {"status": "ok"}
+                reachable = await self.event_bus.ping()
+                result["redis"] = {"status": "ok" if reachable else "unreachable"}
             except Exception as exc:
                 result["redis"] = {"status": "error", "detail": str(exc)}
 

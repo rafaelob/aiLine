@@ -5,8 +5,8 @@
 Hexagonal (Ports-and-Adapters). Domain core has zero framework imports.
 
 - **Domain:** entities, value objects, domain services (pure Pydantic)
-- **Ports:** Protocol interfaces (ChatLLM, Embeddings, VectorStore, UnitOfWork, CurriculumProvider, EventBus, STT, TTS, SignRecognition, ObjectStorage)
-- **Adapters:** concrete implementations (Anthropic, OpenAI, Gemini, pgvector, ChromaDB, Qdrant, etc.)
+- **Ports:** Protocol interfaces (ChatLLM, Embeddings, VectorStore, UnitOfWork, CurriculumProvider, EventBus, STT, TTS, SignRecognition, ObjectStorage, ImageGenerator)
+- **Adapters:** concrete implementations (Anthropic, OpenAI, Gemini, GeminiImageGenerator, pgvector, ChromaDB, Qdrant, etc.)
 - **Application:** use cases orchestrating domain + ports (plan generation, tutor chat, material ingestion, RAG query, sign recognition, skill runtime)
 - **Infrastructure:** FastAPI routers, SQLAlchemy repos, LangGraph workflows
 - **Frontend:** Next.js 16 App Router with route groups: `[locale]/` (public landing) + `[locale]/(app)/` (authenticated shell with sidebar/topbar)
@@ -38,13 +38,29 @@ Student message -> SSE (fetch-event-source) -> LangGraph tutor StateGraph:
 
 ### Sign Language (Browser -> Server)
 
+8 international sign languages: ASL (US), BSL (UK), LGP (Portugal), DGS (Germany), LSF (France), LSE (Spain), Libras (Brazil), ISL (Ireland).
+
 Webcam -> MediaPipe JS (Hands+Pose) -> TF.js MLP classifier -> Gloss labels (limited to 3-4 navigation gestures for MVP)
--> Dedicated WebSocket /ws/accessibility/libras -> LLM gloss->sentence -> Response
+-> Dedicated WebSocket /ws/accessibility/libras?lang={code} -> LLM gloss->sentence (per-language prompt) -> Response
 Text -> VLibras widget (text->Libras 3D avatar, government CDN)
+
+Discovery API: GET /sign-language/languages, /languages/{code}, /languages/{code}/gestures, /for-locale/{locale}
 
 ### Material Ingestion
 
 Upload -> parse (PDF/DOCX/TXT) -> chunk (512 tokens, 64 overlap) -> embed (gemini-embedding-001 @ 1536d MRL) -> pgvector HNSW upsert
+
+### Demo System
+
+8 pre-built demo profiles (teacher, 4 students with ASD/ADHD/Dyslexia/Hearing, parent, school_admin, super_admin) with seed data. Demo login bypasses auth for hackathon evaluation. Each profile has pre-populated courses, plans, progress records, and tutor sessions.
+
+### RBAC & Authentication
+
+5 roles: super_admin, school_admin, teacher, student, parent. JWT authentication (HS256/RS256/ES256) with role + org_id claims. TenantContext extended with role and org_id contextvars. Centralized authorization (ADR-060): require_role() with super_admin bypass, require_admin(), require_teacher_or_admin(), can_access_student_data(). Auth API: POST /auth/login (auto-create in dev), POST /auth/register, GET /auth/me, GET /auth/roles. 5 RBAC ORM tables: organizations, users, student_profiles, teacher_students, parent_students.
+
+### Image Generation
+
+POST /media/generate-image -> ImageGenerator port -> GeminiImageGenerator adapter (Gemini Imagen 4). Returns generated educational images for lesson materials.
 
 ### SmartRouterAdapter (Multi-LLM)
 
@@ -68,7 +84,7 @@ Format: `provider:model-name` (anthropic, google-gla, openai, openrouter).
 - **SmartRouter:** 0.25 tokens + 0.25 structured + 0.25 tools + 0.15 history + 0.10 intent (ADR-049). Thresholds: <=0.40 cheap, 0.41-0.70 middle, >=0.71 primary. Hard overrides for tools/strict_json. Escalation ladder up to 4-6 attempts.
 - **SSE:** 14 events, `{run_id, seq, ts, type, stage, payload}` envelope. Terminal guarantee via RunContext (ADR-055). Redis ZSET replay (ADR-054). asyncio.Lock for thread safety.
 - **Branch errors:** `safe_branch()` -> `{ok, payload, error}`. Fan-in on partial success.
-- **TenantContext:** `teacher_id` from JWT only, `TeacherId` NewType wrapper, all repos require it.
+- **TenantContext:** `teacher_id` from JWT only, `TeacherId` NewType wrapper, all repos require it. Extended with `role` and `org_id` for RBAC. Super admin bypasses tenant isolation checks.
 
 ### Skills Runtime (agentskills.io)
 
@@ -80,6 +96,15 @@ Format: `provider:model-name` (anthropic, google-gla, openai, openrouter).
 4. SkillCrafter agent: multi-turn conversational skill creation by teachers -> CraftedSkillOutput
 
 Agents: Planner, Executor, QualityGate, Tutor, SkillCrafter (5 total, Pydantic AI 1.58.0)
+
+### "Make the Invisible Visible" (Sprint 26)
+
+Frontend components that expose the AI pipeline to users:
+- **Pipeline Visualization**: 6-node CSS Grid graph driven by SSE events (stage.started/completed/failed, quality.scored, refinement.*, tool.*). Planner labeled "Opus 4.6 Core".
+- **Adaptation Diff View**: Split-pane comparing standard vs adapted curriculum with profile tabs (ASD/ADHD/Dyslexia/Hearing) and diff highlighting (additions/modifications/removals).
+- **Evidence Panel**: 6-section trust accordion (Model, Quality Score gauge, Standards Aligned, RAG Provenance bar, Accommodations, Processing Time) reading from ai_receipt SSE events.
+- **TTS Audio Player**: HTMLAudioElement-based player calling POST /media/tts/synthesize with speed/language/voice controls.
+- **Inclusive Classroom Mode**: 2x2 teacher cockpit grid showing 4 students (Lucas/Sofia/Pedro/Ana) with disability-specific accent colors and accommodation badges.
 
 ## ADR Log
 

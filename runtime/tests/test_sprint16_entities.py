@@ -234,6 +234,7 @@ class TestTutorTurnFlag:
             session_id="s",
             turn_index=0,
             teacher_id="t",
+            reason="",
             created_at="2026-01-01T00:00:00Z",
         )
         assert flag.turn_index == 0
@@ -245,6 +246,7 @@ class TestTutorTurnFlag:
                 session_id="s",
                 turn_index=-1,
                 teacher_id="t",
+                reason="",
                 created_at="2026-01-01T00:00:00Z",
             )
 
@@ -254,6 +256,7 @@ class TestTutorTurnFlag:
             session_id="s",
             turn_index=0,
             teacher_id="t",
+            reason="",
             created_at="2026-01-01T00:00:00Z",
         )
         assert flag.reason == ""
@@ -289,9 +292,15 @@ class TestLearnerProgress:
         p = LearnerProgress(
             progress_id="p1",
             student_id="s1",
+            student_name="",
             teacher_id="t1",
             standard_code="EF06MA01",
+            standard_description="",
+            mastery_level=MasteryLevel.NOT_STARTED,
+            session_count=0,
+            last_activity=None,
             created_at="2026-02-14T10:00:00Z",
+            notes="",
         )
         assert p.mastery_level == MasteryLevel.NOT_STARTED
         assert p.session_count == 0
@@ -323,10 +332,15 @@ class TestLearnerProgress:
             p = LearnerProgress(
                 progress_id="p",
                 student_id="s",
+                student_name="Test",
                 teacher_id="t",
                 standard_code="C",
+                standard_description="Test",
                 mastery_level=level,
+                session_count=0,
+                last_activity=None,
                 created_at="2026-01-01T00:00:00Z",
+                notes="",
             )
             assert p.mastery_level == level
 
@@ -335,10 +349,15 @@ class TestLearnerProgress:
             LearnerProgress(
                 progress_id="p",
                 student_id="s",
+                student_name="Test",
                 teacher_id="t",
                 standard_code="C",
+                standard_description="Test",
+                mastery_level=MasteryLevel.NOT_STARTED,
                 session_count=-1,
+                last_activity=None,
                 created_at="2026-01-01T00:00:00Z",
+                notes="",
             )
 
 

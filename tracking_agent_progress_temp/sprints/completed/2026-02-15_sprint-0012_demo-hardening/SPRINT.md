@@ -1,6 +1,6 @@
 # Sprint 0012 — Demo Hardening
 
-**Status:** planned | **Date:** 2026-02-15
+**Status:** completed | **Date:** 2026-02-15
 **Goal:** Bulletproof demo experience with cached golden paths, curated scenarios,
 frontend polish, accessibility audit, 3-minute demo video, and final hackathon
 submission.

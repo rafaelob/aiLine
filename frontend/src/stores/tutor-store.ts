@@ -17,9 +17,8 @@ export interface TutorState {
   reset: () => void
 }
 
-let messageCounter = 0
 function nextId(): string {
-  return `msg-${++messageCounter}-${Date.now()}`
+  return `msg-${crypto.randomUUID()}`
 }
 
 export const useTutorStore = create<TutorState>()(
@@ -61,12 +60,14 @@ export const useTutorStore = create<TutorState>()(
 
       appendAssistantChunk: (chunk) =>
         set((state) => {
-          const msgs = [...state.messages]
-          const last = msgs[msgs.length - 1]
-          if (last && last.role === 'assistant') {
-            msgs[msgs.length - 1] = { ...last, content: last.content + chunk }
-          }
-          return { messages: msgs }
+          const { messages } = state
+          if (messages.length === 0) return state
+          const last = messages[messages.length - 1]
+          if (!last || last.role !== 'assistant') return state
+          // Reuse head of array, only create new reference for the updated last element
+          const updated = messages.slice(0, -1)
+          updated.push({ ...last, content: last.content + chunk })
+          return { messages: updated }
         }),
 
       finalizeAssistant: () => set({ isStreaming: false }),
@@ -86,7 +87,8 @@ export const useTutorStore = create<TutorState>()(
     {
       name: 'ailine-tutor-chat',
       partialize: (state) => ({
-        messages: state.messages,
+        // Cap persisted messages to prevent unbounded localStorage growth
+        messages: state.messages.slice(-100),
         sessionId: state.sessionId,
       }),
     },

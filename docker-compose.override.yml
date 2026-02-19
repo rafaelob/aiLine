@@ -1,0 +1,23 @@
+# Dev/test overrides for AiLine Docker Compose.
+# Automatically merged with docker-compose.yml when running `docker compose up`.
+# For production, use: docker compose -f docker-compose.yml up
+#
+# Frontend is built from the "test" stage so devDependencies are available
+# for `docker compose exec frontend pnpm test` and `pnpm typecheck`.
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: test
+    command: ["pnpm", "dev", "--hostname", "0.0.0.0"]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 2G

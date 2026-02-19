@@ -8,6 +8,8 @@ import { useConfetti } from '@/hooks/use-confetti'
 import { PlanTabs } from './plan-tabs'
 import { TransformationScorecard } from './transformation-scorecard'
 import { TeacherReviewPanel } from './teacher-review-panel'
+import { AdaptationDiff } from './adaptation-diff'
+import { EvidencePanel } from './evidence-panel'
 import type { ScorecardData } from './transformation-scorecard'
 import type { StudyPlan, QualityReport } from '@/types/plan'
 
@@ -79,7 +81,15 @@ export function PlanResultDisplay({
         <TransformationScorecard scorecard={scorecard} />
       )}
 
+      <EvidencePanel
+        plan={plan}
+        qualityReport={qualityReport}
+        scorecard={scorecard}
+      />
+
       {runId && <TeacherReviewPanel planId={runId} />}
+
+      <AdaptationDiff plan={plan} />
 
       <PlanTabs plan={plan} qualityReport={qualityReport} score={score} scorecard={scorecard} />
 

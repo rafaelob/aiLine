@@ -28,3 +28,7 @@ class InMemoryEventBus:
         self, event_type: str, handler: Callable[[dict[str, Any]], Awaitable[None]]
     ) -> None:
         self._handlers[event_type].append(handler)
+
+    async def ping(self) -> bool:
+        """In-memory bus is always reachable."""
+        return True

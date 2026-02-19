@@ -1,11 +1,13 @@
 # AiLine Frontend -- multi-stage Docker build (Next.js 16)
-# Stage 1: install + build via pnpm
-# Stage 2: standalone runtime with non-root user
+# Stage 1: install deps via pnpm (shared by build + test)
+# Stage 2: build production bundle
+# Stage 3: test runner (devDependencies available)
+# Stage 4: standalone runtime with non-root user
 
 # ---------------------------------------------------------------------------
-# Builder
+# Deps (shared layer: all dependencies installed)
 # ---------------------------------------------------------------------------
-FROM node:24-alpine AS builder
+FROM node:24-alpine AS deps
 
 RUN corepack enable
 
@@ -14,12 +16,26 @@ WORKDIR /build
 # Copy dependency manifest first (layer caching)
 COPY package.json pnpm-lock.yaml* ./
 
-# Install dependencies (frozen lockfile enforced -- fail fast if lockfile is stale)
+# Install all dependencies including devDependencies
 RUN pnpm install --frozen-lockfile
+
+# ---------------------------------------------------------------------------
+# Builder
+# ---------------------------------------------------------------------------
+FROM deps AS builder
 
 # Copy source and build
 COPY . .
 RUN pnpm build
+
+# ---------------------------------------------------------------------------
+# Test (devDependencies available for pnpm test / typecheck / lint)
+# ---------------------------------------------------------------------------
+FROM deps AS test
+
+COPY . .
+
+CMD ["pnpm", "test"]
 
 # ---------------------------------------------------------------------------
 # Runtime

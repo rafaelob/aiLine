@@ -19,6 +19,7 @@ vi.mock('motion/react', () => ({
     },
   },
   AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  useReducedMotion: () => false,
 }))
 
 const mockStartGeneration = vi.fn()
@@ -28,6 +29,7 @@ let mockHookState = {
   plan: null as unknown,
   error: null as string | null,
   stages: [],
+  events: [] as unknown[],
   qualityReport: null,
   score: null as number | null,
   scorecard: null as unknown,
@@ -58,8 +60,27 @@ vi.mock('./teacher-review-panel', () => ({
   TeacherReviewPanel: () => <div data-testid="review-panel">Review Panel</div>,
 }))
 
+vi.mock('./pipeline-visualization', () => ({
+  PipelineVisualization: () => <div data-testid="pipeline-viz">Pipeline Viz</div>,
+}))
+
+vi.mock('./plan-result-display', () => ({
+  PlanResultDisplay: ({ score, onReset }: { plan: unknown; qualityReport: unknown; score: number | null; scorecard: unknown; runId: string | null; onReset: () => void }) => (
+    <div data-testid="plan-result">
+      <span>plans.generation_complete</span>
+      {score != null && <span>{score}/100</span>}
+      <div data-testid="plan-tabs">Plan Tabs</div>
+      <button onClick={onReset}>plans.create</button>
+    </div>
+  ),
+}))
+
 vi.mock('./streaming-thought', () => ({
   StreamingThought: () => <div data-testid="streaming-thought">Thinking</div>,
+}))
+
+vi.mock('./thought-panel', () => ({
+  ThoughtPanel: () => <div data-testid="thought-panel">Thought Panel</div>,
 }))
 
 vi.mock('@/hooks/use-confetti', () => ({
@@ -76,6 +97,7 @@ describe('PlanGenerationFlow', () => {
       plan: null,
       error: null,
       stages: [],
+      events: [],
       qualityReport: null,
       score: null,
       scorecard: null,

@@ -212,7 +212,7 @@ async def _run_quality_gate_llm(
     try:
         qg_agent = get_quality_gate_agent()
         qg_prompt = (
-            f"Avalie este plano de aula. Score deterministico: {det_score}.\n"
+            f"Evaluate this lesson plan. Deterministic score: {det_score}.\n"
             f"Draft: {json.dumps(draft, ensure_ascii=False)[:3000]}\n"
             f"Checklist: {json.dumps(validation.get('checklist', {}), ensure_ascii=False)}\n"
             f"Hard constraints: {json.dumps(validation.get('hard_constraints', {}), ensure_ascii=False)}\n"
@@ -241,12 +241,20 @@ async def _run_quality_gate_llm(
         )
 
         llm_score = qg_result.output.score
-        final_score = int(0.4 * det_score + 0.6 * llm_score)
+        # Hysteresis: near decision thresholds (60, 80 +/- 5 points),
+        # weight deterministic scoring higher to reduce LLM jitter.
+        near_threshold = any(abs(det_score - t) <= 5 for t in (60, 80))
+        if near_threshold:
+            det_weight, llm_weight = 0.6, 0.4
+        else:
+            det_weight, llm_weight = 0.4, 0.6
+        final_score = int(det_weight * det_score + llm_weight * llm_score)
         validation["llm_assessment"] = qg_result.output.model_dump()
         validation["score_breakdown"] = {
             "deterministic": det_score,
             "llm": llm_score,
-            "weights": "0.4*det+0.6*llm",
+            "weights": f"{det_weight}*det+{llm_weight}*llm",
+            "near_threshold": near_threshold,
         }
         deps.circuit_breaker.record_success()
         log_event(

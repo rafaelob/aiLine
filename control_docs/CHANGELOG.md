@@ -1,6 +1,101 @@
 # Changelog
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.12.0] - 2026-02-19 (Sprint 26 — "Make the Invisible Visible")
+
+### Added
+- Agent Pipeline Visualization — 6-node real-time CSS Grid graph showing RAG/Profile/Planner(Opus 4.6)/QualityGate/Executor/Export with SSE-driven state transitions (F-217)
+- Adaptation Diff View — split-pane standard vs AI-adapted curriculum with 4 profile tabs and diff highlighting (F-218)
+- Evidence Panel — 6-section trust accordion with quality gauge, RAG provenance bar, ai_receipt integration (F-219)
+- TTS Audio Player — play/pause, speed/language/voice selectors, progress bar, API integration (F-220)
+- Braille Download + Copy — download .brf file and copy to clipboard on BraillePreview component (F-221)
+- Inclusive Classroom Mode — 2x2 teacher cockpit grid (ASD/ADHD/Dyslexia/Hearing) with accent colors and accommodation badges (F-222)
+- Skills API wired to app factory with SessionFactorySkillRepository (F-176)
+- TTS router wired with ElevenLabs/FakeTTS fallback and Settings field (F-165)
+- Skills workflow nodes integrated in plan + tutor workflows (F-177)
+
+### Fixed
+- 15 ruff lint errors across 8 backend files (import sorting, naming, unused imports)
+- 2 TypeScript errors (FeatureItem icon type union, ReactNode cast in learning-trajectory)
+- ai_receipt SSE event type mismatch in evidence panel extraction
+- evidence-panel null-safety for curriculum_alignment and accessibility_notes
+- Docker frontend memory limit increased to 2G (prevents OOM during test suite)
+
+### Changed
+- Strategic architecture review by GPT-5.2 + Gemini-3.1-Pro: "Make the invisible visible" theme
+- Total: 2,348 runtime + 277 agents + 1,236 frontend = **~3,861 tests passing**
+
+## [0.11.0] - 2026-02-18 (Sprint 25 — Skills DB + Braille Phase 1)
+
+### Added
+- Skills DB Persistence — Skill/SkillVersion/SkillRating/TeacherSkillSet with pgvector embeddings, migration 0004, repository (F-175)
+- Braille Phase 1 — BrfTranslator Grade 1, NABCC mapping, EN/PT-BR/ES, 40-cell wrap (F-166)
+
+## [0.10.1] - 2026-02-18 (Mega Review — Security & Architecture Hardening)
+
+### Fixed (CRITICAL)
+- **C1**: Rate limiter threading.Lock replaced with asyncio.Lock — was blocking the asyncio event loop under concurrency
+- **C2**: Unverified JWT decode no longer trusts role/org_id claims — hardcoded to "teacher" in dev mode to prevent super_admin forging
+
+### Fixed (HIGH)
+- **H1**: SkillRow.slug changed from globally unique to composite unique (teacher_id, slug) — allows per-tenant skill forking
+- **H3**: JWT token removed from localStorage persist (XSS mitigation) — now lives in memory only via Zustand store
+- **M5**: Skills node no longer emits raw exception strings via SSE — generic "skills_resolution_failed" message instead
+- **M6**: isTokenExpired now treats tokens without exp claim as expired (safe default)
+- **M9**: accessibility_needs input sanitized against known categories to prevent prompt injection
+- **M12**: JWT success log downgraded from info to debug level (LGPD privacy)
+
+### Added
+- Super-admin cross-tenant access audit trail (structured warning log)
+- 18 ruff lint errors fixed across 6 files (import sorting, unused imports/vars, code style)
+
+### Changed
+- Mega architecture review by GPT-5.2 + Gemini-3-Pro: 25 issues identified (2 critical, 5 high, 12 medium, 6 low)
+- Total: 2,358 backend + 1,137 frontend = **3,495 tests passing**, 0 lint/type errors
+
+## [0.10.0] - 2026-02-18 (International Sign Languages & RBAC Login)
+
+### Added
+- International sign language registry — 8 languages (ASL, BSL, LGP, DGS, LSF, LSE, Libras, ISL) with metadata, 8 gestures each, locale mapping (F-201)
+- Sign language discovery API — 4 endpoints: languages list/detail, gestures per language, locale recommendation (F-203)
+- WebSocket language selection via ?lang= query param (F-204)
+- RBAC domain entities — UserRole (5 roles), Organization, User, StudentProfile (F-205)
+- RBAC ORM models — 5 new tables: organizations, users, student_profiles, teacher_students, parent_students (F-206)
+- RBAC Alembic migration 0003 (F-207)
+- RBAC middleware integration — role + org_id contextvars, JWT claims extraction (F-208)
+- Authorization module — require_role(), require_admin(), can_access_student_data() with super_admin bypass (F-209)
+- Auth API router — POST /auth/login, /register, GET /me, /roles (F-210)
+- 2 admin demo profiles: admin-principal (school_admin), admin-super (super_admin) (F-211)
+- Frontend auth store (Zustand persist) with JWT + user profile (F-213)
+- Frontend login page with role-based selection, demo profiles, email/password form, i18n (F-214)
+- Sign language selector component — 8 languages, ARIA combobox, keyboard nav (F-215)
+- 235 new tests (RBAC authz, sign language registry, auth endpoints, user entities)
+
+### Fixed
+- Auth middleware path exclusion — /auth/me now works with authentication (was excluded by /auth prefix) (F-212)
+- Gloss translator internationalized for 8 sign languages with per-language LLM prompts (F-202)
+
+### Changed
+- Frontend auth headers priority — JWT from auth store checked first, graceful fallback chain (F-216)
+- Total: 2,155 runtime + 277 agents + 1,116 frontend = **3,548 tests passing**
+
+## [0.9.0] - 2026-02-16 (Landing Overhaul, Demo System, Image Gen)
+
+### Added
+- Demo login system — 6 pre-built profiles (teacher, 4 students with ASD/ADHD/Dyslexia/Hearing, parent) with seed data (F-193, F-194)
+- Gemini Imagen 4 integration — ImageGenerator port, GeminiImageGenerator adapter, POST /media/generate-image (F-195)
+- Landing page hero with persona toggle and "How It Works" 4-step section (F-191, F-192)
+- "Start Here" badge on teacher card, route prefetch on hover/focus (F-198)
+- i18n expansion — 40+ new keys across all 3 locales for demo system and landing (F-200)
+
+### Fixed
+- SSE double-finalize — post-completion side-effects wrapped in nested try/except (F-196)
+- IDOR surface elimination — removed dead teacher_id from PlanGenerateIn/PlanStreamIn (F-197)
+
+### Changed
+- Default locale changed from pt-BR to English for hackathon judges (F-199)
+- Total: 1,941 runtime + 277 agents + 1,115 frontend = **3,333 tests passing**
+
 ## [0.8.0] - 2026-02-16 (Security Hardening & Expert Review)
 
 ### Fixed
@@ -36,83 +131,21 @@ All notable changes documented here. Format: [Keep a Changelog](https://keepacha
 - Docker CORS for localhost + 127.0.0.1 (F-174)
 
 ## [0.6.0] - 2026-02-15 (Maturity & Polish)
-
-### Added
-- Public landing page — hero with mesh gradient, animated stat counters, feature cards, floating glass nav, "Built with Claude Opus 4.6" footer (F-146)
-- Route group `(app)/` — authenticated pages with sidebar/topbar isolated from public landing (F-147)
-- 86 new tests — landing page components, shared animated counter, extracted dashboard modules (F-153)
-- Shared AnimatedCounter component with configurable spring physics (F-150)
-
-### Improved
-- Dashboard refactored: 541→362 LOC — extracted icons, plan history card, animated counter (F-149)
-- All 327 ESLint warnings eliminated via config update + targeted fixes (F-148)
-- Landing page WCAG AAA compliance — focus rings, aria-live counters, proper headings, reduced-motion (F-151)
-- Landing UX premium polish — gradient text, scroll animations, hover depth effects (F-152)
-- Security review — 0 critical/high findings across all uncommitted changes (F-154)
-- Repository cleanup — .gitignore improvements, screenshot artifacts removed (F-155)
-- Total: 1,875 backend + 250 agents + 1,048 frontend = **3,173 tests passing**
+Landing page (F-146), route groups (F-147), 327 ESLint warnings fixed (F-148), dashboard refactor (F-149), AnimatedCounter (F-150), a11y hardening (F-151), UX polish (F-152), 86 new tests (F-153), security review (F-154), repo cleanup (F-155). **3,173 tests.**
 
 ## [0.5.0] - 2026-02-15 (State-of-the-Art Final Sweep)
+Command Palette (F-141), plan nodes refactor (F-142), plan flow refactor (F-143), shared motion variants (F-144), SSE type safety (F-145). **3,087 tests.**
 
-### Added
-- Command Palette (Cmd+K / Ctrl+K) — fuzzy search, 9 page navigation, quick actions, theme + language switching, ARIA combobox (F-141)
-- 21 new frontend tests (command palette, refactored components)
-
-### Improved
-- Refactored `_plan_nodes.py`: 764 LOC → 15 LOC barrel + 5 focused modules (F-142)
-- Refactored `plan-generation-flow.tsx`: 757 LOC → 379 + 358 + 104 LOC (F-143)
-- Extracted shared motion variants from 9 components into `lib/motion-variants.ts` (F-144)
-- Fixed 3 unsafe `as never` casts with proper types in SSE hooks (F-145)
-- Updated all docs to consistent numbers: 145 features, 3,087 tests, 20 sprints
-- Total: 1,875 backend + 250 agents + 962 frontend = **3,087 tests passing**
-
-## [0.4.0] - 2026-02-15 (Impact Sweep & State-of-the-Art Polish)
-
-### Added
-- View Transition Theme Morphing — circular clip-path reveal from click origin on persona switch (F-136)
-- Loading skeletons for all 8 page routes — page-specific layout skeletons (F-137)
-- Mobile Nav overflow menu — "More" popover for Materials, Sign Language, Observability, Settings (F-138)
-- 51 new API tests — Progress (16), Plan Review (18), Tutor Transcript/Flag (17) (F-139)
-- PreferencesPanel View Transition support (F-140)
-
-### Improved
-- All mobile pages now reachable (was missing 4 via mobile nav)
-- `useViewTransition` hook supports typed transitions ('route' | 'theme') with origin coordinates
-- Reduced-motion users see instant theme swap (no clip-path animation)
-- Total: 1,875 backend + 250 agents + 941 frontend = **3,066 tests passing** (updated to 3,087 in Sprint 19)
+## [0.4.0] - 2026-02-15 (Impact Sweep)
+View Transition morphing (F-136), loading skeletons (F-137), mobile nav overflow (F-138), 51 API tests (F-139), PreferencesPanel transitions (F-140). **3,066 tests.**
 
 ## [0.3.0] - 2026-02-15 (Hackathon Final Push)
-
-### Added
-- Settings Page — AI model, language, accessibility, about sections with glass morphism (F-126)
-- Guided Demo Mode — `?demo=true` auto-fills wizard, floating tooltip overlay, 3-step guided tour (F-127)
-- Trust & Transparency Panel — quality report, scorecard, model provenance, decision badge in plan tabs (F-128)
-- Materials Upload Page — file upload, material listing with tags, glass card grid (F-129)
-- Live Dashboard Stats — wired to API endpoints, plan history cards, loading skeleton (F-130)
-- Tutor Persistence — Zustand persist middleware, ConversationReview tab (F-131)
-- System Status Indicator — TopBar health check badge with dropdown details (F-132)
-- 44 new frontend tests (964 total, 113/114 files passing)
-
-### Fixed
-- 9 RUF009 lint errors (os.getenv in dataclass defaults → field default_factory) (F-133)
-- 2 UP038 lint errors (isinstance tuple → union syntax)
-- React Compiler cascading-render warning in plan-generation-flow.tsx
-- Dead `/settings` sidebar link now has a corresponding page
-- ESLint: 0 errors (was 1)
-- Ruff: 0 errors (was 11)
-- mypy: 0 errors across runtime (159 files) + agents (29 files) — was 44 errors
-
-### Improved
-- Wired 4 orphaned components: CognitiveLoadMeter→Accessibility, DegradationPanel→Observability, PersonaHUD→Accessibility, PrivacyPanel→Settings (F-134)
-- Removed 5 duplicate/unused components and 5 test files (F-135)
-- i18n: perfect 3-locale parity (en, pt-BR, es) verified across all 780+ keys
-- All 9 sidebar nav links verified with corresponding pages
-- Total: 1,821 backend + 250 agents + 931 frontend = **3,002 tests passing**
+Settings (F-126), Demo Mode (F-127), Trust Panel (F-128), Materials (F-129), Dashboard Stats (F-130), Tutor Persist (F-131), Status Indicator (F-132), lint zero (F-133-135). **3,002 tests.**
 
 ## [0.2.0] - 2026-02-14 (Hackathon Victory Sprint)
-Scorecard (F-121), HITL Review (F-122), Progress Dashboard (F-123), Conversation Review (F-125), 115 new tests, 8 nav items. **2,900 tests.**
+Scorecard (F-121), HITL Review (F-122), Progress Dashboard (F-123), Conversation Review (F-125). **2,900 tests.**
 
 ## [0.1.1] - 2026-02-14 (Excellence Sweep)
-114 mypy → 0, LangGraph state leak fix, server-side translations, a11y landmarks, Ruff 0.
+114 mypy -> 0, LangGraph state leak fix, server-side translations, a11y landmarks, Ruff 0.
 
-## [0.1.0] - 2026-02-13 — Hackathon Release (120 features, 60 ADRs, 2700+ tests)
+## [0.1.0] - 2026-02-13 -- Hackathon Release (120 features, 60 ADRs, 2700+ tests)

@@ -37,6 +37,7 @@ def _test_settings() -> Settings:
         anthropic_api_key="",
         openai_api_key="",
         google_api_key="",
+        openrouter_api_key="",
     )
 
 
@@ -365,3 +366,102 @@ class TestCrossTenantVectorIsolation:
         assert all(r.id.startswith("a-") for r in results_a)
         assert len(results_b) == 5
         assert all(r.id.startswith("b-") for r in results_b)
+
+
+# ---------------------------------------------------------------------------
+# 5. check_student_access() unit tests
+# ---------------------------------------------------------------------------
+
+
+class TestCheckStudentAccess:
+    """Unit tests for async check_student_access()."""
+
+    def test_can_access_student_data_super_admin(self) -> None:
+        """Super admin can access any student's data synchronously."""
+        from ailine_runtime.app.authz import can_access_student_data
+        from ailine_runtime.shared.tenant import clear_tenant_id, set_tenant_id
+
+        token = set_tenant_id("admin-001")
+        try:
+            with patch(
+                "ailine_runtime.app.authz.get_current_user_role",
+                return_value="super_admin",
+            ):
+                assert can_access_student_data("any-student") is True
+        finally:
+            clear_tenant_id(token)
+
+    def test_can_access_student_data_student_self(self) -> None:
+        """Student can access their own data synchronously."""
+        from ailine_runtime.app.authz import can_access_student_data
+        from ailine_runtime.shared.tenant import clear_tenant_id, set_tenant_id
+
+        token = set_tenant_id("student-self")
+        try:
+            with patch(
+                "ailine_runtime.app.authz.get_current_user_role",
+                return_value="student",
+            ):
+                assert can_access_student_data("student-self") is True
+        finally:
+            clear_tenant_id(token)
+
+    def test_can_access_student_data_student_other(self) -> None:
+        """Student cannot access another student's data."""
+        from ailine_runtime.app.authz import can_access_student_data
+        from ailine_runtime.shared.tenant import clear_tenant_id, set_tenant_id
+
+        token = set_tenant_id("student-self")
+        try:
+            with patch(
+                "ailine_runtime.app.authz.get_current_user_role",
+                return_value="student",
+            ):
+                assert can_access_student_data("student-other") is False
+        finally:
+            clear_tenant_id(token)
+
+    def test_can_access_student_data_no_auth(self) -> None:
+        """No auth context returns False."""
+        from ailine_runtime.app.authz import can_access_student_data
+
+        assert can_access_student_data("any-student") is False
+
+    async def test_check_student_access_super_admin(self) -> None:
+        """Async check: super admin bypasses DB lookup."""
+        from ailine_runtime.app.authz import check_student_access
+        from ailine_runtime.shared.tenant import clear_tenant_id, set_tenant_id
+
+        token = set_tenant_id("admin-001")
+        try:
+            with patch(
+                "ailine_runtime.app.authz.get_current_user_role",
+                return_value="super_admin",
+            ):
+                result = await check_student_access("any-student", object())
+                assert result is True
+        finally:
+            clear_tenant_id(token)
+
+    async def test_check_student_access_invalid_session(self) -> None:
+        """Non-AsyncSession object returns False for teacher role."""
+        from ailine_runtime.app.authz import check_student_access
+        from ailine_runtime.shared.tenant import clear_tenant_id, set_tenant_id
+
+        token = set_tenant_id("teacher-001")
+        try:
+            with patch(
+                "ailine_runtime.app.authz.get_current_user_role",
+                return_value="teacher",
+            ):
+                result = await check_student_access("student-001", "not-a-session")
+                assert result is False
+        finally:
+            clear_tenant_id(token)
+
+    async def test_check_student_access_no_auth(self) -> None:
+        """No auth context returns False."""
+        from ailine_runtime.app.authz import check_student_access
+
+        result = await check_student_access("any-student", object())
+        assert result is False
