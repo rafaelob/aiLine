@@ -1,6 +1,6 @@
 # Sprint 0010 — SSE Streaming Pipeline
 
-**Status:** planned | **Date:** 2026-02-14
+**Status:** completed | **Date:** 2026-02-14
 **Goal:** Real-time pipeline progress via Server-Sent Events (SSE), WebSocket for
 tutor chat, and event-driven architecture for stage transitions.
 

@@ -21,29 +21,31 @@ class TestQualityAssessment:
             checklist={"has_steps": True, "has_instructions": True},
             human_review_required=False,
             human_review_reasons=[],
+            rag_confidence="low",
+            rag_sources_cited=False,
         )
         assert qa.score == 85
         assert qa.status == "accept"
         assert qa.warnings == ["minor issue"]
 
     def test_score_min_boundary(self) -> None:
-        qa = QualityAssessment(score=0, status="must-refine")
+        qa = QualityAssessment(score=0, status="must-refine", rag_confidence="low", rag_sources_cited=False)
         assert qa.score == 0
 
     def test_score_max_boundary(self) -> None:
-        qa = QualityAssessment(score=100, status="accept")
+        qa = QualityAssessment(score=100, status="accept", rag_confidence="low", rag_sources_cited=False)
         assert qa.score == 100
 
     def test_score_below_min_rejected(self) -> None:
         with pytest.raises(ValidationError, match="greater than or equal to 0"):
-            QualityAssessment(score=-1, status="must-refine")
+            QualityAssessment(score=-1, status="must-refine", rag_confidence="low", rag_sources_cited=False)
 
     def test_score_above_max_rejected(self) -> None:
         with pytest.raises(ValidationError, match="less than or equal to 100"):
-            QualityAssessment(score=101, status="accept")
+            QualityAssessment(score=101, status="accept", rag_confidence="low", rag_sources_cited=False)
 
     def test_defaults(self) -> None:
-        qa = QualityAssessment(score=70, status="refine-if-budget")
+        qa = QualityAssessment(score=70, status="refine-if-budget", rag_confidence="low", rag_sources_cited=False)
         assert qa.errors == []
         assert qa.warnings == []
         assert qa.recommendations == []
@@ -53,7 +55,8 @@ class TestQualityAssessment:
 
     def test_model_dump(self) -> None:
         qa = QualityAssessment(
-            score=75, status="refine-if-budget", errors=["missing steps"]
+            score=75, status="refine-if-budget", errors=["missing steps"],
+            rag_confidence="low", rag_sources_cited=False,
         )
         d = qa.model_dump()
         assert d["score"] == 75

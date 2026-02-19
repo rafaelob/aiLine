@@ -10,17 +10,19 @@ from __future__ import annotations
 import os
 import re
 import time
+import typing
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Any, ClassVar
+from typing import Any
 
 import structlog
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import JSONResponse, PlainTextResponse, Response
 
+from ..app.authz import require_authenticated
 from ..shared.config import Settings, get_settings
 from ..shared.container import Container
 from ..shared.metrics import (
@@ -52,7 +54,7 @@ def normalize_metric_path(path: str) -> str:
     for part in parts:
         if not part:
             normalized.append(part)
-        elif _UUID_RE.fullmatch(part) or _NUMERIC_RE.match(part):
+        elif _UUID_RE.fullmatch(part) or _NUMERIC_RE.fullmatch(part):
             normalized.append(":id")
         else:
             normalized.append(part)
@@ -67,8 +69,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     configure_logging(json_output=True)
 
     # Validate dev-mode safety before building the application.
-    from .middleware.tenant_context import validate_dev_mode
+    # Clear the cached dev-mode check so it re-reads the env var
+    # (important when create_app is called multiple times in tests).
+    from .middleware.tenant_context import _is_dev_mode, validate_dev_mode
 
+    _is_dev_mode.cache_clear()
     validate_dev_mode(env=settings.env)
 
     # Initialize OpenTelemetry tracing (no-op when AILINE_OTEL_ENABLED is unset)
@@ -222,7 +227,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # -----------------------------------------------------------------
 
     @app.get("/health/diagnostics")
-    async def health_diagnostics() -> Response:
+    async def health_diagnostics(
+        _teacher_id: str = Depends(require_authenticated),
+    ) -> Response:
         """Comprehensive system diagnostics for the frontend Status Indicator.
 
         Returns system status, available LLM models, skills count,
@@ -272,6 +279,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "openai": bool(settings.openai_api_key),
             "google": bool(settings.google_api_key),
             "openrouter": bool(settings.openrouter_api_key),
+            "elevenlabs": bool(settings.elevenlabs_api_key),
         }
 
         # -- Skills --
@@ -353,8 +361,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # -----------------------------------------------------------------
 
     @app.get("/metrics", include_in_schema=False)
-    async def metrics_endpoint() -> PlainTextResponse:
-        """Expose in-process metrics in Prometheus text exposition format."""
+    async def metrics_endpoint(
+        _teacher_id: str = Depends(require_authenticated),
+    ) -> PlainTextResponse:
+        """Expose in-process metrics in Prometheus text exposition format.
+
+        Requires authentication to prevent unauthenticated access to
+        operational data (request counts, latency distributions, etc.).
+        """
         return PlainTextResponse(
             content=render_metrics(),
             media_type="text/plain; version=0.0.4; charset=utf-8",
@@ -379,6 +393,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # Register routers
     # -----------------------------------------------------------------
     from .routers import (
+        auth,
         curriculum,
         demo,
         materials,
@@ -388,11 +403,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         plans_stream,
         progress,
         rag_diagnostics,
+        setup,
         sign_language,
         skills,
+        skills_v1,
         traces,
+        tts,
         tutors,
     )
+
+    # Auth and setup (no tenant context required, must be registered first)
+    app.include_router(auth.router, prefix="/auth", tags=["auth"])
+    app.include_router(setup.router, prefix="/setup", tags=["setup"])
 
     app.include_router(materials.router, prefix="/materials", tags=["materials"])
     app.include_router(plans.router, prefix="/plans", tags=["plans"])
@@ -411,6 +433,20 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app.include_router(progress.router, prefix="/progress", tags=["progress"])
     app.include_router(skills.router, prefix="/skills", tags=["skills"])
+    app.include_router(
+        skills_v1.router, prefix="/v1/skills", tags=["skills-v1"]
+    )
+    app.include_router(tts.router, prefix="/v1/tts", tags=["tts"])
+
+    # Wire SkillRepository for skills_v1 router (F-176).
+    # Reuse the session factory from the vectorstore engine (same PG instance).
+    _wire_skill_repo(container, skills_v1)
+
+    # Pre-seed auth store with demo profiles when demo mode is active
+    if settings.demo_mode:
+        from .routers.auth import seed_demo_users
+
+        seed_demo_users()
 
     return app
 
@@ -467,3 +503,38 @@ async def _check_redis(container: Container) -> str:
     except Exception as exc:
         _log.warning("readiness_redis_check_failed", error=str(exc))
         return f"error: {type(exc).__name__}"
+
+
+def _wire_skill_repo(container: Container, skills_v1_module: Any) -> None:
+    """Inject a SkillRepository into the skills_v1 router.
+
+    When a PostgreSQL-backed vectorstore is available, reuses its session
+    factory to create a ``SessionFactorySkillRepository``. Otherwise, falls
+    back to ``FakeSkillRepository`` for dev/test environments.
+
+    Skips wiring if a repo has already been injected (e.g., by test fixtures
+    calling ``set_skill_repo()`` before ``create_app()``).
+    """
+    # Respect pre-existing repo (test fixtures set it before create_app)
+    if skills_v1_module.is_skill_repo_set():
+        _log.info("skill_repo.wired", backend="pre_existing")
+        return
+
+    from ..domain.ports.skills import SkillRepository
+
+    vs = container.vectorstore
+    session_factory = getattr(vs, "_session_factory", None) if vs else None
+
+    repo: SkillRepository
+    if session_factory is not None:
+        from ..adapters.db.skill_repository import SessionFactorySkillRepository
+
+        repo = SessionFactorySkillRepository(session_factory)
+        _log.info("skill_repo.wired", backend="postgres")
+    else:
+        from ..adapters.db.fake_skill_repository import FakeSkillRepository
+
+        repo = FakeSkillRepository()
+        _log.info("skill_repo.wired", backend="fake_in_memory")
+
+    skills_v1_module.set_skill_repo(repo)

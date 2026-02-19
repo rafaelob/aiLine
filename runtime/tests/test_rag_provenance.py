@@ -30,7 +30,13 @@ from ailine_runtime.shared.rag_diagnostics_store import (
 @pytest.fixture()
 def app(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("AILINE_DEV_MODE", "true")
-    settings = Settings(env="development")
+    settings = Settings(
+        anthropic_api_key="",
+        openai_api_key="",
+        google_api_key="",
+        openrouter_api_key="",
+        env="development",
+    )
     return create_app(settings)
 
 

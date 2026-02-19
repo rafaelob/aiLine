@@ -43,6 +43,9 @@ def _tutors_dir() -> Path:
 
 
 def save_tutor_spec(spec: TutorAgentSpec) -> dict[str, Any]:
+    from ..shared.sanitize import safe_path_component
+
+    safe_path_component(spec.tutor_id, label="tutor_id")
     path = _tutors_dir() / f"{spec.tutor_id}.json"
     path.write_text(
         spec.model_dump_json(indent=2, ensure_ascii=False), encoding="utf-8"
@@ -51,6 +54,13 @@ def save_tutor_spec(spec: TutorAgentSpec) -> dict[str, Any]:
 
 
 def load_tutor_spec(tutor_id: str) -> TutorAgentSpec | None:
+    from ..shared.sanitize import safe_path_component
+
+    try:
+        safe_path_component(tutor_id, label="tutor_id")
+    except ValueError:
+        logger.warning("load_tutor_spec_invalid_id", tutor_id=tutor_id[:50])
+        return None
     path = _tutors_dir() / f"{tutor_id}.json"
     if not path.exists():
         return None

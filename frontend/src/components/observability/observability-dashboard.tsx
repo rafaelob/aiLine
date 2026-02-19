@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import { motion } from 'motion/react'
 import { cn } from '@/lib/cn'
 import { containerVariants, itemVariants } from '@/lib/motion-variants'
 import type { ObservabilityDashboard } from '@/types/trace'
-import { API_BASE } from '@/lib/api'
+import { API_BASE, getAuthHeaders } from '@/lib/api'
 
 /**
  * Judge Dashboard page content.
@@ -19,14 +19,25 @@ export default function ObservabilityDashboardContent() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  const abortRef = useRef<AbortController | null>(null)
+
   const fetchData = useCallback(async () => {
+    // Abort any in-flight request to prevent overlap
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+
     try {
-      const res = await fetch(`${API_BASE}/api/v1/observability/dashboard`)
+      const res = await fetch(`${API_BASE}/observability/dashboard`, {
+        headers: getAuthHeaders(),
+        signal: controller.signal,
+      })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const json: ObservabilityDashboard = await res.json()
       setData(json)
       setError(null)
     } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return
       setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
       setLoading(false)
@@ -36,7 +47,10 @@ export default function ObservabilityDashboardContent() {
   useEffect(() => {
     fetchData()
     const interval = setInterval(fetchData, 30000)
-    return () => clearInterval(interval)
+    return () => {
+      clearInterval(interval)
+      abortRef.current?.abort()
+    }
   }, [fetchData])
 
   if (loading) {

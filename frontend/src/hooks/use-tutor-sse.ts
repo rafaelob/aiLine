@@ -11,7 +11,14 @@ import { API_BASE, getAuthHeaders } from '@/lib/api'
  */
 export function useTutorSSE() {
   const abortRef = useRef<AbortController | null>(null)
-  const store = useTutorStore()
+  const retryCountRef = useRef(0)
+
+  // Granular selectors to avoid re-rendering on every streaming token
+  const messages = useTutorStore((s) => s.messages)
+  const isStreaming = useTutorStore((s) => s.isStreaming)
+  const error = useTutorStore((s) => s.error)
+  const sessionId = useTutorStore((s) => s.sessionId)
+  const reset = useTutorStore((s) => s.reset)
 
   // Abort SSE connection on unmount to prevent memory leaks
   useEffect(() => {
@@ -25,9 +32,11 @@ export function useTutorSSE() {
       abortRef.current?.abort()
       const ctrl = new AbortController()
       abortRef.current = ctrl
+      retryCountRef.current = 0
 
-      store.addUserMessage(message)
-      store.startStreaming()
+      const s = useTutorStore.getState()
+      s.addUserMessage(message)
+      s.startStreaming()
 
       try {
         await fetchEventSource(`${API_BASE}/tutor/chat`, {
@@ -39,73 +48,87 @@ export function useTutorSSE() {
           },
           body: JSON.stringify({
             message,
-            session_id: store.sessionId,
+            session_id: useTutorStore.getState().sessionId,
           }),
           signal: ctrl.signal,
 
           onopen: async (response) => {
             if (!response.ok) {
+              if (response.status >= 400 && response.status < 500) {
+                ctrl.abort()
+                useTutorStore.getState().setError(
+                  `Tutor SSE failed: ${response.status} ${response.statusText}`
+                )
+                return
+              }
               throw new Error(
                 `Tutor SSE failed: ${response.status} ${response.statusText}`
               )
             }
+            retryCountRef.current = 0
           },
 
           onmessage: (msg) => {
             if (!msg.data) return
             try {
               const data = JSON.parse(msg.data)
+              const st = useTutorStore.getState()
 
-              if (data.session_id && !store.sessionId) {
-                store.setSessionId(data.session_id)
+              if (data.session_id && !st.sessionId) {
+                st.setSessionId(data.session_id)
               }
 
               if (data.chunk) {
-                store.appendAssistantChunk(data.chunk)
+                st.appendAssistantChunk(data.chunk)
               }
 
               if (data.done) {
-                store.finalizeAssistant()
+                st.finalizeAssistant()
               }
             } catch {
               // If not JSON, treat as raw text chunk
-              store.appendAssistantChunk(msg.data)
+              useTutorStore.getState().appendAssistantChunk(msg.data)
             }
           },
 
           onerror: (err) => {
             if (ctrl.signal.aborted) return
-            store.setError(
-              err instanceof Error ? err.message : 'Connection lost'
-            )
-            throw err
+
+            retryCountRef.current++
+            if (retryCountRef.current > 3) {
+              useTutorStore.getState().setError(
+                err instanceof Error ? err.message : 'Connection lost'
+              )
+              ctrl.abort()
+              return // Stop retrying
+            }
           },
 
           openWhenHidden: true,
         })
       } catch (err) {
         if (!ctrl.signal.aborted) {
-          store.setError(
+          useTutorStore.getState().setError(
             err instanceof Error ? err.message : 'Failed to send message'
           )
         }
       }
     },
-    [store]
+    []
   )
 
   const cancel = useCallback(() => {
     abortRef.current?.abort()
-    store.finalizeAssistant()
-  }, [store])
+    useTutorStore.getState().finalizeAssistant()
+  }, [])
 
   return {
     sendMessage,
     cancel,
-    messages: store.messages,
-    isStreaming: store.isStreaming,
-    error: store.error,
-    sessionId: store.sessionId,
-    reset: store.reset,
+    messages,
+    isStreaming,
+    error,
+    sessionId,
+    reset,
   }
 }

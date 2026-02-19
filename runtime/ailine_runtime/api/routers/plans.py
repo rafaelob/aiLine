@@ -34,8 +34,19 @@ _SAFE_RESPONSE_FIELDS = frozenset(
 
 
 class PlanGenerateIn(BaseModel):
-    run_id: str = Field(..., description="Run ID for observability.")
-    user_prompt: str
+    run_id: str = Field(
+        ...,
+        min_length=1,
+        max_length=128,
+        pattern=r"^[a-zA-Z0-9_-]+$",
+        description="Run ID for observability (alphanumeric, hyphens, underscores).",
+    )
+    user_prompt: str = Field(
+        ...,
+        min_length=1,
+        max_length=50_000,
+        description="Teacher's natural-language request.",
+    )
     subject: str | None = Field(None, description="Optional: subject (RAG filter).")
     class_accessibility_profile: dict[str, Any] | None = None
     learner_profiles: list[dict[str, Any]] | None = None
@@ -98,7 +109,11 @@ async def plans_generate(body: PlanGenerateIn, request: Request):
 
 
 class PlanReviewIn(BaseModel):
-    status: str = Field(..., description="approved|rejected|needs_revision")
+    status: str = Field(
+        ...,
+        pattern=r"^(draft|pending_review|approved|rejected|needs_revision)$",
+        description="Review status: draft, pending_review, approved, rejected, or needs_revision.",
+    )
     notes: str = Field("", max_length=2000)
 
 

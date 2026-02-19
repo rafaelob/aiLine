@@ -143,7 +143,7 @@ class TestBuildTutorSystemPrompt:
             teacher_id="teach1",
             subject="Matematica",
             grade="6o ano",
-            student_profile=LearnerProfile(name="Ana"),
+            student_profile=LearnerProfile(name="Ana", age=None, language="pt-BR"),
             materials_scope=TutorMaterialsScope(
                 teacher_id="teach1", subject="Matematica"
             ),
@@ -162,8 +162,10 @@ class TestBuildTutorSystemPrompt:
             grade="5o ano",
             student_profile=LearnerProfile(
                 name="Pedro",
+                age=None,
                 needs=["autism", "hearing"],
                 strengths=["leitura"],
+                language="pt-BR",
             ),
             materials_scope=TutorMaterialsScope(
                 teacher_id="teach1", subject="Ciencias"
@@ -183,7 +185,7 @@ class TestBuildTutorSystemPrompt:
             teacher_id="teach1",
             subject="Historia",
             grade="7o ano",
-            student_profile=LearnerProfile(name="Maria"),
+            student_profile=LearnerProfile(name="Maria", age=None, language="pt-BR"),
             materials_scope=TutorMaterialsScope(
                 teacher_id="teach1", subject="Historia"
             ),
@@ -202,7 +204,7 @@ class TestBuildTutorSystemPrompt:
             grade="4o ano",
             tone="divertido e motivador",
             style="coach",
-            student_profile=LearnerProfile(name="Joao"),
+            student_profile=LearnerProfile(name="Joao", age=None, language="pt-BR"),
             materials_scope=TutorMaterialsScope(
                 teacher_id="teach1", subject="Portugues"
             ),
@@ -326,7 +328,7 @@ class TestSaveLoadSpec:
             teacher_id="teach1",
             subject="Geografia",
             grade="9o ano",
-            student_profile=LearnerProfile(name="Teste"),
+            student_profile=LearnerProfile(name="Teste", age=None, language="pt-BR"),
             materials_scope=TutorMaterialsScope(
                 teacher_id="teach1", subject="Geografia"
             ),

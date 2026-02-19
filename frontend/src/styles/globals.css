@@ -71,7 +71,7 @@
   --color-surface: #F8FAFC;
   --color-surface-elevated: #F1F5F9;
   --color-border: #E2E8F0;
-  --color-muted: #64748B;
+  --color-muted: #4B5563;
   --color-on-primary: #FFFFFF;
   --radius-sm: 6px;
   --radius-md: 12px;
@@ -226,7 +226,7 @@
   --color-surface: #FFF8EE;
   --color-surface-elevated: #FFF0DD;
   --color-border: #E8D5B8;
-  --color-muted: #8B7E6A;
+  --color-muted: #5C5344;
   --color-on-primary: #FFFFFF;
   --radius-sm: 6px;
   --radius-md: 10px;
@@ -568,9 +568,9 @@ textarea,
   *,
   *::before,
   *::after {
-    animation-duration: 0.01ms !important;
+    animation-duration: 0ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    transition-duration: 0ms !important;
     scroll-behavior: auto !important;
   }
 }
@@ -708,10 +708,10 @@ textarea,
   top: 16px;
 }
 
-[data-theme="screen-reader"] [role="navigation"],
-[data-theme="screen-reader"] [role="main"],
+[data-theme="screen-reader"] nav,
+[data-theme="screen-reader"] main,
 [data-theme="screen-reader"] [role="complementary"],
-[data-theme="screen-reader"] [role="banner"] {
+[data-theme="screen-reader"] header {
   outline: 2px dashed var(--color-border);
   outline-offset: 4px;
 }
@@ -786,6 +786,17 @@ textarea,
   -webkit-text-fill-color: transparent;
 }
 
+/* Fallback for forced-colors mode (Windows High Contrast) */
+@media (forced-colors: active) {
+  .gradient-text,
+  .gradient-text-animated,
+  .hero-title-gradient {
+    background: none !important;
+    -webkit-text-fill-color: CanvasText !important;
+    color: CanvasText !important;
+  }
+}
+
 /* ===== PERSONA GEOMETRY UTILITIES ===== */
 /* Consume theme geometry tokens for adaptive layouts */
 
@@ -810,9 +821,8 @@ textarea,
   .skip-link,
   nav,
   aside,
-  header[role="banner"],
+  header,
   [aria-label="Mobile navigation"],
-  [aria-label="Notificações"],
   button:not([data-print]),
   .glass-box-panel {
     display: none !important;

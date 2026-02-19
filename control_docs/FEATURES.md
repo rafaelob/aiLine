@@ -4,84 +4,16 @@
 Core platform: Hexagonal arch, 3 LLM adapters, LangGraph, SmartRouter, 4 Pydantic AI agents, FastAPI+SSE, pgvector, RAG, curriculum alignment, Next.js 16 (9 WCAG themes, 3 locales), accessibility, security, Docker Compose, CI/CD. 73 features.
 
 ### Sprint 13 — Final Polish & Wow Factor (Feb 13)
-F-074→F-099: Agent Trace Viewer, SmartRouter Rationale, QualityGate Hard Constraints, RAG Quoting, Observability Dashboard, Standards Alignment, Theme Morphing, Magic Tabs, Skeleton Shimmer, Staggered Entrance, Bento Grid, Typewriter SSE, Toast, Empty States, Webcam Ring, Export Fold, Degradation Panel, Privacy Panel, Cognitive Load Meter, Trace UI, Rationale Card UI, Observability UI, Error Boundary, i18n Coverage, E2E Golden Paths, Judge Artifacts (26 features).
+F-074 to F-099 (26 features): Agent Trace Viewer, SmartRouter Rationale, QualityGate Hard Constraints, RAG Quoting, Observability Dashboard, Theme Morphing, Skeleton Shimmer, Typewriter SSE, Toast, Empty States, Webcam Ring, Error Boundary, i18n Coverage, E2E Golden Paths, Judge Artifacts.
 
-### Sprint 14 — State-of-the-Art Hardening (Feb 13, 2026)
-- [F-100] JWT RS256/ES256 Verification — Full asymmetric JWT with JWKS support, algorithm pinning, iss/aud/exp/nbf validation
-- [F-101] JWT Security Test Suite — 57 tests: forged tokens, expired, wrong aud/kid, replay, tenant impersonation
-- [F-102] Prompt Injection Defenses — Document trust scoring, retrieval sanitization, instruction hierarchy in RAG
-- [F-103] Structured Audit Logging — Admin actions, content access, auth events to structured log
-- [F-104] OpenTelemetry Tracing — Spans for FastAPI/SQLAlchemy/LLM/pipeline/tool calls, OTLP export
-- [F-105] RFC 7807 Problem Details — Unified error handler, application/problem+json, field-level validation errors
-- [F-106] DB Pool Tuning — pool_size=10 + max_overflow=10 for SSE workload, HNSW m=16/ef_construction=128
-- [F-107] Cache Headers — Curriculum API 1h cache (static standards data)
-- [F-108] Container Refactoring — container.py 476→278 LOC split into core + adapters
-- [F-109] Agent Eval Harness — 15 golden test sets (5 Planner + 5 QualityGate + 5 Tutor) with rubric scoring
-- [F-110] Eval Rubric System — Multi-dimension scoring (accuracy/safety/pedagogy/structure), regression detection
-- [F-111] RAG Provenance Diagnostics — RetrievalResult with confidence classification, RAGDiagnostics with answerability
-- [F-112] RAG Diagnostics API — GET /rag/diagnostics/{run_id} + /recent with chunk provenance
-- [F-113] Sign Language Worker Fix — MediaPipe feature-gated loading, TODO stubs replaced
-- [F-114] Playwright webServer Config — Self-contained E2E (build + start + test)
-- [F-115] Visual Regression Tests — 8 screenshot comparisons for key layouts
-- [F-116] View Transitions API — CSS-based route morphing animations
-- [F-117] Dynamic OG Images — next/og ImageResponse for shared lesson links
-- [F-118] PWA Manifest — manifest.json, beforeinstallprompt, icons, shortcuts, service worker registrar
-- [F-119] Recharts Keyboard Accessibility — Tab through data points, aria-live announcements
-- [F-120] Optimistic UI — useOptimistic hook for quick interactions
+### Sprint 14 — State-of-the-Art Hardening (Feb 13)
+F-100 to F-120 (21 features): JWT RS256/ES256 (F-100-101), Prompt Injection Defenses (F-102), Audit Logging (F-103), OpenTelemetry (F-104), RFC 7807 Errors (F-105), DB Pool Tuning (F-106), Cache Headers (F-107), Container Refactor (F-108), Agent Eval Harness (F-109-110), RAG Provenance (F-111-112), Sign Lang Worker Fix (F-113), Playwright Config (F-114), Visual Regression (F-115), View Transitions (F-116), OG Images (F-117), PWA (F-118), Recharts A11y (F-119), Optimistic UI (F-120).
 
-### Sprint 16 — Hackathon Victory Sprint (Feb 14, 2026)
-- [F-121] Transformation Scorecard — 9-metric trust card (reading level, standards, a11y, RAG, quality, model, router, timing, exports) computed as LangGraph terminal node
-- [F-122] HITL Teacher Review Panel — approve/reject/revision workflow for AI-generated plans with notes + pending reviews badge
-- [F-123] Student Progress Dashboard — mastery tracking (developing/proficient/mastered), standards heatmap, class overview, record form
-- [F-124] UX Micro-Polish — 8 nav items (sidebar + mobile), "Powered by Claude Opus 4.6" badge, empty state + skeleton components, teacher-friendly labels
-- [F-125] Conversation Review — scrollable tutor transcript with per-turn flagging for teacher oversight
+### Sprints 16-20 — Hackathon Victory through Maturity (Feb 14-15)
+F-121 to F-155 (35 features): Scorecard (F-121), HITL Review (F-122), Progress Dashboard (F-123), Conversation Review (F-125), Settings (F-126), Demo Mode (F-127), Trust Panel (F-128), Materials (F-129), Dashboard Stats (F-130), Tutor Persist (F-131), Status Indicator (F-132), Lint Zero (F-133-135), View Transition Morphing (F-136), Loading Skeletons (F-137), Mobile Nav (F-138), API Tests (F-139), Command Palette (F-141), Plan Nodes Refactor (F-142), Plan Flow Refactor (F-143), Motion Variants (F-144), SSE Type Safety (F-145), Landing Page (F-146-155).
 
-### Sprint 17 — Hackathon Final Push (Feb 15, 2026)
-- [F-126] Settings Page — AI model display, language, accessibility preferences link, about info with glass morphism
-- [F-127] Guided Demo Mode — URL param `?demo=true`, auto-fill wizard, floating tooltip overlay, Zustand demo-store with 3 guided steps
-- [F-128] Trust & Transparency Panel — Consolidated quality report, scorecard metrics, model provenance, teacher decision badge in plan tabs
-- [F-129] Materials Upload Page — File upload form, material listing with tags, glass card grid, server+client component split
-- [F-130] Live Dashboard Stats — Wired to `/traces/recent` + `/progress/dashboard` APIs, plan history cards, loading skeleton
-- [F-131] Tutor Persistence & Review — Zustand persist middleware for chat sessions, ConversationReview tab in tutors page
-- [F-132] System Status Indicator — TopBar health check badge (green/red dot), dropdown with API/model/privacy info
-- [F-133] Ruff Lint Zero — Fixed 9 RUF009 (dataclass default mutable) + 2 UP038 (isinstance union syntax) in runtime
-- [F-134] Orphan Component Integration — Wired CognitiveLoadMeter, DegradationPanel, PersonaHUD, PrivacyPanel into their pages
-- [F-135] Dead Code Cleanup — Removed 5 duplicate/unused components (ui/empty-state, interactive-card, stagger-list, landing/*)
-
-### Sprint 18 — Impact Sweep & State-of-the-Art Polish (Feb 15, 2026)
-- [F-136] View Transition Theme Morphing — Circular clip-path reveal animation from click origin on persona/theme switch, CSS-driven with `--vt-x`/`--vt-y` coordinates
-- [F-137] Loading Skeletons for All Pages — 8 `loading.tsx` files (dashboard, plans, tutors, materials, settings, exports, observability, sign-language) with page-specific skeleton layouts
-- [F-138] Mobile Nav Overflow Menu — "More" popover with 4 overflow items (materials, sign-language, observability, settings), AnimatePresence animation, Escape/click-outside close
-- [F-139] HITL API Test Coverage — 51 new tests: Progress API (16), Plan Review API (18), Tutor Transcript/Flag API (17), covering success/404/422/401/403 paths
-- [F-140] PreferencesPanel View Transition — Theme switch in preferences panel now uses View Transitions API for smooth circular reveal
-
-### Sprint 19 — State-of-the-Art Final Sweep (Feb 15, 2026)
-- [F-141] Command Palette (Cmd+K) — Fuzzy search, navigation (9 pages), quick actions, theme switching (9 personas), language switching (3 locales), ARIA combobox, glass morphism overlay, keyboard navigation
-- [F-142] Plan Nodes Refactor — Split 764 LOC `_plan_nodes.py` into 5 focused modules (_node_shared, _planner_node, _quality_node, _executor_node, _scorecard_node) with backward-compatible barrel re-export
-- [F-143] Plan Generation Flow Refactor — Split 757 LOC `plan-generation-flow.tsx` into orchestrator (379 LOC) + wizard-steps (358 LOC) + plan-result-display (104 LOC)
-- [F-144] Shared Motion Variants — Extracted `containerVariants`/`itemVariants` from 9 components into `lib/motion-variants.ts`, eliminating duplication
-- [F-145] SSE Type Safety — Replaced 3 `as never` casts in `use-pipeline-sse.ts` with proper `StudyPlan`, `ScorecardData`, `QualityReport` type assertions
-
-### Sprint 20 — Maturity & Polish (Feb 15, 2026)
-- [F-146] Public Landing Page — Full-screen hero with mesh gradient, animated counters, feature cards, floating glass nav, "Built with Claude Opus 4.6" footer
-- [F-147] Route Group Split — `(app)/` for authenticated pages with sidebar/topbar, landing at root without app shell
-- [F-148] ESLint Zero Warnings — Cleaned all 327 warnings (unused vars in test mocks) via config + targeted fixes
-- [F-149] Dashboard Refactor — Extracted dashboard-icons.tsx (78 LOC), plan-history-card.tsx (66 LOC) from 541→362 LOC main file
-- [F-150] Shared AnimatedCounter — Deduped spring count-up from dashboard + landing into shared component (80 LOC)
-- [F-151] Landing A11y Hardening — Focus rings, aria-live counters, Next.js Link for client nav, proper heading hierarchy, reduced-motion support
-- [F-152] Landing UX Polish — Gradient text animation, scroll-triggered entrances, hover card effects, responsive breakpoints
-- [F-153] Landing Test Coverage — 86 new tests across 9 files (landing components, shared counter, extracted dashboard modules)
-- [F-154] Security Review — 0 critical/high findings; verified ThemeScript safety, route auth boundaries, no XSS vectors
-- [F-155] Repo Cleanup — .gitignore for screenshots, removed nul artifact, cleaned root-level PNGs
-
-### Final Audit — Agent Skills & Accessibility Enhancement (Feb 15, 2026)
-- [F-156] Sign Language Interpreter Skill — Libras/ASL gloss translation with grammar reference, non-manual markers, classifiers, educational vocabulary
-- [F-157] Multi-Language Content Adapter Skill — Cross-language educational content adaptation with curriculum mapping (BNCC↔Common Core), cultural context, accessibility preservation
-- [F-158] Progress Analyzer Skill — Learning analytics with trend detection, risk identification, intervention recommendations, flexible grouping strategies
-- [F-159] Differentiated Instruction Skill — UDL-based mixed-ability planning with tiered activities, choice boards, multi-modal learning paths
-- [F-160] Audio Description Generator Skill — Alt text + extended descriptions + audio scripts for visual educational content (WCAG 2.2 compliant)
-- [F-161] Parent Report Generator Skill — Parent-friendly progress reports in PT-BR/EN/ES with home activity suggestions, jargon-free language
-- [F-162] Skills Enhancement — All 17 skills upgraded to agentskills.io v1 spec with license, compatibility, references/ directories, detailed domain knowledge
+### Agent Skills Audit (Feb 15)
+F-156 to F-162 (7 features): Sign Language Interpreter Skill, Multi-Language Adapter, Progress Analyzer, Differentiated Instruction, Audio Description Generator, Parent Report Generator, 17 Skills agentskills.io v1 spec upgrade.
 
 ### Sprint 21 — Skills Runtime System (Feb 15, 2026)
 - [F-167] Skills Spec Validator — agentskills.io-compliant validation (slug rules, metadata string-only, token budget, frontmatter keys)
@@ -107,12 +39,51 @@ F-074→F-099: Agent Trace Viewer, SmartRouter Rationale, QualityGate Hard Const
 - [F-189] Streaming Thought UI — Collapsible AI "thinking" panel with pulsing indicators, staggered animations, aria-live for screen readers
 - [F-190] Confetti Celebration Hook — Dynamic-import canvas-confetti with reduced-motion respect and AiLine brand colors
 
+### Sprint 23 — Landing Overhaul, Demo System, Image Gen (Feb 16, 2026)
+- [F-191] Landing Page Hero with Persona Toggle — Interactive hero section with live persona switching for accessibility demonstration
+- [F-192] "How It Works" 4-Step Section — Visual walkthrough: Upload -> AI Plan -> Adapt -> Track Progress
+- [F-193] Demo Login System — 6 pre-built profiles (teacher, 4 students with ASD/ADHD/Dyslexia/Hearing, parent) for instant demo access
+- [F-194] Demo Seed Data & Scenarios — Pre-populated courses, plans, progress records, and tutor sessions for each demo persona
+- [F-195] Gemini Imagen 4 Integration — ImageGenerator port, GeminiImageGenerator adapter, POST /media/generate-image endpoint for AI image creation
+- [F-196] SSE Double-Finalize Fix — Post-completion side-effects wrapped in nested try/except to prevent stream corruption
+- [F-197] IDOR Surface Elimination — Removed dead teacher_id from PlanGenerateIn/PlanStreamIn request schemas (auth context only)
+- [F-198] Teacher Card UX — "Start Here" badge on teacher demo card, route prefetch on hover/focus for instant navigation
+- [F-199] Default Locale to English — Changed default locale from pt-BR to en for hackathon judges
+- [F-200] i18n Expansion — 40+ new translation keys across all 3 locales (en, pt-BR, es) for demo system and landing page
+
+### Sprint 24 — International Sign Languages & RBAC Login (Feb 18, 2026)
+- [F-201] International Sign Language Registry — 8 sign languages (ASL, BSL, LGP, DGS, LSF, LSE, Libras, ISL) with per-language metadata, 8 common gestures each, locale mapping
+- [F-202] Gloss Translator Internationalization — 8 language-specific LLM system prompts for sign-to-spoken translation (ASL→EN, DGS→DE, LSE→ES, LGP→PT, etc.)
+- [F-203] Sign Language Discovery API — 4 new endpoints: GET /sign-language/languages, /languages/{code}, /languages/{code}/gestures, /for-locale/{locale}
+- [F-204] WebSocket Language Selection — /ws/libras-caption now accepts ?lang= query param for international sign language selection
+- [F-205] RBAC Domain Entities — UserRole(StrEnum) with 5 roles, Organization, User, StudentProfile domain models
+- [F-206] RBAC ORM Models — 5 new tables: organizations, users, student_profiles, teacher_students, parent_students with UUID v7 PKs
+- [F-207] RBAC Alembic Migration — Migration 0003: creates 5 RBAC tables with proper FKs and indexes
+- [F-208] RBAC Middleware Integration — TenantContext extended with role + org_id contextvars, JWT claims extraction for role/org_id, dev header support (X-User-Role, X-Org-ID)
+- [F-209] RBAC Authorization Module — require_role(), require_admin(), require_teacher_or_admin(), can_access_student_data() with super_admin bypass
+- [F-210] Auth API Router — 4 endpoints: POST /auth/login (JWT), POST /auth/register, GET /auth/me, GET /auth/roles with in-memory store
+- [F-211] Demo Admin Profiles — 2 new admin demo profiles: admin-principal (school_admin), admin-super (super_admin), total 8 profiles
+- [F-212] Auth Path Exclusion Fix — Middleware changed from prefix /auth exclusion to exact-match /auth/login, /auth/register, /auth/roles so /auth/me works with auth
+- [F-213] Frontend Auth Store — Zustand persist store with JWT + user profile, login/logout/updateUser actions
+- [F-214] Frontend Login Page — Role-based login with 5 glass cards, demo profile selection per role, email/password form, i18n (27 keys × 3 locales)
+- [F-215] Frontend Sign Language Selector — Dropdown component with 8 languages, full ARIA combobox, keyboard navigation, flag + metadata display
+- [F-216] Frontend Auth Headers Priority — getAuthHeaders() now checks auth store JWT first, with graceful fallback chain
+
+### Sprint 25 — Skills DB + Braille Phase 1 (Feb 18, 2026)
+- [F-175] Skills DB Persistence — Skill/SkillVersion/SkillRating/TeacherSkillSet models, pgvector embeddings (1536d HNSW), migration 0004, SkillRepository port+adapter, 50 tests
+- [F-166] Braille Phase 1 — BrfTranslator Grade 1, NABCC mapping, EN/PT-BR/ES, 40-cell wrap, pagination, 40 tests
+
+### Sprint 26 — "Make the Invisible Visible" (Feb 19, 2026)
+- [F-176] Skills API Wired — 9 endpoints under /v1/skills wired to app factory with SessionFactorySkillRepository, CRUD + fork + rate + suggest
+- [F-177] Skills Workflow Integration — skills_node in plan_workflow + tutor_workflow with DB-backed resolution, SSE stage events
+- [F-165] TTS Integration — ElevenLabs adapter wired, POST /media/tts/synthesize + GET /voices, FakeTTS fallback
+- [F-217] Agent Pipeline Visualization — 6-node real-time CSS Grid graph (RAG, Profile, Planner "Opus 4.6", QualityGate, Executor, Export), SSE-driven state transitions, motion animations
+- [F-218] Adaptation Diff View — Split-pane standard vs AI-adapted curriculum with profile tabs (ASD/ADHD/Dyslexia/Hearing), diff highlighting (additions/modifications/removals)
+- [F-219] Evidence Panel — 6-section trust accordion (AI Model, Quality Score gauge, Standards Aligned, RAG Provenance bar, Accommodations, Processing Time), ai_receipt SSE integration
+- [F-220] TTS Audio Player — Play/pause, speed selector (0.5x-2x), language/voice selectors, progress bar, API integration
+- [F-221] Braille Download + Copy — Download .brf file + copy to clipboard buttons added to BraillePreview component
+- [F-222] Inclusive Classroom Mode — "One Lesson, Four Adapted Plans" 2x2 teacher cockpit grid (Lucas/ASD, Sofia/ADHD, Pedro/Dyslexia, Ana/Hearing) with accent colors and accommodation badges
+
 ## Backlog
 - [F-035] Sign Language Post-MVP Path — SPOTER transformer + VLibrasBD NMT dataset (ADR-047)
-- [F-163] RBAC System — Admin, student, coordinator roles with permission matrix
-- [F-175] Skills DB Persistence — SQLAlchemy models (Skill, SkillVersion, TeacherSkillSet) with pgvector embeddings for skill matching
-- [F-176] Skills API Endpoints — CRUD, fork, rate, suggest, craft endpoints under /v1/skills with tenant isolation
-- [F-177] Skills Workflow Integration — skills_node in plan_workflow and tutor_workflow for dynamic skill resolution
-- [F-178] Teacher Skill Sets — Per-teacher skill configurations with presets (e.g., "math_grade_5", "accessibility_high_support")
-- [F-165] TTS Integration — ElevenLabs adapter for text-to-speech accessibility
-- [F-166] Braille Export Pipeline — BRF format generation for visual impairment support
+- [F-178] Teacher Skill Sets — Per-teacher skill configurations with presets

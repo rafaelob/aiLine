@@ -11,11 +11,23 @@ export const runtime = 'edge'
  * Renders a branded card with the AiLine logo, title, and subtitle
  * at 1200x630 (standard OG image dimensions).
  */
+/** Strip control characters and enforce max length for OG params. */
+function sanitizeParam(raw: string | null, fallback: string, maxLen: number): string {
+  if (!raw) return fallback
+  // Strip control characters (U+0000–U+001F, U+007F–U+009F)
+  const clean = raw.replace(/[\x00-\x1f\x7f-\x9f]/g, '').trim()
+  if (!clean) return fallback
+  return clean.length > maxLen ? `${clean.slice(0, maxLen - 1)}\u2026` : clean
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl
-  const title = searchParams.get('title') ?? 'AiLine'
-  const subtitle =
-    searchParams.get('subtitle') ?? 'Adaptive Inclusive Learning'
+  const title = sanitizeParam(searchParams.get('title'), 'AiLine', 100)
+  const subtitle = sanitizeParam(
+    searchParams.get('subtitle'),
+    'Adaptive Inclusive Learning',
+    200,
+  )
 
   return new ImageResponse(
     (

@@ -2,62 +2,111 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { cn } from '@/lib/cn'
 import { useSignLanguageWorker } from '@/hooks/use-sign-language-worker'
-import type {
-  CaptureState,
-  RecognitionResult,
-  WebcamErrorCode,
-} from '@/types/sign-language'
-import { API_BASE } from '@/lib/api'
+import { useLibrasCaptioning } from '@/hooks/use-libras-captioning'
+import type { CaptureState, WebcamErrorCode } from '@/types/sign-language'
 
 /**
- * Webcam capture component for sign language gesture recognition (ADR-009, ADR-026).
+ * Webcam capture component with continuous sign language recognition (ADR-009, ADR-026).
  *
- * Split-panel layout:
- * - Left: live webcam feed with a "Recognize" capture button
- * - Right: recognized gesture result with confidence score
+ * Unified layout:
+ * - Top: live webcam feed with Start/Stop Captioning toggle
+ * - Bottom: real-time caption display (glosses + translated text)
  *
- * Uses getUserMedia to access the camera.
- * HTTPS required in production (localhost OK for dev).
- *
- * The capture button grabs a still frame from the video, converts it to a
- * Blob, and POSTs it to /sign-language/recognize.
+ * Continuous mode uses a rAF loop at ~20fps to:
+ * 1. Capture frames from video → canvas → ImageData
+ * 2. Send to sign-language-worker for landmark extraction (VIDEO mode)
+ * 3. Feed landmarks to libras-inference-worker via feedLandmarks()
+ * 4. Inference worker → WebSocket → LLM translation → caption text
  */
 
 interface WebcamCaptureProps {
-  /** Additional CSS classes for the root container. */
   className?: string
 }
 
+/** Frame interval for ~20fps capture loop. */
+const FRAME_INTERVAL_MS = 50
+
 export default function WebcamCapture({ className }: WebcamCaptureProps) {
   const t = useTranslations('sign_language')
+  const prefersReducedMotion = useReducedMotion()
+  const noMotion = prefersReducedMotion ?? false
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
+  const rafRef = useRef<number>(0)
+  const lastFrameTimeRef = useRef(0)
+  const isCaptioningRef = useRef(false)
 
   const [captureState, setCaptureState] = useState<CaptureState>('idle')
   const [errorCode, setErrorCode] = useState<WebcamErrorCode | null>(null)
-  const [result, setResult] = useState<RecognitionResult | null>(null)
-  const [isRecognizing, setIsRecognizing] = useState(false)
+  const [isCaptioning, setIsCaptioning] = useState(false)
+  const [captioningStatusMsg, setCaptioningStatusMsg] = useState('')
 
-  // Web Worker for off-main-thread ML inference (FINDING-24)
   const worker = useSignLanguageWorker()
+  const captioning = useLibrasCaptioning()
 
-  // Update result when worker produces a classification
+  // Keep ref in sync
   useEffect(() => {
-    if (worker.lastResult) {
-      setResult({
-        gesture: worker.lastResult.gesture,
-        confidence: worker.lastResult.confidence,
-        landmarks: [],
-        model: 'mediapipe-mlp-worker',
-      })
-      setIsRecognizing(false)
-      setCaptureState('streaming')
-    }
-  }, [worker.lastResult])
+    isCaptioningRef.current = isCaptioning
+  }, [isCaptioning])
+
+  // Wire up landmark listener: when worker returns landmarks, feed to captioning
+  useEffect(() => {
+    worker.setLandmarkListener((landmarks) => {
+      if (isCaptioningRef.current) {
+        captioning.feedLandmarks(landmarks)
+      }
+    })
+    return () => worker.setLandmarkListener(null)
+  }, [worker, captioning])
+
+  // ------- rAF capture loop -------
+  // Use a ref to avoid self-reference issues with React Compiler
+  const captureLoopRef = useRef<(now: number) => void>(() => {})
+
+  const captureLoop = useCallback(
+    (now: number) => {
+      if (!isCaptioningRef.current) return
+
+      // Throttle to ~20fps
+      if (now - lastFrameTimeRef.current < FRAME_INTERVAL_MS) {
+        rafRef.current = requestAnimationFrame(captureLoopRef.current)
+        return
+      }
+      lastFrameTimeRef.current = now
+
+      const video = videoRef.current
+      const canvas = canvasRef.current
+      if (!video || !canvas || video.readyState < 2) {
+        rafRef.current = requestAnimationFrame(captureLoopRef.current)
+        return
+      }
+
+      canvas.width = video.videoWidth || 640
+      canvas.height = video.videoHeight || 480
+      const ctx = canvas.getContext('2d')
+      if (!ctx) {
+        rafRef.current = requestAnimationFrame(captureLoopRef.current)
+        return
+      }
+
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+      worker.extractLandmarks(imageData, now)
+
+      rafRef.current = requestAnimationFrame(captureLoopRef.current)
+    },
+    [worker],
+  )
+
+  // Keep ref in sync with latest captureLoop
+  useEffect(() => {
+    captureLoopRef.current = captureLoop
+  }, [captureLoop])
 
   // ------- Webcam lifecycle -------
 
@@ -94,6 +143,13 @@ export default function WebcamCapture({ className }: WebcamCaptureProps) {
   }, [])
 
   const stopWebcam = useCallback(() => {
+    // Stop captioning first
+    if (isCaptioningRef.current) {
+      setIsCaptioning(false)
+      cancelAnimationFrame(rafRef.current)
+      captioning.stopCaptioning()
+    }
+
     if (streamRef.current) {
       for (const track of streamRef.current.getTracks()) {
         track.stop()
@@ -104,11 +160,29 @@ export default function WebcamCapture({ className }: WebcamCaptureProps) {
       videoRef.current.srcObject = null
     }
     setCaptureState('idle')
-  }, [])
+  }, [captioning])
+
+  const toggleCaptioning = useCallback(() => {
+    if (isCaptioningRef.current) {
+      // Stop captioning
+      setIsCaptioning(false)
+      setCaptioningStatusMsg(t('continuous_stop'))
+      cancelAnimationFrame(rafRef.current)
+      captioning.stopCaptioning()
+    } else {
+      // Start captioning
+      setIsCaptioning(true)
+      setCaptioningStatusMsg(t('continuous_active'))
+      captioning.startCaptioning()
+      lastFrameTimeRef.current = 0
+      rafRef.current = requestAnimationFrame(captureLoop)
+    }
+  }, [captioning, captureLoop, t])
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      cancelAnimationFrame(rafRef.current)
       if (streamRef.current) {
         for (const track of streamRef.current.getTracks()) {
           track.stop()
@@ -117,93 +191,37 @@ export default function WebcamCapture({ className }: WebcamCaptureProps) {
     }
   }, [])
 
-  // ------- Capture & recognize -------
+  // ------- Derived state -------
+  const confidencePercent = Math.round(captioning.confidence * 100)
 
-  const captureAndRecognize = useCallback(async () => {
-    const video = videoRef.current
-    const canvas = canvasRef.current
-    if (!video || !canvas || captureState !== 'streaming') return
-
-    setIsRecognizing(true)
-    setCaptureState('capturing')
-
-    // Draw current video frame to canvas
-    canvas.width = video.videoWidth || 640
-    canvas.height = video.videoHeight || 480
-    const ctx = canvas.getContext('2d')
-    if (!ctx) {
-      setIsRecognizing(false)
-      setCaptureState('streaming')
-      return
-    }
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-
-    // Convert to Blob and POST to API
-    canvas.toBlob(async (blob) => {
-      if (!blob) {
-        setIsRecognizing(false)
-        setCaptureState('streaming')
-        return
-      }
-
-      try {
-        const formData = new FormData()
-        formData.append('file', blob, 'capture.png')
-
-        const response = await fetch(`${API_BASE}/sign-language/recognize`, {
-          method: 'POST',
-          body: formData,
-        })
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`)
-        }
-
-        const data: RecognitionResult = await response.json()
-        setResult(data)
-      } catch {
-        setResult(null)
-      } finally {
-        setIsRecognizing(false)
-        setCaptureState('streaming')
-      }
-    }, 'image/png')
-  }, [captureState])
-
-  // ------- Render helpers -------
-
-  const confidencePercent = result ? Math.round(result.confidence * 100) : 0
-  const confidenceColor =
-    confidencePercent >= 80
-      ? 'text-[var(--color-success)]'
-      : confidencePercent >= 50
-        ? 'text-[var(--color-warning)]'
-        : 'text-[var(--color-error)]'
-
-  // Active ring: glow/pulse border based on capture state and confidence
   const isActive = captureState === 'streaming' || captureState === 'capturing'
   const ringClass = isActive
-    ? result && confidencePercent >= 80
-      ? 'ring-2 ring-[var(--color-success)] ring-offset-2 ring-offset-[var(--color-bg)]'
-      : result && confidencePercent >= 50
-        ? 'ring-2 ring-[var(--color-warning)] ring-offset-2 ring-offset-[var(--color-bg)]'
-        : 'ring-2 ring-[var(--color-primary)]/50 ring-offset-2 ring-offset-[var(--color-bg)] animate-pulse'
+    ? isCaptioning
+      ? cn('ring-2 ring-[var(--color-success)] ring-offset-2 ring-offset-[var(--color-bg)]', !noMotion && 'animate-pulse')
+      : 'ring-2 ring-[var(--color-primary)]/50 ring-offset-2 ring-offset-[var(--color-bg)]'
     : ''
 
   return (
-    <div className={cn('grid gap-6 md:grid-cols-2', className)}>
-      {/* Left panel: webcam feed */}
+    <div className={cn('flex flex-col gap-6', className)}>
+      {/* Screen reader announcement for captioning status changes */}
+      <div className="sr-only" aria-live="assertive" aria-atomic="true">
+        {captioningStatusMsg}
+      </div>
+
+      {/* Webcam feed */}
       <div className="flex flex-col gap-4">
         <h3 className="text-lg font-semibold text-[var(--color-text)]">
           {t('webcam')}
         </h3>
+        {/* Screen reader instructions */}
+        <p className="sr-only">{t('webcam_sr_instructions')}</p>
 
         <div
           className={cn(
             'relative aspect-video overflow-hidden rounded-[var(--radius-md)]',
             'border border-[var(--color-border)] bg-[var(--color-surface-elevated)]',
             'transition-shadow duration-300',
-            ringClass
+            ringClass,
           )}
           data-testid="webcam-container"
         >
@@ -235,12 +253,26 @@ export default function WebcamCapture({ className }: WebcamCaptureProps) {
             aria-label={t('webcam')}
             className={cn(
               'h-full w-full object-cover',
-              captureState !== 'streaming' && captureState !== 'capturing' && 'hidden'
+              captureState !== 'streaming' && captureState !== 'capturing' && 'hidden',
             )}
           />
 
           {/* Hidden canvas for frame capture */}
           <canvas ref={canvasRef} className="hidden" aria-hidden="true" />
+
+          {/* Captioning active badge */}
+          {isCaptioning && (
+            <div className="absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1">
+              <span
+                className="block h-2 w-2 rounded-full bg-[var(--color-error)]"
+                style={noMotion ? undefined : { animation: 'pulse 1.5s ease-in-out infinite' }}
+                aria-hidden="true"
+              />
+              <span className="text-xs font-medium text-white">
+                {t('continuous_active')}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Controls */}
@@ -254,7 +286,7 @@ export default function WebcamCapture({ className }: WebcamCaptureProps) {
                 'bg-[var(--color-primary)] text-[var(--color-on-primary)]',
                 'font-medium text-sm transition-colors',
                 'hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2',
-                'focus-visible:outline-[var(--color-primary)]'
+                'focus-visible:outline-[var(--color-primary)]',
               )}
             >
               {t('start_camera')}
@@ -263,19 +295,19 @@ export default function WebcamCapture({ className }: WebcamCaptureProps) {
             <>
               <button
                 type="button"
-                onClick={captureAndRecognize}
-                disabled={isRecognizing || captureState !== 'streaming'}
-                aria-busy={isRecognizing}
+                onClick={toggleCaptioning}
+                disabled={captureState !== 'streaming' && !isCaptioning}
                 className={cn(
                   'flex-1 rounded-[var(--radius-md)] px-4 py-2.5',
-                  'bg-[var(--color-primary)] text-[var(--color-on-primary)]',
                   'font-medium text-sm transition-colors',
-                  'hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2',
-                  'focus-visible:outline-[var(--color-primary)]',
-                  'disabled:opacity-50 disabled:cursor-not-allowed'
+                  'focus-visible:outline-2 focus-visible:outline-offset-2',
+                  'disabled:opacity-50 disabled:cursor-not-allowed',
+                  isCaptioning
+                    ? 'bg-[var(--color-error)] text-white hover:opacity-90 focus-visible:outline-[var(--color-error)]'
+                    : 'bg-[var(--color-primary)] text-[var(--color-on-primary)] hover:opacity-90 focus-visible:outline-[var(--color-primary)]',
                 )}
               >
-                {isRecognizing ? t('recognizing') : t('recognize')}
+                {isCaptioning ? t('continuous_stop') : t('continuous_start')}
               </button>
               <button
                 type="button"
@@ -284,7 +316,9 @@ export default function WebcamCapture({ className }: WebcamCaptureProps) {
                   'rounded-[var(--radius-md)] px-4 py-2.5',
                   'border border-[var(--color-border)] text-[var(--color-text)]',
                   'font-medium text-sm transition-colors',
-                  'hover:bg-[var(--color-surface-elevated)]'
+                  'hover:bg-[var(--color-surface-elevated)]',
+                  'focus-visible:outline-2 focus-visible:outline-offset-2',
+                  'focus-visible:outline-[var(--color-primary)]',
                 )}
               >
                 {t('stop_camera')}
@@ -294,43 +328,124 @@ export default function WebcamCapture({ className }: WebcamCaptureProps) {
         </div>
       </div>
 
-      {/* Right panel: recognition result */}
-      <div className="flex flex-col gap-4">
-        <h3 className="text-lg font-semibold text-[var(--color-text)]">
-          {t('result')}
-        </h3>
+      {/* Caption display (integrated, always visible when streaming) */}
+      {(captureState === 'streaming' || captureState === 'capturing') && (
+        <div className="flex flex-col gap-3">
+          <p className="text-sm text-[var(--color-muted)]">
+            {t('continuous_description')}
+          </p>
 
-        <div
-          className={cn(
-            'flex flex-1 flex-col items-center justify-center gap-4',
-            'rounded-[var(--radius-md)] border border-[var(--color-border)]',
-            'bg-[var(--color-surface-elevated)] p-6'
-          )}
-        >
-          {result ? (
-            <>
-              <p
-                className="text-4xl font-bold text-[var(--color-text)]"
-                aria-live="polite"
-              >
-                {result.gesture === 'unknown'
-                  ? t('gesture_unknown')
-                  : result.gesture.charAt(0).toUpperCase() + result.gesture.slice(1)}
-              </p>
-              <p className={cn('text-2xl font-semibold', confidenceColor)}>
-                {confidencePercent}%
-              </p>
-              <p className="text-xs text-[var(--color-muted)]">
-                {t('model')}: {result.model}
-              </p>
-            </>
-          ) : (
-            <p className="text-sm text-[var(--color-muted)]">
-              {t('no_result')}
+          <div
+            className={cn(
+              'relative min-h-[120px] rounded-[var(--radius-md)] p-4',
+              'border border-[var(--color-border)]',
+              'bg-[var(--color-surface-elevated)]',
+            )}
+            aria-live="polite"
+            aria-atomic="false"
+          >
+            {/* Raw glosses line */}
+            <div className="mb-2">
+              <span className="text-xs font-medium text-[var(--color-muted)] uppercase tracking-wide">
+                {t('captioning_glosses')}
+              </span>
+              <div className="mt-0.5 min-h-[20px] text-sm text-[var(--color-muted)]">
+                <AnimatePresence mode="wait">
+                  {captioning.rawGlosses.length > 0 ? (
+                    <motion.span
+                      key={captioning.rawGlosses.join('-')}
+                      initial={noMotion ? undefined : { opacity: 0, y: 4 }}
+                      animate={noMotion ? undefined : { opacity: 0.7, y: 0 }}
+                      exit={noMotion ? undefined : { opacity: 0 }}
+                      transition={noMotion ? undefined : { duration: 0.2 }}
+                    >
+                      {captioning.rawGlosses.join(' ')}
+                    </motion.span>
+                  ) : (
+                    <span className="opacity-40">---</span>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+
+            {/* Translation line */}
+            <div>
+              <span className="text-xs font-medium text-[var(--color-muted)] uppercase tracking-wide">
+                {t('captioning_translation')}
+              </span>
+              <div className="mt-0.5 min-h-[24px] text-base">
+                {captioning.committedText || captioning.draftText ? (
+                  <p>
+                    {captioning.committedText && (
+                      <span className="text-[var(--color-text)]">{captioning.committedText}</span>
+                    )}
+                    {captioning.committedText && captioning.draftText && ' '}
+                    {captioning.draftText && (
+                      <motion.span
+                        className="text-[var(--color-muted)]"
+                        initial={noMotion ? undefined : { opacity: 0 }}
+                        animate={noMotion ? undefined : { opacity: 0.6 }}
+                        transition={noMotion ? undefined : { duration: 0.15 }}
+                      >
+                        {captioning.draftText}
+                      </motion.span>
+                    )}
+                  </p>
+                ) : isCaptioning ? (
+                  <span className="text-sm text-[var(--color-muted)] opacity-50">
+                    {t('captioning_draft')}
+                  </span>
+                ) : (
+                  <span className="text-sm text-[var(--color-muted)] opacity-40">
+                    {t('captioning_no_signs')}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Confidence bar */}
+            {isCaptioning && captioning.confidence > 0 && (
+              <div className="mt-3 flex items-center gap-2">
+                <span className="text-xs text-[var(--color-muted)]">
+                  {t('captioning_confidence')}
+                </span>
+                <div
+                  className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--color-border)]"
+                  role="progressbar"
+                  aria-valuenow={confidencePercent}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label={`${t('captioning_confidence')}: ${confidencePercent}%`}
+                >
+                  <motion.div
+                    className={cn(
+                      'h-full rounded-full',
+                      confidencePercent >= 80
+                        ? 'bg-[var(--color-success)]'
+                        : confidencePercent >= 50
+                          ? 'bg-[var(--color-warning)]'
+                          : 'bg-[var(--color-error)]',
+                    )}
+                    initial={noMotion ? undefined : { width: 0 }}
+                    animate={{ width: `${confidencePercent}%` }}
+                    transition={noMotion ? { duration: 0 } : { duration: 0.3, ease: 'easeOut' }}
+                  />
+                </div>
+                <span className="text-xs font-mono text-[var(--color-muted)]">
+                  {confidencePercent}%
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Error display */}
+          {captioning.error && (
+            <p className="text-sm text-[var(--color-error)]" role="alert">
+              {t('captioning_error')}
             </p>
           )}
         </div>
-      </div>
+      )}
     </div>
   )
 }

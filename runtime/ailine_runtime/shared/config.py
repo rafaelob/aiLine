@@ -19,7 +19,7 @@ class EmbeddingConfig(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="AILINE_EMBEDDING_")
     provider: Literal["gemini", "openai", "local", "openrouter"] = "gemini"
     model: str = "gemini-embedding-001"
-    dimensions: int = 1536
+    dimensions: int = 3072
     api_key: str = ""
     batch_size: int = 100
     """Max embeddings per API call. Controls chunking of large embed requests
@@ -71,6 +71,12 @@ class Settings(BaseSettings):
             "OPENROUTER_API_KEY", "AILINE_OPENROUTER_API_KEY"
         ),
     )
+    elevenlabs_api_key: str = Field(
+        "",
+        validation_alias=AliasChoices(
+            "ELEVENLABS_API_KEY", "AILINE_ELEVENLABS_API_KEY"
+        ),
+    )
 
     # Sub-configs
     llm: LLMConfig = Field(default_factory=LLMConfig)
@@ -105,11 +111,14 @@ class Settings(BaseSettings):
     # Environment (development | staging | production)
     env: Literal["development", "staging", "production"] = "development"
 
+    # Setup
+    setup_complete: bool = False
+
     # Demo
     demo_mode: bool = False
 
     # i18n
-    default_locale: str = "pt-BR"
+    default_locale: str = "en"
 
     def skill_source_paths(self) -> list[str]:
         from ..skills.paths import parse_skill_source_paths

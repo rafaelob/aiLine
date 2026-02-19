@@ -130,7 +130,7 @@ def make_scorecard_node(deps: AgentDeps):
                 "trust_level": trust_level,
                 "citations_count": citations_count,
                 "accommodations_applied": accommodations,
-                "locale": getattr(deps, "locale", "pt-BR"),
+                "locale": deps.locale,
                 "total_pipeline_time_ms": round(pipeline_time_ms, 1),
             }
             try_emit(emitter, writer, SSEEventType.AI_RECEIPT, "receipt", ai_receipt)

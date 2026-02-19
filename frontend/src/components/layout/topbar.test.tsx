@@ -106,6 +106,6 @@ describe('TopBar', () => {
     await act(async () => { render(<TopBar />) })
     const statusBtn = screen.getByLabelText('topbar.system_status')
     await user.click(statusBtn)
-    expect(screen.getByRole('dialog', { name: 'topbar.system_status' })).toBeInTheDocument()
+    expect(screen.getByRole('status', { name: 'topbar.system_status' })).toBeInTheDocument()
   })
 })

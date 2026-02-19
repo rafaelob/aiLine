@@ -63,7 +63,7 @@ export function ProgressDashboard() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6" aria-busy="true">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <SkeletonCard key={i} />
@@ -79,7 +79,7 @@ export function ProgressDashboard() {
       <div role="alert" className="rounded-[var(--radius-md)] p-4 text-center bg-[var(--color-error)]/10 text-[var(--color-error)]">
         <p className="text-sm">{error}</p>
         <button type="button" onClick={fetchDashboard} className="mt-2 text-sm underline">
-          Retry
+          {t('retry')}
         </button>
       </div>
     )

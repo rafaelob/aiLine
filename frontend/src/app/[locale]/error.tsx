@@ -4,7 +4,7 @@
 import { useTranslations } from 'next-intl'
 import { useParams } from 'next/navigation'
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { motion } from 'motion/react'
+import { motion, useReducedMotion } from 'motion/react'
 import { cn } from '@/lib/cn'
 
 /**
@@ -32,6 +32,9 @@ export default function ErrorPage({
   const copiedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const retryButtonRef = useRef<HTMLButtonElement>(null)
 
+  const prefersReducedMotion = useReducedMotion()
+  const noMotion = prefersReducedMotion ?? false
+
   const isSSEError =
     error.message?.includes('SSE') ||
     error.message?.includes('EventSource') ||
@@ -45,6 +48,15 @@ export default function ErrorPage({
   // Focus the primary action button on mount for keyboard users
   useEffect(() => {
     retryButtonRef.current?.focus()
+  }, [])
+
+  // Clean up copied timeout on unmount to avoid setState on unmounted component
+  useEffect(() => {
+    return () => {
+      if (copiedTimeoutRef.current) {
+        clearTimeout(copiedTimeoutRef.current)
+      }
+    }
   }, [])
 
   // Build diagnostic info string
@@ -104,9 +116,9 @@ export default function ErrorPage({
       className="flex min-h-[60vh] items-center justify-center p-6"
       role="alert"
       aria-live="assertive"
-      initial={{ opacity: 0, y: 20, filter: 'blur(8px)' }}
-      animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-      transition={{ type: 'spring', stiffness: 200, damping: 24 }}
+      initial={noMotion ? undefined : { opacity: 0, y: 20, filter: 'blur(8px)' }}
+      animate={noMotion ? undefined : { opacity: 1, y: 0, filter: 'blur(0px)' }}
+      transition={noMotion ? undefined : { type: 'spring', stiffness: 200, damping: 24 }}
     >
       <div
         className={cn(

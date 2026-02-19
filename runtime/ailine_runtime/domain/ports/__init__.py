@@ -5,7 +5,8 @@ from .db import Repository, UnitOfWork
 from .embeddings import Embeddings
 from .events import EventBus
 from .llm import ChatLLM, ChatMessage
-from .media import STT, TTS, ImageDescriber, SignRecognition
+from .media import STT, TTS, ImageDescriber, SignRecognition, VoiceInfo
+from .skills import SkillRepository
 from .storage import ObjectStorage
 from .vectorstore import VectorSearchResult, VectorStore
 
@@ -21,7 +22,9 @@ __all__ = [
     "ObjectStorage",
     "Repository",
     "SignRecognition",
+    "SkillRepository",
     "UnitOfWork",
     "VectorSearchResult",
     "VectorStore",
+    "VoiceInfo",
 ]

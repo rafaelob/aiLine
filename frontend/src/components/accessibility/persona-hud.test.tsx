@@ -16,7 +16,9 @@ vi.mock('motion/react', () => ({
   AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }))
 
-const mockSwitchTheme = vi.fn()
+const mockSwitchTheme = vi.fn((id: string) => {
+  document.body.setAttribute('data-theme', id)
+})
 
 vi.mock('@/hooks/use-theme', () => ({
   useTheme: () => ({

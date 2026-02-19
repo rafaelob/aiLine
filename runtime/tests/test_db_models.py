@@ -18,11 +18,14 @@ from ailine_runtime.adapters.db.models import (
     CurriculumObjectiveRow,
     LessonRow,
     MaterialRow,
+    ParentStudentRow,
     PipelineRunRow,
     RunEventRow,
     TeacherRow,
+    TeacherStudentRow,
     TutorAgentRow,
     TutorSessionRow,
+    UserRow,
     _uuid7_str,
 )
 from ailine_runtime.adapters.db.repositories import (
@@ -102,7 +105,7 @@ class TestUuid7:
 
 
 class TestMetadata:
-    def test_all_11_tables_registered(self) -> None:
+    def test_all_tables_registered(self) -> None:
         table_names = set(Base.metadata.tables.keys())
         expected = {
             "teachers",
@@ -116,6 +119,15 @@ class TestMetadata:
             "curriculum_objectives",
             "run_events",
             "accessibility_profiles",
+            "organizations",
+            "users",
+            "student_profiles",
+            "teacher_students",
+            "parent_students",
+            "skills",
+            "skill_versions",
+            "skill_ratings",
+            "teacher_skill_sets",
         }
         assert expected == table_names
 
@@ -854,3 +866,91 @@ class TestPipelineRunCompositeFKTenantIsolation:
 
         assert run.lesson_id == lesson.id
         assert run.teacher_id == teacher.id
+
+
+# ---------------------------------------------------------------------------
+# UniqueConstraint on relationship tables
+# ---------------------------------------------------------------------------
+
+
+class TestTeacherStudentUniqueConstraint:
+    """Verify that (teacher_id, student_id) is unique on teacher_students."""
+
+    async def test_duplicate_relationship_raises(self, session: AsyncSession) -> None:
+        from sqlalchemy.exc import IntegrityError
+
+        teacher = UserRow(
+            email="teacher-uq@test.com",
+            display_name="Teacher UQ",
+            role="teacher",
+        )
+        student = UserRow(
+            email="student-uq@test.com",
+            display_name="Student UQ",
+            role="student",
+        )
+        session.add_all([teacher, student])
+        await session.flush()
+
+        rel1 = TeacherStudentRow(
+            teacher_id=teacher.id, student_id=student.id,
+        )
+        session.add(rel1)
+        await session.flush()
+
+        rel2 = TeacherStudentRow(
+            teacher_id=teacher.id, student_id=student.id,
+        )
+        session.add(rel2)
+        with pytest.raises(IntegrityError):
+            await session.flush()
+
+    async def test_different_pairs_allowed(self, session: AsyncSession) -> None:
+        teacher = UserRow(
+            email="t-diff@test.com", display_name="T", role="teacher",
+        )
+        s1 = UserRow(
+            email="s1-diff@test.com", display_name="S1", role="student",
+        )
+        s2 = UserRow(
+            email="s2-diff@test.com", display_name="S2", role="student",
+        )
+        session.add_all([teacher, s1, s2])
+        await session.flush()
+
+        session.add(TeacherStudentRow(teacher_id=teacher.id, student_id=s1.id))
+        session.add(TeacherStudentRow(teacher_id=teacher.id, student_id=s2.id))
+        await session.flush()  # should not raise
+
+
+class TestParentStudentUniqueConstraint:
+    """Verify that (parent_id, student_id) is unique on parent_students."""
+
+    async def test_duplicate_relationship_raises(self, session: AsyncSession) -> None:
+        from sqlalchemy.exc import IntegrityError
+
+        parent = UserRow(
+            email="parent-uq@test.com",
+            display_name="Parent UQ",
+            role="parent",
+        )
+        student = UserRow(
+            email="student-puq@test.com",
+            display_name="Student PUQ",
+            role="student",
+        )
+        session.add_all([parent, student])
+        await session.flush()
+
+        rel1 = ParentStudentRow(
+            parent_id=parent.id, student_id=student.id,
+        )
+        session.add(rel1)
+        await session.flush()
+
+        rel2 = ParentStudentRow(
+            parent_id=parent.id, student_id=student.id,
+        )
+        session.add(rel2)
+        with pytest.raises(IntegrityError):
+            await session.flush()

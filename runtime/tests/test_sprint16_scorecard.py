@@ -102,6 +102,7 @@ class TestMakeScorecardNode:
         class FakeDeps:
             default_variants = "standard_html"
             max_workflow_duration_seconds = 600
+            locale = "en"
 
             class circuit_breaker:  # noqa: N801
                 @staticmethod

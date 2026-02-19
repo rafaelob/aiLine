@@ -39,6 +39,8 @@ class ExportFormat(StrEnum):
     VISUAL_SCHEDULE_JSON = "visual_schedule_json"
     STUDENT_PLAIN_TEXT = "student_plain_text"
     AUDIO_SCRIPT = "audio_script"
+    AUDIO_MP3 = "audio_mp3"
+    BRAILLE_BRF = "braille_brf"
 
 
 class Objective(BaseModel):

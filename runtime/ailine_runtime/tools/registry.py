@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import os
-import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -194,10 +193,17 @@ async def save_plan_handler(args: SavePlanArgs) -> dict[str, Any]:
     # and in the file path namespace to prevent cross-tenant access.
     from uuid_utils import uuid7
 
-    teacher_id = args.teacher_id or "anonymous"
+    if not args.teacher_id:
+        raise ValueError("teacher_id is required to save a plan")
+    if args.teacher_id.strip().lower() == "anonymous":
+        raise ValueError("teacher_id 'anonymous' is not allowed; a valid teacher identity is required")
+    teacher_id = args.teacher_id
     # Validate teacher_id format to prevent path traversal (S-5)
-    if teacher_id != "anonymous" and not re.match(r"^[0-9a-f\-]{36}$", teacher_id):
-        return {"error": "Invalid teacher_id format (expected UUID)"}
+    # Uses the project standard validator that also accepts demo IDs
+    # like "demo-teacher-ms-johnson" (alphanumeric + hyphens/underscores).
+    from ..shared.tenant import validate_teacher_id_format
+
+    teacher_id = validate_teacher_id_format(teacher_id)
     plan_id = str(uuid7())
     out_dir = Path(os.getenv("AILINE_LOCAL_STORE", ".local_store")) / teacher_id
     out_dir.mkdir(parents=True, exist_ok=True)

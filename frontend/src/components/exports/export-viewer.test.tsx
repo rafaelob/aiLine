@@ -18,6 +18,7 @@ vi.mock('motion/react', () => ({
       return <article {...safe}>{children as React.ReactNode}</article>
     },
   },
+  useReducedMotion: () => false,
 }))
 
 vi.mock('dompurify', () => ({

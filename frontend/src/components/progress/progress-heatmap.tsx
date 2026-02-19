@@ -31,11 +31,11 @@ export function ProgressHeatmap({ standards }: ProgressHeatmapProps) {
       <table className="w-full text-sm" role="grid">
         <thead>
           <tr className="text-left text-xs text-[var(--color-muted)]">
-            <th className="pb-3 pr-4 font-medium">Standard</th>
+            <th className="pb-3 pr-4 font-medium">{t('standard_column')}</th>
             <th className="pb-3 px-3 font-medium text-center">{t('mastery_levels.mastered')}</th>
             <th className="pb-3 px-3 font-medium text-center">{t('mastery_levels.proficient')}</th>
             <th className="pb-3 px-3 font-medium text-center">{t('mastery_levels.developing')}</th>
-            <th className="pb-3 pl-3 font-medium text-center">Total</th>
+            <th className="pb-3 pl-3 font-medium text-center">{t('total_column')}</th>
           </tr>
         </thead>
         <tbody>

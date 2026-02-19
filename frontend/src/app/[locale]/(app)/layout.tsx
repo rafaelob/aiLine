@@ -34,7 +34,6 @@ export default async function AppLayout({ children }: AppLayoutProps) {
 
           <main
             id="main-content"
-            role="main"
             className="flex-1 overflow-y-auto p-6 pb-20 md:pb-6"
           >
             {children}

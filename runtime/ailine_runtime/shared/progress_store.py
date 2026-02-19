@@ -141,13 +141,30 @@ class ProgressStore:
             r for r in self._records.get(teacher_id, []) if r.student_id == student_id
         ]
 
+    def get_student_all_teachers(self, student_id: str) -> list[LearnerProgress]:
+        """Get all progress records for a student across all teachers.
+
+        Used for student self-view and parent view where the teacher_id
+        is not known (the student may have records from multiple teachers).
+        """
+        with self._lock:
+            results = []
+            for records in self._records.values():
+                for r in records:
+                    if r.student_id == student_id:
+                        results.append(r)
+            return results
+
 
 _store: ProgressStore | None = None
+_store_lock = threading.Lock()
 
 
 def get_progress_store() -> ProgressStore:
     """Get or create the singleton progress store."""
     global _store
     if _store is None:
-        _store = ProgressStore()
+        with _store_lock:
+            if _store is None:
+                _store = ProgressStore()
     return _store

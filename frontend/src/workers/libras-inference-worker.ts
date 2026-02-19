@@ -108,23 +108,149 @@ async function initModel(modelUrl?: string): Promise<void> {
 }
 
 /**
+ * MediaPipe hand landmark indices (per hand, 21 points × 3 coords).
+ * Indices below are the point index within a single hand (0-20).
+ */
+const WRIST = 0
+const THUMB_TIP = 4
+const INDEX_TIP = 8
+const MIDDLE_TIP = 12
+const RING_TIP = 16
+const PINKY_TIP = 20
+const INDEX_MCP = 5
+const MIDDLE_MCP = 9
+const RING_MCP = 13
+const PINKY_MCP = 17
+const THUMB_MCP = 2
+
+/** Get 3D point from flat landmark array for a hand starting at `handOffset`. */
+function getPoint(landmarks: number[], handOffset: number, idx: number): [number, number, number] {
+  const base = handOffset + idx * 3
+  return [landmarks[base] ?? 0, landmarks[base + 1] ?? 0, landmarks[base + 2] ?? 0]
+}
+
+/** Euclidean distance between two 3D points. */
+function dist3d(a: [number, number, number], b: [number, number, number]): number {
+  const dx = a[0] - b[0]
+  const dy = a[1] - b[1]
+  const dz = a[2] - b[2]
+  return Math.sqrt(dx * dx + dy * dy + dz * dz)
+}
+
+/** Check if a finger tip is extended (tip further from wrist than MCP). */
+function isExtended(
+  landmarks: number[],
+  handOffset: number,
+  tipIdx: number,
+  mcpIdx: number,
+): boolean {
+  const wrist = getPoint(landmarks, handOffset, WRIST)
+  const tip = getPoint(landmarks, handOffset, tipIdx)
+  const mcp = getPoint(landmarks, handOffset, mcpIdx)
+  return dist3d(tip, wrist) > dist3d(mcp, wrist) * 1.15
+}
+
+/**
+ * Classify a static hand pose from a single landmark frame.
+ *
+ * Detects:
+ * - Open hand (all fingers extended) → "OI" (hello)
+ * - Closed fist (no fingers extended) → "NAO" (no)
+ * - Thumbs up (only thumb extended) → "SIM" (yes)
+ * - Pinch (thumb + index close, others extended) → "OBRIGADO" (thank you)
+ *
+ * Returns null if no clear pose is detected.
+ */
+function classifyStaticPose(landmarks: number[]): { gloss: string; confidence: number } | null {
+  // Need at least one hand (21 points × 3 = 63 values)
+  if (landmarks.length < 63) return null
+
+  // Check if hand has meaningful data (not all zeros)
+  let hasData = false
+  for (let i = 0; i < 63; i++) {
+    if (Math.abs(landmarks[i]) > 0.001) { hasData = true; break }
+  }
+  if (!hasData) return null
+
+  const handOffset = 0
+
+  const thumbExt = isExtended(landmarks, handOffset, THUMB_TIP, THUMB_MCP)
+  const indexExt = isExtended(landmarks, handOffset, INDEX_TIP, INDEX_MCP)
+  const middleExt = isExtended(landmarks, handOffset, MIDDLE_TIP, MIDDLE_MCP)
+  const ringExt = isExtended(landmarks, handOffset, RING_TIP, RING_MCP)
+  const pinkyExt = isExtended(landmarks, handOffset, PINKY_TIP, PINKY_MCP)
+
+  const extCount = [thumbExt, indexExt, middleExt, ringExt, pinkyExt].filter(Boolean).length
+
+  // Pinch: thumb tip and index tip close together
+  const thumbTip = getPoint(landmarks, handOffset, THUMB_TIP)
+  const indexTip = getPoint(landmarks, handOffset, INDEX_TIP)
+  const pinchDist = dist3d(thumbTip, indexTip)
+  const wrist = getPoint(landmarks, handOffset, WRIST)
+  const middleMcp = getPoint(landmarks, handOffset, MIDDLE_MCP)
+  const handScale = dist3d(wrist, middleMcp)
+  const isPinch = handScale > 0.01 && (pinchDist / handScale) < 0.4
+
+  // Open hand: all 5 fingers extended
+  if (extCount === 5) {
+    return { gloss: 'OI', confidence: 0.6 }
+  }
+
+  // Closed fist: no fingers extended
+  if (extCount === 0) {
+    return { gloss: 'NAO', confidence: 0.55 }
+  }
+
+  // Thumbs up: only thumb extended
+  if (thumbExt && !indexExt && !middleExt && !ringExt && !pinkyExt) {
+    return { gloss: 'SIM', confidence: 0.6 }
+  }
+
+  // Pinch gesture with other fingers relaxed
+  if (isPinch && extCount <= 2) {
+    return { gloss: 'OBRIGADO', confidence: 0.5 }
+  }
+
+  return null
+}
+
+/**
  * Infer glosses from a sequence of landmark frames.
  *
- * With ONNX: runs BiLSTM inference and CTC decodes the output.
- * Fallback: uses motion energy heuristic to detect signing activity
- * and returns a low-confidence gloss based on frame variance.
- * Unlike the previous placeholder, this uses deterministic selection
- * and explicit low confidence so consumers can distinguish real vs fallback.
+ * Strategy (layered):
+ * 1. Static pose classification on the latest frame (high signal)
+ * 2. Motion energy heuristic for dynamic gestures
+ * 3. ONNX BiLSTM path (when model is available)
  */
 function inferGlosses(landmarks: number[][]): { glosses: string[]; confidence: number } {
   if (landmarks.length === 0) return { glosses: [], confidence: 0 }
 
   if (onnxAvailable) {
-    // ONNX path (not yet wired for MVP -- model file required)
     return { glosses: [], confidence: 0 }
   }
 
-  // Motion energy heuristic: compute inter-frame variance to detect signing
+  // --- Layer 1: Static pose classification on recent frames ---
+  // Check the last few frames for a stable pose
+  const recentCount = Math.min(5, landmarks.length)
+  const poseCounts: Record<string, number> = {}
+  let bestPoseConf = 0
+
+  for (let i = landmarks.length - recentCount; i < landmarks.length; i++) {
+    const pose = classifyStaticPose(landmarks[i])
+    if (pose) {
+      poseCounts[pose.gloss] = (poseCounts[pose.gloss] ?? 0) + 1
+      bestPoseConf = Math.max(bestPoseConf, pose.confidence)
+    }
+  }
+
+  // If a pose is detected in majority of recent frames, use it
+  for (const [gloss, count] of Object.entries(poseCounts)) {
+    if (count >= Math.ceil(recentCount / 2)) {
+      return { glosses: [gloss], confidence: bestPoseConf }
+    }
+  }
+
+  // --- Layer 2: Motion energy heuristic for dynamic gestures ---
   let totalMotion = 0
   for (let f = 1; f < landmarks.length; f++) {
     const prev = landmarks[f - 1]
@@ -139,16 +265,13 @@ function inferGlosses(landmarks: number[][]): { glosses: string[]; confidence: n
   const MOTION_THRESHOLD = 0.01
 
   if (avgMotion < MOTION_THRESHOLD) {
-    // Not enough movement to classify as signing
     return { glosses: [], confidence: 0 }
   }
 
-  // Deterministic gloss selection based on motion energy
   const vocabKeys = Object.keys(LIBRAS_VOCABULARY).map(Number)
   const idx = Math.floor(avgMotion * 10000) % vocabKeys.length
   const gloss = LIBRAS_VOCABULARY[vocabKeys[idx]]
 
-  // Confidence capped at 0.3 to signal fallback mode
   const confidence = Math.min(0.3, avgMotion * 10)
 
   return { glosses: gloss ? [gloss] : [], confidence }

@@ -18,7 +18,7 @@ from dataclasses import dataclass
 # Constants
 # ---------------------------------------------------------------------------
 
-_TRUNCATION_MARKER = "(... truncado por limite de tokens ...)"
+_TRUNCATION_MARKER = "(... truncated due to token limit ...)"
 
 
 # ---------------------------------------------------------------------------
@@ -146,7 +146,7 @@ def compose_skills_fragment(
     # ------------------------------------------------------------------
     # Phase 1: Build header
     # ------------------------------------------------------------------
-    header_lines = ["## Skills Runtime (Ativas)", ""]
+    header_lines = ["## Skills Runtime (Active)", ""]
     for skill in sorted_skills:
         header_lines.append(f"- **{skill.name}**: {skill.reason}")
     header_lines.append("")
@@ -268,7 +268,7 @@ def _rebuild_header(
     surviving_names: set[str],
 ) -> str:
     """Rebuild the header section listing only surviving skills."""
-    header_lines = ["## Skills Runtime (Ativas)", ""]
+    header_lines = ["## Skills Runtime (Active)", ""]
     for skill in all_skills:
         if skill.name in surviving_names:
             header_lines.append(f"- **{skill.name}**: {skill.reason}")

@@ -39,9 +39,9 @@ def parse_skill_md(path: Path) -> SkillDefinition:
     if isinstance(description, str):
         description = description.strip()
 
-    metadata = raw_yaml.get("metadata", {})
-    if not isinstance(metadata, dict):
-        metadata = {}
+    raw_metadata = raw_yaml.get("metadata", {})
+    if not isinstance(raw_metadata, dict):
+        raw_metadata = {}
 
     # Legacy fields that should live under metadata
     legacy_fields = (
@@ -53,8 +53,14 @@ def parse_skill_md(path: Path) -> SkillDefinition:
         "compatibility",
     )
     for field in legacy_fields:
-        if field in raw_yaml and field not in metadata:
-            metadata[field] = raw_yaml[field]
+        if field in raw_yaml and field not in raw_metadata:
+            raw_metadata[field] = raw_yaml[field]
+
+    # Enforce dict[str, str] per agentskills.io spec
+    metadata: dict[str, str] = {
+        str(k): str(v) if not isinstance(v, str) else v
+        for k, v in raw_metadata.items()
+    }
 
     body = text[match.end() :].strip()
 

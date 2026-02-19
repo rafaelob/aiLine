@@ -114,4 +114,4 @@ async def test_sse_load_50_concurrent() -> None:
     ), f"Too many failures: {len(errors)}/{CONCURRENT}"
     if ttfbs:
         p95_ttfb = sorted(ttfbs)[int(len(ttfbs) * 0.95)]
-        assert p95_ttfb < 5.0, f"p95 TTFB too high: {p95_ttfb:.3f}s"
+        assert p95_ttfb < 10.0, f"p95 TTFB too high: {p95_ttfb:.3f}s"

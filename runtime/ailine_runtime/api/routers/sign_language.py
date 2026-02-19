@@ -1,13 +1,14 @@
-"""Sign language API router -- gesture recognition, supported gestures, and Libras captioning.
+"""Sign language API router -- gesture recognition, international sign language registry, and captioning.
 
 Endpoints resolve the ``SignRecognition`` adapter from ``app.state.container``.
 When no real model is configured the container falls back to
 ``FakeSignRecognition``, which keeps the API testable without external models.
 
-WebSocket /ws/libras-caption provides real-time gloss → Portuguese captioning.
+WebSocket /ws/libras-caption provides real-time gloss -> spoken-language captioning.
 
 MVP scope (ADR-026): 4 basic Libras gestures (oi, obrigado, sim, nao).
-Extended scope: 30-gloss captioning with CTC decoding + LLM translation.
+Extended scope: 8 international sign languages with 8 common gestures each,
+30-gloss captioning with CTC decoding + LLM translation.
 """
 
 from __future__ import annotations
@@ -18,6 +19,7 @@ from typing import Any
 import structlog
 from fastapi import (
     APIRouter,
+    Depends,
     HTTPException,
     Request,
     UploadFile,
@@ -28,7 +30,15 @@ from pydantic import BaseModel, Field
 
 from ...accessibility.caption_orchestrator import CaptionOrchestrator
 from ...accessibility.gloss_translator import GlossToTextTranslator
-from ...api.middleware.tenant_context import _extract_teacher_id_from_jwt
+from ...accessibility.sign_language_registry import (
+    COMMON_GESTURES,
+    SignLanguageCode,
+    SignLanguageInfo,
+    get_sign_language,
+    get_sign_language_for_locale,
+    list_all_sign_languages,
+)
+from ...api.middleware.tenant_context import extract_teacher_id_from_jwt
 from ...app.authz import require_authenticated
 
 logger = structlog.get_logger(__name__)
@@ -73,6 +83,30 @@ class GestureListResponse(BaseModel):
     gestures: list[GestureInfo]
     model: str
     note: str
+
+
+class SignLanguageGestureItem(BaseModel):
+    """A single gesture in a sign language."""
+
+    id: str
+    name: str
+    gloss: str
+
+
+class SignLanguageGesturesResponse(BaseModel):
+    """List of common gestures for a sign language."""
+
+    sign_language: str
+    sign_language_name: str
+    gestures: list[SignLanguageGestureItem]
+    total: int
+
+
+class SignLanguageListResponse(BaseModel):
+    """List of all supported sign languages."""
+
+    languages: list[SignLanguageInfo]
+    total: int
 
 
 # -- Supported gestures (canonical MVP list, ADR-026) -----------------------
@@ -123,13 +157,90 @@ def _get_sign_recognizer(request: Request) -> Any:
     return recognizer
 
 
-# -- Endpoints ---------------------------------------------------------------
+# -- International sign language endpoints ------------------------------------
+
+
+@router.get("/languages", response_model=SignLanguageListResponse)
+async def list_sign_languages() -> SignLanguageListResponse:
+    """List all supported sign languages.
+
+    Returns metadata for all 8 sign languages supported by the platform:
+    ASL, BSL, LGP, DGS, LSF, LSE, Libras, ISL.
+    """
+    languages = list_all_sign_languages()
+    return SignLanguageListResponse(languages=languages, total=len(languages))
+
+
+@router.get("/languages/{code}", response_model=SignLanguageInfo)
+async def get_sign_language_info(code: str) -> SignLanguageInfo:
+    """Get detailed information about a specific sign language.
+
+    Args:
+        code: Sign language code (e.g., asl, bsl, libras, dgs, lsf, lse, lgp, isl).
+    """
+    info = get_sign_language(code)
+    if info is None:
+        valid = ", ".join(c.value for c in SignLanguageCode)
+        raise HTTPException(
+            status_code=404,
+            detail=f"Sign language '{code}' not found. Valid codes: {valid}",
+        )
+    return info
+
+
+@router.get(
+    "/languages/{code}/gestures",
+    response_model=SignLanguageGesturesResponse,
+)
+async def get_sign_language_gestures(code: str) -> SignLanguageGesturesResponse:
+    """Get common gestures for a specific sign language.
+
+    Returns 8 basic gestures (hello, thank you, yes, no, please, sorry, help, understand)
+    in the requested sign language.
+    """
+    info = get_sign_language(code)
+    if info is None:
+        valid = ", ".join(c.value for c in SignLanguageCode)
+        raise HTTPException(
+            status_code=404,
+            detail=f"Sign language '{code}' not found. Valid codes: {valid}",
+        )
+
+    raw_gestures = COMMON_GESTURES.get(info.code, [])
+    gestures = [
+        SignLanguageGestureItem(
+            id=g["id"],
+            name=g["name"],
+            gloss=g["gloss"],
+        )
+        for g in raw_gestures
+    ]
+    return SignLanguageGesturesResponse(
+        sign_language=info.code.value,
+        sign_language_name=info.name,
+        gestures=gestures,
+        total=len(gestures),
+    )
+
+
+@router.get("/for-locale/{locale}", response_model=SignLanguageInfo)
+async def get_sign_language_for_locale_endpoint(locale: str) -> SignLanguageInfo:
+    """Get the recommended sign language for a given locale.
+
+    Locale examples: en, en-US, en-GB, pt-BR, de, fr, es, en-IE.
+    Falls back to ASL if the locale is not recognized.
+    """
+    return get_sign_language_for_locale(locale)
+
+
+# -- Existing endpoints (backward compatible) ---------------------------------
 
 
 @router.post("/recognize", response_model=RecognitionResult)
 async def recognize_sign(
     request: Request,
     file: UploadFile,
+    _teacher_id: str = Depends(require_authenticated),
 ) -> RecognitionResult:
     """Recognize a sign language gesture from a video or image upload.
 
@@ -141,7 +252,6 @@ async def recognize_sign(
     input size; the real adapter returns "unknown" until a trained model
     is provided.
     """
-    require_authenticated()
     recognizer = _get_sign_recognizer(request)
     video_bytes = await file.read()
     if not video_bytes:
@@ -163,7 +273,9 @@ async def recognize_sign(
 
 
 @router.get("/gestures", response_model=GestureListResponse)
-async def list_gestures() -> GestureListResponse:
+async def list_gestures(
+    _teacher_id: str = Depends(require_authenticated),
+) -> GestureListResponse:
     """List all gestures supported by the current sign language model.
 
     MVP scope: 4 basic Libras gestures (ADR-026).
@@ -175,21 +287,23 @@ async def list_gestures() -> GestureListResponse:
     )
 
 
-# -- WebSocket: Libras gloss captioning -------------------------------------
+# -- WebSocket: sign language gloss captioning --------------------------------
 
 
 @router.websocket("/ws/libras-caption")
 async def libras_caption_ws(websocket: WebSocket) -> None:
-    """WebSocket endpoint for real-time Libras gloss → Portuguese captioning.
+    """WebSocket endpoint for real-time sign language gloss -> spoken-language captioning.
 
     Authentication: pass JWT as ``?token=<jwt>`` query parameter.
     The token is verified before accepting the connection.
 
-    Protocol (client → server):
+    Optional: pass ``?lang=<code>`` to set the sign language (default: libras).
+
+    Protocol (client -> server):
       {"type": "gloss_partial", "glosses": ["EU", "GOSTAR"], "confidence": 0.75, "ts": 1234}
       {"type": "gloss_final",   "glosses": ["EU", "GOSTAR"], "confidence": 0.95, "ts": 1234}
 
-    Protocol (server → client):
+    Protocol (server -> client):
       {"type": "caption_draft_delta", "text": "Eu gosto...", "glosses": [...], "confidence": 0.75}
       {"type": "caption_final_delta", "text": "Eu gosto da escola.", "full_text": "...", "glosses": [...]}
       {"type": "error", "detail": "..."}
@@ -197,7 +311,7 @@ async def libras_caption_ws(websocket: WebSocket) -> None:
     # Authenticate via query parameter token before accepting the connection.
     token = websocket.query_params.get("token", "")
     if token:
-        teacher_id, _error = _extract_teacher_id_from_jwt(token)
+        teacher_id, _error = extract_teacher_id_from_jwt(token)
         if not teacher_id:
             await websocket.close(code=4001, reason="Authentication failed")
             return
@@ -222,7 +336,14 @@ async def libras_caption_ws(websocket: WebSocket) -> None:
         await websocket.close(code=1011)
         return
 
-    translator = GlossToTextTranslator(llm=llm)
+    # Resolve sign language from query parameter (default: Libras)
+    lang_param = websocket.query_params.get("lang", "libras")
+    try:
+        sign_language = SignLanguageCode(lang_param.lower())
+    except ValueError:
+        sign_language = SignLanguageCode.LIBRAS
+
+    translator = GlossToTextTranslator(llm=llm, sign_language=sign_language)
 
     async def emit_message(msg: dict[str, Any]) -> None:
         await websocket.send_json(msg)
@@ -232,7 +353,10 @@ async def libras_caption_ws(websocket: WebSocket) -> None:
         emit=emit_message,
     )
 
-    logger.info("libras_caption.session_start")
+    logger.info(
+        "sign_caption.session_start",
+        sign_language=sign_language.value,
+    )
 
     try:
         while True:
@@ -256,8 +380,11 @@ async def libras_caption_ws(websocket: WebSocket) -> None:
             await orchestrator.handle_message(message)
 
     except WebSocketDisconnect:
-        logger.info("libras_caption.session_end")
+        logger.info(
+            "sign_caption.session_end",
+            sign_language=sign_language.value,
+        )
     except Exception:
-        logger.exception("libras_caption.error")
+        logger.exception("sign_caption.error")
     finally:
         orchestrator.reset()

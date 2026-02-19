@@ -52,11 +52,11 @@ export function InstallPrompt() {
 
   return (
     <div
-      role="banner"
+      role="alertdialog"
       aria-label={t('install_label')}
-      className="fixed bottom-20 left-4 right-4 z-50 flex items-center justify-between
+      className="fixed bottom-4 left-4 right-4 z-50 flex items-center justify-between
                  rounded-lg bg-[var(--color-primary)] p-4 text-white shadow-lg
-                 md:bottom-4 md:left-auto md:right-4 md:w-96"
+                 md:left-4 md:right-auto md:w-96"
     >
       <div className="flex-1">
         <p className="text-sm font-medium">{t('install_title')}</p>

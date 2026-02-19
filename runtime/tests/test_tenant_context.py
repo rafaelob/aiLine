@@ -57,6 +57,7 @@ def settings() -> Settings:
         anthropic_api_key="fake-key-for-tests",
         openai_api_key="",
         google_api_key="",
+        openrouter_api_key="",
         db=DatabaseConfig(url="sqlite+aiosqlite:///:memory:"),
         llm=LLMConfig(provider="fake", api_key="fake"),
         embedding=EmbeddingConfig(provider="gemini", api_key=""),
@@ -104,6 +105,20 @@ class TestTenantContext:
 
         with pytest.raises(UnauthorizedAccessError, match="Access denied"):
             ctx.verify_access("teacher-002")
+
+    def test_verify_access_super_admin_bypasses_check(self) -> None:
+        """super_admin should access any tenant's resources."""
+        from ailine_runtime.domain.entities.user import UserRole
+
+        ctx = TenantContext(teacher_id="admin-001", role=UserRole.SUPER_ADMIN)
+        # Should not raise even though resource belongs to different tenant
+        ctx.verify_access("teacher-002")
+
+    def test_verify_access_super_admin_string_also_works(self) -> None:
+        """UserRole.SUPER_ADMIN == 'super_admin' due to StrEnum."""
+        ctx = TenantContext(teacher_id="admin-001", role="super_admin")
+        # StrEnum comparison: "super_admin" == UserRole.SUPER_ADMIN
+        ctx.verify_access("teacher-002")
 
     def test_repr(self) -> None:
         ctx = TenantContext(teacher_id="abc")
@@ -557,6 +572,7 @@ class TestDevModeSafety:
             anthropic_api_key="fake-key",
             openai_api_key="",
             google_api_key="",
+            openrouter_api_key="",
             db=DatabaseConfig(url="sqlite+aiosqlite:///:memory:"),
             llm=LLMConfig(provider="fake", api_key="fake"),
             embedding=EmbeddingConfig(provider="gemini", api_key=""),
@@ -575,6 +591,7 @@ class TestDevModeSafety:
             anthropic_api_key="fake-key",
             openai_api_key="",
             google_api_key="",
+            openrouter_api_key="",
             db=DatabaseConfig(url="sqlite+aiosqlite:///:memory:"),
             llm=LLMConfig(provider="fake", api_key="fake"),
             embedding=EmbeddingConfig(provider="gemini", api_key=""),
@@ -583,3 +600,140 @@ class TestDevModeSafety:
         )
         app = create_app(settings=dev_settings)
         assert app is not None
+
+
+# ---------------------------------------------------------------------------
+# Path exclusion boundary tests (Sprint 26: segment-safe prefix matching)
+# ---------------------------------------------------------------------------
+
+
+class TestPathExclusionBoundaries:
+    """Verify that prefix matching respects segment boundaries.
+
+    E.g. /demo should match /demo and /demo/*, but NOT /demo_anything.
+    """
+
+    def test_excluded_prefixes_use_trailing_slash(self) -> None:
+        """All prefix entries should end with '/' to prevent partial matches."""
+        from ailine_runtime.api.middleware.tenant_context import _EXCLUDED_PREFIXES
+
+        for prefix in _EXCLUDED_PREFIXES:
+            assert prefix.endswith("/"), f"Prefix {prefix!r} must end with '/'"
+
+    def test_excluded_exact_contains_base_paths(self) -> None:
+        """Exact-match set should contain the base (no-slash) variants."""
+        from ailine_runtime.api.middleware.tenant_context import _EXCLUDED_EXACT
+
+        expected_bases = {"/health", "/docs", "/demo", "/setup", "/redoc", "/openapi.json"}
+        for base in expected_bases:
+            assert base in _EXCLUDED_EXACT, f"{base!r} missing from _EXCLUDED_EXACT"
+
+    def test_demo_prefix_does_not_match_demo_underscore(self) -> None:
+        """'/demo_anything' should NOT be excluded by '/demo/' prefix."""
+        from ailine_runtime.api.middleware.tenant_context import (
+            _EXCLUDED_EXACT,
+            _EXCLUDED_PREFIXES,
+        )
+
+        path = "/demo_anything"
+        in_exact = path in _EXCLUDED_EXACT
+        in_prefix = any(path.startswith(p) for p in _EXCLUDED_PREFIXES)
+        assert not in_exact and not in_prefix
+
+    def test_docs_prefix_does_not_match_docs_underscore(self) -> None:
+        """'/docs_secret' should NOT be excluded."""
+        from ailine_runtime.api.middleware.tenant_context import (
+            _EXCLUDED_EXACT,
+            _EXCLUDED_PREFIXES,
+        )
+
+        path = "/docs_secret"
+        in_exact = path in _EXCLUDED_EXACT
+        in_prefix = any(path.startswith(p) for p in _EXCLUDED_PREFIXES)
+        assert not in_exact and not in_prefix
+
+
+# ---------------------------------------------------------------------------
+# Dev role escalation restriction tests (Sprint 26)
+# ---------------------------------------------------------------------------
+
+
+class TestDevRoleEscalation:
+    """Verify X-User-Role cannot escalate to super_admin in dev mode."""
+
+    async def test_super_admin_via_header_blocked(
+        self, client: AsyncClient
+    ) -> None:
+        """X-User-Role: super_admin should be downgraded to teacher."""
+        resp = await client.get(
+            "/auth/me",
+            headers={
+                "X-Teacher-ID": "test-user-123",
+                "X-User-Role": "super_admin",
+            },
+        )
+        assert resp.status_code == 200
+        # The role should have been downgraded to teacher
+        body = resp.json()
+        assert body["role"] == "teacher"
+
+    async def test_teacher_role_via_header_allowed(
+        self, client: AsyncClient
+    ) -> None:
+        """X-User-Role: teacher should be accepted."""
+        resp = await client.get(
+            "/auth/me",
+            headers={
+                "X-Teacher-ID": "test-user-456",
+                "X-User-Role": "teacher",
+            },
+        )
+        assert resp.status_code == 200
+        assert resp.json()["role"] == "teacher"
+
+    async def test_student_role_via_header_allowed(
+        self, client: AsyncClient
+    ) -> None:
+        """X-User-Role: student should be accepted."""
+        resp = await client.get(
+            "/auth/me",
+            headers={
+                "X-Teacher-ID": "test-student-789",
+                "X-User-Role": "student",
+            },
+        )
+        assert resp.status_code == 200
+        assert resp.json()["role"] == "student"
+
+
+# ---------------------------------------------------------------------------
+# JWT config caching tests (Sprint 26)
+# ---------------------------------------------------------------------------
+
+
+class TestJwtConfigCaching:
+    """Verify _get_jwt_config uses lru_cache."""
+
+    def test_jwt_config_is_cached(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """_get_jwt_config should return the same object on repeated calls."""
+        monkeypatch.setenv("AILINE_DEV_MODE", "true")
+        from ailine_runtime.api.middleware.tenant_context import _get_jwt_config
+
+        _get_jwt_config.cache_clear()
+        result1 = _get_jwt_config()
+        result2 = _get_jwt_config()
+        assert result1 is result2  # Same cached object
+
+    def test_jwt_config_cache_clears(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """After cache_clear, _get_jwt_config returns fresh data."""
+        monkeypatch.setenv("AILINE_JWT_SECRET", "test-secret-1")
+        from ailine_runtime.api.middleware.tenant_context import _get_jwt_config
+
+        _get_jwt_config.cache_clear()
+        r1 = _get_jwt_config()
+        assert r1["secret"] == "test-secret-1"
+
+        monkeypatch.setenv("AILINE_JWT_SECRET", "test-secret-2")
+        _get_jwt_config.cache_clear()
+        r2 = _get_jwt_config()
+        assert r2["secret"] == "test-secret-2"

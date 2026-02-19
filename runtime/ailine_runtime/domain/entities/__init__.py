@@ -29,6 +29,7 @@ from .progress import (
     StudentSummary,
 )
 from .run import PipelineRun, RunEvent
+from .skill import Skill, SkillRating, SkillVersion
 from .tutor import (
     LearnerProfile,
     TutorAgentSpec,
@@ -39,37 +40,36 @@ from .tutor import (
     TutorTurnFlag,
     TutorTurnOutput,
 )
+from .user import Organization, StudentProfile, User, UserRole
 
 __all__ = [
-    # plan
     "AccessibilityAdaptation",
-    # accessibility
     "AccessibilityNeed",
     "AccessibilityPackDraft",
-    # progress
     "ClassProgressSummary",
-    # curriculum
     "CurriculumObjective",
     "CurriculumSystem",
     "ExportFormat",
-    # tutor
     "LearnerProfile",
     "LearnerProgress",
     "MasteryLevel",
-    # material
     "Material",
     "MaterialChunk",
     "Objective",
-    # run
+    "Organization",
     "PipelineRun",
     "PlanReview",
     "PlanStep",
     "ReviewStatus",
     "RunEvent",
     "RunStage",
+    "Skill",
+    "SkillRating",
+    "SkillVersion",
     "StandardRef",
     "StandardSummary",
     "StudentPlan",
+    "StudentProfile",
     "StudentStep",
     "StudentSummary",
     "StudyPlanDraft",
@@ -82,4 +82,6 @@ __all__ = [
     "TutorSession",
     "TutorTurnFlag",
     "TutorTurnOutput",
+    "User",
+    "UserRole",
 ]

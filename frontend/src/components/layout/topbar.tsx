@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import { usePathname, useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { motion, LayoutGroup } from 'motion/react'
 import { cn } from '@/lib/cn'
 import { PreferencesPanel } from '@/components/accessibility/preferences-panel'
@@ -32,23 +33,26 @@ export function TopBar() {
   const pathname = usePathname()
   const router = useRouter()
   const [showA11y, setShowA11y] = useState(false)
+  const [localeSwitching, setLocaleSwitching] = useState(false)
 
   // Extract current locale from pathname
   const localeMatch = pathname.match(/^\/([^/]+)/)
-  const currentLocale = (localeMatch?.[1] ?? 'pt-BR') as Locale
+  const currentLocale = (localeMatch?.[1] ?? 'en') as Locale
 
   // Build breadcrumbs from pathname
   const pathWithoutLocale = pathname.replace(/^\/[^/]+/, '')
   const segments = pathWithoutLocale.split('/').filter(Boolean)
 
   function switchLocale(newLocale: Locale) {
+    setLocaleSwitching(true)
     router.push(`/${newLocale}${pathWithoutLocale}`)
+    // Clear loading state after navigation completes (or timeout as fallback)
+    setTimeout(() => setLocaleSwitching(false), 1500)
   }
 
   return (
     <>
       <header
-        role="banner"
         className={cn(
           'flex items-center justify-between gap-4 px-6 py-2.5',
           'border-b border-[var(--color-border)]/50',
@@ -75,12 +79,13 @@ export function TopBar() {
           )}
 
           {/* Desktop: full breadcrumb trail */}
-          <a
-            href={`/${currentLocale}/dashboard`}
+          <Link
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic locale-prefixed path
+            href={`/${currentLocale}/dashboard` as any}
             className="hidden sm:inline text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors shrink-0"
           >
             {tNav('dashboard')}
-          </a>
+          </Link>
           {segments.map((segment, i) => {
             const href = `/${currentLocale}/${segments.slice(0, i + 1).join('/')}`
             const isLast = i === segments.length - 1
@@ -99,12 +104,13 @@ export function TopBar() {
                     {label}
                   </motion.span>
                 ) : (
-                  <a
-                    href={href}
+                  <Link
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic locale-prefixed path
+                    href={href as any}
                     className="text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors truncate"
                   >
                     {label}
-                  </a>
+                  </Link>
                 )}
               </span>
             )
@@ -125,6 +131,28 @@ export function TopBar() {
               )}
               role="radiogroup"
               aria-label={t('locale_label')}
+              onKeyDown={(e) => {
+                const locales = Object.keys(LOCALE_LABELS) as Locale[]
+                if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                  e.preventDefault()
+                  const idx = locales.indexOf(currentLocale)
+                  const next = locales[(idx + 1) % locales.length]
+                  switchLocale(next)
+                  const container = e.currentTarget
+                  requestAnimationFrame(() => {
+                    container.querySelector<HTMLElement>('[aria-checked="true"]')?.focus()
+                  })
+                } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                  e.preventDefault()
+                  const idx = locales.indexOf(currentLocale)
+                  const prev = locales[(idx - 1 + locales.length) % locales.length]
+                  switchLocale(prev)
+                  const container = e.currentTarget
+                  requestAnimationFrame(() => {
+                    container.querySelector<HTMLElement>('[aria-checked="true"]')?.focus()
+                  })
+                }
+              }}
             >
               {(Object.entries(LOCALE_LABELS) as [Locale, string][]).map(([code, label]) => {
                 const isActive = code === currentLocale
@@ -134,6 +162,7 @@ export function TopBar() {
                     type="button"
                     role="radio"
                     aria-checked={isActive}
+                    tabIndex={isActive ? 0 : -1}
                     aria-label={LOCALE_FULL[code]}
                     onClick={() => switchLocale(code)}
                     className={cn(
@@ -157,6 +186,11 @@ export function TopBar() {
               })}
             </div>
           </LayoutGroup>
+
+          {/* Locale switching indicator */}
+          {localeSwitching && (
+            <span className="w-4 h-4 border-2 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" aria-hidden="true" />
+          )}
 
           {/* System status indicator */}
           <SystemStatusButton />
@@ -211,16 +245,56 @@ function AccessibilityIcon() {
   )
 }
 
+/** Simple TTL cache for health check to avoid re-fetching on every render. */
+let healthCache: { status: 'healthy' | 'degraded' | 'unknown'; ts: number } | null = null
+const HEALTH_TTL_MS = 30_000
+
 function SystemStatusButton() {
   const t = useTranslations('topbar')
   const [status, setStatus] = useState<'healthy' | 'degraded' | 'unknown'>('unknown')
   const [showDropdown, setShowDropdown] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const panelId = 'system-status-panel'
 
   useEffect(() => {
+    if (healthCache && Date.now() - healthCache.ts < HEALTH_TTL_MS) {
+      setStatus(healthCache.status)
+      return
+    }
     fetch(`${API_BASE}/health/ready`)
-      .then((res) => setStatus(res.ok ? 'healthy' : 'degraded'))
-      .catch(() => setStatus('degraded'))
+      .then((res) => {
+        const s = res.ok ? 'healthy' : 'degraded'
+        healthCache = { status: s, ts: Date.now() }
+        setStatus(s)
+      })
+      .catch(() => {
+        healthCache = { status: 'degraded', ts: Date.now() }
+        setStatus('degraded')
+      })
   }, [])
+
+  useEffect(() => {
+    if (!showDropdown) return
+    function handleClick(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowDropdown(false)
+        triggerRef.current?.focus()
+      }
+    }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setShowDropdown(false)
+        triggerRef.current?.focus()
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    document.addEventListener('keydown', handleKey)
+    return () => {
+      document.removeEventListener('mousedown', handleClick)
+      document.removeEventListener('keydown', handleKey)
+    }
+  }, [showDropdown])
 
   const dotColor =
     status === 'healthy'
@@ -230,12 +304,14 @@ function SystemStatusButton() {
         : 'bg-[var(--color-muted)]'
 
   return (
-    <div className="relative">
+    <div ref={dropdownRef} className="relative">
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setShowDropdown((s) => !s)}
         aria-label={t('system_status')}
         aria-expanded={showDropdown}
+        aria-controls={showDropdown ? panelId : undefined}
         className={cn(
           'flex items-center gap-1.5 px-2.5 py-2',
           'rounded-[var(--radius-md)]',
@@ -245,21 +321,25 @@ function SystemStatusButton() {
         )}
       >
         <span className={cn('w-2 h-2 rounded-full', dotColor)} aria-hidden="true" />
+        <span className="sr-only">
+          {status === 'healthy' ? t('api_healthy') : status === 'degraded' ? t('api_degraded') : t('system_status')}
+        </span>
         <StatusIcon />
       </button>
 
       {showDropdown && (
         <div
+          id={panelId}
           className={cn(
             'absolute right-0 top-full mt-2 w-64 z-50',
             'rounded-[var(--radius-lg)] glass border border-[var(--color-border)]',
             'shadow-[var(--shadow-lg)] p-4 space-y-3',
           )}
-          role="dialog"
+          role="status"
           aria-label={t('system_status')}
         >
           <div className="flex items-center gap-2">
-            <span className={cn('w-2.5 h-2.5 rounded-full', dotColor)} />
+            <span className={cn('w-2.5 h-2.5 rounded-full', dotColor)} aria-hidden="true" />
             <span className="text-sm font-medium text-[var(--color-text)]">
               {status === 'healthy' ? t('api_healthy') : t('api_degraded')}
             </span>

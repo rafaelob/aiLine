@@ -34,11 +34,13 @@ Routes that are excluded from tenant enforcement:
 - ``/health``
 - ``/docs``, ``/openapi.json``, ``/redoc``
 - ``/demo/*``
+- ``/setup/*``
 """
 
 from __future__ import annotations
 
 import base64
+import functools
 import json
 import os
 from collections.abc import Awaitable, Callable
@@ -51,21 +53,43 @@ from starlette.responses import JSONResponse, Response
 
 from ...domain.exceptions import InvalidTenantIdError
 from ...shared.tenant import (
+    clear_org_id,
     clear_tenant_id,
+    clear_user_role,
+    set_org_id,
     set_tenant_id,
+    set_user_role,
     validate_teacher_id_format,
 )
 
 logger = structlog.get_logger("ailine.middleware.tenant_context")
 
-# Paths excluded from tenant context enforcement.
+# Path prefixes excluded from tenant context enforcement.
+# Use trailing slash to ensure segment-boundary matching:
+# e.g. "/demo/" matches "/demo/login" but NOT "/demo_anything".
+# Exact paths (no trailing content) go in _EXCLUDED_EXACT instead.
 _EXCLUDED_PREFIXES = (
+    "/docs/",
+    "/redoc/",
+    "/demo/",
+    "/setup/",
+)
+
+# Exact-match excluded paths (not prefix-based).
+# /auth/login, /auth/register, /auth/roles don't require tenant context.
+# /auth/me DOES require tenant context (authenticated endpoint).
+_EXCLUDED_EXACT = frozenset({
     "/health",
+    "/health/ready",
     "/docs",
-    "/openapi.json",
     "/redoc",
     "/demo",
-)
+    "/setup",
+    "/openapi.json",
+    "/auth/login",
+    "/auth/register",
+    "/auth/roles",
+})
 
 # Algorithms considered safe. "none" is explicitly excluded.
 _ALLOWED_ALGORITHMS = ("HS256", "RS256", "ES256")
@@ -88,6 +112,10 @@ def validate_dev_mode(*, env: str = "") -> None:
         ValueError: If ``AILINE_DEV_MODE=true`` and *env* is
             ``"production"``.
     """
+    # Refresh caches so env changes (e.g. test fixtures) take effect.
+    _is_dev_mode.cache_clear()
+    _get_jwt_config.cache_clear()
+
     if not _is_dev_mode():
         return
 
@@ -110,13 +138,24 @@ def validate_dev_mode(*, env: str = "") -> None:
     )
 
 
+@functools.lru_cache(maxsize=1)
 def _is_dev_mode() -> bool:
-    """Check if dev mode is enabled via environment variable."""
+    """Check if dev mode is enabled (cached after first call per app lifecycle).
+
+    Uses lru_cache to avoid per-request os.getenv() overhead.
+    Call ``_is_dev_mode.cache_clear()`` when the environment changes
+    (e.g. in create_app or test fixtures).
+    """
     return os.getenv("AILINE_DEV_MODE", "").lower() in ("true", "1", "yes")
 
 
+@functools.lru_cache(maxsize=1)
 def _get_jwt_config() -> dict[str, Any]:
-    """Read JWT configuration from environment variables.
+    """Read JWT configuration from environment variables (cached).
+
+    Uses lru_cache to avoid per-request os.getenv() overhead.
+    Call ``_get_jwt_config.cache_clear()`` when the environment changes
+    (e.g. in create_app or test fixtures).
 
     Returns a dict with keys:
     - secret: HMAC secret (for HS256) or empty string
@@ -154,27 +193,49 @@ def _get_jwt_config() -> dict[str, Any]:
     }
 
 
-def _extract_teacher_id_from_jwt(token: str) -> tuple[str | None, str | None]:
-    """Extract teacher_id (``sub`` claim) from a JWT token.
+class _JwtClaims:
+    """Lightweight container for claims extracted from a JWT."""
 
-    Returns a tuple of (teacher_id, error_reason). If teacher_id is not
-    None, error_reason is None and vice versa. Both being None means
-    no JWT config is set and unverified fallback was used but sub was
-    missing.
+    __slots__ = ("org_id", "role", "teacher_id")
+
+    def __init__(
+        self,
+        teacher_id: str | None = None,
+        role: str | None = None,
+        org_id: str | None = None,
+    ) -> None:
+        self.teacher_id = teacher_id
+        self.role = role
+        self.org_id = org_id
+
+
+def _extract_teacher_id_from_jwt(
+    token: str,
+) -> tuple[_JwtClaims, str | None]:
+    """Extract claims (sub, role, org_id) from a JWT token.
+
+    Returns a tuple of (_JwtClaims, error_reason). If teacher_id inside
+    the claims is not None, error_reason is None and vice versa.
     """
     cfg = _get_jwt_config()
     has_key_material = bool(cfg["secret"]) or bool(cfg["public_key"])
 
     if has_key_material:
-        result, error = _verified_jwt_decode(token, cfg)
-        if result is not None:
-            return result, None
+        claims, error = _verified_jwt_decode(token, cfg)
+        if claims.teacher_id is not None:
+            return claims, None
         # Verified decode failed -- do NOT fall through to unverified
-        return None, error
+        return _JwtClaims(), error
 
     # Fallback: unverified base64 decode (only when no key material)
     if _is_dev_mode():
-        return _unverified_jwt_decode(token), None
+        claims = _unverified_jwt_decode(token)
+        # SECURITY: Unverified tokens cannot escalate roles.
+        # Only extract sub; hardcode role to "teacher" to prevent
+        # forged super_admin claims in dev mode.
+        claims.role = "teacher"
+        claims.org_id = None
+        return claims, None
 
     # In non-dev mode without key material, reject JWT silently
     logger.warning(
@@ -184,19 +245,19 @@ def _extract_teacher_id_from_jwt(token: str) -> tuple[str | None, str | None]:
             "is configured. Set key material or enable dev mode."
         ),
     )
-    return None, "no_key_material"
+    return _JwtClaims(), "no_key_material"
 
 
 def _verified_jwt_decode(
     token: str, cfg: dict[str, Any]
-) -> tuple[str | None, str | None]:
+) -> tuple[_JwtClaims, str | None]:
     """Decode and verify a JWT using PyJWT.
 
     Supports HS256 (symmetric), RS256, and ES256 (asymmetric).
     Validates exp, nbf, iss, aud, and sub claims.
     Rejects the ``none`` algorithm unconditionally.
 
-    Returns (sub_claim, None) on success, (None, error_reason) on failure.
+    Returns (_JwtClaims, None) on success, (_JwtClaims(), error_reason) on failure.
     """
     try:
         import jwt as pyjwt
@@ -207,12 +268,12 @@ def _verified_jwt_decode(
                 "JWT key material is configured but PyJWT is not installed. Install it with: pip install PyJWT[crypto]"
             ),
         )
-        return None, "jwt_library_missing"
+        return _JwtClaims(), "jwt_library_missing"
 
     algorithms = cfg["algorithms"]
     if not algorithms:
         logger.warning("jwt_no_algorithms", msg="No allowed JWT algorithms configured")
-        return None, "no_algorithms"
+        return _JwtClaims(), "no_algorithms"
 
     # Reject 'none' algorithm explicitly (defense in depth)
     algorithms = [a for a in algorithms if a.lower() != "none"]
@@ -223,7 +284,7 @@ def _verified_jwt_decode(
     elif cfg["secret"]:
         key = cfg["secret"]
     else:
-        return None, "no_key_material"
+        return _JwtClaims(), "no_key_material"
 
     try:
         decode_opts: dict[str, Any] = {
@@ -246,48 +307,54 @@ def _verified_jwt_decode(
         sub = payload.get("sub")
         if not sub or not isinstance(sub, str):
             logger.warning("jwt_missing_sub", msg="JWT payload missing 'sub' claim")
-            return None, "missing_sub"
+            return _JwtClaims(), "missing_sub"
 
-        logger.info(
+        # Extract RBAC claims with backward-compatible defaults
+        role = payload.get("role", "teacher")
+        org_id = payload.get("org_id")
+
+        logger.debug(
             "auth_jwt_success",
             teacher_id=sub,
+            role=role,
+            org_id=org_id,
             issuer=payload.get("iss"),
         )
-        return sub, None
+        return _JwtClaims(teacher_id=sub, role=role, org_id=org_id), None
 
     except pyjwt.ExpiredSignatureError:
         logger.warning("jwt_expired", msg="JWT token has expired")
-        return None, "expired"
+        return _JwtClaims(), "expired"
     except pyjwt.ImmatureSignatureError:
         logger.warning("jwt_not_yet_valid", msg="JWT nbf claim is in the future")
-        return None, "not_yet_valid"
+        return _JwtClaims(), "not_yet_valid"
     except pyjwt.InvalidIssuerError:
         logger.warning("jwt_invalid_issuer", msg="JWT issuer mismatch")
-        return None, "invalid_issuer"
+        return _JwtClaims(), "invalid_issuer"
     except pyjwt.InvalidAudienceError:
         logger.warning("jwt_invalid_audience", msg="JWT audience mismatch")
-        return None, "invalid_audience"
+        return _JwtClaims(), "invalid_audience"
     except pyjwt.InvalidAlgorithmError:
         logger.warning("jwt_invalid_algorithm", msg="JWT uses disallowed algorithm")
-        return None, "invalid_algorithm"
+        return _JwtClaims(), "invalid_algorithm"
     except pyjwt.DecodeError as exc:
         logger.warning("jwt_decode_error", error=str(exc))
-        return None, "decode_error"
+        return _JwtClaims(), "decode_error"
     except pyjwt.InvalidTokenError as exc:
         logger.warning("jwt_invalid", error=str(exc))
-        return None, "invalid_token"
+        return _JwtClaims(), "invalid_token"
 
 
-def _unverified_jwt_decode(token: str) -> str | None:
+def _unverified_jwt_decode(token: str) -> _JwtClaims:
     """Decode JWT payload without signature verification (dev-mode fallback).
 
     Only used when no key material is configured AND dev mode is enabled.
-    Extracts the ``sub`` claim from the base64-encoded payload segment.
+    Extracts sub, role, and org_id claims from the base64-encoded payload.
     """
     try:
         parts = token.split(".")
         if len(parts) < 2:
-            return None
+            return _JwtClaims()
         payload_b64 = parts[1]
         padding = 4 - len(payload_b64) % 4
         if padding != 4:
@@ -295,10 +362,40 @@ def _unverified_jwt_decode(token: str) -> str | None:
         payload_bytes = base64.urlsafe_b64decode(payload_b64)
         payload: dict[str, Any] = json.loads(payload_bytes)
         sub = payload.get("sub")
-        return str(sub) if sub is not None else None
+        teacher_id = str(sub) if sub is not None else None
+        role = payload.get("role", "teacher")
+        org_id = payload.get("org_id")
+        return _JwtClaims(
+            teacher_id=teacher_id,
+            role=role,
+            org_id=str(org_id) if org_id is not None else None,
+        )
     except (ValueError, KeyError, json.JSONDecodeError):
         logger.warning("unverified_jwt_decode_failed")
-        return None
+        return _JwtClaims()
+
+
+def extract_teacher_id_from_jwt(token: str) -> tuple[str | None, str | None]:
+    """Public API: extract teacher_id from a JWT token.
+
+    Returns a tuple of (teacher_id, error_reason). If teacher_id is not
+    None, error_reason is None and vice versa.
+
+    This is the public wrapper around the internal ``_extract_teacher_id_from_jwt``
+    function, intended for use by WebSocket endpoints and other code that
+    needs JWT verification outside the middleware pipeline.
+    """
+    claims, error = _extract_teacher_id_from_jwt(token)
+    return claims.teacher_id, error
+
+
+def extract_claims_from_jwt(token: str) -> tuple[_JwtClaims, str | None]:
+    """Public API: extract all RBAC claims from a JWT token.
+
+    Returns a tuple of (_JwtClaims, error_reason). Extends
+    ``extract_teacher_id_from_jwt`` with role and org_id.
+    """
+    return _extract_teacher_id_from_jwt(token)
 
 
 class TenantContextMiddleware(BaseHTTPMiddleware):
@@ -317,10 +414,14 @@ class TenantContextMiddleware(BaseHTTPMiddleware):
     ) -> Response:
         # Skip excluded paths
         path = request.url.path
-        if any(path.startswith(prefix) for prefix in _EXCLUDED_PREFIXES):
+        if path in _EXCLUDED_EXACT or any(
+            path.startswith(prefix) for prefix in _EXCLUDED_PREFIXES
+        ):
             return await call_next(request)
 
         teacher_id: str | None = None
+        role: str | None = None
+        org_id: str | None = None
         jwt_error: str | None = None
 
         # 1. Try Authorization header (JWT)
@@ -328,11 +429,15 @@ class TenantContextMiddleware(BaseHTTPMiddleware):
         if auth_header.startswith("Bearer "):
             jwt_token = auth_header[7:].strip()
             if jwt_token:
-                teacher_id, jwt_error = _extract_teacher_id_from_jwt(jwt_token)
+                claims, jwt_error = _extract_teacher_id_from_jwt(jwt_token)
+                teacher_id = claims.teacher_id
+                role = claims.role
+                org_id = claims.org_id
                 if teacher_id:
                     logger.debug(
                         "tenant_from_jwt",
                         teacher_id=teacher_id,
+                        role=role,
                         path=path,
                     )
                 elif jwt_error:
@@ -349,9 +454,35 @@ class TenantContextMiddleware(BaseHTTPMiddleware):
             if x_teacher_id:
                 if _is_dev_mode():
                     teacher_id = x_teacher_id
+                    # Also check for X-User-Role and X-Org-ID (dev mode only)
+                    raw_role = (
+                        request.headers.get("X-User-Role", "").strip() or "teacher"
+                    )
+                    # SECURITY: Restrict dev mode role escalation — super_admin
+                    # cannot be assumed via dev headers (must use real JWT).
+                    dev_allowed_roles = frozenset({
+                        "teacher", "student", "parent", "school_admin",
+                    })
+                    if raw_role not in dev_allowed_roles:
+                        logger.warning(
+                            "dev_role_escalation_blocked",
+                            requested_role=raw_role,
+                            teacher_id=teacher_id,
+                            path=path,
+                            msg=(
+                                f"X-User-Role '{raw_role}' blocked in dev mode. "
+                                "Only teacher/student/parent/school_admin allowed via headers."
+                            ),
+                        )
+                        raw_role = "teacher"
+                    role = raw_role
+                    org_id = (
+                        request.headers.get("X-Org-ID", "").strip() or None
+                    )
                     logger.debug(
                         "tenant_from_header",
                         teacher_id=teacher_id,
+                        role=role,
                         path=path,
                     )
                 else:
@@ -378,15 +509,22 @@ class TenantContextMiddleware(BaseHTTPMiddleware):
 
         # Set in contextvars (None means "no tenant context")
         if teacher_id is not None:
-            token = set_tenant_id(teacher_id)
+            tid_token = set_tenant_id(teacher_id)
+            role_token = set_user_role(role or "teacher")
+            org_token = set_org_id(org_id) if org_id else None
             try:
                 # Also bind to structlog for correlation
-                structlog.contextvars.bind_contextvars(teacher_id=teacher_id)
+                structlog.contextvars.bind_contextvars(
+                    teacher_id=teacher_id, role=role or "teacher",
+                )
                 response = await call_next(request)
                 return response
             finally:
-                clear_tenant_id(token)
-                structlog.contextvars.unbind_contextvars("teacher_id")
+                clear_tenant_id(tid_token)
+                clear_user_role(role_token)
+                if org_token is not None:
+                    clear_org_id(org_token)
+                structlog.contextvars.unbind_contextvars("teacher_id", "role")
         else:
             # No tenant context -- proceed without it.
             # Endpoints requiring auth will call get_current_teacher_id()

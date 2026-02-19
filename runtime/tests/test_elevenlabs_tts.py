@@ -32,8 +32,8 @@ class TestElevenLabsTTSInit:
     def test_default_values(self):
         tts = ElevenLabsTTS()
         assert tts._api_key == ""
-        assert tts._voice_id == "default"
-        assert tts._model_id == "eleven_multilingual_v2"
+        assert tts._voice_id == "21m00Tcm4TlvDq8ikWAM"
+        assert tts._model_id == "eleven_v3"
 
     def test_custom_values(self):
         tts = ElevenLabsTTS(api_key="k", voice_id="v", model_id="m")

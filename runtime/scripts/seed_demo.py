@@ -183,7 +183,7 @@ def test_scenario_detail(client: httpx.Client, scenario_id: str) -> bool:
 
 
 def main() -> int:
-    print(f"AiLine Demo Seed Script")
+    print("AiLine Demo Seed Script")
     print(f"Target: {BASE_URL}")
     print(f"Teacher ID: {TEACHER_ID}")
 

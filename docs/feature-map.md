@@ -1,6 +1,6 @@
 # AiLine Feature Map
 
-**145 features** organized into 12 capability areas. Each feature links to its ID in `control_docs/FEATURES.md`.
+**190+ features** organized into 12 capability areas. Each feature links to its ID in `control_docs/FEATURES.md`.
 
 ---
 
@@ -99,7 +99,7 @@ Full-stack internationalization (3 languages), curriculum standard alignment (4 
 
 ## F. Developer Experience and Operations (15 features)
 
-Docker Compose stack, 3,087 tests, CI pipeline, observability, health checks, and documentation.
+Docker Compose stack, 3,300+ tests, CI pipeline, observability, health checks, and documentation.
 
 | ID | Feature | Key Details |
 |----|---------|-------------|
@@ -244,7 +244,7 @@ Command palette, code refactoring, motion dedup, and type safety improvements.
 | C. Real-Time Pipeline | 10 | 14 SSE event types, replay, terminal guarantee |
 | D. Data and Security | 14 | Tenant isolation, circuit breaker, rate limiting, LGPD/FERPA |
 | E. Multi-Language | 5 | 3 languages, BNCC/CCSS/NGSS/ELA standards |
-| F. Developer Experience | 15 | 3,087 tests, Docker, CI, observability, 60 ADRs |
+| F. Developer Experience | 15 | 3,300+ tests, Docker, CI, observability, 60 ADRs |
 | G. Sprint 13 Polish | 26 | Pipeline transparency, observability UI, UX animations |
 | H. Sprint 14 Hardening | 21 | JWT security, OTel tracing, agent eval, visual regression |
 | I. Sprint 16 Victory | 5 | Scorecard, teacher review, progress dashboard, UX polish |

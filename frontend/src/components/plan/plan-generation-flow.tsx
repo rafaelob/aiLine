@@ -2,13 +2,16 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
+import { useSearchParams } from 'next/navigation'
 import { motion } from 'motion/react'
 import { cn } from '@/lib/cn'
 import { usePipelineSSE } from '@/hooks/use-pipeline-sse'
 import { PipelineViewer } from '@/components/pipeline/pipeline-viewer'
+import { PipelineVisualization } from './pipeline-visualization'
 import { WizardSteps } from './wizard-steps'
 import { PlanResultDisplay } from './plan-result-display'
 import { StreamingThought } from './streaming-thought'
+import { ThoughtPanel } from './thought-panel'
 import type { PlanGenerationRequest } from '@/types/plan'
 import { DEMO_PROMPT, DEMO_GRADE, DEMO_SUBJECT, DEMO_PROFILE } from '@/lib/demo-data'
 import { useDemoStore } from '@/stores/demo-store'
@@ -32,6 +35,7 @@ export function PlanGenerationFlow() {
     cancel,
     runId,
     stages,
+    events,
     plan,
     qualityReport,
     score,
@@ -46,10 +50,11 @@ export function PlanGenerationFlow() {
     grade: '',
     subject: '',
     accessibility_profile: 'standard',
-    locale: 'pt-BR',
+    locale: 'en',
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const stepContentRef = useRef<HTMLDivElement>(null)
+  const searchParams = useSearchParams()
 
   const resetWizard = useCallback(() => {
     setStep(0)
@@ -58,7 +63,7 @@ export function PlanGenerationFlow() {
       grade: '',
       subject: '',
       accessibility_profile: 'standard',
-      locale: 'pt-BR',
+      locale: 'en',
     })
     setErrors({})
   }, [])
@@ -123,8 +128,7 @@ export function PlanGenerationFlow() {
   const demoInitRef = useRef(false)
   useEffect(() => {
     if (demoInitRef.current) return
-    const params = new URLSearchParams(window.location.search)
-    if (params.get('demo') === 'true') {
+    if (searchParams.get('demo') === 'true') {
       demoInitRef.current = true
       queueMicrotask(() => {
         setFormData((prev) => ({
@@ -138,7 +142,7 @@ export function PlanGenerationFlow() {
         useDemoStore.getState().startDemo()
       })
     }
-  }, [])
+  }, [searchParams])
 
   const showForm = !isRunning && !plan
   const showPipeline = isRunning
@@ -166,7 +170,7 @@ export function PlanGenerationFlow() {
         >
           {/* Step indicator */}
           <div className="px-6 pt-6 pb-4">
-            <nav aria-label={`Step ${step + 1} of ${STEP_COUNT}`}>
+            <nav aria-label={tWizard('step_indicator', { current: String(step + 1), total: String(STEP_COUNT) })}>
               <ol className="flex items-center justify-between mb-2" role="list">
                 {stepLabels.map((label, i) => (
                   <li
@@ -239,7 +243,7 @@ export function PlanGenerationFlow() {
             </nav>
             {/* Live region for screen readers announcing step changes */}
             <div className="sr-only" aria-live="polite" aria-atomic="true">
-              {`Step ${step + 1} of ${STEP_COUNT}: ${stepLabels[step]}`}
+              {tWizard('step_indicator_full', { current: String(step + 1), total: String(STEP_COUNT), label: stepLabels[step] })}
             </div>
           </div>
 
@@ -306,9 +310,18 @@ export function PlanGenerationFlow() {
 
       {/* Pipeline viewer during generation */}
       {showPipeline && (
-        <div className="space-y-4">
+        <div className="space-y-4" aria-busy="true">
+          <PipelineVisualization
+            stages={stages}
+            events={events}
+            isRunning={isRunning}
+            score={score}
+          />
           <StreamingThought stages={stages} isRunning={isRunning} />
-          <PipelineViewer stages={stages} isRunning={isRunning} error={error} />
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
+            <PipelineViewer stages={stages} isRunning={isRunning} error={error} />
+            <ThoughtPanel stages={stages} events={events} isRunning={isRunning} />
+          </div>
           <div className="flex justify-center">
             <button
               type="button"

@@ -9,13 +9,8 @@ export default defineConfig({
     include: ['src/**/*.test.{ts,tsx}'],
     css: false,
     pool: 'forks',
-    poolOptions: {
-      forks: {
-        minForks: 1,
-        maxForks: 1,
-        execArgv: ['--max-old-space-size=4096'],
-      },
-    },
+    minForks: 1,
+    maxForks: 1,
     fileParallelism: false,
     restoreMocks: true,
     teardownTimeout: 5000,

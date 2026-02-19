@@ -6,18 +6,19 @@ import { useTranslations } from 'next-intl'
 import { motion, AnimatePresence } from 'motion/react'
 import { cn } from '@/lib/cn'
 import { useAccessibilityStore } from '@/stores/accessibility-store'
+import { cssTheme } from '@/hooks/use-theme'
 import { useViewTransition } from '@/hooks/use-view-transition'
 
 const THEME_IDS = [
   'standard',
-  'high-contrast',
+  'high_contrast',
   'tea',
   'tdah',
   'dyslexia',
-  'low-vision',
+  'low_vision',
   'hearing',
   'motor',
-  'screen-reader',
+  'screen_reader',
 ] as const
 
 type ThemeId = (typeof THEME_IDS)[number]
@@ -125,8 +126,10 @@ export function PreferencesPanel({ open, onClose }: PreferencesPanelProps) {
   function handleThemeChange(newTheme: ThemeId) {
     startTransition(
       () => {
+        const css = cssTheme(newTheme)
         setTheme(newTheme)
-        document.body.setAttribute('data-theme', newTheme)
+        document.body.setAttribute('data-theme', css)
+        document.documentElement.setAttribute('data-theme', css)
         setThemeAnnouncement(t('switched_to', { persona: t(`themes.${newTheme}`) }))
       },
       { type: 'theme' },

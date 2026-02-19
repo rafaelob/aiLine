@@ -14,12 +14,21 @@ WORKDIR /build
 RUN pip install --no-cache-dir uv
 
 # Copy agents package first (runtime depends on it)
-COPY agents/pyproject.toml agents/pyproject.toml
+COPY agents/pyproject.toml agents/uv.lock agents/
 COPY agents/ailine_agents/ agents/ailine_agents/
 
-# Build agents wheel and install it (avoids .pth path-based install)
-RUN cd agents && uv build --wheel --out-dir /tmp/wheels \
-    && uv pip install --system /tmp/wheels/ailine_agents-*.whl
+# Build agents wheel and install it with all LLM provider extras.
+# Export lock-pinned versions as constraints (filter out the local package itself).
+RUN cd agents \
+    && uv export --frozen --no-hashes --no-dev -o /tmp/raw-constraints.txt \
+    && grep -v '^file://' /tmp/raw-constraints.txt | grep -v '^\-e ' | grep '==' > /tmp/agent-constraints.txt || true \
+    && uv build --wheel --out-dir /tmp/wheels \
+    && AGENTS_WHL=$(ls /tmp/wheels/ailine_agents-*.whl) \
+    && if [ -s /tmp/agent-constraints.txt ]; then \
+         uv pip install --system --constraint /tmp/agent-constraints.txt "${AGENTS_WHL}[all]"; \
+       else \
+         uv pip install --system "${AGENTS_WHL}[all]"; \
+       fi
 
 # Copy runtime dependency manifest AND source (hatchling needs package dir)
 COPY runtime/pyproject.toml runtime/uv.lock* runtime/

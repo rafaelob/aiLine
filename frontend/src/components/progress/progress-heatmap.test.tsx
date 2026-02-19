@@ -49,11 +49,11 @@ describe('ProgressHeatmap', () => {
 
   it('renders column headers', () => {
     render(<ProgressHeatmap standards={makeStandards()} />)
-    expect(screen.getByText('Standard')).toBeInTheDocument()
+    expect(screen.getByText('progress.standard_column')).toBeInTheDocument()
     expect(screen.getByText('progress.mastery_levels.mastered')).toBeInTheDocument()
     expect(screen.getByText('progress.mastery_levels.proficient')).toBeInTheDocument()
     expect(screen.getByText('progress.mastery_levels.developing')).toBeInTheDocument()
-    expect(screen.getByText('Total')).toBeInTheDocument()
+    expect(screen.getByText('progress.total_column')).toBeInTheDocument()
   })
 
   it('renders standard codes', () => {
@@ -90,7 +90,7 @@ describe('ProgressHeatmap', () => {
     const rows = container.querySelectorAll('tbody tr')
     expect(rows.length).toBe(0)
     // Header should still be present
-    expect(screen.getByText('Standard')).toBeInTheDocument()
+    expect(screen.getByText('progress.standard_column')).toBeInTheDocument()
   })
 
   it('handles standard with no description', () => {

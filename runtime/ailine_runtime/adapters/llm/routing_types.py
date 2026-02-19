@@ -155,10 +155,22 @@ def compute_route(features: RouteFeatures) -> RouteDecision:
 
 # Complexity signal patterns for intent scoring
 _COMPLEXITY_SIGNALS = [
-    re.compile(r"(?:analis|compar|avali|sintetiz|critic)", re.IGNORECASE),
-    re.compile(r"(?:multi|complex|detalhad|aprofundad)", re.IGNORECASE),
-    re.compile(r"(?:curricul|BNCC|standard|alignment)", re.IGNORECASE),
-    re.compile(r"(?:acessibilid|inclusiv|adapt|TEA|TDAH)", re.IGNORECASE),
+    # Cognitive verbs (PT + EN)
+    re.compile(r"(?:analis|compar|avali|sintetiz|critic|analyze|compare|evaluate|synthesize|critique)", re.IGNORECASE),
+    # Depth signals (PT + EN)
+    re.compile(r"(?:multi|complex|detalhad|aprofundad|detailed|in-depth)", re.IGNORECASE),
+    # Curriculum alignment (PT + EN)
+    re.compile(
+        r"(?:curricul|BNCC|standard|alignment|assessment|rubric"
+        r"|formative|summative|scaffold|UDL|IEP|curriculum|standards)",
+        re.IGNORECASE,
+    ),
+    # Accessibility / inclusion (PT + EN)
+    re.compile(
+        r"(?:acessibilid|inclusiv|adapt|TEA|TDAH|accessibility|inclusive"
+        r"|autism|ADHD|dyslexia|hearing|impairment|differentiated|accommodation)",
+        re.IGNORECASE,
+    ),
 ]
 
 

@@ -110,20 +110,20 @@ def _make_unsigned_jwt(payload: dict) -> str:
 class TestUnverifiedJwtDecode:
     def test_extracts_sub_claim(self) -> None:
         token = _make_unsigned_jwt({"sub": "teacher-001"})
-        assert _unverified_jwt_decode(token) == "teacher-001"
+        assert _unverified_jwt_decode(token).teacher_id == "teacher-001"
 
     def test_missing_sub_returns_none(self) -> None:
         token = _make_unsigned_jwt({"name": "John"})
-        assert _unverified_jwt_decode(token) is None
+        assert _unverified_jwt_decode(token).teacher_id is None
 
     def test_malformed_token_returns_none(self) -> None:
-        assert _unverified_jwt_decode("not-a-jwt") is None
+        assert _unverified_jwt_decode("not-a-jwt").teacher_id is None
 
     def test_empty_token_returns_none(self) -> None:
-        assert _unverified_jwt_decode("") is None
+        assert _unverified_jwt_decode("").teacher_id is None
 
     def test_single_dot_returns_none(self) -> None:
-        assert _unverified_jwt_decode("header.") is None
+        assert _unverified_jwt_decode("header.").teacher_id is None
 
 
 class TestVerifiedJwtDecode:
@@ -131,7 +131,7 @@ class TestVerifiedJwtDecode:
 
     Note: _verified_jwt_decode now takes (token, cfg_dict) where cfg_dict
     has keys: secret, public_key, issuer, audience, algorithms.
-    It returns (sub_claim, None) on success, (None, error_reason) on failure.
+    It returns (_JwtClaims, None) on success, (_JwtClaims(), error_reason) on failure.
     """
 
     @staticmethod
@@ -156,7 +156,7 @@ class TestVerifiedJwtDecode:
         }
         token = _make_jwt_hs256(payload, secret)
         result, error = _verified_jwt_decode(token, self._make_cfg(secret=secret))
-        assert result == "teacher-jwt-verified"
+        assert result.teacher_id == "teacher-jwt-verified"
         assert error is None
 
     def test_expired_token_returns_none(self) -> None:
@@ -167,7 +167,7 @@ class TestVerifiedJwtDecode:
         }
         token = _make_jwt_hs256(payload, secret)
         result, error = _verified_jwt_decode(token, self._make_cfg(secret=secret))
-        assert result is None
+        assert result.teacher_id is None
         assert error == "expired"
 
     def test_wrong_secret_returns_none(self) -> None:
@@ -179,7 +179,7 @@ class TestVerifiedJwtDecode:
         result, _error = _verified_jwt_decode(
             token, self._make_cfg(secret="wrong-secret-key-32-bytes-longer!")
         )
-        assert result is None
+        assert result.teacher_id is None
 
     def test_issuer_mismatch_returns_none(self) -> None:
         secret = "my-test-secret-key-32bytes-long!"
@@ -192,7 +192,7 @@ class TestVerifiedJwtDecode:
         result, error = _verified_jwt_decode(
             token, self._make_cfg(secret=secret, issuer="expected-issuer")
         )
-        assert result is None
+        assert result.teacher_id is None
         assert error == "invalid_issuer"
 
     def test_issuer_match_succeeds(self) -> None:
@@ -206,7 +206,7 @@ class TestVerifiedJwtDecode:
         result, error = _verified_jwt_decode(
             token, self._make_cfg(secret=secret, issuer="ailine-auth")
         )
-        assert result == "teacher-iss-ok"
+        assert result.teacher_id == "teacher-iss-ok"
         assert error is None
 
     def test_missing_exp_returns_none(self) -> None:
@@ -218,7 +218,7 @@ class TestVerifiedJwtDecode:
             # Manually encode without exp to bypass PyJWT's own checks
             token = pyjwt.encode({"sub": "teacher-no-exp"}, secret, algorithm="HS256")
             result, _error = _verified_jwt_decode(token, self._make_cfg(secret=secret))
-            assert result is None
+            assert result.teacher_id is None
         except ImportError:
             pytest.skip("PyJWT not installed")
 
@@ -227,7 +227,7 @@ class TestVerifiedJwtDecode:
         cfg = self._make_cfg()
         with patch.dict("sys.modules", {"jwt": None}):
             result, error = _verified_jwt_decode("some.token.here", cfg)
-            assert result is None
+            assert result.teacher_id is None
             assert error == "jwt_library_missing"
 
 
@@ -251,11 +251,13 @@ class TestExtractTeacherIdFromJwt:
         monkeypatch.setenv("AILINE_DEV_MODE", "true")
         from ailine_runtime.api.middleware.tenant_context import (
             _extract_teacher_id_from_jwt,
+            _is_dev_mode,
         )
 
+        _is_dev_mode.cache_clear()
         token = _make_unsigned_jwt({"sub": "teacher-unverified"})
-        teacher_id, _error = _extract_teacher_id_from_jwt(token)
-        assert teacher_id == "teacher-unverified"
+        claims, _error = _extract_teacher_id_from_jwt(token)
+        assert claims.teacher_id == "teacher-unverified"
 
     def test_unverified_mode_no_secret_no_dev_mode_rejects(
         self, monkeypatch: pytest.MonkeyPatch
@@ -266,11 +268,14 @@ class TestExtractTeacherIdFromJwt:
         monkeypatch.delenv("AILINE_DEV_MODE", raising=False)
         from ailine_runtime.api.middleware.tenant_context import (
             _extract_teacher_id_from_jwt,
+            _is_dev_mode,
         )
 
+        _is_dev_mode.cache_clear()
+
         token = _make_unsigned_jwt({"sub": "teacher-unverified"})
-        teacher_id, error = _extract_teacher_id_from_jwt(token)
-        assert teacher_id is None
+        claims, error = _extract_teacher_id_from_jwt(token)
+        assert claims.teacher_id is None
         assert error == "no_key_material"
 
     def test_verified_mode_valid(self, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -287,8 +292,8 @@ class TestExtractTeacherIdFromJwt:
             "exp": int(time.time()) + 3600,
         }
         token = _make_jwt_hs256(payload, secret)
-        teacher_id, _error = _extract_teacher_id_from_jwt(token)
-        assert teacher_id == "teacher-verified"
+        claims, _error = _extract_teacher_id_from_jwt(token)
+        assert claims.teacher_id == "teacher-verified"
 
     def test_verified_mode_expired_rejects(
         self, monkeypatch: pytest.MonkeyPatch
@@ -307,8 +312,8 @@ class TestExtractTeacherIdFromJwt:
         }
         token = _make_jwt_hs256(payload, secret)
         # Should NOT fall through to unverified decode
-        teacher_id, error = _extract_teacher_id_from_jwt(token)
-        assert teacher_id is None
+        claims, error = _extract_teacher_id_from_jwt(token)
+        assert claims.teacher_id is None
         assert error == "expired"
 
 
@@ -320,6 +325,10 @@ class TestExtractTeacherIdFromJwt:
 class TestContainerValidation:
     def test_validate_returns_validation_result(self) -> None:
         settings = Settings(
+            anthropic_api_key="",
+            openai_api_key="",
+            google_api_key="",
+            openrouter_api_key="",
             llm=LLMConfig(provider="fake", api_key=""),
             redis=RedisConfig(url=""),
         )
@@ -331,6 +340,10 @@ class TestContainerValidation:
 
     def test_validate_reports_missing_optional(self) -> None:
         settings = Settings(
+            anthropic_api_key="",
+            openai_api_key="",
+            google_api_key="",
+            openrouter_api_key="",
             llm=LLMConfig(provider="fake", api_key=""),
             embedding=EmbeddingConfig(provider="gemini", api_key=""),
             redis=RedisConfig(url=""),
@@ -346,6 +359,10 @@ class TestContainerValidation:
     def test_validate_production_raises_without_llm(self) -> None:
         """Production mode should raise if llm is None."""
         settings = Settings(
+            anthropic_api_key="",
+            openai_api_key="",
+            google_api_key="",
+            openrouter_api_key="",
             llm=LLMConfig(provider="fake", api_key=""),
             redis=RedisConfig(url=""),
             env="production",
@@ -354,7 +371,13 @@ class TestContainerValidation:
         container = Container.build(settings)
         # Create a new container with llm=None to test production validation
         container_no_llm = Container(
-            settings=Settings(env="production"),
+            settings=Settings(
+                anthropic_api_key="",
+                openai_api_key="",
+                google_api_key="",
+                openrouter_api_key="",
+                env="production",
+            ),
             llm=None,
             event_bus=container.event_bus,
         )
@@ -363,7 +386,13 @@ class TestContainerValidation:
 
     def test_validate_dev_mode_no_raise_without_llm(self) -> None:
         """Development mode should NOT raise even if llm is None."""
-        settings = Settings(env="development")
+        settings = Settings(
+            anthropic_api_key="",
+            openai_api_key="",
+            google_api_key="",
+            openrouter_api_key="",
+            env="development",
+        )
         container_no_llm = Container(
             settings=settings,
             llm=None,

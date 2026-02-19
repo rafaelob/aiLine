@@ -18,7 +18,7 @@ import '@/styles/globals.css'
  * preventing a flash of the wrong theme (FOUC).
  */
 function ThemeScript() {
-  const code = `(function(){try{var s=localStorage.getItem('ailine-a11y-prefs');if(s){var p=JSON.parse(s);var t=p.theme||'standard';document.documentElement.setAttribute('data-theme',t);document.body&&document.body.setAttribute('data-theme',t);if(p.reducedMotion){document.body&&document.body.setAttribute('data-reduced-motion','true')}}}catch(e){}})()`;
+  const code = `(function(){try{var m={high_contrast:'high-contrast',low_vision:'low-vision',screen_reader:'screen-reader'};var s=localStorage.getItem('ailine-a11y-prefs');if(s){var p=JSON.parse(s);var t=p.theme||'standard';t=m[t]||t;document.documentElement.setAttribute('data-theme',t);document.body&&document.body.setAttribute('data-theme',t);if(p.reducedMotion){document.body&&document.body.setAttribute('data-reduced-motion','true')}}}catch(e){}})()`;
   return <script dangerouslySetInnerHTML={{ __html: code }} />;
 }
 

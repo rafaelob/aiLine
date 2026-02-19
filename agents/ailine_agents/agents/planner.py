@@ -31,7 +31,7 @@ def _cached_skill_fragment() -> str:
     return registry.get_prompt_fragment(_PLANNER_SKILLS)
 
 
-_DEFAULT_PLANNER_MODEL = "anthropic:claude-sonnet-4-5"
+_DEFAULT_PLANNER_MODEL = "anthropic:claude-opus-4-6"
 
 
 def build_planner_agent(
@@ -62,7 +62,7 @@ def build_planner_agent(
         if ctx.deps.subject:
             parts.append(f"Subject: {ctx.deps.subject}")
         if parts:
-            parts.append("Quando chamar rag_search, SEMPRE passe teacher_id.")
+            parts.append("When calling rag_search, ALWAYS pass teacher_id.")
         return "\n".join(parts)
 
     if use_skills:

@@ -75,6 +75,13 @@ def add_material(
     tags: list[str] | None = None,
     created_at: str | None = None,
 ) -> Material:
+    from ..shared.sanitize import safe_path_component
+
+    # Defense-in-depth: validate path components even though the API layer
+    # validates teacher_id format.  Prevents directory traversal if a store
+    # function is ever called outside of the HTTP request path.
+    safe_path_component(teacher_id, label="teacher_id")
+
     material_id = str(uuid.uuid4())
     tags = tags or []
     created_at = created_at or datetime.now(UTC).isoformat()
@@ -261,14 +268,14 @@ def search_materials(
         return []
 
     id_filter = set(material_ids or [])
-    tag_filter = set([t.lower() for t in (tags or [])])
+    tag_filter = {t.lower() for t in (tags or [])}
 
     scored: list[dict[str, Any]] = []
     for m in iter_materials(teacher_id=teacher_id, subject=subject):
         if id_filter and m.material_id not in id_filter:
             continue
         if tag_filter:
-            mt = set([t.lower() for t in m.tags])
+            mt = {t.lower() for t in m.tags}
             if not (mt & tag_filter):
                 continue
 

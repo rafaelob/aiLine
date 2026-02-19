@@ -15,6 +15,7 @@ interface LandingFooterProps {
 export function LandingFooter({ builtWith, openSource, createdWith, hackathon }: LandingFooterProps) {
   return (
     <footer
+      role="contentinfo"
       className={cn(
         'py-10 px-6 mt-auto',
         'border-t border-[var(--color-border)]',

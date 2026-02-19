@@ -50,6 +50,13 @@ class RedisEventBus:
     ) -> None:
         self._handlers[event_type].append(handler)
 
+    async def ping(self) -> bool:
+        """Check Redis connectivity."""
+        try:
+            return bool(await self._redis.ping())
+        except Exception:
+            return False
+
     async def close(self) -> None:
         """Gracefully shut down the Redis connection."""
         if self._listener_task and not self._listener_task.done():

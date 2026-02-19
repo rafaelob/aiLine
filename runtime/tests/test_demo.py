@@ -4,7 +4,7 @@ Covers:
 - DemoService: scenario loading, listing, retrieval, cached plan/events, reset
 - Demo API endpoints: GET /demo/scenarios, GET /demo/scenarios/{id},
   POST /demo/scenarios/{id}/run, POST /demo/scenarios/{id}/execute,
-  POST /demo/scenarios/{id}/stream, GET /demo/reset
+  POST /demo/scenarios/{id}/stream, POST /demo/reset
 - DemoModeMiddleware: interception of /plans/generate when demo_mode=true
 - Edge cases: missing scenarios, empty data dir, malformed JSON
 """
@@ -94,6 +94,7 @@ def settings_demo_off() -> Settings:
         anthropic_api_key="fake-key",
         openai_api_key="",
         google_api_key="",
+        openrouter_api_key="",
         db=DatabaseConfig(url="sqlite+aiosqlite:///:memory:"),
         llm=LLMConfig(provider="fake", api_key="fake"),
         embedding=EmbeddingConfig(provider="gemini", api_key=""),
@@ -109,6 +110,7 @@ def settings_demo_on() -> Settings:
         anthropic_api_key="fake-key",
         openai_api_key="",
         google_api_key="",
+        openrouter_api_key="",
         db=DatabaseConfig(url="sqlite+aiosqlite:///:memory:"),
         llm=LLMConfig(provider="fake", api_key="fake"),
         embedding=EmbeddingConfig(provider="gemini", api_key=""),
@@ -408,14 +410,14 @@ class TestDemoAPIGetScenario:
 class TestDemoAPIRun:
     """Tests for POST /demo/scenarios/{id}/run."""
 
-    async def test_run_returns_cached_plan(self, client_demo_off: AsyncClient) -> None:
-        list_resp = await client_demo_off.get("/demo/scenarios")
+    async def test_run_returns_cached_plan(self, client_demo_on: AsyncClient) -> None:
+        list_resp = await client_demo_on.get("/demo/scenarios")
         scenarios = list_resp.json()
         if not scenarios:
             pytest.skip("No demo scenarios available")
         scenario_id = scenarios[0]["id"]
 
-        resp = await client_demo_off.post(f"/demo/scenarios/{scenario_id}/run")
+        resp = await client_demo_on.post(f"/demo/scenarios/{scenario_id}/run")
         assert resp.status_code == 200
         body = resp.json()
         assert body["status"] == "completed"
@@ -424,25 +426,31 @@ class TestDemoAPIRun:
         assert body["run_id"] == f"demo-{scenario_id}"
 
     async def test_run_nonexistent_returns_404(
+        self, client_demo_on: AsyncClient
+    ) -> None:
+        resp = await client_demo_on.post("/demo/scenarios/nonexistent-id/run")
+        assert resp.status_code == 404
+
+    async def test_run_requires_demo_mode(
         self, client_demo_off: AsyncClient
     ) -> None:
-        resp = await client_demo_off.post("/demo/scenarios/nonexistent-id/run")
-        assert resp.status_code == 404
+        resp = await client_demo_off.post("/demo/scenarios/test-scenario/run")
+        assert resp.status_code == 403
 
 
 class TestDemoAPIExecute:
     """Tests for POST /demo/scenarios/{id}/execute."""
 
     async def test_execute_returns_cached_plan(
-        self, client_demo_off: AsyncClient
+        self, client_demo_on: AsyncClient
     ) -> None:
-        list_resp = await client_demo_off.get("/demo/scenarios")
+        list_resp = await client_demo_on.get("/demo/scenarios")
         scenarios = list_resp.json()
         if not scenarios:
             pytest.skip("No demo scenarios available")
         scenario_id = scenarios[0]["id"]
 
-        resp = await client_demo_off.post(f"/demo/scenarios/{scenario_id}/execute")
+        resp = await client_demo_on.post(f"/demo/scenarios/{scenario_id}/execute")
         assert resp.status_code == 200
         body = resp.json()
         assert body["status"] == "completed"
@@ -451,39 +459,49 @@ class TestDemoAPIExecute:
         assert body["run_id"] == f"demo-{scenario_id}"
 
     async def test_execute_nonexistent_returns_404(
-        self, client_demo_off: AsyncClient
+        self, client_demo_on: AsyncClient
     ) -> None:
-        resp = await client_demo_off.post("/demo/scenarios/nonexistent-id/execute")
+        resp = await client_demo_on.post("/demo/scenarios/nonexistent-id/execute")
         assert resp.status_code == 404
 
-    async def test_execute_matches_run_output(
+    async def test_execute_requires_demo_mode(
         self, client_demo_off: AsyncClient
     ) -> None:
-        list_resp = await client_demo_off.get("/demo/scenarios")
+        resp = await client_demo_off.post("/demo/scenarios/test-scenario/execute")
+        assert resp.status_code == 403
+
+    async def test_execute_matches_run_output(
+        self, client_demo_on: AsyncClient
+    ) -> None:
+        list_resp = await client_demo_on.get("/demo/scenarios")
         scenarios = list_resp.json()
         if not scenarios:
             pytest.skip("No demo scenarios available")
         scenario_id = scenarios[0]["id"]
 
-        run_resp = await client_demo_off.post(f"/demo/scenarios/{scenario_id}/run")
-        exec_resp = await client_demo_off.post(f"/demo/scenarios/{scenario_id}/execute")
+        run_resp = await client_demo_on.post(f"/demo/scenarios/{scenario_id}/run")
+        exec_resp = await client_demo_on.post(f"/demo/scenarios/{scenario_id}/execute")
         assert run_resp.json() == exec_resp.json()
 
 
 class TestDemoAPIReset:
-    """Tests for GET /demo/reset."""
+    """Tests for POST /demo/reset."""
 
-    async def test_reset_returns_ok(self, client_demo_off: AsyncClient) -> None:
-        resp = await client_demo_off.get("/demo/reset")
+    async def test_reset_returns_ok(self, client_demo_on: AsyncClient) -> None:
+        resp = await client_demo_on.post("/demo/reset")
         assert resp.status_code == 200
         body = resp.json()
         assert body["status"] == "ok"
 
+    async def test_reset_requires_demo_mode(self, client_demo_off: AsyncClient) -> None:
+        resp = await client_demo_off.post("/demo/reset")
+        assert resp.status_code == 403
+
     async def test_scenarios_available_after_reset(
-        self, client_demo_off: AsyncClient
+        self, client_demo_on: AsyncClient
     ) -> None:
-        await client_demo_off.get("/demo/reset")
-        resp = await client_demo_off.get("/demo/scenarios")
+        await client_demo_on.post("/demo/reset")
+        resp = await client_demo_on.get("/demo/scenarios")
         assert resp.status_code == 200
         assert len(resp.json()) >= 1
 
@@ -823,7 +841,7 @@ class TestDemoProfiles:
         assert "mode" in body
         assert body["mode"] == "hackathon_demo"
         profiles = body["profiles"]
-        assert len(profiles) == 6
+        assert len(profiles) == 8
 
     async def test_profiles_contain_required_fields(
         self, client_demo_off: AsyncClient
@@ -909,56 +927,69 @@ class TestDemoProfilesUnit:
 class TestDemoSeed:
     """Tests for POST /demo/seed."""
 
-    async def test_seed_returns_ok(self, client_demo_off: AsyncClient) -> None:
+    @pytest.fixture(autouse=True)
+    def _reset_stores(self) -> None:
+        """Reset in-memory stores before each test so seed idempotency doesn't interfere."""
+        import ailine_runtime.shared.progress_store as _ps_mod
+        import ailine_runtime.shared.review_store as _rs_mod
+
+        _rs_mod._store = None
+        _ps_mod._store = None
+
+    async def test_seed_requires_demo_mode(self, client_demo_off: AsyncClient) -> None:
         resp = await client_demo_off.post("/demo/seed")
+        assert resp.status_code == 403
+
+    async def test_seed_returns_ok(self, client_demo_on: AsyncClient) -> None:
+        resp = await client_demo_on.post("/demo/seed")
         assert resp.status_code == 200
         body = resp.json()
         assert body["status"] == "ok"
         assert "teacher_id" in body
         assert body["teacher_id"] == "demo-teacher-ms-johnson"
 
-    async def test_seed_creates_materials(self, client_demo_off: AsyncClient) -> None:
-        resp = await client_demo_off.post("/demo/seed")
+    async def test_seed_creates_materials(self, client_demo_on: AsyncClient) -> None:
+        resp = await client_demo_on.post("/demo/seed")
         body = resp.json()
         assert body["created"]["materials"] == 2
         assert len(body["ids"]["materials"]) == 2
 
-    async def test_seed_creates_reviews(self, client_demo_off: AsyncClient) -> None:
-        resp = await client_demo_off.post("/demo/seed")
+    async def test_seed_creates_reviews(self, client_demo_on: AsyncClient) -> None:
+        resp = await client_demo_on.post("/demo/seed")
         body = resp.json()
         assert body["created"]["reviews"] == 3
         assert len(body["ids"]["reviews"]) == 3
 
     async def test_seed_creates_progress_records(
-        self, client_demo_off: AsyncClient
+        self, client_demo_on: AsyncClient
     ) -> None:
-        resp = await client_demo_off.post("/demo/seed")
+        resp = await client_demo_on.post("/demo/seed")
         body = resp.json()
         assert body["created"]["progress"] == 8
         assert len(body["ids"]["progress"]) == 8
 
-    async def test_seed_creates_tutors(self, client_demo_off: AsyncClient) -> None:
-        resp = await client_demo_off.post("/demo/seed")
+    async def test_seed_creates_tutors(self, client_demo_on: AsyncClient) -> None:
+        resp = await client_demo_on.post("/demo/seed")
         body = resp.json()
         assert body["created"]["tutors"] == 2
         assert len(body["ids"]["tutors"]) == 2
 
-    async def test_seed_creates_sessions(self, client_demo_off: AsyncClient) -> None:
-        resp = await client_demo_off.post("/demo/seed")
+    async def test_seed_creates_sessions(self, client_demo_on: AsyncClient) -> None:
+        resp = await client_demo_on.post("/demo/seed")
         body = resp.json()
         assert body["created"]["sessions"] == 2
         assert len(body["ids"]["sessions"]) == 2
 
     async def test_seed_data_accessible_with_demo_header(
         self,
-        client_demo_off: AsyncClient,
+        client_demo_on: AsyncClient,
     ) -> None:
         """After seeding, materials should be accessible using the teacher's ID."""
-        seed_resp = await client_demo_off.post("/demo/seed")
+        seed_resp = await client_demo_on.post("/demo/seed")
         assert seed_resp.status_code == 200
 
         # Verify materials are accessible via the materials API
-        mat_resp = await client_demo_off.get(
+        mat_resp = await client_demo_on.get(
             "/materials",
             headers={"X-Teacher-ID": "demo-teacher-ms-johnson"},
         )

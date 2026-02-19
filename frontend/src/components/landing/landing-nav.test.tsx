@@ -47,10 +47,10 @@ describe('LandingNav', () => {
     expect(screen.getByRole('navigation', { hidden: true })).toBeInTheDocument()
   })
 
-  it('has aria-label "Landing navigation"', () => {
+  it('has aria-label with landing_nav_label translation key', () => {
     render(<LandingNav {...defaultProps} />)
     const nav = screen.getByRole('navigation', { hidden: true })
-    expect(nav).toHaveAttribute('aria-label', 'Landing navigation')
+    expect(nav).toHaveAttribute('aria-label', 'nav.landing_nav_label')
   })
 
   it('renders AiLine brand name', () => {

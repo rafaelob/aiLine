@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -14,7 +13,7 @@ class SkillDefinition(BaseModel):
     name: str
     description: str = ""
     instructions: str = ""
-    metadata: dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, str] = Field(default_factory=dict)
 
 
 class SkillRegistry:

@@ -5,15 +5,14 @@ import { LandingFeatures } from './landing-features'
 vi.mock('motion/react', () => ({
   motion: {
     article: ({ children, ...rest }: Record<string, unknown>) => {
-      const { initial: _i, animate: _a, transition: _t, ...safe } = rest
+      const { initial: _i, animate: _a, transition: _t, whileInView: _w, viewport: _v, ...safe } = rest
       return <article {...safe}>{children as React.ReactNode}</article>
     },
     div: ({ children, ...rest }: Record<string, unknown>) => {
-      const { initial: _i, animate: _a, transition: _t, ...safe } = rest
+      const { initial: _i, animate: _a, transition: _t, whileInView: _w, viewport: _v, ...safe } = rest
       return <div {...safe}>{children as React.ReactNode}</div>
     },
   },
-  useInView: () => true,
   useReducedMotion: () => false,
 }))
 

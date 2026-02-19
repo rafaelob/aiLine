@@ -10,9 +10,9 @@ Hackathon: "Built with Opus 4.6" | Feb 10-16, 2026
 | Metric | Value |
 |--------|-------|
 | Features shipped | 145 |
-| Backend tests | 2,125 (1,875 runtime + 250 agents) |
-| Frontend tests | 962 (110 suites) |
-| **Total tests** | **3,087** |
+| Backend tests | 2,230 (1,943 runtime + 287 agents) |
+| Frontend tests | 1,096 (130+ suites) |
+| **Total tests** | **3,326+** |
 | E2E Playwright tests | 35+ (3 golden paths + 8 visual regression + a11y) |
 | Live API integration tests | 65 (real Anthropic/OpenAI/Gemini) |
 | Architecture Decision Records | 60 |
@@ -108,7 +108,7 @@ All 4 services (PostgreSQL + pgvector, Redis, FastAPI API, Next.js 16 frontend) 
 
 2. **True Inclusivity** -- Not an afterthought. 9 disability-specific themes, Brazilian Sign Language (Libras) support, Empathy Bridge simulator for educator training.
 
-3. **Production Engineering** -- Hexagonal architecture, 3,087 tests, 60 ADRs, circuit breaker, retry with backoff, SSE replay, tenant isolation. Built to run, not just to demo.
+3. **Production Engineering** -- Hexagonal architecture, 3,300+ tests, 60 ADRs, circuit breaker, retry with backoff, SSE replay, tenant isolation. Built to run, not just to demo.
 
 4. **Multi-LLM Resilience** -- SmartRouter picks the optimal model per request. If one provider fails, automatic escalation. No single point of AI failure.
 

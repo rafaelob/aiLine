@@ -302,3 +302,117 @@ async def test_record_all_mastery_levels(client: AsyncClient, level: str) -> Non
     )
     assert resp.status_code == 200
     assert resp.json()["mastery_level"] == level
+
+
+# ---------------------------------------------------------------------------
+# GET /progress/overview
+# ---------------------------------------------------------------------------
+
+
+async def test_overview_teacher(client: AsyncClient) -> None:
+    """Teacher overview returns role and dashboard data."""
+    resp = await client.get("/progress/overview")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["total_students"] == 0
+    assert body["teacher_id"] == "teacher-progress-001"
+
+
+async def test_overview_after_recording(client: AsyncClient) -> None:
+    """Overview reflects data after recording progress."""
+    await client.post(
+        "/progress/record",
+        json={
+            "student_id": "s-ov",
+            "student_name": "Overview Student",
+            "standard_code": "EF06MA01",
+            "mastery_level": "proficient",
+        },
+    )
+    resp = await client.get("/progress/overview")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["total_students"] == 1
+
+
+async def test_overview_unauthenticated(
+    unauthenticated_client: AsyncClient,
+) -> None:
+    """Unauthenticated request to /overview returns 401."""
+    resp = await unauthenticated_client.get("/progress/overview")
+    assert resp.status_code == 401
+
+
+# ---------------------------------------------------------------------------
+# GET /progress/parent
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture()
+async def parent_client(app) -> AsyncGenerator[AsyncClient, None]:
+    """Client with parent role header."""
+    transport = ASGITransport(app=app, raise_app_exceptions=False)
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://test",
+        headers={
+            "X-Teacher-ID": "parent-001",
+            "X-User-Role": "parent",
+        },
+    ) as c:
+        yield c
+
+
+async def test_parent_endpoint_returns_placeholder(
+    parent_client: AsyncClient,
+) -> None:
+    """Parent endpoint returns children placeholder for MVP."""
+    resp = await parent_client.get("/progress/parent")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["parent_id"] == "parent-001"
+    assert body["children"] == []
+    assert "Link" in body["message"]
+
+
+async def test_parent_endpoint_rejects_teacher(client: AsyncClient) -> None:
+    """Teacher role cannot access /parent endpoint."""
+    resp = await client.get("/progress/parent")
+    assert resp.status_code == 403
+
+
+async def test_parent_endpoint_unauthenticated(
+    unauthenticated_client: AsyncClient,
+) -> None:
+    """Unauthenticated request to /parent returns 401."""
+    resp = await unauthenticated_client.get("/progress/parent")
+    assert resp.status_code == 401
+
+
+# ---------------------------------------------------------------------------
+# ProgressStore.get_student_all_teachers
+# ---------------------------------------------------------------------------
+
+
+async def test_get_student_all_teachers(client: AsyncClient) -> None:
+    """get_student_all_teachers aggregates across teachers."""
+    from ailine_runtime.domain.entities.progress import MasteryLevel
+    from ailine_runtime.shared.progress_store import get_progress_store
+
+    store = get_progress_store()
+    # Record under two different teachers
+    store.record_progress(
+        teacher_id="t1", student_id="shared-student",
+        student_name="Shared", standard_code="MA01",
+        standard_description="Math", mastery_level=MasteryLevel.DEVELOPING,
+    )
+    store.record_progress(
+        teacher_id="t2", student_id="shared-student",
+        student_name="Shared", standard_code="SCI01",
+        standard_description="Science", mastery_level=MasteryLevel.MASTERED,
+    )
+
+    all_records = store.get_student_all_teachers("shared-student")
+    assert len(all_records) == 2
+    codes = {r.standard_code for r in all_records}
+    assert codes == {"MA01", "SCI01"}

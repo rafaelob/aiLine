@@ -20,6 +20,8 @@ export function ToastProvider() {
     <div
       role="region"
       aria-label={t('notifications')}
+      aria-live="polite"
+      aria-relevant="additions removals"
       className="fixed bottom-20 right-4 z-[65] flex flex-col gap-2 pointer-events-none sm:bottom-6 sm:right-6 sm:max-w-sm w-full max-w-sm"
     >
       <AnimatePresence mode="popLayout">

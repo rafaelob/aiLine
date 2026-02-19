@@ -8,8 +8,9 @@
 - **Security:** trivy (container), pip-audit (Python), pnpm audit (Node)
 
 ## Coverage Targets
-- Pre-MVP (current): 2,125 backend tests (1,875 runtime + 250 agents), all passing
-- Frontend: 962 tests, all passing (110 test suites)
+- Pre-MVP (current): 2,432 backend tests (2,155 runtime + 277 agents), all passing
+- Frontend: 1,116 tests, all passing
+- Total: 3,548 tests, all lint/typecheck gates green (ruff, mypy, ESLint, tsc)
 - E2E: 3 Playwright golden path specs + 8 visual regression + axe-core a11y audit
 - Agent eval: 15 golden test sets (Planner/QualityGate/Tutor) + rubric scoring
 - Post-MVP: >= 90% on touched code (hard gate)
@@ -47,9 +48,9 @@ docker compose up -d --build && docker compose exec api uv run pytest -v  # Dock
 | Domain entities, validators, exports, i18n | Yes | - | - |
 | Middleware (rate limiter, sanitization, tenant, metrics) | Yes | - | - |
 | Resilience (circuit breaker, retry, idempotency, SSE) | Yes | - | - |
-| Pydantic AI agents + Skill Registry | Yes (250) | Yes (10 live_llm) | - |
+| Pydantic AI agents + Skill Registry | Yes (277) | Yes (10 live_llm) | - |
 | API endpoints, DB CRUD, RAG pipeline | - | Yes | - |
 | LLM adapters (Anthropic/OpenAI/Gemini) | - | Yes (live_llm) | - |
-| Frontend components (962 Vitest) | Yes | - | - |
+| Frontend components (1,115 Vitest) | Yes | - | - |
 | Full plan pipeline, tutor chat, SSE streaming | - | - | Yes |
 | WCAG AAA, keyboard nav, visual regression | - | - | Yes (axe + Playwright) |

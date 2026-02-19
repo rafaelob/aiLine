@@ -90,3 +90,9 @@ class TestInMemoryEventBus:
         assert received_a[0]["src"] == "a"
         assert len(received_b) == 1
         assert received_b[0]["src"] == "b"
+
+    @pytest.mark.asyncio
+    async def test_ping_returns_true(self):
+        """InMemoryEventBus.ping() should always return True."""
+        bus = InMemoryEventBus()
+        assert await bus.ping() is True

@@ -67,6 +67,7 @@ def settings() -> Settings:
         anthropic_api_key="fake-key-for-tests",
         openai_api_key="",
         google_api_key="",
+        openrouter_api_key="",
         db=DatabaseConfig(url="sqlite+aiosqlite:///:memory:"),
         llm=LLMConfig(provider="fake", api_key="fake"),
         embedding=EmbeddingConfig(provider="gemini", api_key=""),
@@ -136,8 +137,8 @@ class TestJWTForgedSignature:
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
         # Sign with a different secret
         token = _make_signed_jwt(_valid_payload(), secret="wrong-secret-entirely")
-        teacher_id, error = _extract_teacher_id_from_jwt(token)
-        assert teacher_id is None
+        claims, error = _extract_teacher_id_from_jwt(token)
+        assert claims.teacher_id is None
         assert error is not None
 
     def test_tampered_payload_rejected(self, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -158,8 +159,8 @@ class TestJWTForgedSignature:
             .decode()
         )
         tampered = f"{parts[0]}.{new_payload}.{parts[2]}"
-        teacher_id, _error = _extract_teacher_id_from_jwt(tampered)
-        assert teacher_id is None
+        claims, _error = _extract_teacher_id_from_jwt(tampered)
+        assert claims.teacher_id is None
 
 
 class TestJWTExpiredToken:
@@ -169,8 +170,8 @@ class TestJWTExpiredToken:
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
         payload = _valid_payload(exp=datetime.now(UTC) - timedelta(hours=1))
         token = _make_signed_jwt(payload)
-        teacher_id, error = _extract_teacher_id_from_jwt(token)
-        assert teacher_id is None
+        claims, error = _extract_teacher_id_from_jwt(token)
+        assert claims.teacher_id is None
         assert error == "expired"
 
 
@@ -181,8 +182,8 @@ class TestJWTNotYetValid:
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
         payload = _valid_payload(nbf=datetime.now(UTC) + timedelta(hours=1))
         token = _make_signed_jwt(payload)
-        teacher_id, error = _extract_teacher_id_from_jwt(token)
-        assert teacher_id is None
+        claims, error = _extract_teacher_id_from_jwt(token)
+        assert claims.teacher_id is None
         assert error == "not_yet_valid"
 
 
@@ -194,8 +195,8 @@ class TestJWTWrongAudience:
         monkeypatch.setenv("AILINE_JWT_AUDIENCE", "ailine-api")
         payload = _valid_payload(aud="wrong-audience")
         token = _make_signed_jwt(payload)
-        teacher_id, error = _extract_teacher_id_from_jwt(token)
-        assert teacher_id is None
+        claims, error = _extract_teacher_id_from_jwt(token)
+        assert claims.teacher_id is None
         assert error == "invalid_audience"
 
     def test_correct_audience_accepted(self, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -203,8 +204,8 @@ class TestJWTWrongAudience:
         monkeypatch.setenv("AILINE_JWT_AUDIENCE", "ailine-api")
         payload = _valid_payload(aud="ailine-api")
         token = _make_signed_jwt(payload)
-        teacher_id, error = _extract_teacher_id_from_jwt(token)
-        assert teacher_id == TEACHER_ID
+        claims, error = _extract_teacher_id_from_jwt(token)
+        assert claims.teacher_id == TEACHER_ID
         assert error is None
 
 
@@ -216,8 +217,8 @@ class TestJWTWrongIssuer:
         monkeypatch.setenv("AILINE_JWT_ISSUER", "ailine-auth")
         payload = _valid_payload(iss="evil-issuer")
         token = _make_signed_jwt(payload)
-        teacher_id, error = _extract_teacher_id_from_jwt(token)
-        assert teacher_id is None
+        claims, error = _extract_teacher_id_from_jwt(token)
+        assert claims.teacher_id is None
         assert error == "invalid_issuer"
 
     def test_correct_issuer_accepted(self, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -225,8 +226,8 @@ class TestJWTWrongIssuer:
         monkeypatch.setenv("AILINE_JWT_ISSUER", "ailine-auth")
         payload = _valid_payload(iss="ailine-auth")
         token = _make_signed_jwt(payload)
-        teacher_id, _error = _extract_teacher_id_from_jwt(token)
-        assert teacher_id == TEACHER_ID
+        claims, _error = _extract_teacher_id_from_jwt(token)
+        assert claims.teacher_id == TEACHER_ID
 
 
 class TestJWTAlgorithmNone:
@@ -237,8 +238,8 @@ class TestJWTAlgorithmNone:
     ) -> None:
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
         token = _make_unsigned_jwt(_valid_payload())
-        teacher_id, _error = _extract_teacher_id_from_jwt(token)
-        assert teacher_id is None
+        claims, _error = _extract_teacher_id_from_jwt(token)
+        assert claims.teacher_id is None
 
     def test_alg_none_rejected_without_dev_mode(
         self, monkeypatch: pytest.MonkeyPatch
@@ -247,9 +248,9 @@ class TestJWTAlgorithmNone:
         monkeypatch.delenv("AILINE_JWT_PUBLIC_KEY", raising=False)
         monkeypatch.delenv("AILINE_DEV_MODE", raising=False)
         token = _make_unsigned_jwt(_valid_payload())
-        teacher_id, _error = _extract_teacher_id_from_jwt(token)
+        claims, _error = _extract_teacher_id_from_jwt(token)
         # Without key material and without dev mode, JWT is rejected
-        assert teacher_id is None
+        assert claims.teacher_id is None
 
     def test_none_not_in_allowed_algorithms(self) -> None:
         assert "none" not in _ALLOWED_ALGORITHMS
@@ -281,8 +282,8 @@ class TestJWTAlgorithmConfusion:
             pytest.skip("cryptography not installed")
             return
 
-        teacher_id, _error = _extract_teacher_id_from_jwt(token)
-        assert teacher_id is None
+        claims, _error = _extract_teacher_id_from_jwt(token)
+        assert claims.teacher_id is None
 
 
 class TestJWTMissingSub:
@@ -297,15 +298,15 @@ class TestJWTMissingSub:
         }
         # PyJWT will raise because we require "sub" in options
         token = pyjwt.encode(payload, HMAC_SECRET, algorithm="HS256")
-        teacher_id, _error = _extract_teacher_id_from_jwt(token)
-        assert teacher_id is None
+        claims, _error = _extract_teacher_id_from_jwt(token)
+        assert claims.teacher_id is None
 
     def test_empty_sub_rejected(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
         payload = _valid_payload(sub="")
         token = _make_signed_jwt(payload)
-        teacher_id, _error = _extract_teacher_id_from_jwt(token)
-        assert teacher_id is None
+        claims, _error = _extract_teacher_id_from_jwt(token)
+        assert claims.teacher_id is None
 
 
 class TestJWTReplayAttack:
@@ -319,17 +320,17 @@ class TestJWTReplayAttack:
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
         token = _make_signed_jwt(_valid_payload())
         # Verify it works twice (stateless)
-        tid1, _ = _extract_teacher_id_from_jwt(token)
-        tid2, _ = _extract_teacher_id_from_jwt(token)
-        assert tid1 == tid2 == TEACHER_ID
+        c1, _ = _extract_teacher_id_from_jwt(token)
+        c2, _ = _extract_teacher_id_from_jwt(token)
+        assert c1.teacher_id == c2.teacher_id == TEACHER_ID
 
     def test_expired_replay_fails(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Even if a token was once valid, it should fail after expiry."""
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
         payload = _valid_payload(exp=datetime.now(UTC) - timedelta(seconds=1))
         token = _make_signed_jwt(payload)
-        teacher_id, error = _extract_teacher_id_from_jwt(token)
-        assert teacher_id is None
+        claims, error = _extract_teacher_id_from_jwt(token)
+        assert claims.teacher_id is None
         assert error == "expired"
 
 
@@ -342,8 +343,8 @@ class TestJWTTenantImpersonation:
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
         payload = _valid_payload(sub="teacher-real")
         token = _make_signed_jwt(payload)
-        teacher_id, _ = _extract_teacher_id_from_jwt(token)
-        assert teacher_id == "teacher-real"
+        claims, _ = _extract_teacher_id_from_jwt(token)
+        assert claims.teacher_id == "teacher-real"
 
     def test_cannot_impersonate_via_custom_claim(
         self, monkeypatch: pytest.MonkeyPatch
@@ -352,9 +353,9 @@ class TestJWTTenantImpersonation:
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
         payload = _valid_payload(sub="teacher-real", teacher_id="teacher-attacker")
         token = _make_signed_jwt(payload)
-        teacher_id, _ = _extract_teacher_id_from_jwt(token)
+        claims, _ = _extract_teacher_id_from_jwt(token)
         # Should use 'sub', not 'teacher_id'
-        assert teacher_id == "teacher-real"
+        assert claims.teacher_id == "teacher-real"
 
 
 class TestJWTRS256Asymmetric:
@@ -387,8 +388,8 @@ class TestJWTRS256Asymmetric:
         monkeypatch.delenv("AILINE_JWT_SECRET", raising=False)
 
         token = pyjwt.encode(_valid_payload(), private_pem, algorithm="RS256")
-        teacher_id, error = _extract_teacher_id_from_jwt(token)
-        assert teacher_id == TEACHER_ID
+        claims, error = _extract_teacher_id_from_jwt(token)
+        assert claims.teacher_id == TEACHER_ID
         assert error is None
 
     def test_rs256_wrong_key_rejected(self, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -421,8 +422,8 @@ class TestJWTRS256Asymmetric:
         monkeypatch.delenv("AILINE_JWT_SECRET", raising=False)
 
         token = pyjwt.encode(_valid_payload(), private_pem1, algorithm="RS256")
-        teacher_id, _error = _extract_teacher_id_from_jwt(token)
-        assert teacher_id is None
+        claims, _error = _extract_teacher_id_from_jwt(token)
+        assert claims.teacher_id is None
 
 
 class TestJWTDevModeFallback:
@@ -435,8 +436,8 @@ class TestJWTDevModeFallback:
         monkeypatch.delenv("AILINE_JWT_SECRET", raising=False)
         monkeypatch.delenv("AILINE_JWT_PUBLIC_KEY", raising=False)
         token = _make_unsigned_jwt({"sub": "teacher-dev"})
-        teacher_id, _error = _extract_teacher_id_from_jwt(token)
-        assert teacher_id == "teacher-dev"
+        claims, _error = _extract_teacher_id_from_jwt(token)
+        assert claims.teacher_id == "teacher-dev"
 
     def test_no_dev_mode_rejects_unverified(
         self, monkeypatch: pytest.MonkeyPatch
@@ -445,8 +446,8 @@ class TestJWTDevModeFallback:
         monkeypatch.delenv("AILINE_JWT_SECRET", raising=False)
         monkeypatch.delenv("AILINE_JWT_PUBLIC_KEY", raising=False)
         token = _make_unsigned_jwt({"sub": "teacher-dev"})
-        teacher_id, error = _extract_teacher_id_from_jwt(token)
-        assert teacher_id is None
+        claims, error = _extract_teacher_id_from_jwt(token)
+        assert claims.teacher_id is None
         assert error == "no_key_material"
 
     def test_secret_set_but_dev_mode_does_not_bypass(
@@ -457,9 +458,9 @@ class TestJWTDevModeFallback:
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
         # Create unsigned JWT
         token = _make_unsigned_jwt({"sub": "teacher-attacker"})
-        teacher_id, _error = _extract_teacher_id_from_jwt(token)
+        claims, _error = _extract_teacher_id_from_jwt(token)
         # Should be rejected because secret is set -> verified path
-        assert teacher_id is None
+        assert claims.teacher_id is None
 
 
 class TestJWTConfigParsing:
@@ -714,6 +715,7 @@ class TestEnvironmentValidation:
             anthropic_api_key="",
             openai_api_key="",
             google_api_key="",
+            openrouter_api_key="",
             db=DatabaseConfig(url="sqlite+aiosqlite:///:memory:"),
             llm=LLMConfig(provider="fake", api_key="fake"),
             embedding=EmbeddingConfig(provider="gemini", api_key=""),
@@ -730,6 +732,7 @@ class TestEnvironmentValidation:
             anthropic_api_key="real-key",
             openai_api_key="",
             google_api_key="",
+            openrouter_api_key="",
             db=DatabaseConfig(url="sqlite+aiosqlite:///:memory:"),
             llm=LLMConfig(provider="anthropic", api_key="real-key"),
             embedding=EmbeddingConfig(provider="gemini", api_key=""),
@@ -774,6 +777,7 @@ class TestEnvironmentValidation:
             anthropic_api_key="real-key",
             openai_api_key="",
             google_api_key="",
+            openrouter_api_key="",
             db=DatabaseConfig(url="postgresql+asyncpg://user:pass@localhost/db"),
             llm=LLMConfig(provider="anthropic", api_key="real-key"),
             embedding=EmbeddingConfig(provider="gemini", api_key=""),
@@ -791,6 +795,7 @@ class TestEnvironmentValidation:
             anthropic_api_key="real-key",
             openai_api_key="",
             google_api_key="",
+            openrouter_api_key="",
             db=DatabaseConfig(url="postgresql+asyncpg://user:pass@localhost/db"),
             llm=LLMConfig(provider="anthropic", api_key="real-key"),
             embedding=EmbeddingConfig(provider="gemini", api_key=""),
@@ -805,6 +810,7 @@ class TestEnvironmentValidation:
             anthropic_api_key="",
             openai_api_key="",
             google_api_key="",
+            openrouter_api_key="",
             db=DatabaseConfig(url=""),
             llm=LLMConfig(provider="fake", api_key="fake"),
             embedding=EmbeddingConfig(provider="gemini", api_key=""),

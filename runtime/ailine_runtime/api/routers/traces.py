@@ -13,7 +13,7 @@ from __future__ import annotations
 from typing import Any
 
 import structlog
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from ...app.authz import require_authenticated
 from ...shared.trace_store import get_trace_store
@@ -25,7 +25,7 @@ router = APIRouter()
 
 @router.get("/recent")
 async def list_recent_traces(
-    limit: int = 20,
+    limit: int = Query(20, ge=1, le=50),
     teacher_id: str = Depends(require_authenticated),
 ) -> list[dict[str, Any]]:
     """List recent pipeline traces (lightweight summary).

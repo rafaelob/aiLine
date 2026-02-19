@@ -14,6 +14,7 @@ to avoid interfering with orchestration liveness/readiness probes.
 
 from __future__ import annotations
 
+import asyncio
 import os
 import time
 from collections.abc import Awaitable, Callable
@@ -28,8 +29,8 @@ from ...shared.tenant import try_get_current_teacher_id
 
 logger = structlog.get_logger("ailine.middleware.rate_limit")
 
-# Paths excluded from rate limiting (health probes and metrics must never be throttled).
-_EXCLUDED_PATHS = frozenset({"/health", "/health/ready", "/metrics"})
+# Paths excluded from rate limiting (health probes only; /metrics is rate-limited).
+_EXCLUDED_PATHS = frozenset({"/health", "/health/ready"})
 
 # Periodic cleanup interval: every N requests, purge expired entries.
 _CLEANUP_INTERVAL = 100
@@ -73,7 +74,13 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self._window_seconds = 60.0
         # client_key -> _SlidingWindowCounter
         self._counters: dict[str, _SlidingWindowCounter] = {}
+        self._lock = asyncio.Lock()
         self._request_count = 0
+        # Only trust X-Forwarded-For from known proxy IPs (SEC-04)
+        _raw = os.getenv("AILINE_TRUSTED_PROXIES", "")
+        self._trusted_proxies: frozenset[str] = frozenset(
+            p.strip() for p in _raw.split(",") if p.strip()
+        )
 
     @property
     def rpm(self) -> int:
@@ -90,13 +97,14 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         teacher_id = try_get_current_teacher_id()
         if teacher_id is not None:
             return f"tid:{teacher_id}"
-        # Use the first entry in X-Forwarded-For if present, otherwise
-        # fall back to request.client.host.
-        forwarded = request.headers.get("X-Forwarded-For", "").strip()
-        if forwarded:
-            return f"ip:{forwarded.split(',')[0].strip()}"
-        if request.client is not None:
-            return f"ip:{request.client.host}"
+        # Only trust X-Forwarded-For when the direct client is a known proxy.
+        client_ip = request.client.host if request.client else None
+        if client_ip and client_ip in self._trusted_proxies:
+            forwarded = request.headers.get("X-Forwarded-For", "").strip()
+            if forwarded:
+                return f"ip:{forwarded.split(',')[0].strip()}"
+        if client_ip:
+            return f"ip:{client_ip}"
         return "ip:unknown"
 
     def _get_sliding_count(self, counter: _SlidingWindowCounter, now: float) -> float:
@@ -153,45 +161,46 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         now = time.monotonic()
         client_key = self._client_key(request)
 
-        # Get or create counter for this client.
-        counter = self._counters.get(client_key)
-        if counter is None:
-            counter = _SlidingWindowCounter()
-            counter.curr_window_start = now - (now % self._window_seconds)
-            self._counters[client_key] = counter
+        async with self._lock:
+            # Get or create counter for this client.
+            counter = self._counters.get(client_key)
+            if counter is None:
+                counter = _SlidingWindowCounter()
+                counter.curr_window_start = now - (now % self._window_seconds)
+                self._counters[client_key] = counter
 
-        estimated_count = self._get_sliding_count(counter, now)
+            estimated_count = self._get_sliding_count(counter, now)
 
-        # Compute reset timestamp (wall clock).
-        window_start = now - (now % self._window_seconds)
-        reset_at = time.time() + (self._window_seconds - (now - window_start))
+            # Compute reset timestamp (wall clock).
+            window_start = now - (now % self._window_seconds)
+            reset_at = time.time() + (self._window_seconds - (now - window_start))
 
-        if estimated_count >= self._rpm:
-            # Rate limit exceeded.
-            retry_after = int(self._window_seconds - (now - window_start)) + 1
-            logger.warning(
-                "rate_limit_exceeded",
-                client_key=client_key,
-                estimated_count=round(estimated_count, 1),
-                limit=self._rpm,
-            )
+            if estimated_count >= self._rpm:
+                # Rate limit exceeded.
+                retry_after = int(self._window_seconds - (now - window_start)) + 1
+                logger.warning(
+                    "rate_limit_exceeded",
+                    client_key=client_key,
+                    estimated_count=round(estimated_count, 1),
+                    limit=self._rpm,
+                )
+                self._maybe_cleanup(now)
+                return JSONResponse(
+                    status_code=429,
+                    content={"detail": "Too many requests. Please retry later."},
+                    headers={
+                        "Retry-After": str(retry_after),
+                        "X-RateLimit-Limit": str(self._rpm),
+                        "X-RateLimit-Remaining": "0",
+                        "X-RateLimit-Reset": str(int(reset_at)),
+                    },
+                )
+
+            # Accept the request and increment the counter.
+            counter.curr_count += 1
+            remaining = max(0, int(self._rpm - estimated_count - 1))
+
             self._maybe_cleanup(now)
-            return JSONResponse(
-                status_code=429,
-                content={"detail": "Too many requests. Please retry later."},
-                headers={
-                    "Retry-After": str(retry_after),
-                    "X-RateLimit-Limit": str(self._rpm),
-                    "X-RateLimit-Remaining": "0",
-                    "X-RateLimit-Reset": str(int(reset_at)),
-                },
-            )
-
-        # Accept the request and increment the counter.
-        counter.curr_count += 1
-        remaining = max(0, int(self._rpm - estimated_count - 1))
-
-        self._maybe_cleanup(now)
 
         response = await call_next(request)
         response.headers["X-RateLimit-Limit"] = str(self._rpm)

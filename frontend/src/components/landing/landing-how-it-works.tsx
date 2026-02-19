@@ -1,7 +1,6 @@
 'use client'
 
-import { useRef } from 'react'
-import { motion, useInView, useReducedMotion } from 'motion/react'
+import { motion, useReducedMotion } from 'motion/react'
 import { cn } from '@/lib/cn'
 
 interface LandingHowItWorksProps {
@@ -60,16 +59,14 @@ function StepCard({
   step: { title: string; description: string }
   index: number
 }) {
-  const ref = useRef<HTMLElement>(null)
-  const isInView = useInView(ref, { once: true, margin: '-40px' })
   const prefersReducedMotion = useReducedMotion()
   const noMotion = prefersReducedMotion ?? false
 
   return (
     <motion.article
-      ref={ref}
       initial={noMotion ? undefined : { opacity: 0, y: 24 }}
-      animate={noMotion ? undefined : isInView ? { opacity: 1, y: 0 } : undefined}
+      whileInView={noMotion ? undefined : { opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-40px' }}
       transition={noMotion ? undefined : { delay: index * 0.12, duration: 0.5 }}
       className={cn(
         'group relative overflow-hidden rounded-2xl p-6',
@@ -92,9 +89,9 @@ function StepCard({
           'bg-gradient-to-br shadow-lg',
           STEP_GRADIENTS[index]
         )}
-        animate={
-          noMotion ? undefined : isInView ? { scale: [0.8, 1.05, 1] } : undefined
-        }
+        initial={noMotion ? undefined : { scale: 0.8 }}
+        whileInView={noMotion ? undefined : { scale: [0.8, 1.05, 1] }}
+        viewport={{ once: true, margin: '-40px' }}
         transition={
           noMotion
             ? undefined
@@ -122,7 +119,7 @@ function StepCard({
 export function LandingHowItWorks({ title, steps }: LandingHowItWorksProps) {
   return (
     <section
-      className="py-20 px-6 bg-[var(--color-surface)]"
+      className="py-12 px-6 bg-[var(--color-surface)]"
       aria-labelledby="how-it-works-heading"
     >
       <div className="max-w-5xl mx-auto">

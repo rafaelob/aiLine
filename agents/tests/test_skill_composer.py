@@ -151,7 +151,7 @@ class TestComposeSkillsFragmentBasic:
     def test_single_skill(self) -> None:
         skill = _make_skill(name="alpha", reason="selected")
         result = compose_skills_fragment([skill], token_budget=5000)
-        assert "## Skills Runtime (Ativas)" in result
+        assert "## Skills Runtime (Active)" in result
         assert "**alpha**" in result
         assert "## Skill: alpha" in result
         assert "Follow these rules." in result

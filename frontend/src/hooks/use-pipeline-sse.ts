@@ -15,7 +15,20 @@ import { API_BASE, getAuthHeaders } from '@/lib/api'
 
 export function usePipelineSSE() {
   const abortRef = useRef<AbortController | null>(null)
-  const store = usePipelineStore()
+  const retryCountRef = useRef(0)
+  const generationIdRef = useRef(0)
+
+  // Granular selectors to avoid re-rendering on every SSE event
+  const runId = usePipelineStore((s) => s.runId)
+  const stages = usePipelineStore((s) => s.stages)
+  const events = usePipelineStore((s) => s.events)
+  const currentStage = usePipelineStore((s) => s.currentStage)
+  const plan = usePipelineStore((s) => s.plan)
+  const qualityReport = usePipelineStore((s) => s.qualityReport)
+  const score = usePipelineStore((s) => s.score)
+  const scorecard = usePipelineStore((s) => s.scorecard)
+  const isRunning = usePipelineStore((s) => s.isRunning)
+  const error = usePipelineStore((s) => s.error)
 
   // Abort SSE connection on unmount to prevent memory leaks
   useEffect(() => {
@@ -30,8 +43,10 @@ export function usePipelineSSE() {
       abortRef.current?.abort()
       const ctrl = new AbortController()
       abortRef.current = ctrl
+      retryCountRef.current = 0
+      const currentGenId = ++generationIdRef.current
 
-      store.reset()
+      usePipelineStore.getState().reset()
 
       try {
         await fetchEventSource(`${API_BASE}/plans/generate/stream`, {
@@ -46,10 +61,20 @@ export function usePipelineSSE() {
 
           onopen: async (response) => {
             if (!response.ok) {
+              // Don't retry on client errors
+              if (response.status >= 400 && response.status < 500) {
+                ctrl.abort()
+                usePipelineStore.getState().setError(
+                  `SSE connection failed: ${response.status} ${response.statusText}`
+                )
+                return
+              }
               throw new Error(
                 `SSE connection failed: ${response.status} ${response.statusText}`
               )
             }
+            // Reset retry count on successful connection
+            retryCountRef.current = 0
           },
 
           onmessage: (msg) => {
@@ -57,27 +82,28 @@ export function usePipelineSSE() {
 
             try {
               const event: PipelineEvent = JSON.parse(msg.data)
+              const s = usePipelineStore.getState()
 
               // Initialize run on first event
               if (event.type === 'run.started' && event.run_id) {
-                store.startRun(event.run_id)
+                s.startRun(event.run_id)
               }
 
-              store.addEvent(event)
+              s.addEvent(event)
 
               // Extract plan from run.completed payload
               if (event.type === 'run.completed' && event.payload?.plan) {
-                store.setPlan(event.payload.plan as StudyPlan)
+                s.setPlan(event.payload.plan as StudyPlan)
               }
 
               // Extract scorecard from run.completed payload
               if (event.type === 'run.completed' && event.payload?.scorecard) {
-                store.setScorecard(event.payload.scorecard as ScorecardData)
+                s.setScorecard(event.payload.scorecard as ScorecardData)
               }
 
               // Extract quality report
               if (event.type === 'quality.scored' && event.payload) {
-                store.setQualityReport(event.payload as unknown as QualityReport)
+                s.setQualityReport(event.payload as unknown as QualityReport)
               }
             } catch {
               // Skip malformed events silently
@@ -86,42 +112,50 @@ export function usePipelineSSE() {
 
           onerror: (err) => {
             if (ctrl.signal.aborted) return
-            store.setError(
-              err instanceof Error ? err.message : 'Connection lost'
-            )
-            throw err // Retry handled by fetchEventSource
+            // Stale generation guard — don't set error for old generations
+            if (currentGenId !== generationIdRef.current) return
+
+            retryCountRef.current++
+            if (retryCountRef.current > 3) {
+              usePipelineStore.getState().setError(
+                err instanceof Error ? err.message : 'Connection lost'
+              )
+              ctrl.abort()
+              return // Stop retrying (don't throw)
+            }
+            // Allow retry by not throwing
           },
 
           openWhenHidden: true, // Keep SSE alive when tab is hidden
         })
       } catch (err) {
         if (!ctrl.signal.aborted) {
-          store.setError(
+          usePipelineStore.getState().setError(
             err instanceof Error ? err.message : 'Failed to start generation'
           )
         }
       }
     },
-    [store]
+    []
   )
 
   const cancel = useCallback(() => {
     abortRef.current?.abort()
-    store.setError('Generation cancelled')
-  }, [store])
+    usePipelineStore.getState().setError('Generation cancelled')
+  }, [])
 
   return {
     startGeneration,
     cancel,
-    runId: store.runId,
-    stages: store.stages,
-    events: store.events,
-    currentStage: store.currentStage,
-    plan: store.plan,
-    qualityReport: store.qualityReport,
-    score: store.score,
-    scorecard: store.scorecard,
-    isRunning: store.isRunning,
-    error: store.error,
+    runId,
+    stages,
+    events,
+    currentStage,
+    plan,
+    qualityReport,
+    score,
+    scorecard,
+    isRunning,
+    error,
   }
 }

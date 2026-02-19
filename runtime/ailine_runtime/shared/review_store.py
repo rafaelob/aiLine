@@ -35,7 +35,8 @@ class ReviewStore:
             return review
 
     def get_review(self, plan_id: str) -> PlanReview | None:
-        return self._reviews.get(plan_id)
+        with self._lock:
+            return self._reviews.get(plan_id)
 
     def update_review(
         self, plan_id: str, status: ReviewStatus, notes: str = ""
@@ -52,15 +53,17 @@ class ReviewStore:
             return review
 
     def list_pending(self, teacher_id: str) -> list[PlanReview]:
-        return [
-            r
-            for r in self._reviews.values()
-            if r.teacher_id == teacher_id
-            and r.status in (ReviewStatus.PENDING_REVIEW, ReviewStatus.DRAFT)
-        ]
+        with self._lock:
+            return [
+                r
+                for r in self._reviews.values()
+                if r.teacher_id == teacher_id
+                and r.status in (ReviewStatus.PENDING_REVIEW, ReviewStatus.DRAFT)
+            ]
 
     def list_all(self, teacher_id: str) -> list[PlanReview]:
-        return [r for r in self._reviews.values() if r.teacher_id == teacher_id]
+        with self._lock:
+            return [r for r in self._reviews.values() if r.teacher_id == teacher_id]
 
     def add_flag(
         self, session_id: str, turn_index: int, teacher_id: str, reason: str
@@ -78,14 +81,18 @@ class ReviewStore:
             return flag
 
     def get_flags(self, session_id: str) -> list[TutorTurnFlag]:
-        return self._flags.get(session_id, [])
+        with self._lock:
+            return list(self._flags.get(session_id, []))
 
 
 _store: ReviewStore | None = None
+_store_lock = threading.Lock()
 
 
 def get_review_store() -> ReviewStore:
     global _store
     if _store is None:
-        _store = ReviewStore()
+        with _store_lock:
+            if _store is None:
+                _store = ReviewStore()
     return _store

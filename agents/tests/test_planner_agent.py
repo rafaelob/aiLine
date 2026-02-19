@@ -37,7 +37,7 @@ class TestBuildPlannerAgent:
     def test_model_name(self) -> None:
         agent = build_planner_agent()
         assert isinstance(agent.model, Model)
-        assert agent.model.model_name == "claude-sonnet-4-5"
+        assert agent.model.model_name == "claude-opus-4-6"
 
     def test_has_system_prompt(self) -> None:
         agent = build_planner_agent()

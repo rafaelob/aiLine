@@ -37,7 +37,7 @@ class GeminiEmbeddings:
         *,
         model: str = "gemini-embedding-001",
         api_key: str = "",
-        dimensions: int = 1536,
+        dimensions: int = 3072,
     ) -> None:
         from google import genai
 

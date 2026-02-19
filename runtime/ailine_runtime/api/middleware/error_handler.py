@@ -29,6 +29,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from ...app.authz import AuthorizationError
 from ...domain.exceptions import (
     DomainError,
     InvalidTenantIdError,
@@ -43,6 +44,7 @@ _log = structlog.get_logger("ailine.api.errors")
 _DOMAIN_STATUS_MAP: dict[type[DomainError], int] = {
     TenantNotFoundError: 401,
     UnauthorizedAccessError: 403,
+    AuthorizationError: 403,
     InvalidTenantIdError: 422,
 }
 
@@ -114,9 +116,12 @@ def install_error_handlers(app: FastAPI) -> None:
             path=request.url.path,
             detail=detail[:200],
         )
+        # Propagate custom headers (e.g. Retry-After on 429) from the exception.
+        headers = getattr(exc, "headers", None) or {}
         return JSONResponse(
             status_code=exc.status_code,
             content=problem,
+            headers=headers,
             media_type="application/problem+json",
         )
 

@@ -29,6 +29,13 @@ export function useConfetti() {
         gravity: 1.2,
         ticks: 150,
       })
+
+      // Mark confetti canvas as decorative for assistive technology
+      document.querySelectorAll('canvas').forEach((c) => {
+        if (c.style.zIndex === '9999') {
+          c.setAttribute('aria-hidden', 'true')
+        }
+      })
     },
     [reducedMotion]
   )

@@ -161,6 +161,8 @@ def _make_good_assessment() -> QualityAssessment:
         warnings=[],
         recommendations=["Considere adicionar mais exemplos praticos"],
         checklist={"objectives_clear": True, "timing_adequate": True},
+        rag_confidence="low",
+        rag_sources_cited=False,
     )
 
 
@@ -172,6 +174,8 @@ def _make_poor_assessment() -> QualityAssessment:
         warnings=["Tempo de aula muito curto"],
         recommendations=["Reescrever objetivos", "Adicionar adaptacoes"],
         checklist={"objectives_clear": False, "timing_adequate": False},
+        rag_confidence="low",
+        rag_sources_cited=False,
     )
 
 

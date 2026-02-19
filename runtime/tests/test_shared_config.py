@@ -44,7 +44,7 @@ class TestEmbeddingConfig:
             cfg = EmbeddingConfig()
             assert cfg.provider == "gemini"
             assert cfg.model == "gemini-embedding-001"
-            assert cfg.dimensions == 1536
+            assert cfg.dimensions == 3072
 
     def test_env_override(self):
         from ailine_runtime.shared.config import EmbeddingConfig
@@ -84,7 +84,7 @@ class TestSettings:
         assert settings.planner_model == "anthropic:claude-opus-4-6"
         assert settings.max_refinement_iters == 2
         assert settings.demo_mode is False
-        assert settings.default_locale == "pt-BR"
+        assert settings.default_locale == "en"
         assert settings.enable_exports is True
 
     def test_env_override(self):

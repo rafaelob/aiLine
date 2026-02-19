@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import { LandingPage } from './landing-page'
+import { LandingPage, type LandingPageProps } from './landing-page'
 
 vi.mock('./landing-nav', () => ({
   LandingNav: ({ locale, startDemo }: { locale: string; startDemo: string }) => (
@@ -53,59 +53,67 @@ vi.mock('./landing-footer', () => ({
   ),
 }))
 
-const defaultProps = {
+const defaultProps: LandingPageProps = {
   locale: 'en',
-  heroTitle: 'AiLine',
-  heroSubtitle: 'Hero Subtitle',
-  heroFullName: 'Adaptive Inclusive Learning',
   startDemo: 'Try the Demo',
-  badgeOpenSource: 'Open Source',
-  badgeBuiltWith: 'Built with Claude Code',
-  statsPersonas: 'Personas',
-  statsLanguages: 'Languages',
-  statsModels: 'Models',
-  statsStandards: 'Standards',
-  statsLabel: 'Stats',
-  featuresTitle: 'Features',
-  featurePipeline: 'Pipeline',
-  featurePipelineDesc: 'Pipeline desc',
-  featureAccessibility: 'Accessibility',
-  featureAccessibilityDesc: 'A11y desc',
-  featureTutor: 'Tutor',
-  featureTutorDesc: 'Tutor desc',
-  featureModels: 'Models Feature',
-  featureModelsDesc: 'Models desc',
-  featureSign: 'Sign Language',
-  featureSignDesc: 'Sign desc',
-  featureCurriculum: 'Curriculum',
-  featureCurriculumDesc: 'Curriculum desc',
-  builtWith: 'Built with Claude',
-  howItWorksTitle: 'How It Works',
-  howItWorksSteps: [
-    { title: 'Step 1', description: 'Desc 1' },
-    { title: 'Step 2', description: 'Desc 2' },
-    { title: 'Step 3', description: 'Desc 3' },
-    { title: 'Step 4', description: 'Desc 4' },
-  ],
-  demoTitle: 'Try the Demo',
-  demoSubtitle: 'Choose a profile',
-  demoEnterAs: 'Enter',
-  demoTeacherLabel: 'Teacher',
-  demoStudentLabel: 'Student',
-  demoParentLabel: 'Parent',
-  demoProfiles: {
-    teacher: { name: 'Sarah', detail: '5th Grade', description: 'Desc' },
-    students: {
-      alex: { name: 'Alex', condition: 'ASD', description: 'Desc' },
-      maya: { name: 'Maya', condition: 'ADHD', description: 'Desc' },
-      lucas: { name: 'Lucas', condition: 'Dyslexia', description: 'Desc' },
-      sofia: { name: 'Sofia', condition: 'Hearing', description: 'Desc' },
-    },
-    parent: { name: 'David', description: 'Desc' },
+  hero: {
+    title: 'AiLine',
+    subtitle: 'Hero Subtitle',
+    fullName: 'Adaptive Inclusive Learning',
+    badgeOpenSource: 'Open Source',
+    badgeBuiltWith: 'Built with Claude Code',
   },
-  footerOpenSource: 'Open Source — MIT',
-  footerCreatedWith: 'Created with Claude Code',
-  footerHackathon: 'Hackathon Feb 2026',
+  stats: {
+    personas: 'Personas',
+    languages: 'Languages',
+    models: 'Models',
+    standards: 'Standards',
+    label: 'Stats',
+  },
+  features: {
+    title: 'Features',
+    items: [
+      { title: 'Pipeline', desc: 'Pipeline desc', icon: 'pipeline' },
+      { title: 'Accessibility', desc: 'A11y desc', icon: 'a11y' },
+      { title: 'Tutor', desc: 'Tutor desc', icon: 'tutor' },
+      { title: 'Models Feature', desc: 'Models desc', icon: 'models' },
+      { title: 'Sign Language', desc: 'Sign desc', icon: 'sign' },
+      { title: 'Curriculum', desc: 'Curriculum desc', icon: 'curriculum' },
+    ],
+  },
+  howItWorks: {
+    title: 'How It Works',
+    steps: [
+      { title: 'Step 1', description: 'Desc 1' },
+      { title: 'Step 2', description: 'Desc 2' },
+      { title: 'Step 3', description: 'Desc 3' },
+      { title: 'Step 4', description: 'Desc 4' },
+    ],
+  },
+  demo: {
+    title: 'Try the Demo',
+    subtitle: 'Choose a profile',
+    enterAs: 'Enter',
+    teacherLabel: 'Teacher',
+    studentLabel: 'Student',
+    parentLabel: 'Parent',
+    profiles: {
+      teacher: { name: 'Sarah', detail: '5th Grade', description: 'Desc' },
+      students: {
+        alex: { name: 'Alex', condition: 'ASD', description: 'Desc' },
+        maya: { name: 'Maya', condition: 'ADHD', description: 'Desc' },
+        lucas: { name: 'Lucas', condition: 'Dyslexia', description: 'Desc' },
+        sofia: { name: 'Sofia', condition: 'Hearing', description: 'Desc' },
+      },
+      parent: { name: 'David', description: 'Desc' },
+    },
+  },
+  footer: {
+    builtWith: 'Built with Claude',
+    openSource: 'Open Source — MIT',
+    createdWith: 'Created with Claude Code',
+    hackathon: 'Hackathon Feb 2026',
+  },
 }
 
 describe('LandingPage', () => {

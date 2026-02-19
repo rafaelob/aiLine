@@ -41,7 +41,7 @@ def build_executor_prompt(
     """Build the executor agent prompt."""
     variants = [v.strip() for v in default_variants.split(",") if v.strip()]
     return (
-        f"Finalize este plano draft.\n\n"
+        f"Finalize this draft plan.\n\n"
         f"run_id: {run_id}\n"
         f"variants: {json.dumps(variants, ensure_ascii=False)}\n"
         f"class_profile: {json.dumps(class_profile, ensure_ascii=False) if class_profile else 'null'}\n"

@@ -27,7 +27,13 @@ def _reset():
 @pytest.fixture
 def app(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("AILINE_DEV_MODE", "true")
-    settings = Settings(env="development")
+    settings = Settings(
+        anthropic_api_key="",
+        openai_api_key="",
+        google_api_key="",
+        openrouter_api_key="",
+        env="development",
+    )
     return create_app(settings)
 
 
@@ -48,6 +54,16 @@ class TestObservabilityDashboard:
             resp = await client.get("/observability/dashboard")
             assert resp.status_code == 200
             data = resp.json()
+            # Flat fields for frontend ObservabilityDashboard interface
+            assert "provider" in data
+            assert "model" in data
+            assert "scores" in data
+            assert "error_rate" in data
+            assert "circuit_breaker_state" in data
+            assert "sse_event_counts" in data
+            assert "token_usage" in data
+            assert "latency_history" in data
+            # Extended nested fields (backward compat)
             assert "llm" in data
             assert "circuit_breaker" in data
             assert "http" in data

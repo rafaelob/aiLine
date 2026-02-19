@@ -2,11 +2,51 @@
 
 Returns a minimal valid WAV file without calling any external API.
 Used when no API keys are configured or in CI environments (ADR-051).
+
+Satisfies the ``TTS`` protocol from ``domain.ports.media``.
 """
 
 from __future__ import annotations
 
 import struct
+
+from ...domain.ports.media import VoiceInfo
+
+# Pre-built voice catalog for deterministic testing.
+_FAKE_VOICES = [
+    VoiceInfo(
+        id="fake-voice-en-female",
+        name="Aria (Fake)",
+        language="en",
+        gender="female",
+        preview_url="",
+        labels={"accent": "american", "use_case": "narration"},
+    ),
+    VoiceInfo(
+        id="fake-voice-en-male",
+        name="Marcus (Fake)",
+        language="en",
+        gender="male",
+        preview_url="",
+        labels={"accent": "british", "use_case": "narration"},
+    ),
+    VoiceInfo(
+        id="fake-voice-pt-female",
+        name="Clara (Fake)",
+        language="pt-BR",
+        gender="female",
+        preview_url="",
+        labels={"accent": "brazilian", "use_case": "narration"},
+    ),
+    VoiceInfo(
+        id="fake-voice-es-male",
+        name="Diego (Fake)",
+        language="es",
+        gender="male",
+        preview_url="",
+        labels={"accent": "castilian", "use_case": "narration"},
+    ),
+]
 
 
 def _create_silent_wav(*, duration_ms: int = 100, sample_rate: int = 16000) -> bytes:
@@ -60,3 +100,21 @@ class FakeTTS:
     ) -> bytes:
         """Return a minimal valid WAV file containing silence."""
         return _create_silent_wav(duration_ms=self._duration_ms)
+
+    async def list_voices(
+        self, *, language: str | None = None
+    ) -> list[VoiceInfo]:
+        """Return a static list of fake voices, optionally filtered by language."""
+        if language:
+            lang_lower = language.lower()
+            return [
+                v for v in _FAKE_VOICES if lang_lower in v.language.lower()
+            ]
+        return list(_FAKE_VOICES)
+
+    async def get_voice(self, voice_id: str) -> VoiceInfo | None:
+        """Return a fake voice by ID, or None if not found."""
+        for v in _FAKE_VOICES:
+            if v.id == voice_id:
+                return v
+        return None

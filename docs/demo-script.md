@@ -107,10 +107,10 @@
 
 **Actions:**
 1. Show the **health endpoint** (`/health/ready`) returning `{"status": "ready"}` with DB + Redis checks
-2. Flash the test count: **3,087 tests** (2,125 backend + 962 frontend), all green
+2. Flash the test count: **3,300+ tests** (1,943 backend + 287 agents + 1,096 frontend), all green
 3. Show the **circuit breaker** concept: "If Anthropic goes down, the SmartRouter escalates to OpenAI or Gemini. If all providers fail, the circuit breaker opens and returns a graceful degradation message."
 4. Show **SSE replay**: "If the user's connection drops mid-pipeline, events are stored in Redis. On reconnect, missed events are replayed -- no lost work."
-5. Flash key stats: 60 ADRs, 145 features, hexagonal architecture, tenant isolation
+5. Flash key stats: 60 ADRs, 190+ features, hexagonal architecture, tenant isolation
 
 **Key talking point:** "Every architectural decision is documented. Circuit breaker, retry with backoff, SSE replay, tenant isolation at the DB level. This is production-grade engineering."
 
@@ -123,7 +123,7 @@
 **Narration:**
 > "AiLine: Adaptive Inclusive Learning -- Individual Needs in Education. One AI-powered platform that transforms how educators serve every learner, regardless of ability, language, or learning style."
 
-> "145 features. 3,087 tests. 60 architecture decisions. 4 AI agents. 3 LLM providers. 9 accessibility themes. 4 curriculum standards. Built in one week."
+> "190+ features. 3,300+ tests. 60 architecture decisions. 5 AI agents. 3 LLM providers. 9 accessibility themes. 4 curriculum standards. 17 agent skills. Built in one week."
 
 > "Because every student deserves a lesson designed for them."
 

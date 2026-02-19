@@ -19,6 +19,7 @@ interface NavItem {
  */
 export function Sidebar() {
   const t = useTranslations('nav')
+  const tApp = useTranslations('app')
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
 
@@ -46,8 +47,7 @@ export function Sidebar() {
   }
 
   return (
-    <motion.aside
-      role="navigation"
+    <motion.nav
       aria-label={t('main_nav_label')}
       initial={false}
       animate={{ width: collapsed ? 76 : 264 }}
@@ -81,7 +81,7 @@ export function Sidebar() {
                 AiLine
               </span>
               <span className="text-[10px] text-[var(--color-muted)] -mt-0.5 whitespace-nowrap">
-                Adaptive Inclusive Learning
+                {tApp('tagline')}
               </span>
             </motion.div>
           )}
@@ -89,9 +89,9 @@ export function Sidebar() {
       </div>
 
       {/* Navigation items */}
-      <nav className="flex-1 py-2 overflow-y-auto">
+      <div className="flex-1 py-2 overflow-y-auto">
         <LayoutGroup>
-          <ul role="list" className="space-y-1 px-3">
+          <ul className="space-y-1 px-3">
             {navItems.map((item) => {
               const active = isActive(item.href)
               return (
@@ -100,6 +100,7 @@ export function Sidebar() {
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic locale-prefixed paths
                     href={`${localePrefix}${item.href}` as any}
                     aria-current={active ? 'page' : undefined}
+                    aria-describedby={collapsed ? `desc-${item.key}` : undefined}
                     className={cn(
                       'group/item relative flex items-center gap-3 px-3 py-2.5 rounded-xl overflow-hidden',
                       'transition-all duration-200',
@@ -145,20 +146,27 @@ export function Sidebar() {
                         </motion.span>
                       )}
                     </AnimatePresence>
-                    {/* Tooltip when collapsed */}
+                    {/* Accessible description for collapsed state */}
                     {collapsed && (
-                      <span
-                        role="tooltip"
-                        className={cn(
-                          'absolute left-full ml-2 px-2 py-1 rounded-md',
-                          'bg-[var(--color-surface-elevated)] text-xs font-medium',
-                          'shadow-[var(--shadow-md)] border border-[var(--color-border)]',
-                          'opacity-0 group-hover/item:opacity-100 transition-opacity',
-                          'pointer-events-none whitespace-nowrap z-50'
-                        )}
-                      >
-                        {t(item.key)}
-                      </span>
+                      <>
+                        <span id={`desc-${item.key}`} className="sr-only">
+                          {t(item.key)}
+                        </span>
+                        {/* Visual tooltip — decorative, hidden from AT */}
+                        <span
+                          role="tooltip"
+                          aria-hidden="true"
+                          className={cn(
+                            'absolute left-full ml-2 px-2 py-1 rounded-md',
+                            'bg-[var(--color-surface-elevated)] text-xs font-medium',
+                            'shadow-[var(--shadow-md)] border border-[var(--color-border)]',
+                            'opacity-0 group-hover/item:opacity-100 group-focus-within/item:opacity-100 transition-opacity',
+                            'pointer-events-none whitespace-nowrap z-50'
+                          )}
+                        >
+                          {t(item.key)}
+                        </span>
+                      </>
                     )}
                   </Link>
                 </li>
@@ -166,7 +174,7 @@ export function Sidebar() {
             })}
           </ul>
         </LayoutGroup>
-      </nav>
+      </div>
 
       {/* Subtle divider */}
       <div className="h-px mx-4 my-2 bg-gradient-to-r from-transparent via-[var(--color-border)] to-transparent" aria-hidden="true" />
@@ -189,8 +197,8 @@ export function Sidebar() {
                 style={{ background: 'linear-gradient(135deg, #CC785C, #D4A574)' }}
                 aria-hidden="true"
               />
-              <span className="text-[9px] text-[var(--color-muted)]/70 leading-tight">
-                Powered by<br />Claude Opus 4.6
+              <span className="text-[9px] text-[var(--color-muted)] leading-tight">
+                {t('powered_by')}
               </span>
             </motion.div>
           )}
@@ -229,7 +237,7 @@ export function Sidebar() {
           </motion.svg>
         </button>
       </div>
-    </motion.aside>
+    </motion.nav>
   )
 }
 
@@ -237,7 +245,7 @@ export function Sidebar() {
 
 function DashboardIcon() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <rect x="3" y="3" width="7" height="9" rx="1" />
       <rect x="14" y="3" width="7" height="5" rx="1" />
       <rect x="14" y="12" width="7" height="9" rx="1" />
@@ -248,7 +256,7 @@ function DashboardIcon() {
 
 function PlansIcon() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
       <polyline points="14 2 14 8 20 8" />
       <line x1="16" y1="13" x2="8" y2="13" />
@@ -260,7 +268,7 @@ function PlansIcon() {
 
 function MaterialsIcon() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
       <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
     </svg>
@@ -269,7 +277,7 @@ function MaterialsIcon() {
 
 function TutorsIcon() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
       <circle cx="9" cy="7" r="4" />
       <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
@@ -280,7 +288,7 @@ function TutorsIcon() {
 
 function SignLanguageIcon() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M18 11V6a2 2 0 0 0-4 0v1" />
       <path d="M14 10V4a2 2 0 0 0-4 0v2" />
       <path d="M10 10.5V6a2 2 0 0 0-4 0v8" />
@@ -291,7 +299,7 @@ function SignLanguageIcon() {
 
 function ProgressIcon() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <line x1="18" y1="20" x2="18" y2="10" />
       <line x1="12" y1="20" x2="12" y2="4" />
       <line x1="6" y1="20" x2="6" y2="14" />
@@ -301,7 +309,7 @@ function ProgressIcon() {
 
 function GuideIcon() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <circle cx="12" cy="12" r="10" />
       <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
       <line x1="12" y1="17" x2="12.01" y2="17" />
@@ -311,7 +319,7 @@ function GuideIcon() {
 
 function ObservabilityIcon() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
     </svg>
   )
@@ -319,7 +327,7 @@ function ObservabilityIcon() {
 
 function SettingsIcon() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <circle cx="12" cy="12" r="3" />
       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
     </svg>

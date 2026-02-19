@@ -42,6 +42,7 @@ def settings() -> Settings:
         anthropic_api_key="fake-key-for-tests",
         openai_api_key="",
         google_api_key="",
+        openrouter_api_key="",
         db=DatabaseConfig(url="sqlite+aiosqlite:///:memory:"),
         llm=LLMConfig(provider="fake", api_key="fake"),
         embedding=EmbeddingConfig(provider="gemini", api_key=""),
@@ -53,6 +54,7 @@ def settings() -> Settings:
 def app_low_limit(settings: Settings, monkeypatch: pytest.MonkeyPatch):
     """Create app with a very low rate limit (5 RPM) for testing."""
     monkeypatch.setenv("AILINE_RATE_LIMIT_RPM", "5")
+    monkeypatch.setenv("AILINE_DEV_MODE", "true")
     return create_app(settings=settings)
 
 
@@ -181,14 +183,15 @@ async def test_health_ready_excluded_from_rate_limiting(
 # ---------------------------------------------------------------------------
 
 
-async def test_metrics_excluded_from_rate_limiting(
+async def test_metrics_is_rate_limited(
     client_low_limit: AsyncClient,
 ) -> None:
-    """/metrics endpoint should never be rate-limited."""
-    for _ in range(20):
-        resp = await client_low_limit.get("/metrics")
-        assert resp.status_code == 200
-        assert "X-RateLimit-Limit" not in resp.headers
+    """/metrics endpoint should be subject to rate limiting (security)."""
+    resp = await client_low_limit.get(
+        "/metrics", headers={"X-Teacher-ID": "teacher-001"}
+    )
+    assert resp.status_code == 200
+    assert "X-RateLimit-Limit" in resp.headers
 
 
 # ---------------------------------------------------------------------------
