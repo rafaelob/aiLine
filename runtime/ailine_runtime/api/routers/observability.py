@@ -118,17 +118,22 @@ async def observability_dashboard(
     # Provider status
     provider_info = obs_store.get_provider_status()
 
+    # Compute average quality score from completed traces with a valid final_score
+    completed_quality_scores = [
+        t.final_score
+        for t in recent_traces
+        if t.status == "completed" and t.final_score is not None
+    ]
+    quality_avg_value = (
+        (sum(completed_quality_scores) / max(len(completed_quality_scores), 1)) * 100
+    )
+
     return {
         # Flat fields expected by the frontend ObservabilityDashboard interface
         "provider": provider_info.get("name", "unknown"),
         "model": provider_info.get("model", "unknown"),
         "scores": {
-            "quality_avg": round(
-                sum(1 for t in recent_traces if t.status == "completed")
-                / max(len(recent_traces), 1)
-                * 100,
-                1,
-            ),
+            "quality_avg": round(quality_avg_value, 1),
             "latency_p50_ms": round(latency_percentiles.get("p50", 0) * 1000, 1),
             "latency_p95_ms": round(latency_percentiles.get("p95", 0) * 1000, 1),
         },
