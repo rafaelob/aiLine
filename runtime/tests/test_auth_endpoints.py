@@ -78,14 +78,16 @@ async def client_no_dev(app_no_dev) -> AsyncGenerator[AsyncClient, None]:
 
 
 def _reset_auth_store() -> None:
-    """Clear the in-memory user store and rate limiter between tests."""
-    from ailine_runtime.adapters.db.user_repository import InMemoryUserRepository
-    from ailine_runtime.api.routers.auth import _login_attempts, _user_repo
+    """Reset the user repository to a fresh InMemory instance and clear rate limiter.
 
-    if isinstance(_user_repo, InMemoryUserRepository):
-        _user_repo._by_email.clear()
-        _user_repo._by_id.clear()
-    _login_attempts.clear()
+    After F-230 wiring, create_app() may replace the module-level _user_repo
+    with a SessionFactoryUserRepository. Tests need a clean InMemory repo.
+    """
+    from ailine_runtime.adapters.db.user_repository import InMemoryUserRepository
+    from ailine_runtime.api.routers import auth as auth_mod
+
+    auth_mod._user_repo = InMemoryUserRepository()
+    auth_mod._login_attempts.clear()
 
 
 # ---------------------------------------------------------------------------

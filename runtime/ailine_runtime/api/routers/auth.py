@@ -30,6 +30,21 @@ logger = structlog.get_logger("ailine.api.auth")
 router = APIRouter()
 
 
+# -- DI wiring helpers -------------------------------------------------------
+
+
+def set_user_repo(repo: UserRepository) -> None:
+    """Inject a user repository (called from app.py at startup)."""
+    global _user_repo
+    _user_repo = repo
+    logger.info("auth.user_repo_set", backend=type(repo).__name__)
+
+
+def is_user_repo_set() -> bool:
+    """True if a non-default repo was already injected (e.g., by test fixtures)."""
+    return not isinstance(_user_repo, InMemoryUserRepository)
+
+
 # -- Request/Response schemas ------------------------------------------------
 
 # Lightweight email format check (RFC 5321 simplified).
@@ -114,10 +129,9 @@ class TokenResponse(BaseModel):
     user: UserResponse
 
 
-# -- User store (InMemoryUserRepository pre-MVP; PostgresUserRepository post-MVP)
+# -- User store (InMemoryUserRepository default; replaced via set_user_repo)
 
 _user_repo: UserRepository = InMemoryUserRepository()
-_users_lock = asyncio.Lock()
 
 # Dedicated login rate limiter: per-IP, 5 attempts per minute.
 _login_attempts: dict[str, list[float]] = {}
@@ -276,52 +290,44 @@ async def login(body: LoginRequest, request: Request) -> TokenResponse:
     # Validate role — non-admin users cannot self-assign admin roles
     validated_role = _validate_role(body.role)
 
-    async with _users_lock:
-        user = await _user_repo.get_by_email(body.email)
+    user = await _user_repo.get_by_email(body.email)
 
-        if user is None:
+    if user is None:
+        dev_mode = os.getenv("AILINE_DEV_MODE", "").lower() in ("true", "1", "yes")
+        if not dev_mode:
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+
+        user = UserRow(
+            email=body.email,
+            display_name=body.email.split("@")[0].replace(".", " ").title(),
+            role=validated_role,
+            locale="en",
+            avatar_url="",
+            accessibility_profile="",
+            is_active=True,
+            hashed_password=_hash_password(body.password),
+        )
+        await _user_repo.create(user)
+        logger.info("auth.auto_created_user", user_id=user.id, role=validated_role)
+    else:
+        # Verify password: if user has a hashed password, require correct password
+        stored_hash = user.hashed_password or ""
+        if stored_hash:
+            if not _verify_password(body.password, stored_hash):
+                raise HTTPException(status_code=401, detail="Invalid credentials")
+        else:
+            # User has no password (demo user) — only allow in dev mode.
+            # In non-dev mode, passwordless accounts are NEVER accessible
+            # (prevents auth bypass when demo users are seeded but dev mode is off).
             dev_mode = os.getenv("AILINE_DEV_MODE", "").lower() in ("true", "1", "yes")
             if not dev_mode:
                 raise HTTPException(status_code=401, detail="Invalid credentials")
 
-            user = UserRow(
-                email=body.email,
-                display_name=body.email.split("@")[0].replace(".", " ").title(),
-                role=validated_role,
-                locale="en",
-                avatar_url="",
-                accessibility_profile="",
-                is_active=True,
-                hashed_password=_hash_password(body.password),
-            )
-            await _user_repo.create(user)
-            logger.info("auth.auto_created_user", user_id=user.id, role=validated_role)
-        else:
-            # Verify password: if user has a hashed password, require correct password
-            stored_hash = user.hashed_password or ""
-            if stored_hash:
-                if not _verify_password(body.password, stored_hash):
-                    raise HTTPException(status_code=401, detail="Invalid credentials")
-            else:
-                # User has no password (demo user) — only allow in dev mode.
-                # In non-dev mode, passwordless accounts are NEVER accessible
-                # (prevents auth bypass when demo users are seeded but dev mode is off).
-                dev_mode = os.getenv("AILINE_DEV_MODE", "").lower() in ("true", "1", "yes")
-                if not dev_mode:
-                    raise HTTPException(status_code=401, detail="Invalid credentials")
-
-        # Snapshot immutable fields WHILE under the lock to prevent race
-        # conditions with concurrent modifications to the user row.
-        snapshot_id = user.id
-        snapshot_role = user.role
-        snapshot_org = user.org_id
-        snapshot_response = _user_response(user)
-
-    token = _create_jwt(snapshot_id, snapshot_role, snapshot_org)
+    token = _create_jwt(user.id, user.role, user.org_id)
 
     return TokenResponse(
         access_token=token,
-        user=snapshot_response,
+        user=_user_response(user),
     )
 
 
@@ -331,33 +337,29 @@ async def register(body: RegisterRequest) -> TokenResponse:
     # Validate role — non-admin users cannot self-register as admin
     validated_role = _validate_role(body.role)
 
-    async with _users_lock:
-        existing = await _user_repo.get_by_email(body.email)
-        if existing is not None:
-            raise HTTPException(status_code=409, detail="Email already registered")
+    existing = await _user_repo.get_by_email(body.email)
+    if existing is not None:
+        raise HTTPException(status_code=409, detail="Email already registered")
 
-        user = UserRow(
-            email=body.email,
-            display_name=body.display_name,
-            role=validated_role,
-            org_id=body.org_id,
-            locale=body.locale,
-            avatar_url="",
-            accessibility_profile="",
-            is_active=True,
-            hashed_password=_hash_password(body.password),
-        )
-        await _user_repo.create(user)
-        logger.info("auth.registered", user_id=user.id, role=validated_role)
-
-        # Snapshot under lock
-        snapshot_response = _user_response(user)
+    user = UserRow(
+        email=body.email,
+        display_name=body.display_name,
+        role=validated_role,
+        org_id=body.org_id,
+        locale=body.locale,
+        avatar_url="",
+        accessibility_profile="",
+        is_active=True,
+        hashed_password=_hash_password(body.password),
+    )
+    await _user_repo.create(user)
+    logger.info("auth.registered", user_id=user.id, role=validated_role)
 
     token = _create_jwt(user.id, validated_role, body.org_id)
 
     return TokenResponse(
         access_token=token,
-        user=snapshot_response,
+        user=_user_response(user),
     )
 
 
@@ -370,10 +372,9 @@ async def get_me(
     org_id = get_current_org_id()
 
     # Find user in store by ID
-    async with _users_lock:
-        user = await _user_repo.get_by_id(teacher_id)
-        if user is not None:
-            return _user_response(user)
+    user = await _user_repo.get_by_id(teacher_id)
+    if user is not None:
+        return _user_response(user)
 
     # User not in store (could be from JWT/demo), return basic profile
     return UserResponse(
@@ -465,35 +466,29 @@ async def demo_login(body: DemoLoginRequest) -> TokenResponse:
     role = profile.get("role", "teacher")
     org_id = profile.get("org_id")
 
-    async with _users_lock:
-        user = await _user_repo.get_by_email(email)
-        if user is None:
-            # Auto-create if not yet seeded
-            user = UserRow(
-                id=profile["id"],
-                email=email,
-                display_name=profile["name"],
-                role=role,
-                locale="en",
-                avatar_url="",
-                accessibility_profile=profile.get("accessibility", ""),
-                is_active=True,
-                hashed_password=_hash_password("demo123"),
-            )
-            await _user_repo.create(user)
-            logger.info("auth.demo_login_created_user", demo_key=canonical_key)
+    user = await _user_repo.get_by_email(email)
+    if user is None:
+        # Auto-create if not yet seeded
+        user = UserRow(
+            id=profile["id"],
+            email=email,
+            display_name=profile["name"],
+            role=role,
+            locale="en",
+            avatar_url="",
+            accessibility_profile=profile.get("accessibility", ""),
+            is_active=True,
+            hashed_password=_hash_password("demo123"),
+        )
+        await _user_repo.create(user)
+        logger.info("auth.demo_login_created_user", demo_key=canonical_key)
 
-        snapshot_id = user.id
-        snapshot_role = user.role
-        snapshot_org = user.org_id
-        snapshot_response = _user_response(user)
-
-    token = _create_jwt(snapshot_id, snapshot_role, snapshot_org)
-    logger.info("auth.demo_login", demo_key=canonical_key, user_id=snapshot_id)
+    token = _create_jwt(user.id, user.role, user.org_id)
+    logger.info("auth.demo_login", demo_key=canonical_key, user_id=user.id)
 
     return TokenResponse(
         access_token=token,
-        user=snapshot_response,
+        user=_user_response(user),
     )
 
 
@@ -501,16 +496,15 @@ async def demo_login(body: DemoLoginRequest) -> TokenResponse:
 
 
 def seed_demo_users() -> None:
-    """Pre-seed the in-memory user store with demo profiles.
+    """Pre-seed the user store with demo profiles (InMemory path).
 
-    Called synchronously at startup before any requests are served,
-    so direct dict access is safe (no concurrent async tasks yet).
-    Uses InMemoryUserRepository.seed_sync() for synchronous insertion.
+    Called synchronously at startup before any requests are served.
+    Only works with InMemoryUserRepository. For PostgresUserRepository,
+    use ``seed_demo_users_async()`` instead (called from a lifespan hook).
     """
     from ...adapters.db.user_repository import InMemoryUserRepository
     from .demo import DEMO_PROFILES
 
-    # Only InMemoryUserRepository supports synchronous seeding
     if not isinstance(_user_repo, InMemoryUserRepository):
         logger.info("auth.seed_demo_users_skipped", reason="not in-memory repo")
         return
@@ -531,3 +525,33 @@ def seed_demo_users() -> None:
                 hashed_password=demo_pw_hash,
             )
             _user_repo.seed_sync(row)
+
+
+async def seed_demo_users_async() -> None:
+    """Pre-seed demo users via async repository (Postgres path).
+
+    Safe for concurrent calls — uses get_by_email + create with the
+    DB UNIQUE constraint on email as the ultimate guard.
+    """
+    from .demo import DEMO_PROFILES
+
+    demo_pw_hash = _hash_password("demo123")
+    seeded = 0
+    for key, profile in DEMO_PROFILES.items():
+        email = f"{key}@ailine-demo.edu"
+        existing = await _user_repo.get_by_email(email)
+        if existing is None:
+            row = UserRow(
+                id=profile["id"],
+                email=email,
+                display_name=profile["name"],
+                role=profile.get("role", "teacher"),
+                locale="en",
+                avatar_url="",
+                accessibility_profile=profile.get("accessibility", ""),
+                is_active=True,
+                hashed_password=demo_pw_hash,
+            )
+            await _user_repo.create(row)
+            seeded += 1
+    logger.info("auth.seed_demo_users_async", seeded=seeded)

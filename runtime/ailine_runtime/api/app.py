@@ -93,6 +93,21 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         """Manage application lifecycle: graceful startup and shutdown."""
         _log.info("app.startup", version="0.1.0")
+
+        # Async seeding for Postgres-backed user repo (F-230)
+        if settings.demo_mode:
+            from .routers.auth import is_user_repo_set, seed_demo_users_async
+
+            if is_user_repo_set():
+                try:
+                    await seed_demo_users_async()
+                except Exception as exc:
+                    _log.warning(
+                        "seed_demo_users_async_failed",
+                        error=str(exc),
+                        hint="Run alembic upgrade head to create the users table",
+                    )
+
         yield
         _log.info("app.shutdown_started")
         await container.close()
@@ -504,6 +519,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # Reuse the session factory from the vectorstore engine (same PG instance).
     _wire_skill_repo(container, skills_v1)
 
+    # Wire UserRepository for auth router (F-230).
+    _wire_user_repo(container, auth, db_url=settings.db.url if settings.db else "")
+
     # Pre-seed auth store with demo profiles when demo mode is active
     if settings.demo_mode:
         from .routers.auth import seed_demo_users
@@ -600,3 +618,36 @@ def _wire_skill_repo(container: Container, skills_v1_module: Any) -> None:
         _log.info("skill_repo.wired", backend="fake_in_memory")
 
     skills_v1_module.set_skill_repo(repo)
+
+
+def _wire_user_repo(
+    container: Container, auth_module: Any, *, db_url: str = ""
+) -> None:
+    """Inject a UserRepository into the auth router (F-230).
+
+    Only wires a PostgreSQL-backed repository when the database URL is
+    actually PostgreSQL. For SQLite/test environments, keeps the default
+    ``InMemoryUserRepository`` to avoid migration-dependent table lookups.
+
+    Skips wiring if a repo has already been injected (e.g., by test fixtures).
+    """
+    if auth_module.is_user_repo_set():
+        _log.info("user_repo.wired", backend="pre_existing")
+        return
+
+    # Only use Postgres repo when the DB is actually PostgreSQL
+    if "postgresql" not in db_url:
+        _log.info("user_repo.wired", backend="in_memory_default")
+        return
+
+    vs = container.vectorstore
+    session_factory = getattr(vs, "_session_factory", None) if vs else None
+
+    if session_factory is not None:
+        from ..adapters.db.user_repository import SessionFactoryUserRepository
+
+        repo = SessionFactoryUserRepository(session_factory)
+        auth_module.set_user_repo(repo)
+        _log.info("user_repo.wired", backend="postgres")
+    else:
+        _log.info("user_repo.wired", backend="in_memory_default")

@@ -68,7 +68,7 @@ Based on GPT-5.2 backend architecture review + frontend UX review.
 ### Phase 4 — Cleanup & Polish
 - [ ] F-240: Config Deduplication — deprecate AiLineConfig in favor of Settings
 - [ ] F-241: Cache Skill Registry in Diagnostics
-- [ ] F-242: Demo Storyboard — guided demo panels for hackathon presentation
+- [x] F-242: Demo Storyboard — 2 tracks (Teacher/Accessibility), 5 steps each, full i18n (4e0de99)
 
 ---
 
