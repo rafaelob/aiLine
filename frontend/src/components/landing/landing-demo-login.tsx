@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl'
 import { motion, useReducedMotion } from 'motion/react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/cn'
-import { setDemoProfile } from '@/lib/api'
+import { demoLogin, setDemoProfile } from '@/lib/api'
 import { useAccessibilityStore } from '@/stores/accessibility-store'
 import { cssTheme } from '@/hooks/use-theme'
 
@@ -131,8 +131,8 @@ function ProfileCard({
     router.prefetch(`/${locale}${profile.route}`)
   }, [locale, profile.route, router])
 
-  const handleEnter = useCallback(() => {
-    // Use shared setDemoProfile() to persist profile, dispatch change event, and clear stale JWT
+  const handleEnter = useCallback(async () => {
+    // Set demo profile first as fallback (X-Teacher-ID header in dev mode)
     if (typeof window !== 'undefined') {
       setDemoProfile(profile.key)
     }
@@ -146,6 +146,9 @@ function ProfileCard({
         document.documentElement.setAttribute('data-theme', css)
       }
     }
+
+    // Try proper JWT auth via demo-login endpoint (non-blocking fallback)
+    await demoLogin(profile.key)
 
     router.push(`/${locale}${profile.route}`)
   }, [profile, locale, router, setTheme])

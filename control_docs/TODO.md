@@ -35,30 +35,40 @@ All 26 sprints COMPLETED. 224 features (F-001 through F-224). ~3,600+ tests (2,3
 
 ---
 
-## Sprint 27 — "Production-Grade Polish" (Planned)
+## Sprint 27 — "Production-Grade Polish" (In Progress)
 
 Based on GPT-5.2 backend architecture review + frontend UX review.
 
+### Critical Fixes (done — from Mega Review v3)
+- [x] F-243: Demo profile key mismatch — VALID_DEMO_PROFILES includes both short (login) and long (landing) keys
+- [x] F-244: EvidencePanel aria-labelledby — missing id on toggle button
+- [x] F-245: PreferencesPanel focus restore — stale closure fix
+- [x] F-246: JWT iss/aud claims — mint when env vars configured
+- [x] F-247: /auth/demo-login endpoint — proper JWT flow with short/long key aliases, 7 tests
+- [x] F-248: Demo users seeded with hashed password (demo123), email login works
+- [x] F-249: Login rate limit raised to 20/min for demo-friendly Docker testing
+- [x] F-250: Docker frontend memory 512M → 2G, NODE_OPTIONS=--max-old-space-size=1536
+
 ### Phase 1 — Backend Hardening (HIGH IMPACT)
-- [ ] F-230: PostgresUserRepository — persistent auth across restarts (replace InMemoryUserRepository, wire via Container DI)
-- [ ] F-231: JWT Hardening — RS256 issuance matching middleware config, jti claim + Redis blacklist for logout/revoke, shorter access TTL (15-60 min)
-- [ ] F-232: Health Diagnostics Split — public /health/diagnostics (version, uptime, deps ok/degraded), private /health/diagnostics/internal (full payload, auth required)
+- [ ] F-230: PostgresUserRepository — persistent auth across restarts
+- [ ] F-231: JWT Hardening — RS256, jti + Redis blacklist, shorter access TTL
+- [ ] F-232: Health Diagnostics Split — public /health/diagnostics, private /internal
 
 ### Phase 2 — Frontend Premium Polish (HIGH VISUAL IMPACT)
-- [ ] F-233: Before/After Accessibility Compare Slider — draggable split-pane comparing standard vs persona themes with same content
-- [ ] F-234: Pipeline Edge Animations — SVG stroke-dashoffset during running nodes, node glow states (idle/running/succeeded/failed/skipped)
-- [ ] F-235: Motor Accessibility Mode — increased hit targets (pill-shaped clickable areas), sticky toolbar with big primary actions, visual tap zones
-- [ ] F-236: Micro-interactions — button press scale(0.98) + shadow shift, SSE event slide-in animation, theme-aware skeleton shimmer (disabled in high_contrast/screen_reader)
+- [x] F-233: Before/After Accessibility Compare Slider (d30daed)
+- [x] F-234: Pipeline Edge Animations — SVG stroke-dashoffset + node glow states
+- [ ] F-235: Motor Accessibility Mode — increased hit targets, sticky toolbar
+- [x] F-236: Micro-interactions — btn-press scale(0.97), slide-in animation, dash-flow keyframe
 
 ### Phase 3 — API & Observability
-- [ ] F-237: Run Resource Model — POST /plans:run → {run_id}, GET /runs/{id} (status + artifacts), GET /runs/{id}/events (SSE replay). Unifies plan/tutor patterns
-- [ ] F-238: RFC 7807 Error Model — consistent {type, title, detail, instance, request_id} on all errors, OpenAPI reusable error components
-- [ ] F-239: TenantContext Explicit Dependencies — Depends(get_actor) returning ActorContext {user_id, role, org_id}, repos accept ActorContext explicitly
+- [ ] F-237: Run Resource Model — POST /plans:run, GET /runs/{id}, GET /runs/{id}/events
+- [ ] F-238: RFC 7807 Error Model — consistent error responses
+- [ ] F-239: TenantContext Explicit Dependencies — Depends(get_actor) returning ActorContext
 
 ### Phase 4 — Cleanup & Polish
-- [ ] F-240: Config Deduplication — deprecate AiLineConfig dataclass in favor of Settings pydantic model
-- [ ] F-241: Cache Skill Registry in Diagnostics — compute at startup or cache N seconds instead of scanning on every /health/diagnostics call
-- [ ] F-242: Demo Storyboard — guided "Teacher story" + "Accessibility showcase" demo panels for 5-minute hackathon presentation
+- [ ] F-240: Config Deduplication — deprecate AiLineConfig in favor of Settings
+- [ ] F-241: Cache Skill Registry in Diagnostics
+- [ ] F-242: Demo Storyboard — guided demo panels for hackathon presentation
 
 ---
 

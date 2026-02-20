@@ -681,18 +681,18 @@ class TestLoginRateLimit:
         _reset_auth_store()
         _login_attempts.clear()
 
-    async def test_login_rate_limit_blocks_after_5_attempts(
+    async def test_login_rate_limit_blocks_after_max_attempts(
         self, client_dev: AsyncClient
     ) -> None:
-        """After 5 login attempts, the 6th should be rate limited."""
-        for i in range(5):
+        """After 20 login attempts, the 21st should be rate limited."""
+        for i in range(20):
             resp = await client_dev.post(
                 "/auth/login",
                 json={"email": f"rate-test-{i}@test.com", "role": "teacher"},
             )
             assert resp.status_code == 200
 
-        # 6th attempt should be rate limited
+        # 21st attempt should be rate limited
         resp = await client_dev.post(
             "/auth/login",
             json={"email": "rate-test-blocked@test.com", "role": "teacher"},
@@ -704,7 +704,7 @@ class TestLoginRateLimit:
         self, client_dev: AsyncClient
     ) -> None:
         """Rate limit response should include Retry-After header."""
-        for i in range(5):
+        for i in range(20):
             await client_dev.post(
                 "/auth/login",
                 json={"email": f"retry-test-{i}@test.com"},
@@ -749,3 +749,114 @@ class TestJwtSecretLength:
         # Import the secret string used in _create_jwt fallback
         secret = "dev-secret-not-for-production-use-32bytes!"
         assert len(secret.encode()) >= 32
+
+
+# ---------------------------------------------------------------------------
+# POST /auth/demo-login
+# ---------------------------------------------------------------------------
+
+
+class TestDemoLogin:
+    """Tests for POST /auth/demo-login."""
+
+    @pytest.fixture(autouse=True)
+    def _clean(self) -> None:
+        _reset_auth_store()
+        yield
+        _reset_auth_store()
+
+    async def test_demo_login_long_key(self, client_dev: AsyncClient) -> None:
+        """Demo login with a canonical long key returns JWT and user."""
+        resp = await client_dev.post(
+            "/auth/demo-login",
+            json={"demo_key": "teacher-ms-johnson"},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "access_token" in data
+        assert data["user"]["display_name"] == "Ms. Sarah Johnson"
+        assert data["user"]["role"] == "teacher"
+        assert data["user"]["id"] == "demo-teacher-ms-johnson"
+
+    async def test_demo_login_short_alias(self, client_dev: AsyncClient) -> None:
+        """Short alias resolves to the canonical long-key profile."""
+        resp = await client_dev.post(
+            "/auth/demo-login",
+            json={"demo_key": "student-asd"},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["user"]["display_name"] == "Alex Rivera"
+        assert data["user"]["role"] == "student"
+        assert data["user"]["accessibility_profile"] == "tea"
+
+    async def test_demo_login_invalid_key(self, client_dev: AsyncClient) -> None:
+        """Unknown key returns 404."""
+        resp = await client_dev.post(
+            "/auth/demo-login",
+            json={"demo_key": "nonexistent"},
+        )
+        assert resp.status_code == 404
+
+    async def test_demo_login_admin_profile(self, client_dev: AsyncClient) -> None:
+        """Admin profiles are accessible via demo-login."""
+        resp = await client_dev.post(
+            "/auth/demo-login",
+            json={"demo_key": "admin-principal"},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["user"]["role"] == "school_admin"
+        assert "access_token" in data
+
+    async def test_demo_login_jwt_is_valid(self, client_dev: AsyncClient) -> None:
+        """JWT from demo-login is accepted by /auth/me."""
+        resp = await client_dev.post(
+            "/auth/demo-login",
+            json={"demo_key": "teacher-ms-johnson"},
+        )
+        token = resp.json()["access_token"]
+
+        me_resp = await client_dev.get(
+            "/auth/me",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert me_resp.status_code == 200
+        assert me_resp.json()["id"] == "demo-teacher-ms-johnson"
+
+    async def test_demo_login_all_profiles(self, client_dev: AsyncClient) -> None:
+        """All 8 demo profiles are accessible (long keys)."""
+        keys = [
+            "teacher-ms-johnson",
+            "student-alex-tea",
+            "student-maya-adhd",
+            "student-lucas-dyslexia",
+            "student-sofia-hearing",
+            "parent-david",
+            "admin-principal",
+            "admin-super",
+        ]
+        for key in keys:
+            resp = await client_dev.post(
+                "/auth/demo-login",
+                json={"demo_key": key},
+            )
+            assert resp.status_code == 200, f"Failed for key: {key}"
+
+    async def test_demo_login_all_short_aliases(self, client_dev: AsyncClient) -> None:
+        """All 6 short aliases resolve correctly."""
+        aliases = {
+            "teacher": "teacher",
+            "student-asd": "student",
+            "student-adhd": "student",
+            "student-dyslexia": "student",
+            "student-hearing": "student",
+            "parent": "parent",
+        }
+        for alias, expected_role in aliases.items():
+            resp = await client_dev.post(
+                "/auth/demo-login",
+                json={"demo_key": alias},
+            )
+            assert resp.status_code == 200, f"Failed for alias: {alias}"
+            assert resp.json()["user"]["role"] == expected_role

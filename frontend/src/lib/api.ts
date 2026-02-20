@@ -68,6 +68,37 @@ export function setDemoProfile(profileKey: string): void {
   )
 }
 
+/**
+ * Authenticate via a demo profile key by calling POST /auth/demo-login.
+ * Returns a JWT and user profile, and stores them in the auth store.
+ * Falls back silently — the X-Teacher-ID header works as backup in dev mode.
+ */
+export async function demoLogin(
+  profileKey: string,
+): Promise<{ token: string; user: Record<string, unknown> } | null> {
+  try {
+    const res = await fetch(`${API_BASE}/auth/demo-login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ demo_key: profileKey }),
+    })
+    if (!res.ok) return null
+    const data = (await res.json()) as {
+      access_token: string
+      user: Record<string, unknown>
+    }
+    // Store in auth store for proper JWT auth flow
+    const { login } = useAuthStore.getState()
+    login(data.access_token, data.user as Parameters<typeof login>[1])
+    // Also keep demo profile in sessionStorage as fallback
+    sessionStorage.setItem(DEMO_PROFILE_KEY, profileKey)
+    return { token: data.access_token, user: data.user }
+  } catch {
+    // API not available — fall back to X-Teacher-ID header
+    return null
+  }
+}
+
 /** Clear the active demo profile. */
 export function clearDemoProfile(): void {
   sessionStorage.removeItem(DEMO_PROFILE_KEY)

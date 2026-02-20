@@ -199,7 +199,7 @@ export function PipelineVisualization({
           <VisNodeCard node={nodes[0]} t={t} noMotion={noMotion} index={0} />
         </div>
         <div style={{ gridArea: 'conn1' }} className="flex items-center justify-center" aria-hidden="true">
-          <Connector completed={nodes[0].status === 'completed'} />
+          <Connector completed={nodes[0].status === 'completed'} active={nodes[0].status === 'active'} />
         </div>
         <div style={{ gridArea: 'planner' }} className="row-span-2 flex items-center">
           <VisNodeCard
@@ -211,7 +211,7 @@ export function PipelineVisualization({
           />
         </div>
         <div style={{ gridArea: 'conn3' }} className="flex items-center justify-center" aria-hidden="true">
-          <Connector completed={nodes[4].status === 'completed' || nodes[4].status === 'active'} />
+          <Connector completed={nodes[4].status === 'completed'} active={nodes[4].status === 'active' || nodes[2].status === 'completed'} />
         </div>
         <div style={{ gridArea: 'executor' }}>
           <VisNodeCard node={nodes[4]} t={t} noMotion={noMotion} index={4} />
@@ -222,7 +222,7 @@ export function PipelineVisualization({
           <VisNodeCard node={nodes[1]} t={t} noMotion={noMotion} index={1} />
         </div>
         <div style={{ gridArea: 'conn2' }} className="flex items-center justify-center" aria-hidden="true">
-          <Connector completed={nodes[1].status === 'completed'} />
+          <Connector completed={nodes[1].status === 'completed'} active={nodes[1].status === 'active'} />
         </div>
         {/* Quality is positioned under planner, connected via merge */}
         <div style={{ gridArea: 'quality' }} className="flex items-center">
@@ -235,7 +235,7 @@ export function PipelineVisualization({
           />
         </div>
         <div style={{ gridArea: 'conn4' }} className="flex items-center justify-center" aria-hidden="true">
-          <Connector completed={nodes[5].status === 'completed'} />
+          <Connector completed={nodes[5].status === 'completed'} active={nodes[3].status === 'completed' && nodes[5].status !== 'completed'} />
         </div>
         <div style={{ gridArea: 'export' }}>
           <VisNodeCard node={nodes[5]} t={t} noMotion={noMotion} index={5} />
@@ -313,12 +313,15 @@ function VisNodeCard({ node, t, noMotion, index, badge, showLoop }: VisNodeCardP
       role="group"
       aria-label={`${t(`nodes.${node.id}`)}: ${t(`status.${node.status}`)}`}
     >
-      {/* Icon circle */}
+      {/* Icon circle with glow */}
       <div
         className={cn(
           'relative flex items-center justify-center',
-          'w-10 h-10 rounded-full transition-colors duration-300',
+          'w-10 h-10 rounded-full transition-all duration-300',
           statusColors[node.status],
+          node.status === 'active' && 'shadow-[0_0_12px_var(--color-warning)]',
+          node.status === 'completed' && 'shadow-[0_0_8px_var(--color-success)]',
+          node.status === 'failed' && 'shadow-[0_0_8px_var(--color-error)]',
         )}
       >
         <svg
@@ -404,23 +407,50 @@ function VisNodeCard({ node, t, noMotion, index, badge, showLoop }: VisNodeCardP
   )
 }
 
-function Connector({ completed }: { completed: boolean }) {
+function Connector({ completed, active }: { completed: boolean; active?: boolean }) {
+  const strokeColor = completed
+    ? 'var(--color-success)'
+    : active
+      ? 'var(--color-warning)'
+      : 'var(--color-border)'
+
   return (
-    <div className="flex items-center w-full">
-      <div
-        className={cn(
-          'flex-1 h-0.5 transition-colors duration-300 rounded-full',
-          completed ? 'bg-[var(--color-success)]' : 'bg-[var(--color-border)]',
-        )}
+    <svg
+      className="w-full h-4"
+      viewBox="0 0 60 16"
+      fill="none"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+    >
+      {/* Background track */}
+      <line
+        x1="2" y1="8" x2="52" y2="8"
+        stroke="var(--color-border)"
+        strokeWidth="2"
+        strokeLinecap="round"
+        opacity={0.3}
       />
-      <div
-        className={cn(
-          'w-0 h-0 border-t-[3px] border-b-[3px] border-l-[5px]',
-          'border-t-transparent border-b-transparent transition-colors duration-300',
-          completed ? 'border-l-[var(--color-success)]' : 'border-l-[var(--color-border)]',
-        )}
+      {/* Active/completed fill line */}
+      <line
+        x1="2" y1="8" x2="52" y2="8"
+        stroke={strokeColor}
+        strokeWidth="2"
+        strokeLinecap="round"
+        className="transition-all duration-300"
+        {...(active && {
+          strokeDasharray: '6 4',
+          style: {
+            animation: 'dash-flow 0.8s linear infinite',
+          },
+        })}
       />
-    </div>
+      {/* Arrow head */}
+      <polygon
+        points="52,4 60,8 52,12"
+        fill={strokeColor}
+        className="transition-all duration-300"
+      />
+    </svg>
   )
 }
 

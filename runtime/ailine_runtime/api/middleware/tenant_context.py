@@ -89,6 +89,7 @@ _EXCLUDED_EXACT = frozenset({
     "/openapi.json",
     "/auth/login",
     "/auth/register",
+    "/auth/demo-login",
     "/auth/roles",
 })
 

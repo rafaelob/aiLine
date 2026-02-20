@@ -122,7 +122,7 @@ _users_lock = asyncio.Lock()
 # Dedicated login rate limiter: per-IP, 5 attempts per minute.
 _login_attempts: dict[str, list[float]] = {}
 _login_rate_lock = asyncio.Lock()
-_LOGIN_MAX_ATTEMPTS = 5
+_LOGIN_MAX_ATTEMPTS = 20
 _LOGIN_WINDOW_SECONDS = 60.0
 _LOGIN_CLEANUP_INTERVAL = 300.0  # Prune stale IPs every 5 minutes
 _login_last_cleanup = 0.0
@@ -424,6 +424,79 @@ async def list_roles() -> dict[str, Any]:
     }
 
 
+# -- Demo login endpoint -----------------------------------------------------
+
+
+class DemoLoginRequest(BaseModel):
+    """Demo login request — accepts a demo profile key."""
+
+    demo_key: str = Field(..., max_length=100, description="Demo profile key")
+
+
+# Short-key aliases used by the login page (login-data.ts).
+# Maps to the canonical long keys in demo_profiles.py.
+_SHORT_TO_LONG_KEY: dict[str, str] = {
+    "teacher": "teacher-ms-johnson",
+    "student-asd": "student-alex-tea",
+    "student-adhd": "student-maya-adhd",
+    "student-dyslexia": "student-lucas-dyslexia",
+    "student-hearing": "student-sofia-hearing",
+    "parent": "parent-david",
+}
+
+
+@router.post("/demo-login", response_model=TokenResponse)
+async def demo_login(body: DemoLoginRequest) -> TokenResponse:
+    """Authenticate via a demo profile key and return a JWT.
+
+    Looks up the profile in DEMO_PROFILES, finds or creates the matching
+    user, and returns a JWT with the correct role/org_id.  Accepts both
+    long keys (``teacher-ms-johnson``) and short aliases (``teacher``).
+    """
+    from .demo_profiles import DEMO_PROFILES
+
+    # Resolve short aliases to canonical long keys
+    canonical_key = _SHORT_TO_LONG_KEY.get(body.demo_key, body.demo_key)
+    profile = DEMO_PROFILES.get(canonical_key)
+    if profile is None:
+        raise HTTPException(status_code=404, detail="Unknown demo profile key")
+
+    email = f"{canonical_key}@ailine-demo.edu"
+    role = profile.get("role", "teacher")
+    org_id = profile.get("org_id")
+
+    async with _users_lock:
+        user = await _user_repo.get_by_email(email)
+        if user is None:
+            # Auto-create if not yet seeded
+            user = UserRow(
+                id=profile["id"],
+                email=email,
+                display_name=profile["name"],
+                role=role,
+                locale="en",
+                avatar_url="",
+                accessibility_profile=profile.get("accessibility", ""),
+                is_active=True,
+                hashed_password=_hash_password("demo123"),
+            )
+            await _user_repo.create(user)
+            logger.info("auth.demo_login_created_user", demo_key=canonical_key)
+
+        snapshot_id = user.id
+        snapshot_role = user.role
+        snapshot_org = user.org_id
+        snapshot_response = _user_response(user)
+
+    token = _create_jwt(snapshot_id, snapshot_role, snapshot_org)
+    logger.info("auth.demo_login", demo_key=canonical_key, user_id=snapshot_id)
+
+    return TokenResponse(
+        access_token=token,
+        user=snapshot_response,
+    )
+
+
 # -- Demo user seeding -------------------------------------------------------
 
 
@@ -442,6 +515,7 @@ def seed_demo_users() -> None:
         logger.info("auth.seed_demo_users_skipped", reason="not in-memory repo")
         return
 
+    demo_pw_hash = _hash_password("demo123")
     for key, profile in DEMO_PROFILES.items():
         email = f"{key}@ailine-demo.edu"
         if not _user_repo.has_email(email):
@@ -454,6 +528,6 @@ def seed_demo_users() -> None:
                 avatar_url="",
                 accessibility_profile=profile.get("accessibility", ""),
                 is_active=True,
-                hashed_password="",
+                hashed_password=demo_pw_hash,
             )
             _user_repo.seed_sync(row)
