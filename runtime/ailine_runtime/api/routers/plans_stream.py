@@ -96,6 +96,12 @@ async def _run_pipeline(
         # Initialize trace (tenant-scoped for isolation)
         trace_store = get_trace_store()
         await trace_store.get_or_create(body.run_id, teacher_id=teacher_id)
+        # Persist run metadata for the /runs resource model (F-237)
+        await trace_store.update_run(
+            body.run_id,
+            user_prompt=body.user_prompt[:500],
+            subject=body.subject or "",
+        )
 
         deps = AgentDepsFactory.from_container(
             container,

@@ -61,7 +61,7 @@ Based on GPT-5.2 backend architecture review + frontend UX review.
 - [x] F-236: Micro-interactions — btn-press scale(0.97), slide-in animation, dash-flow keyframe
 
 ### Phase 3 — API & Observability
-- [ ] F-237: Run Resource Model — POST /plans:run, GET /runs/{id}, GET /runs/{id}/events
+- [x] F-237: Run Resource Model — GET /runs (list+filter+pagination), GET /runs/{id} (detail)
 - [x] F-238: RFC 7807 Error Model — already implemented (error_handler.py, 8 tests, application/problem+json)
 - [x] F-239: TenantContext Explicit Dependencies — all routers use Depends(require_authenticated)
 

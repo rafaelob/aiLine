@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import time
+from datetime import UTC, datetime
 from typing import Any
 
 from ..domain.entities.trace import NodeTrace, RunTrace
@@ -61,7 +62,11 @@ class TraceStore:
         async with self._lock:
             self._evict_expired()
             if run_id not in self._traces:
-                self._traces[run_id] = RunTrace(run_id=run_id, teacher_id=teacher_id)
+                self._traces[run_id] = RunTrace(
+                    run_id=run_id,
+                    teacher_id=teacher_id,
+                    created_at=datetime.now(UTC).isoformat(),
+                )
                 self._timestamps[run_id] = time.monotonic()
                 self._enforce_capacity()
             elif teacher_id and not self._traces[run_id].teacher_id:

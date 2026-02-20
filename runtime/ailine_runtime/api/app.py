@@ -533,6 +533,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         plans_stream,
         progress,
         rag_diagnostics,
+        runs,
         setup,
         sign_language,
         skills,
@@ -557,6 +558,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app.include_router(demo.router, prefix="/demo", tags=["demo"])
     app.include_router(traces.router, prefix="/traces", tags=["traces"])
+    app.include_router(runs.router, prefix="/runs", tags=["runs"])
     app.include_router(rag_diagnostics.router, prefix="/rag", tags=["rag-diagnostics"])
     app.include_router(
         observability.router, prefix="/observability", tags=["observability"]

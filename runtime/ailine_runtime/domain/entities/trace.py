@@ -69,6 +69,9 @@ class RunTrace(BaseModel):
         default="", description="Owning teacher for tenant isolation"
     )
     status: str = Field(default="running", description="running | completed | failed")
+    created_at: str = Field(default="", description="ISO 8601 UTC creation timestamp")
+    user_prompt: str = Field(default="", description="Original user prompt (truncated)")
+    subject: str = Field(default="", description="Subject area for the plan")
     total_time_ms: float = Field(default=0.0, description="Total wall-clock time")
     nodes: list[NodeTrace] = Field(
         default_factory=list, description="Per-node traces in order"
