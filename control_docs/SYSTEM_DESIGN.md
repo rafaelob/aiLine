@@ -106,6 +106,21 @@ Frontend components that expose the AI pipeline to users:
 - **TTS Audio Player**: HTMLAudioElement-based player calling POST /media/tts/synthesize with speed/language/voice controls.
 - **Inclusive Classroom Mode**: 2x2 teacher cockpit grid showing 4 students (Lucas/Sofia/Pedro/Ana) with disability-specific accent colors and accommodation badges.
 
+### Capabilities Discovery (GET /capabilities)
+
+Public endpoint returning platform feature availability based on wired adapters and configuration:
+- `version`, `personas` (9), `sign_languages` (8)
+- `llm` (available + provider), `tts` (ElevenLabs), `image_generation` (Gemini Imagen)
+- `vector_search` (pgvector), `braille` (grades + languages), `skills` (count + categories)
+- `demo_mode` (boolean)
+Excluded from auth middleware, rate limiting, and tenant context. Enables progressive enhancement on frontend.
+
+### Accessibility Status System
+
+- **A11yStatusBadge**: Floating indicator (bottom-left) showing active persona icon + name, feature count badge for non-default settings, expandable detail panel with all active features (theme, font, motion, focus, bionic)
+- **PersonaExplainer**: Banner below topbar when non-standard persona active, shows icon + theme name + adaptation hints with aria-live="polite"
+- **Focus States**: WCAG outline (3px solid primary, offset 3px) + forced-colors mode (Highlight color, no box-shadow)
+
 ## ADR Log
 
 60 ADRs (ADR-001 through ADR-060). Key decisions: 001 Hexagonal | 002-003 SQLAlchemy+pgvector | 006 SSE+WS | 012 multi-tenancy | 013 parallel LangGraph | 017/028-029/049 SmartRouter | 024/038 typed SSE | 042 recursion_limit=25 | 048 direct Anthropic API (no SDK) | 050 tiered quality gate | 051 FakeLLM CI | 053 composite FK | 054 SSE replay (Redis ZSET) | 055 RunContext terminal guarantee | 056 pool sizing | 057 Web Worker sign lang | 058 ThemeContext | 059 ailine_agents (Pydantic AI) | 060 structural tenant isolation + centralized authz

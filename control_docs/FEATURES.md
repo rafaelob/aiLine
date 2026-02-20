@@ -84,6 +84,15 @@ F-156 to F-162 (7 features): Sign Language Interpreter Skill, Multi-Language Ada
 - [F-221] Braille Download + Copy — Download .brf file + copy to clipboard buttons added to BraillePreview component
 - [F-222] Inclusive Classroom Mode — "One Lesson, Four Adapted Plans" 2x2 teacher cockpit grid (Lucas/ASD, Sofia/ADHD, Pedro/Dyslexia, Ana/Hearing) with accent colors and accommodation badges
 
+### Improvements Branch — Comprehensive Review & Polish (Feb 19, 2026)
+- [F-223] A11y Status Badge — Floating "Make the Invisible Visible" indicator showing active persona + features count, expandable detail panel, ARIA-compliant (11 tests)
+- [F-224] Persona Explainer Banner — "Why this adaptation?" context banner below topbar, shows persona icon/name/hints, aria-live polite (8 tests)
+- [F-225] Capabilities Endpoint — GET /capabilities returns platform feature availability (LLM, TTS, image gen, vector search, braille, skills, demo mode), excluded from auth/rate-limit (3 tests)
+- [F-226] Enhanced Focus States — WCAG-compliant outline+offset focus indicators, forced-colors mode support for Windows High Contrast
+- [F-227] Theme Color Preview Chips — 3 color circles (bg, primary, text) next to each theme in preferences panel
+- [F-228] Config Validation at Startup — Settings.validate_environment() called before Container.build(), fail-fast with structured warnings
+- [F-229] Comprehensive Test Expansion — 16 new test files, 133 new tests covering login phases, auth store, sign language selector, wizard steps, settings, API, demo data
+
 ## Backlog
 - [F-035] Sign Language Post-MVP Path — SPOTER transformer + VLibrasBD NMT dataset (ADR-047)
 - [F-178] Teacher Skill Sets — Per-teacher skill configurations with presets

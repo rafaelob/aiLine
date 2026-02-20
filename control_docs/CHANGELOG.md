@@ -1,6 +1,28 @@
 # Changelog
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.13.0] - 2026-02-19 (Comprehensive Review & Polish)
+
+### Added
+- A11y Status Badge — floating "Make the Invisible Visible" indicator showing active persona + features count, expandable detail panel with ARIA compliance (F-223, 11 tests)
+- Persona Explainer Banner — "Why this adaptation?" context banner below topbar with persona-specific hints, aria-live polite (F-224, 8 tests)
+- GET /capabilities endpoint — platform feature discovery (LLM, TTS, image gen, vector search, braille, skills, demo mode), excluded from auth/rate-limit (F-225, 3 tests)
+- Enhanced focus states — WCAG outline+offset indicators with forced-colors mode for Windows High Contrast (F-226)
+- Theme color preview chips — 3 color circles (bg, primary, text) next to each theme in preferences panel (F-227)
+- Config validation at startup — Settings.validate_environment() called before Container.build() with structured warnings (F-228)
+- 16 new test files covering login phases, auth store, sign language selector, wizard steps, settings, API, demo data (F-229, 133 tests)
+
+### Fixed
+- useTranslations mock: stable function references per namespace (OOM fix in vitest)
+- test_tenant_context: HS256-signed JWTs with dev secret for proper verification
+- exports/page.test.tsx: removed importActual causing OOM
+- JWT middleware: dev-secret fallback with proper HS256 verification
+- Demo mode: _require_demo_mode guard fix
+
+### Changed
+- Expert reviews by GPT-5.2 (backend architecture) and GPT-5.2 (frontend UX) — Sprint 27 plan created with 13 features across 4 phases
+- Total: 2,406 backend + 1,397 frontend = **~3,803 tests passing**, 0 lint/type errors
+
 ## [0.12.0] - 2026-02-19 (Sprint 26 — "Make the Invisible Visible")
 
 ### Added
