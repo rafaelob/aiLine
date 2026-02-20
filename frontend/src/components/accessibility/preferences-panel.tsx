@@ -60,15 +60,14 @@ export function PreferencesPanel({ open, onClose }: PreferencesPanelProps) {
   } = useAccessibilityStore()
   const { startTransition } = useViewTransition()
 
-  // Save previously focused element and restore on unmount
+  // Save previously focused element on open; restore on close.
+  // Uses separate branches instead of cleanup to avoid stale closure.
   useEffect(() => {
     if (open) {
       previousFocusRef.current = document.activeElement as HTMLElement | null
-    }
-    return () => {
-      if (!open) {
-        previousFocusRef.current?.focus()
-      }
+    } else if (previousFocusRef.current) {
+      previousFocusRef.current.focus()
+      previousFocusRef.current = null
     }
   }, [open])
 

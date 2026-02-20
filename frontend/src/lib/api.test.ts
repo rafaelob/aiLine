@@ -118,11 +118,18 @@ describe('api module', () => {
       expect(headers).toEqual({ Authorization: `Bearer ${token}` })
     })
 
-    it('falls back to demo profile header when no JWT available', () => {
+    it('falls back to demo profile header when no JWT available (short key)', () => {
       sessionStorage.setItem('ailine_demo_profile', 'teacher')
 
       const headers = getAuthHeaders()
       expect(headers).toEqual({ 'X-Teacher-ID': 'demo-teacher' })
+    })
+
+    it('falls back to demo profile header for landing page long key', () => {
+      sessionStorage.setItem('ailine_demo_profile', 'teacher-ms-johnson')
+
+      const headers = getAuthHeaders()
+      expect(headers).toEqual({ 'X-Teacher-ID': 'demo-teacher-ms-johnson' })
     })
 
     it('rejects invalid demo profile keys', () => {
@@ -133,10 +140,16 @@ describe('api module', () => {
       expect(headers['X-Teacher-ID']).toBeUndefined()
     })
 
-    it('accepts all valid demo profile keys', () => {
+    it('accepts all valid demo profile keys (short and long formats)', () => {
       const validProfiles = [
+        // Short format (login page)
         'teacher', 'student-asd', 'student-adhd', 'student-dyslexia',
-        'student-hearing', 'parent', 'admin-principal', 'admin-super',
+        'student-hearing', 'parent',
+        // Long format (landing page — matches backend demo_profiles.py)
+        'teacher-ms-johnson', 'student-alex-tea', 'student-maya-adhd',
+        'student-lucas-dyslexia', 'student-sofia-hearing', 'parent-david',
+        // Admin profiles (same in both flows)
+        'admin-principal', 'admin-super',
       ]
       for (const profile of validProfiles) {
         sessionStorage.setItem('ailine_demo_profile', profile)

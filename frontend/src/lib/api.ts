@@ -26,14 +26,25 @@ function isTokenExpired(token: string): boolean {
 /** Session storage key for the active demo profile. */
 const DEMO_PROFILE_KEY = 'ailine_demo_profile'
 
-/** Valid demo profile keys — must match backend seed data. */
+/** Valid demo profile keys — includes both landing page (long) and login page (short) formats.
+ *  Long keys match backend demo_profiles.py; short keys match login-data.ts.
+ */
 const VALID_DEMO_PROFILES = new Set([
+  // Landing page (long format — matches backend demo_profiles.py)
+  'teacher-ms-johnson',
+  'student-alex-tea',
+  'student-maya-adhd',
+  'student-lucas-dyslexia',
+  'student-sofia-hearing',
+  'parent-david',
+  // Login page (short format — matches login-data.ts)
   'teacher',
   'student-asd',
   'student-adhd',
   'student-dyslexia',
   'student-hearing',
   'parent',
+  // Admin profiles (same key in both flows)
   'admin-principal',
   'admin-super',
 ])

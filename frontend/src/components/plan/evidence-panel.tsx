@@ -254,6 +254,7 @@ export function EvidencePanel({ plan, qualityReport, scorecard, className }: Evi
             <div key={section.id}>
               <button
                 type="button"
+                id={`evidence-btn-${section.id}`}
                 onClick={() => toggleSection(section.id)}
                 aria-expanded={isOpen}
                 aria-controls={`evidence-${section.id}`}

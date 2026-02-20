@@ -209,6 +209,15 @@ def _create_jwt(user_id: str, role: str, org_id: str | None = None) -> str:
     if org_id:
         payload["org_id"] = org_id
 
+    # Include iss/aud claims when configured, so the verification path
+    # in TenantContextMiddleware accepts our own tokens.
+    issuer = os.getenv("AILINE_JWT_ISSUER", "").strip()
+    audience = os.getenv("AILINE_JWT_AUDIENCE", "").strip()
+    if issuer:
+        payload["iss"] = issuer
+    if audience:
+        payload["aud"] = audience
+
     return pyjwt.encode(payload, secret, algorithm="HS256")
 
 
