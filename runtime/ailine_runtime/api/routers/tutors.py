@@ -10,7 +10,7 @@ from typing import Any, Literal
 
 from ailine_agents.deps import AgentDepsFactory
 from ailine_agents.workflows.tutor_workflow import build_tutor_workflow, run_tutor_turn
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from ...app.authz import require_authenticated, require_tenant_access
@@ -35,17 +35,12 @@ class TutorCreateIn(BaseModel):
     auto_persona: bool = False
 
 
-def _resolve_teacher_id_required() -> str:
-    """Resolve teacher_id from JWT context (mandatory).
-
-    Raises 401 if no authenticated teacher context is available.
-    """
-    return require_authenticated()
-
-
 @router.post("")
-async def tutors_create(body: TutorCreateIn, request: Request):
-    teacher_id = _resolve_teacher_id_required()
+async def tutors_create(
+    body: TutorCreateIn,
+    request: Request,
+    teacher_id: str = Depends(require_authenticated),
+):
 
     settings = request.app.state.settings
     spec = await create_tutor_agent(

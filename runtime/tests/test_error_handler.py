@@ -75,6 +75,7 @@ class TestRFC7807ErrorFormat:
         resp = await client.post(
             "/materials",
             json={"invalid_field_only": "value"},
+            headers={"X-Teacher-ID": "test-error-handler"},
         )
         assert resp.status_code == 422
         body = resp.json()
@@ -91,6 +92,7 @@ class TestRFC7807ErrorFormat:
         resp = await client.post(
             "/materials",
             json={"invalid_field_only": "value"},
+            headers={"X-Teacher-ID": "test-error-handler"},
         )
         body = resp.json()
         assert body.get("instance") == "/materials"

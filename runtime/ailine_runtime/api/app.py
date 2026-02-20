@@ -275,19 +275,60 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
 
     # -----------------------------------------------------------------
-    # Enhanced diagnostics endpoint
+    # Public diagnostics (no auth — safe subset for frontend status)
     # -----------------------------------------------------------------
 
     @app.get("/health/diagnostics")
-    async def health_diagnostics(
+    async def health_diagnostics() -> Response:
+        """Public system diagnostics for the frontend Status Indicator.
+
+        Returns overall status, dependency availability (without latency),
+        version, environment, uptime, and skill count. Sensitive operational
+        details (latency, model config, API keys, memory) are only available
+        at ``/internal/diagnostics`` (authenticated).
+        """
+        import time as _time
+
+        app_start_time = getattr(app.state, "_start_time", None)
+        if app_start_time is None:
+            app.state._start_time = _time.monotonic()  # type: ignore[attr-defined]
+            app_start_time = app.state._start_time
+
+        # Dependency status (no latency — that is internal)
+        db_check = await _check_db(container)
+        redis_check = await _check_redis(container)
+
+        deps_status = {
+            "db": {"status": db_check},
+            "redis": {"status": redis_check},
+        }
+
+        all_ok = all(d["status"] in ("ok", "skip") for d in deps_status.values())
+
+        skills_info = _get_skills_info(settings)
+
+        diagnostics: dict[str, Any] = {
+            "status": "healthy" if all_ok else "degraded",
+            "dependencies": deps_status,
+            "skills": {"available": skills_info["available"], "count": skills_info["count"]},
+            "uptime_seconds": round(_time.monotonic() - app_start_time, 1),
+            "environment": settings.env,
+            "version": app.version,
+        }
+        return JSONResponse(content=diagnostics, status_code=200 if all_ok else 503)
+
+    # -----------------------------------------------------------------
+    # Private diagnostics (authenticated — full operational details)
+    # -----------------------------------------------------------------
+
+    @app.get("/internal/diagnostics")
+    async def internal_diagnostics(
         _teacher_id: str = Depends(require_authenticated),
     ) -> Response:
-        """Comprehensive system diagnostics for the frontend Status Indicator.
+        """Authenticated diagnostics with full operational data.
 
-        Returns system status, available LLM models, skills count,
-        API key presence, dependency latency, memory usage, and uptime.
-        Unlike /health/ready, this endpoint is more detailed and intended
-        for the dashboard UI.
+        Includes dependency latency, LLM model config, API key presence,
+        skill names, and process memory. Requires valid JWT.
         """
         import os
         import time as _time
@@ -298,16 +339,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             app.state._start_time = _time.monotonic()  # type: ignore[attr-defined]
             app_start_time = app.state._start_time
 
-        # -- Dependencies --
+        # -- Dependencies with latency --
         deps_status: dict[str, Any] = {}
 
-        # DB
         db_start = _time.monotonic()
         db_check = await _check_db(container)
         db_latency_ms = round((_time.monotonic() - db_start) * 1000, 1)
         deps_status["db"] = {"status": db_check, "latency_ms": db_latency_ms}
 
-        # Redis
         redis_start = _time.monotonic()
         redis_check = await _check_redis(container)
         redis_latency_ms = round((_time.monotonic() - redis_start) * 1000, 1)
@@ -347,7 +386,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
         mem: dict[str, Any] = {"pid": os.getpid()}
         try:
-            # Windows: use ctypes to get working set size
             if sys.platform == "win32":
                 import ctypes
                 import ctypes.wintypes
@@ -376,11 +414,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 )
                 mem["rss_mb"] = round(counters.WorkingSetSize / (1024 * 1024), 1)
             else:
-                # Unix/Linux: read /proc/self/status
                 import resource
 
                 usage = resource.getrusage(resource.RUSAGE_SELF)
-                # maxrss is in KB on Linux, bytes on macOS
                 divisor = 1024 if sys.platform == "linux" else 1
                 mem["rss_mb"] = round(usage.ru_maxrss / divisor / 1024, 1)
         except Exception:
@@ -388,8 +424,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         diagnostics["memory"] = mem
 
         # -- Uptime --
-        uptime_seconds = round(_time.monotonic() - app_start_time, 1)
-        diagnostics["uptime_seconds"] = uptime_seconds
+        diagnostics["uptime_seconds"] = round(_time.monotonic() - app_start_time, 1)
 
         # -- Environment --
         diagnostics["environment"] = settings.env
@@ -399,8 +434,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         all_ok = all(d.get("status") in ("ok", "skip") for d in deps_status.values())
         diagnostics["status"] = "healthy" if all_ok else "degraded"
 
-        status_code = 200 if all_ok else 503
-        return JSONResponse(content=diagnostics, status_code=status_code)
+        return JSONResponse(content=diagnostics, status_code=200 if all_ok else 503)
 
     # -----------------------------------------------------------------
     # Capabilities endpoint — dynamic feature discovery

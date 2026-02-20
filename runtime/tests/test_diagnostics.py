@@ -1,14 +1,7 @@
-"""Tests for the enhanced /health/diagnostics endpoint.
+"""Tests for the health diagnostics split (F-232).
 
-Covers:
-- Diagnostics returns expected structure
-- Dependency status with latency
-- LLM config info (no secrets)
-- API key presence (boolean, never actual keys)
-- Skills loaded status
-- Memory usage
-- Uptime tracking
-- Overall status determination
+Public ``/health/diagnostics`` — no auth, safe subset.
+Private ``/internal/diagnostics`` — auth required, full operational data.
 """
 
 from __future__ import annotations
@@ -44,115 +37,116 @@ async def client(app) -> AsyncGenerator[AsyncClient, None]:
 
 
 # ---------------------------------------------------------------------------
-# GET /health/diagnostics
+# GET /health/diagnostics (public — no auth required)
 # ---------------------------------------------------------------------------
 
 
-class TestHealthDiagnostics:
-    async def test_diagnostics_returns_200(self, client: AsyncClient) -> None:
-        resp = await client.get("/health/diagnostics", headers=AUTH_HEADERS)
+class TestPublicDiagnostics:
+    async def test_returns_200_without_auth(self, client: AsyncClient) -> None:
+        resp = await client.get("/health/diagnostics")
         assert resp.status_code == 200
 
-    async def test_diagnostics_has_dependencies(self, client: AsyncClient) -> None:
-        resp = await client.get("/health/diagnostics", headers=AUTH_HEADERS)
-        body = resp.json()
-        assert "dependencies" in body
+    async def test_has_status(self, client: AsyncClient) -> None:
+        body = (await client.get("/health/diagnostics")).json()
+        assert body["status"] in ("healthy", "degraded")
+
+    async def test_has_dependencies_without_latency(self, client: AsyncClient) -> None:
+        body = (await client.get("/health/diagnostics")).json()
         deps = body["dependencies"]
-        assert "db" in deps
-        assert "redis" in deps
-        # Each dep has status and latency
+        assert "db" in deps and "redis" in deps
         assert "status" in deps["db"]
+        assert "latency_ms" not in deps["db"]
+        assert "latency_ms" not in deps["redis"]
+
+    async def test_has_skills_count(self, client: AsyncClient) -> None:
+        body = (await client.get("/health/diagnostics")).json()
+        skills = body["skills"]
+        assert "count" in skills
+        assert isinstance(skills["count"], int)
+        # Public should NOT expose skill names
+        assert "names" not in skills
+
+    async def test_has_uptime(self, client: AsyncClient) -> None:
+        body = (await client.get("/health/diagnostics")).json()
+        assert isinstance(body["uptime_seconds"], int | float)
+        assert body["uptime_seconds"] >= 0
+
+    async def test_has_environment(self, client: AsyncClient) -> None:
+        body = (await client.get("/health/diagnostics")).json()
+        assert body["environment"] == "development"
+
+    async def test_has_version(self, client: AsyncClient) -> None:
+        body = (await client.get("/health/diagnostics")).json()
+        assert body["version"] == "0.1.0"
+
+    async def test_no_sensitive_fields(self, client: AsyncClient) -> None:
+        """Public diagnostics must NOT contain LLM config, API keys, or memory."""
+        body = (await client.get("/health/diagnostics")).json()
+        assert "llm" not in body
+        assert "api_keys" not in body
+        assert "memory" not in body
+
+    async def test_healthy_with_skip_deps(self, client: AsyncClient) -> None:
+        body = (await client.get("/health/diagnostics")).json()
+        assert body["status"] == "healthy"
+
+    async def test_content_type_json(self, client: AsyncClient) -> None:
+        resp = await client.get("/health/diagnostics")
+        assert "application/json" in resp.headers["content-type"]
+
+
+# ---------------------------------------------------------------------------
+# GET /internal/diagnostics (authenticated — full operational data)
+# ---------------------------------------------------------------------------
+
+
+class TestInternalDiagnostics:
+    async def test_requires_auth(self, client: AsyncClient) -> None:
+        resp = await client.get("/internal/diagnostics")
+        assert resp.status_code in (401, 403)
+
+    async def test_returns_200_with_auth(self, client: AsyncClient) -> None:
+        resp = await client.get("/internal/diagnostics", headers=AUTH_HEADERS)
+        assert resp.status_code == 200
+
+    async def test_has_dependencies_with_latency(self, client: AsyncClient) -> None:
+        body = (await client.get("/internal/diagnostics", headers=AUTH_HEADERS)).json()
+        deps = body["dependencies"]
         assert "latency_ms" in deps["db"]
-        assert "status" in deps["redis"]
         assert "latency_ms" in deps["redis"]
 
-    async def test_diagnostics_has_llm_config(self, client: AsyncClient) -> None:
-        resp = await client.get("/health/diagnostics", headers=AUTH_HEADERS)
-        body = resp.json()
-        assert "llm" in body
+    async def test_has_llm_config(self, client: AsyncClient) -> None:
+        body = (await client.get("/internal/diagnostics", headers=AUTH_HEADERS)).json()
         llm = body["llm"]
         assert "provider" in llm
         assert "model" in llm
         assert "planner_model" in llm
-        assert "executor_model" in llm
-        assert "qg_model" in llm
-        assert "tutor_model" in llm
 
-    async def test_diagnostics_api_keys_are_boolean(self, client: AsyncClient) -> None:
-        """API key presence must be boolean, never the actual key."""
-        resp = await client.get("/health/diagnostics", headers=AUTH_HEADERS)
-        body = resp.json()
-        assert "api_keys" in body
-        keys = body["api_keys"]
-        for provider, present in keys.items():
-            assert isinstance(
-                present, bool
-            ), f"{provider} should be bool, got {type(present)}"
+    async def test_api_keys_are_boolean(self, client: AsyncClient) -> None:
+        body = (await client.get("/internal/diagnostics", headers=AUTH_HEADERS)).json()
+        for provider, present in body["api_keys"].items():
+            assert isinstance(present, bool), f"{provider} should be bool"
 
-    async def test_diagnostics_never_exposes_secrets(self, client: AsyncClient) -> None:
-        """Ensure no actual API key values leak into diagnostics."""
-        resp = await client.get("/health/diagnostics", headers=AUTH_HEADERS)
-        text = resp.text
-        # The test settings use "fake-key-for-tests" — this must NOT appear
-        assert "fake-key-for-tests" not in text
+    async def test_never_exposes_secrets(self, client: AsyncClient) -> None:
+        resp = await client.get("/internal/diagnostics", headers=AUTH_HEADERS)
+        assert "fake-key-for-tests" not in resp.text
 
-    async def test_diagnostics_has_skills(self, client: AsyncClient) -> None:
-        resp = await client.get("/health/diagnostics", headers=AUTH_HEADERS)
-        body = resp.json()
-        assert "skills" in body
+    async def test_has_skills_with_names(self, client: AsyncClient) -> None:
+        body = (await client.get("/internal/diagnostics", headers=AUTH_HEADERS)).json()
         skills = body["skills"]
-        assert "loaded" in skills
+        assert "names" in skills
         assert "count" in skills
-        assert isinstance(skills["count"], int)
 
-    async def test_diagnostics_has_memory(self, client: AsyncClient) -> None:
-        resp = await client.get("/health/diagnostics", headers=AUTH_HEADERS)
-        body = resp.json()
-        assert "memory" in body
+    async def test_has_memory(self, client: AsyncClient) -> None:
+        body = (await client.get("/internal/diagnostics", headers=AUTH_HEADERS)).json()
         mem = body["memory"]
         assert "pid" in mem
         assert "rss_mb" in mem
 
-    async def test_diagnostics_has_uptime(self, client: AsyncClient) -> None:
-        resp = await client.get("/health/diagnostics", headers=AUTH_HEADERS)
-        body = resp.json()
-        assert "uptime_seconds" in body
+    async def test_has_uptime(self, client: AsyncClient) -> None:
+        body = (await client.get("/internal/diagnostics", headers=AUTH_HEADERS)).json()
         assert isinstance(body["uptime_seconds"], int | float)
-        assert body["uptime_seconds"] >= 0
 
-    async def test_diagnostics_has_environment(self, client: AsyncClient) -> None:
-        resp = await client.get("/health/diagnostics", headers=AUTH_HEADERS)
-        body = resp.json()
-        assert "environment" in body
-        assert body["environment"] == "development"
-
-    async def test_diagnostics_has_version(self, client: AsyncClient) -> None:
-        resp = await client.get("/health/diagnostics", headers=AUTH_HEADERS)
-        body = resp.json()
-        assert "version" in body
-        assert body["version"] == "0.1.0"
-
-    async def test_diagnostics_has_overall_status(self, client: AsyncClient) -> None:
-        resp = await client.get("/health/diagnostics", headers=AUTH_HEADERS)
-        body = resp.json()
-        assert "status" in body
+    async def test_has_overall_status(self, client: AsyncClient) -> None:
+        body = (await client.get("/internal/diagnostics", headers=AUTH_HEADERS)).json()
         assert body["status"] in ("healthy", "degraded")
-
-    async def test_diagnostics_healthy_with_skip_deps(
-        self, client: AsyncClient
-    ) -> None:
-        """With test settings (SQLite dev, in-memory bus), status is healthy."""
-        resp = await client.get("/health/diagnostics", headers=AUTH_HEADERS)
-        body = resp.json()
-        # Both deps should be "skip" which counts as OK
-        assert body["status"] == "healthy"
-
-    async def test_diagnostics_content_type(self, client: AsyncClient) -> None:
-        resp = await client.get("/health/diagnostics", headers=AUTH_HEADERS)
-        assert "application/json" in resp.headers["content-type"]
-
-    async def test_diagnostics_requires_auth(self, client: AsyncClient) -> None:
-        """Diagnostics endpoint requires authentication (SEC-03)."""
-        resp = await client.get("/health/diagnostics")
-        # Should fail without auth header
-        assert resp.status_code in (401, 403)

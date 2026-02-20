@@ -52,7 +52,7 @@ Based on GPT-5.2 backend architecture review + frontend UX review.
 ### Phase 1 — Backend Hardening (HIGH IMPACT)
 - [x] F-230: PostgresUserRepository — SessionFactoryUserRepository + DI wiring (d505bdd)
 - [ ] F-231: JWT Hardening — RS256, jti + Redis blacklist, shorter access TTL
-- [ ] F-232: Health Diagnostics Split — public /health/diagnostics, private /internal
+- [x] F-232: Health Diagnostics Split — public /health/diagnostics, private /internal/diagnostics
 
 ### Phase 2 — Frontend Premium Polish (HIGH VISUAL IMPACT)
 - [x] F-233: Before/After Accessibility Compare Slider (d30daed)
@@ -63,7 +63,7 @@ Based on GPT-5.2 backend architecture review + frontend UX review.
 ### Phase 3 — API & Observability
 - [ ] F-237: Run Resource Model — POST /plans:run, GET /runs/{id}, GET /runs/{id}/events
 - [x] F-238: RFC 7807 Error Model — already implemented (error_handler.py, 8 tests, application/problem+json)
-- [ ] F-239: TenantContext Explicit Dependencies — Depends(get_actor) returning ActorContext
+- [x] F-239: TenantContext Explicit Dependencies — all routers use Depends(require_authenticated)
 
 ### Phase 4 — Cleanup & Polish
 - [x] F-240: Config Deduplication — AiLineConfig deprecated with DeprecationWarning, Settings is canonical

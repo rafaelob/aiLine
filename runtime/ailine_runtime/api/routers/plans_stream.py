@@ -20,7 +20,7 @@ from typing import Any
 import structlog
 from ailine_agents import AgentDepsFactory
 from ailine_agents.workflows.plan_workflow import build_plan_workflow
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
 
@@ -37,14 +37,6 @@ router = APIRouter()
 
 # Heartbeat interval to keep the connection alive (seconds).
 _HEARTBEAT_INTERVAL_S = 15.0
-
-
-def _resolve_teacher_id() -> str:
-    """Resolve teacher_id from JWT context (mandatory).
-
-    Raises 401 if no authenticated teacher context is available.
-    """
-    return require_authenticated()
 
 
 class PlanStreamIn(BaseModel):
@@ -211,7 +203,9 @@ async def _run_pipeline(
 
 @router.post("/generate/stream")
 async def plans_generate_stream(
-    body: PlanStreamIn, request: Request
+    body: PlanStreamIn,
+    request: Request,
+    teacher_id: str = Depends(require_authenticated),
 ) -> EventSourceResponse:
     """Stream plan generation progress as Server-Sent Events.
 
@@ -229,9 +223,6 @@ async def plans_generate_stream(
         raise HTTPException(
             status_code=422, detail="user_prompt must not be empty after sanitization"
         )
-
-    # Resolve teacher_id: mandatory JWT auth (never from request body)
-    teacher_id = _resolve_teacher_id()
 
     emitter = SSEEventEmitter(body.run_id)
     queue: asyncio.Queue[dict[str, str] | None] = asyncio.Queue(maxsize=500)
