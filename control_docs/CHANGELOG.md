@@ -1,6 +1,31 @@
 # Changelog
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.14.0] - 2026-02-20 (Sprint 27 — Critical Fixes, Demo Auth, Visual Polish)
+
+### Added
+- POST /auth/demo-login endpoint — proper JWT auth flow for demo profiles, accepts both long keys (teacher-ms-johnson) and short aliases (teacher), 7 new tests (F-247)
+- Demo users seeded with hashed password (demo123) so email login also works (F-248)
+- demoLogin() async helper in frontend api.ts — calls demo-login, stores JWT in auth store (F-247)
+- Pipeline SVG connectors with animated dash-flow on active edges + arrow heads (F-234)
+- Node glow effects on pipeline (active=warning glow, completed=success, failed=error) (F-234)
+- Motor accessibility: pill-shaped buttons (28px radius), 3px focus halos with 8px tap zone indicators, bottom action bar padding (F-235)
+- btn-press micro-interaction (scale 0.97 + inset shadow on active), slide-in-right animation for SSE notifications (F-236)
+
+### Fixed
+- **P0:** VALID_DEMO_PROFILES expanded to include both short (login page) and long (landing page) key formats (F-243)
+- **P0:** EvidencePanel aria-labelledby — added missing id attribute on toggle button (F-244)
+- **P0:** PreferencesPanel stale-closure focus restore — replaced cleanup pattern with direct branch (F-245)
+- **HIGH:** JWT iss/aud claims now minted when AILINE_JWT_ISSUER/AUDIENCE env vars configured (F-246)
+- Login rate limit raised from 5/min to 20/min for demo-friendly Docker testing (F-249)
+
+### Changed
+- Docker frontend memory 512M → 2G with NODE_OPTIONS=--max-old-space-size=1536 (F-250)
+- Frontend healthcheck: wget || curl fallback
+- Landing + login pages upgraded to JWT-first demo login (X-Teacher-ID fallback preserved)
+- /auth/demo-login excluded from tenant middleware
+- Total: 2,413 backend + 1,411 frontend = **3,824 tests passing**, 0 lint/type errors
+
 ## [0.13.0] - 2026-02-19 (Comprehensive Review & Polish)
 
 ### Added

@@ -90,6 +90,7 @@ vi.mock('@/components/auth/login-form-phase', () => ({
 vi.mock('@/lib/api', () => ({
   API_BASE: '/api',
   setDemoProfile: vi.fn(),
+  demoLogin: vi.fn().mockResolvedValue(null),
   getAuthHeaders: () => ({}),
 }))
 

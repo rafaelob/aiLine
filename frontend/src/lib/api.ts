@@ -89,7 +89,7 @@ export async function demoLogin(
     }
     // Store in auth store for proper JWT auth flow
     const { login } = useAuthStore.getState()
-    login(data.access_token, data.user as Parameters<typeof login>[1])
+    login(data.access_token, data.user as unknown as Parameters<typeof login>[1])
     // Also keep demo profile in sessionStorage as fallback
     sessionStorage.setItem(DEMO_PROFILE_KEY, profileKey)
     return { token: data.access_token, user: data.user }
