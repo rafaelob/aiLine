@@ -68,6 +68,11 @@ def settings() -> Settings:
 
 @pytest.fixture()
 def app(settings: Settings):
+    # Reset auth store to avoid state leaking from previous test modules (F-230)
+    from ailine_runtime.adapters.db.user_repository import InMemoryUserRepository
+    from ailine_runtime.api.routers import auth as auth_mod
+    auth_mod._user_repo = InMemoryUserRepository()
+    auth_mod._login_attempts.clear()
     return create_app(settings=settings)
 
 

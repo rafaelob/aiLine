@@ -66,7 +66,7 @@ Based on GPT-5.2 backend architecture review + frontend UX review.
 - [ ] F-239: TenantContext Explicit Dependencies — Depends(get_actor) returning ActorContext
 
 ### Phase 4 — Cleanup & Polish
-- [ ] F-240: Config Deduplication — deprecate AiLineConfig in favor of Settings
+- [x] F-240: Config Deduplication — AiLineConfig deprecated with DeprecationWarning, Settings is canonical
 - [x] F-241: Cache Skill Registry — _get_skills_info() cached once, used by diagnostics + capabilities
 - [x] F-242: Demo Storyboard — 2 tracks (Teacher/Accessibility), 5 steps each, full i18n (4e0de99)
 

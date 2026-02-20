@@ -1,6 +1,16 @@
+"""Legacy configuration dataclass — DEPRECATED.
+
+All production code now uses ``shared.config.Settings`` (Pydantic BaseSettings).
+This module is retained only for backward compatibility with the agents package's
+``skill_source_paths`` helper. It will be removed in a future release.
+
+Use ``from ailine_runtime.shared.config import get_settings`` instead.
+"""
+
 from __future__ import annotations
 
 import os
+import warnings
 from dataclasses import dataclass, field
 
 
@@ -87,4 +97,14 @@ class AiLineConfig:
 
 
 def get_config() -> AiLineConfig:
+    """Return a legacy AiLineConfig instance.
+
+    .. deprecated:: 0.1.0
+       Use ``from ailine_runtime.shared.config import get_settings`` instead.
+    """
+    warnings.warn(
+        "get_config() is deprecated. Use get_settings() from shared.config.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     return AiLineConfig()
