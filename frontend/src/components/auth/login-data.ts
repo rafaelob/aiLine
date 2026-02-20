@@ -118,6 +118,24 @@ export const DEMO_PROFILES_BY_ROLE: Record<UserRole, DemoProfile[]> = {
       route: '/progress',
     },
   ],
-  school_admin: [],
-  super_admin: [],
+  school_admin: [
+    {
+      key: 'admin-principal',
+      name: 'Dr. Robert Williams',
+      avatar: 'RW',
+      description: 'demo_admin_principal_desc',
+      color: 'from-amber-500 to-orange-600',
+      route: '/dashboard',
+    },
+  ],
+  super_admin: [
+    {
+      key: 'admin-super',
+      name: 'System Administrator',
+      avatar: 'SA',
+      description: 'demo_admin_super_desc',
+      color: 'from-purple-500 to-violet-600',
+      route: '/dashboard',
+    },
+  ],
 }

@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import base64
 import json
+import time
 from collections.abc import AsyncGenerator
 from pathlib import Path
 
@@ -45,8 +46,8 @@ from ailine_runtime.shared.tenant import (
 def _enable_dev_mode(monkeypatch: pytest.MonkeyPatch) -> None:
     """Enable dev mode for all tests in this module.
 
-    The test helpers use unsigned JWTs (_make_jwt with alg=none),
-    which require dev mode for the unverified fallback path.
+    The test helpers create HS256-signed JWTs using the dev fallback
+    secret, which matches the middleware's dev-mode configuration.
     """
     monkeypatch.setenv("AILINE_DEV_MODE", "true")
 
@@ -77,15 +78,23 @@ async def client(app) -> AsyncGenerator[AsyncClient, None]:
         yield c
 
 
+_DEV_SECRET = "dev-secret-not-for-production-use-32bytes!"
+
+
 def _make_jwt(payload: dict) -> str:
-    """Create a minimal JWT (unsigned) for testing."""
-    header = (
-        base64.urlsafe_b64encode(json.dumps({"alg": "none"}).encode())
-        .rstrip(b"=")
-        .decode()
-    )
-    body = base64.urlsafe_b64encode(json.dumps(payload).encode()).rstrip(b"=").decode()
-    return f"{header}.{body}."
+    """Create an HS256-signed JWT for testing using the dev fallback secret.
+
+    Automatically adds ``exp`` and ``iat`` claims if not already present
+    so that the middleware's verified decode path accepts the token.
+    """
+    try:
+        import jwt as pyjwt
+    except ImportError:
+        pytest.skip("PyJWT not installed")
+
+    if "exp" not in payload:
+        payload = {**payload, "exp": int(time.time()) + 3600, "iat": int(time.time())}
+    return pyjwt.encode(payload, _DEV_SECRET, algorithm="HS256")
 
 
 # ---------------------------------------------------------------------------

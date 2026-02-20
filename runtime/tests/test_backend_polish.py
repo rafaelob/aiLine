@@ -242,22 +242,38 @@ class TestExtractTeacherIdFromJwt:
     Note: _extract_teacher_id_from_jwt now returns (teacher_id, error_reason).
     """
 
-    def test_unverified_mode_no_secret_dev_mode(
+    def test_dev_mode_uses_fallback_secret(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """Without AILINE_JWT_SECRET but with dev mode, unverified decode is used."""
+        """Without AILINE_JWT_SECRET but with dev mode, the dev fallback secret is used
+        for verified decode. Unsigned JWTs are rejected; properly signed JWTs work."""
         monkeypatch.delenv("AILINE_JWT_SECRET", raising=False)
         monkeypatch.delenv("AILINE_JWT_PUBLIC_KEY", raising=False)
         monkeypatch.setenv("AILINE_DEV_MODE", "true")
         from ailine_runtime.api.middleware.tenant_context import (
             _extract_teacher_id_from_jwt,
+            _get_jwt_config,
             _is_dev_mode,
         )
 
         _is_dev_mode.cache_clear()
+        _get_jwt_config.cache_clear()
+
+        import jwt as pyjwt
+
+        # Unsigned JWT should be rejected (dev fallback enables verified path)
         token = _make_unsigned_jwt({"sub": "teacher-unverified"})
         claims, _error = _extract_teacher_id_from_jwt(token)
-        assert claims.teacher_id == "teacher-unverified"
+        assert claims.teacher_id is None
+
+        # JWT signed with the dev fallback secret should work
+        import time
+        dev_secret = "dev-secret-not-for-production-use-32bytes!"
+        payload = {"sub": "teacher-dev", "exp": int(time.time()) + 3600, "iat": int(time.time())}
+        signed_token = pyjwt.encode(payload, dev_secret, algorithm="HS256")
+        claims_signed, error = _extract_teacher_id_from_jwt(signed_token)
+        assert claims_signed.teacher_id == "teacher-dev"
+        assert error is None
 
     def test_unverified_mode_no_secret_no_dev_mode_rejects(
         self, monkeypatch: pytest.MonkeyPatch

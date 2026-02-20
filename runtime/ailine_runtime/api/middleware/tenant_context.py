@@ -169,6 +169,12 @@ def _get_jwt_config() -> dict[str, Any]:
     issuer = os.getenv("AILINE_JWT_ISSUER", "") or None
     audience = os.getenv("AILINE_JWT_AUDIENCE", "") or None
 
+    # In dev mode without explicit key material, use the same fallback
+    # secret as the auth router to ensure JWTs created at /auth/login
+    # are verifiable by the middleware.
+    if not secret and not public_key and _is_dev_mode():
+        secret = "dev-secret-not-for-production-use-32bytes!"
+
     # Determine algorithms based on what key material is available
     algorithms_env = os.getenv("AILINE_JWT_ALGORITHMS", "")
     if algorithms_env:

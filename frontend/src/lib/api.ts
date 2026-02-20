@@ -34,6 +34,8 @@ const VALID_DEMO_PROFILES = new Set([
   'student-dyslexia',
   'student-hearing',
   'parent',
+  'admin-principal',
+  'admin-super',
 ])
 
 /** Custom event dispatched when the demo profile changes. */

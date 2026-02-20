@@ -72,14 +72,22 @@ vi.mock('motion/react', () => ({
   }),
 }))
 
-// Mock next-intl
-vi.mock('next-intl', () => ({
-  useTranslations: (namespace?: string) => {
-    return (key: string) => (namespace ? `${namespace}.${key}` : key)
-  },
-  useLocale: () => 'pt-BR',
-  NextIntlClientProvider: ({ children }: { children: React.ReactNode }) => children,
-}))
+// Mock next-intl — returns stable function references per namespace
+// to avoid breaking referential equality in useCallback/useEffect chains.
+vi.mock('next-intl', () => {
+  const translatorCache = new Map<string, (key: string) => string>()
+  function getTranslator(ns: string): (key: string) => string {
+    if (!translatorCache.has(ns)) {
+      translatorCache.set(ns, (key: string) => (ns ? `${ns}.${key}` : key))
+    }
+    return translatorCache.get(ns)!
+  }
+  return {
+    useTranslations: (namespace?: string) => getTranslator(namespace ?? ''),
+    useLocale: () => 'pt-BR',
+    NextIntlClientProvider: ({ children }: { children: React.ReactNode }) => children,
+  }
+})
 
 // Mock next-intl/server
 vi.mock('next-intl/server', () => ({
