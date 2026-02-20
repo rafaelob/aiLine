@@ -6,6 +6,7 @@ import { motion } from 'motion/react'
 import { cn } from '@/lib/cn'
 import { containerVariants, itemVariants } from '@/lib/motion-variants'
 import { PrivacyPanel } from '@/components/privacy/privacy-panel'
+import { ThemeCompareSlider } from '@/components/accessibility/theme-compare-slider'
 
 const modelDisplay =
   process.env.NEXT_PUBLIC_DEFAULT_MODEL ?? 'Auto-routed (SmartRouter)'
@@ -128,6 +129,10 @@ export function SettingsContent() {
             >
               {t('open_preferences')}
             </Link>
+            {/* Before/After theme comparison */}
+            <div className="mt-4">
+              <ThemeCompareSlider />
+            </div>
           </div>
         </div>
       </motion.section>
