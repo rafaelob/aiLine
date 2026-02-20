@@ -114,6 +114,12 @@ class Settings(BaseSettings):
     # Setup
     setup_complete: bool = False
 
+    # JWT
+    jwt_access_ttl_seconds: int = Field(
+        default=900,
+        description="JWT access token TTL in seconds (default 15 min; dev overrides to 24h)",
+    )
+
     # Demo
     demo_mode: bool = False
 

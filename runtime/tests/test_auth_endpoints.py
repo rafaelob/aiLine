@@ -537,6 +537,97 @@ class TestTokenFormat:
         assert payload["sub"] == resp.json()["user"]["id"]
         assert payload["role"] == "teacher"
 
+    async def test_token_contains_jti(self, client_dev: AsyncClient) -> None:
+        """JWT payload must contain a unique jti claim (F-231)."""
+        import jwt as pyjwt
+
+        resp = await client_dev.post(
+            "/auth/login",
+            json={"email": "jti-test@test.com"},
+        )
+        token = resp.json()["access_token"]
+        payload = pyjwt.decode(
+            token, "dev-secret-not-for-production-use-32bytes!", algorithms=["HS256"]
+        )
+        assert "jti" in payload
+        # jti must be a valid UUID4 string
+        import uuid
+
+        uuid.UUID(payload["jti"], version=4)
+
+    async def test_jti_is_unique_per_token(self, client_dev: AsyncClient) -> None:
+        """Each token must have a different jti (F-231)."""
+        import jwt as pyjwt
+
+        resp1 = await client_dev.post(
+            "/auth/login",
+            json={"email": "jti-unique@test.com"},
+        )
+        resp2 = await client_dev.post(
+            "/auth/login",
+            json={"email": "jti-unique@test.com"},
+        )
+        payload1 = pyjwt.decode(
+            resp1.json()["access_token"],
+            "dev-secret-not-for-production-use-32bytes!",
+            algorithms=["HS256"],
+        )
+        payload2 = pyjwt.decode(
+            resp2.json()["access_token"],
+            "dev-secret-not-for-production-use-32bytes!",
+            algorithms=["HS256"],
+        )
+        assert payload1["jti"] != payload2["jti"]
+
+
+# ---------------------------------------------------------------------------
+# Logout (F-231)
+# ---------------------------------------------------------------------------
+
+
+class TestLogoutEndpoint:
+    """Tests for POST /auth/logout (jti blacklisting)."""
+
+    @pytest.fixture(autouse=True)
+    def _clean_store(self) -> None:
+        _reset_auth_store()
+        yield
+        _reset_auth_store()
+
+    async def test_logout_returns_ok(self, client_dev: AsyncClient) -> None:
+        """Logout should succeed with a valid bearer token."""
+        login_resp = await client_dev.post(
+            "/auth/login",
+            json={"email": "logout-test@test.com"},
+        )
+        token = login_resp.json()["access_token"]
+        resp = await client_dev.post(
+            "/auth/logout",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "ok"
+
+    async def test_logout_requires_auth(self, client_dev: AsyncClient) -> None:
+        """Logout without auth header should return 401."""
+        resp = await client_dev.post("/auth/logout")
+        assert resp.status_code == 401
+
+    async def test_logout_no_bearer_still_ok(self, client_dev: AsyncClient) -> None:
+        """Logout with auth but no Bearer prefix returns ok (graceful)."""
+        login_resp = await client_dev.post(
+            "/auth/login",
+            json={"email": "logout-nobearer@test.com"},
+        )
+        login_resp.json()["access_token"]  # ensure login succeeded
+        # Send token via X-Teacher-ID to pass auth, but no Bearer header
+        resp = await client_dev.post(
+            "/auth/logout",
+            headers={"X-Teacher-ID": "test-user"},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "ok"
+
 
 # ---------------------------------------------------------------------------
 # Email validation

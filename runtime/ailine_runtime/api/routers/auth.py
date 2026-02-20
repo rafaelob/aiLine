@@ -13,6 +13,7 @@ import os
 import re
 import secrets
 import time
+import uuid
 from typing import Any
 
 import structlog
@@ -192,39 +193,63 @@ def _verify_password(password: str, stored_hash: str) -> bool:
     return hmac.compare_digest(new_hash, stored_hash)
 
 
-def _create_jwt(user_id: str, role: str, org_id: str | None = None) -> str:
-    """Create a signed JWT using PyJWT (HS256).
+def _create_jwt(
+    user_id: str,
+    role: str,
+    org_id: str | None = None,
+    ttl_override: int | None = None,
+) -> str:
+    """Create a signed JWT with jti claim.
 
-    Uses the same secret and algorithm as the verification path in
-    TenantContextMiddleware, ensuring tokens produced here are
-    correctly verifiable by the middleware.
+    Algorithm selection (F-231):
+    - RS256 when AILINE_JWT_PRIVATE_KEY is set (production path)
+    - HS256 when only AILINE_JWT_SECRET is set
+    - HS256 with dev fallback secret in dev mode
 
-    In dev mode without AILINE_JWT_SECRET, falls back to a dev-only secret.
+    TTL: Uses ``ttl_override`` if given, else ``AILINE_JWT_ACCESS_TTL_SECONDS``
+    env var, else 86400s (24h) in dev mode / 900s (15 min) otherwise.
     """
     import jwt as pyjwt
 
     dev_mode = os.getenv("AILINE_DEV_MODE", "").lower() in ("true", "1", "yes")
+    private_key = os.getenv("AILINE_JWT_PRIVATE_KEY", "").strip()
     secret = os.getenv("AILINE_JWT_SECRET", "")
-    if not secret:
-        if not dev_mode:
-            raise RuntimeError(
-                "AILINE_JWT_SECRET must be set in non-dev mode. "
-                "Generate one with: python -c 'import secrets; print(secrets.token_urlsafe(48))'"
-            )
-        secret = "dev-secret-not-for-production-use-32bytes!"
+
+    # Select algorithm and signing key
+    if private_key:
+        algorithm = "RS256"
+        signing_key = private_key
+    elif secret:
+        algorithm = "HS256"
+        signing_key = secret
+    elif dev_mode:
+        algorithm = "HS256"
+        signing_key = "dev-secret-not-for-production-use-32bytes!"
+    else:
+        raise RuntimeError(
+            "JWT key material must be set in non-dev mode. "
+            "Set AILINE_JWT_PRIVATE_KEY (RS256) or AILINE_JWT_SECRET (HS256)."
+        )
+
+    # TTL: explicit override > env var > dev default (24h) / prod default (15 min)
+    if ttl_override is not None:
+        ttl = ttl_override
+    else:
+        env_ttl = os.getenv("AILINE_JWT_ACCESS_TTL_SECONDS", "").strip()
+        ttl = int(env_ttl) if env_ttl else 86400 if dev_mode else 900
 
     now = int(time.time())
     payload: dict[str, Any] = {
         "sub": user_id,
         "role": role,
-        "exp": now + 86400,  # 24h
+        "jti": str(uuid.uuid4()),
+        "exp": now + ttl,
         "iat": now,
     }
     if org_id:
         payload["org_id"] = org_id
 
-    # Include iss/aud claims when configured, so the verification path
-    # in TenantContextMiddleware accepts our own tokens.
+    # Include iss/aud claims when configured
     issuer = os.getenv("AILINE_JWT_ISSUER", "").strip()
     audience = os.getenv("AILINE_JWT_AUDIENCE", "").strip()
     if issuer:
@@ -232,7 +257,7 @@ def _create_jwt(user_id: str, role: str, org_id: str | None = None) -> str:
     if audience:
         payload["aud"] = audience
 
-    return pyjwt.encode(payload, secret, algorithm="HS256")
+    return pyjwt.encode(payload, signing_key, algorithm=algorithm)
 
 
 async def _check_login_rate(client_ip: str) -> None:
@@ -386,6 +411,62 @@ async def get_me(
     )
 
 
+@router.post("/logout")
+async def logout(
+    request: Request,
+    teacher_id: str = Depends(require_authenticated),
+) -> dict[str, str]:
+    """Invalidate the current JWT by blacklisting its jti in Redis.
+
+    The jti (JWT ID) is added to a Redis SET with a TTL matching the
+    token's remaining lifetime. Subsequent requests with the same jti
+    are rejected by the middleware (F-231).
+
+    Falls back to a no-op acknowledgement when Redis is unavailable
+    (in-memory dev mode).
+    """
+    import jwt as pyjwt
+
+    auth_header = request.headers.get("authorization", "")
+    if not auth_header.startswith("Bearer "):
+        return {"status": "ok"}
+
+    raw_token = auth_header[7:]
+    try:
+        # Decode without verification just to read jti + exp
+        unverified = pyjwt.decode(raw_token, options={"verify_signature": False})
+        jti = unverified.get("jti")
+        exp = unverified.get("exp", 0)
+    except Exception:
+        return {"status": "ok"}
+
+    if not jti:
+        return {"status": "ok"}
+
+    # Blacklist in Redis with TTL = remaining token lifetime
+    remaining = max(int(exp) - int(time.time()), 1)
+    redis_client = _get_redis_client(request)
+    if redis_client is not None:
+        try:
+            await redis_client.setex(f"jti_blacklist:{jti}", remaining, "1")
+            logger.info("auth.logout", teacher_id=teacher_id, jti=jti)
+        except Exception as exc:
+            logger.warning("auth.logout_redis_failed", error=str(exc))
+
+    return {"status": "ok"}
+
+
+def _get_redis_client(request: Request) -> Any:
+    """Extract the Redis client from the app container, if available."""
+    container = getattr(request.app.state, "container", None)
+    if container is None:
+        return None
+    event_bus = getattr(container, "event_bus", None)
+    if event_bus is None:
+        return None
+    return getattr(event_bus, "_redis", None)
+
+
 @router.get("/roles")
 async def list_roles() -> dict[str, Any]:
     """List all available roles with descriptions."""
@@ -464,7 +545,6 @@ async def demo_login(body: DemoLoginRequest) -> TokenResponse:
 
     email = f"{canonical_key}@ailine-demo.edu"
     role = profile.get("role", "teacher")
-    org_id = profile.get("org_id")
 
     user = await _user_repo.get_by_email(email)
     if user is None:

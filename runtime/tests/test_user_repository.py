@@ -180,7 +180,7 @@ def test_session_factory_implements_protocol() -> None:
     """SessionFactoryUserRepository satisfies the UserRepository protocol."""
 
     # Dummy factory (never called in this test)
-    def _factory():  # noqa: ANN202
+    def _factory():
         raise NotImplementedError
 
     repo = SessionFactoryUserRepository(_factory)
@@ -204,7 +204,7 @@ def test_set_user_repo_and_check() -> None:
         assert not auth_mod.is_user_repo_set()
 
         # Inject a SessionFactory repo
-        def _factory():  # noqa: ANN202
+        def _factory():
             raise NotImplementedError
 
         sf_repo = SessionFactoryUserRepository(_factory)

@@ -205,17 +205,19 @@ def _get_jwt_config() -> dict[str, Any]:
 class _JwtClaims:
     """Lightweight container for claims extracted from a JWT."""
 
-    __slots__ = ("org_id", "role", "teacher_id")
+    __slots__ = ("jti", "org_id", "role", "teacher_id")
 
     def __init__(
         self,
         teacher_id: str | None = None,
         role: str | None = None,
         org_id: str | None = None,
+        jti: str | None = None,
     ) -> None:
         self.teacher_id = teacher_id
         self.role = role
         self.org_id = org_id
+        self.jti = jti
 
 
 def _extract_teacher_id_from_jwt(
@@ -321,6 +323,7 @@ def _verified_jwt_decode(
         # Extract RBAC claims with backward-compatible defaults
         role = payload.get("role", "teacher")
         org_id = payload.get("org_id")
+        jti = payload.get("jti")
 
         logger.debug(
             "auth_jwt_success",
@@ -329,7 +332,7 @@ def _verified_jwt_decode(
             org_id=org_id,
             issuer=payload.get("iss"),
         )
-        return _JwtClaims(teacher_id=sub, role=role, org_id=org_id), None
+        return _JwtClaims(teacher_id=sub, role=role, org_id=org_id, jti=jti), None
 
     except pyjwt.ExpiredSignatureError:
         logger.warning("jwt_expired", msg="JWT token has expired")
@@ -407,6 +410,31 @@ def extract_claims_from_jwt(token: str) -> tuple[_JwtClaims, str | None]:
     return _extract_teacher_id_from_jwt(token)
 
 
+async def _is_jti_blacklisted(request: Request, jti: str) -> bool:
+    """Check if a JWT ID (jti) has been revoked via Redis blacklist.
+
+    Returns False when Redis is unavailable (fail-open for availability).
+    The blacklist key format is ``jti_blacklist:{jti}`` with a TTL matching
+    the token's remaining lifetime (set by POST /auth/logout).
+    """
+    container = getattr(getattr(request.app, "state", None), "container", None)
+    if container is None:
+        return False
+    event_bus = getattr(container, "event_bus", None)
+    if event_bus is None:
+        return False
+    redis_client = getattr(event_bus, "_redis", None)
+    if redis_client is None:
+        return False
+    try:
+        result = await redis_client.get(f"jti_blacklist:{jti}")
+        return result is not None
+    except Exception:
+        # Fail-open: if Redis is down, allow the request through
+        logger.warning("jti_blacklist_check_failed", jti=jti)
+        return False
+
+
 class TenantContextMiddleware(BaseHTTPMiddleware):
     """Extract teacher_id from request and store in contextvars.
 
@@ -443,13 +471,25 @@ class TenantContextMiddleware(BaseHTTPMiddleware):
                 role = claims.role
                 org_id = claims.org_id
                 if teacher_id:
-                    logger.debug(
-                        "tenant_from_jwt",
-                        teacher_id=teacher_id,
-                        role=role,
-                        path=path,
-                    )
-                elif jwt_error:
+                    # F-231: Check jti blacklist (Redis) for revoked tokens
+                    if claims.jti and await _is_jti_blacklisted(
+                        request, claims.jti
+                    ):
+                        logger.warning(
+                            "jwt_revoked",
+                            jti=claims.jti,
+                            path=path,
+                        )
+                        teacher_id = None
+                        jwt_error = "revoked"
+                    else:
+                        logger.debug(
+                            "tenant_from_jwt",
+                            teacher_id=teacher_id,
+                            role=role,
+                            path=path,
+                        )
+                if jwt_error:
                     # JWT was present but invalid -- log auth failure
                     logger.warning(
                         "auth_jwt_failure",

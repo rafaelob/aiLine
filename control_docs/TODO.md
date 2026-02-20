@@ -51,7 +51,7 @@ Based on GPT-5.2 backend architecture review + frontend UX review.
 
 ### Phase 1 — Backend Hardening (HIGH IMPACT)
 - [x] F-230: PostgresUserRepository — SessionFactoryUserRepository + DI wiring (d505bdd)
-- [ ] F-231: JWT Hardening — RS256, jti + Redis blacklist, shorter access TTL
+- [x] F-231: JWT Hardening — RS256/HS256 algorithm selection, jti claim + Redis blacklist, POST /auth/logout, configurable TTL
 - [x] F-232: Health Diagnostics Split — public /health/diagnostics, private /internal/diagnostics
 
 ### Phase 2 — Frontend Premium Polish (HIGH VISUAL IMPACT)
