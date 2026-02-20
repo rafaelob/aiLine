@@ -50,14 +50,14 @@ Based on GPT-5.2 backend architecture review + frontend UX review.
 - [x] F-250: Docker frontend memory 512M → 2G, NODE_OPTIONS=--max-old-space-size=1536
 
 ### Phase 1 — Backend Hardening (HIGH IMPACT)
-- [ ] F-230: PostgresUserRepository — persistent auth across restarts
+- [x] F-230: PostgresUserRepository — SessionFactoryUserRepository + DI wiring (d505bdd)
 - [ ] F-231: JWT Hardening — RS256, jti + Redis blacklist, shorter access TTL
 - [ ] F-232: Health Diagnostics Split — public /health/diagnostics, private /internal
 
 ### Phase 2 — Frontend Premium Polish (HIGH VISUAL IMPACT)
 - [x] F-233: Before/After Accessibility Compare Slider (d30daed)
 - [x] F-234: Pipeline Edge Animations — SVG stroke-dashoffset + node glow states
-- [ ] F-235: Motor Accessibility Mode — increased hit targets, sticky toolbar
+- [x] F-235: Motor Accessibility Mode — MotorStickyToolbar, 56px targets, pill shapes, 12 tests
 - [x] F-236: Micro-interactions — btn-press scale(0.97), slide-in animation, dash-flow keyframe
 
 ### Phase 3 — API & Observability

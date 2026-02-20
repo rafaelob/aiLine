@@ -4,6 +4,7 @@ import { TopBar } from '@/components/layout/topbar'
 import { MobileNav } from '@/components/layout/mobile-nav'
 import { A11yStatusBadge } from '@/components/accessibility/a11y-status-badge'
 import { PersonaExplainer } from '@/components/accessibility/persona-explainer'
+import { MotorStickyToolbar } from '@/components/accessibility/motor-sticky-toolbar'
 
 interface AppLayoutProps {
   children: React.ReactNode
@@ -45,6 +46,9 @@ export default async function AppLayout({ children }: AppLayoutProps) {
           </main>
         </div>
       </div>
+
+      {/* Motor accessibility sticky toolbar (F-235) */}
+      <MotorStickyToolbar />
 
       {/* Mobile bottom navigation */}
       <MobileNav />
