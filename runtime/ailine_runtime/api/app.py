@@ -34,6 +34,37 @@ from ..shared.observability import configure_logging
 
 _log = structlog.get_logger("ailine.api.app")
 
+# Cached skills info — populated once on first diagnostics/capabilities request (F-241).
+_skills_cache: dict[str, Any] | None = None
+
+
+def _get_skills_info(settings_obj: Any) -> dict[str, Any]:
+    """Return cached skills registry info (count + names).
+
+    Scans skill directories once, then caches the result for the
+    lifetime of the process. Safe for concurrent access since the
+    dict is replaced atomically (GIL-protected).
+    """
+    global _skills_cache
+    if _skills_cache is not None:
+        return _skills_cache
+    try:
+        from ailine_agents.skills.registry import SkillRegistry
+
+        registry = SkillRegistry()
+        count = registry.scan_paths(settings_obj.skill_source_paths())
+        result: dict[str, Any] = {
+            "loaded": True,
+            "available": True,
+            "count": count,
+            "names": registry.list_names(),
+        }
+    except Exception:
+        result = {"loaded": False, "available": False, "count": 0, "names": []}
+    _skills_cache = result
+    return result
+
+
 # Regex patterns for normalizing path parameters in metrics labels.
 # Matches UUID v4/v7 (with or without hyphens) and pure numeric IDs.
 _UUID_RE = re.compile(
@@ -303,19 +334,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "elevenlabs": bool(settings.elevenlabs_api_key),
         }
 
-        # -- Skills --
-        try:
-            from ailine_agents.skills.registry import SkillRegistry
-
-            registry = SkillRegistry()
-            skill_count = registry.scan_paths(settings.skill_source_paths())
-            diagnostics["skills"] = {
-                "loaded": True,
-                "count": skill_count,
-                "names": registry.list_names(),
-            }
-        except Exception:
-            diagnostics["skills"] = {"loaded": False, "count": 0, "names": []}
+        # -- Skills (cached — F-241) --
+        skills_info = _get_skills_info(settings)
+        diagnostics["skills"] = {
+            "loaded": skills_info["loaded"],
+            "count": skills_info["count"],
+            "names": skills_info["names"],
+        }
 
         # -- Memory usage (stdlib only, no psutil dependency) --
         import sys
@@ -418,15 +443,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         # Braille translation
         caps["braille"] = {"available": True, "grades": [1], "languages": ["en", "pt-BR", "es"]}
 
-        # Skills
-        try:
-            from ailine_agents.skills.registry import SkillRegistry
-
-            registry = SkillRegistry()
-            count = registry.scan_paths(settings.skill_source_paths())
-            caps["skills"] = {"available": True, "count": count}
-        except Exception:
-            caps["skills"] = {"available": False, "count": 0}
+        # Skills (cached — F-241)
+        skills_info = _get_skills_info(settings)
+        caps["skills"] = {"available": skills_info["available"], "count": skills_info["count"]}
 
         # Demo mode
         caps["demo_mode"] = settings.demo_mode

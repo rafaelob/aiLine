@@ -62,12 +62,12 @@ Based on GPT-5.2 backend architecture review + frontend UX review.
 
 ### Phase 3 — API & Observability
 - [ ] F-237: Run Resource Model — POST /plans:run, GET /runs/{id}, GET /runs/{id}/events
-- [ ] F-238: RFC 7807 Error Model — consistent error responses
+- [x] F-238: RFC 7807 Error Model — already implemented (error_handler.py, 8 tests, application/problem+json)
 - [ ] F-239: TenantContext Explicit Dependencies — Depends(get_actor) returning ActorContext
 
 ### Phase 4 — Cleanup & Polish
 - [ ] F-240: Config Deduplication — deprecate AiLineConfig in favor of Settings
-- [ ] F-241: Cache Skill Registry in Diagnostics
+- [x] F-241: Cache Skill Registry — _get_skills_info() cached once, used by diagnostics + capabilities
 - [x] F-242: Demo Storyboard — 2 tracks (Teacher/Accessibility), 5 steps each, full i18n (4e0de99)
 
 ---
