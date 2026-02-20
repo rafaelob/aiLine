@@ -29,8 +29,8 @@ from ...shared.tenant import try_get_current_teacher_id
 
 logger = structlog.get_logger("ailine.middleware.rate_limit")
 
-# Paths excluded from rate limiting (health probes only; /metrics is rate-limited).
-_EXCLUDED_PATHS = frozenset({"/health", "/health/ready"})
+# Paths excluded from rate limiting (health probes + capabilities).
+_EXCLUDED_PATHS = frozenset({"/health", "/health/ready", "/capabilities"})
 
 # Periodic cleanup interval: every N requests, purge expired entries.
 _CLEANUP_INTERVAL = 100

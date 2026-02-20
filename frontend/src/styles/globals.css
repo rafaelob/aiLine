@@ -525,11 +525,21 @@ body {
   transition: background-color 500ms ease, color 500ms ease;
 }
 
-/* Focus styles — WCAG AAA compliant */
+/* Focus styles — WCAG AAA compliant with premium outline ring */
 :focus-visible {
-  outline: none;
+  outline: 3px solid var(--color-primary);
+  outline-offset: 3px;
   box-shadow: var(--focus-ring);
   border-radius: var(--radius-sm);
+}
+
+/* Forced-colors mode (Windows High Contrast) — outline only */
+@media (forced-colors: active) {
+  :focus-visible {
+    outline: 3px solid Highlight;
+    outline-offset: 3px;
+    box-shadow: none;
+  }
 }
 
 /* Skip-to-content link (visible on focus for keyboard users) */

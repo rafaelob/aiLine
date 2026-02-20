@@ -81,6 +81,7 @@ _EXCLUDED_PREFIXES = (
 _EXCLUDED_EXACT = frozenset({
     "/health",
     "/health/ready",
+    "/capabilities",
     "/docs",
     "/redoc",
     "/demo",

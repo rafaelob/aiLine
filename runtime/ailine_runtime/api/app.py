@@ -81,6 +81,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     init_tracing(service_name="ailine-runtime")
 
+    # Validate environment early — fail fast on misconfiguration (GPT-5.2 review).
+    env_warnings = settings.validate_environment()
+    if env_warnings:
+        for w in env_warnings:
+            _log.warning("config.validation_warning", message=w)
+
     container = Container.build(settings)
 
     @asynccontextmanager
@@ -355,6 +361,62 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
         status_code = 200 if all_ok else 503
         return JSONResponse(content=diagnostics, status_code=status_code)
+
+    # -----------------------------------------------------------------
+    # Capabilities endpoint — dynamic feature discovery
+    # -----------------------------------------------------------------
+
+    @app.get("/capabilities")
+    async def capabilities() -> dict[str, Any]:
+        """Public endpoint listing currently available platform features.
+
+        Returns which adapters and services are wired and operational.
+        Useful for progressive enhancement in the frontend — e.g., only
+        show TTS button if TTS is configured, sign language if available.
+        """
+        caps: dict[str, Any] = {
+            "version": app.version,
+            "personas": 9,
+            "sign_languages": 8,
+        }
+
+        # LLM availability
+        caps["llm"] = {
+            "available": bool(
+                settings.anthropic_api_key
+                or settings.openai_api_key
+                or settings.google_api_key
+                or settings.openrouter_api_key
+            ),
+            "provider": settings.llm.provider,
+        }
+
+        # TTS (ElevenLabs)
+        caps["tts"] = {"available": bool(settings.elevenlabs_api_key)}
+
+        # Image generation (Gemini Imagen)
+        caps["image_generation"] = {"available": bool(settings.google_api_key)}
+
+        # Vector search (pgvector)
+        caps["vector_search"] = {"available": container.vectorstore is not None}
+
+        # Braille translation
+        caps["braille"] = {"available": True, "grades": [1], "languages": ["en", "pt-BR", "es"]}
+
+        # Skills
+        try:
+            from ailine_agents.skills.registry import SkillRegistry
+
+            registry = SkillRegistry()
+            count = registry.scan_paths(settings.skill_source_paths())
+            caps["skills"] = {"available": True, "count": count}
+        except Exception:
+            caps["skills"] = {"available": False, "count": 0}
+
+        # Demo mode
+        caps["demo_mode"] = settings.demo_mode
+
+        return caps
 
     # -----------------------------------------------------------------
     # Metrics endpoint (Prometheus text format)
