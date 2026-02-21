@@ -116,6 +116,29 @@ F-156 to F-162 (7 features): Sign Language Interpreter Skill, Multi-Language Ada
 - [F-249] Login Rate Limit — raised to 20/min for demo-friendly Docker testing
 - [F-250] Docker Frontend Memory — 512M to 2G, NODE_OPTIONS=--max-old-space-size=1536
 
+### Sprint 28 — Security Containment + Docs Sync (Feb 21, 2026)
+- [F-251] Demo Login Privilege Escalation Fix — _validate_role() enforcement + admin profiles removed from DEMO_PROFILES
+- [F-252] TraceStore Tenant Integrity — append_node/update_run no longer auto-create RunTrace
+- [F-253] Dev Mode Default OFF — AILINE_DEV_MODE defaults to false in Docker Compose
+- [F-254] JWT Dev Secret Module — Shared jwt_dev_secret.py replaces hardcoded fallback secrets
+- [F-255] Demo Login Rate Limiting — Per-IP rate limit (20/min) on /auth/demo-login
+- [F-256] Diagnostics Admin-Only — /internal/diagnostics restricted to admin role
+- [F-257] Rate Limiter Docs Alignment — Docstrings corrected to 20 attempts/minute
+- [F-258] Redis Access Encapsulation — EventBus.get_redis_client() protocol method replaces private _redis
+- [F-259] TraceStore Server-Side Filtering — list_recent() accepts status parameter
+- [F-260] Seed Import Unification — All imports use demo_profiles module directly
+- [F-261] Role Validation 422 — _validate_role() raises HTTP 422 for invalid roles
+- [F-262] Body Immutability — plans_stream uses Pydantic model_copy instead of mutation
+- [F-263] SessionStorage JWT Cleanup — Removed insecure sessionStorage fallback
+- [F-264] Docker Port Hardening — DB/Redis ports bound to 127.0.0.1
+- [F-265] SYSTEM_DESIGN.md Version Sync — Tailwind, motion, next-intl, pydantic-ai versions corrected
+- [F-266] FEATURES.md Sprint 27 — Added Sprint 27 section (F-230 to F-250)
+- [F-267] SECURITY.md Roles Update — Corrected to 5 roles (super_admin through parent)
+- [F-268] RUN_DEPLOY.md Port Defaults — Fixed port defaults (8011/3011/5411/6311)
+- [F-269] TEST.md Counts Update — Updated to ~3,889 tests, fixed pytest command
+- [F-270] Frontend CLAUDE.md Sync — Tailwind and motion versions corrected
+- [F-271] I18N Diacritics Fix — 7 pt-BR + 1 es diacritics corrected
+
 ## Backlog
 - [F-035] Sign Language Post-MVP Path — SPOTER transformer + VLibrasBD NMT dataset (ADR-047)
 - [F-178] Teacher Skill Sets — Per-teacher skill configurations with presets
