@@ -841,7 +841,7 @@ class TestDemoProfiles:
         assert "mode" in body
         assert body["mode"] == "hackathon_demo"
         profiles = body["profiles"]
-        assert len(profiles) == 8
+        assert len(profiles) == 6  # F-251: admin profiles removed
 
     async def test_profiles_contain_required_fields(
         self, client_demo_off: AsyncClient

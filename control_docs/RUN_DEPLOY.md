@@ -16,13 +16,19 @@ GOOGLE_API_KEY=...          # for Gemini embeddings
 OPENAI_API_KEY=...          # fallback LLM
 ELEVENLABS_API_KEY=...      # TTS
 # Docker port overrides (if collisions):
-API_HOST_PORT=8000
-FRONTEND_HOST_PORT=3000
+API_HOST_PORT=8011          # default host port for API
+FRONTEND_HOST_PORT=3011     # default host port for frontend
+DB_HOST_PORT=5411           # default host port for Postgres
+REDIS_HOST_PORT=6311        # default host port for Redis
+# Frontend container env (set in docker-compose.yml):
+# API_INTERNAL_URL=http://api:8000
+# HOSTNAME=0.0.0.0
+# NODE_OPTIONS=--max-old-space-size=1536
 ```
 
 ## Docker Compose (recommended)
 ```bash
-# Full stack: api (8000), frontend (3000), db (5432 internal), redis (6379 internal)
+# Full stack: api (8011), frontend (3011), db (5411), redis (6311) — host ports
 docker compose up -d --build
 
 docker compose ps                # health
@@ -36,8 +42,8 @@ docker compose down -v           # stop + delete data
 |---------|-------|-------------|---------|
 | db | pgvector/pgvector:0.8.0-pg16 | none (internal) | backend |
 | redis | redis:7.4-alpine | none (internal) | backend |
-| api | runtime/Dockerfile | 8000 | backend + frontend |
-| frontend | frontend/Dockerfile | 3000 | frontend |
+| api | runtime/Dockerfile | 8011 | backend + frontend |
+| frontend | frontend/Dockerfile | 3011 | frontend |
 
 **DB init:** `infra/db/init-pgvector.sql` auto-creates the `vector` extension via docker-entrypoint-initdb.
 

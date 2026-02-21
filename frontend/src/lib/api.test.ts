@@ -109,13 +109,16 @@ describe('api module', () => {
       expect(state.isAuthenticated).toBe(false)
     })
 
-    it('falls back to sessionStorage JWT when store has no token', () => {
+    it('sessionStorage JWT is cleaned up by F-263 security fix', () => {
       const futureExp = Math.floor(Date.now() / 1000) + 3600
       const token = makeJwt(futureExp)
       sessionStorage.setItem('ailine_token', token)
 
+      // F-263: sessionStorage JWT fallback was removed for security.
+      // The module-level cleanup removes ailine_token on load.
+      // getAuthHeaders no longer reads from sessionStorage.
       const headers = getAuthHeaders()
-      expect(headers).toEqual({ Authorization: `Bearer ${token}` })
+      expect(headers).toEqual({})
     })
 
     it('falls back to demo profile header when no JWT available (short key)', () => {
@@ -148,8 +151,7 @@ describe('api module', () => {
         // Long format (landing page — matches backend demo_profiles.py)
         'teacher-ms-johnson', 'student-alex-tea', 'student-maya-adhd',
         'student-lucas-dyslexia', 'student-sofia-hearing', 'parent-david',
-        // Admin profiles (same in both flows)
-        'admin-principal', 'admin-super',
+        // F-251: admin profiles removed
       ]
       for (const profile of validProfiles) {
         sessionStorage.setItem('ailine_demo_profile', profile)
@@ -180,14 +182,15 @@ describe('api module', () => {
       expect(headers).toEqual({ Authorization: `Bearer ${token}` })
     })
 
-    it('sessionStorage JWT takes priority over demo profile', () => {
+    it('demo profile used when sessionStorage JWT is absent (F-263)', () => {
       const futureExp = Math.floor(Date.now() / 1000) + 3600
       const token = makeJwt(futureExp)
       sessionStorage.setItem('ailine_token', token)
       sessionStorage.setItem('ailine_demo_profile', 'teacher')
 
+      // F-263: sessionStorage JWT is no longer read; demo profile wins
       const headers = getAuthHeaders()
-      expect(headers).toEqual({ Authorization: `Bearer ${token}` })
+      expect(headers).toEqual({ 'X-Teacher-ID': 'demo-teacher' })
     })
 
     it('handles malformed JWT gracefully (treats as expired)', () => {

@@ -93,6 +93,29 @@ F-156 to F-162 (7 features): Sign Language Interpreter Skill, Multi-Language Ada
 - [F-228] Config Validation at Startup — Settings.validate_environment() called before Container.build(), fail-fast with structured warnings
 - [F-229] Comprehensive Test Expansion — 16 new test files, 133 new tests covering login phases, auth store, sign language selector, wizard steps, settings, API, demo data
 
+### Sprint 27 — Production-Grade Polish (Feb 20, 2026)
+- [F-230] PostgresUserRepository — SessionFactoryUserRepository with DI wiring for persistent user storage
+- [F-231] JWT Hardening — RS256/HS256 algorithm selection, jti claim + Redis blacklist, POST /auth/logout, configurable TTL
+- [F-232] Health Diagnostics Split — public /health/diagnostics vs private /internal/diagnostics with auth
+- [F-233] Before/After Accessibility Compare Slider — draggable theme comparison, keyboard accessible
+- [F-234] Pipeline Edge Animations — SVG stroke-dashoffset flow + node glow states
+- [F-235] Motor Accessibility Mode — MotorStickyToolbar with 56px targets, pill shapes, focus halos
+- [F-236] Micro-interactions — btn-press scale(0.97), slide-in animation, dash-flow keyframe
+- [F-237] Run Resource Model — GET /runs (list + filter + pagination), GET /runs/{id} (detail)
+- [F-238] RFC 7807 Error Model — already implemented (error_handler.py, application/problem+json)
+- [F-239] TenantContext Explicit Dependencies — all routers use Depends(require_authenticated)
+- [F-240] Config Deduplication — AiLineConfig deprecated with DeprecationWarning, Settings is canonical
+- [F-241] Cache Skill Registry — _get_skills_info() cached once, used by diagnostics + capabilities
+- [F-242] Demo Storyboard — 2 tracks (Teacher/Accessibility), 5 steps each, full i18n
+- [F-243] Demo Profile Key Mismatch — VALID_DEMO_PROFILES includes both short and long keys
+- [F-244] EvidencePanel aria-labelledby Fix — missing id on toggle button
+- [F-245] PreferencesPanel Focus Restore — stale closure fix
+- [F-246] JWT iss/aud Claims — mint when env vars configured
+- [F-247] /auth/demo-login Endpoint — proper JWT flow with short/long key aliases
+- [F-248] Demo Users Seeded — hashed password (demo123), email login works
+- [F-249] Login Rate Limit — raised to 20/min for demo-friendly Docker testing
+- [F-250] Docker Frontend Memory — 512M to 2G, NODE_OPTIONS=--max-old-space-size=1536
+
 ## Backlog
 - [F-035] Sign Language Post-MVP Path — SPOTER transformer + VLibrasBD NMT dataset (ADR-047)
 - [F-178] Teacher Skill Sets — Per-teacher skill configurations with presets

@@ -29,11 +29,10 @@ async def list_runs(
     and cursor-based pagination via ``limit`` + ``offset``.
     """
     store = get_trace_store()
-    # Fetch more than needed to apply status filter after
-    all_traces = await store.list_recent(limit=500, teacher_id=teacher_id)
-
-    if status:
-        all_traces = [t for t in all_traces if t.status == status]
+    # F-259: Server-side status filtering (moved from client-side to store)
+    all_traces = await store.list_recent(
+        limit=500, teacher_id=teacher_id, status=status,
+    )
 
     total = len(all_traces)
     page = all_traces[offset : offset + limit]

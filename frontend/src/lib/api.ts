@@ -4,6 +4,11 @@ import { useAuthStore } from '../stores/auth-store'
 
 export const API_BASE = '/api'
 
+// SECURITY: Actively clean up legacy insecure tokens on module load (Sprint 26 cleanup)
+if (typeof window !== 'undefined') {
+  sessionStorage.removeItem('ailine_token')
+}
+
 /**
  * Check if a JWT token has expired by decoding the payload.
  * Returns true if expired or unparseable (safe default).
@@ -44,9 +49,7 @@ const VALID_DEMO_PROFILES = new Set([
   'student-dyslexia',
   'student-hearing',
   'parent',
-  // Admin profiles (same key in both flows)
-  'admin-principal',
-  'admin-super',
+  // F-251: admin profiles removed to prevent privilege escalation
 ])
 
 /** Custom event dispatched when the demo profile changes. */
@@ -111,9 +114,8 @@ export function clearDemoProfile(): void {
  *
  * Priority:
  * 1. Persisted auth store JWT (from real login via zustand-persist)
- * 2. Session/localStorage JWT (legacy paths)
- * 3. Demo profile header
- * 4. Dev teacher ID fallback
+ * 2. Demo profile header
+ * 3. Dev teacher ID fallback
  */
 export function getAuthHeaders(): Record<string, string> {
   if (typeof window === 'undefined') return {}
@@ -132,14 +134,7 @@ export function getAuthHeaders(): Record<string, string> {
     // Store not initialized — fall through
   }
 
-  // 2. Legacy sessionStorage JWT (with expiry check)
-  // SECURITY: localStorage fallback removed — XSS vector (Sprint 26)
-  const token = sessionStorage.getItem('ailine_token')
-  if (token && !isTokenExpired(token)) {
-    return { Authorization: `Bearer ${token}` }
-  }
-
-  // 3. Active demo profile (validate against allowlist)
+  // 2. Active demo profile (validate against allowlist)
   const demoProfile = getCurrentProfile()
   if (demoProfile && VALID_DEMO_PROFILES.has(demoProfile)) {
     return { 'X-Teacher-ID': `demo-${demoProfile}` }

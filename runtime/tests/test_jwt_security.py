@@ -445,9 +445,9 @@ class TestJWTDevModeFallback:
         claims_unsigned, _error = _extract_teacher_id_from_jwt(unsigned_token)
         assert claims_unsigned.teacher_id is None
 
-        # JWT signed with the dev fallback secret should work
-        dev_secret = "dev-secret-not-for-production-use-32bytes!"
-        signed_token = pyjwt.encode(_valid_payload(sub="teacher-dev"), dev_secret, algorithm="HS256")
+        # JWT signed with the dev fallback secret should work (F-254)
+        from ailine_runtime.shared.jwt_dev_secret import DEV_JWT_SECRET
+        signed_token = pyjwt.encode(_valid_payload(sub="teacher-dev"), DEV_JWT_SECRET, algorithm="HS256")
         claims_signed, error = _extract_teacher_id_from_jwt(signed_token)
         assert claims_signed.teacher_id == "teacher-dev"
         assert error is None

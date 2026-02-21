@@ -61,13 +61,17 @@ _ALLOWED_SELF_ASSIGN_ROLES = frozenset({
 def _validate_role(role: str, *, allow_admin: bool = False) -> str:
     """Validate and normalize a role string against UserRole enum.
 
-    Non-admin users cannot self-assign admin roles (super_admin, school_admin).
-    Returns a valid UserRole value, defaulting to 'teacher' on invalid input.
+    F-261: raises HTTPException 422 for completely unknown role values.
+    Admin roles (super_admin, school_admin) are silently downgraded to
+    'teacher' for security (non-admin cannot self-assign).
     """
     try:
         validated = UserRole(role)
     except ValueError:
-        return UserRole.TEACHER
+        raise HTTPException(
+            status_code=422,
+            detail=f"Invalid role: '{role}'. Valid roles: {', '.join(r.value for r in UserRole)}",
+        ) from None
     if not allow_admin and validated not in _ALLOWED_SELF_ASSIGN_ROLES:
         return UserRole.TEACHER
     return validated
@@ -134,7 +138,7 @@ class TokenResponse(BaseModel):
 
 _user_repo: UserRepository = InMemoryUserRepository()
 
-# Dedicated login rate limiter: per-IP, 5 attempts per minute.
+# Dedicated login rate limiter: per-IP, 20 attempts per minute (F-249).
 _login_attempts: dict[str, list[float]] = {}
 _login_rate_lock = asyncio.Lock()
 _LOGIN_MAX_ATTEMPTS = 20
@@ -223,8 +227,10 @@ def _create_jwt(
         algorithm = "HS256"
         signing_key = secret
     elif dev_mode:
+        from ...shared.jwt_dev_secret import DEV_JWT_SECRET
+
         algorithm = "HS256"
-        signing_key = "dev-secret-not-for-production-use-32bytes!"
+        signing_key = DEV_JWT_SECRET
     else:
         raise RuntimeError(
             "JWT key material must be set in non-dev mode. "
@@ -261,7 +267,7 @@ def _create_jwt(
 
 
 async def _check_login_rate(client_ip: str) -> None:
-    """Enforce per-IP login rate limit (5 attempts/minute).
+    """Enforce per-IP login rate limit (20 attempts/minute).
 
     Raises HTTPException 429 if the limit is exceeded.
     Periodically prunes stale IP entries to prevent unbounded memory growth.
@@ -306,7 +312,7 @@ async def login(body: LoginRequest, request: Request) -> TokenResponse:
     """Authenticate user and return JWT token.
 
     In dev mode, any email/role combination is accepted without password.
-    Includes per-IP rate limiting (5 attempts/minute) to mitigate brute force.
+    Includes per-IP rate limiting (20 attempts/minute) to mitigate brute force.
     """
     # Per-IP login rate limiting
     client_ip = request.client.host if request.client else "unknown"
@@ -445,7 +451,7 @@ async def logout(
 
     # Blacklist in Redis with TTL = remaining token lifetime
     remaining = max(int(exp) - int(time.time()), 1)
-    redis_client = _get_redis_client(request)
+    redis_client = await _get_redis_client(request)
     if redis_client is not None:
         try:
             await redis_client.setex(f"jti_blacklist:{jti}", remaining, "1")
@@ -456,15 +462,19 @@ async def logout(
     return {"status": "ok"}
 
 
-def _get_redis_client(request: Request) -> Any:
-    """Extract the Redis client from the app container, if available."""
+async def _get_redis_client(request: Request) -> Any:
+    """Extract the Redis client from the app container via public protocol.
+
+    F-258: Uses ``EventBus.get_redis_client()`` instead of accessing
+    the private ``_redis`` attribute directly.
+    """
     container = getattr(request.app.state, "container", None)
     if container is None:
         return None
     event_bus = getattr(container, "event_bus", None)
     if event_bus is None:
         return None
-    return getattr(event_bus, "_redis", None)
+    return await event_bus.get_redis_client()
 
 
 @router.get("/roles")
@@ -528,13 +538,17 @@ _SHORT_TO_LONG_KEY: dict[str, str] = {
 
 
 @router.post("/demo-login", response_model=TokenResponse)
-async def demo_login(body: DemoLoginRequest) -> TokenResponse:
+async def demo_login(body: DemoLoginRequest, request: Request) -> TokenResponse:
     """Authenticate via a demo profile key and return a JWT.
 
     Looks up the profile in DEMO_PROFILES, finds or creates the matching
     user, and returns a JWT with the correct role/org_id.  Accepts both
     long keys (``teacher-ms-johnson``) and short aliases (``teacher``).
     """
+    # F-255: Rate-limit demo login the same as normal login
+    client_ip = request.client.host if request.client else "unknown"
+    await _check_login_rate(client_ip)
+
     from .demo_profiles import DEMO_PROFILES
 
     # Resolve short aliases to canonical long keys
@@ -544,7 +558,10 @@ async def demo_login(body: DemoLoginRequest) -> TokenResponse:
         raise HTTPException(status_code=404, detail="Unknown demo profile key")
 
     email = f"{canonical_key}@ailine-demo.edu"
-    role = profile.get("role", "teacher")
+    raw_role = profile.get("role", "teacher")
+    # F-251: Enforce role validation -- demo profiles are capped to
+    # teacher/student/parent.  Admin roles cannot be minted via demo login.
+    role = _validate_role(raw_role)
 
     user = await _user_repo.get_by_email(email)
     if user is None:
@@ -583,7 +600,7 @@ def seed_demo_users() -> None:
     use ``seed_demo_users_async()`` instead (called from a lifespan hook).
     """
     from ...adapters.db.user_repository import InMemoryUserRepository
-    from .demo import DEMO_PROFILES
+    from .demo_profiles import DEMO_PROFILES
 
     if not isinstance(_user_repo, InMemoryUserRepository):
         logger.info("auth.seed_demo_users_skipped", reason="not in-memory repo")
@@ -613,7 +630,7 @@ async def seed_demo_users_async() -> None:
     Safe for concurrent calls — uses get_by_email + create with the
     DB UNIQUE constraint on email as the ultimate guard.
     """
-    from .demo import DEMO_PROFILES
+    from .demo_profiles import DEMO_PROFILES
 
     demo_pw_hash = _hash_password("demo123")
     seeded = 0

@@ -3,9 +3,9 @@
 ## Stack
 - Next.js 16.1.6 (Turbopack, React Compiler 1.0)
 - React 19.2.4 with auto-memoization
-- Tailwind CSS 4.1.18 (CSS-first, @theme directive)
-- next-intl 4.8.2 for i18n (EN, PT-BR, ES)
-- motion 12.34.0 for animations (import from "motion/react")
+- Tailwind CSS 4.2.0 (CSS-first, @theme directive)
+- next-intl 4.8.3 for i18n (EN, PT-BR, ES)
+- motion 12.34.2 for animations (import from "motion/react")
 - Zustand 5.0.11 for state management
 - Recharts 3.7.0 for charts
 - DOMPurify 3.3.1 for XSS sanitization

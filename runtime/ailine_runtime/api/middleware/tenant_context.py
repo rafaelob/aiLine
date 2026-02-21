@@ -174,9 +174,12 @@ def _get_jwt_config() -> dict[str, Any]:
 
     # In dev mode without explicit key material, use the same fallback
     # secret as the auth router to ensure JWTs created at /auth/login
-    # are verifiable by the middleware.
+    # are verifiable by the middleware.  F-254: uses a shared generated
+    # secret instead of a hardcoded string.
     if not secret and not public_key and _is_dev_mode():
-        secret = "dev-secret-not-for-production-use-32bytes!"
+        from ...shared.jwt_dev_secret import DEV_JWT_SECRET
+
+        secret = DEV_JWT_SECRET
 
     # Determine algorithms based on what key material is available
     algorithms_env = os.getenv("AILINE_JWT_ALGORITHMS", "")
@@ -417,13 +420,14 @@ async def _is_jti_blacklisted(request: Request, jti: str) -> bool:
     The blacklist key format is ``jti_blacklist:{jti}`` with a TTL matching
     the token's remaining lifetime (set by POST /auth/logout).
     """
+    # F-258: Use public EventBus.get_redis_client() instead of private _redis
     container = getattr(getattr(request.app, "state", None), "container", None)
     if container is None:
         return False
     event_bus = getattr(container, "event_bus", None)
     if event_bus is None:
         return False
-    redis_client = getattr(event_bus, "_redis", None)
+    redis_client = await event_bus.get_redis_client()
     if redis_client is None:
         return False
     try:

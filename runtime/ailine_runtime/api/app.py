@@ -22,7 +22,7 @@ from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import JSONResponse, PlainTextResponse, Response
 
-from ..app.authz import require_authenticated
+from ..app.authz import require_admin, require_authenticated
 from ..shared.config import Settings, get_settings
 from ..shared.container import Container
 from ..shared.metrics import (
@@ -323,12 +323,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.get("/internal/diagnostics")
     async def internal_diagnostics(
-        _teacher_id: str = Depends(require_authenticated),
+        _teacher_id: str = Depends(require_admin),
     ) -> Response:
-        """Authenticated diagnostics with full operational data.
+        """Admin-only diagnostics with full operational data (F-256).
 
         Includes dependency latency, LLM model config, API key presence,
-        skill names, and process memory. Requires valid JWT.
+        skill names, and process memory. Requires admin role (super_admin
+        or school_admin).
         """
         import os
         import time as _time

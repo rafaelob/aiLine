@@ -31,18 +31,16 @@ describe('login-data', () => {
   })
 
   describe('DEMO_PROFILES_BY_ROLE', () => {
-    it('has profiles for all 5 roles', () => {
+    it('has profiles for 3 non-admin roles (F-251)', () => {
       const roles = Object.keys(DEMO_PROFILES_BY_ROLE)
-      expect(roles).toHaveLength(5)
+      expect(roles).toHaveLength(3)
       expect(roles).toContain('teacher')
       expect(roles).toContain('student')
       expect(roles).toContain('parent')
-      expect(roles).toContain('school_admin')
-      expect(roles).toContain('super_admin')
     })
 
     it('student role has 4 profiles with accessibility types', () => {
-      const students = DEMO_PROFILES_BY_ROLE.student
+      const students = DEMO_PROFILES_BY_ROLE.student!
       expect(students).toHaveLength(4)
       const keys = students.map((p) => p.key)
       expect(keys).toContain('student-asd')
@@ -66,12 +64,12 @@ describe('login-data', () => {
     })
 
     it('student-asd has tea accessibility profile', () => {
-      const asd = DEMO_PROFILES_BY_ROLE.student.find((p) => p.key === 'student-asd')
+      const asd = DEMO_PROFILES_BY_ROLE.student!.find((p) => p.key === 'student-asd')
       expect(asd?.accessibility).toBe('tea')
     })
 
     it('student-hearing routes to sign-language', () => {
-      const hearing = DEMO_PROFILES_BY_ROLE.student.find((p) => p.key === 'student-hearing')
+      const hearing = DEMO_PROFILES_BY_ROLE.student!.find((p) => p.key === 'student-hearing')
       expect(hearing?.route).toBe('/sign-language')
     })
   })

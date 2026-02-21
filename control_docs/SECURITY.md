@@ -40,11 +40,11 @@
 ## Access Control
 - JWT RS256/ES256 verification with JWKS support, algorithm pinning, iss/aud/exp/nbf validation (F-100)
 - 57 JWT security tests: forged, expired, wrong aud/kid, replay, tenant impersonation (F-101)
-- Centralized authorization policy (authz.py): `require_authenticated`, `require_tenant_access`, `can_observe` (ADR-060)
+- Centralized authorization policy (authz.py, ADR-060): `require_authenticated`, `require_tenant_access`, `require_role`, `require_admin`, `require_teacher_or_admin`, `require_any_authenticated_role`, `can_access_student_data`, `check_student_access`, `can_observe`
 - **All API endpoints require authentication** (media, sign-language, plans, tutors, materials, observability, traces, RAG diagnostics)
 - WebSocket `/ws/libras-caption` requires JWT token via `?token=` query parameter
 - CORS `X-Teacher-ID` header only allowed in dev mode (removed from production CORS)
-- Roles: admin, educator, student
+- Roles (5): super_admin, school_admin, teacher, student, parent (super_admin bypasses all role checks)
 - Principle of least privilege on all service accounts
 
 ## Prompt Injection Defenses (F-102)

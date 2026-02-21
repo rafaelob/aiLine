@@ -77,6 +77,22 @@ async def client_no_dev(app_no_dev) -> AsyncGenerator[AsyncClient, None]:
         yield c
 
 
+def _get_jwt_secret() -> str:
+    """Return the JWT signing secret used by the auth router.
+
+    Mirrors ``_create_jwt()`` key selection: env-var AILINE_JWT_SECRET if set,
+    otherwise the auto-generated dev fallback from ``jwt_dev_secret``.
+    """
+    import os
+
+    secret = os.getenv("AILINE_JWT_SECRET", "")
+    if secret:
+        return secret
+    from ailine_runtime.shared.jwt_dev_secret import DEV_JWT_SECRET
+
+    return DEV_JWT_SECRET
+
+
 def _reset_auth_store() -> None:
     """Reset the user repository to a fresh InMemory instance and clear rate limiter.
 
@@ -530,9 +546,10 @@ class TestTokenFormat:
             json={"email": "pyjwt-test@test.com"},
         )
         token = resp.json()["access_token"]
-        # Should be decodable by PyJWT with the dev secret
+        # Use the same secret the JWT was minted with (env var > dev fallback)
+        secret = _get_jwt_secret()
         payload = pyjwt.decode(
-            token, "dev-secret-not-for-production-use-32bytes!", algorithms=["HS256"]
+            token, secret, algorithms=["HS256"]
         )
         assert payload["sub"] == resp.json()["user"]["id"]
         assert payload["role"] == "teacher"
@@ -546,8 +563,9 @@ class TestTokenFormat:
             json={"email": "jti-test@test.com"},
         )
         token = resp.json()["access_token"]
+        secret = _get_jwt_secret()
         payload = pyjwt.decode(
-            token, "dev-secret-not-for-production-use-32bytes!", algorithms=["HS256"]
+            token, secret, algorithms=["HS256"]
         )
         assert "jti" in payload
         # jti must be a valid UUID4 string
@@ -567,14 +585,15 @@ class TestTokenFormat:
             "/auth/login",
             json={"email": "jti-unique@test.com"},
         )
+        secret = _get_jwt_secret()
         payload1 = pyjwt.decode(
             resp1.json()["access_token"],
-            "dev-secret-not-for-production-use-32bytes!",
+            secret,
             algorithms=["HS256"],
         )
         payload2 = pyjwt.decode(
             resp2.json()["access_token"],
-            "dev-secret-not-for-production-use-32bytes!",
+            secret,
             algorithms=["HS256"],
         )
         assert payload1["jti"] != payload2["jti"]
@@ -835,12 +854,11 @@ class TestLoginRateLimit:
 
 
 class TestJwtSecretLength:
-    """Tests for JWT dev secret meeting RFC 7518 HS256 minimum (32 bytes)."""
+    """Tests for JWT signing secret meeting RFC 7518 HS256 minimum (32 bytes)."""
 
-    def test_dev_secret_is_32_plus_bytes(self) -> None:
-        """The dev-mode JWT secret must be at least 32 bytes for HS256."""
-        # Import the secret string used in _create_jwt fallback
-        secret = "dev-secret-not-for-production-use-32bytes!"
+    def test_jwt_secret_is_32_plus_bytes(self) -> None:
+        """The JWT signing secret must be at least 32 bytes for HS256."""
+        secret = _get_jwt_secret()
         assert len(secret.encode()) >= 32
 
 
@@ -891,16 +909,13 @@ class TestDemoLogin:
         )
         assert resp.status_code == 404
 
-    async def test_demo_login_admin_profile(self, client_dev: AsyncClient) -> None:
-        """Admin profiles are accessible via demo-login."""
+    async def test_demo_login_admin_profile_removed(self, client_dev: AsyncClient) -> None:
+        """Admin profiles were removed (F-251) and now return 404."""
         resp = await client_dev.post(
             "/auth/demo-login",
             json={"demo_key": "admin-principal"},
         )
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["user"]["role"] == "school_admin"
-        assert "access_token" in data
+        assert resp.status_code == 404
 
     async def test_demo_login_jwt_is_valid(self, client_dev: AsyncClient) -> None:
         """JWT from demo-login is accepted by /auth/me."""
@@ -918,7 +933,10 @@ class TestDemoLogin:
         assert me_resp.json()["id"] == "demo-teacher-ms-johnson"
 
     async def test_demo_login_all_profiles(self, client_dev: AsyncClient) -> None:
-        """All 8 demo profiles are accessible (long keys)."""
+        """All 6 non-admin demo profiles are accessible (long keys).
+
+        F-251: admin-principal and admin-super were removed.
+        """
         keys = [
             "teacher-ms-johnson",
             "student-alex-tea",
@@ -926,8 +944,6 @@ class TestDemoLogin:
             "student-lucas-dyslexia",
             "student-sofia-hearing",
             "parent-david",
-            "admin-principal",
-            "admin-super",
         ]
         for key in keys:
             resp = await client_dev.post(
@@ -935,6 +951,29 @@ class TestDemoLogin:
                 json={"demo_key": key},
             )
             assert resp.status_code == 200, f"Failed for key: {key}"
+
+    async def test_demo_login_admin_super_removed(self, client_dev: AsyncClient) -> None:
+        """F-251: admin-super profile returns 404."""
+        resp = await client_dev.post(
+            "/auth/demo-login",
+            json={"demo_key": "admin-super"},
+        )
+        assert resp.status_code == 404
+
+    async def test_demo_login_invalid_role_in_profile_422(self, client_dev: AsyncClient) -> None:
+        """F-261: If a demo profile somehow had a completely invalid role, _validate_role raises 422.
+
+        This tests the _validate_role function directly since demo profiles
+        always have valid roles; we test the mechanism in isolation.
+        """
+        from fastapi import HTTPException
+
+        from ailine_runtime.api.routers.auth import _validate_role
+
+        with pytest.raises(HTTPException) as exc_info:
+            _validate_role("totally_bogus_role")
+        assert exc_info.value.status_code == 422
+        assert "Invalid role" in exc_info.value.detail
 
     async def test_demo_login_all_short_aliases(self, client_dev: AsyncClient) -> None:
         """All 6 short aliases resolve correctly."""

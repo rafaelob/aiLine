@@ -7,11 +7,14 @@ Thread-safe for concurrent async access.
 from __future__ import annotations
 
 import asyncio
+import logging
 import time
 from datetime import UTC, datetime
 from typing import Any
 
 from ..domain.entities.trace import NodeTrace, RunTrace
+
+logger = logging.getLogger("ailine.shared.trace_store")
 
 # Default TTL: 1 hour
 _DEFAULT_TTL_SECONDS = 3600
@@ -74,20 +77,36 @@ class TraceStore:
             return self._traces[run_id]
 
     async def append_node(self, run_id: str, node: NodeTrace) -> None:
-        """Append a node trace to a run."""
+        """Append a node trace to a run.
+
+        F-252: Does NOT auto-create a RunTrace.  If the run_id does not
+        exist (i.e. was never initialised via ``get_or_create``), the
+        call is silently ignored with a warning log.  This prevents
+        tenant-integrity bypass through implicit trace creation.
+        """
         async with self._lock:
             if run_id not in self._traces:
-                self._traces[run_id] = RunTrace(run_id=run_id)
-                self._timestamps[run_id] = time.monotonic()
+                logger.warning(
+                    "append_node called for non-existent run_id=%s — ignored",
+                    run_id,
+                )
+                return
             self._traces[run_id].nodes.append(node)
             self._timestamps[run_id] = time.monotonic()
 
     async def update_run(self, run_id: str, **kwargs: Any) -> None:
-        """Update top-level run fields (status, total_time_ms, etc.)."""
+        """Update top-level run fields (status, total_time_ms, etc.).
+
+        F-252: Does NOT auto-create a RunTrace.  If the run_id does not
+        exist, the call is silently ignored with a warning log.
+        """
         async with self._lock:
             if run_id not in self._traces:
-                self._traces[run_id] = RunTrace(run_id=run_id)
-                self._timestamps[run_id] = time.monotonic()
+                logger.warning(
+                    "update_run called for non-existent run_id=%s — ignored",
+                    run_id,
+                )
+                return
             trace = self._traces[run_id]
             for key, value in kwargs.items():
                 if hasattr(trace, key):
@@ -95,12 +114,18 @@ class TraceStore:
             self._timestamps[run_id] = time.monotonic()
 
     async def list_recent(
-        self, limit: int = 20, *, teacher_id: str | None = None
+        self,
+        limit: int = 20,
+        *,
+        teacher_id: str | None = None,
+        status: str | None = None,
     ) -> list[RunTrace]:
         """List recent traces, newest first.
 
         When *teacher_id* is provided, only returns traces belonging to
         that teacher (tenant isolation).
+        When *status* is provided, only returns traces with that status
+        (F-259: server-side filtering).
         """
         async with self._lock:
             self._evict_expired()
@@ -113,6 +138,8 @@ class TraceStore:
             for rid in sorted_ids:
                 t = self._traces[rid]
                 if teacher_id is not None and t.teacher_id != teacher_id:
+                    continue
+                if status is not None and t.status != status:
                     continue
                 traces.append(t)
                 if len(traces) >= limit:

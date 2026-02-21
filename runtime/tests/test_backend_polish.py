@@ -266,11 +266,12 @@ class TestExtractTeacherIdFromJwt:
         claims, _error = _extract_teacher_id_from_jwt(token)
         assert claims.teacher_id is None
 
-        # JWT signed with the dev fallback secret should work
+        # JWT signed with the dev fallback secret should work (F-254)
         import time
-        dev_secret = "dev-secret-not-for-production-use-32bytes!"
+
+        from ailine_runtime.shared.jwt_dev_secret import DEV_JWT_SECRET
         payload = {"sub": "teacher-dev", "exp": int(time.time()) + 3600, "iat": int(time.time())}
-        signed_token = pyjwt.encode(payload, dev_secret, algorithm="HS256")
+        signed_token = pyjwt.encode(payload, DEV_JWT_SECRET, algorithm="HS256")
         claims_signed, error = _extract_teacher_id_from_jwt(signed_token)
         assert claims_signed.teacher_id == "teacher-dev"
         assert error is None

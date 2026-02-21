@@ -57,6 +57,10 @@ class RedisEventBus:
         except Exception:
             return False
 
+    async def get_redis_client(self) -> Any | None:
+        """Return the underlying Redis client for direct access (jti blacklist, etc.)."""
+        return self._redis
+
     async def close(self) -> None:
         """Gracefully shut down the Redis connection."""
         if self._listener_task and not self._listener_task.done():

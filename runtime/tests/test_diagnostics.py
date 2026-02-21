@@ -21,7 +21,11 @@ def _force_inmemory_event_bus(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("AILINE_DEV_MODE", "true")
 
 
-AUTH_HEADERS = {"X-Teacher-ID": "test-diag-teacher"}
+# F-256: /internal/diagnostics now requires admin role.
+# In dev mode, X-User-Role is respected by the tenant context middleware.
+AUTH_HEADERS = {"X-Teacher-ID": "test-diag-teacher", "X-User-Role": "school_admin"}
+# Non-admin headers for negative test
+NON_ADMIN_HEADERS = {"X-Teacher-ID": "test-diag-teacher"}
 
 
 @pytest.fixture()
@@ -105,7 +109,12 @@ class TestInternalDiagnostics:
         resp = await client.get("/internal/diagnostics")
         assert resp.status_code in (401, 403)
 
-    async def test_returns_200_with_auth(self, client: AsyncClient) -> None:
+    async def test_non_admin_gets_403(self, client: AsyncClient) -> None:
+        """F-256: Non-admin user (teacher role) should be rejected."""
+        resp = await client.get("/internal/diagnostics", headers=NON_ADMIN_HEADERS)
+        assert resp.status_code == 403
+
+    async def test_returns_200_with_admin_auth(self, client: AsyncClient) -> None:
         resp = await client.get("/internal/diagnostics", headers=AUTH_HEADERS)
         assert resp.status_code == 200
 

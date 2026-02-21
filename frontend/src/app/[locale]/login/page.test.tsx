@@ -103,8 +103,7 @@ vi.mock('@/components/auth/login-data', () => ({
     teacher: [{ key: 'teacher', name: 'Teacher', route: '/dashboard', color: 'blue', avatar: 'T', description: '' }],
     student: [],
     parent: [],
-    school_admin: [],
-    super_admin: [],
+    // F-251: admin profiles removed
   },
 }))
 

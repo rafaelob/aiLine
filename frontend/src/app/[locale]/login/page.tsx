@@ -121,7 +121,7 @@ export default function LoginPage() {
   )
 
   const demoProfiles = selectedRole
-    ? DEMO_PROFILES_BY_ROLE[selectedRole]
+    ? (DEMO_PROFILES_BY_ROLE[selectedRole] ?? [])
     : []
 
   return (

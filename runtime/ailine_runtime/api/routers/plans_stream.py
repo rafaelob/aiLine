@@ -223,20 +223,23 @@ async def plans_generate_stream(
     container = request.app.state.container
     settings = request.app.state.settings
 
-    # --- Input sanitization ---
-    body.user_prompt = sanitize_prompt(body.user_prompt)
-    if not body.user_prompt:
+    # --- Input sanitization (F-262: immutable body — create sanitised copy) ---
+    sanitized_prompt = sanitize_prompt(body.user_prompt)
+    if not sanitized_prompt:
         raise HTTPException(
             status_code=422, detail="user_prompt must not be empty after sanitization"
         )
 
-    emitter = SSEEventEmitter(body.run_id)
+    # F-262: pass sanitised copy to pipeline; original body stays immutable
+    safe_body = body.model_copy(update={"user_prompt": sanitized_prompt})
+
+    emitter = SSEEventEmitter(safe_body.run_id)
     queue: asyncio.Queue[dict[str, str] | None] = asyncio.Queue(maxsize=500)
 
     async def event_generator() -> AsyncIterator[dict[str, str]]:
         # Start the pipeline and heartbeat as background tasks
         pipeline_task = asyncio.create_task(
-            _run_pipeline(body, teacher_id, settings, container, emitter, queue)
+            _run_pipeline(safe_body, teacher_id, settings, container, emitter, queue)
         )
         heartbeat_task = asyncio.create_task(_heartbeat_loop(emitter, queue))
 
