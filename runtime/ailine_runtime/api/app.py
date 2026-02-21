@@ -628,8 +628,8 @@ async def _check_redis(container: Container) -> str:
     if event_bus is None:
         return "skip"
 
-    # Only probe if the bus is a RedisEventBus (has _redis attribute).
-    redis_client = getattr(event_bus, "_redis", None)
+    # F-258: Use public EventBus.get_redis_client() instead of private _redis.
+    redis_client = await event_bus.get_redis_client()
     if redis_client is None:
         return "skip"
 

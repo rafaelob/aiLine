@@ -58,7 +58,7 @@ _ALLOWED_SELF_ASSIGN_ROLES = frozenset({
 })
 
 
-def _validate_role(role: str, *, allow_admin: bool = False) -> str:
+def _validate_role(role: str, *, allow_admin: bool = False) -> UserRole:
     """Validate and normalize a role string against UserRole enum.
 
     F-261: raises HTTPException 422 for completely unknown role values.

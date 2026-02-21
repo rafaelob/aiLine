@@ -26,7 +26,7 @@ async def list_runs(
     """List plan pipeline runs for the authenticated teacher.
 
     Supports filtering by ``status`` (running, completed, failed)
-    and cursor-based pagination via ``limit`` + ``offset``.
+    and offset-based pagination via ``limit`` + ``offset``.
     """
     store = get_trace_store()
     # F-259: Server-side status filtering (moved from client-side to store)
