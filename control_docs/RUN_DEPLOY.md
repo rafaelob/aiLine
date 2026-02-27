@@ -40,8 +40,8 @@ docker compose down -v           # stop + delete data
 **Services:**
 | Service | Image | Port (host) | Network |
 |---------|-------|-------------|---------|
-| db | pgvector/pgvector:0.8.0-pg16 | none (internal) | backend |
-| redis | redis:7.4-alpine | none (internal) | backend |
+| db | pgvector/pgvector:0.8.0-pg16 | 127.0.0.1:5411 | backend |
+| redis | redis:7.4-alpine | 127.0.0.1:6311 | backend |
 | api | runtime/Dockerfile | 8011 | backend + frontend |
 | frontend | frontend/Dockerfile | 3011 | frontend |
 
