@@ -206,7 +206,7 @@ async def standards_evidence(
 
     # Build standards alignment evidence
     obs_store = get_observability_store()
-    evidence = obs_store.get_standards_evidence(run_id)
+    evidence = obs_store.get_standards_evidence(run_id, teacher_id=teacher_id)
 
     return {
         "run_id": run_id,
@@ -240,7 +240,7 @@ async def standards_handout(
         )
 
     obs_store = get_observability_store()
-    evidence = obs_store.get_standards_evidence(run_id)
+    evidence = obs_store.get_standards_evidence(run_id, teacher_id=teacher_id)
 
     quality_data: dict[str, Any] = {}
     for node in trace.nodes:

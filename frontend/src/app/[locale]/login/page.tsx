@@ -6,7 +6,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'motion/react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/cn'
 import { useAuthStore, type UserRole } from '@/stores/auth-store'
-import { API_BASE, demoLogin, setDemoProfile, getAuthHeaders } from '@/lib/api'
+import { API_BASE, demoLogin, setDemoProfile } from '@/lib/api'
 import { useAccessibilityStore } from '@/stores/accessibility-store'
 import { cssTheme } from '@/hooks/use-theme'
 import { DEMO_PROFILES_BY_ROLE, type DemoProfile } from '@/components/auth/login-data'
@@ -80,7 +80,6 @@ export default function LoginPage() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            ...getAuthHeaders(),
           },
           body: JSON.stringify({ email, password, role: selectedRole }),
         })

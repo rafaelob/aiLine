@@ -48,7 +48,7 @@ class TestRedisEventBus:
             async def handler(data: dict) -> None:
                 received.append(data)
 
-            bus.subscribe("test.event", handler)
+            await bus.subscribe("test.event", handler)
             await bus.publish("test.event", {"key": "value"})
 
             assert len(received) == 1
@@ -92,8 +92,8 @@ class TestRedisEventBus:
             async def good_handler(data: dict) -> None:
                 calls.append("ok")
 
-            bus.subscribe("err", bad_handler)
-            bus.subscribe("err", good_handler)
+            await bus.subscribe("err", bad_handler)
+            await bus.subscribe("err", good_handler)
             await bus.publish("err", {})
 
             assert calls == ["ok"]

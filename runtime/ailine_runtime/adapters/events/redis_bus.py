@@ -43,12 +43,37 @@ class RedisEventBus:
             except Exception:
                 _log.exception("event_handler_failed", event_type=event_type)
 
-    def subscribe(
+    async def subscribe(
         self,
         event_type: str,
         handler: Callable[[dict[str, Any]], Awaitable[None]],
     ) -> None:
         self._handlers[event_type].append(handler)
+        await self._pubsub.subscribe(event_type)
+        if self._listener_task is None or self._listener_task.done():
+            self._listener_task = asyncio.create_task(self._listen())
+
+    async def _listen(self) -> None:
+        """Background listener that dispatches PubSub messages to handlers."""
+        try:
+            async for message in self._pubsub.listen():
+                if message["type"] != "message":
+                    continue
+                try:
+                    payload = json.loads(message["data"])
+                    event_type = payload.get("event_type", "")
+                    data = payload.get("data", {})
+                    for handler in self._handlers.get(event_type, []):
+                        try:
+                            await handler(data)
+                        except Exception:
+                            _log.exception("event_handler_failed", event_type=event_type)
+                except (json.JSONDecodeError, KeyError):
+                    _log.warning("invalid_pubsub_message", data=message.get("data"))
+        except asyncio.CancelledError:
+            return
+        except Exception:
+            _log.exception("pubsub_listener_crashed")
 
     async def ping(self) -> bool:
         """Check Redis connectivity."""

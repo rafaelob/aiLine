@@ -99,54 +99,91 @@ export async function fetchEventSource(
     ...fetchInit
   } = opts
 
-  const response = await fetch(url, { ...fetchInit, signal })
+  const MAX_RETRIES = 5
+  const BASE_RETRY_MS = 3000
+  let retryMs = BASE_RETRY_MS
+  let lastEventId = ''
+  let attempt = 0
 
-  if (onopen) {
-    await onopen(response)
-  }
+  while (!signal?.aborted) {
+    try {
+      const headers: Record<string, string> = {
+        ...(fetchInit.headers as Record<string, string> ?? {}),
+      }
+      if (lastEventId) {
+        headers['Last-Event-ID'] = lastEventId
+      }
 
-  // If the response isn't OK and onopen didn't throw, bail out
-  if (!response.ok || !response.body) return
+      const response = await fetch(url, { ...fetchInit, headers, signal })
 
-  const reader = response.body.getReader()
-  const decoder = new TextDecoder()
-  let buffer = ''
+      if (onopen) {
+        await onopen(response)
+      }
 
-  try {
-    for (;;) {
-      const { done, value } = await reader.read()
+      if (!response.ok || !response.body) return
 
-      if (done) break
+      // Reset retry count on successful connection
+      attempt = 0
+      retryMs = BASE_RETRY_MS
 
-      buffer += decoder.decode(value, { stream: true })
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
 
-      // SSE events are separated by double newlines
-      const parts = buffer.split('\n\n')
-      // Last part is either empty (complete event) or partial (keep buffering)
-      buffer = parts.pop() ?? ''
+      for (;;) {
+        const { done, value } = await reader.read()
+        if (done) break
 
-      for (const part of parts) {
-        if (!part.trim()) continue
-        const msg = parseSseEvent(part)
-        if (msg && onmessage) {
-          onmessage(msg)
+        buffer += decoder.decode(value, { stream: true })
+
+        const parts = buffer.split('\n\n')
+        buffer = parts.pop() ?? ''
+
+        for (const part of parts) {
+          if (!part.trim()) continue
+          const msg = parseSseEvent(part)
+          if (msg) {
+            if (msg.id) lastEventId = msg.id
+            if (msg.retry !== undefined) retryMs = msg.retry
+            if (onmessage) onmessage(msg)
+          }
         }
       }
-    }
 
-    // Flush any remaining buffer
-    if (buffer.trim()) {
-      const msg = parseSseEvent(buffer)
-      if (msg && onmessage) {
-        onmessage(msg)
+      // Flush remaining buffer
+      if (buffer.trim()) {
+        const msg = parseSseEvent(buffer)
+        if (msg) {
+          if (msg.id) lastEventId = msg.id
+          if (onmessage) onmessage(msg)
+        }
       }
-    }
-  } catch (err) {
-    if (signal?.aborted) return
-    if (onerror) {
-      onerror(err)
-    } else {
-      throw err
+
+      // Stream ended normally — no retry needed
+      return
+    } catch (err) {
+      if (signal?.aborted) return
+
+      attempt++
+      if (onerror) {
+        onerror(err)
+      }
+
+      if (attempt >= MAX_RETRIES) {
+        // Max retries exceeded — give up
+        if (!onerror) throw err
+        return
+      }
+
+      // Exponential backoff: 3s, 6s, 12s, 24s, 48s
+      const delay = retryMs * Math.pow(2, attempt - 1)
+      await new Promise<void>((resolve) => {
+        const timer = setTimeout(resolve, delay)
+        signal?.addEventListener('abort', () => {
+          clearTimeout(timer)
+          resolve()
+        }, { once: true })
+      })
     }
   }
 }

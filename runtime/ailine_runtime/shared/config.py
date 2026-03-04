@@ -19,7 +19,7 @@ class EmbeddingConfig(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="AILINE_EMBEDDING_")
     provider: Literal["gemini", "openai", "local", "openrouter"] = "gemini"
     model: str = "gemini-embedding-001"
-    dimensions: int = 3072
+    dimensions: int = 1536
     api_key: str = ""
     batch_size: int = 100
     """Max embeddings per API call. Controls chunking of large embed requests
@@ -63,7 +63,7 @@ class Settings(BaseSettings):
         "", validation_alias=AliasChoices("OPENAI_API_KEY", "AILINE_OPENAI_API_KEY")
     )
     google_api_key: str = Field(
-        "", validation_alias=AliasChoices("GOOGLE_API_KEY", "AILINE_GOOGLE_API_KEY")
+        "", validation_alias=AliasChoices("GOOGLE_API_KEY", "AILINE_GOOGLE_API_KEY", "GEMINI_API_KEY")
     )
     openrouter_api_key: str = Field(
         "",
@@ -184,11 +184,12 @@ class Settings(BaseSettings):
 
             jwt_secret = os.getenv("AILINE_JWT_SECRET", "")
             jwt_public_key = os.getenv("AILINE_JWT_PUBLIC_KEY", "")
-            if not jwt_secret and not jwt_public_key:
+            jwt_private_key = os.getenv("AILINE_JWT_PRIVATE_KEY", "")
+            if not jwt_secret and not jwt_public_key and not jwt_private_key:
                 errors.append(
                     "JWT key material is required in production. "
                     "Set AILINE_JWT_SECRET (HS256) or "
-                    "AILINE_JWT_PUBLIC_KEY (RS256/ES256)."
+                    "AILINE_JWT_PRIVATE_KEY + AILINE_JWT_PUBLIC_KEY (RS256/ES256)."
                 )
 
         if errors and is_prod:
