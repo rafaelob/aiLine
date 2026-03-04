@@ -23,7 +23,7 @@ def app(settings: Settings, monkeypatch: pytest.MonkeyPatch):
 
 
 @pytest.fixture()
-async def client(app) -> AsyncGenerator[AsyncClient, None]:
+async def client(app) -> AsyncGenerator[AsyncClient]:
     transport = ASGITransport(app=app)
     async with AsyncClient(
         transport=transport,

@@ -3,9 +3,11 @@
 ## Stack
 - Next.js 16.1.6 (Turbopack, React Compiler 1.0)
 - React 19.2.4 with auto-memoization
-- Tailwind CSS 4.2.0 (CSS-first, @theme directive)
+- Tailwind CSS 4.2.1 (CSS-first, @theme directive)
 - next-intl 4.8.3 for i18n (EN, PT-BR, ES)
-- motion 12.34.2 for animations (import from "motion/react")
+- motion 12.34.3 for animations (import from "motion/react")
+- TypeScript 5.9.3
+- tailwind-merge 3.5.0
 - Zustand 5.0.11 for state management
 - Recharts 3.7.0 for charts
 - DOMPurify 3.3.1 for XSS sanitization
@@ -37,7 +39,7 @@ pnpm dev          # Dev server (http://localhost:3000)
 ## Key Conventions
 - Theme switching: `document.body.setAttribute('data-theme', id)` -- NO React re-render
 - `cookies()`, `headers()`, `params`, `searchParams` MUST be awaited
-- SSE: `compress: false` in next.config.ts
+- SSE: `compress: false` in next.config.ts; custom `src/lib/sse-fetch.ts` wrapper (no external dep)
 - Import motion from "motion/react" (NOT framer-motion)
 - React Compiler: `reactCompiler: true` + babel-plugin-react-compiler
 - WCAG AAA: all interactive elements get aria-labels, proper focus management

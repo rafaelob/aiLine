@@ -1,0 +1,43 @@
+# Observability config (example)
+# date: 2026-02-24 (v3)
+
+ledger:
+  enabled: true
+  export_format: json
+  export_path: "./logs/context_ledger.jsonl"
+  include_hashes: true
+  redact_fields:
+    - api_key
+    - access_token
+    - password
+    - ssn
+
+tracing:
+  enabled: true
+  provider: "opentelemetry"
+  service_name: "agent-platform"
+  spans:
+    - assemble_context
+    - retrieve_rag
+    - call_tool
+    - delegate_call
+    - handoff_transfer
+    - agent_subrun
+    - summarize_prefix
+    - compact_tool_results
+    - final_completion
+
+quality_metrics:
+  enable_trajectory_tests: true
+  lost_constraints_detector: true
+  citation_coverage: true
+
+token_metrics:
+  # Suggested metrics to export per turn (names are indicative)
+  - tokens_total_input
+  - context_fill_ratio
+  - utilization_target_ratio
+  - tokens_by_slice
+  - compaction_events
+  - compaction_events_per_100_turns
+

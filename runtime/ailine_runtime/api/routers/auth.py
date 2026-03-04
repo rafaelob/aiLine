@@ -544,7 +544,15 @@ async def demo_login(body: DemoLoginRequest, request: Request) -> TokenResponse:
     Looks up the profile in DEMO_PROFILES, finds or creates the matching
     user, and returns a JWT with the correct role/org_id.  Accepts both
     long keys (``teacher-ms-johnson``) and short aliases (``teacher``).
+
+    F-403: Requires AILINE_DEMO_MODE=true or AILINE_DEMO_MODE=1 to be enabled.
+    Returns 404 if demo mode is not active, preventing demo login in production.
     """
+    # F-403: Gate behind AILINE_DEMO_MODE env var
+    demo_mode = os.getenv("AILINE_DEMO_MODE", "").lower() in ("true", "1", "yes")
+    if not demo_mode:
+        raise HTTPException(status_code=404, detail="Not found")
+
     # F-255: Rate-limit demo login the same as normal login
     client_ip = request.client.host if request.client else "unknown"
     await _check_login_rate(client_ip)

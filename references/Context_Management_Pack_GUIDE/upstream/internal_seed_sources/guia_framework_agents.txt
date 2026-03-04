@@ -1,0 +1,4265 @@
+# Guia Definitivo: Framework de Orquestração de Agentes
+
+> **Documento de Arquitetura e Implementação — Estado da Arte**
+> 
+> Framework baseado em OpenAI Agents SDK + Pydantic-AI + Temporal.io
+> 
+> Versão 2.0 | Novembro 2025
+> Atualização 2.1 | Dezembro 2025 — expansão técnica sobre **turnos**, **steps**, **tool calling interno vs externo**, **timeouts** (rede vs execução) e recomendações práticas para **OpenAI GPT-5.2 (Responses API)** e **Gemini 3 Pro (python-genai)**.
+
+
+---
+
+## Índice
+
+### Parte I — Fundamentos e Arquitetura
+1. [Visão Geral e Princípios](#1-visão-geral-e-princípios)
+2. [Arquitetura em Camadas](#2-arquitetura-em-camadas)
+3. [Tipos de Orquestração](#3-tipos-de-orquestração)
+   - 3.1 [Manager + Tools](#31-manager--tools)
+   - 3.2 [Handoff Completo](#32-handoff-completo)
+   - 3.3 [LittleHandoff (Handoff-lite)](#33-littlehandoff-handoff-lite)
+   - 3.4 [Painel com Moderador](#34-painel-com-moderador)
+   - 3.5 [Code Orchestration](#35-code-orchestration)
+   - 3.6 [Matriz de Decisão](#36-matriz-de-decisão)
+
+### Parte II — Contratos de Runtime de Modelo
+4. [Model Adapter: Abstração Multi-Provider](#4-model-adapter-abstração-multi-provider)
+   - 4.1 [Interfaces e Tipos Base](#41-interfaces-e-tipos-base)
+   - 4.2 [OpenAI Adapter](#42-openai-adapter)
+   - 4.3 [Gemini Adapter](#43-gemini-adapter)
+   - 4.4 [Provider Strategy e Fallback](#44-provider-strategy-e-fallback)
+   - 4.5 [Mapeamento de Conceitos OpenAI ↔ Gemini](#45-mapeamento-de-conceitos-openai--gemini)
+
+### Parte III — Tools e MCP
+5. [Arquitetura de Tools](#5-arquitetura-de-tools)
+   - 5.1 [LogicalTool: Catálogo Unificado](#51-logicaltool-catálogo-unificado)
+   - 5.2 [MCP: Transports e Configuração](#52-mcp-transports-e-configuração)
+   - 5.3 [Registro de Tools por Provider](#53-registro-de-tools-por-provider)
+   - 5.4 [Matriz de Decisão: STDIO vs HTTPS](#54-matriz-de-decisão-stdio-vs-https)
+   - 5.5 [Agent-as-Tool e LittleHandoff](#55-agent-as-tool-e-littlehandoff)
+
+### Parte IV — Planning, Contexto e Memória
+6. [Planning Tool: Design Não-Determinístico](#6-planning-tool-design-não-determinístico)
+   - 6.1 [Modelo de Dados](#61-modelo-de-dados)
+   - 6.2 [Ciclo de Vida e Persistência](#62-ciclo-de-vida-e-persistência)
+   - 6.3 [Implementação da Tool](#63-implementação-da-tool)
+7. [Gestão de Sessões e Contexto](#7-gestão-de-sessões-e-contexto)
+   - 7.1 [SessionMeta e RunContext](#71-sessionmeta-e-runcontext)
+   - 7.2 [Context Engineering: Trimming e Summarization](#72-context-engineering-trimming-e-summarization)
+   - 7.3 [Camadas de Memória](#73-camadas-de-memória)
+
+### Parte V — Configuração e Perfis
+8. [Orchestration Profiles](#8-orchestration-profiles)
+   - 8.1 [Modelo de Configuração](#81-modelo-de-configuração)
+   - 8.2 [Perfis por Produto](#82-perfis-por-produto)
+   - 8.3 [Limites e Budgets](#83-limites-e-budgets)
+
+### Parte VI — Long-Running e HITL
+9. [Temporal.io: Integração Opcional](#9-temporalio-integração-opcional)
+   - 9.1 [Quando Usar Temporal](#91-quando-usar-temporal)
+   - 9.2 [Arquitetura de Workflows](#92-arquitetura-de-workflows)
+   - 9.3 [Human-in-the-Loop](#93-human-in-the-loop)
+10. [Agentes Ativos e Eventos](#10-agentes-ativos-e-eventos)
+
+### Parte VII — Templates e Prompts
+11. [Templates de Prompts](#11-templates-de-prompts)
+    - 11.1 [Hub Conversacional](#111-hub-conversacional)
+    - 11.2 [Especialista LittleHandoff](#112-especialista-littlehandoff)
+    - 11.3 [Worker Não-Conversacional](#113-worker-não-conversacional)
+
+### Parte VIII — Observabilidade e Qualidade
+12. [Observabilidade](#12-observabilidade)
+    - 12.1 [Stack de Tracing](#121-stack-de-tracing)
+    - 12.2 [Métricas Obrigatórias](#122-métricas-obrigatórias)
+    - 12.3 [Versionamento de Prompts e Configs](#123-versionamento-de-prompts-e-configs)
+13. [Evals e Testes](#13-evals-e-testes)
+14. [Checklist de Implementação](#14-checklist-de-implementação)
+
+### Apêndices
+- [A. Referências e Documentação](#a-referências-e-documentação)
+- [B. Glossário de Termos](#b-glossário-de-termos)
+- [C. Turnos, Steps, Tool Calls e Timeouts](#c-turnos-steps-tool-calls-e-timeouts)
+- [D. Recomendações de Configuração: max_turns e timeouts](#d-recomendações-de-configuração-max_turns-e-timeouts)
+- [E. MCP e Tools por Provider (OpenAI Responses vs Gemini SDK)](#e-mcp-e-tools-por-provider-openai-responses-vs-gemini-sdk)
+
+---
+
+
+## Atualizações v2.1 (Dezembro 2025)
+
+Esta versão do guia **mantém integralmente** o conteúdo da Versão 2.0 e adiciona (sem remover nada):
+
+1. **Semântica precisa de "turno"** em três camadas:
+   - **Framework / Runner** (OpenAI Agents SDK): turno = *uma invocação ao modelo*.
+   - **Provider** (OpenAI Responses API e Gemini API): distinção entre *tool calling interno* (provider-managed) e *tool calling externo* (function calling tradicional que exige loop).
+   - **Gemini 3 Pro**: diferença formal entre **turn** e **step** (function calling multi-step) e impactos de **thought signatures**.
+2. **Timeouts e budgets** com visão de produção:
+   - Timeout de **rede/HTTP** (SDK) vs timeout de **execução** (run-level / deadline).
+   - Recomendações de implementação para interromper runs e tools com `asyncio.wait_for`, e como harmonizar isso com Temporal.
+3. **Atualização conceitual para GPT-5.2 / GPT-5.2-pro**:
+   - Reforço do impacto de *reasoning tokens*, *tool calls* e uso de **background mode** para requests que podem levar minutos.
+4. **Atualização conceitual para Gemini 3 Pro**:
+   - **Thought signatures** e validação estrita em function calling.
+   - **Automatic Function Calling (AFC)** no python-genai e como mapear `maximum_remote_calls` para o seu `max_turns`.
+
+As adições principais estão nos Apêndices **C** e **D**.
+
+---
+# Parte I — Fundamentos e Arquitetura
+
+## 1. Visão Geral e Princípios
+
+### 1.1 Objetivo do Framework
+
+Criar uma arquitetura de orquestração de agentes que seja:
+
+- **Flexível**: Suporte a múltiplos padrões de cooperação entre agentes
+- **Multi-provider**: Abstração sobre OpenAI e Gemini (e futuros providers)
+- **Observável**: Tracing e métricas desde o design
+- **Escalável**: De chat simples a workflows de longa duração com HITL
+
+### 1.2 Princípios de Design
+
+| Princípio | Descrição |
+|-----------|-----------|
+| **Provider-agnostic** | Agentes nunca falam diretamente com SDKs; usam `ModelAdapter` |
+| **Tools como catálogo único** | Um `LogicalTool` → mapeado para cada provider automaticamente |
+| **Planning consultivo** | Agente decide quando planejar; framework não impõe |
+| **Contexto como recurso escasso** | Curadoria agressiva; trimming/summarization by default |
+| **Temporal opcional** | Core do framework não depende de Temporal |
+| **Config-driven** | Comportamento controlado por `OrchestrationProfile` |
+
+### 1.3 Stack Tecnológico
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    CORE DO FRAMEWORK                         │
+├─────────────────────────────────────────────────────────────┤
+│  OpenAI Agents SDK    │  Base para Agent, Runner, Session   │
+│  Pydantic / Pydantic-AI │  Validação e tipagem             │
+│  Python 3.11+         │  Runtime                            │
+├─────────────────────────────────────────────────────────────┤
+│                    PROVIDERS LLM                             │
+├─────────────────────────────────────────────────────────────┤
+│  OpenAI Responses API │  GPT-5.1, reasoning models          │
+│  Google GenAI         │  Gemini 3                           │
+├─────────────────────────────────────────────────────────────┤
+│                    PERSISTÊNCIA                              │
+├─────────────────────────────────────────────────────────────┤
+│  PostgreSQL           │  SessionMeta, Plans, Memory         │
+│  Redis                │  RunContext, Plan Cache             │
+│  pgvector             │  RAG embeddings                     │
+├─────────────────────────────────────────────────────────────┤
+│                    OPCIONAL                                  │
+├─────────────────────────────────────────────────────────────┤
+│  Temporal.io          │  Long-running workflows, HITL       │
+│  Langfuse             │  Tracing e observabilidade          │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 2. Arquitetura em Camadas
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           CAMADA DE INTERFACE                                │
+│  ┌───────────┐  ┌───────────┐  ┌───────────┐  ┌───────────┐  ┌───────────┐ │
+│  │  Web API  │  │  WhatsApp │  │   Slack   │  │  Webhooks │  │   SSE     │ │
+│  └─────┬─────┘  └─────┬─────┘  └─────┬─────┘  └─────┬─────┘  └─────┬─────┘ │
+└────────┼──────────────┼──────────────┼──────────────┼──────────────┼────────┘
+         │              │              │              │              │
+         └──────────────┴──────────────┼──────────────┴──────────────┘
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      CAMADA DE ORQUESTRAÇÃO                                  │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                    OrchestrationEngine                               │   │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌────────────┐ │   │
+│  │  │   Agents    │  │   Runner    │  │  Guardrails │  │   Tracing  │ │   │
+│  │  └─────────────┘  └─────────────┘  └─────────────┘  └────────────┘ │   │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐                 │   │
+│  │  │   Handoffs  │  │   Sessions  │  │ RunContext  │                 │   │
+│  │  └─────────────┘  └─────────────┘  └─────────────┘                 │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                       │
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      CAMADA DE MODEL RUNTIME                                 │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                      ModelAdapter (Protocol)                         │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                    ┌───────────────┴───────────────┐                        │
+│              ┌─────▼─────┐                   ┌─────▼─────┐                  │
+│              │  OpenAI   │                   │  Gemini   │                  │
+│              │  Adapter  │                   │  Adapter  │                  │
+│              └───────────┘                   └───────────┘                  │
+│                    │                               │                        │
+│              ┌─────▼─────┐                   ┌─────▼─────┐                  │
+│              │ Responses │                   │google-genai│                  │
+│              │    API    │                   │    SDK    │                  │
+│              └───────────┘                   └───────────┘                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                       │
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         CAMADA DE TOOLS                                      │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                    ToolRegistry (LogicalTool[])                      │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│       ┌────────────────┬────────────────┬────────────────┐                  │
+│  ┌────▼────┐      ┌────▼────┐      ┌────▼────┐      ┌────▼────┐            │
+│  │Function │      │Agent-as │      │  MCP    │      │  MCP    │            │
+│  │  Tools  │      │  -Tool  │      │ (STDIO) │      │ (HTTPS) │            │
+│  └─────────┘      └─────────┘      └─────────┘      └─────────┘            │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                       │
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                     CAMADA DE MEMÓRIA & DADOS                                │
+│  ┌──────────────────────────────┐  ┌──────────────────────────────┐        │
+│  │       PostgreSQL             │  │           Redis               │        │
+│  │  ┌──────────┐ ┌──────────┐  │  │  ┌──────────┐ ┌──────────┐   │        │
+│  │  │ sessions │ │  plans   │  │  │  │RunContext│ │PlanCache │   │        │
+│  │  └──────────┘ └──────────┘  │  │  └──────────┘ └──────────┘   │        │
+│  │  ┌──────────┐ ┌──────────┐  │  │  ┌──────────┐                │        │
+│  │  │ messages │ │ memories │  │  │  │Throttling│                │        │
+│  │  └──────────┘ └──────────┘  │  │  └──────────┘                │        │
+│  └──────────────────────────────┘  └──────────────────────────────┘        │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                       │
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                   CAMADA OPCIONAL (Long-Running / HITL)                      │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                        Temporal.io                                   │   │
+│  │  ┌────────────────┐  ┌────────────────┐  ┌────────────────┐         │   │
+│  │  │   Workflows    │  │   Activities   │  │    Signals     │         │   │
+│  │  └────────────────┘  └────────────────┘  └────────────────┘         │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 3. Tipos de Orquestração
+
+O framework suporta 5 tipos de orquestração, cada um adequado para diferentes cenários.
+
+### 3.1 Manager + Tools
+
+O padrão mais comum e recomendado como ponto de partida.
+
+```
+┌──────────┐         ┌────────────────────────────────────┐
+│  Usuário │◄───────►│           Manager (Hub)            │
+│          │         │  ┌──────┐ ┌──────┐ ┌──────┐       │
+└──────────┘         │  │Tool A│ │Tool B│ │Tool C│       │
+                     │  └──────┘ └──────┘ └──────┘       │
+                     │  ┌──────────────────────────┐     │
+                     │  │    Agent-as-Tool (B2)    │     │
+                     │  └──────────────────────────┘     │
+                     └────────────────────────────────────┘
+```
+
+**Características:**
+- Um único agente "hub" mantém a conversa
+- Tools e especialistas são chamados como funções
+- Hub sempre sintetiza a resposta final
+
+**Quando usar:**
+- Domínio único e bem definido
+- UX precisa ser consistente
+- Primeiro MVP de qualquer produto
+
+### 3.2 Handoff Completo
+
+Transferência de controle da conversa para outro agente.
+
+```
+┌──────────┐    ┌──────────┐           ┌──────────┐    ┌──────────┐
+│  Usuário │◄──►│    A1    │──handoff─►│    B1    │◄──►│  Usuário │
+│          │    │ Triagem  │           │Especialista   │          │
+└──────────┘    └──────────┘           └──────────┘    └──────────┘
+                 (A1 sai)               (B1 assume)
+```
+
+**Características:**
+- Controle da conversa é transferido
+- Novo agente fala diretamente com o usuário
+- Histórico pode ser nestado ou resumido
+
+**Quando usar:**
+- Especialista precisa de interação direta prolongada
+- Domínios muito diferentes com prompts específicos
+- Suporte técnico especializado
+
+### 3.3 LittleHandoff (Handoff-lite)
+
+**O padrão inovador deste framework.** Hub mantém controle, mas delega execução para sub-orquestrador.
+
+```
+┌──────────┐    ┌──────────────────────────────────────────────────┐
+│  Usuário │◄──►│                      A1 (Hub)                    │
+│          │    │                                                  │
+└──────────┘    │   ┌──────────────────────────────────────────┐  │
+                │   │  Tool: run_primary_task                  │  │
+                │   │  ┌────────────────────────────────────┐  │  │
+                │   │  │    Runner.run(B1, task_spec)       │  │  │
+                │   │  │    ┌────────────────────────────┐  │  │  │
+                │   │  │    │  B1 executa autonomamente  │  │  │  │
+                │   │  │    │  - Planning próprio        │  │  │  │
+                │   │  │    │  - Múltiplos turns         │  │  │  │
+                │   │  │    │  - Tools/MCP               │  │  │  │
+                │   │  │    │  - Retorna resultado       │  │  │  │
+                │   │  │    └────────────────────────────┘  │  │  │
+                │   │  └────────────────────────────────────┘  │  │
+                │   └──────────────────────────────────────────┘  │
+                │                                                  │
+                │   A1 sintetiza resultado para o usuário         │
+                └──────────────────────────────────────────────────┘
+```
+
+**Características:**
+- Hub (A1) **sempre** na frente do usuário
+- B1 é um **sub-orquestrador** com autonomia
+- B1 tem sessão/plano próprios
+- Entrada e saída são **estruturadas** (Pydantic)
+
+**Contratos de Dados:**
+
+```python
+class PrimaryTaskSpec(BaseModel):
+    """Entrada para o sub-orquestrador B1"""
+    task_id: str
+    domain: str                       # "billing", "contracts", "ml_ops"
+    specific_query: str               # O que B1 deve fazer
+    context_summary: str              # Resumo curado da conversa
+    constraints: list[TaskConstraint] = []
+    user_profile: UserProfileSnapshot | None = None
+    extra_payload: dict[str, Any] = {}
+
+class PrimaryTaskResult(BaseModel):
+    """Saída do sub-orquestrador B1"""
+    status: Literal["completed", "needs_more_info", "blocked", "error"]
+    summary: str                      # Resumo executivo
+    detailed_report: str | None = None
+    followup_questions: list[FollowupQuestion] = []
+    risks: list[str] = []
+    raw_artifacts: dict[str, Any] = {}
+```
+
+**Quando usar:**
+- B1 precisa de autonomia (planning, multi-turn)
+- UX deve ser consistente (A1 sintetiza)
+- Compliance/auditoria (A1 controla tudo que vai pro usuário)
+
+### 3.4 Painel com Moderador
+
+Múltiplos especialistas em paralelo, coordenados por um moderador.
+
+```
+                    ┌──────────┐
+                    │  Usuário │
+                    └────┬─────┘
+                         │
+                    ┌────▼─────┐
+                    │    B1    │
+                    │Moderador │
+                    └────┬─────┘
+           ┌─────────────┼─────────────┐
+           │             │             │
+      ┌────▼────┐   ┌────▼────┐   ┌────▼────┐
+      │   C1    │   │   D1    │   │   E1    │
+      │Expert Y │   │Expert Z │   │Expert W │
+      └────┬────┘   └────┬────┘   └────┬────┘
+           │             │             │
+           ▼             ▼             ▼
+      ┌─────────┐   ┌─────────┐   ┌─────────┐
+      │   C2    │   │   D2    │   │   E2    │
+      │Tool/Sec │   │Tool/Sec │   │Tool/Sec │
+      └─────────┘   └─────────┘   └─────────┘
+```
+
+**Estado do Painel:**
+
+```python
+class PanelMessage(BaseModel):
+    speaker: str  # "C1", "D1", etc.
+    role: Literal["expert", "moderator"]
+    content: str
+    confidence: float | None = None
+
+class PanelState(BaseModel):
+    question: str
+    round: int = 0
+    max_rounds: int = 3
+    messages: list[PanelMessage] = []
+    consensus_reached: bool = False
+```
+
+**Quando usar:**
+- Questões multi-dimensionais
+- Diversidade de perspectivas é valor
+- Decisões que se beneficiam de debate
+
+### 3.5 Code Orchestration
+
+Orquestração explícita via código Python, não via prompts.
+
+```python
+async def code_orchestrated_flow(input: TaskInput, session: SessionMeta) -> TaskOutput:
+    # 1) Classificação determinística
+    task_type = classify_task(input)
+    
+    # 2) Roteamento por código
+    if task_type == "simple_query":
+        return await simple_agent.run(input)
+    
+    # 3) Para casos complexos, envolve LLM
+    if task_type == "complex_analysis":
+        # Fase de análise
+        analysis = await analyst_agent.run(input, max_turns=3)
+        
+        # Gate determinístico
+        if analysis.confidence < 0.7:
+            return TaskOutput(status="needs_review", data=analysis)
+        
+        # Fase de execução
+        result = await executor_agent.run(analysis.plan, max_turns=5)
+        return result
+    
+    # 4) Fallback
+    return await fallback_agent.run(input)
+```
+
+**Quando usar:**
+- Fluxos semi-determinísticos
+- Precisa de gates e validações explícitas
+- Integração com pipelines de dados
+
+### 3.6 Matriz de Decisão
+
+| Cenário | Orquestração Recomendada | Justificativa |
+|---------|-------------------------|---------------|
+| Chat de suporte simples | Manager+Tools | Menor complexidade |
+| Suporte com escalonamento | Handoff | Especialista assume |
+| Copiloto com análises complexas | LittleHandoff | B1 precisa autonomia |
+| Consultoria multi-domínio | Painel | Diversidade de perspectivas |
+| Pipeline de processamento | Code Orchestration | Controle determinístico |
+| Workflow com aprovações | LittleHandoff + Temporal | HITL de verdade |
+
+---
+
+# Parte II — Contratos de Runtime de Modelo
+
+## 4. Model Adapter: Abstração Multi-Provider
+
+### 4.1 Interfaces e Tipos Base
+
+```python
+# model_runtime/types.py
+
+from enum import Enum
+from typing import Protocol, Any, AsyncIterator
+from pydantic import BaseModel
+from datetime import datetime
+
+class ModelProvider(str, Enum):
+    """Providers suportados"""
+    OPENAI = "openai"
+    GEMINI = "gemini"
+
+class ProviderStrategy(str, Enum):
+    """Estratégia de uso de providers"""
+    PRIMARY_OPENAI = "primary_openai"
+    PRIMARY_GEMINI = "primary_gemini"
+    FALLBACK_OPENAI_TO_GEMINI = "fallback_openai_to_gemini"
+    FALLBACK_GEMINI_TO_OPENAI = "fallback_gemini_to_openai"
+    MIRROR_SECOND_OPINION = "mirror_second_opinion"  # Roda ambos, compara
+
+class MessageRole(str, Enum):
+    """Roles normalizados"""
+    SYSTEM = "system"
+    DEVELOPER = "developer"
+    USER = "user"
+    ASSISTANT = "assistant"
+    TOOL = "tool"
+
+class Message(BaseModel):
+    """Mensagem normalizada (provider-agnostic)"""
+    role: MessageRole
+    content: str | list[dict]  # str ou content blocks
+    name: str | None = None
+    tool_call_id: str | None = None
+    
+class ToolCall(BaseModel):
+    """Tool call normalizada"""
+    id: str
+    name: str
+    arguments: dict[str, Any]
+
+class ToolResult(BaseModel):
+    """Resultado de tool normalizado"""
+    tool_call_id: str
+    content: str | dict
+    is_error: bool = False
+
+class TokenUsage(BaseModel):
+    """Uso de tokens normalizado"""
+    input_tokens: int
+    output_tokens: int
+    total_tokens: int
+    reasoning_tokens: int | None = None  # OpenAI reasoning models
+    
+class GenerationResult(BaseModel):
+    """Resultado de geração normalizado"""
+    messages: list[Message]           # Histórico incremental
+    tool_calls: list[ToolCall]        # Chamadas de tools decididas
+    final_output: str | dict | None   # Resposta final (se não tool call)
+    stop_reason: str                  # "end_turn", "tool_use", "max_tokens"
+    usage: TokenUsage
+    model: str
+    provider: ModelProvider
+    latency_ms: int
+
+class StreamDelta(BaseModel):
+    """Delta de streaming normalizado"""
+    type: Literal["text", "tool_call", "usage", "done"]
+    content: str | None = None
+    tool_call: ToolCall | None = None
+    usage: TokenUsage | None = None
+
+class ModelConfig(BaseModel):
+    """Configuração de modelo"""
+    provider: ModelProvider
+    model_name: str                   # "gpt-5.1", "gemini-3-pro"
+    max_input_tokens: int
+    max_output_tokens: int
+    temperature: float = 0.7
+    top_p: float | None = None
+    reasoning_effort: Literal["low", "medium", "high"] | None = None
+    
+class ToolDef(BaseModel):
+    """Definição de tool para o modelo"""
+    name: str
+    description: str
+    input_schema: dict                # JSON Schema
+    strict: bool = True
+
+class ModelAdapter(Protocol):
+    """Interface para adapters de modelo"""
+    
+    async def generate(
+        self,
+        messages: list[Message],
+        tools: list[ToolDef] | None = None,
+        output_schema: type[BaseModel] | None = None,
+        config: ModelConfig | None = None,
+    ) -> GenerationResult:
+        """Geração síncrona (aguarda resultado completo)"""
+        ...
+    
+    async def generate_stream(
+        self,
+        messages: list[Message],
+        tools: list[ToolDef] | None = None,
+        output_schema: type[BaseModel] | None = None,
+        config: ModelConfig | None = None,
+    ) -> AsyncIterator[StreamDelta]:
+        """Geração com streaming"""
+        ...
+    
+    def get_provider(self) -> ModelProvider:
+        """Retorna o provider deste adapter"""
+        ...
+```
+
+### 4.2 OpenAI Adapter
+
+```python
+# model_runtime/openai_adapter.py
+
+from openai import AsyncOpenAI
+from .types import *
+import time
+
+class OpenAIAdapter:
+    """Adapter para OpenAI Responses API"""
+    
+    def __init__(self, client: AsyncOpenAI | None = None):
+        self.client = client or AsyncOpenAI()
+    
+    def get_provider(self) -> ModelProvider:
+        return ModelProvider.OPENAI
+    
+    async def generate(
+        self,
+        messages: list[Message],
+        tools: list[ToolDef] | None = None,
+        output_schema: type[BaseModel] | None = None,
+        config: ModelConfig | None = None,
+    ) -> GenerationResult:
+        config = config or ModelConfig(
+            provider=ModelProvider.OPENAI,
+            model_name="gpt-5.1",
+            max_input_tokens=200000,
+            max_output_tokens=4096,
+        )
+        
+        start_time = time.monotonic()
+        
+        # Converte mensagens para formato OpenAI
+        openai_messages = self._convert_messages(messages)
+        
+        # Converte tools para formato OpenAI
+        openai_tools = self._convert_tools(tools) if tools else None
+        
+        # Monta response_format se output_schema
+        response_format = None
+        if output_schema:
+            response_format = {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": output_schema.__name__,
+                    "schema": output_schema.model_json_schema(),
+                    "strict": True,
+                }
+            }
+        
+        # Chama Responses API
+        response = await self.client.responses.create(
+            model=config.model_name,
+            input=openai_messages,
+            tools=openai_tools,
+            max_output_tokens=config.max_output_tokens,
+            temperature=config.temperature,
+            response_format=response_format,
+            reasoning={"effort": config.reasoning_effort} if config.reasoning_effort else None,
+        )
+        
+        latency_ms = int((time.monotonic() - start_time) * 1000)
+        
+        return self._parse_response(response, config, latency_ms)
+    
+    def _convert_messages(self, messages: list[Message]) -> list[dict]:
+        """Converte Message normalizado → formato OpenAI"""
+        result = []
+        for msg in messages:
+            openai_msg = {
+                "role": msg.role.value,
+                "content": msg.content,
+            }
+            if msg.name:
+                openai_msg["name"] = msg.name
+            if msg.tool_call_id:
+                openai_msg["tool_call_id"] = msg.tool_call_id
+            result.append(openai_msg)
+        return result
+    
+    def _convert_tools(self, tools: list[ToolDef]) -> list[dict]:
+        """Converte ToolDef → formato OpenAI"""
+        return [
+            {
+                "type": "function",
+                "function": {
+                    "name": tool.name,
+                    "description": tool.description,
+                    "parameters": tool.input_schema,
+                    "strict": tool.strict,
+                }
+            }
+            for tool in tools
+        ]
+    
+    def _parse_response(
+        self, 
+        response, 
+        config: ModelConfig, 
+        latency_ms: int
+    ) -> GenerationResult:
+        """Converte resposta OpenAI → GenerationResult normalizado"""
+        tool_calls = []
+        final_output = None
+        messages = []
+        
+        # Extrai output
+        output = response.output
+        for item in output:
+            if item.type == "message":
+                messages.append(Message(
+                    role=MessageRole.ASSISTANT,
+                    content=item.content[0].text if item.content else "",
+                ))
+                final_output = item.content[0].text if item.content else None
+            elif item.type == "function_call":
+                tool_calls.append(ToolCall(
+                    id=item.call_id,
+                    name=item.name,
+                    arguments=json.loads(item.arguments),
+                ))
+        
+        return GenerationResult(
+            messages=messages,
+            tool_calls=tool_calls,
+            final_output=final_output,
+            stop_reason=response.stop_reason,
+            usage=TokenUsage(
+                input_tokens=response.usage.input_tokens,
+                output_tokens=response.usage.output_tokens,
+                total_tokens=response.usage.total_tokens,
+                reasoning_tokens=getattr(response.usage, 'reasoning_tokens', None),
+            ),
+            model=config.model_name,
+            provider=ModelProvider.OPENAI,
+            latency_ms=latency_ms,
+        )
+```
+
+### 4.3 Gemini Adapter
+
+```python
+# model_runtime/gemini_adapter.py
+
+from google import genai
+from google.genai.types import (
+    GenerateContentConfig,
+    Tool,
+    FunctionDeclaration,
+    Schema,
+)
+from .types import *
+import time
+
+class GeminiAdapter:
+    """Adapter para Google Gemini (google-genai)"""
+    
+    def __init__(self, client: genai.Client | None = None):
+        self.client = client or genai.Client()
+    
+    def get_provider(self) -> ModelProvider:
+        return ModelProvider.GEMINI
+    
+    async def generate(
+        self,
+        messages: list[Message],
+        tools: list[ToolDef] | None = None,
+        output_schema: type[BaseModel] | None = None,
+        config: ModelConfig | None = None,
+    ) -> GenerationResult:
+        config = config or ModelConfig(
+            provider=ModelProvider.GEMINI,
+            model_name="gemini-3-pro",
+            max_input_tokens=500000,
+            max_output_tokens=8192,
+        )
+        
+        start_time = time.monotonic()
+        
+        # Separa system instruction dos contents
+        system_instruction, contents = self._convert_messages(messages)
+        
+        # Converte tools para formato Gemini
+        gemini_tools = self._convert_tools(tools) if tools else None
+        
+        # Monta config
+        gen_config = GenerateContentConfig(
+            temperature=config.temperature,
+            max_output_tokens=config.max_output_tokens,
+            response_schema=self._pydantic_to_gemini_schema(output_schema) if output_schema else None,
+            response_mime_type="application/json" if output_schema else None,
+        )
+        
+        # Chama Gemini
+        response = await self.client.aio.models.generate_content(
+            model=config.model_name,
+            contents=contents,
+            config=gen_config,
+            tools=gemini_tools,
+            system_instruction=system_instruction,
+        )
+        
+        latency_ms = int((time.monotonic() - start_time) * 1000)
+        
+        return self._parse_response(response, config, latency_ms)
+    
+    def _convert_messages(self, messages: list[Message]) -> tuple[str | None, list[dict]]:
+        """Converte Message normalizado → formato Gemini"""
+        system_instruction = None
+        contents = []
+        
+        for msg in messages:
+            if msg.role in (MessageRole.SYSTEM, MessageRole.DEVELOPER):
+                # Gemini usa system_instruction separado
+                if system_instruction:
+                    system_instruction += "\n\n" + msg.content
+                else:
+                    system_instruction = msg.content
+            elif msg.role == MessageRole.USER:
+                contents.append({
+                    "role": "user",
+                    "parts": [{"text": msg.content}],
+                })
+            elif msg.role == MessageRole.ASSISTANT:
+                contents.append({
+                    "role": "model",
+                    "parts": [{"text": msg.content}],
+                })
+            elif msg.role == MessageRole.TOOL:
+                # Tool result em Gemini
+                contents.append({
+                    "role": "user",
+                    "parts": [{
+                        "function_response": {
+                            "name": msg.name,
+                            "response": {"result": msg.content},
+                        }
+                    }],
+                })
+        
+        return system_instruction, contents
+    
+    def _convert_tools(self, tools: list[ToolDef]) -> list[Tool]:
+        """Converte ToolDef → formato Gemini"""
+        declarations = []
+        for tool in tools:
+            declarations.append(FunctionDeclaration(
+                name=tool.name,
+                description=tool.description,
+                parameters=self._json_schema_to_gemini(tool.input_schema),
+            ))
+        return [Tool(function_declarations=declarations)]
+    
+    def _json_schema_to_gemini(self, schema: dict) -> Schema:
+        """Converte JSON Schema → Gemini Schema"""
+        # Implementação do mapeamento de tipos
+        # (simplificado aqui, produção precisa de handling completo)
+        return Schema(
+            type=schema.get("type", "object"),
+            properties=schema.get("properties", {}),
+            required=schema.get("required", []),
+        )
+    
+    def _pydantic_to_gemini_schema(self, model: type[BaseModel]) -> Schema:
+        """Converte Pydantic model → Gemini Schema"""
+        json_schema = model.model_json_schema()
+        return self._json_schema_to_gemini(json_schema)
+    
+    def _parse_response(
+        self, 
+        response, 
+        config: ModelConfig, 
+        latency_ms: int
+    ) -> GenerationResult:
+        """Converte resposta Gemini → GenerationResult normalizado"""
+        tool_calls = []
+        final_output = None
+        messages = []
+        
+        for candidate in response.candidates:
+            for part in candidate.content.parts:
+                if hasattr(part, 'text') and part.text:
+                    messages.append(Message(
+                        role=MessageRole.ASSISTANT,
+                        content=part.text,
+                    ))
+                    final_output = part.text
+                elif hasattr(part, 'function_call') and part.function_call:
+                    fc = part.function_call
+                    tool_calls.append(ToolCall(
+                        id=f"call_{fc.name}_{int(time.time()*1000)}",
+                        name=fc.name,
+                        arguments=dict(fc.args) if fc.args else {},
+                    ))
+        
+        # Gemini usage
+        usage_meta = response.usage_metadata
+        
+        return GenerationResult(
+            messages=messages,
+            tool_calls=tool_calls,
+            final_output=final_output,
+            stop_reason="tool_use" if tool_calls else "end_turn",
+            usage=TokenUsage(
+                input_tokens=usage_meta.prompt_token_count,
+                output_tokens=usage_meta.candidates_token_count,
+                total_tokens=usage_meta.total_token_count,
+            ),
+            model=config.model_name,
+            provider=ModelProvider.GEMINI,
+            latency_ms=latency_ms,
+        )
+```
+
+### 4.4 Provider Strategy e Fallback
+
+```python
+# model_runtime/strategy.py
+
+from .types import *
+from .openai_adapter import OpenAIAdapter
+from .gemini_adapter import GeminiAdapter
+import logging
+
+logger = logging.getLogger(__name__)
+
+class ModelRuntime:
+    """Gerenciador de runtime com estratégia de providers"""
+    
+    def __init__(
+        self,
+        strategy: ProviderStrategy = ProviderStrategy.PRIMARY_OPENAI,
+        openai_adapter: OpenAIAdapter | None = None,
+        gemini_adapter: GeminiAdapter | None = None,
+    ):
+        self.strategy = strategy
+        self.openai = openai_adapter or OpenAIAdapter()
+        self.gemini = gemini_adapter or GeminiAdapter()
+    
+    def _get_primary_adapter(self) -> ModelAdapter:
+        if self.strategy in (
+            ProviderStrategy.PRIMARY_OPENAI,
+            ProviderStrategy.FALLBACK_OPENAI_TO_GEMINI,
+        ):
+            return self.openai
+        return self.gemini
+    
+    def _get_fallback_adapter(self) -> ModelAdapter | None:
+        if self.strategy == ProviderStrategy.FALLBACK_OPENAI_TO_GEMINI:
+            return self.gemini
+        elif self.strategy == ProviderStrategy.FALLBACK_GEMINI_TO_OPENAI:
+            return self.openai
+        return None
+    
+    async def generate(
+        self,
+        messages: list[Message],
+        tools: list[ToolDef] | None = None,
+        output_schema: type[BaseModel] | None = None,
+        config: ModelConfig | None = None,
+    ) -> GenerationResult:
+        """Gera com estratégia de fallback"""
+        primary = self._get_primary_adapter()
+        fallback = self._get_fallback_adapter()
+        
+        try:
+            return await primary.generate(messages, tools, output_schema, config)
+        except Exception as e:
+            logger.warning(f"Primary provider failed: {e}")
+            
+            if fallback:
+                logger.info(f"Falling back to {fallback.get_provider()}")
+                # Ajusta config para fallback provider
+                fallback_config = self._adapt_config_for_provider(
+                    config, 
+                    fallback.get_provider()
+                )
+                return await fallback.generate(
+                    messages, tools, output_schema, fallback_config
+                )
+            
+            raise
+    
+    async def generate_with_second_opinion(
+        self,
+        messages: list[Message],
+        tools: list[ToolDef] | None = None,
+        output_schema: type[BaseModel] | None = None,
+        config: ModelConfig | None = None,
+    ) -> tuple[GenerationResult, GenerationResult]:
+        """Gera com ambos providers para comparação"""
+        import asyncio
+        
+        openai_task = self.openai.generate(messages, tools, output_schema, config)
+        gemini_task = self.gemini.generate(messages, tools, output_schema, config)
+        
+        openai_result, gemini_result = await asyncio.gather(
+            openai_task, gemini_task,
+            return_exceptions=True
+        )
+        
+        # Trata erros
+        if isinstance(openai_result, Exception):
+            logger.error(f"OpenAI failed in second opinion: {openai_result}")
+            openai_result = None
+        if isinstance(gemini_result, Exception):
+            logger.error(f"Gemini failed in second opinion: {gemini_result}")
+            gemini_result = None
+        
+        return openai_result, gemini_result
+    
+    def _adapt_config_for_provider(
+        self, 
+        config: ModelConfig | None, 
+        provider: ModelProvider
+    ) -> ModelConfig:
+        """Adapta config para outro provider"""
+        if not config:
+            if provider == ModelProvider.OPENAI:
+                return ModelConfig(
+                    provider=ModelProvider.OPENAI,
+                    model_name="gpt-5.1",
+                    max_input_tokens=200000,
+                    max_output_tokens=4096,
+                )
+            else:
+                return ModelConfig(
+                    provider=ModelProvider.GEMINI,
+                    model_name="gemini-3-pro",
+                    max_input_tokens=500000,
+                    max_output_tokens=8192,
+                )
+        
+        # Mapeamento de modelos equivalentes
+        model_mapping = {
+            ("openai", "gpt-5.1"): ("gemini", "gemini-3-pro"),
+            ("openai", "gpt-5.1-mini"): ("gemini", "gemini-3-flash"),
+            ("gemini", "gemini-3-pro"): ("openai", "gpt-5.1"),
+            ("gemini", "gemini-3-flash"): ("openai", "gpt-5.1-mini"),
+        }
+        
+        key = (config.provider.value, config.model_name)
+        if key in model_mapping:
+            _, new_model = model_mapping[key]
+        else:
+            new_model = "gpt-5.1" if provider == ModelProvider.OPENAI else "gemini-3-pro"
+        
+        return ModelConfig(
+            provider=provider,
+            model_name=new_model,
+            max_input_tokens=config.max_input_tokens,
+            max_output_tokens=min(config.max_output_tokens, 8192),  # Gemini limit
+            temperature=config.temperature,
+            top_p=config.top_p,
+        )
+```
+
+### 4.5 Mapeamento de Conceitos OpenAI ↔ Gemini
+
+| Conceito | OpenAI Responses | Gemini (google-genai) |
+|----------|-----------------|----------------------|
+| **Mensagem do sistema** | `role: "system"` | `system_instruction` |
+| **Mensagem do desenvolvedor** | `role: "developer"` | `system_instruction` |
+| **Mensagem do usuário** | `role: "user"` | `role: "user"` |
+| **Mensagem do assistente** | `role: "assistant"` | `role: "model"` |
+| **Definição de tool** | `type: "function"`, `function: {...}` | `FunctionDeclaration` |
+| **Tool call** | `tool_calls[]` | `function_call` em `parts` |
+| **Tool result** | `tool_outputs[]` | `function_response` em `parts` |
+| **Structured output** | `response_format: {type: "json_schema"}` | `response_schema` + `response_mime_type` |
+| **MCP** | `type: "mcp"` | N/A (via backend) |
+| **Streaming** | SSE com deltas | `generate_content_stream` |
+| **Reasoning / Thinking** | `reasoning: {effort: "..."}` (+ summaries/compaction conforme modelo) | `thinking_config` (+ **thought_signature** em function calling no Gemini 3 Pro) |
+| **Tool calling interno (provider-managed)** | Built-in tools (ex.: web/file search, code interpreter, remote MCP) podem ocorrer dentro de **uma** resposta; limite via `max_tool_calls` | Built-in tools (ex.: search / code execution / URL context) são processadas **dentro de uma única chamada** à API |
+| **Tool calling externo (function calling)** | `function` tools exigem runtime executar tool e **re-invocar** o modelo | Function calling exige runtime executar tool e reenviar histórico; AFC pode automatizar isso no SDK |
+| **Controle de loops automáticos** | `max_turns` (orquestrador) + `max_tool_calls` (built-in) | `maximum_remote_calls` (AFC) + budget do orquestrador |
+| **Assinatura de raciocínio** | N/A (não há *thought_signature* equivalente exposto) | `thought_signature` obrigatório em function calling (Gemini 3 Pro) para não falhar com erro 4xx |
+
+---
+
+# Parte III — Tools e MCP
+
+## 5. Arquitetura de Tools
+
+### 5.1 LogicalTool: Catálogo Unificado
+
+O framework usa um **catálogo único de tools** que é mapeado para cada provider.
+
+```python
+# tools/registry.py
+
+from enum import Enum
+from typing import Callable, Any
+from pydantic import BaseModel
+
+class ToolBackend(str, Enum):
+    """Tipo de backend da tool"""
+    PYTHON_FUNCTION = "python_function"   # Função Python local
+    AGENT_AS_TOOL = "agent_as_tool"       # Outro agente
+    MCP_STDIO = "mcp_stdio"               # MCP via STDIO
+    MCP_HTTPS = "mcp_https"               # MCP via HTTPS
+
+class LogicalTool(BaseModel):
+    """Definição lógica de tool (provider-agnostic)"""
+    
+    # Identificação
+    name: str                             # "crm_lookup_customer"
+    namespace: str | None = None          # "crm" (para agrupamento)
+    description: str
+    
+    # Schema
+    input_schema: dict                    # JSON Schema dos parâmetros
+    output_schema: dict | None = None     # JSON Schema do retorno
+    
+    # Backend
+    backend: ToolBackend
+    handler: str | None = None            # "handlers.crm.lookup_customer" para PYTHON_FUNCTION
+    agent_name: str | None = None         # Nome do agente para AGENT_AS_TOOL
+    mcp_server_id: str | None = None      # ID do MCP server para MCP_*
+    mcp_tool_name: str | None = None      # Nome da tool no MCP (se diferente)
+    
+    # Configuração
+    timeout_s: int = 30
+    retries: int = 2
+    requires_confirmation: bool = False   # HITL
+    
+    # Metadata
+    tags: list[str] = []
+    version: str = "1.0.0"
+
+class ToolRegistry:
+    """Registry centralizado de tools"""
+    
+    def __init__(self):
+        self._tools: dict[str, LogicalTool] = {}
+        self._handlers: dict[str, Callable] = {}
+    
+    def register(self, tool: LogicalTool, handler: Callable | None = None):
+        """Registra uma tool no catálogo"""
+        self._tools[tool.name] = tool
+        if handler:
+            self._handlers[tool.name] = handler
+    
+    def get(self, name: str) -> LogicalTool | None:
+        return self._tools.get(name)
+    
+    def list_by_namespace(self, namespace: str) -> list[LogicalTool]:
+        return [t for t in self._tools.values() if t.namespace == namespace]
+    
+    def list_by_tags(self, tags: list[str]) -> list[LogicalTool]:
+        return [t for t in self._tools.values() if any(tag in t.tags for tag in tags)]
+    
+    def to_openai_tools(
+        self, 
+        tool_names: list[str] | None = None,
+        include_mcp_as_native: bool = False,
+    ) -> list[dict]:
+        """Converte para formato OpenAI Responses"""
+        tools = tool_names or list(self._tools.keys())
+        result = []
+        
+        for name in tools:
+            tool = self._tools.get(name)
+            if not tool:
+                continue
+            
+            if tool.backend == ToolBackend.MCP_HTTPS and include_mcp_as_native:
+                # MCP HTTPS pode ser registrado nativamente no OpenAI
+                mcp_config = self._get_mcp_config(tool.mcp_server_id)
+                result.append({
+                    "type": "mcp",
+                    "mcp_server": {
+                        "server_url": mcp_config.server_url,
+                    }
+                })
+            else:
+                # Todas as outras viram function tool
+                result.append({
+                    "type": "function",
+                    "function": {
+                        "name": tool.name,
+                        "description": tool.description,
+                        "parameters": tool.input_schema,
+                        "strict": True,
+                    }
+                })
+        
+        return result
+    
+    def to_gemini_tools(self, tool_names: list[str] | None = None) -> list:
+        """Converte para formato Gemini"""
+        from google.genai.types import FunctionDeclaration, Tool
+        
+        tools = tool_names or list(self._tools.keys())
+        declarations = []
+        
+        for name in tools:
+            tool = self._tools.get(name)
+            if not tool:
+                continue
+            
+            # Gemini sempre recebe function declarations
+            # Backend MCP é tratado no handler
+            declarations.append(FunctionDeclaration(
+                name=tool.name,
+                description=tool.description,
+                parameters=tool.input_schema,
+            ))
+        
+        return [Tool(function_declarations=declarations)]
+```
+
+### 5.2 MCP: Transports e Configuração
+
+```python
+# tools/mcp.py
+
+from enum import Enum
+from pydantic import BaseModel
+from typing import Any
+import asyncio
+
+class McpTransport(str, Enum):
+    """Transports MCP suportados"""
+    STDIO = "stdio"
+    HTTPS_STREAM = "https_stream"
+
+class McpServerConfig(BaseModel):
+    """Configuração de um servidor MCP"""
+    
+    id: str                           # "crm_mcp", "backoffice_mcp"
+    transport: McpTransport
+    
+    # STDIO config
+    command: str | None = None        # "python"
+    args: list[str] | None = None     # ["mcp_server.py"]
+    env: dict[str, str] | None = None
+    
+    # HTTPS config
+    server_url: str | None = None     # "https://mcp.example.com"
+    api_key: str | None = None
+    
+    # Common config
+    timeout_s: int = 30
+    health_check_interval_s: int = 60
+
+class McpServerRegistry:
+    """Registry de servidores MCP"""
+    
+    def __init__(self):
+        self._servers: dict[str, McpServerConfig] = {}
+        self._clients: dict[str, Any] = {}  # Conexões ativas
+    
+    def register(self, config: McpServerConfig):
+        self._servers[config.id] = config
+    
+    def get(self, server_id: str) -> McpServerConfig | None:
+        return self._servers.get(server_id)
+    
+    async def get_client(self, server_id: str):
+        """Obtém ou cria cliente MCP"""
+        if server_id in self._clients:
+            return self._clients[server_id]
+        
+        config = self._servers.get(server_id)
+        if not config:
+            raise ValueError(f"MCP server not found: {server_id}")
+        
+        if config.transport == McpTransport.STDIO:
+            client = await self._create_stdio_client(config)
+        else:
+            client = await self._create_https_client(config)
+        
+        self._clients[server_id] = client
+        return client
+    
+    async def _create_stdio_client(self, config: McpServerConfig):
+        """Cria cliente MCP STDIO"""
+        from mcp import ClientSession, StdioServerParameters
+        from mcp.client.stdio import stdio_client
+        
+        server_params = StdioServerParameters(
+            command=config.command,
+            args=config.args or [],
+            env=config.env,
+        )
+        
+        # Inicia processo e retorna session
+        read, write = await stdio_client(server_params).__aenter__()
+        session = ClientSession(read, write)
+        await session.initialize()
+        
+        return session
+    
+    async def _create_https_client(self, config: McpServerConfig):
+        """Cria cliente MCP HTTPS"""
+        import httpx
+        
+        # Cliente HTTP para MCP streamable
+        client = httpx.AsyncClient(
+            base_url=config.server_url,
+            headers={"Authorization": f"Bearer {config.api_key}"} if config.api_key else {},
+            timeout=config.timeout_s,
+        )
+        
+        return client
+```
+
+### 5.3 Registro de Tools por Provider
+
+```python
+# tools/executor.py
+
+from .registry import ToolRegistry, LogicalTool, ToolBackend
+from .mcp import McpServerRegistry
+from model_runtime.types import ToolCall, ToolResult
+import json
+
+class ToolExecutor:
+    """Executa tools chamadas pelo modelo"""
+    
+    def __init__(
+        self,
+        tool_registry: ToolRegistry,
+        mcp_registry: McpServerRegistry,
+    ):
+        self.tools = tool_registry
+        self.mcp = mcp_registry
+    
+    async def execute(self, tool_call: ToolCall) -> ToolResult:
+        """Executa uma tool call"""
+        tool = self.tools.get(tool_call.name)
+        if not tool:
+            return ToolResult(
+                tool_call_id=tool_call.id,
+                content=f"Tool not found: {tool_call.name}",
+                is_error=True,
+            )
+        
+        try:
+            if tool.backend == ToolBackend.PYTHON_FUNCTION:
+                result = await self._execute_python(tool, tool_call)
+            elif tool.backend == ToolBackend.AGENT_AS_TOOL:
+                result = await self._execute_agent(tool, tool_call)
+            elif tool.backend in (ToolBackend.MCP_STDIO, ToolBackend.MCP_HTTPS):
+                result = await self._execute_mcp(tool, tool_call)
+            else:
+                raise ValueError(f"Unknown backend: {tool.backend}")
+            
+            return ToolResult(
+                tool_call_id=tool_call.id,
+                content=result if isinstance(result, str) else json.dumps(result),
+                is_error=False,
+            )
+        
+        except Exception as e:
+            return ToolResult(
+                tool_call_id=tool_call.id,
+                content=f"Error executing {tool_call.name}: {str(e)}",
+                is_error=True,
+            )
+    
+    async def _execute_python(self, tool: LogicalTool, call: ToolCall):
+        """Executa função Python"""
+        handler = self.tools._handlers.get(tool.name)
+        if not handler:
+            raise ValueError(f"No handler for {tool.name}")
+        
+        if asyncio.iscoroutinefunction(handler):
+            return await handler(**call.arguments)
+        return handler(**call.arguments)
+    
+    async def _execute_agent(self, tool: LogicalTool, call: ToolCall):
+        """Executa agent-as-tool (LittleHandoff)"""
+        from agents import Runner
+        
+        # Obtém o agente configurado
+        agent = self._get_agent(tool.agent_name)
+        
+        # Executa como sub-run
+        result = await Runner.run(
+            agent,
+            input=json.dumps(call.arguments),
+            max_turns=4,  # Limite para agent-as-tool
+        )
+        
+        return result.final_output
+    
+    async def _execute_mcp(self, tool: LogicalTool, call: ToolCall):
+        """Executa tool via MCP"""
+        client = await self.mcp.get_client(tool.mcp_server_id)
+        
+        # Nome da tool no MCP pode ser diferente
+        mcp_tool_name = tool.mcp_tool_name or tool.name
+        
+        # Chama via MCP
+        result = await client.call_tool(mcp_tool_name, call.arguments)
+        
+        return result.content
+```
+
+### 5.4 Matriz de Decisão: STDIO vs HTTPS
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    DECISÃO: STDIO vs HTTPS para MCP                          │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+                              ┌───────────────────┐
+                              │  O MCP é interno  │
+                              │ (mesmo cluster)?  │
+                              └─────────┬─────────┘
+                                        │
+                         ┌──────────────┴──────────────┐
+                         │                             │
+                        SIM                           NÃO
+                         │                             │
+                         ▼                             ▼
+              ┌─────────────────┐          ┌─────────────────────┐
+              │  Latência é     │          │  Usar HTTPS         │
+              │  crítica (<5ms)?│          │  streamable         │
+              └────────┬────────┘          │  (único caminho)    │
+                       │                   └─────────────────────┘
+            ┌──────────┴──────────┐
+            │                     │
+           SIM                   NÃO
+            │                     │
+            ▼                     ▼
+    ┌───────────────┐   ┌─────────────────────┐
+    │  Usar STDIO   │   │  Precisa compartilhar│
+    │  (processo    │   │  com outros times/   │
+    │   local)      │   │  produtos?           │
+    └───────────────┘   └──────────┬──────────┘
+                                   │
+                        ┌──────────┴──────────┐
+                        │                     │
+                       SIM                   NÃO
+                        │                     │
+                        ▼                     ▼
+              ┌─────────────────┐   ┌───────────────────┐
+              │  Usar HTTPS     │   │  Usar STDIO       │
+              │  (padronização) │   │  (mais simples)   │
+              └─────────────────┘   └───────────────────┘
+```
+
+**Resumo da Decisão:**
+
+| Cenário | Transporte | Motivo |
+|---------|-----------|--------|
+| MCP interno, alta performance | STDIO | Latência mínima, sem rede |
+| MCP interno, compartilhado | HTTPS | Padronização, múltiplos consumidores |
+| MCP externo | HTTPS | Único caminho viável |
+| Protótipo/PoC | STDIO | Mais simples de configurar |
+| Produção multi-tenant | HTTPS | Isolamento, rate limiting |
+
+**Registro por Provider:**
+
+| Provider | STDIO | HTTPS |
+|----------|-------|-------|
+| **OpenAI** | Function tool no backend (handler chama MCP) | `type: "mcp"` nativo OU function tool |
+| **Gemini** | Function tool no backend | Function tool no backend |
+
+### 5.5 Agent-as-Tool e LittleHandoff
+
+```python
+# tools/agent_as_tool.py
+
+from pydantic import BaseModel
+from typing import Any
+from agents import Agent, Runner
+
+class LittleHandoffConfig(BaseModel):
+    """Configuração para LittleHandoff"""
+    agent: Agent
+    tool_name: str
+    tool_description: str
+    max_turns: int = 4
+    timeout_s: int = 60
+    
+    # Schema de entrada/saída
+    input_type: type[BaseModel]   # PrimaryTaskSpec
+    output_type: type[BaseModel]  # PrimaryTaskResult
+
+def create_littlehandoff_tool(config: LittleHandoffConfig) -> LogicalTool:
+    """Cria uma LogicalTool para LittleHandoff"""
+    
+    async def handler(**kwargs) -> dict:
+        """Handler que executa o sub-orquestrador"""
+        # Valida entrada
+        task_spec = config.input_type(**kwargs)
+        
+        # Executa B1 como sub-run
+        result = await Runner.run(
+            config.agent,
+            input=task_spec.model_dump_json(),
+            max_turns=config.max_turns,
+        )
+        
+        # Parse e valida saída
+        output = config.output_type.model_validate_json(result.final_output)
+        return output.model_dump()
+    
+    return LogicalTool(
+        name=config.tool_name,
+        description=config.tool_description,
+        input_schema=config.input_type.model_json_schema(),
+        output_schema=config.output_type.model_json_schema(),
+        backend=ToolBackend.AGENT_AS_TOOL,
+        agent_name=config.agent.name,
+        timeout_s=config.timeout_s,
+    ), handler
+
+# Exemplo de uso:
+# 
+# b1_agent = Agent(name="billing_specialist", ...)
+# 
+# tool, handler = create_littlehandoff_tool(LittleHandoffConfig(
+#     agent=b1_agent,
+#     tool_name="run_billing_analysis",
+#     tool_description="Executa análise especializada de billing",
+#     input_type=PrimaryTaskSpec,
+#     output_type=PrimaryTaskResult,
+# ))
+# 
+# registry.register(tool, handler)
+```
+
+---
+
+# Parte IV — Planning, Contexto e Memória
+
+## 6. Planning Tool: Design Não-Determinístico
+
+### 6.1 Modelo de Dados
+
+```python
+# planning/models.py
+
+from pydantic import BaseModel, Field
+from typing import Literal, Any
+from datetime import datetime
+from enum import Enum
+
+class PlanItemStatus(str, Enum):
+    TODO = "todo"
+    IN_PROGRESS = "in_progress"
+    DONE = "done"
+    BLOCKED = "blocked"
+    SKIPPED = "skipped"
+
+class PlanStatus(str, Enum):
+    DRAFT = "draft"
+    ACTIVE = "active"
+    COMPLETED = "completed"
+    ABANDONED = "abandoned"
+
+class PlanScope(str, Enum):
+    """Escopo de durabilidade do plano"""
+    RUN = "run"                 # Apenas este run
+    SESSION = "session"         # Esta sessão/conversa
+    USER = "user"               # Cross-sessão do usuário
+    WORKFLOW = "workflow"       # Workflow Temporal
+
+class PlanItem(BaseModel):
+    """Item individual do plano"""
+    id: str
+    description: str
+    status: PlanItemStatus = PlanItemStatus.TODO
+    order_index: int
+    depends_on: list[str] = Field(default_factory=list)
+    assigned_agent: str | None = None
+    notes: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    
+    # Tracking
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    blocked_reason: str | None = None
+
+class PlanState(BaseModel):
+    """Estado completo do plano"""
+    # Identificação
+    plan_id: str
+    session_id: str
+    user_id: str | None = None
+    
+    # Configuração
+    scope: PlanScope = PlanScope.SESSION
+    owner_agent: str              # Agente que criou o plano
+    
+    # Conteúdo
+    title: str
+    goal: str
+    explanation: str | None = None
+    items: list[PlanItem] = Field(default_factory=list)
+    current_item_id: str | None = None
+    
+    # Status
+    status: PlanStatus = PlanStatus.DRAFT
+    
+    # Timestamps
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    expires_at: datetime | None = None
+    
+    # Versionamento
+    version: int = 1
+```
+
+### 6.2 Ciclo de Vida e Persistência
+
+```python
+# planning/storage.py
+
+from typing import Protocol
+from .models import PlanState, PlanScope
+import json
+import redis.asyncio as redis
+from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import datetime, timedelta
+
+class PlanStorage(Protocol):
+    """Interface de storage para planos"""
+    async def load(self, plan_id: str) -> PlanState | None: ...
+    async def save(self, plan: PlanState) -> None: ...
+    async def delete(self, plan_id: str) -> None: ...
+    async def get_active_for_session(self, session_id: str) -> PlanState | None: ...
+
+class RedisPlanCache:
+    """Cache Redis para planos (curto prazo)"""
+    
+    def __init__(self, client: redis.Redis):
+        self.redis = client
+    
+    def _key(self, plan_id: str) -> str:
+        return f"plan:{plan_id}"
+    
+    def _session_key(self, session_id: str) -> str:
+        return f"session:{session_id}:active_plan"
+    
+    async def load(self, plan_id: str) -> PlanState | None:
+        data = await self.redis.get(self._key(plan_id))
+        if not data:
+            return None
+        return PlanState.model_validate_json(data)
+    
+    async def save(self, plan: PlanState) -> None:
+        # TTL baseado no scope
+        ttl = self._get_ttl(plan.scope)
+        
+        # Salva plano
+        await self.redis.set(
+            self._key(plan.plan_id),
+            plan.model_dump_json(),
+            ex=ttl,
+        )
+        
+        # Atualiza ponteiro da sessão
+        if plan.status == PlanStatus.ACTIVE:
+            await self.redis.set(
+                self._session_key(plan.session_id),
+                plan.plan_id,
+                ex=ttl,
+            )
+    
+    async def get_active_for_session(self, session_id: str) -> PlanState | None:
+        plan_id = await self.redis.get(self._session_key(session_id))
+        if not plan_id:
+            return None
+        return await self.load(plan_id.decode())
+    
+    def _get_ttl(self, scope: PlanScope) -> int:
+        """TTL em segundos por scope"""
+        return {
+            PlanScope.RUN: 60 * 30,          # 30 min
+            PlanScope.SESSION: 60 * 60 * 24, # 24h
+            PlanScope.USER: 60 * 60 * 24 * 7, # 7 dias
+            PlanScope.WORKFLOW: 60 * 60 * 24 * 30, # 30 dias
+        }[scope]
+
+class PostgresPlanStorage:
+    """Storage PostgreSQL para planos (longo prazo)"""
+    
+    def __init__(self, session_factory):
+        self.session_factory = session_factory
+    
+    async def load(self, plan_id: str) -> PlanState | None:
+        async with self.session_factory() as session:
+            result = await session.execute(
+                "SELECT data FROM plans WHERE id = :id",
+                {"id": plan_id}
+            )
+            row = result.fetchone()
+            if not row:
+                return None
+            return PlanState.model_validate_json(row[0])
+    
+    async def save(self, plan: PlanState) -> None:
+        plan.updated_at = datetime.utcnow()
+        plan.version += 1
+        
+        async with self.session_factory() as session:
+            await session.execute("""
+                INSERT INTO plans (id, session_id, user_id, status, data, created_at, updated_at, expires_at)
+                VALUES (:id, :session_id, :user_id, :status, :data, :created_at, :updated_at, :expires_at)
+                ON CONFLICT (id) DO UPDATE SET
+                    status = :status,
+                    data = :data,
+                    updated_at = :updated_at,
+                    expires_at = :expires_at
+            """, {
+                "id": plan.plan_id,
+                "session_id": plan.session_id,
+                "user_id": plan.user_id,
+                "status": plan.status.value,
+                "data": plan.model_dump_json(),
+                "created_at": plan.created_at,
+                "updated_at": plan.updated_at,
+                "expires_at": plan.expires_at,
+            })
+            await session.commit()
+
+class CompositePlanStorage:
+    """Storage composto: Redis (cache) + Postgres (durável)"""
+    
+    def __init__(self, cache: RedisPlanCache, db: PostgresPlanStorage):
+        self.cache = cache
+        self.db = db
+    
+    async def load(self, plan_id: str) -> PlanState | None:
+        # Tenta cache primeiro
+        plan = await self.cache.load(plan_id)
+        if plan:
+            return plan
+        
+        # Fallback para DB
+        plan = await self.db.load(plan_id)
+        if plan:
+            # Popula cache
+            await self.cache.save(plan)
+        
+        return plan
+    
+    async def save(self, plan: PlanState) -> None:
+        # Sempre salva em ambos
+        await self.cache.save(plan)
+        
+        # DB apenas para scopes duráveis
+        if plan.scope in (PlanScope.SESSION, PlanScope.USER, PlanScope.WORKFLOW):
+            await self.db.save(plan)
+```
+
+### 6.3 Implementação da Tool
+
+```python
+# planning/tool.py
+
+from agents import function_tool, RunContextWrapper
+from .models import PlanState, PlanItem, PlanItemStatus, PlanStatus, PlanScope
+from .storage import CompositePlanStorage
+from typing import Any
+import uuid
+from datetime import datetime
+
+# Contexto do agente que inclui o plano
+class AgentContext(BaseModel):
+    session_id: str
+    user_id: str | None = None
+    plan: PlanState | None = None
+    
+    # Storage injetado
+    _plan_storage: CompositePlanStorage | None = None
+
+@function_tool(name_override="update_plan_private")
+async def update_plan_private(
+    ctx: RunContextWrapper[AgentContext],
+    goal: str | None = None,
+    items: list[dict] | None = None,
+    explanation: str | None = None,
+    current_item_id: str | None = None,
+    mark_status: str | None = None,
+) -> str:
+    """
+    Atualiza o estado interno de planejamento.
+    
+    Esta é uma ferramenta INTERNA para organizar seu trabalho.
+    O plano NUNCA deve ser mostrado diretamente ao usuário.
+    
+    Use quando:
+    - A tarefa é complexa e requer múltiplos passos
+    - Você quer organizar sua abordagem antes de executar
+    - Precisa atualizar progresso ou re-planejar
+    
+    Args:
+        goal: Objetivo geral do plano (opcional, para criar/atualizar)
+        items: Lista de itens do plano [{"id": "...", "description": "...", "status": "..."}]
+        explanation: Sua explicação interna sobre o plano
+        current_item_id: ID do item atualmente em execução
+        mark_status: Marcar plano como "completed" ou "abandoned"
+    
+    Returns:
+        "ok" se sucesso, ou mensagem de erro
+    """
+    context = ctx.context
+    storage = context._plan_storage
+    
+    # Carrega plano existente ou cria novo
+    if context.plan is None:
+        if goal is None:
+            return "error: goal is required to create a new plan"
+        
+        context.plan = PlanState(
+            plan_id=str(uuid.uuid4()),
+            session_id=context.session_id,
+            user_id=context.user_id,
+            owner_agent=ctx.agent.name,
+            title=goal[:100],
+            goal=goal,
+            scope=PlanScope.SESSION,
+        )
+    
+    plan = context.plan
+    
+    # Atualiza campos
+    if goal:
+        plan.goal = goal
+        plan.title = goal[:100]
+    
+    if explanation:
+        plan.explanation = explanation
+    
+    if items:
+        plan.items = [
+            PlanItem(
+                id=item.get("id", str(uuid.uuid4())),
+                description=item["description"],
+                status=PlanItemStatus(item.get("status", "todo")),
+                order_index=idx,
+                depends_on=item.get("depends_on", []),
+                notes=item.get("notes"),
+            )
+            for idx, item in enumerate(items)
+        ]
+    
+    if current_item_id:
+        plan.current_item_id = current_item_id
+        # Marca item como in_progress
+        for item in plan.items:
+            if item.id == current_item_id:
+                if item.status == PlanItemStatus.TODO:
+                    item.status = PlanItemStatus.IN_PROGRESS
+                    item.started_at = datetime.utcnow()
+    
+    if mark_status:
+        if mark_status == "completed":
+            plan.status = PlanStatus.COMPLETED
+        elif mark_status == "abandoned":
+            plan.status = PlanStatus.ABANDONED
+    elif plan.status == PlanStatus.DRAFT:
+        plan.status = PlanStatus.ACTIVE
+    
+    # Persiste
+    plan.updated_at = datetime.utcnow()
+    if storage:
+        await storage.save(plan)
+    
+    return "ok"
+
+@function_tool(name_override="check_plan_item")
+async def check_plan_item(
+    ctx: RunContextWrapper[AgentContext],
+    item_id: str,
+    status: str,
+    notes: str | None = None,
+) -> str:
+    """
+    Atualiza o status de um item específico do plano.
+    
+    Args:
+        item_id: ID do item a atualizar
+        status: Novo status ("done", "blocked", "skipped")
+        notes: Notas sobre o resultado
+    
+    Returns:
+        "ok" se sucesso, ou mensagem de erro
+    """
+    plan = ctx.context.plan
+    if not plan:
+        return "error: no active plan"
+    
+    for item in plan.items:
+        if item.id == item_id:
+            item.status = PlanItemStatus(status)
+            if notes:
+                item.notes = notes
+            if status == "done":
+                item.completed_at = datetime.utcnow()
+            elif status == "blocked":
+                item.blocked_reason = notes
+            break
+    else:
+        return f"error: item {item_id} not found"
+    
+    # Verifica se plano foi completado
+    all_done = all(
+        item.status in (PlanItemStatus.DONE, PlanItemStatus.SKIPPED)
+        for item in plan.items
+    )
+    if all_done:
+        plan.status = PlanStatus.COMPLETED
+    
+    # Persiste
+    storage = ctx.context._plan_storage
+    if storage:
+        await storage.save(plan)
+    
+    return "ok"
+```
+
+---
+
+## 7. Gestão de Sessões e Contexto
+
+### 7.1 SessionMeta e RunContext
+
+```python
+# sessions/models.py
+
+from pydantic import BaseModel, Field
+from typing import Any, Literal
+from datetime import datetime
+from enum import Enum
+
+class ProductType(str, Enum):
+    """Tipos de produto suportados"""
+    SUPPORT_CHAT = "support_chat"
+    INTERNAL_COPILOT = "internal_copilot"
+    BACKOFFICE_AUTOMATION = "backoffice_automation"
+
+class OrchestrationType(str, Enum):
+    """Tipos de orquestração"""
+    MANAGER_TOOLS = "manager_tools"
+    HANDOFF = "handoff"
+    LITTLE_HANDOFF = "little_handoff"
+    PANEL = "panel"
+    CODE_ORCHESTRATION = "code_orchestration"
+
+class WorkflowEngine(str, Enum):
+    """Engine de workflow"""
+    DIRECT = "direct"           # Apenas Agents SDK
+    TEMPORAL = "temporal"       # Agents SDK + Temporal
+
+class SessionStatus(str, Enum):
+    """Status da sessão"""
+    ACTIVE = "active"
+    PAUSED = "paused"
+    COMPLETED = "completed"
+    EXPIRED = "expired"
+
+class SessionMeta(BaseModel):
+    """Metadados persistentes da sessão (PostgreSQL)"""
+    
+    # Identificação
+    session_id: str
+    user_id: str | None = None
+    tenant_id: str | None = None
+    conversation_id: str | None = None  # OpenAI conversation_id se usar
+    
+    # Configuração de orquestração
+    product_type: ProductType
+    orchestration_type: OrchestrationType
+    provider_strategy: ProviderStrategy
+    workflow_engine: WorkflowEngine = WorkflowEngine.DIRECT
+    
+    # Limites de execução
+    max_turns: int = 10
+    timeout_s: int = 60
+    max_handoff_depth: int = 3
+    max_tool_calls: int = 20
+    max_conversation_tokens: int = 100000
+    
+    # Estado
+    status: SessionStatus = SessionStatus.ACTIVE
+    current_agent: str | None = None
+    plan_id: str | None = None
+    
+    # Timestamps
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    last_activity_at: datetime = Field(default_factory=datetime.utcnow)
+    
+    # Versionamento
+    prompt_version: str = "1.0.0"
+    toolset_version: str = "1.0.0"
+    profile_version: str = "1.0.0"
+
+class RunContextData(BaseModel):
+    """Estado efêmero do run atual (Redis)"""
+    
+    # Identificação
+    run_id: str
+    session_id: str
+    
+    # Stack de agentes (para tracking de handoffs)
+    agent_stack: list[str] = Field(default_factory=list)
+    current_handoff_depth: int = 0
+    
+    # Contadores
+    turn_count: int = 0
+    tool_calls_count: int = 0
+    tokens_used: int = 0
+    
+    # Estado do plano (cache)
+    plan_id: str | None = None
+    current_plan_item: str | None = None
+    
+    # Flags de controle
+    cancelled: bool = False
+    hit_budget: bool = False
+    needs_human: bool = False
+    
+    # Info requests pendentes (de sub-agentes)
+    pending_info_requests: list[dict] = Field(default_factory=list)
+    
+    # Timestamps
+    started_at: datetime = Field(default_factory=datetime.utcnow)
+```
+
+### 7.2 Context Engineering: Trimming e Summarization
+
+```python
+# sessions/context.py
+
+from typing import Protocol
+from pydantic import BaseModel
+from collections import deque
+import asyncio
+
+class Message(BaseModel):
+    role: str
+    content: str
+    name: str | None = None
+    tool_call_id: str | None = None
+    synthetic: bool = False  # True para mensagens geradas (ex: summary)
+
+class SessionStore(Protocol):
+    """Interface para storage de mensagens"""
+    async def get_items(self, limit: int | None = None) -> list[Message]: ...
+    async def add_items(self, items: list[Message]) -> None: ...
+    async def clear(self) -> None: ...
+
+class TrimmingSession:
+    """
+    Sessão com trimming: mantém apenas os últimos N turnos de usuário.
+    
+    Um turno = mensagem de usuário + tudo que vem depois até o próximo usuário.
+    """
+    
+    def __init__(self, max_turns: int = 5):
+        self.max_turns = max(1, max_turns)
+        self._items: deque[Message] = deque()
+        self._lock = asyncio.Lock()
+    
+    async def get_items(self, limit: int | None = None) -> list[Message]:
+        async with self._lock:
+            # Garante trimming no read também
+            trimmed = self._trim_to_last_user_turns(list(self._items))
+            if limit and limit > 0:
+                return trimmed[-limit:]
+            return trimmed
+    
+    async def add_items(self, items: list[Message]) -> None:
+        if not items:
+            return
+        
+        async with self._lock:
+            self._items.extend(items)
+            # Aplica trimming imediatamente
+            trimmed = self._trim_to_last_user_turns(list(self._items))
+            self._items.clear()
+            self._items.extend(trimmed)
+    
+    def _trim_to_last_user_turns(self, items: list[Message]) -> list[Message]:
+        """Mantém apenas os últimos N turnos de usuário"""
+        if not items:
+            return []
+        
+        # Encontra índices de mensagens de usuário (não sintéticas)
+        user_indices = [
+            i for i, msg in enumerate(items)
+            if msg.role == "user" and not msg.synthetic
+        ]
+        
+        if len(user_indices) <= self.max_turns:
+            return items
+        
+        # Pega o índice do início do N-ésimo turno mais recente
+        start_idx = user_indices[-self.max_turns]
+        return items[start_idx:]
+
+class SummarizingSession:
+    """
+    Sessão com sumarização: compacta histórico antigo em resumo.
+    
+    - context_limit: máximo de turnos antes de sumarizar
+    - keep_last_n_turns: turnos a manter verbatim após sumarização
+    """
+    
+    SUMMARY_PROMPT = """
+    Resuma a conversa anterior de forma estruturada e concisa (máx 200 palavras).
+    
+    Inclua obrigatoriamente:
+    • Contexto do problema/solicitação
+    • Passos já tentados e resultados
+    • Identificadores importantes (IDs, nomes, valores)
+    • Status atual e próximos passos pendentes
+    
+    Regras:
+    - Use bullets curtos, verbos no início
+    - Cite erros/códigos exatamente como apareceram
+    - Se informação foi supersedida, indique "Supersedido:"
+    - Não invente fatos
+    """
+    
+    def __init__(
+        self,
+        context_limit: int = 10,
+        keep_last_n_turns: int = 3,
+        summarizer_model: str = "gpt-5.1-mini",
+    ):
+        self.context_limit = context_limit
+        self.keep_last_n_turns = min(keep_last_n_turns, context_limit)
+        self.summarizer_model = summarizer_model
+        self._items: list[Message] = []
+        self._lock = asyncio.Lock()
+    
+    async def add_items(self, items: list[Message]) -> None:
+        async with self._lock:
+            self._items.extend(items)
+            
+            # Verifica se precisa sumarizar
+            user_turn_count = sum(
+                1 for msg in self._items
+                if msg.role == "user" and not msg.synthetic
+            )
+            
+            if user_turn_count <= self.context_limit:
+                return
+            
+            # Precisa sumarizar
+            await self._summarize_locked()
+    
+    async def _summarize_locked(self) -> None:
+        """Sumariza o prefixo, mantém últimos K turnos"""
+        # Encontra boundary
+        user_indices = [
+            i for i, msg in enumerate(self._items)
+            if msg.role == "user" and not msg.synthetic
+        ]
+        
+        if len(user_indices) <= self.keep_last_n_turns:
+            return
+        
+        # Boundary: início do K-ésimo turno mais recente
+        boundary_idx = user_indices[-self.keep_last_n_turns]
+        
+        # Prefixo a sumarizar
+        prefix = self._items[:boundary_idx]
+        suffix = self._items[boundary_idx:]
+        
+        # Gera resumo
+        summary = await self._generate_summary(prefix)
+        
+        # Cria par sintético
+        synthetic_user = Message(
+            role="user",
+            content="Resuma a conversa que tivemos até agora.",
+            synthetic=True,
+        )
+        synthetic_assistant = Message(
+            role="assistant",
+            content=summary,
+            synthetic=True,
+        )
+        
+        # Substitui
+        self._items = [synthetic_user, synthetic_assistant] + suffix
+    
+    async def _generate_summary(self, messages: list[Message]) -> str:
+        """Gera resumo usando LLM"""
+        from model_runtime import ModelRuntime, ModelConfig, Message as RuntimeMessage
+        
+        runtime = ModelRuntime()
+        
+        # Monta prompt de sumarização
+        conversation_text = "\n".join([
+            f"{msg.role}: {msg.content}"
+            for msg in messages
+        ])
+        
+        result = await runtime.generate(
+            messages=[
+                RuntimeMessage(role="system", content=self.SUMMARY_PROMPT),
+                RuntimeMessage(role="user", content=conversation_text),
+            ],
+            config=ModelConfig(
+                provider=ModelProvider.OPENAI,
+                model_name=self.summarizer_model,
+                max_input_tokens=50000,
+                max_output_tokens=500,
+                temperature=0.3,
+            ),
+        )
+        
+        return result.final_output or ""
+```
+
+### 7.3 Camadas de Memória
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           ARQUITETURA DE MEMÓRIA                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  CURTO PRAZO (< 1 hora)                                                      │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                         RunContext (Redis)                           │   │
+│  │  • Estado do run atual                                               │   │
+│  │  • Contadores de uso                                                 │   │
+│  │  • Flags de controle                                                 │   │
+│  │  • TTL: duração do run                                               │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                    Session Messages (in-memory/Redis)                │   │
+│  │  • Últimos N turnos (trimmed)                                        │   │
+│  │  • Tool calls e results recentes                                     │   │
+│  │  • TTL: duração da sessão                                            │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                       │
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  MÉDIO PRAZO (1 hora - 7 dias)                                               │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                      PlanState (Redis + Postgres)                    │   │
+│  │  • Plano atual e histórico                                           │   │
+│  │  • Passos, status, notas                                             │   │
+│  │  • TTL: configurável por scope                                       │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                 Conversation Summary (Postgres)                      │   │
+│  │  • Resumos compactados de conversas longas                           │   │
+│  │  • Decisões tomadas                                                  │   │
+│  │  • TTL: 7-30 dias                                                    │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                       │
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  LONGO PRAZO (> 7 dias)                                                      │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                      User Memory (Postgres)                          │   │
+│  │  • Preferências do usuário                                           │   │
+│  │  • Fatos importantes (estilo Zep)                                    │   │
+│  │  • Histórico de interações (agregado)                                │   │
+│  │  • TTL: meses/anos                                                   │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                    RAG Vectors (pgvector)                            │   │
+│  │  • Chunks de documentos                                              │   │
+│  │  • Embeddings de conversas importantes                               │   │
+│  │  • TTL: conforme política de retenção                                │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+# Parte V — Configuração e Perfis
+
+## 8. Orchestration Profiles
+
+### 8.1 Modelo de Configuração
+
+```python
+# config/profiles.py
+
+from pydantic import BaseModel
+from typing import Literal
+from sessions.models import ProductType, OrchestrationType, WorkflowEngine
+from model_runtime.types import ProviderStrategy, ModelProvider
+
+class OrchestrationProfile(BaseModel):
+    """
+    Perfil de configuração para um tipo de produto/orquestração.
+    
+    Define todos os parâmetros de comportamento do framework.
+    """
+    
+    # Identificação
+    profile_id: str
+    name: str
+    description: str
+    version: str = "1.0.0"
+    
+    # Tipo de produto e orquestração
+    product_type: ProductType
+    orchestration_type: OrchestrationType
+    
+    # Estratégia de provider
+    provider_strategy: ProviderStrategy
+    primary_model: str              # "gpt-5.1"
+    fallback_model: str | None      # "gemini-3-pro"
+    specialist_model: str | None    # Modelo para especialistas/B2
+    
+    # Limites de execução
+    max_turns: int
+    timeout_s: int
+    max_handoff_depth: int
+    max_tool_calls: int
+    
+    # Limites de contexto
+    max_conversation_tokens: int
+    context_strategy: Literal["trimming", "summarization"]
+    trimming_max_turns: int = 5
+    summarization_context_limit: int = 10
+    summarization_keep_last: int = 3
+    
+    # Features
+    enable_planning: bool = True
+    enable_second_opinion: bool = False
+    enable_temporal: bool = False
+    
+    # Workflow engine
+    workflow_engine: WorkflowEngine = WorkflowEngine.DIRECT
+    
+    # HITL
+    require_confirmation_for: list[str] = []  # Nomes de tools que requerem confirmação
+    auto_escalate_on_failure_count: int = 3
+
+class ProfileRegistry:
+    """Registry de perfis de orquestração"""
+    
+    def __init__(self):
+        self._profiles: dict[str, OrchestrationProfile] = {}
+        self._load_defaults()
+    
+    def _load_defaults(self):
+        """Carrega perfis padrão"""
+        # Support Chat - Manager+Tools
+        self.register(OrchestrationProfile(
+            profile_id="support_chat_manager_tools",
+            name="Support Chat (Manager+Tools)",
+            description="Chat de suporte com um hub e tools especializadas",
+            product_type=ProductType.SUPPORT_CHAT,
+            orchestration_type=OrchestrationType.MANAGER_TOOLS,
+            provider_strategy=ProviderStrategy.FALLBACK_OPENAI_TO_GEMINI,
+            primary_model="gpt-5.1",
+            fallback_model="gemini-3-pro",
+            max_turns=8,
+            timeout_s=30,
+            max_handoff_depth=2,
+            max_tool_calls=12,
+            max_conversation_tokens=80000,
+            context_strategy="trimming",
+            trimming_max_turns=5,
+            enable_planning=True,
+            enable_second_opinion=False,
+        ))
+        
+        # Support Chat - Handoff
+        self.register(OrchestrationProfile(
+            profile_id="support_chat_handoff",
+            name="Support Chat (Handoff)",
+            description="Chat de suporte com handoff para especialistas",
+            product_type=ProductType.SUPPORT_CHAT,
+            orchestration_type=OrchestrationType.HANDOFF,
+            provider_strategy=ProviderStrategy.PRIMARY_OPENAI,
+            primary_model="gpt-5.1",
+            max_turns=10,
+            timeout_s=45,
+            max_handoff_depth=3,
+            max_tool_calls=15,
+            max_conversation_tokens=100000,
+            context_strategy="summarization",
+            summarization_context_limit=12,
+            summarization_keep_last=4,
+            enable_planning=True,
+        ))
+        
+        # Internal Copilot - LittleHandoff
+        self.register(OrchestrationProfile(
+            profile_id="internal_copilot_littlehandoff",
+            name="Internal Copilot (LittleHandoff)",
+            description="Copiloto interno com sub-orquestradores especializados",
+            product_type=ProductType.INTERNAL_COPILOT,
+            orchestration_type=OrchestrationType.LITTLE_HANDOFF,
+            provider_strategy=ProviderStrategy.MIRROR_SECOND_OPINION,
+            primary_model="gpt-5.1",
+            fallback_model="gemini-3-pro",
+            specialist_model="gpt-5.1",
+            max_turns=16,
+            timeout_s=90,
+            max_handoff_depth=4,
+            max_tool_calls=25,
+            max_conversation_tokens=180000,
+            context_strategy="summarization",
+            summarization_context_limit=15,
+            summarization_keep_last=5,
+            enable_planning=True,
+            enable_second_opinion=True,
+        ))
+        
+        # Backoffice - LittleHandoff + Temporal
+        self.register(OrchestrationProfile(
+            profile_id="backoffice_temporal",
+            name="Backoffice Automation (Temporal)",
+            description="Automação de backoffice com workflows Temporal",
+            product_type=ProductType.BACKOFFICE_AUTOMATION,
+            orchestration_type=OrchestrationType.LITTLE_HANDOFF,
+            provider_strategy=ProviderStrategy.PRIMARY_OPENAI,
+            primary_model="gpt-5.1",
+            specialist_model="gpt-5.1-mini",
+            max_turns=20,
+            timeout_s=120,
+            max_handoff_depth=3,
+            max_tool_calls=30,
+            max_conversation_tokens=60000,
+            context_strategy="trimming",
+            trimming_max_turns=3,
+            enable_planning=True,
+            enable_temporal=True,
+            workflow_engine=WorkflowEngine.TEMPORAL,
+            require_confirmation_for=["execute_payment", "delete_record"],
+            auto_escalate_on_failure_count=2,
+        ))
+    
+    def register(self, profile: OrchestrationProfile):
+        self._profiles[profile.profile_id] = profile
+    
+    def get(self, profile_id: str) -> OrchestrationProfile | None:
+        return self._profiles.get(profile_id)
+    
+    def get_for_product(self, product: ProductType) -> list[OrchestrationProfile]:
+        return [p for p in self._profiles.values() if p.product_type == product]
+```
+
+### 8.2 Perfis por Produto
+
+| Produto | Profile ID | Orquestração | Provider | max_turns | timeout | max_tokens |
+|---------|------------|--------------|----------|-----------|---------|------------|
+| Support Chat | `support_chat_manager_tools` | Manager+Tools | OpenAI → Gemini | 8 | 30s | 80k |
+| Support Chat | `support_chat_handoff` | Handoff | OpenAI | 10 | 45s | 100k |
+| Internal Copilot | `internal_copilot_littlehandoff` | LittleHandoff | OpenAI + Second Opinion | 16 | 90s | 180k |
+| Backoffice | `backoffice_temporal` | LittleHandoff + Temporal | OpenAI | 20 | 120s | 60k |
+
+### 8.3 Limites e Budgets
+
+```python
+# config/limits.py
+
+from dataclasses import dataclass
+
+@dataclass
+class ExecutionBudget:
+    """Budget de execução para um run"""
+    max_turns: int
+    max_tool_calls: int
+    max_tokens: int
+    timeout_s: int
+    max_handoff_depth: int
+    
+    # Contadores
+    turns_used: int = 0
+    tool_calls_used: int = 0
+    tokens_used: int = 0
+    handoff_depth: int = 0
+    
+    def can_continue(self) -> bool:
+        """Verifica se pode continuar execução"""
+        return (
+            self.turns_used < self.max_turns and
+            self.tool_calls_used < self.max_tool_calls and
+            self.tokens_used < self.max_tokens and
+            self.handoff_depth < self.max_handoff_depth
+        )
+    
+    def record_turn(self):
+        self.turns_used += 1
+    
+    def record_tool_call(self):
+        self.tool_calls_used += 1
+    
+    def record_tokens(self, count: int):
+        self.tokens_used += count
+    
+    def record_handoff(self):
+        self.handoff_depth += 1
+    
+    def get_remaining(self) -> dict:
+        return {
+            "turns": self.max_turns - self.turns_used,
+            "tool_calls": self.max_tool_calls - self.tool_calls_used,
+            "tokens": self.max_tokens - self.tokens_used,
+            "handoff_depth": self.max_handoff_depth - self.handoff_depth,
+        }
+```
+
+#### Atualização v2.1 — O que **max_turns** realmente significa (e como aplicar timeout de verdade)
+
+O `ExecutionBudget` da v2.0 já contém `timeout_s`, mas **não aplica** esse limite dentro de `can_continue()`. Na prática, isso cria um risco clássico de produção: o run pode ficar preso em tool calls lentas, retries, ou em modelos com alto tempo de raciocínio, e ainda assim continuar "dentro do budget".
+
+Nesta v2.1, a recomendação é tratar:
+
+- **max_turns** = número máximo de **invocações ao modelo** (i.e., *model calls*). Não confundir com "mensagens".
+- **timeout_s** = deadline de **execução do run** (wall-clock), independente de quantas turns ainda sobraram.
+
+A forma mais robusta de fazer isso é incluir um relógio monotônico no budget e checar o deadline antes de cada:
+
+1) invocação ao modelo, 2) execução de tool, 3) handoff para subagente.
+
+Exemplo (referência) de budget "aplicável":
+
+```python
+import time
+from dataclasses import dataclass, field
+
+@dataclass
+class ExecutionBudgetV21:
+    """Budget orientado a produção.
+
+    Objetivo: impor limites consistentes em *runs* multi-provider.
+
+    Definições:
+      - turn: 1 chamada ao modelo (1 request ao provider).
+      - external tool call: tool executada fora do provider (função Python/MCP/HTTP/etc).
+      - provider tool call: tool executada pelo provider dentro da mesma request (quando suportado).
+    """
+
+    max_turns: int
+    max_external_tool_calls: int
+    max_tokens: int
+    timeout_s: float
+    max_handoff_depth: int
+
+    # Opcional (provider-specific)
+    max_openai_builtin_tool_calls: int | None = None
+    max_gemini_remote_calls: int | None = None  # útil se AFC estiver ligado
+
+    started_at: float = field(default_factory=time.monotonic)
+
+    turns_used: int = 0
+    external_tool_calls_used: int = 0
+    tokens_used: int = 0
+    handoff_depth: int = 0
+
+    openai_builtin_tool_calls_used: int = 0
+    gemini_remote_calls_used: int = 0
+
+    @property
+    def deadline(self) -> float:
+        return self.started_at + self.timeout_s
+
+    def time_left_s(self) -> float:
+        return max(0.0, self.deadline - time.monotonic())
+
+    def can_continue(self) -> bool:
+        # Primeiro: tempo (mais importante em produção)
+        if time.monotonic() >= self.deadline:
+            return False
+
+        # Depois: limites discretos
+        if self.turns_used >= self.max_turns:
+            return False
+        if self.external_tool_calls_used >= self.max_external_tool_calls:
+            return False
+        if self.tokens_used >= self.max_tokens:
+            return False
+        if self.handoff_depth >= self.max_handoff_depth:
+            return False
+
+        # Provider-specific (se habilitado)
+        if self.max_openai_builtin_tool_calls is not None:
+            if self.openai_builtin_tool_calls_used >= self.max_openai_builtin_tool_calls:
+                return False
+        if self.max_gemini_remote_calls is not None:
+            if self.gemini_remote_calls_used >= self.max_gemini_remote_calls:
+                return False
+
+        return True
+
+    def note_model_call(self, tokens_used: int = 0):
+        self.turns_used += 1
+        self.tokens_used += tokens_used
+
+    def note_external_tool_call(self):
+        self.external_tool_calls_used += 1
+
+    def note_openai_builtin_tool_call(self, n: int = 1):
+        self.openai_builtin_tool_calls_used += n
+
+    def note_gemini_remote_call(self, n: int = 1):
+        self.gemini_remote_calls_used += n
+```
+
+A análise completa de semântica de turnos e timeouts está no **Apêndice C**.
+
+---
+
+# Parte VI — Long-Running e HITL
+
+## 9. Temporal.io: Integração Opcional
+
+### 9.1 Quando Usar Temporal
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    DECISÃO: Temporal vs Agents SDK Direto                    │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+                              ┌───────────────────┐
+                              │ Tarefa dura mais  │
+                              │  de 2 minutos?    │
+                              └─────────┬─────────┘
+                                        │
+                         ┌──────────────┴──────────────┐
+                        NÃO                           SIM
+                         │                             │
+                         ▼                             ▼
+              ┌─────────────────┐          ┌─────────────────────┐
+              │ Agents SDK      │          │  Precisa de HITL    │
+              │ direto          │          │  (aprovações)?      │
+              │ (mais simples)  │          └──────────┬──────────┘
+              └─────────────────┘                     │
+                                        ┌─────────────┴─────────────┐
+                                       SIM                         NÃO
+                                        │                           │
+                                        ▼                           ▼
+                              ┌─────────────────┐       ┌─────────────────────┐
+                              │ USAR TEMPORAL   │       │  Precisa de retry   │
+                              │                 │       │  robusto/sagas?     │
+                              └─────────────────┘       └──────────┬──────────┘
+                                                                   │
+                                                      ┌────────────┴────────────┐
+                                                     SIM                       NÃO
+                                                      │                         │
+                                                      ▼                         ▼
+                                            ┌─────────────────┐     ┌─────────────────┐
+                                            │ USAR TEMPORAL   │     │ Agents SDK      │
+                                            │                 │     │ com timeouts    │
+                                            └─────────────────┘     └─────────────────┘
+```
+
+### 9.2 Arquitetura de Workflows
+
+```python
+# temporal/workflows.py
+
+from temporalio import workflow, activity
+from temporalio.common import RetryPolicy
+from datetime import timedelta
+from typing import Any
+
+from agents import Agent, Runner
+from sessions.models import SessionMeta
+from config.profiles import OrchestrationProfile
+
+@activity.defn
+async def run_agent_activity(
+    input: str,
+    session_meta_dict: dict,
+    profile_id: str,
+) -> dict:
+    """
+    Activity que executa um agente.
+    
+    Encapsula toda a lógica do Agents SDK em uma activity Temporal.
+    """
+    from sessions.models import SessionMeta
+    from config.profiles import ProfileRegistry
+    
+    # Reconstrói objetos
+    session_meta = SessionMeta(**session_meta_dict)
+    profile = ProfileRegistry().get(profile_id)
+    
+    # Constrói agente baseado no profile
+    agent = build_agent_for_profile(profile, session_meta)
+    
+    # Executa
+    result = await Runner.run(
+        agent,
+        input=input,
+        max_turns=profile.max_turns,
+    )
+    
+    return {
+        "final_output": result.final_output,
+        "run_id": str(result.run_id),
+        "status": "completed" if result.final_output else "incomplete",
+    }
+
+@workflow.defn
+class LongRunningAgentWorkflow:
+    """
+    Workflow para tarefas de longa duração com HITL.
+    
+    Fases:
+    1. Análise/planejamento (agente)
+    2. Aprovação humana (signal)
+    3. Execução (agente)
+    4. Verificação (opcional)
+    """
+    
+    def __init__(self):
+        self.approval_received = False
+        self.approval_details: dict | None = None
+        self.human_feedback: str | None = None
+    
+    @workflow.signal
+    async def approve(self, details: dict | None = None):
+        """Signal para aprovar execução"""
+        self.approval_received = True
+        self.approval_details = details
+    
+    @workflow.signal
+    async def reject(self, feedback: str):
+        """Signal para rejeitar com feedback"""
+        self.approval_received = False
+        self.human_feedback = feedback
+    
+    @workflow.run
+    async def run(
+        self,
+        initial_input: str,
+        session_meta_dict: dict,
+        profile_id: str,
+    ) -> dict:
+        # Retry policy para activities
+        retry_policy = RetryPolicy(
+            initial_interval=timedelta(seconds=1),
+            maximum_interval=timedelta(minutes=5),
+            maximum_attempts=3,
+        )
+        
+        # 1) Fase de análise/planejamento
+        analysis = await workflow.execute_activity(
+            run_agent_activity,
+            args=[
+                f"[ANÁLISE] {initial_input}",
+                session_meta_dict,
+                profile_id,
+            ],
+            start_to_close_timeout=timedelta(minutes=5),
+            retry_policy=retry_policy,
+        )
+        
+        if analysis["status"] != "completed":
+            return {"status": "analysis_failed", "details": analysis}
+        
+        # 2) Esperar aprovação humana
+        try:
+            await workflow.wait_condition(
+                lambda: self.approval_received or self.human_feedback is not None,
+                timeout=timedelta(days=7),  # Timeout de 7 dias
+            )
+        except asyncio.TimeoutError:
+            return {"status": "approval_timeout"}
+        
+        if self.human_feedback and not self.approval_received:
+            # Rejeitado - pode re-analisar com feedback
+            return {
+                "status": "rejected",
+                "feedback": self.human_feedback,
+                "analysis": analysis,
+            }
+        
+        # 3) Fase de execução (aprovado)
+        execution_input = (
+            f"[EXECUTAR] Plano aprovado:\n{analysis['final_output']}\n\n"
+            f"Detalhes da aprovação: {self.approval_details or 'Sem detalhes adicionais'}"
+        )
+        
+        execution = await workflow.execute_activity(
+            run_agent_activity,
+            args=[
+                execution_input,
+                session_meta_dict,
+                profile_id,
+            ],
+            start_to_close_timeout=timedelta(minutes=10),
+            retry_policy=retry_policy,
+        )
+        
+        return {
+            "status": "completed" if execution["status"] == "completed" else "execution_failed",
+            "analysis": analysis,
+            "execution": execution,
+        }
+```
+
+### 9.3 Human-in-the-Loop
+
+```python
+# temporal/hitl.py
+
+from pydantic import BaseModel
+from typing import Literal
+from datetime import datetime
+
+class HITLRequest(BaseModel):
+    """Solicitação de intervenção humana"""
+    request_id: str
+    workflow_id: str
+    session_id: str
+    user_id: str | None
+    
+    # Tipo de solicitação
+    type: Literal["approval", "review", "input", "escalation"]
+    
+    # Contexto
+    summary: str
+    details: dict
+    proposed_action: str | None
+    
+    # Metadata
+    urgency: Literal["low", "medium", "high", "critical"]
+    deadline: datetime | None
+    created_at: datetime
+    
+class HITLResponse(BaseModel):
+    """Resposta humana"""
+    request_id: str
+    
+    # Decisão
+    decision: Literal["approve", "reject", "modify", "escalate"]
+    
+    # Detalhes
+    feedback: str | None = None
+    modifications: dict | None = None
+    
+    # Metadata
+    responder_id: str
+    responded_at: datetime
+
+class HITLService:
+    """Serviço para gerenciar HITL"""
+    
+    def __init__(self, temporal_client, notification_service):
+        self.temporal = temporal_client
+        self.notifications = notification_service
+    
+    async def create_request(self, request: HITLRequest) -> str:
+        """Cria uma solicitação de HITL"""
+        # Persiste no banco
+        await self._save_request(request)
+        
+        # Notifica responsáveis
+        await self.notifications.notify_hitl_request(request)
+        
+        return request.request_id
+    
+    async def respond(self, response: HITLResponse):
+        """Processa resposta humana"""
+        # Busca request original
+        request = await self._get_request(response.request_id)
+        
+        # Envia signal para o workflow
+        if response.decision == "approve":
+            await self.temporal.get_workflow_handle(
+                request.workflow_id
+            ).signal("approve", response.modifications)
+        elif response.decision in ("reject", "modify"):
+            await self.temporal.get_workflow_handle(
+                request.workflow_id
+            ).signal("reject", response.feedback)
+        
+        # Atualiza status
+        await self._update_request_status(response)
+```
+
+---
+
+## 10. Agentes Ativos e Eventos
+
+```python
+# active_agents/events.py
+
+from pydantic import BaseModel
+from typing import Any, Literal
+from datetime import datetime
+from enum import Enum
+
+class EventType(str, Enum):
+    """Tipos de eventos que podem disparar agentes"""
+    TICKET_CREATED = "ticket.created"
+    TICKET_STUCK = "ticket.stuck"
+    TICKET_ESCALATED = "ticket.escalated"
+    CUSTOMER_CHURN_RISK = "customer.churn_risk"
+    INVOICE_OVERDUE = "invoice.overdue"
+    METRIC_THRESHOLD = "metric.threshold"
+    SCHEDULE_TRIGGER = "schedule.trigger"
+    USER_INACTIVE = "user.inactive"
+
+class DomainEvent(BaseModel):
+    """Evento de domínio normalizado"""
+    event_id: str
+    event_type: EventType
+    
+    # Contexto
+    tenant_id: str
+    user_id: str | None
+    entity_type: str        # "ticket", "customer", "invoice"
+    entity_id: str
+    
+    # Payload
+    payload: dict[str, Any]
+    
+    # Metadata
+    timestamp: datetime
+    source: str             # "crm", "billing", "scheduler"
+    idempotency_key: str
+
+class TriggerConfig(BaseModel):
+    """Configuração de trigger para um agente"""
+    trigger_id: str
+    agent_id: str
+    
+    # Critérios de match
+    event_types: list[EventType]
+    tenant_ids: list[str] | None = None  # None = todos
+    conditions: dict[str, Any] = {}       # Condições adicionais
+    
+    # Controles
+    enabled: bool = True
+    cooldown_minutes: int = 60            # Tempo mínimo entre acionamentos
+    max_daily_triggers: int = 100
+    
+    # Prioridade
+    priority: Literal["low", "medium", "high"] = "medium"
+
+class ActiveAgentRunner:
+    """Runner para agentes ativos (disparados por eventos)"""
+    
+    def __init__(
+        self,
+        trigger_configs: list[TriggerConfig],
+        session_service,
+        agent_factory,
+    ):
+        self.triggers = {t.trigger_id: t for t in trigger_configs}
+        self.sessions = session_service
+        self.agents = agent_factory
+    
+    async def handle_event(self, event: DomainEvent) -> dict | None:
+        """Processa um evento e dispara agente se aplicável"""
+        # Encontra triggers que matcham
+        matching_triggers = self._find_matching_triggers(event)
+        
+        if not matching_triggers:
+            return None
+        
+        # Usa o trigger de maior prioridade
+        trigger = max(matching_triggers, key=lambda t: self._priority_score(t))
+        
+        # Verifica cooldown
+        if not await self._check_cooldown(trigger, event):
+            return {"status": "cooldown"}
+        
+        # Cria ou recupera sessão
+        session = await self.sessions.get_or_create_for_event(event, trigger)
+        
+        # Monta contexto do evento
+        context = self._build_event_context(event, session)
+        
+        # Executa agente
+        agent = self.agents.get(trigger.agent_id)
+        result = await self._run_with_event_context(agent, context, session)
+        
+        # Atualiza cooldown
+        await self._record_trigger(trigger, event)
+        
+        return result
+    
+    def _build_event_context(self, event: DomainEvent, session) -> str:
+        """Monta o contexto do evento para o agente"""
+        return f"""
+[EVENTO DETECTADO]
+Tipo: {event.event_type.value}
+Entidade: {event.entity_type} ({event.entity_id})
+Timestamp: {event.timestamp.isoformat()}
+
+Detalhes:
+{json.dumps(event.payload, indent=2)}
+
+Histórico recente da sessão:
+{session.get_recent_summary()}
+
+Sua tarefa:
+Analise o evento e decida se e como agir. Se decidir notificar o usuário,
+escreva a mensagem. Se não for necessário agir agora, explique brevemente
+o motivo (esta explicação não será enviada ao usuário).
+"""
+```
+
+---
+
+# Parte VII — Templates de Prompts
+
+## 11. Templates de Prompts
+
+### 11.1 Hub Conversacional
+
+```markdown
+# Instruções Raiz
+
+Você é **{{nome_do_agente}}**, um agente conversacional que atua como 
+**hub orquestrador** para o produto **{{nome_do_produto}}**.
+
+## Identidade e Contexto
+
+- **Público-alvo:** {{publico_alvo}}
+- **Propósito:** {{proposito}}
+- **Domínio:** {{dominio_principal}}
+- **Idioma:** {{idioma}} (sempre responda neste idioma)
+
+Hoje é **{{now_date}}** ({{now_weekday}}, {{now_time}}).
+
+## Serviços
+
+### 1. Atendimento Conversacional
+
+**Escopo:** Entender, decompor e resolver solicitações do domínio {{dominio_principal}}.
+
+**Processo:**
+
+1. **Entendimento**
+   - Leia a mensagem com atenção
+   - Se faltarem dados críticos, faça **até {{max_perguntas}}** perguntas objetivas
+   - Se fora do escopo, explique e redirecione
+
+2. **Planejamento** (interno, não expor ao usuário)
+   - Identifique objetivo do turno
+   - Liste tools/especialistas que podem ajudar
+   - Considere riscos e constraints
+
+3. **Execução**
+   - Use tools conforme necessário (limite: {{max_tool_calls}} por turno)
+   - Evite repetir a mesma tool >{{max_repeticoes}} vezes sem ganho
+   - Se a tool retornar erro, tente abordagem alternativa
+
+4. **Síntese**
+   - **NUNCA** exponha outputs brutos de tools ao usuário
+   - Sintetize informações em linguagem natural
+   - Se houver conflito entre fontes, explique e escolha
+
+5. **Resposta**
+   - Responda de forma clara e acionável
+   - Inclua próximos passos quando relevante
+   - Pergunte se pode ajudar em mais algo
+
+### 2. LittleHandoff para Especialistas
+
+Quando uma tarefa exigir análise especializada, use a tool `{{tool_especialista}}`.
+
+**Processo:**
+
+1. **Identificar necessidade** conforme critérios: {{criterios_especialista}}
+
+2. **Construir context_summary** (máx {{limite_tokens}} tokens):
+   - Resumo do problema
+   - Decisões já tomadas
+   - Constraints relevantes
+
+3. **Definir specific_query** clara e objetiva
+
+4. **Chamar a tool** e aguardar resposta estruturada
+
+5. **Sintetizar** o resultado JSON em resposta amigável ao usuário
+
+## Diretrizes Gerais
+
+### Ferramentas Disponíveis
+
+{{ferramentas_formatadas}}
+
+### Política de Uso de Tools
+
+- `tool_choice`: auto (você decide quando usar)
+- Chamadas paralelas: {{parallel_tool_calls}}
+- Sempre valide parâmetros antes de chamar
+- Tools com `requires_confirmation: true` precisam de confirmação do usuário
+
+### Confidencialidade
+
+- **NUNCA** exponha: IDs internos, logs, keys, nomes de sistemas
+- **NUNCA** mencione: providers (OpenAI/Gemini), nomes de sub-agentes
+- Se perguntarem sobre sua implementação, responda de forma genérica
+
+### Limites
+
+- Máximo de {{max_turns}} turnos por conversa
+- Se não conseguir resolver, sugira escalonamento
+- Em caso de erro persistente, peça desculpas e ofereça alternativa
+
+## Formato de Saída
+
+{{output_format}}
+```
+
+### 11.2 Especialista LittleHandoff
+
+```markdown
+# Instruções Raiz
+
+Você é **{{nome_do_agente}}**, um agente especialista em **{{dominio}}**.
+
+## Regras Fundamentais
+
+1. Você **NUNCA** conversa diretamente com o usuário final
+2. Você recebe chamadas via **LittleHandoff** de um hub
+3. Você **SEMPRE** retorna saída estruturada em JSON
+
+## Entrada
+
+Você receberá um JSON com:
+
+```json
+{
+  "context_summary": "Resumo da conversa e contexto",
+  "specific_query": "O que você deve fazer/analisar",
+  "constraints": ["Lista de restrições"],
+  "metadata": {}
+}
+```
+
+## Saída (OBRIGATÓRIA)
+
+Você **DEVE** retornar um JSON válido neste formato:
+
+```json
+{
+  "status": "ok | partial | error",
+  "findings": ["Lista de achados principais"],
+  "recommendations": ["Lista de recomendações"],
+  "risks": ["Lista de riscos identificados"],
+  "confidence": "high | medium | low",
+  "debug_notes": "Notas internas (não mostrar ao usuário)"
+}
+```
+
+## Processo de Trabalho
+
+1. **Interpretação**
+   - Parse e valide a entrada
+   - Se estiver mal formada, retorne `status: "error"`
+
+2. **Planejamento Interno**
+   - Decida se precisa usar tools
+   - Não existe fluxo fixo - use seu julgamento
+
+3. **Execução**
+   - Use tools conforme necessário
+   - Limite: {{max_tool_calls}} chamadas
+   - Prefira ferramentas com resposta enxuta
+
+4. **Síntese**
+   - Consolide tudo no JSON de saída
+   - `status: "partial"` se houver incertezas significativas
+   - Documente hipóteses em `debug_notes`
+
+## Ferramentas Disponíveis
+
+{{ferramentas_formatadas}}
+
+## Restrições
+
+- Máximo {{max_turns}} turns internos
+- Timeout: {{timeout_s}} segundos
+- Sem streaming, sem formatação rica
+- Foco em precisão, não em verbosidade
+```
+
+### 11.3 Worker Não-Conversacional
+
+```markdown
+# Instruções Raiz
+
+Você é **{{nome_do_agente}}**, um agente worker para tarefas de **{{tipo_tarefa}}**.
+
+## Modo de Operação
+
+- Você é invocado via API, não por conversa
+- Entrada e saída são **sempre** JSON estruturado
+- Formato de saída **determinístico**, processo interno **não determinístico**
+
+## Entrada
+
+```json
+{
+  "task_type": "{{task_types_suportados}}",
+  "payload": {},
+  "context": "Contexto adicional opcional",
+  "constraints": {}
+}
+```
+
+## Saída
+
+```json
+{
+  "status": "ok | warning | error",
+  "result": {},
+  "logs": ["Passos executados"],
+  "metrics": {
+    "duration_ms": 0,
+    "tool_calls": 0
+  },
+  "errors": []
+}
+```
+
+## Processo
+
+1. **Validação**
+   - Verifique `task_type` é suportado
+   - Valide campos obrigatórios em `payload`
+   - Se inválido, retorne `status: "error"` imediatamente
+
+2. **Planejamento**
+   - 2-3 passos mentais
+   - Escolha tools por eficiência
+
+3. **Execução**
+   - Máximo {{max_tool_calls}} tool calls
+   - Evite repetições idênticas
+   - Registre cada passo em `logs`
+
+4. **Validação de Saída**
+   - Verifique `result` está completo
+   - Se inconsistente, use `status: "warning"`
+   - Preencha `metrics` com dados reais
+
+## Ferramentas
+
+{{ferramentas_formatadas}}
+
+## Restrições
+
+- Timeout: {{timeout_s}}s
+- Sem texto livre fora do JSON
+- `errors` deve ter detalhes acionáveis
+```
+
+---
+
+# Parte VIII — Observabilidade e Qualidade
+
+## 12. Observabilidade
+
+### 12.1 Stack de Tracing
+
+```python
+# observability/tracing.py
+
+from pydantic import BaseModel
+from typing import Any
+from datetime import datetime
+import uuid
+
+class TraceEvent(BaseModel):
+    """Evento de trace"""
+    trace_id: str
+    span_id: str
+    parent_span_id: str | None
+    
+    # Identificação
+    session_id: str
+    run_id: str
+    agent_name: str
+    
+    # Evento
+    event_type: str  # "llm_start", "llm_end", "tool_start", "tool_end", "handoff", etc.
+    timestamp: datetime
+    
+    # Dados
+    input: dict | None = None
+    output: dict | None = None
+    error: str | None = None
+    
+    # Métricas
+    duration_ms: int | None = None
+    tokens_in: int | None = None
+    tokens_out: int | None = None
+    
+    # Versionamento
+    prompt_version: str
+    toolset_version: str
+    profile_version: str
+
+class Tracer:
+    """Tracer para observabilidade"""
+    
+    def __init__(self, backend):
+        self.backend = backend  # Langfuse, OpenTelemetry, etc.
+    
+    def start_trace(self, session_id: str, run_id: str) -> str:
+        """Inicia um trace"""
+        trace_id = str(uuid.uuid4())
+        self.backend.start_trace(trace_id, {
+            "session_id": session_id,
+            "run_id": run_id,
+        })
+        return trace_id
+    
+    def log_llm_call(
+        self,
+        trace_id: str,
+        span_id: str,
+        model: str,
+        provider: str,
+        messages: list,
+        response: dict,
+        duration_ms: int,
+        tokens: dict,
+    ):
+        """Loga uma chamada de LLM"""
+        self.backend.log_event(TraceEvent(
+            trace_id=trace_id,
+            span_id=span_id,
+            event_type="llm_call",
+            input={"model": model, "provider": provider, "messages": messages},
+            output=response,
+            duration_ms=duration_ms,
+            tokens_in=tokens.get("input"),
+            tokens_out=tokens.get("output"),
+        ))
+    
+    def log_tool_call(
+        self,
+        trace_id: str,
+        span_id: str,
+        tool_name: str,
+        arguments: dict,
+        result: dict,
+        duration_ms: int,
+        error: str | None = None,
+    ):
+        """Loga uma chamada de tool"""
+        self.backend.log_event(TraceEvent(
+            trace_id=trace_id,
+            span_id=span_id,
+            event_type="tool_call",
+            input={"tool": tool_name, "arguments": arguments},
+            output=result,
+            duration_ms=duration_ms,
+            error=error,
+        ))
+```
+
+### 12.2 Métricas Obrigatórias
+
+| Métrica | Tipo | Descrição | Alertas |
+|---------|------|-----------|---------|
+| `agent.run.duration_ms` | Histogram | Duração total do run | P95 > 30s |
+| `agent.run.turns` | Counter | Número de turns | > max_turns |
+| `agent.tool_calls.count` | Counter | Tool calls por run | > max_tool_calls |
+| `agent.tool_calls.errors` | Counter | Erros de tools | Taxa > 5% |
+| `agent.tokens.input` | Counter | Tokens de entrada | > budget |
+| `agent.tokens.output` | Counter | Tokens de saída | > budget |
+| `agent.handoff.depth` | Gauge | Profundidade de handoff | > max_depth |
+| `agent.hitl.requests` | Counter | Solicitações HITL | - |
+| `agent.hitl.response_time` | Histogram | Tempo de resposta HITL | P50 > 1h |
+| `mcp.call.duration_ms` | Histogram | Latência de MCP | P95 > 1s |
+| `mcp.call.errors` | Counter | Erros de MCP | Taxa > 1% |
+
+### 12.3 Versionamento de Prompts e Configs
+
+```python
+# observability/versioning.py
+
+import hashlib
+from pathlib import Path
+
+class VersionManager:
+    """Gerenciador de versões de prompts e configs"""
+    
+    def __init__(self, prompts_dir: Path, configs_dir: Path):
+        self.prompts_dir = prompts_dir
+        self.configs_dir = configs_dir
+    
+    def get_prompt_version(self, agent_name: str) -> str:
+        """Retorna hash do prompt do agente"""
+        prompt_file = self.prompts_dir / f"{agent_name}.md"
+        if not prompt_file.exists():
+            return "unknown"
+        
+        content = prompt_file.read_text()
+        return hashlib.sha256(content.encode()).hexdigest()[:12]
+    
+    def get_toolset_version(self, toolset_name: str) -> str:
+        """Retorna hash do toolset"""
+        # Baseado no registro de tools
+        tools = self._get_tools_for_toolset(toolset_name)
+        content = json.dumps(tools, sort_keys=True)
+        return hashlib.sha256(content.encode()).hexdigest()[:12]
+    
+    def get_profile_version(self, profile_id: str) -> str:
+        """Retorna hash do profile"""
+        profile_file = self.configs_dir / f"profiles/{profile_id}.yaml"
+        if not profile_file.exists():
+            return "unknown"
+        
+        content = profile_file.read_text()
+        return hashlib.sha256(content.encode()).hexdigest()[:12]
+    
+    def get_all_versions(self, agent_name: str, profile_id: str) -> dict:
+        """Retorna todas as versões relevantes"""
+        return {
+            "prompt_version": self.get_prompt_version(agent_name),
+            "toolset_version": self.get_toolset_version(agent_name),
+            "profile_version": self.get_profile_version(profile_id),
+        }
+```
+
+---
+
+## 13. Evals e Testes
+
+```python
+# evals/framework.py
+
+from pydantic import BaseModel
+from typing import Callable, Any
+from datetime import datetime
+
+class EvalCase(BaseModel):
+    """Caso de teste para eval"""
+    case_id: str
+    name: str
+    description: str
+    
+    # Input
+    input: str
+    context: dict = {}
+    
+    # Expected
+    expected_tools: list[str] | None = None
+    expected_contains: list[str] | None = None
+    expected_not_contains: list[str] | None = None
+    expected_status: str | None = None
+    
+    # Grading
+    grader: str = "contains"  # "contains", "llm", "exact", "custom"
+    grader_config: dict = {}
+    
+    # Metadata
+    tags: list[str] = []
+    priority: str = "medium"
+
+class EvalResult(BaseModel):
+    """Resultado de uma eval"""
+    case_id: str
+    passed: bool
+    score: float  # 0-1
+    
+    # Details
+    actual_output: str
+    actual_tools: list[str]
+    
+    # Feedback
+    feedback: str | None = None
+    
+    # Metrics
+    duration_ms: int
+    tokens_used: int
+    tool_calls: int
+    
+    # Timestamp
+    evaluated_at: datetime
+
+class EvalRunner:
+    """Runner de evals"""
+    
+    def __init__(self, agent_factory, graders: dict[str, Callable]):
+        self.agent_factory = agent_factory
+        self.graders = graders
+    
+    async def run_eval(
+        self,
+        case: EvalCase,
+        profile_id: str,
+    ) -> EvalResult:
+        """Executa uma eval"""
+        start = datetime.utcnow()
+        
+        # Cria agente com profile
+        agent = self.agent_factory.create(profile_id)
+        
+        # Executa
+        result = await Runner.run(agent, case.input)
+        
+        duration_ms = int((datetime.utcnow() - start).total_seconds() * 1000)
+        
+        # Grade
+        grader = self.graders[case.grader]
+        passed, score, feedback = grader(case, result)
+        
+        return EvalResult(
+            case_id=case.case_id,
+            passed=passed,
+            score=score,
+            actual_output=result.final_output,
+            actual_tools=[tc.name for tc in result.tool_calls],
+            feedback=feedback,
+            duration_ms=duration_ms,
+            tokens_used=result.usage.total_tokens,
+            tool_calls=len(result.tool_calls),
+            evaluated_at=datetime.utcnow(),
+        )
+    
+    async def run_suite(
+        self,
+        cases: list[EvalCase],
+        profile_id: str,
+    ) -> dict:
+        """Executa uma suite de evals"""
+        results = []
+        for case in cases:
+            result = await self.run_eval(case, profile_id)
+            results.append(result)
+        
+        # Aggregate
+        passed = sum(1 for r in results if r.passed)
+        total = len(results)
+        avg_score = sum(r.score for r in results) / total if total > 0 else 0
+        
+        return {
+            "total": total,
+            "passed": passed,
+            "failed": total - passed,
+            "pass_rate": passed / total if total > 0 else 0,
+            "avg_score": avg_score,
+            "results": results,
+        }
+```
+
+**Casos de Eval Mínimos por Produto:**
+
+| Produto | Casos Mínimos | Cobertura |
+|---------|---------------|-----------|
+| Support Chat | 50 | Triagem, tools, escalation, edge cases |
+| Internal Copilot | 80 | Análise, planning, multi-turn, especialistas |
+| Backoffice | 100 | Workflows, HITL, erros, compensações |
+
+---
+
+## 14. Checklist de Implementação
+
+### Fase 1: Fundação (Semanas 1-2)
+
+- [ ] **Model Runtime**
+  - [ ] Implementar `ModelAdapter` interface
+  - [ ] Implementar `OpenAIAdapter`
+  - [ ] Implementar `GeminiAdapter`
+  - [ ] Implementar `ProviderStrategy` e fallback
+  - [ ] Testes de paridade OpenAI/Gemini
+
+- [ ] **Sessions**
+  - [ ] Implementar `SessionMeta` (Postgres)
+  - [ ] Implementar `RunContextData` (Redis)
+  - [ ] Implementar `TrimmingSession`
+  - [ ] Testes de trimming
+
+### Fase 2: Tools (Semanas 3-4)
+
+- [ ] **Tool Registry**
+  - [ ] Implementar `LogicalTool` model
+  - [ ] Implementar `ToolRegistry`
+  - [ ] Implementar conversão para OpenAI
+  - [ ] Implementar conversão para Gemini
+  - [ ] Testes de registro
+
+- [ ] **MCP**
+  - [ ] Implementar `McpServerConfig`
+  - [ ] Implementar cliente STDIO
+  - [ ] Implementar cliente HTTPS
+  - [ ] Testes com MCP real
+
+- [ ] **Tool Executor**
+  - [ ] Implementar `ToolExecutor`
+  - [ ] Handler para Python functions
+  - [ ] Handler para MCP
+  - [ ] Testes de execução
+
+### Fase 3: Planning (Semanas 5-6)
+
+- [ ] **Planning**
+  - [ ] Implementar `PlanState` e `PlanItem`
+  - [ ] Implementar `update_plan_private` tool
+  - [ ] Implementar `RedisPlanCache`
+  - [ ] Implementar `PostgresPlanStorage`
+  - [ ] Testes de ciclo de vida
+
+### Fase 4: LittleHandoff (Semanas 7-8)
+
+- [ ] **LittleHandoff**
+  - [ ] Implementar `PrimaryTaskSpec` e `PrimaryTaskResult`
+  - [ ] Implementar `create_littlehandoff_tool`
+  - [ ] Integrar com Runner
+  - [ ] Testes end-to-end
+
+- [ ] **Sumarização**
+  - [ ] Implementar `SummarizingSession`
+  - [ ] Prompt de sumarização
+  - [ ] Testes de compactação
+
+### Fase 5: Profiles e Observabilidade (Semanas 9-10)
+
+- [ ] **Profiles**
+  - [ ] Implementar `OrchestrationProfile`
+  - [ ] Implementar `ProfileRegistry`
+  - [ ] Configurar perfis padrão
+  - [ ] Testes de carregamento
+
+- [ ] **Observabilidade**
+  - [ ] Implementar `Tracer`
+  - [ ] Integrar com Langfuse
+  - [ ] Métricas obrigatórias
+  - [ ] Dashboards básicos
+
+- [ ] **Versionamento**
+  - [ ] Implementar `VersionManager`
+  - [ ] Integrar com traces
+  - [ ] Testes
+
+### Fase 6: Temporal e HITL (Semanas 11-12)
+
+- [ ] **Temporal**
+  - [ ] Configurar Temporal server
+  - [ ] Implementar `run_agent_activity`
+  - [ ] Implementar `LongRunningAgentWorkflow`
+  - [ ] Testes de workflow
+
+- [ ] **HITL**
+  - [ ] Implementar `HITLRequest` e `HITLResponse`
+  - [ ] Implementar `HITLService`
+  - [ ] Integrar com signals do Temporal
+  - [ ] Testes de aprovação
+
+### Fase 7: Evals e Produção (Semanas 13-14)
+
+- [ ] **Evals**
+  - [ ] Implementar `EvalRunner`
+  - [ ] Criar 50+ casos para primeiro produto
+  - [ ] Executar baseline
+  - [ ] Documentar resultados
+
+- [ ] **Produção**
+  - [ ] Runbooks
+  - [ ] Alertas configurados
+  - [ ] Rollback plan
+  - [ ] Go-live
+
+---
+
+# Apêndices
+
+## A. Referências e Documentação
+
+### Documentação Oficial
+
+| Documento | URL | Uso |
+|-----------|-----|-----|
+| OpenAI Agents SDK | [GitHub](https://github.com/openai/openai-agents-python) | Core |
+| OpenAI Responses API | [Platform](https://platform.openai.com/docs) | Provider |
+| Google GenAI | [AI for Developers](https://ai.google.dev/) | Provider |
+| Temporal.io | [Docs](https://docs.temporal.io/) | Workflows |
+
+### Guias de Melhores Práticas
+
+| Guia | Autor | Foco |
+|------|-------|------|
+| Building Effective Agents | Anthropic | Padrões de workflow |
+| Effective Context Engineering | Anthropic | Gestão de contexto |
+| Writing Effective Tools | Anthropic | Design de tools |
+| A Practical Guide to Agents | OpenAI | Design geral |
+| Context Engineering (Sessions) | OpenAI | Memória |
+
+## B. Glossário de Termos
+
+| Termo | Definição |
+|-------|-----------|
+| **Agent** | LLM equipado com instructions e tools |
+| **Handoff** | Transferência de controle de conversa entre agentes |
+| **LittleHandoff** | Delegação para sub-orquestrador sem transferir conversa |
+| **Hub** | Agente principal que mantém a conversa com usuário |
+| **Specialist** | Agente especializado em domínio específico |
+| **Tool** | Função que o agente pode chamar |
+| **MCP** | Model Context Protocol - padrão para tools remotas |
+| **Planning** | Estado interno de plano do agente |
+| **Turn** | Um ciclo de raciocínio do agente |
+| **Run** | Uma execução completa do Runner |
+| **Session** | Conversa persistente entre runs |
+| **HITL** | Human-in-the-Loop - intervenção humana |
+| **Profile** | Configuração de orquestração para um produto |
+| **AI invocation (model call)** | Uma requisição ao modelo no provider (OpenAI `responses.create`, Gemini `generate_content`, etc.). Em v2.1, isso é o que conta para `max_turns`. |
+| **Step (Gemini)** | Sub-etapa dentro de um *turn* no Gemini, tipicamente um ciclo `functionCall` → `functionResponse` (pode haver múltiplos steps no mesmo turn). |
+| **Provider-managed tool** | Tool executada pelo próprio provider dentro da mesma requisição (ex.: built-in search / code execution / file search / remote MCP quando suportado). |
+| **External tool** | Tool executada pelo runtime do framework (função Python, MCP local, HTTP, DB). Normalmente exige novo model call para o modelo “consumir” o resultado. |
+| **AFC (Automatic Function Calling)** | Modo do python-genai em que o SDK executa funções Python automaticamente e re-invoca o modelo até um limite de chamadas remotas. |
+| **`thought_signature`** | Assinatura de pensamento do Gemini 3 Pro necessária para preservar o estado de raciocínio durante function calling (validação estrita no *turn* corrente). |
+| **Background mode** | Modo assíncrono do OpenAI Responses API (`background=true`) para tarefas longas sem risco de timeout de conexão. |
+| **Compaction** | Recurso do GPT‑5.2 para gerenciamento/compactação de contexto em tarefas longas. |
+
+
+
+## C. Turnos, Steps, Tool Calls e Timeouts
+
+Esta seção responde diretamente à dúvida central que costuma quebrar orquestradores multi-provider em produção:
+
+- Quando dizemos "**turno**", estamos falando de:
+  1) uma troca *usuário ↔ modelo* (conversacional),
+  2) um *passo interno de raciocínio* do modelo,
+  3) um *ciclo de function calling*,
+  4) ou uma *chamada HTTP* ao provider?
+
+A resposta correta é: **depende da camada**. E, para orquestração, o que importa é **definir uma semântica operacional que seja mensurável e aplicável**.
+
+Nesta v2.1, a recomendação é adotar uma semântica operacional única no framework:
+
+> **Turno do framework = 1 invocação ao modelo (1 request ao provider).**
+
+E, a partir disso, mapear as variações internas de cada provider (OpenAI / Gemini) para parâmetros de controle (`max_tool_calls`, `maximum_remote_calls`, etc.).
+
+### C.1 Camadas de tempo e contagem: o “mapa” que evita confusão
+
+Em sistemas agentic modernos, há pelo menos **4 camadas de contagem** relevantes:
+
+1) **Camada de Conversação (Produto/UX)**
+   - “Turno” = 1 mensagem do usuário + 1 resposta final do assistente.
+   - É a métrica que o usuário percebe.
+
+2) **Camada de Orquestração (Runner / Framework)**
+   - “Turno” = 1 chamada ao modelo (OpenAI Responses ou Gemini generate_content).
+   - Essa é a contagem que você consegue impor com confiabilidade.
+   - É o que o `max_turns` do seu runtime deve representar.
+
+3) **Camada de Tool Use Externa (Function Calling tradicional)**
+   - “Step” = 1 ciclo `functionCall` → `functionResponse`.
+   - Normalmente exige pelo menos **duas** invocações ao modelo:
+     - uma para o modelo pedir a tool;
+     - outra para o modelo consumir o resultado.
+
+4) **Camada de Tool Use Interna (Provider-managed tools)**
+   - O modelo pode acionar ferramentas **dentro** do provider (ex.: web search, code execution, file search).
+   - Do ponto de vista do seu framework, isso pode acontecer dentro de **uma única invocação** ao modelo.
+   - Ainda assim, pode haver **custo**, **latência** e **limites** específicos por tool call.
+
+A consequência prática é:
+
+- **Tools externas** (executadas pelo seu runtime) tendem a “gastar” múltiplos turnos do framework.
+- **Tools internas** (executadas pelo provider) *não* “gastam” turnos do framework — mas podem “gastar” outros budgets (tool-call cap, tokens, e sobretudo tempo).
+
+### C.2 OpenAI Agents SDK: como o Runner conta “turns”
+
+O OpenAI Agents SDK executa um run como um loop:
+
+1. Invoca o agente (chamada ao modelo).
+2. Interpreta o resultado:
+   - Se for **final output**, encerra.
+   - Se for **handoff**, troca de agente e segue.
+   - Se houver **tool calls**, executa tools e volta ao passo 1 (nova invocação ao modelo).
+
+O parâmetro `max_turns` existe para impedir que esse loop rode indefinidamente.
+
+**Interpretação operacional (importante):**
+
+- Cada vez que o Runner precisa **re-invocar o modelo** (por tool output, handoff, retry, etc.), isso consome 1 turno do budget.
+- Chamadas a tools **não consomem** turn, mas:
+  - podem disparar uma re-invocação ao modelo;
+  - e devem ser limitadas por `max_tool_calls` (budget do framework).
+
+#### C.2.1 O detalhe que confunde: “incluindo tool calls”
+
+A documentação do Agents SDK descreve turno como “uma invocação ao modelo (incluindo quaisquer tool calls que ocorram)”.
+
+A leitura correta disso, em 2025, é:
+
+- Se a tool for **provider-managed** (executada no lado do OpenAI ou do Google), ela pode ocorrer “dentro” da mesma invocação.
+- Se a tool for **external function calling**, o modelo emite um `function_call`, o runtime executa a tool, e então é necessária **nova invocação** ao modelo para concluir.
+
+Ou seja: “tool calls podem acontecer”, mas o que incrementa `max_turns` é quando o seu orquestrador precisa **voltar ao modelo**.
+
+#### C.2.2 Agent-as-Tool e o risco de budgets “furados”
+
+O padrão `agent.as_tool()` é útil, mas traz uma nuance crítica: ele encapsula um sub-run “por baixo”, e **não expõe diretamente** um `max_turns` dedicado para esse sub-run.
+
+Implicação prática:
+
+- Em orquestrações do tipo LittleHandoff / Agent-as-Tool, você pode acabar gastando muitos turnos no subagente, consumindo o budget global.
+
+Mitigação recomendada:
+
+- Trate o subagente como uma tool real e aplique:
+  1) **timeout por tool** (`asyncio.wait_for`),
+  2) **sub-budget** derivado do budget global (por exemplo, `max_turns_sub = min(3, remaining_turns)`),
+  3) fallback para resposta “best effort” se exceder.
+
+### C.3 OpenAI Responses API e GPT‑5.2: turnos, tool calls internos e limites reais
+
+#### C.3.1 1 request ≠ 1 passo interno
+
+No OpenAI Responses API, a unidade operacional do seu framework é a **requisição** (`responses.create`).
+
+- Isso é **um turno do framework**.
+- Dentro dessa requisição, o modelo pode:
+  - “pensar” (reasoning tokens),
+  - chamar tools provider-managed,
+  - e só então produzir `output_text`.
+
+Para você, isso tudo é um único turn.
+
+#### C.3.2 GPT‑5.2-pro e “multi-turn model interactions before responding”
+
+O GPT‑5.2-pro é descrito como disponível no Responses API “para habilitar **interações multi-turn internas** antes de responder a uma requisição”.
+
+Consequências práticas:
+
+- Um único request pode levar **minutos**.
+- `max_turns` do seu orquestrador não ajuda aqui, porque não há múltiplos requests — é o provider que está realizando passos internos.
+
+Mitigação recomendada:
+
+1) Use **background mode** (`background=true`) para requests potencialmente longos.
+2) Separe produtos em perfis:
+   - **Chat interativo**: evite `gpt-5.2-pro` e use `gpt-5.2`/`gpt-5-mini`.
+   - **Trabalhos longos** (planejamento, análise, síntese): use `gpt-5.2-pro` em background.
+
+#### C.3.3 Tools no OpenAI: “internas” vs “externas”
+
+No Responses API, há duas classes de ferramentas:
+
+1) **Function calling** (externas ao provider)
+   - Você registra uma tool `type: "function"`.
+   - O modelo pede um `function_call`.
+   - Seu runtime executa.
+   - Você faz **nova** chamada ao modelo com o resultado.
+   - Isso “gasta” múltiplos turnos do framework.
+
+2) **Built-in tools e Remote MCP** (provider-managed)
+   - Você registra ferramentas nativas (ex.: web search, file search, code interpreter) e/ou MCP remoto.
+   - O provider executa e devolve resultado no mesmo ciclo.
+   - Isso *não* exige uma segunda chamada por parte do seu runtime.
+
+**Budget essencial:** `max_tool_calls`.
+
+- Em OpenAI, `max_tool_calls` limita quantas vezes o modelo pode acionar ferramentas provider-managed dentro de uma resposta.
+- Se você não limitar isso, um modelo com alta autonomia pode fazer muitas chamadas e elevar custo/latência.
+
+#### C.3.4 Tokens de output e reasoning: por que sua resposta “some”
+
+Um erro conceitual comum em orquestração com modelos de raciocínio:
+
+- Assumir que `max_output_tokens` limita apenas o texto final.
+
+Na prática, em modelos com reasoning, o orçamento de output costuma incluir também **reasoning tokens**. Resultado:
+
+- O modelo pode consumir grande parte do budget em raciocínio e entregar pouco texto.
+- Você precisa ajustar `max_output_tokens` de acordo com:
+  1) complexidade do task,
+  2) nível de reasoning (`reasoning.effort`),
+  3) número esperado de tool calls.
+
+**Padrão recomendado:**
+
+- Para tarefas longas: `max_output_tokens` alto + background mode.
+- Para chat: `max_output_tokens` moderado + `reasoning.effort=none/medium`.
+
+#### C.3.5 Timeouts no OpenAI: três níveis que precisam coexistir
+
+1) **Timeout HTTP do SDK** (ex.: openai-python)
+   - Controla quanto tempo a conexão pode ficar aberta esperando resposta.
+
+2) **Timeout de infra (ex.: API Gateway, Lambda, Cloud Run)**
+   - Muitas plataformas matam conexões longas (às vezes em 60s–15min).
+
+3) **Timeout lógico do run** (o seu `timeout_s`)
+   - O que seu produto aceita como SLA.
+
+A recomendação é sempre aplicar os 3, com prioridades:
+
+- Run-level deadline (produto) > timeout de infra > timeout do SDK.
+
+### C.4 Gemini 3 Pro + python-genai: turn vs step, thought signatures e AFC
+
+O Gemini 3 Pro formaliza a diferença entre:
+
+- **Turn**: o exchange completo usuário → resposta final.
+- **Step**: subtarefa dentro do mesmo turn quando há function calling (pode haver múltiplos steps).
+
+Isso importa porque:
+
+- Em function calling, o modelo retorna **thought_signature**, que você deve devolver no histórico **exatamente como recebido**, sob pena de erro 400.
+
+#### C.4.1 Thought signatures: por que quebram trimming “ingênuo”
+
+Se você faz trimming/summarization agressivo, você pode:
+
+- remover o `thought_signature` do turn atual,
+- ou reordenar partes (ex.: FC/FR intercalados),
+
+E isso causa erro 4xx.
+
+**Regra operacional segura:**
+
+- Enquanto um turn do Gemini ainda está “em andamento” (há steps pendentes), não faça summarization/trimming que altere as `parts`.
+
+#### C.4.2 AFC (Automatic Function Calling): múltiplos remote calls “dentro” de uma chamada
+
+No python-genai, se você passa uma função Python diretamente como tool, o SDK pode executar function calling automaticamente.
+
+- Por padrão, em certos modos, o SDK continua fazendo chamadas remotas até exceder `maximum_remote_calls` (default ~10).
+
+Implicação para budgets:
+
+- Mesmo que seu código chame `generate_content()` uma vez, podem ocorrer **múltiplas invocações ao modelo** no backend.
+
+Recomendação para consistência com `max_turns`:
+
+- Se você quer controlar turnos no framework, há dois caminhos:
+
+A) **Desabilitar AFC** (`disable=True`) e controlar o loop no seu runtime.
+
+B) **Manter AFC** e mapear:
+
+- `maximum_remote_calls = remaining_turns`
+
+(assim, o SDK não “passa” do seu orçamento de model calls, ainda que esconda os steps).
+
+#### C.4.3 Tools internas do Gemini
+
+O Gemini API também oferece ferramentas built-in.
+
+- Essas tools são processadas dentro de **uma única chamada** à API.
+- Do ponto de vista do framework, isso é 1 turn.
+
+### C.5 Conclusão operacional: como contar “turnos” corretamente
+
+Com tudo acima, a regra que resolve 95% dos problemas é:
+
+1. **Conte turnos como invocações ao modelo.**
+2. **Conte tool calls externas separadamente.**
+3. **Aplique limites provider-specific para tool use interno** (`max_tool_calls`, `maximum_remote_calls`).
+4. **Aplique timeout wall-clock no run**, independente do número de turns.
+
+---
+
+## D. Recomendações de Configuração: max_turns e timeouts
+
+Esta seção transforma as definições do Apêndice C em recomendações diretas para configuração do framework.
+
+### D.1 Definições recomendadas (sem ambiguidade)
+
+- `max_turns` (framework): **máximo de invocações ao modelo** no run.
+- `max_tool_calls` (framework): **máximo de tools externas** executadas pelo runtime (Python/MCP/HTTP).
+- `timeout_s` (framework): **deadline total** do run (wall-clock).
+- `max_tool_calls` (OpenAI Responses API): **máximo de tool calls provider-managed** dentro de uma resposta.
+- `maximum_remote_calls` (Gemini AFC): **máximo de invocações remotas** que o SDK fará automaticamente dentro de um `generate_content`.
+
+### D.2 Valores iniciais por perfil (ponto de partida)
+
+Abaixo um ponto de partida (não é absoluto; é uma base segura):
+
+| Perfil | Objetivo | max_turns | max_tool_calls (externas) | timeout_s | Observações |
+|-------|----------|----------:|---------------------------:|----------:|------------|
+| **chat_fast** | UX interativa | 3–6 | 0–2 | 10–25s | Preferir ferramentas internas do provider quando possível. |
+| **chat_plus_tools** | Chat com dados | 6–10 | 2–6 | 25–60s | Precisa de observabilidade forte; tool timeouts curtos. |
+| **manager_tools** | Manager + workers | 10–18 | 4–10 | 60–120s | Manager pode gastar 2–4 turns só em roteamento. |
+| **handoff_full** | Conversa com especialistas | 10–20 | 4–12 | 60–180s | Defina `max_handoff_depth` baixo (2–4). |
+| **deep_task_bg** | Tarefa longa | 8–25 | 6–20 | 180–600s | Use OpenAI background mode / Temporal. |
+
+### D.3 Regras de ouro para evitar runaway loops
+
+1. **Budget decrescente por subagente**
+   - `sub_budget = min(remaining_turns, 3–5)`.
+
+2. **Timeout por tool sempre menor que timeout do run**
+   - Ex.: `tool_timeout = min(remaining_time_s * 0.5, 20s)`.
+
+3. **Retries contam**
+   - Cada retry de tool consome tempo e aumenta chance de estourar deadline.
+
+4. **AFC (Gemini): limite explicitamente**
+   - Não depender do default.
+
+5. **OpenAI built-in tools: limite com `max_tool_calls`**
+   - Especialmente em tarefas de pesquisa.
+
+### D.4 Checklist de implementação (orquestração e timeouts)
+
+- [ ] `max_turns` incrementa a cada request ao provider.
+- [ ] `timeout_s` é aplicado via deadline monotônica.
+- [ ] Cada tool externa tem `asyncio.wait_for`.
+- [ ] HandOff / Agent-as-Tool recebe sub-budget.
+- [ ] OpenAI: configurar `max_tool_calls` ao habilitar tools internas.
+- [ ] Gemini: desabilitar AFC ou configurar `maximum_remote_calls`.
+- [ ] Gemini 3: preservar `thought_signature` (não quebrar parts no turn corrente).
+- [ ] Observabilidade: logar (turn_index, tool_name, latência, tokens, status).
+
+### D.5 Consideração crítica: “turnos internos” não são controláveis por max_turns
+
+Se o modelo executa passos internos (ex.: GPT‑5.2-pro “multi-turn internal interactions”), isso pode estourar SLA mesmo com `max_turns` baixo.
+
+Nesses casos, o controle correto é:
+
+- **deadline wall-clock** + **background mode** (OpenAI),
+- ou **Temporal** para workflows duráveis.
+
+
+---
+
+> **Documento produzido para implementação.**
+> 
+> Versão 2.0 — Novembro 2025
+> Atualização 2.1 — Dezembro 2025 (Apêndices C/D: turnos, steps, tool calling interno/externo, budgets e timeouts)
+> 
+> Este guia consolida as melhores práticas da OpenAI e Anthropic
+> com os requisitos específicos do framework proposto.
+
+---
+## E. MCP e Tools por Provider (OpenAI Responses vs Gemini SDK)
+
+### E.1 Princípio Unificado (DocIA)
+- Todas as tools MCP devem ser oferecidas **via Hosted MCP** quando o provedor primário
+  for OpenAI (Responses API) e **via STDIO MCP** quando o provedor primário for Gemini.
+- SSE é proibido. **Somente** streamable HTTP (OpenAI) ou STDIO (Gemini).
+- O nome da tool usada na orquestração deve ser o mesmo nome exposto pelo MCP server.
+- Tools **não-MCP** permanecem como **Function tools** (OpenAI loop local / Gemini AFC).
+
+### E.2 Matriz de Transporte
+- **OpenAI Responses** → Hosted MCP (`streamable HTTP`) com allowlist de tools.
+- **Gemini** → `MCPServerStdio` com filtro estático de tools (allowlist).
+
+### E.3 Convenções de Nome (DocIA)
+- **PubMed:** orquestração usa `pubmed_search_mcp` (DocIA). O servidor pode expor
+  `pubmed_search` para clientes internos, mas o Hosted MCP deve expor `pubmed_search_mcp`.
+- **Medical (alias):** o `docia-pubmed-mcp` também expõe `search-medical-literature` e
+  `search-drugs` para o conector Medical MCP (Pharma/Dosage), mantendo a fonte única.
+- **Pharma/Dosage:** manter nomes de tool conforme orquestrações (ex.: `pharma_medical_mcp_search`,
+  `dosage_fhir_medication_lookup`), evitando alias oculto.
+
+### E.4 Deployment Recomendado (GCP)
+- **OpenAI Hosted MCP:** publicar MCP server via Cloud Run (streamable HTTP), com auth
+  (token bearer) e healthcheck ativo (`/healthz`).
+- **Gemini STDIO:** rodar MCP server como subprocesso (spawn local) dentro do mesmo
+  container do agente (ou sidecar) para reduzir latência e manter isolamento.
+
+### E.5 Observabilidade e Reasoning
+- **OpenAI:** capturar `reasoning_item_created`, `tool_called`, `tool_output`, além
+  de metadata de tools (nome + duração + status).
+- **Gemini:** capturar eventos de function-call e tool response como equivalentes.
+- Registrar métricas de latência por tool + contador de falhas por MCP server.
+
+### E.6 Exemplo de Config (env)
+- `DOCIA_PUBMED_MCP_ENABLED=true`
+- `DOCIA_PUBMED_MCP_TRANSPORT=http` (OpenAI) ou `stdio` (Gemini)
+- `DOCIA_PUBMED_MCP_HTTP_HOST=127.0.0.1`
+- `DOCIA_PUBMED_MCP_HTTP_PORT=8102`
+- `DOCIA_PUBMED_MCP_ENDPOINT=https://<mcp-host>/mcp`
+
+### E.7 Exemplo OpenAI Hosted MCP (Responses API)
+```json
+{
+  "model": "gpt-5.2-2025-12-11",
+  "tools": [
+    {
+      "type": "mcp",
+      "server_label": "docia_specialists",
+      "server_url": "https://<public-host>/mcp",
+      "allowed_tools": ["specialist_tool_secondary"],
+      "require_approval": "never"
+    }
+  ]
+}
+```
+
+### E.8 Exemplo Gemini STDIO MCP (google-genai)
+```python
+mcp_server = MCPServerStdio(
+    {"command": sys.executable, "args": ["-m", "medflowai.specialists.mcp_server"]},
+    name="docia_specialists",
+    tool_filter=create_static_tool_filter(["specialist_tool_secondary"]),
+)
+tool_config = genai.types.AutomaticFunctionCallingConfig(disable=False)
+```
+
+### E.9 Checklist Rápido
+- [ ] MCP server expõe tools com nomes exatos usados nas orquestrações.
+- [ ] OpenAI usa Hosted MCP (HTTP streamable).
+- [ ] Gemini usa MCP STDIO com allowlist estático.
+- [ ] SSE desabilitado.
+- [ ] Healthcheck ativo e métricas registradas.
+
+---
+# Apêndice — Chaves de API MCP & Ações Externas (DocIA)
+
+## 1) Princípios
+- **Chaves nunca** vão em código; ficam em `.env`/Secret Manager.
+- Para MCP **STDIO**, chaves devem ser repassadas via `DOCIA_*_MCP_ENV` (JSON de envs) ou via vars diretas do processo (se o servidor já lê env nativamente).
+- Para MCP **Hosted (OpenAI)**, use `DOCIA_*_MCP_TOKEN` apenas para autenticação do *server* (não confundir com chaves de API de provedores terceiros).
+- **OMOP/FHIR ficam fora do escopo atual**: apenas “futuro” (sem sprint/backlog).
+
+## 2) MCPs atuais e necessidade de chave
+| MCP | Uso no DocIA | Chave | Onde obter | Ação externa |
+|---|---|---|---|---|
+| **Medical MCP (PubMed + RxNorm interno)** | Literatura biomédica + lookup básico de fármacos | **Não requerida** (PubMed key opcional) | PubMed (My NCBI) | Reusar `docia-pubmed-mcp`; `search-medical-literature` + `search-drugs`. |
+| **PubMed MCP** | Literatura biomédica | **Opcional (recomendado)** | My NCBI → API Key Management | Criar conta My NCBI, gerar API key e definir `PUBMED_API_KEY` + `PUBMED_EMAIL`. Limites aumentam com key. citeturn2search0turn2search5 |
+| **BioMCP** | Oncologia/variantes/ensaios | **Opcional** | Tokens externos (cBioPortal, OncoKB, NCI) | Só necessário para fontes avançadas; sem isso o BioMCP funciona com fontes públicas/demos. citeturn2search2 |
+| **BioThings MCP** | Genes/variantes/químicos (BioThings.io) | **Não requerida** (README não cita chave) | — | Nenhuma. Rodar via uvx/stdio ou HTTP local. citeturn0search0 |
+| **GGET MCP** | Omics/structural bio | **Não requerida** (README não cita chave) | — | Nenhuma. Rodar via uvx/stdio ou HTTP local. citeturn0search1 |
+| **OpenGenes MCP** | Longevidade/aging | **Não requerida** para uso básico | — | Nenhuma. Server baixa dados automaticamente do HF. citeturn1search1 |
+| **SynergyAge MCP** | Interações genéticas em aging | **Não requerida** para uso básico | — | Nenhuma. Server baixa dados automaticamente do HF. citeturn1search2 |
+
+## 3) MCPs “não‑padrão” (apenas se ativar no futuro)
+- **Buscas gerais (Exa/Kagi/SerpAPI/Bing)**: exigem chave paga/registro; ativar só quando necessidade de web/news em produção.
+- **Outros MCPs listados em `docs_agent_research/`**: revisar caso‑a‑caso e adicionar chaves apenas quando forem promovidos a padrão.
+
+## 4) Futuro (fora de backlog/sprints)
+- **OMOP MCP**: requer base OMOP CDM real. Não habilitar até termos infraestrutura e datasets.
+- **FHIR MCP**: requer servidor FHIR + OAuth/SMART. Manter apenas como referência arquitetural.
+
+---
+# Apêndice — Estratégias de Execução MCP por Provedor (OpenAI/Gemini)
+
+## 1) Modos suportados no DocIA
+- **hosted**: OpenAI Responses usa Hosted MCP (streamable HTTP). Tool calls são provider‑managed.
+- **stdio**: Gemini usa MCPServerStdio (spawn local). Tool calls são executadas pelo runtime.
+- **function**: ferramenta MCP é exposta como *function tool* local (callback Python); útil para testes/logs.
+- **Admin override (runtime):** a página `/admin/mcp` pode ajustar `DOCIA_OPENAI_MCP_STRATEGY`/`DOCIA_GEMINI_MCP_STRATEGY` para a instância atual; em produção multi‑instância, propagar via deploy/secret sync.
+
+## 2) Defaults recomendados
+- **OpenAI primário:** `hosted`
+- **Gemini primário:** `stdio`
+- **Testes/observabilidade:** `function` (captura completa de argumentos/outputs no runtime).
+
+## 3) Variáveis de ambiente (override)
+- `DOCIA_OPENAI_MCP_STRATEGY=hosted|function`
+- `DOCIA_GEMINI_MCP_STRATEGY=stdio|function`
+- `DOCIA_SPECIALIST_PRIMARY_PROVIDER=openai|gemini`
+- `DOCIA_SPECIALIST_SECONDARY_PROVIDER=openai|gemini`
+- `DOCIA_SPECIALIST_PRIMARY_MODEL=<model>`
+- `DOCIA_SPECIALIST_SECONDARY_MODEL=<model>`
+- `DOCIA_SPECIALIST_PRIMARY_REASONING_EFFORT=low|medium|high|xhigh`
+- `DOCIA_SPECIALIST_SECONDARY_REASONING_EFFORT=low|medium|high|xhigh`
+- `DOCIA_SPECIALIST_PRIMARY_THINKING_LEVEL=minimal|low|medium|high`
+- `DOCIA_SPECIALIST_SECONDARY_THINKING_LEVEL=minimal|low|medium|high`
+
+## 4) Implicações de runtime
+- **Hosted MCP (OpenAI):** tool calls acontecem dentro da Responses API; não exige loop externo do orquestrador.
+- **Function tools (OpenAI/Gemini):** cada tool call exige execução local + nova invocação ao modelo.
+- **Gemini AFC:** quando habilitado, parte das chamadas pode ocorrer em uma única request; em DocIA, manter controle no runtime para consistência multi‑provider.
+
+## 5) Observabilidade mínima (produção)
+- Logar `tool_name`, latência, status, provider, `run_id`/`turn_id`.
+- Em OpenAI, coletar eventos `tool_called`/`tool_output` quando disponíveis no Responses.
+- Em Gemini, registrar function call/response em `parts` para equivalência.
+
+## 6) Exemplo — OpenAI Responses com Hosted MCP (streamable HTTP)
+> SSE é proibido. Use **streamable HTTP** (`/mcp`) no servidor FastMCP.
+
+```json
+{
+  "model": "gpt-5.2",
+  "reasoning": {"effort": "low"},
+  "tools": [
+    {
+      "type": "mcp",
+      "server_label": "docia_specialists",
+      "server_url": "https://<mcp-host>/mcp",
+      "allowed_tools": ["specialist_tool_secondary"],
+      "require_approval": "never"
+    }
+  ],
+  "input": "Chame specialist_tool_secondary para um parecer cardiológico breve."
+}
+```
+
+## 7) Exemplo — Gemini com MCP STDIO (function tool + adapter)
+```python
+from google.genai import types
+from medflowai.agents.mcp_adapter import MCPToolAdapter
+from medflowai.agents.mcp_transport import MCPTransportConfig
+
+adapter = MCPToolAdapter(
+    MCPTransportConfig(
+        mode="stdio",
+        command=("python", "-m", "medflowai.specialists.mcp_server"),
+    )
+)
+
+specialist_decl = {
+    "name": "specialist_tool_secondary",
+    "description": "Consulta especialista (secondary) via MCP.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "payload": {"type": "object"}
+        },
+        "required": ["payload"]
+    },
+}
+
+tools = types.Tool(function_declarations=[specialist_decl])
+config = types.GenerateContentConfig(tools=[tools])
+```
+
+## 8) Nota sobre “reasoning”
+- OpenAI e Gemini **não expõem chain-of-thought** completo; apenas *eventos* e metadados.
+- Tool calls aparecem como itens estruturados e exigem **loop explícito** quando
+  se usa function tools (local) — Hosted MCP evita esse loop.
+
+---
+# Apêndice — Tool Loop por Provedor (Responses vs Gemini)
+
+## 1) OpenAI Responses (reasoning models)
+- Tool calls aparecem em `response.output` como itens `function_call` ou `mcp_call`.
+- **Function tools:** é obrigatório enviar `function_call_output` com `call_id` correspondente
+  e **preservar** itens de `reasoning` ao reenviar o `input`.
+- **Hosted MCP:** a execução da tool ocorre no provedor; o orquestrador **não** precisa
+  executar loop local de tool outputs.
+- **Custom tools (OpenAI):** chamadas vêm como `custom_tool_call` com `input` (texto livre).
+  O handler local recebe a string e devolve `function_call_output` com `call_id` para
+  fechar o loop (string/JSON).
+
+## 2) Gemini (function calling + MCP stdio)
+- Function calls surgem nos `parts` (function_call). Para seguir, envie
+  `FunctionResponse` na próxima request (loop manual).
+- MCP STDIO pode ser acoplado via `MCPServerStdio` ou adapter; **o loop ainda é local**
+  quando se usam function tools.
+
+## 3) Matriz recomendada (DocIA)
+- **OpenAI primário:** Hosted MCP (streamable HTTP) por padrão; `function` para testes/observabilidade.
+- **Gemini primário:** MCP STDIO por padrão; `function` como fallback.
+
+## 4) Custom tools (OpenAI vs Gemini)
+- **OpenAI Responses:** `type="custom"` aceita *input* em texto livre; chamadas
+  chegam como `custom_tool_call` e devem retornar `function_call_output` com
+  `call_id` correspondente.
+- **Gemini:** não possui “custom tool” nativo; usamos **function calling** com
+  schema padrão `{input: string}` e convertemos para `FunctionResponse` no loop.
+
+## 5) Orquestração por provedor (OpenAI Responses vs Gemini)
+### 5.1 OpenAI (Responses API)
+- **Hosted MCP (padrão):** registrar tool `type="mcp"` com `server_url` (HTTP *streamable*), `server_label` e `allowed_tools`.
+- **Execução:** quando Hosted MCP está ativo, o OpenAI executa o tool remoto e retorna a resposta final; o backend não executa handlers locais.
+- **Fallback local:** use `function` tool com handler local que invoca MCP via `MCPToolAdapter` (STDIO/HTTP) para testes/observabilidade.
+- **Sem SSE:** evitar SSE em produção; usar HTTP streamable.
+
+### 5.2 Gemini (google-genai)
+- **Tools nativas:** usar **function calling** (FunctionDeclaration + Tool); MCP via **STDIO** é o padrão.
+- **Hosted MCP:** não existe; quando necessário, expor MCP via HTTP local e converter para function tool.
+- **Execução:** handlers locais resolvem tool calls; se necessário, desabilitar `automatic_function_calling` e usar loop manual.
+
+### 5.3 Estratégia DocIA (estado da arte)
+- **OpenAI primário:** Hosted MCP (streamable HTTP) + `DOCIA_OPENAI_MCP_STRATEGY=hosted`.
+- **Gemini primário:** MCP STDIO + `DOCIA_GEMINI_MCP_STRATEGY=stdio`.
+- **Little handoff:** somente para agente conversacional; especialistas são sempre tools.
+
+---
+## 6) Execução durante reasoning (semântica por provedor)
+### 6.1 OpenAI Responses
+- Tool calls aparecem como itens estruturados (`function_call`, `custom_tool_call`, `mcp_call`) no `response.output`.
+- **Function/custom tools** exigem loop local: enviar `function_call_output` com `call_id` correspondente **preservando itens de `reasoning`** no próximo `input`.
+- **Hosted MCP** é provider‑managed: a execução ocorre no provedor, sem loop local.
+
+### 6.2 Gemini (google‑genai)
+- Function calls surgem como `FunctionCall` nos `parts`; o cliente deve devolver `FunctionResponse` no próximo request.
+- **Thought signatures** devem ser preservadas enquanto o turn estiver ativo (evite trimming agressivo no meio do loop).
+- AFC (Automatic Function Calling) pode ser habilitado, mas deve ser limitado (`maximum_remote_calls`) para manter budgets equivalentes ao framework.
+
+## 7) Política de transporte (DocIA)
+- **OpenAI Hosted MCP:** endpoint HTTP *streamable* (`/mcp`) — SSE proibido.
+- **Gemini MCP:** STDIO como padrão; HTTP local apenas para fallback via function tool.
+- **Fallback universal:** `function` tools locais via `MCPToolAdapter` (stdio/http) quando MCP hosted não estiver disponível.
+
+## 8) Matriz mínima de testes (prod-ready)
+- OpenAI Hosted MCP (HTTP streamable) — list tools + tool call + resposta final.
+- OpenAI Function tool (custom handler) — `function_call` + `function_call_output`.
+- Gemini STDIO MCP — `FunctionCall` + `FunctionResponse` com thought_signature preservado.
+- Fallback MCP via function tools — stdio/http local com circuit breaker.

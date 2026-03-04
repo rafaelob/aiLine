@@ -17,8 +17,14 @@ class SkillRepository(Protocol):
 
     # --- CRUD ---
 
-    async def get_by_slug(self, slug: str) -> Skill | None:
-        """Retrieve a single active skill by slug."""
+    async def get_by_slug(
+        self, slug: str, *, teacher_id: str | None = None
+    ) -> Skill | None:
+        """Retrieve a single active skill by slug.
+
+        When teacher_id is given, searches teacher-owned skills first,
+        then falls back to system skills (teacher_id IS NULL).
+        """
         ...
 
     async def list_all(

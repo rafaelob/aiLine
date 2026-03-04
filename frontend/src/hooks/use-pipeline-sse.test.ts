@@ -27,7 +27,7 @@ const { mockFetchEventSource, mockStoreState } = vi.hoisted(() => {
   return { mockFetchEventSource, mockStoreState }
 })
 
-vi.mock('@microsoft/fetch-event-source', () => ({
+vi.mock('@/lib/sse-fetch', () => ({
   fetchEventSource: (...args: unknown[]) => mockFetchEventSource(...args),
 }))
 

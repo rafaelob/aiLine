@@ -60,7 +60,7 @@ def app_no_dev(settings_dev: Settings, monkeypatch: pytest.MonkeyPatch):
 
 
 @pytest.fixture()
-async def client_dev(app_dev) -> AsyncGenerator[AsyncClient, None]:
+async def client_dev(app_dev) -> AsyncGenerator[AsyncClient]:
     transport = ASGITransport(app=app_dev, raise_app_exceptions=False)
     async with AsyncClient(
         transport=transport, base_url="http://test", timeout=10.0
@@ -69,7 +69,7 @@ async def client_dev(app_dev) -> AsyncGenerator[AsyncClient, None]:
 
 
 @pytest.fixture()
-async def client_no_dev(app_no_dev) -> AsyncGenerator[AsyncClient, None]:
+async def client_no_dev(app_no_dev) -> AsyncGenerator[AsyncClient]:
     transport = ASGITransport(app=app_no_dev, raise_app_exceptions=False)
     async with AsyncClient(
         transport=transport, base_url="http://test", timeout=10.0
@@ -871,8 +871,10 @@ class TestDemoLogin:
     """Tests for POST /auth/demo-login."""
 
     @pytest.fixture(autouse=True)
-    def _clean(self) -> None:
+    def _clean(self, monkeypatch: pytest.MonkeyPatch) -> None:
         _reset_auth_store()
+        # F-403: demo-login requires AILINE_DEMO_MODE=true
+        monkeypatch.setenv("AILINE_DEMO_MODE", "true")
         yield
         _reset_auth_store()
 

@@ -209,7 +209,7 @@ jobs:
 
       - name: Audit Python runtime deps
         working-directory: runtime
-        run: uv run pip-audit --desc || true
+        run: uv run pip-audit --desc
 
       - name: Install frontend deps
         working-directory: frontend
@@ -217,14 +217,14 @@ jobs:
 
       - name: Audit npm deps
         working-directory: frontend
-        run: pnpm audit --audit-level=high || true
+        run: pnpm audit --audit-level=high
 
   # ---------------------------------------------------------------------------
   # Docker Compose build validation
   # ---------------------------------------------------------------------------
   docker-build:
     runs-on: ubuntu-latest
-    needs: [backend-lint, backend-typecheck, backend-test, agents-test, frontend-lint, frontend-typecheck, frontend-test]
+    needs: [backend-lint, backend-typecheck, backend-test, agents-test, frontend-lint, frontend-typecheck, frontend-test, security-scan]
     steps:
       - uses: actions/checkout@v4
 

@@ -1,0 +1,237 @@
+# Budget profiles for Context Management Pack (SOTA)
+# date: 2026-02-24
+#
+# Notes:
+# - mode: ratio budgets scale with window size (after output reserve + safety margin).
+# - utilization_target_ratio (optional): use only a fraction of (window - reserves) as the *effective* input budget.
+#   This is useful for long-running / sessão contínua (steady-state watermark) while keeping headroom for bursts.
+# - min/max protect invariants and prevent slice bloat.
+# - Use these as starting points; tune with observability.
+
+profiles:
+
+  balanced_350k:
+    window_tokens: 350000
+    reserve_output_tokens: 8000
+    safety_margin_tokens: 2000
+    mode: ratio
+    slices:
+      system_dev: { ratio: 0.07, min: 10000, max: 35000 }
+      skills_index: { ratio: 0.01, min: 1000, max: 7000 }
+      skills_active: { ratio: 0.10, min: 8000, max: 60000 }
+      state_json: { ratio: 0.05, min: 5000, max: 25000 }
+      history_recency: { ratio: 0.18, min: 15000, max: 90000 }
+      history_summary: { ratio: 0.06, min: 6000, max: 40000 }
+      tool_schemas: { ratio: 0.03, min: 3000, max: 20000 }
+      tool_results: { ratio: 0.25, min: 20000, max: 140000 }
+      rag_evidence: { ratio: 0.22, min: 15000, max: 130000 }
+      orchestration_notes: { ratio: 0.03, min: 0, max: 12000 }
+
+  tool_heavy_350k:
+    window_tokens: 350000
+    reserve_output_tokens: 8000
+    safety_margin_tokens: 2000
+    mode: ratio
+    slices:
+      system_dev: { ratio: 0.05, min: 8000, max: 25000 }
+      skills_index: { ratio: 0.01, min: 1000, max: 6000 }
+      skills_active: { ratio: 0.08, min: 8000, max: 45000 }
+      state_json: { ratio: 0.04, min: 4000, max: 20000 }
+      history_recency: { ratio: 0.12, min: 12000, max: 60000 }
+      history_summary: { ratio: 0.05, min: 6000, max: 30000 }
+      tool_schemas: { ratio: 0.03, min: 3000, max: 20000 }
+      tool_results: { ratio: 0.32, min: 30000, max: 160000 }
+      rag_evidence: { ratio: 0.30, min: 20000, max: 160000 }
+      orchestration_notes: { ratio: 0.00, min: 0, max: 8000 }
+
+  rag_heavy_350k:
+    window_tokens: 350000
+    reserve_output_tokens: 8000
+    safety_margin_tokens: 2000
+    mode: ratio
+    slices:
+      system_dev: { ratio: 0.06, min: 10000, max: 30000 }
+      skills_index: { ratio: 0.01, min: 1000, max: 7000 }
+      skills_active: { ratio: 0.08, min: 8000, max: 45000 }
+      state_json: { ratio: 0.05, min: 5000, max: 25000 }
+      history_recency: { ratio: 0.12, min: 12000, max: 70000 }
+      history_summary: { ratio: 0.06, min: 6000, max: 35000 }
+      tool_schemas: { ratio: 0.03, min: 3000, max: 20000 }
+      tool_results: { ratio: 0.18, min: 15000, max: 100000 }
+      rag_evidence: { ratio: 0.38, min: 30000, max: 190000 }
+      orchestration_notes: { ratio: 0.03, min: 0, max: 12000 }
+
+  long_horizon_350k:
+    window_tokens: 350000
+    reserve_output_tokens: 8000
+    safety_margin_tokens: 2000
+    mode: ratio
+    slices:
+      system_dev: { ratio: 0.06, min: 10000, max: 30000 }
+      skills_index: { ratio: 0.01, min: 1000, max: 7000 }
+      skills_active: { ratio: 0.07, min: 8000, max: 40000 }
+      state_json: { ratio: 0.08, min: 8000, max: 50000 }
+      history_recency: { ratio: 0.10, min: 10000, max: 50000 }
+      history_summary: { ratio: 0.12, min: 12000, max: 80000 }
+      tool_schemas: { ratio: 0.03, min: 3000, max: 20000 }
+      tool_results: { ratio: 0.20, min: 15000, max: 120000 }
+      rag_evidence: { ratio: 0.30, min: 20000, max: 170000 }
+      orchestration_notes: { ratio: 0.03, min: 0, max: 12000 }
+
+  high_stakes_350k:
+    window_tokens: 350000
+    reserve_output_tokens: 12000
+    safety_margin_tokens: 3000
+    mode: ratio
+    slices:
+      system_dev: { ratio: 0.08, min: 12000, max: 40000 }
+      skills_index: { ratio: 0.01, min: 1000, max: 7000 }
+      skills_active: { ratio: 0.06, min: 6000, max: 35000 }
+      state_json: { ratio: 0.10, min: 12000, max: 60000 }
+      history_recency: { ratio: 0.10, min: 10000, max: 50000 }
+      history_summary: { ratio: 0.10, min: 12000, max: 70000 }
+      tool_schemas: { ratio: 0.03, min: 3000, max: 20000 }
+      tool_results: { ratio: 0.18, min: 15000, max: 110000 }
+      rag_evidence: { ratio: 0.32, min: 25000, max: 190000 }
+      orchestration_notes: { ratio: 0.02, min: 0, max: 12000 }
+
+  # -------------------------------------------------
+  # Perfis 400k (exemplos) + steady/burst para sessão contínua
+  #
+  # Modelagem recomendada:
+  # - window_tokens = capacidade do modelo (ex.: 400k)
+  # - reserve_output_tokens = output esperado (e/ou buffer de output)
+  # - safety_margin_tokens = headroom operacional (para bursts, variações e evitar overflow)
+  # - utilization_target_ratio = watermark de steady-state (sessão contínua)
+  #
+  # Exemplo alinhado ao seu cenário:
+  # - hard cap de input ~350k dentro de 400k (reserve_output=8k, safety_margin=42k)
+  # - steady-state ~240k em sessão contínua (utilization_target_ratio ~ 240/350 = 0.686)
+  # -------------------------------------------------
+
+  balanced_400k_hardcap_350k:
+    window_tokens: 400000
+    reserve_output_tokens: 8000
+    safety_margin_tokens: 42000
+    utilization_target_ratio: 1.0
+    mode: ratio
+    slices:
+      system_dev: { ratio: 0.07, min: 10000, max: 45000 }
+      skills_index: { ratio: 0.01, min: 1000, max: 8000 }
+      skills_active: { ratio: 0.10, min: 8000, max: 70000 }
+      state_json: { ratio: 0.05, min: 5000, max: 30000 }
+      history_recency: { ratio: 0.18, min: 15000, max: 110000 }
+      history_summary: { ratio: 0.06, min: 6000, max: 50000 }
+      tool_schemas: { ratio: 0.03, min: 3000, max: 25000 }
+      tool_results: { ratio: 0.25, min: 20000, max: 170000 }
+      rag_evidence: { ratio: 0.22, min: 15000, max: 170000 }
+      orchestration_notes: { ratio: 0.03, min: 0, max: 15000 }
+
+  # Sessão contínua — steady: alvo sustentável (ex.: 240k input efetivo)
+  continuous_balanced_400k_steady_240k:
+    window_tokens: 400000
+    reserve_output_tokens: 8000
+    safety_margin_tokens: 42000
+    utilization_target_ratio: 0.686
+    mode: ratio
+    slices:
+      system_dev: { ratio: 0.07, min: 10000, max: 45000 }
+      skills_index: { ratio: 0.01, min: 1000, max: 8000 }
+      skills_active: { ratio: 0.10, min: 8000, max: 70000 }
+      state_json: { ratio: 0.05, min: 5000, max: 30000 }
+      history_recency: { ratio: 0.18, min: 15000, max: 110000 }
+      history_summary: { ratio: 0.06, min: 6000, max: 50000 }
+      tool_schemas: { ratio: 0.03, min: 3000, max: 25000 }
+      tool_results: { ratio: 0.25, min: 20000, max: 170000 }
+      rag_evidence: { ratio: 0.22, min: 15000, max: 170000 }
+      orchestration_notes: { ratio: 0.03, min: 0, max: 15000 }
+
+  # Sessão contínua — steady: heurística “60% do hard cap” (ex.: ~210k)
+  continuous_balanced_400k_steady_60pct_of_hard:
+    window_tokens: 400000
+    reserve_output_tokens: 8000
+    safety_margin_tokens: 42000
+    utilization_target_ratio: 0.60
+    mode: ratio
+    slices:
+      system_dev: { ratio: 0.07, min: 10000, max: 45000 }
+      skills_index: { ratio: 0.01, min: 1000, max: 8000 }
+      skills_active: { ratio: 0.10, min: 8000, max: 70000 }
+      state_json: { ratio: 0.05, min: 5000, max: 30000 }
+      history_recency: { ratio: 0.18, min: 15000, max: 110000 }
+      history_summary: { ratio: 0.06, min: 6000, max: 50000 }
+      tool_schemas: { ratio: 0.03, min: 3000, max: 25000 }
+      tool_results: { ratio: 0.25, min: 20000, max: 170000 }
+      rag_evidence: { ratio: 0.22, min: 15000, max: 170000 }
+      orchestration_notes: { ratio: 0.03, min: 0, max: 15000 }
+
+  # Sessão contínua (tool-heavy): reduz core e desloca para tools/RAG, mas ainda sob watermark.
+  continuous_tool_heavy_400k_steady_240k:
+    window_tokens: 400000
+    reserve_output_tokens: 8000
+    safety_margin_tokens: 42000
+    utilization_target_ratio: 0.686
+    mode: ratio
+    slices:
+      system_dev: { ratio: 0.05, min: 8000, max: 35000 }
+      skills_index: { ratio: 0.01, min: 1000, max: 7000 }
+      skills_active: { ratio: 0.08, min: 8000, max: 55000 }
+      state_json: { ratio: 0.04, min: 4000, max: 25000 }
+      history_recency: { ratio: 0.12, min: 12000, max: 75000 }
+      history_summary: { ratio: 0.05, min: 6000, max: 40000 }
+      tool_schemas: { ratio: 0.03, min: 3000, max: 25000 }
+      tool_results: { ratio: 0.32, min: 30000, max: 200000 }
+      rag_evidence: { ratio: 0.30, min: 20000, max: 200000 }
+      orchestration_notes: { ratio: 0.00, min: 0, max: 12000 }
+
+  low_latency_128k:
+    window_tokens: 128000
+    reserve_output_tokens: 6000
+    safety_margin_tokens: 1500
+    mode: ratio
+    slices:
+      system_dev: { ratio: 0.08, min: 8000, max: 18000 }
+      skills_index: { ratio: 0.02, min: 1000, max: 4000 }
+      skills_active: { ratio: 0.08, min: 4000, max: 16000 }
+      state_json: { ratio: 0.06, min: 3000, max: 12000 }
+      history_recency: { ratio: 0.18, min: 6000, max: 24000 }
+      history_summary: { ratio: 0.08, min: 3000, max: 16000 }
+      tool_schemas: { ratio: 0.05, min: 2000, max: 12000 }
+      tool_results: { ratio: 0.25, min: 8000, max: 36000 }
+      rag_evidence: { ratio: 0.20, min: 6000, max: 32000 }
+      orchestration_notes: { ratio: 0.00, min: 0, max: 4000 }
+
+  balanced_64k:
+    window_tokens: 64000
+    reserve_output_tokens: 4000
+    safety_margin_tokens: 1000
+    mode: ratio
+    slices:
+      system_dev: { ratio: 0.10, min: 6000, max: 12000 }
+      skills_index: { ratio: 0.02, min: 800, max: 2500 }
+      skills_active: { ratio: 0.10, min: 3000, max: 12000 }
+      state_json: { ratio: 0.08, min: 2500, max: 8000 }
+      history_recency: { ratio: 0.20, min: 6000, max: 16000 }
+      history_summary: { ratio: 0.10, min: 3000, max: 10000 }
+      tool_schemas: { ratio: 0.05, min: 1500, max: 6000 }
+      tool_results: { ratio: 0.18, min: 4000, max: 16000 }
+      rag_evidence: { ratio: 0.17, min: 4000, max: 16000 }
+      orchestration_notes: { ratio: 0.00, min: 0, max: 2000 }
+
+dynamic_reallocation_rules:
+  - if: { expected_tool_calls_gte: 3 }
+    shift:
+      tool_results: +0.05
+      history_recency: -0.03
+      skills_active: -0.02
+  - if: { rag_required: true }
+    shift:
+      rag_evidence: +0.05
+      tool_results: -0.03
+      history_recency: -0.02
+  - if: { risk_level: high }
+    shift:
+      state_json: +0.04
+      rag_evidence: +0.04
+      tool_results: -0.04
+      history_recency: -0.04

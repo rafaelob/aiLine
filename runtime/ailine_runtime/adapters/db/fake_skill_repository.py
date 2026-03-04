@@ -19,7 +19,22 @@ class FakeSkillRepository:
 
     # --- CRUD ---
 
-    async def get_by_slug(self, slug: str) -> Skill | None:
+    async def get_by_slug(
+        self, slug: str, *, teacher_id: str | None = None
+    ) -> Skill | None:
+        # When teacher_id is given, prefer teacher-owned, then system, then any
+        if teacher_id is not None:
+            # Check for teacher-owned skill with this slug
+            for s in self._skills.values():
+                if s.slug == slug and s.is_active and s.teacher_id == teacher_id:
+                    return s
+
+        # Check system skill
+        for s in self._skills.values():
+            if s.slug == slug and s.is_active and s.teacher_id is None:
+                return s
+
+        # Fallback to any active skill with this slug
         skill = self._skills.get(slug)
         if skill and skill.is_active:
             return skill

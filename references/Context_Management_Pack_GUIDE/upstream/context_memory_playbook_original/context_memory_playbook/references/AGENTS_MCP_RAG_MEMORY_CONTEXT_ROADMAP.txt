@@ -1,0 +1,263 @@
+# ROADMAP FOR AGENTS, RAG_MEMORY AND CONTEXT ENGINEERING
+
+---
+
+## Executive reading order (fastest path to results)
+
+1. **Agent foundations & patterns** → *Guide_Effective_Agents_Anthropic.md* + *Google_Guide_Agents.md* + *Guide_OpenAI_Agents.txt* (architecture, single- vs multi-agent, orchestration, guardrails, HITL)
+2. **Tooling & MCP** → *model_context_protocol_extensive_guide.md* (protocol & operations) + *guide_effective_tools_mcp_anthropic.md* (tool design & eval loop)
+3. **Context & memory** → *Guide_Effective_Context_Engineering_Anthropic.md* + *context_engineering_openai.md* + *MEMORY_CONTEXT_ENGINEERING_SUMMARY_GUIDE.md* (taxonomy & techniques)
+4. **Design patterns (glue)** → *Agentic_Design_Patterns.md* (prompting, multi-agent, HITL, evaluation)
+
+If you’re **standing up an agent this week**: read 1 → 2, then cherry-pick 3 for context/memory and 4 for patterns.
+
+
+---
+
+## 0) *Guide_OpenAI_Agents.txt* — practical foundations, orchestration, guardrails & HITL
+
+**What it treats.** When to build agents, how to compose **Model + Tools + Instructions**, orchestration patterns (single-agent, manager of specialists, decentralized handoffs), layered guardrails, and human-in-the-loop (HITL).
+
+**Core ideas & topics**
+
+* **When to build an agent:** complex/variable decision paths, high cost of rule maintenance, heavy unstructured data flows.
+* **Design triad:** **Model** (reason), **Tools** (act), **Instructions** (policy). Start with a strong baseline model; then cost/latency-optimize via evals.
+* **Tools taxonomy:** data access (retrieve/ground), action (change state), orchestration (agents exposed as tools).
+* **Orchestration:** single-agent loops with clear exit criteria; **manager pattern** exposing specialists as callable tools; **handoffs** across agents with shared state/history.
+* **Instructions craft:** break routines into explicit steps, name allowed actions, pre-think edge cases, templatize prompts with variables.
+* **Guardrails:** layered (rules/moderation → LLM checks → tool risk tiers) across input, tool-use, and output; HITL triggers for high-risk actions or repeated failures.
+
+**Cross-links.** Pair with *Google_Guide_Agents.md* (loop/stop rules), *Guide_Effective_Agents_Anthropic.md* (playbook, ACI), *guide_effective_tools_mcp_anthropic.md* (tool/server quality), and *model_context_protocol_extensive_guide.md* (standardized access).
+
+---
+
+## 1) *Google_Guide_Agents.md* — “minimal agent → production agent” playbook
+
+**What it treats.** Blueprint for agent architecture, ReAct-style loop with stop criteria, orchestration patterns, RAG done right, anti-patterns, and copy-paste templates (tool contracts, trajectory tests, agent cards).
+
+**Core ideas & topics**
+
+* **Minimal agent (1→4 flow):** user goal → agent plan → model function call → tool execution → observation → agent synthesis.
+* **Stop criteria:** goal met, no-progress, budget exceeded, non-recoverable error.
+* **Orchestration:** sequential, fan-out/fan-in, refine/reflect, agent-as-a-tool, planner–executor, committee, HITL gates.
+* **RAG pipeline:** robust ingestion, 2-stage retrieval (ANN → re-rank), context compression, attributions, GraphRAG, Agentic RAG.
+* **Ops & anti-patterns:** avoid “Swiss-army” tools, prompt soup, unbounded loops; enforce budgets, caching, re-ranking, bounded concurrency.
+
+**Copy-paste artifacts**: tool contract skeleton, stop criteria, trajectory tests, agent card.
+
+**Cross-links.** Use with *guide_effective_tools_mcp_anthropic.md* and *model_context_protocol_extensive_guide.md*.
+
+---
+
+## 2) *Guide_Effective_Agents_Anthropic.md* — patterns, loops, ACI, safety & evals
+
+**What it treats.** Workflows vs agents, core patterns (chaining, routing, parallelization, orchestrator–workers, evaluator–optimizer), autonomous loops, and an implementation playbook (planning transparency, ACI/tooling checklist, retrieval/memory strategy, evals/metrics, safety).
+
+**Core ideas & topics**
+
+* Start simple; add autonomy only when it **wins your metrics**.
+* Coding-agent swimlane (search/write/test until pass).
+* **Playbook:** plan/halting, typed tools + validation/idempotency, avoid context bloat (TTL, summaries), tracing and automated evals.
+
+**Cross-links.** Complements *guide_effective_tools_mcp_anthropic.md*, *Guide_Effective_Context_Engineering_Anthropic.md*, *context_engineering_openai.md*.
+
+---
+
+## 3) *guide_effective_tools_mcp_anthropic.md* — tool design, eval loop, MCP server patterns
+
+**What it treats.** Building high-signal, well-bounded tools; realistic task evals; closed-loop measurement; MCP server hardening.
+
+**Core ideas & topics**
+
+* **Signal per token** tool design; ergonomic schemas; crisp purpose.
+* **E2E recipe:** prototype → realistic tasks → simple loop → measure accuracy/latency/tokens → iterate.
+* **Server patterns:** timeouts/limits, idempotency keys, caching, backpressure, least privilege, sensitive annotations.
+
+**Cross-links.** Expose via *model_context_protocol_extensive_guide.md*; orchestrate with *Google_Guide_Agents.md* / *Guide_Effective_Agents_Anthropic.md*; control context with *Guide_Effective_Context_Engineering_Anthropic.md*.
+
+---
+
+## 4) *model_context_protocol_extensive_guide.md* — the standard for agent ↔ tool/data
+
+**What it treats.** Concepts and spec: tools/resources/prompts, transports (STDIO, streamable HTTP+SSE), versioning, security, reliability, performance, dev tooling (Inspector, connectors), testing/QA and troubleshooting.
+
+---
+
+## 5) *Guide_Effective_Context_Engineering_Anthropic.md* — curation over prompting
+
+**What it treats.** Context-vs-prompt engineering; “Goldilocks” system prompt; hybrid retrieval (pre-RAG + JIT search); long-horizon compaction & durable notes; templates, anti-patterns, and domain adaptations.
+
+---
+
+## 6) *context_engineering_openai.md* — short-term memory with Sessions (trim & summarize)
+
+**What it treats.** Patterns to keep agents **fast, coherent, cost-efficient**: trimming last-N and summarizing the prefix; safe concurrency; prompts and observability.
+
+---
+
+## 7) *MEMORY_CONTEXT_ENGINEERING_SUMMARY_GUIDE.md* — taxonomy, frameworks & advanced patterns
+
+**What it treats.** Working vs long-term memory, storage forms (text, vectors, graphs), RAG families, compression, RL-driven memory management, federated/distributed memory, governance/compliance.
+
+---
+
+## 8) *Agentic_Design_Patterns.md* — the “glue” across prompting, tools, MCP & eval
+
+**What it treats.** Prompting primitives, context pipelines, RAG, memory/state, reflection, HITL, multi-agent collaboration, evaluation/monitoring, MCP rationale & adoption.
+
+---
+
+## 9) *Google_Guide_Agents.md* — additional snippets to keep handy
+
+* **Executive TL;DR** across architecture, RAG, memory, AgentOps, security, cost/perf.
+* **RAG 4.1–4.5** diagrams and quality controls.
+
+---
+
+## System-prompt calibration & context engineering (text-only guide)
+
+This section replaces visuals with a practical, text-only recipe. It ties together the **Agent foundations & patterns**, **Tooling & MCP**, **Context & memory**, and **Design patterns** sections.
+
+### 1) Why this matters
+
+* The system prompt sets **role, policy, and boundaries**; context engineering selects **what tokens actually enter the window**.
+* Getting both “just right” raises **tool-call precision**, reduces **latency/cost**, and prevents **hallucinated actions**.
+
+### 2) Calibrating the system prompt (Too specific → Just right → Too vague)
+
+* **Too specific**: long step lists, exhaustive edge cases, and nested if/then trees. Symptoms: rigidity, tool under-use, brittle failure on novel cases.
+* **Too vague**: generic role with no policy or output shape. Symptoms: inconsistent tone, missing actions, poor stop behavior.
+* **Just right**: short, high-signal policy with explicit capabilities and a response framework. Use this **skeleton**:
+
+**System-prompt skeleton**
+
+* **Role & scope**: one sentence stating the agent’s domain and responsibility.
+* **Capabilities**: name tools and allowed actions at a high level (read-only vs write, sensitive operations require approval).
+* **Response framework** (keep it 4 steps):
+
+  1. Identify the core issue and intended outcome.
+  2. Gather necessary context (use tools; verify facts; ask concise follow-ups only when needed).
+  3. Provide a concrete resolution with next steps and realistic timelines.
+  4. Confirm satisfaction or escalate per policy.
+* **Constraints & guardrails**: banned behaviors, privacy rules, PII handling, brand tone, safety tiers.
+* **Escalation & stop criteria**: escalate when risk is high, coverage is insufficient, or after N unsuccessful iterations; stop when the stated goal is met or budget is exceeded.
+* **Output schema**: require structured sections (e.g., `Goal`, `Analysis`, `Actions`, `Result`, `Next Step`, `Attribution`).
+
+### 3) Context engineering for agents (prompting vs curation)
+
+* **Prompting alone** feeds only `system + user`. **Context engineering** deliberately composes: system prompt, selected domain snippets, tool registry hints, **memory notes**, user message, and a **trimmed history**.
+* Treat context as a **budgeted asset**: include only tokens with clear decision value; prefer **quote-and-project** (short, windowed quotes and structured extractions) over dumping whole docs.
+* **Curation pipeline** (apply every turn):
+
+  1. Determine task and information needs (from the response framework).
+  2. Pull only the **top-K** snippets from retrieval; de-duplicate and attribute.
+  3. Attach the **minimal tool registry** the agent can act with on this turn.
+  4. Load **memory notes** and the **last-K** message turns; summarize anything older.
+  5. Enforce a **token ceiling**; if exceeded, compress citations and re-rank snippets.
+
+### 4) Working memory & durable memory (how they interact with context)
+
+* **Working memory**: sliding window + summaries. Keep the last-K turns verbatim and summarize older turns into a compact **trace**.
+* **Durable memory**: a small, structured **notes file** with sections like `DECISIONS`, `FACTS`, `PREFERENCES`, `TODO`. Each note has a source and a TTL/refresh policy.
+* **Fetch policy**: load only the notes relevant to the current task; prune or expire stale notes automatically.
+* **Safety**: separate **personal** from **non-personal** notes; require approvals for storing sensitive facts.
+
+### 5) JIT retrieval & confidence gating
+
+* On **low confidence** or **coverage gaps**, the agent should **call retrieval/tools** rather than guess.
+* Implement a **confidence gate**: if uncertainty > threshold or evidence count < M, trigger retrieval; if still insufficient, escalate.
+* Use **two-stage retrieval**: ANN recall → re-rank to **relevance + diversity**; then compress to high-signal excerpts.
+
+### 6) Halting, escalation, and error recovery
+
+* Define **hard stops**: goal achieved; no progress in T steps; budget/time exceeded; tool error rate above threshold; safety/risk encountered.
+* **Escalation**: hand off to a human with a compact dossier (`User goal`, `Tried`, `Evidence`, `Blockers`, `Proposed next step`).
+* **Recovery**: fallback plans, circuit breakers on flaky tools, and replay with smaller context after compression.
+
+### 7) Quality gates & evaluation (what to measure)
+
+* **Outcome**: task success rate, factuality/attribution quality, time-to-resolution.
+* **Process**: average steps per task, unnecessary tool-calls, escalation rate.
+* **Cost/Perf**: tokens in/out, p95 tool latency, cache hit rate.
+* **Safety**: policy violations, PII leakage attempts, high-risk actions without approval.
+* Bake these into **trajectory tests** and run in CI; block releases on regressions.
+
+### 8) Common anti-patterns (and fixes)
+
+* **Prompt soup** (long policy text) → Reduce to the skeleton; move specifics into curated context or tool rules.
+* **Swiss-army tools** (do everything) → Split by capability; add typed params and validators.
+* **Unbounded loops** → Enforce stop criteria and budget; surface plan to the user each turn.
+* **Context bloat** → Apply strict token ceilings, re-rank, and compression; keep quotes short.
+* **Stale memory** → TTLs and periodic compaction; require sources for durable notes.
+
+**How to apply today**
+
+1. Rewrite your system prompt using the skeleton above.
+2. Implement the per-turn curation pipeline with a token ceiling.
+3. Add working-memory summaries and a minimal durable-notes schema.
+4. Add a confidence gate that triggers JIT retrieval or escalation.
+5. Instrument the quality gates and run trajectory tests before shipping.
+
+---
+
+# Cross-document technical checklists
+
+### A. Agent loop (production-grade)
+
+* **Plan & halting:** declare steps, stop criteria, budgets; surface plan to user. (*Google_Guide_Agents.md*, *Guide_Effective_Agents_Anthropic.md*, *Guide_OpenAI_Agents.txt*)
+* **Tooling/ACI:** namespaced tools; typed params; validators; dry-run/idempotency; human-readable + structured returns. (*Guide_Effective_Agents_Anthropic.md*)
+* **HITL gates:** payments, PII, provisioning; approvals logged. (*Google_Guide_Agents.md*, *Guide_OpenAI_Agents.txt*)
+
+### B. Tools (design + MCP server)
+
+* **Contract quality:** clear purpose/bounds; high-signal outputs; deterministic shape; stable names; examples. (*guide_effective_tools_mcp_anthropic.md*)
+* **Server hardening:** timeouts/rate-limits; idempotency keys; backpressure; least privilege; PII redaction. (*guide_effective_tools_mcp_anthropic.md*)
+* **Protocol compliance:** `tools/list|call`, `resources/read|subscribe`, `prompts/list|get`; progress notifications; Roots. (*model_context_protocol_extensive_guide.md*)
+
+### C. Context & memory
+
+* **System prompt “just-right”:** role, guardrails, capabilities, response framework, outputs. (*Guide_Effective_Context_Engineering_Anthropic.md*)
+* **Hybrid retrieval:** pre-RAG then JIT search on low confidence/coverage (MMR, windowed quoting, schema projection). (*Guide_Effective_Context_Engineering_Anthropic.md*)
+* **Short-term memory:** trim last-N, summarize older prefix; safe concurrency updates. (*context_engineering_openai.md*)
+* **Durable notes:** DECISIONS/NOTES/TODO with fetch policy; per-turn trace summaries. (*Guide_Effective_Context_Engineering_Anthropic.md*)
+* **RAG variants:** adaptive/CRAG/self-RAG/GraphRAG/agentic RAG—choose per task & evidence needs. (*MEMORY_CONTEXT_ENGINEERING_SUMMARY_GUIDE.md*)
+
+### D. Evaluation & operations
+
+* **Trajectory tests** (with mocked tools), **held-out tasks**, outcome/process judgments; regressions in CI. (*Google_Guide_Agents.md*, *guide_effective_tools_mcp_anthropic.md*)
+* **Metrics:** accuracy, pass@k, tool error rate, p95 tool latency, tokens in/out, calls per task; canaries & shadow traffic. (*guide_effective_tools_mcp_anthropic.md*, *Guide_Effective_Agents_Anthropic.md*)
+* **Runbooks:** anti-patterns (loops, prompt soup, stale indices), rate limits, circuit breakers, retries/backoff. (*Google_Guide_Agents.md*, *Guide_OpenAI_Agents.txt*)
+
+---
+
+# Mapping: “Which document for which question?”
+
+| Question you have                                        | Where to go first                                | Why                                                   |
+| -------------------------------------------------------- | ------------------------------------------------ | ----------------------------------------------------- |
+| “What’s the simplest **agent architecture** I can ship?” | Google_Guide_Agents.md                           | Clear loop + stop rules.                              |
+| “When should I **build an agent** vs rules/code?”        | Guide_OpenAI_Agents.txt                          | Decision criteria; Model/Tools/Instructions triad.    |
+| “How do I turn LLM+tools into a **reliable product**?”   | Guide_Effective_Agents_Anthropic.md              | Playbook (ACI, retrieval/memory, evals, safety).      |
+| “How do I **design & evaluate tools**?”                  | guide_effective_tools_mcp_anthropic.md           | Tool contracts, eval loops, MCP server patterns.      |
+| “How do I **standardize** tool/data access?”             | model_context_protocol_extensive_guide.md        | Spec, transports, security, Inspector, QA.            |
+| “How do I **budget context** on long tasks?”             | Guide_Effective_Context_Engineering_Anthropic.md | Hybrid retrieval, compaction, durable notes.          |
+| “How do I implement **short-term memory now**?”          | context_engineering_openai.md                    | Trim/summarize with Sessions.                         |
+| “What **memory architecture** should I pick?”            | MEMORY_CONTEXT_ENGINEERING_SUMMARY_GUIDE.md       | Taxonomy, frameworks, Graph/Agentic RAG, compression. |
+| “What **design patterns** tie this together?”            | Agentic_Design_Patterns.md                       | Prompting, MCP, HITL, multi-agent, eval.              |
+
+---
+
+## Suggested adoption roadmap (hands-on)
+
+1. **Stand up the loop.** Implement the 1→4 minimal loop with explicit stop criteria + budgets; wire one or two safest tools. (*Google_Guide_Agents.md*, *Guide_OpenAI_Agents.txt*)
+2. **Stabilize context.** Add Sessions (trim/summarize) and the “Goldilocks” system prompt (see System-prompt section). (*context_engineering_openai.md*, *Guide_Effective_Context_Engineering_Anthropic.md*)
+3. **Do RAG right.** Build ingestion/retrieval (ANN → re-rank → compression; attributions). Consider GraphRAG if multi-hop. (*Google_Guide_Agents.md*)
+4. **Standardize tools.** Wrap tools in an **MCP server**; validate with MCP Inspector; enforce limits/idempotency. (*model_context_protocol_extensive_guide.md*)
+5. **Evaluate like you mean it.** Author 50–200 real tasks; run closed-loop evals; track accuracy/latency/tokens/errors; refactor tools/prompts; re-run. (*guide_effective_tools_mcp_anthropic.md*)
+6. **Layer memory.** Promote recurring facts to durable notes; add memory-aware RAG or graph memory for long-horizon tasks. (*MEMORY_CONTEXT_ENGINEERING_SUMMARY_GUIDE.md*)
+7. **Harden & scale.** Apply anti-patterns list; add rate limits, retries/backoff; ship HITL gates; measure continuously. (*Google_Guide_Agents.md*, *Guide_OpenAI_Agents.txt*)
+
+---
+
+### Final note
+
+These documents are complementary: *Google_Guide_Agents.md*, *Guide_Effective_Agents_Anthropic.md*, and *Guide_OpenAI_Agents.txt* give you the **operational shape** of agents and orchestration; *model_context_protocol_extensive_guide.md* gives you the **wire protocol**; *Guide_Effective_Context_Engineering_Anthropic.md*, *context_engineering_openai.md*, and *MEMORY_CONTEXT_ENGINEERING_SUMMARY_GUIDE.md* give you the **token budget and recall strategy**; *Agentic_Design_Patterns.md* is the **glue** for maintainable patterns and evaluation. Use the checklists above as your definition of done for each milestone.

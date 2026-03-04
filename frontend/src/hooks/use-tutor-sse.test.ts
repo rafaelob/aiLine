@@ -59,7 +59,7 @@ vi.mock('@/stores/tutor-store', () => ({
   useTutorStore: mockUseTutorStore,
 }))
 
-vi.mock('@microsoft/fetch-event-source', () => ({
+vi.mock('@/lib/sse-fetch', () => ({
   fetchEventSource: (...args: unknown[]) => mockFetchEventSource(...args),
 }))
 

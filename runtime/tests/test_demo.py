@@ -132,7 +132,7 @@ def app_demo_on(settings_demo_on: Settings):
 
 
 @pytest.fixture()
-async def client_demo_off(app_demo_off) -> AsyncGenerator[AsyncClient, None]:
+async def client_demo_off(app_demo_off) -> AsyncGenerator[AsyncClient]:
     transport = ASGITransport(app=app_demo_off, raise_app_exceptions=False)
     async with AsyncClient(
         transport=transport, base_url="http://test", timeout=10.0
@@ -141,7 +141,7 @@ async def client_demo_off(app_demo_off) -> AsyncGenerator[AsyncClient, None]:
 
 
 @pytest.fixture()
-async def client_demo_on(app_demo_on) -> AsyncGenerator[AsyncClient, None]:
+async def client_demo_on(app_demo_on) -> AsyncGenerator[AsyncClient]:
     transport = ASGITransport(app=app_demo_on, raise_app_exceptions=False)
     async with AsyncClient(
         transport=transport, base_url="http://test", timeout=10.0

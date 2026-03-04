@@ -26,6 +26,18 @@ class ProgressStore:
     def __init__(self) -> None:
         self._records: dict[str, list[LearnerProgress]] = defaultdict(list)
         self._lock = threading.Lock()
+        # Parent-student linkage: parent_id -> set of student_ids
+        self._parent_links: dict[str, set[str]] = defaultdict(set)
+
+    def link_parent_student(self, parent_id: str, student_id: str) -> None:
+        """Register a parent-student linkage for access control."""
+        with self._lock:
+            self._parent_links[parent_id].add(student_id)
+
+    def is_parent_linked(self, parent_id: str, student_id: str) -> bool:
+        """Check if a parent is linked to a specific student."""
+        with self._lock:
+            return student_id in self._parent_links.get(parent_id, set())
 
     def record_progress(
         self,
