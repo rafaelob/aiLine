@@ -80,12 +80,17 @@ class TestSettings:
     def test_defaults(self):
         from ailine_runtime.shared.config import Settings
 
-        settings = Settings()
-        assert settings.planner_model == "anthropic:claude-opus-4-6"
-        assert settings.max_refinement_iters == 2
-        assert settings.demo_mode is False
-        assert settings.default_locale == "en"
-        assert settings.enable_exports is True
+        # Clear AILINE_* env vars to test pure defaults
+        clean_env = {
+            k: v for k, v in os.environ.items() if not k.startswith("AILINE_")
+        }
+        with patch.dict(os.environ, clean_env, clear=True):
+            settings = Settings()
+            assert settings.planner_model == "anthropic:claude-opus-4-6"
+            assert settings.max_refinement_iters == 2
+            assert settings.demo_mode is False
+            assert settings.default_locale == "en"
+            assert settings.enable_exports is True
 
     def test_env_override(self):
         from ailine_runtime.shared.config import Settings

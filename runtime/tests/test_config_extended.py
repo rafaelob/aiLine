@@ -36,12 +36,18 @@ class TestAiLineConfig:
         assert "/path/a" in paths
         assert "/path/b" in paths
 
-    def test_get_config(self):
+    def test_get_config_emits_deprecation_warning(self):
+        import warnings
+
         from ailine_runtime.config import get_config
 
-        cfg = get_config()
-        assert cfg is not None
-        # The default is ".local_store", but AILINE_LOCAL_STORE env var
-        # may override it (e.g., "/app/.local_store" inside Docker).
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            cfg = get_config()
+            assert cfg is not None
+            assert len(w) == 1
+            assert issubclass(w[0].category, DeprecationWarning)
+            assert "deprecated" in str(w[0].message).lower()
+
         expected = os.getenv("AILINE_LOCAL_STORE", ".local_store")
         assert cfg.local_store_dir == expected

@@ -32,3 +32,7 @@ class InMemoryEventBus:
     async def ping(self) -> bool:
         """In-memory bus is always reachable."""
         return True
+
+    async def get_redis_client(self) -> Any | None:
+        """No Redis client in in-memory bus."""
+        return None

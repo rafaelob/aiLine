@@ -21,3 +21,7 @@ class EventBus(Protocol):
     async def ping(self) -> bool:
         """Health check: return True if the bus is reachable."""
         ...
+
+    async def get_redis_client(self) -> Any | None:
+        """Return the underlying Redis client, or None if unavailable."""
+        return None

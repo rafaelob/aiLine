@@ -19,7 +19,7 @@ interface LoginFormPhaseProps {
   isLoading: boolean
   error: string | null
   onBack: () => void
-  onDemoLogin: (profile: DemoProfile) => void
+  onDemoLogin: (profile: DemoProfile) => void | Promise<void>
   onEmailChange: (value: string) => void
   onPasswordChange: (value: string) => void
   onSubmit: (e: React.FormEvent) => void

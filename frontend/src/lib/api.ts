@@ -4,6 +4,11 @@ import { useAuthStore } from '../stores/auth-store'
 
 export const API_BASE = '/api'
 
+// SECURITY: Actively clean up legacy insecure tokens on module load (Sprint 26 cleanup)
+if (typeof window !== 'undefined') {
+  sessionStorage.removeItem('ailine_token')
+}
+
 /**
  * Check if a JWT token has expired by decoding the payload.
  * Returns true if expired or unparseable (safe default).
@@ -26,14 +31,25 @@ function isTokenExpired(token: string): boolean {
 /** Session storage key for the active demo profile. */
 const DEMO_PROFILE_KEY = 'ailine_demo_profile'
 
-/** Valid demo profile keys — must match backend seed data. */
+/** Valid demo profile keys — includes both landing page (long) and login page (short) formats.
+ *  Long keys match backend demo_profiles.py; short keys match login-data.ts.
+ */
 const VALID_DEMO_PROFILES = new Set([
+  // Landing page (long format — matches backend demo_profiles.py)
+  'teacher-ms-johnson',
+  'student-alex-tea',
+  'student-maya-adhd',
+  'student-lucas-dyslexia',
+  'student-sofia-hearing',
+  'parent-david',
+  // Login page (short format — matches login-data.ts)
   'teacher',
   'student-asd',
   'student-adhd',
   'student-dyslexia',
   'student-hearing',
   'parent',
+  // F-251: admin profiles removed to prevent privilege escalation
 ])
 
 /** Custom event dispatched when the demo profile changes. */
@@ -55,6 +71,37 @@ export function setDemoProfile(profileKey: string): void {
   )
 }
 
+/**
+ * Authenticate via a demo profile key by calling POST /auth/demo-login.
+ * Returns a JWT and user profile, and stores them in the auth store.
+ * Falls back silently — the X-Teacher-ID header works as backup in dev mode.
+ */
+export async function demoLogin(
+  profileKey: string,
+): Promise<{ token: string; user: Record<string, unknown> } | null> {
+  try {
+    const res = await fetch(`${API_BASE}/auth/demo-login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ demo_key: profileKey }),
+    })
+    if (!res.ok) return null
+    const data = (await res.json()) as {
+      access_token: string
+      user: Record<string, unknown>
+    }
+    // Store in auth store for proper JWT auth flow
+    const { login } = useAuthStore.getState()
+    login(data.access_token, data.user as unknown as Parameters<typeof login>[1])
+    // Also keep demo profile in sessionStorage as fallback
+    sessionStorage.setItem(DEMO_PROFILE_KEY, profileKey)
+    return { token: data.access_token, user: data.user }
+  } catch {
+    // API not available — fall back to X-Teacher-ID header
+    return null
+  }
+}
+
 /** Clear the active demo profile. */
 export function clearDemoProfile(): void {
   sessionStorage.removeItem(DEMO_PROFILE_KEY)
@@ -67,9 +114,8 @@ export function clearDemoProfile(): void {
  *
  * Priority:
  * 1. Persisted auth store JWT (from real login via zustand-persist)
- * 2. Session/localStorage JWT (legacy paths)
- * 3. Demo profile header
- * 4. Dev teacher ID fallback
+ * 2. Demo profile header
+ * 3. Dev teacher ID fallback
  */
 export function getAuthHeaders(): Record<string, string> {
   if (typeof window === 'undefined') return {}
@@ -88,14 +134,7 @@ export function getAuthHeaders(): Record<string, string> {
     // Store not initialized — fall through
   }
 
-  // 2. Legacy sessionStorage JWT (with expiry check)
-  // SECURITY: localStorage fallback removed — XSS vector (Sprint 26)
-  const token = sessionStorage.getItem('ailine_token')
-  if (token && !isTokenExpired(token)) {
-    return { Authorization: `Bearer ${token}` }
-  }
-
-  // 3. Active demo profile (validate against allowlist)
+  // 2. Active demo profile (validate against allowlist)
   const demoProfile = getCurrentProfile()
   if (demoProfile && VALID_DEMO_PROFILES.has(demoProfile)) {
     return { 'X-Teacher-ID': `demo-${demoProfile}` }

@@ -66,13 +66,20 @@ def app(settings: Settings, fake_repo: FakeSkillRepository, monkeypatch: pytest.
     # (without this, unverified path coerces all roles to "teacher").
     monkeypatch.setenv("AILINE_JWT_SECRET", "dev-secret-not-for-production-use-32bytes!")
     set_skill_repo(fake_repo)
+    # Reset auth store to avoid state leaking from previous test modules (F-230)
+    from ailine_runtime.adapters.db.user_repository import InMemoryUserRepository
+    from ailine_runtime.api.routers import auth as auth_mod
+    auth_mod._user_repo = InMemoryUserRepository()
+    auth_mod._login_attempts.clear()
     application = create_app(settings=settings)
     yield application
     set_skill_repo(None)  # type: ignore[arg-type]
+    auth_mod._user_repo = InMemoryUserRepository()
+    auth_mod._login_attempts.clear()
 
 
 @pytest.fixture()
-async def client(app) -> AsyncGenerator[AsyncClient, None]:
+async def client(app) -> AsyncGenerator[AsyncClient]:
     transport = ASGITransport(app=app, raise_app_exceptions=False)
     async with AsyncClient(
         transport=transport, base_url="http://test", timeout=10.0

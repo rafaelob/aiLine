@@ -55,7 +55,7 @@ export interface DemoProfile {
   route: string
 }
 
-export const DEMO_PROFILES_BY_ROLE: Record<UserRole, DemoProfile[]> = {
+export const DEMO_PROFILES_BY_ROLE: Partial<Record<UserRole, DemoProfile[]>> = {
   teacher: [
     {
       key: 'teacher',
@@ -118,6 +118,5 @@ export const DEMO_PROFILES_BY_ROLE: Record<UserRole, DemoProfile[]> = {
       route: '/progress',
     },
   ],
-  school_admin: [],
-  super_admin: [],
+  // F-251: admin profiles removed to prevent privilege escalation via demo login
 }

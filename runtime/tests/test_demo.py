@@ -132,7 +132,7 @@ def app_demo_on(settings_demo_on: Settings):
 
 
 @pytest.fixture()
-async def client_demo_off(app_demo_off) -> AsyncGenerator[AsyncClient, None]:
+async def client_demo_off(app_demo_off) -> AsyncGenerator[AsyncClient]:
     transport = ASGITransport(app=app_demo_off, raise_app_exceptions=False)
     async with AsyncClient(
         transport=transport, base_url="http://test", timeout=10.0
@@ -141,7 +141,7 @@ async def client_demo_off(app_demo_off) -> AsyncGenerator[AsyncClient, None]:
 
 
 @pytest.fixture()
-async def client_demo_on(app_demo_on) -> AsyncGenerator[AsyncClient, None]:
+async def client_demo_on(app_demo_on) -> AsyncGenerator[AsyncClient]:
     transport = ASGITransport(app=app_demo_on, raise_app_exceptions=False)
     async with AsyncClient(
         transport=transport, base_url="http://test", timeout=10.0
@@ -841,7 +841,7 @@ class TestDemoProfiles:
         assert "mode" in body
         assert body["mode"] == "hackathon_demo"
         profiles = body["profiles"]
-        assert len(profiles) == 8
+        assert len(profiles) == 6  # F-251: admin profiles removed
 
     async def test_profiles_contain_required_fields(
         self, client_demo_off: AsyncClient

@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ContextBudgetProfiles",
+  "type": "object",
+  "required": [
+    "profiles"
+  ],
+  "properties": {
+    "profiles": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "window_tokens",
+          "reserve_output_tokens",
+          "safety_margin_tokens",
+          "mode",
+          "slices"
+        ],
+        "properties": {
+          "window_tokens": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "utilization_target_ratio": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Optional: fraction of (window_tokens - reserves) to use as effective input budget (steady-state watermark)."
+          },
+          "reserve_output_tokens": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "safety_margin_tokens": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "ratio",
+              "absolute"
+            ]
+          },
+          "slices": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "ratio": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "tokens": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "min": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "max": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "dynamic_reallocation_rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "if",
+          "shift"
+        ],
+        "properties": {
+          "if": {
+            "type": "object"
+          },
+          "shift": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -36,7 +36,7 @@ def app(settings: Settings, monkeypatch: pytest.MonkeyPatch):
 
 
 @pytest.fixture()
-async def client(app) -> AsyncGenerator[AsyncClient, None]:
+async def client(app) -> AsyncGenerator[AsyncClient]:
     transport = ASGITransport(app=app, raise_app_exceptions=False)
     async with AsyncClient(
         transport=transport,
@@ -47,7 +47,7 @@ async def client(app) -> AsyncGenerator[AsyncClient, None]:
 
 
 @pytest.fixture()
-async def unauthenticated_client(app) -> AsyncGenerator[AsyncClient, None]:
+async def unauthenticated_client(app) -> AsyncGenerator[AsyncClient]:
     """Client without authentication headers."""
     transport = ASGITransport(app=app, raise_app_exceptions=False)
     async with AsyncClient(
@@ -349,7 +349,7 @@ async def test_overview_unauthenticated(
 
 
 @pytest.fixture()
-async def parent_client(app) -> AsyncGenerator[AsyncClient, None]:
+async def parent_client(app) -> AsyncGenerator[AsyncClient]:
     """Client with parent role header."""
     transport = ASGITransport(app=app, raise_app_exceptions=False)
     async with AsyncClient(

@@ -6,50 +6,99 @@ import { cn } from '@/lib/cn'
 import { useDemoStore } from '@/stores/demo-store'
 
 export function DemoTooltip() {
-  const t = useTranslations('demo')
-  const { isDemoMode, currentStep, nextStep, exitDemo } = useDemoStore()
+  const t = useTranslations()
+  const {
+    isDemoMode,
+    activeTrack,
+    currentStep,
+    nextStep,
+    prevStep,
+    exitDemo,
+    getSteps,
+    getCurrentStep,
+  } = useDemoStore()
 
-  if (!isDemoMode || currentStep === 0) return null
+  const steps = getSteps()
+  const step = getCurrentStep()
+
+  if (!isDemoMode || !step || !activeTrack) return null
+
+  const totalSteps = steps.length
+  const isFirst = currentStep === 0
+  const isLast = currentStep >= totalSteps - 1
+  const trackColor =
+    activeTrack === 'teacher'
+      ? 'from-blue-500 to-indigo-600'
+      : 'from-emerald-500 to-teal-600'
+  const trackIcon = activeTrack === 'teacher' ? 'T' : 'A'
+  const trackLabel =
+    activeTrack === 'teacher' ? t('demo.track_teacher') : t('demo.track_a11y')
 
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       <motion.div
-        key={currentStep}
-        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+        key={step.id}
+        initial={{ opacity: 0, y: 16, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: -10, scale: 0.95 }}
         transition={{ type: 'spring', stiffness: 300, damping: 25 }}
         className={cn(
           'fixed bottom-6 left-1/2 -translate-x-1/2 z-50',
-          'max-w-md w-full mx-4',
+          'max-w-lg w-full mx-4',
           'glass rounded-2xl border border-[var(--color-primary)]/20',
           'shadow-[var(--shadow-xl)] p-5',
         )}
         role="dialog"
-        aria-label={t('title')}
+        aria-label={t(step.title)}
+        aria-describedby="demo-step-desc"
       >
-        {/* Step indicator dots */}
-        <div className="flex items-center gap-1.5 mb-3">
-          {[1, 2, 3].map((step) => (
-            <div
-              key={step}
-              className={cn(
-                'h-1.5 rounded-full transition-all duration-300',
-                step === currentStep
-                  ? 'w-6 bg-[var(--color-primary)]'
-                  : 'w-1.5 bg-[var(--color-border)]',
-                step < currentStep && 'bg-[var(--color-success)]',
-              )}
-            />
-          ))}
-          <span className="ml-auto text-xs text-[var(--color-muted)]">
-            {currentStep}/3
+        {/* Track badge + step indicator */}
+        <div className="flex items-center gap-2 mb-3">
+          <span
+            className={cn(
+              'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full',
+              'text-[11px] font-bold uppercase tracking-wider text-white',
+              'bg-gradient-to-r',
+              trackColor,
+            )}
+          >
+            {trackIcon} {trackLabel}
           </span>
+
+          {/* Step dots */}
+          <div className="flex items-center gap-1 ml-auto">
+            {steps.map((_, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => useDemoStore.getState().goToStep(idx)}
+                className={cn(
+                  'h-1.5 rounded-full transition-all duration-300',
+                  idx === currentStep
+                    ? 'w-5 bg-[var(--color-primary)]'
+                    : idx < currentStep
+                      ? 'w-1.5 bg-[var(--color-success)]'
+                      : 'w-1.5 bg-[var(--color-border)]',
+                )}
+                aria-label={`Step ${idx + 1} of ${totalSteps}`}
+                aria-current={idx === currentStep ? 'step' : undefined}
+              />
+            ))}
+            <span className="ml-2 text-xs text-[var(--color-muted)] tabular-nums">
+              {currentStep + 1}/{totalSteps}
+            </span>
+          </div>
         </div>
 
         {/* Content */}
-        <p className="text-sm font-medium text-[var(--color-text)]">
-          {t(`step_${currentStep}`)}
+        <h4 className="text-sm font-bold text-[var(--color-text)] mb-1">
+          {t(step.title)}
+        </h4>
+        <p
+          id="demo-step-desc"
+          className="text-xs text-[var(--color-muted)] leading-relaxed"
+        >
+          {t(step.description)}
         </p>
 
         {/* Actions */}
@@ -63,24 +112,37 @@ export function DemoTooltip() {
               'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]',
             )}
           >
-            {t('skip')}
+            {t('demo.skip')}
           </button>
-          <button
-            type="button"
-            onClick={() => {
-              if (currentStep >= 3) exitDemo()
-              else nextStep()
-            }}
-            className={cn(
-              'px-4 py-2 rounded-lg text-sm font-medium',
-              'bg-[var(--color-primary)] text-[var(--color-on-primary)]',
-              'hover:brightness-110 transition-all',
-              'btn-shimmer',
-              'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]',
+
+          <div className="flex items-center gap-2">
+            {!isFirst && (
+              <button
+                type="button"
+                onClick={prevStep}
+                className={cn(
+                  'px-3 py-1.5 rounded-lg text-xs font-medium',
+                  'border border-[var(--color-border)] text-[var(--color-text)]',
+                  'hover:bg-[var(--color-surface-elevated)] transition-colors',
+                  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]',
+                )}
+              >
+                {t('demo.prev')}
+              </button>
             )}
-          >
-            {currentStep >= 3 ? t('complete') : t('next')}
-          </button>
+            <button
+              type="button"
+              onClick={nextStep}
+              className={cn(
+                'px-4 py-1.5 rounded-lg text-xs font-medium',
+                'bg-[var(--color-primary)] text-[var(--color-on-primary)]',
+                'hover:brightness-110 transition-all btn-press',
+                'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]',
+              )}
+            >
+              {isLast ? t('demo.complete') : t('demo.next')}
+            </button>
+          </div>
         </div>
       </motion.div>
     </AnimatePresence>

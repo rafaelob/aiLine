@@ -1,0 +1,117 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "handoff_contract_v2",
+  "type": "object",
+  "required": ["schema_version", "handoff_mode", "handoff_id", "from_agent", "to_agent", "objective"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "handoff_contract_v2"
+    },
+    "handoff_mode": {
+      "type": "string",
+      "enum": ["transfer", "delegate"],
+      "description": "Transfer = control handoff; Delegate = agent-as-tool/subroutine."
+    },
+    "handoff_id": {"type": "string"},
+    "from_agent": {"type": "string"},
+    "to_agent": {"type": "string"},
+
+    "objective": {"type": "string"},
+    "constraints": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+
+    "state": {
+      "type": "object",
+      "description": "Durable/working state snapshot (DECISIONS/FACTS/PREFERENCES/TODOS).",
+      "properties": {
+        "decisions": {"type": "array", "items": {"type": "string"}},
+        "facts": {"type": "array", "items": {"type": "string"}},
+        "preferences": {"type": "array", "items": {"type": "string"}},
+        "todos": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": true
+    },
+
+    "context_policy": {
+      "type": "object",
+      "description": "How much history/slices can be passed to the target agent.",
+      "properties": {
+        "history_mode": {
+          "type": "string",
+          "enum": ["full", "filtered", "summary", "pointer", "none"],
+          "default": "filtered"
+        },
+        "max_history_tokens": {"type": "integer", "minimum": 0},
+        "include_slices": {"type": "array", "items": {"type": "string"}},
+        "exclude_slices": {"type": "array", "items": {"type": "string"}},
+        "redaction": {
+          "type": "object",
+          "properties": {
+            "pii": {"type": "boolean", "default": true},
+            "secrets": {"type": "boolean", "default": true}
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+
+    "delegate_io": {
+      "type": "object",
+      "description": "Only meaningful when handoff_mode=delegate.",
+      "properties": {
+        "input": {"type": "object"},
+        "output": {"type": ["object", "null"]}
+      },
+      "additionalProperties": true
+    },
+
+    "evidence_refs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string"},
+          "uri": {"type": "string"},
+          "citation": {"type": "string"}
+        },
+        "required": ["id", "uri"],
+        "additionalProperties": true
+      }
+    },
+
+    "budget_hint": {
+      "type": "object",
+      "properties": {
+        "max_input_tokens": {"type": "integer", "minimum": 0},
+        "priority": {"type": "string", "enum": ["low", "medium", "high"], "default": "medium"}
+      },
+      "additionalProperties": true
+    },
+
+    "observability": {
+      "type": "object",
+      "properties": {
+        "trace_id": {"type": "string"},
+        "span_id": {"type": "string"},
+        "token_ledger_snapshot": {"type": "object"}
+      },
+      "additionalProperties": true
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"handoff_mode": {"const": "delegate"}}},
+      "then": {
+        "required": ["delegate_io"],
+        "properties": {
+          "delegate_io": {"required": ["input"]}
+        }
+      }
+    }
+  ],
+  "additionalProperties": true
+}

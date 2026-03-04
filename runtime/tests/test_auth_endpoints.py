@@ -60,7 +60,7 @@ def app_no_dev(settings_dev: Settings, monkeypatch: pytest.MonkeyPatch):
 
 
 @pytest.fixture()
-async def client_dev(app_dev) -> AsyncGenerator[AsyncClient, None]:
+async def client_dev(app_dev) -> AsyncGenerator[AsyncClient]:
     transport = ASGITransport(app=app_dev, raise_app_exceptions=False)
     async with AsyncClient(
         transport=transport, base_url="http://test", timeout=10.0
@@ -69,7 +69,7 @@ async def client_dev(app_dev) -> AsyncGenerator[AsyncClient, None]:
 
 
 @pytest.fixture()
-async def client_no_dev(app_no_dev) -> AsyncGenerator[AsyncClient, None]:
+async def client_no_dev(app_no_dev) -> AsyncGenerator[AsyncClient]:
     transport = ASGITransport(app=app_no_dev, raise_app_exceptions=False)
     async with AsyncClient(
         transport=transport, base_url="http://test", timeout=10.0
@@ -77,15 +77,33 @@ async def client_no_dev(app_no_dev) -> AsyncGenerator[AsyncClient, None]:
         yield c
 
 
-def _reset_auth_store() -> None:
-    """Clear the in-memory user store and rate limiter between tests."""
-    from ailine_runtime.adapters.db.user_repository import InMemoryUserRepository
-    from ailine_runtime.api.routers.auth import _login_attempts, _user_repo
+def _get_jwt_secret() -> str:
+    """Return the JWT signing secret used by the auth router.
 
-    if isinstance(_user_repo, InMemoryUserRepository):
-        _user_repo._by_email.clear()
-        _user_repo._by_id.clear()
-    _login_attempts.clear()
+    Mirrors ``_create_jwt()`` key selection: env-var AILINE_JWT_SECRET if set,
+    otherwise the auto-generated dev fallback from ``jwt_dev_secret``.
+    """
+    import os
+
+    secret = os.getenv("AILINE_JWT_SECRET", "")
+    if secret:
+        return secret
+    from ailine_runtime.shared.jwt_dev_secret import DEV_JWT_SECRET
+
+    return DEV_JWT_SECRET
+
+
+def _reset_auth_store() -> None:
+    """Reset the user repository to a fresh InMemory instance and clear rate limiter.
+
+    After F-230 wiring, create_app() may replace the module-level _user_repo
+    with a SessionFactoryUserRepository. Tests need a clean InMemory repo.
+    """
+    from ailine_runtime.adapters.db.user_repository import InMemoryUserRepository
+    from ailine_runtime.api.routers import auth as auth_mod
+
+    auth_mod._user_repo = InMemoryUserRepository()
+    auth_mod._login_attempts.clear()
 
 
 # ---------------------------------------------------------------------------
@@ -528,12 +546,106 @@ class TestTokenFormat:
             json={"email": "pyjwt-test@test.com"},
         )
         token = resp.json()["access_token"]
-        # Should be decodable by PyJWT with the dev secret
+        # Use the same secret the JWT was minted with (env var > dev fallback)
+        secret = _get_jwt_secret()
         payload = pyjwt.decode(
-            token, "dev-secret-not-for-production-use-32bytes!", algorithms=["HS256"]
+            token, secret, algorithms=["HS256"]
         )
         assert payload["sub"] == resp.json()["user"]["id"]
         assert payload["role"] == "teacher"
+
+    async def test_token_contains_jti(self, client_dev: AsyncClient) -> None:
+        """JWT payload must contain a unique jti claim (F-231)."""
+        import jwt as pyjwt
+
+        resp = await client_dev.post(
+            "/auth/login",
+            json={"email": "jti-test@test.com"},
+        )
+        token = resp.json()["access_token"]
+        secret = _get_jwt_secret()
+        payload = pyjwt.decode(
+            token, secret, algorithms=["HS256"]
+        )
+        assert "jti" in payload
+        # jti must be a valid UUID4 string
+        import uuid
+
+        uuid.UUID(payload["jti"], version=4)
+
+    async def test_jti_is_unique_per_token(self, client_dev: AsyncClient) -> None:
+        """Each token must have a different jti (F-231)."""
+        import jwt as pyjwt
+
+        resp1 = await client_dev.post(
+            "/auth/login",
+            json={"email": "jti-unique@test.com"},
+        )
+        resp2 = await client_dev.post(
+            "/auth/login",
+            json={"email": "jti-unique@test.com"},
+        )
+        secret = _get_jwt_secret()
+        payload1 = pyjwt.decode(
+            resp1.json()["access_token"],
+            secret,
+            algorithms=["HS256"],
+        )
+        payload2 = pyjwt.decode(
+            resp2.json()["access_token"],
+            secret,
+            algorithms=["HS256"],
+        )
+        assert payload1["jti"] != payload2["jti"]
+
+
+# ---------------------------------------------------------------------------
+# Logout (F-231)
+# ---------------------------------------------------------------------------
+
+
+class TestLogoutEndpoint:
+    """Tests for POST /auth/logout (jti blacklisting)."""
+
+    @pytest.fixture(autouse=True)
+    def _clean_store(self) -> None:
+        _reset_auth_store()
+        yield
+        _reset_auth_store()
+
+    async def test_logout_returns_ok(self, client_dev: AsyncClient) -> None:
+        """Logout should succeed with a valid bearer token."""
+        login_resp = await client_dev.post(
+            "/auth/login",
+            json={"email": "logout-test@test.com"},
+        )
+        token = login_resp.json()["access_token"]
+        resp = await client_dev.post(
+            "/auth/logout",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "ok"
+
+    async def test_logout_requires_auth(self, client_dev: AsyncClient) -> None:
+        """Logout without auth header should return 401."""
+        resp = await client_dev.post("/auth/logout")
+        assert resp.status_code == 401
+
+    async def test_logout_no_bearer_still_ok(self, client_dev: AsyncClient) -> None:
+        """Logout with auth but no Bearer prefix returns ok (graceful)."""
+        login_resp = await client_dev.post(
+            "/auth/login",
+            json={"email": "logout-nobearer@test.com"},
+        )
+        login_resp.json()["access_token"]  # ensure login succeeded
+        # Send token via X-Teacher-ID to pass auth, but no Bearer header
+        resp = await client_dev.post(
+            "/auth/logout",
+            headers={"X-Teacher-ID": "test-user"},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "ok"
 
 
 # ---------------------------------------------------------------------------
@@ -681,18 +793,18 @@ class TestLoginRateLimit:
         _reset_auth_store()
         _login_attempts.clear()
 
-    async def test_login_rate_limit_blocks_after_5_attempts(
+    async def test_login_rate_limit_blocks_after_max_attempts(
         self, client_dev: AsyncClient
     ) -> None:
-        """After 5 login attempts, the 6th should be rate limited."""
-        for i in range(5):
+        """After 20 login attempts, the 21st should be rate limited."""
+        for i in range(20):
             resp = await client_dev.post(
                 "/auth/login",
                 json={"email": f"rate-test-{i}@test.com", "role": "teacher"},
             )
             assert resp.status_code == 200
 
-        # 6th attempt should be rate limited
+        # 21st attempt should be rate limited
         resp = await client_dev.post(
             "/auth/login",
             json={"email": "rate-test-blocked@test.com", "role": "teacher"},
@@ -704,7 +816,7 @@ class TestLoginRateLimit:
         self, client_dev: AsyncClient
     ) -> None:
         """Rate limit response should include Retry-After header."""
-        for i in range(5):
+        for i in range(20):
             await client_dev.post(
                 "/auth/login",
                 json={"email": f"retry-test-{i}@test.com"},
@@ -742,10 +854,143 @@ class TestLoginRateLimit:
 
 
 class TestJwtSecretLength:
-    """Tests for JWT dev secret meeting RFC 7518 HS256 minimum (32 bytes)."""
+    """Tests for JWT signing secret meeting RFC 7518 HS256 minimum (32 bytes)."""
 
-    def test_dev_secret_is_32_plus_bytes(self) -> None:
-        """The dev-mode JWT secret must be at least 32 bytes for HS256."""
-        # Import the secret string used in _create_jwt fallback
-        secret = "dev-secret-not-for-production-use-32bytes!"
+    def test_jwt_secret_is_32_plus_bytes(self) -> None:
+        """The JWT signing secret must be at least 32 bytes for HS256."""
+        secret = _get_jwt_secret()
         assert len(secret.encode()) >= 32
+
+
+# ---------------------------------------------------------------------------
+# POST /auth/demo-login
+# ---------------------------------------------------------------------------
+
+
+class TestDemoLogin:
+    """Tests for POST /auth/demo-login."""
+
+    @pytest.fixture(autouse=True)
+    def _clean(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        _reset_auth_store()
+        # F-403: demo-login requires AILINE_DEMO_MODE=true
+        monkeypatch.setenv("AILINE_DEMO_MODE", "true")
+        yield
+        _reset_auth_store()
+
+    async def test_demo_login_long_key(self, client_dev: AsyncClient) -> None:
+        """Demo login with a canonical long key returns JWT and user."""
+        resp = await client_dev.post(
+            "/auth/demo-login",
+            json={"demo_key": "teacher-ms-johnson"},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "access_token" in data
+        assert data["user"]["display_name"] == "Ms. Sarah Johnson"
+        assert data["user"]["role"] == "teacher"
+        assert data["user"]["id"] == "demo-teacher-ms-johnson"
+
+    async def test_demo_login_short_alias(self, client_dev: AsyncClient) -> None:
+        """Short alias resolves to the canonical long-key profile."""
+        resp = await client_dev.post(
+            "/auth/demo-login",
+            json={"demo_key": "student-asd"},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["user"]["display_name"] == "Alex Rivera"
+        assert data["user"]["role"] == "student"
+        assert data["user"]["accessibility_profile"] == "tea"
+
+    async def test_demo_login_invalid_key(self, client_dev: AsyncClient) -> None:
+        """Unknown key returns 404."""
+        resp = await client_dev.post(
+            "/auth/demo-login",
+            json={"demo_key": "nonexistent"},
+        )
+        assert resp.status_code == 404
+
+    async def test_demo_login_admin_profile_removed(self, client_dev: AsyncClient) -> None:
+        """Admin profiles were removed (F-251) and now return 404."""
+        resp = await client_dev.post(
+            "/auth/demo-login",
+            json={"demo_key": "admin-principal"},
+        )
+        assert resp.status_code == 404
+
+    async def test_demo_login_jwt_is_valid(self, client_dev: AsyncClient) -> None:
+        """JWT from demo-login is accepted by /auth/me."""
+        resp = await client_dev.post(
+            "/auth/demo-login",
+            json={"demo_key": "teacher-ms-johnson"},
+        )
+        token = resp.json()["access_token"]
+
+        me_resp = await client_dev.get(
+            "/auth/me",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert me_resp.status_code == 200
+        assert me_resp.json()["id"] == "demo-teacher-ms-johnson"
+
+    async def test_demo_login_all_profiles(self, client_dev: AsyncClient) -> None:
+        """All 6 non-admin demo profiles are accessible (long keys).
+
+        F-251: admin-principal and admin-super were removed.
+        """
+        keys = [
+            "teacher-ms-johnson",
+            "student-alex-tea",
+            "student-maya-adhd",
+            "student-lucas-dyslexia",
+            "student-sofia-hearing",
+            "parent-david",
+        ]
+        for key in keys:
+            resp = await client_dev.post(
+                "/auth/demo-login",
+                json={"demo_key": key},
+            )
+            assert resp.status_code == 200, f"Failed for key: {key}"
+
+    async def test_demo_login_admin_super_removed(self, client_dev: AsyncClient) -> None:
+        """F-251: admin-super profile returns 404."""
+        resp = await client_dev.post(
+            "/auth/demo-login",
+            json={"demo_key": "admin-super"},
+        )
+        assert resp.status_code == 404
+
+    async def test_demo_login_invalid_role_in_profile_422(self, client_dev: AsyncClient) -> None:
+        """F-261: If a demo profile somehow had a completely invalid role, _validate_role raises 422.
+
+        This tests the _validate_role function directly since demo profiles
+        always have valid roles; we test the mechanism in isolation.
+        """
+        from fastapi import HTTPException
+
+        from ailine_runtime.api.routers.auth import _validate_role
+
+        with pytest.raises(HTTPException) as exc_info:
+            _validate_role("totally_bogus_role")
+        assert exc_info.value.status_code == 422
+        assert "Invalid role" in exc_info.value.detail
+
+    async def test_demo_login_all_short_aliases(self, client_dev: AsyncClient) -> None:
+        """All 6 short aliases resolve correctly."""
+        aliases = {
+            "teacher": "teacher",
+            "student-asd": "student",
+            "student-adhd": "student",
+            "student-dyslexia": "student",
+            "student-hearing": "student",
+            "parent": "parent",
+        }
+        for alias, expected_role in aliases.items():
+            resp = await client_dev.post(
+                "/auth/demo-login",
+                json={"demo_key": alias},
+            )
+            assert resp.status_code == 200, f"Failed for alias: {alias}"
+            assert resp.json()["user"]["role"] == expected_role

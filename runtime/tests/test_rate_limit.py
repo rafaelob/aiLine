@@ -59,7 +59,7 @@ def app_low_limit(settings: Settings, monkeypatch: pytest.MonkeyPatch):
 
 
 @pytest.fixture()
-async def client_low_limit(app_low_limit) -> AsyncGenerator[AsyncClient, None]:
+async def client_low_limit(app_low_limit) -> AsyncGenerator[AsyncClient]:
     transport = ASGITransport(app=app_low_limit, raise_app_exceptions=False)
     async with AsyncClient(transport=transport, base_url="http://test") as c:
         yield c
@@ -72,7 +72,7 @@ def app_default(settings: Settings):
 
 
 @pytest.fixture()
-async def client_default(app_default) -> AsyncGenerator[AsyncClient, None]:
+async def client_default(app_default) -> AsyncGenerator[AsyncClient]:
     transport = ASGITransport(app=app_default, raise_app_exceptions=False)
     async with AsyncClient(transport=transport, base_url="http://test") as c:
         yield c

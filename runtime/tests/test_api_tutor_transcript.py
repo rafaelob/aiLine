@@ -157,7 +157,7 @@ def seeded_store(local_store: Path) -> Path:
 
 
 @pytest.fixture()
-async def client(app, seeded_store: Path) -> AsyncGenerator[AsyncClient, None]:
+async def client(app, seeded_store: Path) -> AsyncGenerator[AsyncClient]:
     transport = ASGITransport(app=app, raise_app_exceptions=False)
     async with AsyncClient(
         transport=transport,
@@ -170,7 +170,7 @@ async def client(app, seeded_store: Path) -> AsyncGenerator[AsyncClient, None]:
 @pytest.fixture()
 async def unauthenticated_client(
     app, seeded_store: Path
-) -> AsyncGenerator[AsyncClient, None]:
+) -> AsyncGenerator[AsyncClient]:
     """Client without authentication headers."""
     transport = ASGITransport(app=app, raise_app_exceptions=False)
     async with AsyncClient(

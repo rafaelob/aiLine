@@ -82,19 +82,6 @@ DEMO_PROFILES: dict[str, dict[str, Any]] = {
         "avatar_emoji": "\U0001f468",
         "description": "Alex's father, actively involved in education planning",
     },
-    "admin-principal": {
-        "id": "demo-admin-principal",
-        "name": "Dr. Robert Williams",
-        "role": "school_admin",
-        "school": "Lincoln Elementary School",
-        "avatar_emoji": "\U0001f3eb",
-        "description": "School principal, oversees all teachers and curriculum",
-    },
-    "admin-super": {
-        "id": "demo-admin-super",
-        "name": "System Administrator",
-        "role": "super_admin",
-        "avatar_emoji": "\U0001f6e1\ufe0f",
-        "description": "Platform administrator with full system access",
-    },
+    # F-251: admin-principal and admin-super removed to prevent
+    # privilege escalation via demo login.
 }

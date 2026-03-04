@@ -3,27 +3,6 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import ExportsPage from './page'
 
-vi.mock('motion/react', () => {
-  function stripMotionProps(rest: Record<string, unknown>) {
-    const { initial: _i, animate: _a, transition: _t, layoutId: _l, ...safe } = rest
-    return safe
-  }
-  return {
-    motion: {
-      div: ({ children, ...rest }: Record<string, unknown>) => {
-        return <div {...stripMotionProps(rest)}>{children as React.ReactNode}</div>
-      },
-      li: ({ children, ...rest }: Record<string, unknown>) => {
-        return <li {...stripMotionProps(rest)}>{children as React.ReactNode}</li>
-      },
-      article: ({ children, ...rest }: Record<string, unknown>) => {
-        return <article {...stripMotionProps(rest)}>{children as React.ReactNode}</article>
-      },
-    },
-    AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  }
-})
-
 vi.mock('dompurify', () => ({
   default: {
     sanitize: (html: string) => html,
@@ -33,28 +12,26 @@ vi.mock('dompurify', () => ({
 // Track what searchParams returns
 let mockPlanId: string | null = null
 
-vi.mock('next/navigation', async () => {
-  const actual = await vi.importActual('next/navigation')
-  return {
-    ...actual as object,
-    usePathname: () => '/pt-BR/exports',
-    useRouter: () => ({
-      push: vi.fn(),
-      replace: vi.fn(),
-      back: vi.fn(),
-      forward: vi.fn(),
-      refresh: vi.fn(),
-      prefetch: vi.fn(),
-    }),
-    useParams: () => ({ locale: 'pt-BR' }),
-    useSearchParams: () => ({
-      get: (key: string) => {
-        if (key === 'planId') return mockPlanId
-        return null
-      },
-    }),
-  }
-})
+vi.mock('next/navigation', () => ({
+  usePathname: () => '/pt-BR/exports',
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+    refresh: vi.fn(),
+    prefetch: vi.fn(),
+  }),
+  useParams: () => ({ locale: 'pt-BR' }),
+  useSearchParams: () => ({
+    get: (key: string) => {
+      if (key === 'planId') return mockPlanId
+      return null
+    },
+  }),
+  notFound: vi.fn(),
+  redirect: vi.fn(),
+}))
 
 const MOCK_API_RESPONSE = {
   plan_title: 'Frações e Números Decimais',

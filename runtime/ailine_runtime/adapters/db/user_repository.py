@@ -1,11 +1,16 @@
 """PostgreSQL-backed user repository for auth endpoints.
 
-Replaces the in-memory ``_users_store`` dict in auth.py with proper
-database persistence via the UserRow ORM model.
+Provides ``UserRepository`` protocol, three implementations:
+
+- ``PostgresUserRepository``: bound to a single session (unit-of-work).
+- ``SessionFactoryUserRepository``: creates a session per method call,
+  suitable for long-lived DI singletons wired at startup.
+- ``InMemoryUserRepository``: dict-backed for dev/test.
 """
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Protocol, runtime_checkable
 
 import structlog
@@ -34,7 +39,7 @@ class UserRepository(Protocol):
 
 
 class PostgresUserRepository:
-    """Async PostgreSQL-backed user repository."""
+    """Async PostgreSQL-backed user repository (single session)."""
 
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
@@ -52,6 +57,34 @@ class PostgresUserRepository:
     async def create(self, row: UserRow) -> None:
         self._session.add(row)
         await self._session.flush()
+
+
+class SessionFactoryUserRepository:
+    """User repository that creates a session per method call.
+
+    Wraps ``PostgresUserRepository`` with automatic session lifecycle
+    management. Suitable for long-lived DI singletons wired at startup.
+    """
+
+    def __init__(self, session_factory: Callable[..., AsyncSession]) -> None:
+        self._session_factory = session_factory
+
+    async def get_by_email(self, email: str) -> UserRow | None:
+        async with self._session_factory() as session:
+            repo = PostgresUserRepository(session)
+            return await repo.get_by_email(email)
+
+    async def get_by_id(self, user_id: str) -> UserRow | None:
+        async with self._session_factory() as session:
+            repo = PostgresUserRepository(session)
+            return await repo.get_by_id(user_id)
+
+    async def create(self, row: UserRow) -> None:
+        _ensure_id(row)
+        async with self._session_factory() as session:
+            repo = PostgresUserRepository(session)
+            await repo.create(row)
+            await session.commit()
 
 
 class InMemoryUserRepository:

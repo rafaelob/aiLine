@@ -25,7 +25,7 @@ def app(settings: Settings):
 
 
 @pytest.fixture()
-async def client(app) -> AsyncGenerator[AsyncClient, None]:
+async def client(app) -> AsyncGenerator[AsyncClient]:
     """Async HTTP client bound to the test app."""
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as c:
@@ -153,3 +153,37 @@ def test_create_app_stores_container(settings: Settings) -> None:
 async def test_unknown_route_returns_404(client: AsyncClient) -> None:
     resp = await client.get("/nonexistent")
     assert resp.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# Capabilities endpoint
+# ---------------------------------------------------------------------------
+
+
+async def test_capabilities_returns_200_without_auth(client: AsyncClient) -> None:
+    """Capabilities endpoint is public — no auth required."""
+    resp = await client.get("/capabilities")
+    assert resp.status_code == 200
+
+
+async def test_capabilities_contains_expected_fields(client: AsyncClient) -> None:
+    resp = await client.get("/capabilities")
+    body = resp.json()
+    assert "version" in body
+    assert body["personas"] == 9
+    assert body["sign_languages"] == 8
+    assert "llm" in body
+    assert "tts" in body
+    assert "image_generation" in body
+    assert "vector_search" in body
+    assert "braille" in body
+    assert "skills" in body
+    assert "demo_mode" in body
+
+
+async def test_capabilities_braille_info(client: AsyncClient) -> None:
+    resp = await client.get("/capabilities")
+    braille = resp.json()["braille"]
+    assert braille["available"] is True
+    assert 1 in braille["grades"]
+    assert "en" in braille["languages"]

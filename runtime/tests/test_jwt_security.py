@@ -39,6 +39,7 @@ from ailine_runtime.api.middleware.tenant_context import (
     _ALLOWED_ALGORITHMS,
     _extract_teacher_id_from_jwt,
     _get_jwt_config,
+    _is_dev_mode,
 )
 from ailine_runtime.shared.config import (
     DatabaseConfig,
@@ -81,7 +82,7 @@ def app(settings: Settings):
 
 
 @pytest.fixture()
-async def client(app) -> AsyncGenerator[AsyncClient, None]:
+async def client(app) -> AsyncGenerator[AsyncClient]:
     transport = ASGITransport(app=app, raise_app_exceptions=False)
     async with AsyncClient(transport=transport, base_url="http://test") as c:
         yield c
@@ -429,15 +430,27 @@ class TestJWTRS256Asymmetric:
 class TestJWTDevModeFallback:
     """Test dev mode fallback behavior."""
 
-    def test_dev_mode_allows_unverified_jwt(
+    def test_dev_mode_uses_dev_secret_fallback(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
+        """In dev mode without explicit secret, the dev fallback secret is used
+        for verified decode. Unsigned JWTs are rejected; properly signed JWTs work."""
         monkeypatch.setenv("AILINE_DEV_MODE", "true")
         monkeypatch.delenv("AILINE_JWT_SECRET", raising=False)
         monkeypatch.delenv("AILINE_JWT_PUBLIC_KEY", raising=False)
-        token = _make_unsigned_jwt({"sub": "teacher-dev"})
-        claims, _error = _extract_teacher_id_from_jwt(token)
-        assert claims.teacher_id == "teacher-dev"
+        import jwt as pyjwt
+
+        # Unsigned JWT should be rejected (dev secret enables verified decode)
+        unsigned_token = _make_unsigned_jwt({"sub": "teacher-dev"})
+        claims_unsigned, _error = _extract_teacher_id_from_jwt(unsigned_token)
+        assert claims_unsigned.teacher_id is None
+
+        # JWT signed with the dev fallback secret should work (F-254)
+        from ailine_runtime.shared.jwt_dev_secret import DEV_JWT_SECRET
+        signed_token = pyjwt.encode(_valid_payload(sub="teacher-dev"), DEV_JWT_SECRET, algorithm="HS256")
+        claims_signed, error = _extract_teacher_id_from_jwt(signed_token)
+        assert claims_signed.teacher_id == "teacher-dev"
+        assert error is None
 
     def test_no_dev_mode_rejects_unverified(
         self, monkeypatch: pytest.MonkeyPatch
@@ -470,6 +483,8 @@ class TestJWTConfigParsing:
         monkeypatch.delenv("AILINE_JWT_SECRET", raising=False)
         monkeypatch.delenv("AILINE_JWT_PUBLIC_KEY", raising=False)
         monkeypatch.delenv("AILINE_JWT_ALGORITHMS", raising=False)
+        monkeypatch.delenv("AILINE_DEV_MODE", raising=False)
+        _is_dev_mode.cache_clear()
         cfg = _get_jwt_config()
         assert cfg["algorithms"] == []
 

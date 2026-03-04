@@ -18,7 +18,7 @@ Hexagonal (Ports-and-Adapters). Domain core has zero framework imports.
 User request -> FastAPI SSE endpoint -> LangGraph StateGraph:
 
 1. Parallel fan-out: [RAG_Search | Profile_Analyzer] (simultaneous via static edges)
-2. Fan-in -> PlannerAgent (Pydantic AI 1.58.0, StudyPlanDraft output) (ADR-059)
+2. Fan-in -> PlannerAgent (Pydantic AI >=1.58.0, StudyPlanDraft output) (ADR-059)
 3. QualityGateAgent (deterministic validator, score 0-100)
 4. Conditional: score < 80 -> Refine loop (max 2 iters) | else -> ExecutorAgent
 5. ExecutorAgent (Pydantic AI + LangGraph ToolNode) with tool bridge (ToolDef -> @agent.tool) (ADR-048/059)
@@ -41,7 +41,7 @@ Student message -> SSE (fetch-event-source) -> LangGraph tutor StateGraph:
 8 international sign languages: ASL (US), BSL (UK), LGP (Portugal), DGS (Germany), LSF (France), LSE (Spain), Libras (Brazil), ISL (Ireland).
 
 Webcam -> MediaPipe JS (Hands+Pose) -> TF.js MLP classifier -> Gloss labels (limited to 3-4 navigation gestures for MVP)
--> Dedicated WebSocket /ws/accessibility/libras?lang={code} -> LLM gloss->sentence (per-language prompt) -> Response
+-> Dedicated WebSocket /sign-language/ws/libras-caption?lang={code} -> LLM gloss->sentence (per-language prompt) -> Response
 Text -> VLibras widget (text->Libras 3D avatar, government CDN)
 
 Discovery API: GET /sign-language/languages, /languages/{code}, /languages/{code}/gestures, /for-locale/{locale}
@@ -52,7 +52,7 @@ Upload -> parse (PDF/DOCX/TXT) -> chunk (512 tokens, 64 overlap) -> embed (gemin
 
 ### Demo System
 
-8 pre-built demo profiles (teacher, 4 students with ASD/ADHD/Dyslexia/Hearing, parent, school_admin, super_admin) with seed data. Demo login bypasses auth for hackathon evaluation. Each profile has pre-populated courses, plans, progress records, and tutor sessions.
+6 pre-built demo profiles (teacher, 4 students with ASD/ADHD/Dyslexia/Hearing, parent) with seed data. Demo login bypasses auth for hackathon evaluation. Each profile has pre-populated courses, plans, progress records, and tutor sessions.
 
 ### RBAC & Authentication
 
@@ -95,7 +95,7 @@ Format: `provider:model-name` (anthropic, google-gla, openai, openrouter).
 3. SkillPromptComposer: priority sort -> header -> soft-cap -> proportional truncate -> drop lowest
 4. SkillCrafter agent: multi-turn conversational skill creation by teachers -> CraftedSkillOutput
 
-Agents: Planner, Executor, QualityGate, Tutor, SkillCrafter (5 total, Pydantic AI 1.58.0)
+Agents: Planner, Executor, QualityGate, Tutor, SkillCrafter (5 total, Pydantic AI >=1.58.0)
 
 ### "Make the Invisible Visible" (Sprint 26)
 
@@ -106,6 +106,21 @@ Frontend components that expose the AI pipeline to users:
 - **TTS Audio Player**: HTMLAudioElement-based player calling POST /media/tts/synthesize with speed/language/voice controls.
 - **Inclusive Classroom Mode**: 2x2 teacher cockpit grid showing 4 students (Lucas/Sofia/Pedro/Ana) with disability-specific accent colors and accommodation badges.
 
+### Capabilities Discovery (GET /capabilities)
+
+Public endpoint returning platform feature availability based on wired adapters and configuration:
+- `version`, `personas` (9), `sign_languages` (8)
+- `llm` (available + provider), `tts` (ElevenLabs), `image_generation` (Gemini Imagen)
+- `vector_search` (pgvector), `braille` (grades + languages), `skills` (count + categories)
+- `demo_mode` (boolean)
+Excluded from auth middleware, rate limiting, and tenant context. Enables progressive enhancement on frontend.
+
+### Accessibility Status System
+
+- **A11yStatusBadge**: Floating indicator (bottom-left) showing active persona icon + name, feature count badge for non-default settings, expandable detail panel with all active features (theme, font, motion, focus, bionic)
+- **PersonaExplainer**: Banner below topbar when non-standard persona active, shows icon + theme name + adaptation hints with aria-live="polite"
+- **Focus States**: WCAG outline (3px solid primary, offset 3px) + forced-colors mode (Highlight color, no box-shadow)
+
 ## ADR Log
 
 60 ADRs (ADR-001 through ADR-060). Key decisions: 001 Hexagonal | 002-003 SQLAlchemy+pgvector | 006 SSE+WS | 012 multi-tenancy | 013 parallel LangGraph | 017/028-029/049 SmartRouter | 024/038 typed SSE | 042 recursion_limit=25 | 048 direct Anthropic API (no SDK) | 050 tiered quality gate | 051 FakeLLM CI | 053 composite FK | 054 SSE replay (Redis ZSET) | 055 RunContext terminal guarantee | 056 pool sizing | 057 Web Worker sign lang | 058 ThemeContext | 059 ailine_agents (Pydantic AI) | 060 structural tenant isolation + centralized authz
@@ -115,14 +130,15 @@ Frontend components that expose the AI pipeline to users:
 
 **Backend (Python 3.13, uv-managed):**
 FastAPI 0.129.0, SQLAlchemy 2.0.46, Alembic 1.18.4, asyncpg 0.31.0, Pydantic 2.12.5,
-LangGraph 1.0.8, Pydantic AI 1.58.0, ailine-agents 0.1.0, DeepAgents 0.4.1,
+LangGraph 1.0.8, Pydantic AI >=1.58.0, ailine-agents 0.1.0, DeepAgents 0.4.1,
 Anthropic SDK 0.79.0, OpenAI SDK 2.20.0, google-genai 1.63.0,
-pgvector-python 0.4.2, structlog 25.4.0, sse-starlette 3.2.0, faster-whisper 1.2.1,
-uuid-utils 0.14.0, langgraph-checkpoint-postgres 3.0.4, aiosqlite 0.21.0, pypdf 5.x
+pgvector-python 0.4.2, structlog 25.5.0, sse-starlette 3.2.0,
+uuid-utils 0.14.0, aiosqlite 0.22.1
+**Note:** Embedding dimensions inconsistency — config default 3072 vs migration hardcode 1536 (MRL).
 
 **Frontend (Node 24, pnpm):**
-Next.js 16.1.6, React 19.2.4, Tailwind 4.1.18, shadcn/ui 3.8.4, next-intl 4.8.2,
-Zustand 5.0.11, motion 12.34.0, Recharts 3.7.0, DOMPurify 3.3.1,
+Next.js 16.1.6, React 19.2.4, Tailwind 4.2.0, next-intl 4.8.3,
+Zustand 5.0.11, motion 12.34.2, Recharts 3.7.0, DOMPurify 3.3.1,
 @mediapipe/tasks-vision 0.10.32, @tensorflow/tfjs 4.22.0, @microsoft/fetch-event-source 2.0.1
 
 **Infrastructure:** PostgreSQL 16, pgvector 0.8.1, Redis 7.x, Docker Compose v2

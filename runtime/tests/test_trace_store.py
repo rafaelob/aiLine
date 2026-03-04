@@ -47,6 +47,8 @@ class TestTraceStore:
     @pytest.mark.asyncio
     async def test_append_node(self) -> None:
         store = TraceStore()
+        # F-252: trace must be created first via get_or_create
+        await store.get_or_create("run-1")
         node = NodeTrace(node="planner", status="success", time_ms=150.0)
         await store.append_node("run-1", node)
         trace = await store.get("run-1")
@@ -56,8 +58,19 @@ class TestTraceStore:
         assert trace.nodes[0].time_ms == 150.0
 
     @pytest.mark.asyncio
+    async def test_append_node_nonexistent_run_ignored(self) -> None:
+        """F-252: append_node on non-existent run_id does NOT create a trace."""
+        store = TraceStore()
+        node = NodeTrace(node="planner", status="success", time_ms=100.0)
+        await store.append_node("ghost-run", node)
+        trace = await store.get("ghost-run")
+        assert trace is None
+
+    @pytest.mark.asyncio
     async def test_append_multiple_nodes(self) -> None:
         store = TraceStore()
+        # F-252: trace must be created first via get_or_create
+        await store.get_or_create("run-1")
         await store.append_node(
             "run-1", NodeTrace(node="planner", status="success", time_ms=100.0)
         )
@@ -89,6 +102,14 @@ class TestTraceStore:
         assert trace.final_score == 87
 
     @pytest.mark.asyncio
+    async def test_update_run_nonexistent_ignored(self) -> None:
+        """F-252: update_run on non-existent run_id does NOT create a trace."""
+        store = TraceStore()
+        await store.update_run("ghost-run", status="completed")
+        trace = await store.get("ghost-run")
+        assert trace is None
+
+    @pytest.mark.asyncio
     async def test_list_recent(self) -> None:
         store = TraceStore()
         await store.get_or_create("run-1")
@@ -118,6 +139,8 @@ class TestTraceStore:
     @pytest.mark.asyncio
     async def test_node_with_route_rationale(self) -> None:
         store = TraceStore()
+        # F-252: trace must be created first via get_or_create
+        await store.get_or_create("run-1")
         rationale = RouteRationale(
             task_type="planner",
             weighted_scores={"token": 0.25, "structured": 0.25},
@@ -137,6 +160,35 @@ class TestTraceStore:
         assert trace is not None
         assert trace.nodes[0].route_rationale is not None
         assert trace.nodes[0].route_rationale.tier == "primary"
+
+
+    @pytest.mark.asyncio
+    async def test_list_recent_with_status_filter(self) -> None:
+        """F-259: list_recent filters by status when provided."""
+        store = TraceStore()
+        await store.get_or_create("run-1")
+        await store.get_or_create("run-2")
+        await store.get_or_create("run-3")
+        # Mark run-2 as completed
+        await store.update_run("run-2", status="completed")
+        # Mark run-3 as failed
+        await store.update_run("run-3", status="failed")
+
+        running = await store.list_recent(status="running")
+        assert len(running) == 1
+        assert running[0].run_id == "run-1"
+
+        completed = await store.list_recent(status="completed")
+        assert len(completed) == 1
+        assert completed[0].run_id == "run-2"
+
+        failed = await store.list_recent(status="failed")
+        assert len(failed) == 1
+        assert failed[0].run_id == "run-3"
+
+        # No filter returns all
+        all_traces = await store.list_recent()
+        assert len(all_traces) == 3
 
 
 class TestSingleton:

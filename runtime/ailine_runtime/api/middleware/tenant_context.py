@@ -81,6 +81,8 @@ _EXCLUDED_PREFIXES = (
 _EXCLUDED_EXACT = frozenset({
     "/health",
     "/health/ready",
+    "/health/diagnostics",
+    "/capabilities",
     "/docs",
     "/redoc",
     "/demo",
@@ -88,6 +90,7 @@ _EXCLUDED_EXACT = frozenset({
     "/openapi.json",
     "/auth/login",
     "/auth/register",
+    "/auth/demo-login",
     "/auth/roles",
 })
 
@@ -169,6 +172,15 @@ def _get_jwt_config() -> dict[str, Any]:
     issuer = os.getenv("AILINE_JWT_ISSUER", "") or None
     audience = os.getenv("AILINE_JWT_AUDIENCE", "") or None
 
+    # In dev mode without explicit key material, use the same fallback
+    # secret as the auth router to ensure JWTs created at /auth/login
+    # are verifiable by the middleware.  F-254: uses a shared generated
+    # secret instead of a hardcoded string.
+    if not secret and not public_key and _is_dev_mode():
+        from ...shared.jwt_dev_secret import DEV_JWT_SECRET
+
+        secret = DEV_JWT_SECRET
+
     # Determine algorithms based on what key material is available
     algorithms_env = os.getenv("AILINE_JWT_ALGORITHMS", "")
     if algorithms_env:
@@ -196,17 +208,19 @@ def _get_jwt_config() -> dict[str, Any]:
 class _JwtClaims:
     """Lightweight container for claims extracted from a JWT."""
 
-    __slots__ = ("org_id", "role", "teacher_id")
+    __slots__ = ("jti", "org_id", "role", "teacher_id")
 
     def __init__(
         self,
         teacher_id: str | None = None,
         role: str | None = None,
         org_id: str | None = None,
+        jti: str | None = None,
     ) -> None:
         self.teacher_id = teacher_id
         self.role = role
         self.org_id = org_id
+        self.jti = jti
 
 
 def _extract_teacher_id_from_jwt(
@@ -312,6 +326,7 @@ def _verified_jwt_decode(
         # Extract RBAC claims with backward-compatible defaults
         role = payload.get("role", "teacher")
         org_id = payload.get("org_id")
+        jti = payload.get("jti")
 
         logger.debug(
             "auth_jwt_success",
@@ -320,7 +335,7 @@ def _verified_jwt_decode(
             org_id=org_id,
             issuer=payload.get("iss"),
         )
-        return _JwtClaims(teacher_id=sub, role=role, org_id=org_id), None
+        return _JwtClaims(teacher_id=sub, role=role, org_id=org_id, jti=jti), None
 
     except pyjwt.ExpiredSignatureError:
         logger.warning("jwt_expired", msg="JWT token has expired")
@@ -398,6 +413,32 @@ def extract_claims_from_jwt(token: str) -> tuple[_JwtClaims, str | None]:
     return _extract_teacher_id_from_jwt(token)
 
 
+async def _is_jti_blacklisted(request: Request, jti: str) -> bool:
+    """Check if a JWT ID (jti) has been revoked via Redis blacklist.
+
+    Returns False when Redis is unavailable (fail-open for availability).
+    The blacklist key format is ``jti_blacklist:{jti}`` with a TTL matching
+    the token's remaining lifetime (set by POST /auth/logout).
+    """
+    # F-258: Use public EventBus.get_redis_client() instead of private _redis
+    container = getattr(getattr(request.app, "state", None), "container", None)
+    if container is None:
+        return False
+    event_bus = getattr(container, "event_bus", None)
+    if event_bus is None:
+        return False
+    redis_client = await event_bus.get_redis_client()
+    if redis_client is None:
+        return False
+    try:
+        result = await redis_client.get(f"jti_blacklist:{jti}")
+        return result is not None
+    except Exception:
+        # Fail-open: if Redis is down, allow the request through
+        logger.warning("jti_blacklist_check_failed", jti=jti)
+        return False
+
+
 class TenantContextMiddleware(BaseHTTPMiddleware):
     """Extract teacher_id from request and store in contextvars.
 
@@ -434,13 +475,25 @@ class TenantContextMiddleware(BaseHTTPMiddleware):
                 role = claims.role
                 org_id = claims.org_id
                 if teacher_id:
-                    logger.debug(
-                        "tenant_from_jwt",
-                        teacher_id=teacher_id,
-                        role=role,
-                        path=path,
-                    )
-                elif jwt_error:
+                    # F-231: Check jti blacklist (Redis) for revoked tokens
+                    if claims.jti and await _is_jti_blacklisted(
+                        request, claims.jti
+                    ):
+                        logger.warning(
+                            "jwt_revoked",
+                            jti=claims.jti,
+                            path=path,
+                        )
+                        teacher_id = None
+                        jwt_error = "revoked"
+                    else:
+                        logger.debug(
+                            "tenant_from_jwt",
+                            teacher_id=teacher_id,
+                            role=role,
+                            path=path,
+                        )
+                if jwt_error:
                     # JWT was present but invalid -- log auth failure
                     logger.warning(
                         "auth_jwt_failure",

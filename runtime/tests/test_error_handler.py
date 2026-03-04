@@ -46,7 +46,7 @@ def app(settings: Settings):
 
 
 @pytest.fixture()
-async def client(app) -> AsyncGenerator[AsyncClient, None]:
+async def client(app) -> AsyncGenerator[AsyncClient]:
     transport = ASGITransport(app=app, raise_app_exceptions=False)
     async with AsyncClient(transport=transport, base_url="http://test") as c:
         yield c
@@ -75,6 +75,7 @@ class TestRFC7807ErrorFormat:
         resp = await client.post(
             "/materials",
             json={"invalid_field_only": "value"},
+            headers={"X-Teacher-ID": "test-error-handler"},
         )
         assert resp.status_code == 422
         body = resp.json()
@@ -91,6 +92,7 @@ class TestRFC7807ErrorFormat:
         resp = await client.post(
             "/materials",
             json={"invalid_field_only": "value"},
+            headers={"X-Teacher-ID": "test-error-handler"},
         )
         body = resp.json()
         assert body.get("instance") == "/materials"

@@ -8,9 +8,9 @@
 - **Security:** trivy (container), pip-audit (Python), pnpm audit (Node)
 
 ## Coverage Targets
-- Pre-MVP (current): 2,432 backend tests (2,155 runtime + 277 agents), all passing
-- Frontend: 1,116 tests, all passing
-- Total: 3,548 tests, all lint/typecheck gates green (ruff, mypy, ESLint, tsc)
+- Pre-MVP (current): ~2,445 backend tests (runtime + agents), all passing
+- Frontend: ~1,438 tests, all passing
+- Total: ~3,883 tests, all lint/typecheck gates green (ruff, mypy, ESLint, tsc)
 - E2E: 3 Playwright golden path specs + 8 visual regression + axe-core a11y audit
 - Agent eval: 15 golden test sets (Planner/QualityGate/Tutor) + rubric scoring
 - Post-MVP: >= 90% on touched code (hard gate)
@@ -38,7 +38,7 @@ cd frontend && pnpm test && pnpm test:coverage                   # Frontend test
 cd frontend && pnpm exec playwright test                         # E2E + a11y
 cd runtime && uv run ruff check . && uv run mypy .               # Lint + typecheck
 cd frontend && pnpm lint && pnpm exec tsc --noEmit               # Frontend lint
-docker compose up -d --build && docker compose exec api uv run pytest -v  # Docker (source of truth)
+docker compose up -d --build && docker compose exec api python -m pytest -v  # Docker (source of truth)
 ```
 
 ## Test Matrix

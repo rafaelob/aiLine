@@ -62,11 +62,45 @@ class PostgresSkillRepository:
 
     # --- CRUD ---
 
-    async def get_by_slug(self, slug: str) -> Skill | None:
+    async def get_by_slug(
+        self, slug: str, *, teacher_id: str | None = None
+    ) -> Skill | None:
+        """Look up a skill by slug.
+
+        When ``teacher_id`` is given, searches teacher-owned skills first,
+        then falls back to system skills (teacher_id IS NULL).
+        Without ``teacher_id``, prefers system skills but falls back to
+        any single matching skill (avoids MultipleResultsFound).
+        """
+        if teacher_id is not None:
+            # Try teacher-owned first (unique due to uq_skills_teacher_slug)
+            stmt = select(SkillRow).where(
+                SkillRow.slug == slug,
+                SkillRow.teacher_id == teacher_id,
+                SkillRow.is_active.is_(True),
+            )
+            result = await self._session.execute(stmt)
+            row = result.scalar_one_or_none()
+            if row is not None:
+                return _row_to_skill(row)
+
+        # Prefer system skill (teacher_id IS NULL)
+        stmt = select(SkillRow).where(
+            SkillRow.slug == slug,
+            SkillRow.teacher_id.is_(None),
+            SkillRow.is_active.is_(True),
+        )
+        result = await self._session.execute(stmt)
+        row = result.scalar_one_or_none()
+        if row is not None:
+            return _row_to_skill(row)
+
+        # Fallback: return any single match (use .first() to avoid
+        # MultipleResultsFound when multiple teachers share the slug)
         stmt = select(SkillRow).where(
             SkillRow.slug == slug,
             SkillRow.is_active.is_(True),
-        )
+        ).limit(1)
         result = await self._session.execute(stmt)
         row = result.scalar_one_or_none()
         return _row_to_skill(row) if row else None
@@ -121,6 +155,7 @@ class PostgresSkillRepository:
         self,
         slug: str,
         *,
+        teacher_id: str | None = None,
         instructions_md: str | None = None,
         description: str | None = None,
         metadata: dict[str, str] | None = None,
@@ -129,6 +164,10 @@ class PostgresSkillRepository:
         stmt = select(SkillRow).where(
             SkillRow.slug == slug, SkillRow.is_active.is_(True)
         )
+        if teacher_id is not None:
+            stmt = stmt.where(SkillRow.teacher_id == teacher_id)
+        else:
+            stmt = stmt.where(SkillRow.teacher_id.is_(None))
         result = await self._session.execute(stmt)
         row = result.scalar_one_or_none()
         if row is None:
@@ -153,12 +192,13 @@ class PostgresSkillRepository:
         self._session.add(version_row)
         await self._session.flush()
 
-    async def soft_delete(self, slug: str) -> None:
-        stmt = (
-            update(SkillRow)
-            .where(SkillRow.slug == slug)
-            .values(is_active=False)
-        )
+    async def soft_delete(self, slug: str, *, teacher_id: str | None = None) -> None:
+        stmt = update(SkillRow).where(SkillRow.slug == slug)
+        if teacher_id is not None:
+            stmt = stmt.where(SkillRow.teacher_id == teacher_id)
+        else:
+            stmt = stmt.where(SkillRow.teacher_id.is_(None))
+        stmt = stmt.values(is_active=False)
         await self._session.execute(stmt)
         await self._session.flush()
 
@@ -224,13 +264,30 @@ class PostgresSkillRepository:
         result = await self._session.execute(stmt)
         return [_row_to_skill(r) for r in result.scalars().all()]
 
-    async def fork(self, source_slug: str, *, teacher_id: str) -> str:
-        stmt = select(SkillRow).where(
-            SkillRow.slug == source_slug,
-            SkillRow.is_active.is_(True),
-        )
-        result = await self._session.execute(stmt)
-        source = result.scalar_one_or_none()
+    async def fork(
+        self, source_slug: str, *, teacher_id: str, source_teacher_id: str | None = None
+    ) -> str:
+        # Try source_teacher_id-scoped lookup first, fallback to system skill
+        if source_teacher_id is not None:
+            stmt = select(SkillRow).where(
+                SkillRow.slug == source_slug,
+                SkillRow.teacher_id == source_teacher_id,
+                SkillRow.is_active.is_(True),
+            )
+            result = await self._session.execute(stmt)
+            source = result.scalar_one_or_none()
+        else:
+            source = None
+
+        if source is None:
+            # Fallback to system skill (teacher_id IS NULL)
+            stmt = select(SkillRow).where(
+                SkillRow.slug == source_slug,
+                SkillRow.teacher_id.is_(None),
+                SkillRow.is_active.is_(True),
+            )
+            result = await self._session.execute(stmt)
+            source = result.scalar_one_or_none()
         if source is None:
             msg = f"Skill '{source_slug}' not found or inactive"
             raise ValueError(msg)
@@ -286,9 +343,14 @@ class PostgresSkillRepository:
         user_id: str,
         score: int,
         comment: str = "",
+        teacher_id: str | None = None,
     ) -> None:
-        # Resolve skill ID
+        # Resolve skill ID — filter by teacher_id to avoid ambiguity
         stmt = select(SkillRow).where(SkillRow.slug == slug)
+        if teacher_id is not None:
+            stmt = stmt.where(SkillRow.teacher_id == teacher_id)
+        else:
+            stmt = stmt.where(SkillRow.teacher_id.is_(None))
         result = await self._session.execute(stmt)
         skill_row = result.scalar_one_or_none()
         if skill_row is None:
@@ -329,16 +391,25 @@ class PostgresSkillRepository:
     # --- Embedding ---
 
     async def update_embedding(
-        self, slug: str, embedding: list[float]
+        self, slug: str, embedding: list[float], *, teacher_id: str | None = None
     ) -> None:
         try:
-            sql = text(
-                "UPDATE skills SET embedding = cast(:emb AS vector) "
-                "WHERE slug = :slug"
-            )
-            await self._session.execute(
-                sql, {"emb": str(embedding), "slug": slug}
-            )
+            if teacher_id is not None:
+                sql = text(
+                    "UPDATE skills SET embedding = cast(:emb AS vector) "
+                    "WHERE slug = :slug AND teacher_id = :tid"
+                )
+                await self._session.execute(
+                    sql, {"emb": str(embedding), "slug": slug, "tid": teacher_id}
+                )
+            else:
+                sql = text(
+                    "UPDATE skills SET embedding = cast(:emb AS vector) "
+                    "WHERE slug = :slug AND teacher_id IS NULL"
+                )
+                await self._session.execute(
+                    sql, {"emb": str(embedding), "slug": slug}
+                )
             await self._session.flush()
         except (OperationalError, IntegrityError) as exc:
             _log.warning(
@@ -356,10 +427,12 @@ class SessionFactorySkillRepository:
     def __init__(self, session_factory: Callable[..., AsyncSession]) -> None:
         self._session_factory = session_factory
 
-    async def get_by_slug(self, slug: str) -> Skill | None:
+    async def get_by_slug(
+        self, slug: str, *, teacher_id: str | None = None
+    ) -> Skill | None:
         async with self._session_factory() as session:
             repo = PostgresSkillRepository(session)
-            return await repo.get_by_slug(slug)
+            return await repo.get_by_slug(slug, teacher_id=teacher_id)
 
     async def list_all(
         self, *, active_only: bool = True, system_only: bool = False
@@ -385,6 +458,7 @@ class SessionFactorySkillRepository:
         self,
         slug: str,
         *,
+        teacher_id: str | None = None,
         instructions_md: str | None = None,
         description: str | None = None,
         metadata: dict[str, str] | None = None,
@@ -394,6 +468,7 @@ class SessionFactorySkillRepository:
             repo = PostgresSkillRepository(session)
             await repo.update(
                 slug,
+                teacher_id=teacher_id,
                 instructions_md=instructions_md,
                 description=description,
                 metadata=metadata,
@@ -401,10 +476,10 @@ class SessionFactorySkillRepository:
             )
             await session.commit()
 
-    async def soft_delete(self, slug: str) -> None:
+    async def soft_delete(self, slug: str, *, teacher_id: str | None = None) -> None:
         async with self._session_factory() as session:
             repo = PostgresSkillRepository(session)
-            await repo.soft_delete(slug)
+            await repo.soft_delete(slug, teacher_id=teacher_id)
             await session.commit()
 
     async def search_by_text(
@@ -426,10 +501,14 @@ class SessionFactorySkillRepository:
             repo = PostgresSkillRepository(session)
             return await repo.list_by_teacher(teacher_id)
 
-    async def fork(self, source_slug: str, *, teacher_id: str) -> str:
+    async def fork(
+        self, source_slug: str, *, teacher_id: str, source_teacher_id: str | None = None
+    ) -> str:
         async with self._session_factory() as session:
             repo = PostgresSkillRepository(session)
-            result = await repo.fork(source_slug, teacher_id=teacher_id)
+            result = await repo.fork(
+                source_slug, teacher_id=teacher_id, source_teacher_id=source_teacher_id
+            )
             await session.commit()
             return result
 
@@ -440,19 +519,22 @@ class SessionFactorySkillRepository:
         user_id: str,
         score: int,
         comment: str = "",
+        teacher_id: str | None = None,
     ) -> None:
         async with self._session_factory() as session:
             repo = PostgresSkillRepository(session)
-            await repo.rate(slug, user_id=user_id, score=score, comment=comment)
+            await repo.rate(
+                slug, user_id=user_id, score=score, comment=comment, teacher_id=teacher_id
+            )
             await session.commit()
 
     async def update_embedding(
-        self, slug: str, embedding: list[float]
+        self, slug: str, embedding: list[float], *, teacher_id: str | None = None
     ) -> None:
         async with self._session_factory() as session:
             repo = PostgresSkillRepository(session)
             try:
-                await repo.update_embedding(slug, embedding)
+                await repo.update_embedding(slug, embedding, teacher_id=teacher_id)
                 await session.commit()
             except Exception:
                 await session.rollback()

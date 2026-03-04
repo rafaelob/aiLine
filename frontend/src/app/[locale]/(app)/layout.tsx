@@ -2,6 +2,9 @@ import { getTranslations } from 'next-intl/server'
 import { Sidebar } from '@/components/layout/sidebar'
 import { TopBar } from '@/components/layout/topbar'
 import { MobileNav } from '@/components/layout/mobile-nav'
+import { A11yStatusBadge } from '@/components/accessibility/a11y-status-badge'
+import { PersonaExplainer } from '@/components/accessibility/persona-explainer'
+import { MotorStickyToolbar } from '@/components/accessibility/motor-sticky-toolbar'
 
 interface AppLayoutProps {
   children: React.ReactNode
@@ -32,6 +35,9 @@ export default async function AppLayout({ children }: AppLayoutProps) {
         <div className="flex flex-1 flex-col overflow-hidden">
           <TopBar />
 
+          {/* "Why this adaptation?" context banner */}
+          <PersonaExplainer />
+
           <main
             id="main-content"
             className="flex-1 overflow-y-auto p-6 pb-20 md:pb-6"
@@ -41,8 +47,14 @@ export default async function AppLayout({ children }: AppLayoutProps) {
         </div>
       </div>
 
+      {/* Motor accessibility sticky toolbar (F-235) */}
+      <MotorStickyToolbar />
+
       {/* Mobile bottom navigation */}
       <MobileNav />
+
+      {/* Live accessibility status indicator */}
+      <A11yStatusBadge />
     </>
   )
 }

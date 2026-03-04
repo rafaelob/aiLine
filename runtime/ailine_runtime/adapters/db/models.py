@@ -88,6 +88,9 @@ class CourseRow(Base):
     """Course owned by a teacher."""
 
     __tablename__ = "courses"
+    __table_args__ = (
+        UniqueConstraint("teacher_id", "id", name="uq_courses_teacher_id"),
+    )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid7_str)
     teacher_id: Mapped[str] = mapped_column(
@@ -121,6 +124,7 @@ class LessonRow(Base):
 
     __tablename__ = "lessons"
     __table_args__ = (
+        UniqueConstraint("teacher_id", "id", name="uq_lessons_teacher_id"),
         ForeignKeyConstraint(
             ["teacher_id", "course_id"],
             ["courses.teacher_id", "courses.id"],
@@ -158,6 +162,9 @@ class MaterialRow(Base):
     """Teacher-uploaded educational material."""
 
     __tablename__ = "materials"
+    __table_args__ = (
+        UniqueConstraint("teacher_id", "id", name="uq_materials_teacher_id"),
+    )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid7_str)
     teacher_id: Mapped[str] = mapped_column(
@@ -262,6 +269,9 @@ class TutorAgentRow(Base):
     """Configured tutor agent specification owned by a teacher."""
 
     __tablename__ = "tutor_agents"
+    __table_args__ = (
+        UniqueConstraint("teacher_id", "id", name="uq_tutor_agents_teacher_id"),
+    )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid7_str)
     teacher_id: Mapped[str] = mapped_column(

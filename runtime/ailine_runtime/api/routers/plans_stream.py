@@ -20,7 +20,7 @@ from typing import Any
 import structlog
 from ailine_agents import AgentDepsFactory
 from ailine_agents.workflows.plan_workflow import build_plan_workflow
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
 
@@ -37,14 +37,6 @@ router = APIRouter()
 
 # Heartbeat interval to keep the connection alive (seconds).
 _HEARTBEAT_INTERVAL_S = 15.0
-
-
-def _resolve_teacher_id() -> str:
-    """Resolve teacher_id from JWT context (mandatory).
-
-    Raises 401 if no authenticated teacher context is available.
-    """
-    return require_authenticated()
 
 
 class PlanStreamIn(BaseModel):
@@ -104,6 +96,12 @@ async def _run_pipeline(
         # Initialize trace (tenant-scoped for isolation)
         trace_store = get_trace_store()
         await trace_store.get_or_create(body.run_id, teacher_id=teacher_id)
+        # Persist run metadata for the /runs resource model (F-237)
+        await trace_store.update_run(
+            body.run_id,
+            user_prompt=body.user_prompt[:500],
+            subject=body.subject or "",
+        )
 
         deps = AgentDepsFactory.from_container(
             container,
@@ -211,7 +209,9 @@ async def _run_pipeline(
 
 @router.post("/generate/stream")
 async def plans_generate_stream(
-    body: PlanStreamIn, request: Request
+    body: PlanStreamIn,
+    request: Request,
+    teacher_id: str = Depends(require_authenticated),
 ) -> EventSourceResponse:
     """Stream plan generation progress as Server-Sent Events.
 
@@ -223,23 +223,23 @@ async def plans_generate_stream(
     container = request.app.state.container
     settings = request.app.state.settings
 
-    # --- Input sanitization ---
-    body.user_prompt = sanitize_prompt(body.user_prompt)
-    if not body.user_prompt:
+    # --- Input sanitization (F-262: immutable body — create sanitised copy) ---
+    sanitized_prompt = sanitize_prompt(body.user_prompt)
+    if not sanitized_prompt:
         raise HTTPException(
             status_code=422, detail="user_prompt must not be empty after sanitization"
         )
 
-    # Resolve teacher_id: mandatory JWT auth (never from request body)
-    teacher_id = _resolve_teacher_id()
+    # F-262: pass sanitised copy to pipeline; original body stays immutable
+    safe_body = body.model_copy(update={"user_prompt": sanitized_prompt})
 
-    emitter = SSEEventEmitter(body.run_id)
+    emitter = SSEEventEmitter(safe_body.run_id)
     queue: asyncio.Queue[dict[str, str] | None] = asyncio.Queue(maxsize=500)
 
     async def event_generator() -> AsyncIterator[dict[str, str]]:
         # Start the pipeline and heartbeat as background tasks
         pipeline_task = asyncio.create_task(
-            _run_pipeline(body, teacher_id, settings, container, emitter, queue)
+            _run_pipeline(safe_body, teacher_id, settings, container, emitter, queue)
         )
         heartbeat_task = asyncio.create_task(_heartbeat_loop(emitter, queue))
 

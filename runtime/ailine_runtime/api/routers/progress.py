@@ -101,8 +101,13 @@ async def progress_student(student_id: str) -> list[dict[str, Any]]:
             )
         return [r.model_dump() for r in all_records]
 
-    # Parents: use parent-specific endpoint or verify relationship
+    # Parents: must have a verified linkage to this student (FERPA compliance)
     if role == UserRole.PARENT:
+        if not store.is_parent_linked(user_id, student_id):
+            raise HTTPException(
+                status_code=403,
+                detail="Access denied: you are not linked to this student.",
+            )
         all_records = store.get_student_all_teachers(student_id)
         if not all_records:
             raise HTTPException(

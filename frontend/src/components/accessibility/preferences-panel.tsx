@@ -23,6 +23,19 @@ const THEME_IDS = [
 
 type ThemeId = (typeof THEME_IDS)[number]
 
+/** Color preview swatches for each theme (bg, primary, text). */
+const THEME_COLORS: Record<ThemeId, [string, string, string]> = {
+  standard: ['#FFFFFF', '#2563EB', '#1A1A2E'],
+  high_contrast: ['#000000', '#5EEAD4', '#FFFFFF'],
+  tea: ['#F0F7F4', '#2D8B6E', '#1B3A33'],
+  tdah: ['#FFFDF7', '#E07E34', '#2D2A24'],
+  dyslexia: ['#FBF5E6', '#3B7DD8', '#2C2416'],
+  low_vision: ['#FFFEF5', '#1A56DB', '#1A1400'],
+  hearing: ['#F8F9FE', '#4338CA', '#1E1E3A'],
+  motor: ['#FAFBFF', '#3B82F6', '#1C1C3A'],
+  screen_reader: ['#FFFFFF', '#1D4ED8', '#111827'],
+}
+
 interface PreferencesPanelProps {
   open: boolean
   onClose: () => void
@@ -47,15 +60,14 @@ export function PreferencesPanel({ open, onClose }: PreferencesPanelProps) {
   } = useAccessibilityStore()
   const { startTransition } = useViewTransition()
 
-  // Save previously focused element and restore on unmount
+  // Save previously focused element on open; restore on close.
+  // Uses separate branches instead of cleanup to avoid stale closure.
   useEffect(() => {
     if (open) {
       previousFocusRef.current = document.activeElement as HTMLElement | null
-    }
-    return () => {
-      if (!open) {
-        previousFocusRef.current?.focus()
-      }
+    } else if (previousFocusRef.current) {
+      previousFocusRef.current.focus()
+      previousFocusRef.current = null
     }
   }, [open])
 
@@ -240,6 +252,19 @@ export function PreferencesPanel({ open, onClose }: PreferencesPanelProps) {
                       {theme === id && (
                         <span className="w-2.5 h-2.5 rounded-full bg-[var(--color-primary)]" />
                       )}
+                    </span>
+                    {/* Theme color preview chips */}
+                    <span
+                      className="flex gap-0.5 shrink-0"
+                      aria-hidden="true"
+                    >
+                      {THEME_COLORS[id].map((color, ci) => (
+                        <span
+                          key={ci}
+                          className="w-3 h-3 rounded-full border border-[var(--color-border)]/50"
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
                     </span>
                     <span className="flex flex-col">
                       <span className="text-sm text-[var(--color-text)]">

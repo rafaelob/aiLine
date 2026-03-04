@@ -29,18 +29,22 @@ router = APIRouter()
 def _require_demo_mode(request: Request, *, require_token: bool = False) -> None:
     """Raise 403 if demo mode is not enabled."""
     settings = getattr(request.app.state, "settings", None)
-    if settings is not None and getattr(settings, "demo_mode", False):
-        pass
+    if settings is not None:
+        # Trust the Settings object (authoritative for the app instance)
+        demo_enabled = getattr(settings, "demo_mode", False)
     else:
+        # Fallback to env var only when no settings available
         demo_env = os.getenv("AILINE_DEMO_MODE", "").strip()
-        if demo_env not in ("1", "true", "yes"):
-            raise HTTPException(
-                status_code=403,
-                detail=(
-                    "Demo mode is not enabled. Set AILINE_DEMO_MODE=1 "
-                    "in the environment to use demo endpoints."
-                ),
-            )
+        demo_enabled = demo_env in ("1", "true", "yes")
+
+    if not demo_enabled:
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "Demo mode is not enabled. Set AILINE_DEMO_MODE=1 "
+                "in the environment to use demo endpoints."
+            ),
+        )
 
     if require_token:
         expected_token = os.getenv("AILINE_DEMO_TOKEN", "").strip()

@@ -6,7 +6,7 @@ from typing import Any
 
 from ailine_agents import AgentDepsFactory
 from ailine_agents.workflows.plan_workflow import build_plan_workflow
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from ...app.authz import require_authenticated
@@ -52,21 +52,17 @@ class PlanGenerateIn(BaseModel):
     learner_profiles: list[dict[str, Any]] | None = None
 
 
-def _resolve_teacher_id() -> str:
-    """Resolve teacher_id from JWT context (mandatory).
-
-    Raises 401 if no authenticated teacher context is available.
-    """
-    return require_authenticated()
-
-
 def _filter_state(state: dict[str, Any]) -> dict[str, Any]:
     """Filter raw LangGraph state to only expose safe fields to the client."""
     return {k: v for k, v in state.items() if k in _SAFE_RESPONSE_FIELDS}
 
 
 @router.post("/generate", response_model=dict[str, Any])
-async def plans_generate(body: PlanGenerateIn, request: Request):
+async def plans_generate(
+    body: PlanGenerateIn,
+    request: Request,
+    teacher_id: str = Depends(require_authenticated),
+):
     container = request.app.state.container
     settings = request.app.state.settings
 
@@ -76,8 +72,6 @@ async def plans_generate(body: PlanGenerateIn, request: Request):
         raise HTTPException(
             status_code=422, detail="user_prompt must not be empty after sanitization"
         )
-
-    teacher_id = _resolve_teacher_id()
 
     deps = AgentDepsFactory.from_container(
         container,
@@ -118,9 +112,12 @@ class PlanReviewIn(BaseModel):
 
 
 @router.post("/{plan_id}/review")
-async def plan_review(plan_id: str, body: PlanReviewIn):
+async def plan_review(
+    plan_id: str,
+    body: PlanReviewIn,
+    teacher_id: str = Depends(require_authenticated),
+):
     """Submit a teacher review for a plan (HITL approval gate)."""
-    teacher_id = _resolve_teacher_id()
     store = get_review_store()
 
     existing = store.get_review(plan_id)
@@ -145,9 +142,11 @@ async def plan_review(plan_id: str, body: PlanReviewIn):
 
 
 @router.get("/{plan_id}/review")
-async def plan_review_get(plan_id: str):
+async def plan_review_get(
+    plan_id: str,
+    teacher_id: str = Depends(require_authenticated),
+):
     """Get the review status for a plan."""
-    teacher_id = _resolve_teacher_id()
     store = get_review_store()
     review = store.get_review(plan_id)
     if not review:
@@ -160,9 +159,10 @@ async def plan_review_get(plan_id: str):
 
 
 @router.get("/pending-review", response_model=list[dict[str, Any]])
-async def plans_pending_review():
+async def plans_pending_review(
+    teacher_id: str = Depends(require_authenticated),
+):
     """List all plans pending teacher review."""
-    teacher_id = _resolve_teacher_id()
     store = get_review_store()
     reviews = store.list_pending(teacher_id)
     return [r.model_dump() for r in reviews]
@@ -174,9 +174,11 @@ async def plans_pending_review():
 
 
 @router.get("/{run_id}/scorecard")
-async def plans_scorecard(run_id: str):
+async def plans_scorecard(
+    run_id: str,
+    teacher_id: str = Depends(require_authenticated),
+):
     """Get the transformation scorecard for a completed plan run."""
-    teacher_id = _resolve_teacher_id()
 
     trace_store = get_trace_store()
     trace = await trace_store.get(run_id, teacher_id=teacher_id)

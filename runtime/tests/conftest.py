@@ -59,7 +59,7 @@ def pytest_configure(config: pytest.Config) -> None:
 
 
 @pytest.fixture()
-async def async_engine() -> AsyncGenerator[AsyncEngine, None]:
+async def async_engine() -> AsyncGenerator[AsyncEngine]:
     """Create an in-memory aiosqlite engine with all tables."""
     engine = create_async_engine(
         "sqlite+aiosqlite://",
@@ -86,7 +86,7 @@ def session_factory(async_engine: AsyncEngine) -> async_sessionmaker[AsyncSessio
 @pytest.fixture()
 async def session(
     session_factory: async_sessionmaker[AsyncSession],
-) -> AsyncGenerator[AsyncSession, None]:
+) -> AsyncGenerator[AsyncSession]:
     """Provide a single async session, rolled back after the test."""
     async with session_factory() as sess:
         yield sess

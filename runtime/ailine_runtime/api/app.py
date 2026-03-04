@@ -22,7 +22,7 @@ from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import JSONResponse, PlainTextResponse, Response
 
-from ..app.authz import require_authenticated
+from ..app.authz import require_admin, require_authenticated
 from ..shared.config import Settings, get_settings
 from ..shared.container import Container
 from ..shared.metrics import (
@@ -33,6 +33,37 @@ from ..shared.metrics import (
 from ..shared.observability import configure_logging
 
 _log = structlog.get_logger("ailine.api.app")
+
+# Cached skills info — populated once on first diagnostics/capabilities request (F-241).
+_skills_cache: dict[str, Any] | None = None
+
+
+def _get_skills_info(settings_obj: Any) -> dict[str, Any]:
+    """Return cached skills registry info (count + names).
+
+    Scans skill directories once, then caches the result for the
+    lifetime of the process. Safe for concurrent access since the
+    dict is replaced atomically (GIL-protected).
+    """
+    global _skills_cache
+    if _skills_cache is not None:
+        return _skills_cache
+    try:
+        from ailine_agents.skills.registry import SkillRegistry
+
+        registry = SkillRegistry()
+        count = registry.scan_paths(settings_obj.skill_source_paths())
+        result: dict[str, Any] = {
+            "loaded": True,
+            "available": True,
+            "count": count,
+            "names": registry.list_names(),
+        }
+    except Exception:
+        result = {"loaded": False, "available": False, "count": 0, "names": []}
+    _skills_cache = result
+    return result
+
 
 # Regex patterns for normalizing path parameters in metrics labels.
 # Matches UUID v4/v7 (with or without hyphens) and pure numeric IDs.
@@ -81,12 +112,33 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     init_tracing(service_name="ailine-runtime")
 
+    # Validate environment early — fail fast on misconfiguration (GPT-5.2 review).
+    env_warnings = settings.validate_environment()
+    if env_warnings:
+        for w in env_warnings:
+            _log.warning("config.validation_warning", message=w)
+
     container = Container.build(settings)
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         """Manage application lifecycle: graceful startup and shutdown."""
         _log.info("app.startup", version="0.1.0")
+
+        # Async seeding for Postgres-backed user repo (F-230)
+        if settings.demo_mode:
+            from .routers.auth import is_user_repo_set, seed_demo_users_async
+
+            if is_user_repo_set():
+                try:
+                    await seed_demo_users_async()
+                except Exception as exc:
+                    _log.warning(
+                        "seed_demo_users_async_failed",
+                        error=str(exc),
+                        hint="Run alembic upgrade head to create the users table",
+                    )
+
         yield
         _log.info("app.shutdown_started")
         await container.close()
@@ -223,19 +275,61 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
 
     # -----------------------------------------------------------------
-    # Enhanced diagnostics endpoint
+    # Public diagnostics (no auth — safe subset for frontend status)
     # -----------------------------------------------------------------
 
     @app.get("/health/diagnostics")
-    async def health_diagnostics(
-        _teacher_id: str = Depends(require_authenticated),
-    ) -> Response:
-        """Comprehensive system diagnostics for the frontend Status Indicator.
+    async def health_diagnostics() -> Response:
+        """Public system diagnostics for the frontend Status Indicator.
 
-        Returns system status, available LLM models, skills count,
-        API key presence, dependency latency, memory usage, and uptime.
-        Unlike /health/ready, this endpoint is more detailed and intended
-        for the dashboard UI.
+        Returns overall status, dependency availability (without latency),
+        version, environment, uptime, and skill count. Sensitive operational
+        details (latency, model config, API keys, memory) are only available
+        at ``/internal/diagnostics`` (authenticated).
+        """
+        import time as _time
+
+        app_start_time = getattr(app.state, "_start_time", None)
+        if app_start_time is None:
+            app.state._start_time = _time.monotonic()  # type: ignore[attr-defined]
+            app_start_time = app.state._start_time
+
+        # Dependency status (no latency — that is internal)
+        db_check = await _check_db(container)
+        redis_check = await _check_redis(container)
+
+        deps_status = {
+            "db": {"status": db_check},
+            "redis": {"status": redis_check},
+        }
+
+        all_ok = all(d["status"] in ("ok", "skip") for d in deps_status.values())
+
+        skills_info = _get_skills_info(settings)
+
+        diagnostics: dict[str, Any] = {
+            "status": "healthy" if all_ok else "degraded",
+            "dependencies": deps_status,
+            "skills": {"available": skills_info["available"], "count": skills_info["count"]},
+            "uptime_seconds": round(_time.monotonic() - app_start_time, 1),
+            "environment": settings.env,
+            "version": app.version,
+        }
+        return JSONResponse(content=diagnostics, status_code=200 if all_ok else 503)
+
+    # -----------------------------------------------------------------
+    # Private diagnostics (authenticated — full operational details)
+    # -----------------------------------------------------------------
+
+    @app.get("/internal/diagnostics")
+    async def internal_diagnostics(
+        _teacher_id: str = Depends(require_admin),
+    ) -> Response:
+        """Admin-only diagnostics with full operational data (F-256).
+
+        Includes dependency latency, LLM model config, API key presence,
+        skill names, and process memory. Requires admin role (super_admin
+        or school_admin).
         """
         import os
         import time as _time
@@ -246,16 +340,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             app.state._start_time = _time.monotonic()  # type: ignore[attr-defined]
             app_start_time = app.state._start_time
 
-        # -- Dependencies --
+        # -- Dependencies with latency --
         deps_status: dict[str, Any] = {}
 
-        # DB
         db_start = _time.monotonic()
         db_check = await _check_db(container)
         db_latency_ms = round((_time.monotonic() - db_start) * 1000, 1)
         deps_status["db"] = {"status": db_check, "latency_ms": db_latency_ms}
 
-        # Redis
         redis_start = _time.monotonic()
         redis_check = await _check_redis(container)
         redis_latency_ms = round((_time.monotonic() - redis_start) * 1000, 1)
@@ -282,26 +374,19 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "elevenlabs": bool(settings.elevenlabs_api_key),
         }
 
-        # -- Skills --
-        try:
-            from ailine_agents.skills.registry import SkillRegistry
-
-            registry = SkillRegistry()
-            skill_count = registry.scan_paths(settings.skill_source_paths())
-            diagnostics["skills"] = {
-                "loaded": True,
-                "count": skill_count,
-                "names": registry.list_names(),
-            }
-        except Exception:
-            diagnostics["skills"] = {"loaded": False, "count": 0, "names": []}
+        # -- Skills (cached — F-241) --
+        skills_info = _get_skills_info(settings)
+        diagnostics["skills"] = {
+            "loaded": skills_info["loaded"],
+            "count": skills_info["count"],
+            "names": skills_info["names"],
+        }
 
         # -- Memory usage (stdlib only, no psutil dependency) --
         import sys
 
         mem: dict[str, Any] = {"pid": os.getpid()}
         try:
-            # Windows: use ctypes to get working set size
             if sys.platform == "win32":
                 import ctypes
                 import ctypes.wintypes
@@ -330,11 +415,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 )
                 mem["rss_mb"] = round(counters.WorkingSetSize / (1024 * 1024), 1)
             else:
-                # Unix/Linux: read /proc/self/status
                 import resource
 
                 usage = resource.getrusage(resource.RUSAGE_SELF)
-                # maxrss is in KB on Linux, bytes on macOS
                 divisor = 1024 if sys.platform == "linux" else 1
                 mem["rss_mb"] = round(usage.ru_maxrss / divisor / 1024, 1)
         except Exception:
@@ -342,8 +425,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         diagnostics["memory"] = mem
 
         # -- Uptime --
-        uptime_seconds = round(_time.monotonic() - app_start_time, 1)
-        diagnostics["uptime_seconds"] = uptime_seconds
+        diagnostics["uptime_seconds"] = round(_time.monotonic() - app_start_time, 1)
 
         # -- Environment --
         diagnostics["environment"] = settings.env
@@ -353,8 +435,57 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         all_ok = all(d.get("status") in ("ok", "skip") for d in deps_status.values())
         diagnostics["status"] = "healthy" if all_ok else "degraded"
 
-        status_code = 200 if all_ok else 503
-        return JSONResponse(content=diagnostics, status_code=status_code)
+        return JSONResponse(content=diagnostics, status_code=200 if all_ok else 503)
+
+    # -----------------------------------------------------------------
+    # Capabilities endpoint — dynamic feature discovery
+    # -----------------------------------------------------------------
+
+    @app.get("/capabilities")
+    async def capabilities() -> dict[str, Any]:
+        """Public endpoint listing currently available platform features.
+
+        Returns which adapters and services are wired and operational.
+        Useful for progressive enhancement in the frontend — e.g., only
+        show TTS button if TTS is configured, sign language if available.
+        """
+        caps: dict[str, Any] = {
+            "version": app.version,
+            "personas": 9,
+            "sign_languages": 8,
+        }
+
+        # LLM availability
+        caps["llm"] = {
+            "available": bool(
+                settings.anthropic_api_key
+                or settings.openai_api_key
+                or settings.google_api_key
+                or settings.openrouter_api_key
+            ),
+            "provider": settings.llm.provider,
+        }
+
+        # TTS (ElevenLabs)
+        caps["tts"] = {"available": bool(settings.elevenlabs_api_key)}
+
+        # Image generation (Gemini Imagen)
+        caps["image_generation"] = {"available": bool(settings.google_api_key)}
+
+        # Vector search (pgvector)
+        caps["vector_search"] = {"available": container.vectorstore is not None}
+
+        # Braille translation
+        caps["braille"] = {"available": True, "grades": [1], "languages": ["en", "pt-BR", "es"]}
+
+        # Skills (cached — F-241)
+        skills_info = _get_skills_info(settings)
+        caps["skills"] = {"available": skills_info["available"], "count": skills_info["count"]}
+
+        # Demo mode
+        caps["demo_mode"] = settings.demo_mode
+
+        return caps
 
     # -----------------------------------------------------------------
     # Metrics endpoint (Prometheus text format)
@@ -403,6 +534,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         plans_stream,
         progress,
         rag_diagnostics,
+        runs,
         setup,
         sign_language,
         skills,
@@ -427,6 +559,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app.include_router(demo.router, prefix="/demo", tags=["demo"])
     app.include_router(traces.router, prefix="/traces", tags=["traces"])
+    app.include_router(runs.router, prefix="/runs", tags=["runs"])
     app.include_router(rag_diagnostics.router, prefix="/rag", tags=["rag-diagnostics"])
     app.include_router(
         observability.router, prefix="/observability", tags=["observability"]
@@ -441,6 +574,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # Wire SkillRepository for skills_v1 router (F-176).
     # Reuse the session factory from the vectorstore engine (same PG instance).
     _wire_skill_repo(container, skills_v1)
+
+    # Wire UserRepository for auth router (F-230).
+    _wire_user_repo(container, auth, db_url=settings.db.url if settings.db else "")
 
     # Pre-seed auth store with demo profiles when demo mode is active
     if settings.demo_mode:
@@ -492,8 +628,8 @@ async def _check_redis(container: Container) -> str:
     if event_bus is None:
         return "skip"
 
-    # Only probe if the bus is a RedisEventBus (has _redis attribute).
-    redis_client = getattr(event_bus, "_redis", None)
+    # F-258: Use public EventBus.get_redis_client() instead of private _redis.
+    redis_client = await event_bus.get_redis_client()
     if redis_client is None:
         return "skip"
 
@@ -538,3 +674,36 @@ def _wire_skill_repo(container: Container, skills_v1_module: Any) -> None:
         _log.info("skill_repo.wired", backend="fake_in_memory")
 
     skills_v1_module.set_skill_repo(repo)
+
+
+def _wire_user_repo(
+    container: Container, auth_module: Any, *, db_url: str = ""
+) -> None:
+    """Inject a UserRepository into the auth router (F-230).
+
+    Only wires a PostgreSQL-backed repository when the database URL is
+    actually PostgreSQL. For SQLite/test environments, keeps the default
+    ``InMemoryUserRepository`` to avoid migration-dependent table lookups.
+
+    Skips wiring if a repo has already been injected (e.g., by test fixtures).
+    """
+    if auth_module.is_user_repo_set():
+        _log.info("user_repo.wired", backend="pre_existing")
+        return
+
+    # Only use Postgres repo when the DB is actually PostgreSQL
+    if "postgresql" not in db_url:
+        _log.info("user_repo.wired", backend="in_memory_default")
+        return
+
+    vs = container.vectorstore
+    session_factory = getattr(vs, "_session_factory", None) if vs else None
+
+    if session_factory is not None:
+        from ..adapters.db.user_repository import SessionFactoryUserRepository
+
+        repo = SessionFactoryUserRepository(session_factory)
+        auth_module.set_user_repo(repo)
+        _log.info("user_repo.wired", backend="postgres")
+    else:
+        _log.info("user_repo.wired", backend="in_memory_default")

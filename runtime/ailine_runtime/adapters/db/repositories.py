@@ -35,7 +35,7 @@ T = TypeVar("T", bound=DeclarativeBase)
 # ---------------------------------------------------------------------------
 
 
-class BaseRepository(Generic[T]):
+class BaseRepository(Generic[T]):  # noqa: UP046
     """Generic repository providing common CRUD operations with tenant scoping.
 
     Subclasses set ``_model`` to the SQLAlchemy model class.

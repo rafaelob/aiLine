@@ -6,7 +6,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'motion/react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/cn'
 import { useAuthStore, type UserRole } from '@/stores/auth-store'
-import { API_BASE, setDemoProfile, getAuthHeaders } from '@/lib/api'
+import { API_BASE, demoLogin, setDemoProfile, getAuthHeaders } from '@/lib/api'
 import { useAccessibilityStore } from '@/stores/accessibility-store'
 import { cssTheme } from '@/hooks/use-theme'
 import { DEMO_PROFILES_BY_ROLE, type DemoProfile } from '@/components/auth/login-data'
@@ -46,7 +46,8 @@ export default function LoginPage() {
   }, [])
 
   const handleDemoLogin = useCallback(
-    (profile: DemoProfile) => {
+    async (profile: DemoProfile) => {
+      // Set demo profile first as fallback (X-Teacher-ID header in dev mode)
       setDemoProfile(profile.key)
 
       if (profile.accessibility) {
@@ -57,6 +58,9 @@ export default function LoginPage() {
           document.documentElement.setAttribute('data-theme', css)
         }
       }
+
+      // Try proper JWT auth via demo-login endpoint
+      await demoLogin(profile.key)
 
       router.push(`/${locale}${profile.route}`)
     },
@@ -117,7 +121,7 @@ export default function LoginPage() {
   )
 
   const demoProfiles = selectedRole
-    ? DEMO_PROFILES_BY_ROLE[selectedRole]
+    ? (DEMO_PROFILES_BY_ROLE[selectedRole] ?? [])
     : []
 
   return (

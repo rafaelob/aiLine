@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useRef, useEffect } from 'react'
-import { fetchEventSource } from '@microsoft/fetch-event-source'
+import { fetchEventSource } from '@/lib/sse-fetch'
 import { useTutorStore } from '@/stores/tutor-store'
 import { API_BASE, getAuthHeaders } from '@/lib/api'
 

@@ -1,9 +1,10 @@
+import { defineConfig, globalIgnores } from '@eslint/config-helpers'
 import nextConfig from 'eslint-config-next'
 import nextCoreWebVitals from 'eslint-config-next/core-web-vitals'
 import nextTypescript from 'eslint-config-next/typescript'
 
-const config = [
-  { ignores: ['coverage/**'] },
+export default defineConfig([
+  globalIgnores(['coverage/**', '.next/**', 'out/**']),
   ...nextConfig,
   ...nextCoreWebVitals,
   ...nextTypescript,
@@ -20,6 +21,4 @@ const config = [
       ],
     },
   },
-]
-
-export default config
+])

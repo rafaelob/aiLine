@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useRef, useEffect } from 'react'
-import { fetchEventSource } from '@microsoft/fetch-event-source'
+import { fetchEventSource } from '@/lib/sse-fetch'
 import { usePipelineStore } from '@/stores/pipeline-store'
 import type { PipelineEvent } from '@/types/pipeline'
 import type { PlanGenerationRequest, StudyPlan, QualityReport } from '@/types/plan'

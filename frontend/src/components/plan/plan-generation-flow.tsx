@@ -139,7 +139,7 @@ export function PlanGenerationFlow() {
           prompt: DEMO_PROMPT,
         }))
         setStep(3 as WizardStep)
-        useDemoStore.getState().startDemo()
+        useDemoStore.getState().startDemo('teacher')
       })
     }
   }, [searchParams])
