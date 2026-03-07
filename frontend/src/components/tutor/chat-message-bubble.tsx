@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useState, useMemo } from 'react'
+import { memo, useCallback, useState, useMemo } from 'react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/cn'
 import { MarkdownWithMermaid } from '@/components/shared/markdown-with-mermaid'
@@ -16,7 +16,7 @@ interface ChatMessageBubbleProps {
  * User messages right-aligned, assistant messages left-aligned.
  * Supports TTS read-aloud and mermaid diagram rendering.
  */
-export function ChatMessageBubble({
+function ChatMessageBubbleInner({
   message,
   isStreaming = false,
 }: ChatMessageBubbleProps) {
@@ -169,6 +169,8 @@ export function ChatMessageBubble({
     </div>
   )
 }
+
+export const ChatMessageBubble = memo(ChatMessageBubbleInner)
 
 function UserIcon({ className = '' }: { className?: string }) {
   return (

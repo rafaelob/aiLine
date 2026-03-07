@@ -41,16 +41,10 @@ def _get_or_create_setup_token() -> str:
         _SETUP_TOKEN = env_token
     else:
         _SETUP_TOKEN = secrets.token_urlsafe(32)
-        import sys
-        print(
-            f"\n{'=' * 60}\n"
-            f"  AILINE SETUP TOKEN: {_SETUP_TOKEN}\n"
-            f"  Use this in the X-Setup-Token header for /setup/apply\n"
-            f"{'=' * 60}\n",
-            file=sys.stderr,
-            flush=True,
+        _log.info(
+            "setup_token_generated",
+            msg="Setup token generated. Retrieve via server admin or set AILINE_SETUP_TOKEN env var.",
         )
-        _log.info("setup_token_generated", msg="Setup token printed to stderr")
     return _SETUP_TOKEN
 
 
@@ -112,7 +106,7 @@ EMBEDDING_PROVIDERS: list[dict[str, Any]] = [
         "id": "gemini",
         "name": "Google Gemini",
         "models": [
-            {"id": "gemini-embedding-001", "max_dims": 3072, "default_dims": 3072},
+            {"id": "gemini-embedding-001", "max_dims": 3072, "default_dims": 1536},
         ],
     },
     {

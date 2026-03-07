@@ -1,6 +1,6 @@
 /** Shared API configuration for all client-side fetch calls. */
 
-import { useAuthStore } from '../stores/auth-store'
+import { useAuthStore, type AuthUser } from '../stores/auth-store'
 
 export const API_BASE = '/api'
 
@@ -92,7 +92,7 @@ export async function demoLogin(
     }
     // Store in auth store for proper JWT auth flow
     const { login } = useAuthStore.getState()
-    login(data.access_token, data.user as unknown as Parameters<typeof login>[1])
+    login(data.access_token, data.user as AuthUser)
     // Also keep demo profile in sessionStorage as fallback
     sessionStorage.setItem(DEMO_PROFILE_KEY, profileKey)
     return { token: data.access_token, user: data.user }

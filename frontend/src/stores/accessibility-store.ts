@@ -7,6 +7,8 @@ import { cssTheme } from '@/hooks/use-theme'
  * Theme switching is done via DOM attribute, not React state (ADR-019).
  */
 
+let _mqCleanup: (() => void) | null = null
+
 const STORAGE_KEY = 'ailine-a11y-prefs'
 
 interface A11yPrefs {
@@ -147,12 +149,16 @@ export const useAccessibilityStore = create<AccessibilityState>((set, get) => ({
         }
       }
       mql.addEventListener('change', handler)
-      // Store cleanup function for testing
-      ;(useAccessibilityStore as unknown as Record<string, unknown>)
-        ._mqCleanup = () => mql.removeEventListener('change', handler)
+      _mqCleanup = () => mql.removeEventListener('change', handler)
     }
   },
 }))
+
+/** Remove media query listener (for testing). */
+export function cleanupAccessibilityStore(): void {
+  _mqCleanup?.()
+  _mqCleanup = null
+}
 
 const fontSizeMap: Record<string, string> = {
   small: '14px',

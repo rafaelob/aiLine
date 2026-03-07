@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
+import anyio
 from ailine_agents.deps import AgentDepsFactory
 from ailine_agents.workflows.tutor_workflow import build_tutor_workflow, run_tutor_turn
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -61,8 +62,8 @@ async def tutors_create(
 
 
 @router.get("/{tutor_id}")
-async def tutors_get(tutor_id: str):
-    spec = load_tutor_spec(tutor_id)
+async def tutors_get(tutor_id: str, teacher_id: str = Depends(require_authenticated)):
+    spec = await anyio.to_thread.run_sync(load_tutor_spec, tutor_id)
     if not spec:
         raise HTTPException(status_code=404, detail="Tutor not found")
 
@@ -77,16 +78,16 @@ class TutorSessionCreateOut(BaseModel):
 
 
 @router.post("/{tutor_id}/sessions")
-async def tutor_create_session(tutor_id: str):
-    spec = load_tutor_spec(tutor_id)
+async def tutor_create_session(tutor_id: str, teacher_id: str = Depends(require_authenticated)):
+    spec = await anyio.to_thread.run_sync(load_tutor_spec, tutor_id)
     if not spec:
         raise HTTPException(status_code=404, detail="Tutor not found")
 
     # Centralized tenant verification (ADR-060)
     require_tenant_access(spec.teacher_id, action="create", resource="tutor session")
 
-    s = create_session(tutor_id)
-    save_session(s)
+    s = await anyio.to_thread.run_sync(create_session, tutor_id)
+    await anyio.to_thread.run_sync(save_session, s)
     return TutorSessionCreateOut(session_id=s.session_id)
 
 
@@ -106,14 +107,14 @@ async def tutor_chat(tutor_id: str, body: TutorChatIn, request: Request):
             status_code=422, detail="message must not be empty after sanitization"
         )
 
-    spec = load_tutor_spec(tutor_id)
+    spec = await anyio.to_thread.run_sync(load_tutor_spec, tutor_id)
     if not spec:
         raise HTTPException(status_code=404, detail="Tutor not found")
 
     # Centralized tenant verification (ADR-060)
     require_tenant_access(spec.teacher_id, action="chat", resource="tutor")
 
-    session = load_session(body.session_id)
+    session = await anyio.to_thread.run_sync(load_session, body.session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     if session.tutor_id != tutor_id:
@@ -148,7 +149,7 @@ async def tutor_chat(tutor_id: str, body: TutorChatIn, request: Request):
     validated = result.get("validated_output") or {}
     answer = validated.get("answer_markdown", "")
     session.append("assistant", answer)
-    save_session(session)
+    await anyio.to_thread.run_sync(save_session, session)
 
     return {
         "validated": validated,
@@ -165,12 +166,12 @@ async def tutor_chat(tutor_id: str, body: TutorChatIn, request: Request):
 @router.get("/{tutor_id}/sessions/{session_id}/transcript")
 async def tutor_session_transcript(tutor_id: str, session_id: str):
     """Get full conversation transcript for teacher review."""
-    spec = load_tutor_spec(tutor_id)
+    spec = await anyio.to_thread.run_sync(load_tutor_spec, tutor_id)
     if not spec:
         raise HTTPException(status_code=404, detail="Tutor not found")
     require_tenant_access(spec.teacher_id, action="read", resource="tutor transcript")
 
-    session = load_session(session_id)
+    session = await anyio.to_thread.run_sync(load_session, session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     if session.tutor_id != tutor_id:
@@ -198,12 +199,12 @@ class TurnFlagIn(BaseModel):
 @router.post("/{tutor_id}/sessions/{session_id}/flag")
 async def tutor_flag_turn(tutor_id: str, session_id: str, body: TurnFlagIn):
     """Flag a specific turn in a tutor conversation for review."""
-    spec = load_tutor_spec(tutor_id)
+    spec = await anyio.to_thread.run_sync(load_tutor_spec, tutor_id)
     if not spec:
         raise HTTPException(status_code=404, detail="Tutor not found")
     ctx = require_tenant_access(spec.teacher_id, action="flag", resource="tutor turn")
 
-    session = load_session(session_id)
+    session = await anyio.to_thread.run_sync(load_session, session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     if session.tutor_id != tutor_id:

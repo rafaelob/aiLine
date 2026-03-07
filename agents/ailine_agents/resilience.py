@@ -43,67 +43,99 @@ class CircuitBreaker:
         self._cooldown_seconds = cooldown_seconds
         self._failure_count = 0
         self._circuit_open_until: float | None = None
+        self._state: str = "closed"  # closed, open, half_open
+        self._probe_in_flight: bool = False
         self._lock = threading.Lock()
 
     @property
     def failure_count(self) -> int:
-        """Current consecutive failure count."""
         return self._failure_count
 
     @property
-    def is_open(self) -> bool:
-        """True if the circuit is open and blocking calls."""
+    def state(self) -> str:
+        """Current circuit breaker state: closed, open, or half_open."""
         with self._lock:
-            return self._is_open_locked()
+            self._maybe_transition_to_half_open()
+            return self._state
 
-    def _is_open_locked(self) -> bool:
-        """Check if circuit is open (must hold _lock)."""
-        if self._circuit_open_until is None:
-            return False
-        # Cooldown expired -- transition to half-open
-        return time.monotonic() < self._circuit_open_until
+    @property
+    def is_open(self) -> bool:
+        with self._lock:
+            self._maybe_transition_to_half_open()
+            return self._state == "open"
+
+    def _maybe_transition_to_half_open(self) -> None:
+        """Transition from open to half_open if cooldown expired (must hold _lock)."""
+        if self._state == "open" and self._circuit_open_until is not None:
+            if time.monotonic() >= self._circuit_open_until:
+                self._state = "half_open"
+                self._probe_in_flight = False
+                log.info("circuit_breaker.half_open", failure_count=self._failure_count)
 
     def check(self) -> bool:
-        """Check if a call is allowed.
-
-        Returns True if the call can proceed, False if the circuit is open.
-        """
         with self._lock:
-            if self._is_open_locked():
-                log.warning(
-                    "circuit_breaker.blocked",
-                    failure_count=self._failure_count,
-                    open_until=self._circuit_open_until,
-                    remaining_seconds=round(
-                        (self._circuit_open_until or 0) - time.monotonic(), 1
-                    ),
-                )
+            self._maybe_transition_to_half_open()
+
+            if self._state == "closed":
+                return True
+
+            if self._state == "half_open":
+                if not self._probe_in_flight:
+                    self._probe_in_flight = True
+                    log.info("circuit_breaker.probe_allowed")
+                    return True
+                log.warning("circuit_breaker.blocked_half_open", msg="Probe already in flight")
                 return False
-            return True
+
+            # state == "open"
+            log.warning(
+                "circuit_breaker.blocked",
+                failure_count=self._failure_count,
+                open_until=self._circuit_open_until,
+                remaining_seconds=round(
+                    (self._circuit_open_until or 0) - time.monotonic(), 1
+                ),
+            )
+            return False
 
     def record_success(self) -> None:
-        """Record a successful call -- resets the failure counter."""
         with self._lock:
+            prev_state = self._state
             prev_count = self._failure_count
             self._failure_count = 0
             self._circuit_open_until = None
-            if prev_count > 0:
+            self._state = "closed"
+            self._probe_in_flight = False
+            if prev_count > 0 or prev_state != "closed":
                 log.info(
                     "circuit_breaker.reset",
                     previous_failures=prev_count,
+                    previous_state=prev_state,
                 )
 
     def record_failure(self) -> None:
-        """Record a failed call. Opens the circuit if threshold is reached."""
         with self._lock:
             self._failure_count += 1
+
+            if self._state == "half_open":
+                # Probe failed -- reopen
+                self._state = "open"
+                self._circuit_open_until = time.monotonic() + self._cooldown_seconds
+                self._probe_in_flight = False
+                log.error(
+                    "circuit_breaker.probe_failed",
+                    failure_count=self._failure_count,
+                    cooldown_seconds=self._cooldown_seconds,
+                )
+                return
+
             if self._failure_count >= self._failure_threshold:
+                self._state = "open"
                 self._circuit_open_until = time.monotonic() + self._cooldown_seconds
                 log.error(
                     "circuit_breaker.opened",
                     failure_count=self._failure_count,
                     cooldown_seconds=self._cooldown_seconds,
-                    open_until=self._circuit_open_until,
                 )
 
     def reset(self) -> None:
@@ -111,6 +143,8 @@ class CircuitBreaker:
         with self._lock:
             self._failure_count = 0
             self._circuit_open_until = None
+            self._state = "closed"
+            self._probe_in_flight = False
 
 
 class CircuitOpenError(Exception):

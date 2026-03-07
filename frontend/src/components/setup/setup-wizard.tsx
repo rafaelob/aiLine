@@ -15,6 +15,7 @@ import { StepSecurity } from './steps/step-security'
 import { StepReview } from './steps/step-review'
 import { DEFAULT_CONFIG, TOTAL_STEPS } from './setup-types'
 import type { SetupConfig, LlmProvider, EmbeddingProvider } from './setup-types'
+import { API_BASE } from '@/lib/api'
 
 interface SetupWizardProps {
   locale: string
@@ -26,6 +27,35 @@ type ApplyStatus = 'idle' | 'writing' | 'done' | 'error'
  * Main setup wizard orchestrator.
  * Manages step navigation, state, validation, and API calls.
  */
+/** Map camelCase setup config to snake_case for the backend API. */
+function toSetupPayload(config: SetupConfig): Record<string, unknown> {
+  return {
+    llm_provider: config.llmProvider,
+    llm_model: '',
+    embedding_provider: config.embeddingProvider,
+    embedding_model: config.embeddingModel,
+    embedding_dimensions: config.embeddingDimensions,
+    planner_model: config.plannerModel,
+    executor_model: config.executorModel,
+    quality_model: config.qualityModel,
+    tutor_model: config.tutorModel,
+    anthropic_api_key: config.llmProvider === 'anthropic' ? config.llmApiKey : '',
+    openai_api_key: config.llmProvider === 'openai' ? config.llmApiKey : '',
+    google_api_key: config.llmProvider === 'gemini' ? config.llmApiKey : '',
+    openrouter_api_key: config.llmProvider === 'openrouter' ? config.llmApiKey : '',
+    db_url: config.databaseUrl,
+    redis_url: config.redisUrl,
+    api_host_port: config.apiPort,
+    frontend_host_port: config.frontendPort,
+    jwt_secret: config.jwtSecret,
+    cors_origins: config.corsOrigins,
+    elevenlabs_api_key: config.elevenlabsKey,
+    locale: config.language,
+    dev_mode: false,
+    demo_mode: false,
+  }
+}
+
 export function SetupWizard({ locale }: SetupWizardProps) {
   const t = useTranslations('setup')
   const prefersReducedMotion = useReducedMotion()
@@ -100,11 +130,10 @@ export function SetupWizard({ locale }: SetupWizardProps) {
     setApplying(true)
     setApplyStatus('writing')
     try {
-      const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8011'
-      const res = await fetch(`${apiBase}/api/v1/setup/apply`, {
+      const res = await fetch(`${API_BASE}/setup/apply`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config),
+        headers: { 'Content-Type': 'application/json', 'X-Setup-Token': '' },
+        body: JSON.stringify(toSetupPayload(config)),
       })
       if (res.ok) {
         setApplyStatus('done')

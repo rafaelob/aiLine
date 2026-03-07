@@ -24,6 +24,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
 
+from ailine_agents.resilience import IdempotencyGuard
+
 from ...app.authz import require_authenticated
 from ...shared.review_store import get_review_store
 from ...shared.sanitize import sanitize_prompt
@@ -37,6 +39,9 @@ router = APIRouter()
 
 # Heartbeat interval to keep the connection alive (seconds).
 _HEARTBEAT_INTERVAL_S = 15.0
+
+# Idempotency guard -- prevent duplicate concurrent runs with the same run_id.
+_idempotency_guard = IdempotencyGuard(ttl_seconds=300.0, max_size=1000)
 
 
 class PlanStreamIn(BaseModel):
@@ -67,15 +72,18 @@ class PlanStreamIn(BaseModel):
 async def _heartbeat_loop(
     emitter: SSEEventEmitter,
     queue: asyncio.Queue[dict[str, str] | None],
+    done: asyncio.Event,
     interval: float = _HEARTBEAT_INTERVAL_S,
 ) -> None:
     """Push heartbeat events into the queue at a fixed interval.
 
-    Stops when ``None`` is placed in the queue (sentinel).
+    Stops when the ``done`` event is set or the task is cancelled.
     """
     try:
-        while True:
+        while not done.is_set():
             await asyncio.sleep(interval)
+            if done.is_set():
+                return
             event = emitter.heartbeat()
             await queue.put({"data": event.to_sse_data()})
     except asyncio.CancelledError:
@@ -89,6 +97,8 @@ async def _run_pipeline(
     container: Any,
     emitter: SSEEventEmitter,
     queue: asyncio.Queue[dict[str, str] | None],
+    idem_key: str,
+    done: asyncio.Event,
 ) -> None:
     """Execute the LangGraph plan workflow, pushing SSE events to the queue."""
     trace_store = None
@@ -99,6 +109,7 @@ async def _run_pipeline(
         # Persist run metadata for the /runs resource model (F-237)
         await trace_store.update_run(
             body.run_id,
+            teacher_id=teacher_id,
             user_prompt=body.user_prompt[:500],
             subject=body.subject or "",
         )
@@ -177,6 +188,7 @@ async def _run_pipeline(
 
             await trace_store.update_run(
                 body.run_id,
+                teacher_id=teacher_id,
                 status="completed",
                 final_score=final_payload.get("score"),
                 scorecard=scorecard,
@@ -200,9 +212,11 @@ async def _run_pipeline(
 
         # Mark trace as failed (guard against trace_store init failure)
         if trace_store is not None:
-            await trace_store.update_run(body.run_id, status="failed")
+            await trace_store.update_run(body.run_id, teacher_id=teacher_id, status="failed")
 
     finally:
+        done.set()
+        _idempotency_guard.complete(idem_key, None)
         # Sentinel to signal the generator to stop
         await queue.put(None)
 
@@ -233,15 +247,21 @@ async def plans_generate_stream(
     # F-262: pass sanitised copy to pipeline; original body stays immutable
     safe_body = body.model_copy(update={"user_prompt": sanitized_prompt})
 
+    # Idempotency guard -- prevent duplicate runs
+    idem_key = f"{teacher_id}:{safe_body.run_id}"
+    if not _idempotency_guard.try_acquire(idem_key):
+        raise HTTPException(status_code=409, detail="A run with this ID is already in progress")
+
     emitter = SSEEventEmitter(safe_body.run_id)
     queue: asyncio.Queue[dict[str, str] | None] = asyncio.Queue(maxsize=500)
+    done = asyncio.Event()
 
     async def event_generator() -> AsyncIterator[dict[str, str]]:
         # Start the pipeline and heartbeat as background tasks
         pipeline_task = asyncio.create_task(
-            _run_pipeline(safe_body, teacher_id, settings, container, emitter, queue)
+            _run_pipeline(safe_body, teacher_id, settings, container, emitter, queue, idem_key, done)
         )
-        heartbeat_task = asyncio.create_task(_heartbeat_loop(emitter, queue))
+        heartbeat_task = asyncio.create_task(_heartbeat_loop(emitter, queue, done))
 
         try:
             while True:
