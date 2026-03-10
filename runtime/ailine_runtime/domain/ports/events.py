@@ -12,7 +12,7 @@ class EventBus(Protocol):
 
     async def publish(self, event_type: str, data: dict[str, Any]) -> None: ...
 
-    def subscribe(
+    async def subscribe(
         self,
         event_type: str,
         handler: Callable[[dict[str, Any]], Awaitable[None]],

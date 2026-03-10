@@ -18,9 +18,8 @@ import time
 from typing import Any
 
 import structlog
-from langgraph.types import RunnableConfig
-
 from ailine_runtime.api.streaming.events import SSEEventType
+from langgraph.types import RunnableConfig
 
 from ..skills.accessibility_policy import (
     ACCESSIBILITY_NEED_CATEGORIES,

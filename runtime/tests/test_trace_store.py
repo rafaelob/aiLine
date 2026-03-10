@@ -41,7 +41,7 @@ class TestTraceStore:
     @pytest.mark.asyncio
     async def test_get_nonexistent(self) -> None:
         store = TraceStore()
-        result = await store.get("nonexistent")
+        result = await store.get("nonexistent", teacher_id="test-teacher")
         assert result is None
 
     @pytest.mark.asyncio
@@ -51,7 +51,7 @@ class TestTraceStore:
         await store.get_or_create("run-1")
         node = NodeTrace(node="planner", status="success", time_ms=150.0)
         await store.append_node("run-1", node)
-        trace = await store.get("run-1")
+        trace = await store.get("run-1", teacher_id="")
         assert trace is not None
         assert len(trace.nodes) == 1
         assert trace.nodes[0].node == "planner"
@@ -63,7 +63,7 @@ class TestTraceStore:
         store = TraceStore()
         node = NodeTrace(node="planner", status="success", time_ms=100.0)
         await store.append_node("ghost-run", node)
-        trace = await store.get("ghost-run")
+        trace = await store.get("ghost-run", teacher_id="")
         assert trace is None
 
     @pytest.mark.asyncio
@@ -83,7 +83,7 @@ class TestTraceStore:
         await store.append_node(
             "run-1", NodeTrace(node="executor", status="success", time_ms=200.0)
         )
-        trace = await store.get("run-1")
+        trace = await store.get("run-1", teacher_id="")
         assert trace is not None
         assert len(trace.nodes) == 3
         assert [n.node for n in trace.nodes] == ["planner", "validate", "executor"]
@@ -95,7 +95,7 @@ class TestTraceStore:
         await store.update_run(
             "run-1", status="completed", total_time_ms=500.0, final_score=87
         )
-        trace = await store.get("run-1")
+        trace = await store.get("run-1", teacher_id="")
         assert trace is not None
         assert trace.status == "completed"
         assert trace.total_time_ms == 500.0
@@ -106,7 +106,7 @@ class TestTraceStore:
         """F-252: update_run on non-existent run_id does NOT create a trace."""
         store = TraceStore()
         await store.update_run("ghost-run", status="completed")
-        trace = await store.get("ghost-run")
+        trace = await store.get("ghost-run", teacher_id="")
         assert trace is None
 
     @pytest.mark.asyncio
@@ -125,15 +125,15 @@ class TestTraceStore:
         await store.get_or_create("run-2")
         await store.get_or_create("run-3")
         await store.get_or_create("run-4")  # should evict run-1
-        assert await store.get("run-1") is None
-        assert await store.get("run-4") is not None
+        assert await store.get("run-1", teacher_id="") is None
+        assert await store.get("run-4", teacher_id="") is not None
 
     @pytest.mark.asyncio
     async def test_ttl_eviction(self) -> None:
         store = TraceStore(ttl_seconds=0)  # Immediate expiry
         await store.get_or_create("run-1")
         # Force eviction by accessing
-        result = await store.get("run-1")
+        result = await store.get("run-1", teacher_id="")
         assert result is None
 
     @pytest.mark.asyncio
@@ -156,7 +156,7 @@ class TestTraceStore:
             route_rationale=rationale,
         )
         await store.append_node("run-1", node)
-        trace = await store.get("run-1")
+        trace = await store.get("run-1", teacher_id="")
         assert trace is not None
         assert trace.nodes[0].route_rationale is not None
         assert trace.nodes[0].route_rationale.tier == "primary"

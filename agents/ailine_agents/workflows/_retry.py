@@ -55,7 +55,7 @@ def _is_transient(exc: BaseException) -> bool:
     return exc.__cause__ is not None and _is_transient(exc.__cause__)
 
 
-async def with_retry(
+async def with_retry[T](
     fn: Callable[[], Awaitable[T]],
     *,
     max_attempts: int = 3,

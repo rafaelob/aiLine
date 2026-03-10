@@ -427,7 +427,7 @@ def _sanitize_user_message(message: str) -> str:
         return message
     sanitized = message
     # Strip known injection markers (case-insensitive)
-    _INJECTION_PATTERNS = [
+    _injection_patterns = [
         "ignore previous instructions",
         "ignore all instructions",
         "system:",
@@ -439,7 +439,7 @@ def _sanitize_user_message(message: str) -> str:
         "override:",
     ]
     lower = sanitized.lower()
-    for pattern in _INJECTION_PATTERNS:
+    for pattern in _injection_patterns:
         if pattern in lower:
             # Replace the injection pattern with a neutralized version
             idx = lower.find(pattern)

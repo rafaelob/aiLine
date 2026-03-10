@@ -324,7 +324,7 @@ class TestComposeSkillsFragmentEdgeCases:
 
         from collections.abc import Generator
 
-        def gen() -> Generator[ActivatedSkill, None, None]:
+        def gen() -> Generator[ActivatedSkill]:
             yield _make_skill(name="gen-skill")
 
         result = compose_skills_fragment(gen(), token_budget=5000)  # type: ignore[arg-type]

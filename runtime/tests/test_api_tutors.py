@@ -135,7 +135,8 @@ async def test_create_session_tutor_not_found(
 # ---------------------------------------------------------------------------
 
 
-async def test_tutor_chat(client: AsyncClient, tmp_local_store: Path) -> None:
+async def test_tutor_chat(client: AsyncClient, tmp_local_store: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "dummy")
     # Create tutor
     create_resp = await client.post("/tutors", json=_tutor_payload())
     tutor_id = create_resp.json()["tutor_id"]

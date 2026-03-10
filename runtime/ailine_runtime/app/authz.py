@@ -192,11 +192,11 @@ async def check_student_access(
             return True
 
     if role == UserRole.PARENT:
-        stmt = select(ParentStudentRow).where(
+        stmt_parent = select(ParentStudentRow).where(
             ParentStudentRow.parent_id == user_id,
             ParentStudentRow.student_id == student_id,
         )
-        result = await session.execute(stmt)
+        result = await session.execute(stmt_parent)
         if result.scalar_one_or_none() is not None:
             return True
 

@@ -157,7 +157,9 @@ describe('fetchEventSource', () => {
   })
 
   it('calls onerror when stream read throws', async () => {
-    const onerror = vi.fn()
+    const onerror = vi.fn().mockImplementation(() => {
+      throw new Error('stop retry');
+    })
     const body = new ReadableStream({
       pull() {
         throw new Error('stream broken')
@@ -165,7 +167,7 @@ describe('fetchEventSource', () => {
     })
     vi.stubGlobal('fetch', mockFetch(200, body))
 
-    await fetchEventSource('/test', { onerror })
+    await expect(fetchEventSource('/test', { onerror })).rejects.toThrow('stop retry')
 
     expect(onerror).toHaveBeenCalledOnce()
     expect(onerror.mock.calls[0][0]).toBeInstanceOf(Error)
