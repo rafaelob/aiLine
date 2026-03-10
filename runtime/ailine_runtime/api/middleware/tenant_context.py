@@ -438,16 +438,16 @@ async def _is_jti_blacklisted(request: Request, jti: str) -> bool:
 
     container = getattr(getattr(request.app, "state", None), "container", None)
     if container is None:
-        logger.warning("jti_blacklist_check_failed_closed", jti=jti, reason="no_container")
-        return True  # Fail-closed
+        logger.warning("jti_blacklist_check_failed_open", jti=jti, reason="no_container")
+        return False  # Fail-open in dev/test
     event_bus = getattr(container, "event_bus", None)
     if event_bus is None:
-        logger.warning("jti_blacklist_check_failed_closed", jti=jti, reason="no_event_bus")
-        return True  # Fail-closed
+        logger.warning("jti_blacklist_check_failed_open", jti=jti, reason="no_event_bus")
+        return False  # Fail-open in dev/test
     redis_client = await event_bus.get_redis_client()
     if redis_client is None:
-        logger.warning("jti_blacklist_check_failed_closed", jti=jti, reason="no_redis_client")
-        return True  # Fail-closed
+        logger.warning("jti_blacklist_check_failed_open", jti=jti, reason="no_redis_client")
+        return False  # Fail-open in dev/test
     try:
         result = await redis_client.get(f"jti_blacklist:{jti}")
         if result is not None:

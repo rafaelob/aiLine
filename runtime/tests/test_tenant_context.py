@@ -81,7 +81,8 @@ async def client(app) -> AsyncGenerator[AsyncClient]:
         yield c
 
 
-_DEV_SECRET = "dev-secret-not-for-production-use-32bytes!"
+from ailine_runtime.shared.jwt_dev_secret import DEV_JWT_SECRET
+_DEV_SECRET = DEV_JWT_SECRET
 
 
 def _make_jwt(payload: dict) -> str:

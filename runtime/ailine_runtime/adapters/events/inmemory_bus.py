@@ -24,7 +24,7 @@ class InMemoryEventBus:
             except Exception:
                 _log.exception("event_handler_failed", event_type=event_type)
 
-    def subscribe(
+    async def subscribe(
         self, event_type: str, handler: Callable[[dict[str, Any]], Awaitable[None]]
     ) -> None:
         self._handlers[event_type].append(handler)

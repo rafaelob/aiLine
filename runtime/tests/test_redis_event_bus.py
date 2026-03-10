@@ -33,7 +33,10 @@ class TestRedisEventBus:
     async def test_publish_calls_local_handlers(self):
         """Local handlers receive events even with Redis backing."""
         mock_redis_mod = MagicMock()
-        mock_redis_instance = AsyncMock()
+        mock_redis_instance = MagicMock()
+        mock_pubsub = AsyncMock()
+        mock_redis_instance.pubsub.return_value = mock_pubsub
+        mock_redis_instance.publish = AsyncMock()
         mock_redis_mod.Redis.from_url.return_value = mock_redis_instance
 
         with patch.dict(
@@ -60,7 +63,10 @@ class TestRedisEventBus:
     async def test_publish_no_subscribers(self):
         """Publishing to an event with no subscribers should not raise."""
         mock_redis_mod = MagicMock()
-        mock_redis_instance = AsyncMock()
+        mock_redis_instance = MagicMock()
+        mock_pubsub = AsyncMock()
+        mock_redis_instance.pubsub.return_value = mock_pubsub
+        mock_redis_instance.publish = AsyncMock()
         mock_redis_mod.Redis.from_url.return_value = mock_redis_instance
 
         with patch.dict(
@@ -75,7 +81,10 @@ class TestRedisEventBus:
     async def test_handler_error_does_not_propagate(self):
         """If a handler raises, other handlers still run."""
         mock_redis_mod = MagicMock()
-        mock_redis_instance = AsyncMock()
+        mock_redis_instance = MagicMock()
+        mock_pubsub = AsyncMock()
+        mock_redis_instance.pubsub.return_value = mock_pubsub
+        mock_redis_instance.publish = AsyncMock()
         mock_redis_mod.Redis.from_url.return_value = mock_redis_instance
 
         with patch.dict(
@@ -109,7 +118,10 @@ class TestEventBusSelection:
     def test_custom_redis_url_attempts_redis_bus(self):
         """A non-default Redis URL triggers RedisEventBus creation."""
         mock_redis_mod = MagicMock()
-        mock_redis_instance = AsyncMock()
+        mock_redis_instance = MagicMock()
+        mock_pubsub = AsyncMock()
+        mock_redis_instance.pubsub.return_value = mock_pubsub
+        mock_redis_instance.publish = AsyncMock()
         mock_redis_mod.Redis.from_url.return_value = mock_redis_instance
 
         settings = Settings(redis={"url": "redis://prod-redis:6379/1"})

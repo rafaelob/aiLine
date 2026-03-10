@@ -66,11 +66,14 @@ class CircuitBreaker:
 
     def _maybe_transition_to_half_open(self) -> None:
         """Transition from open to half_open if cooldown expired (must hold _lock)."""
-        if self._state == "open" and self._circuit_open_until is not None:
-            if time.monotonic() >= self._circuit_open_until:
-                self._state = "half_open"
-                self._probe_in_flight = False
-                log.info("circuit_breaker.half_open", failure_count=self._failure_count)
+        if (
+            self._state == "open"
+            and self._circuit_open_until is not None
+            and time.monotonic() >= self._circuit_open_until
+        ):
+            self._state = "half_open"
+            self._probe_in_flight = False
+            log.info("circuit_breaker.half_open", failure_count=self._failure_count)
 
     def check(self) -> bool:
         with self._lock:

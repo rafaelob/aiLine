@@ -21,7 +21,7 @@ class TestInMemoryEventBus:
         async def handler(data: dict) -> None:
             received.append(data)
 
-        bus.subscribe("test.event", handler)
+        await bus.subscribe("test.event", handler)
         await bus.publish("test.event", {"key": "value"})
 
         assert len(received) == 1
@@ -44,8 +44,8 @@ class TestInMemoryEventBus:
         async def handler_b(data: dict) -> None:
             calls.append("b")
 
-        bus.subscribe("multi", handler_a)
-        bus.subscribe("multi", handler_b)
+        await bus.subscribe("multi", handler_a)
+        await bus.subscribe("multi", handler_b)
         await bus.publish("multi", {})
 
         assert calls == ["a", "b"]
@@ -61,8 +61,8 @@ class TestInMemoryEventBus:
         async def good_handler(data: dict) -> None:
             calls.append("ok")
 
-        bus.subscribe("err", bad_handler)
-        bus.subscribe("err", good_handler)
+        await bus.subscribe("err", bad_handler)
+        await bus.subscribe("err", good_handler)
         await bus.publish("err", {})
 
         # The good handler should still have been called
@@ -80,8 +80,8 @@ class TestInMemoryEventBus:
         async def handler_b(data: dict) -> None:
             received_b.append(data)
 
-        bus.subscribe("type_a", handler_a)
-        bus.subscribe("type_b", handler_b)
+        await bus.subscribe("type_a", handler_a)
+        await bus.subscribe("type_b", handler_b)
 
         await bus.publish("type_a", {"src": "a"})
         await bus.publish("type_b", {"src": "b"})
