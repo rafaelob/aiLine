@@ -136,6 +136,7 @@ class TestJWTForgedSignature:
 
     def test_wrong_secret_rejected(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "real-key")
         # Sign with a different secret
         token = _make_signed_jwt(_valid_payload(), secret="wrong-secret-entirely")
         claims, error = _extract_teacher_id_from_jwt(token)
@@ -144,6 +145,7 @@ class TestJWTForgedSignature:
 
     def test_tampered_payload_rejected(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "real-key")
         token = _make_signed_jwt(_valid_payload())
         # Tamper with the payload by modifying the middle segment
         parts = token.split(".")
@@ -169,6 +171,7 @@ class TestJWTExpiredToken:
 
     def test_expired_token_rejected(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "real-key")
         payload = _valid_payload(exp=datetime.now(UTC) - timedelta(hours=1))
         token = _make_signed_jwt(payload)
         claims, error = _extract_teacher_id_from_jwt(token)
@@ -181,6 +184,7 @@ class TestJWTNotYetValid:
 
     def test_future_nbf_rejected(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "real-key")
         payload = _valid_payload(nbf=datetime.now(UTC) + timedelta(hours=1))
         token = _make_signed_jwt(payload)
         claims, error = _extract_teacher_id_from_jwt(token)
@@ -193,6 +197,7 @@ class TestJWTWrongAudience:
 
     def test_wrong_audience_rejected(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "real-key")
         monkeypatch.setenv("AILINE_JWT_AUDIENCE", "ailine-api")
         payload = _valid_payload(aud="wrong-audience")
         token = _make_signed_jwt(payload)
@@ -202,6 +207,7 @@ class TestJWTWrongAudience:
 
     def test_correct_audience_accepted(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "real-key")
         monkeypatch.setenv("AILINE_JWT_AUDIENCE", "ailine-api")
         payload = _valid_payload(aud="ailine-api")
         token = _make_signed_jwt(payload)
@@ -215,6 +221,7 @@ class TestJWTWrongIssuer:
 
     def test_wrong_issuer_rejected(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "real-key")
         monkeypatch.setenv("AILINE_JWT_ISSUER", "ailine-auth")
         payload = _valid_payload(iss="evil-issuer")
         token = _make_signed_jwt(payload)
@@ -224,6 +231,7 @@ class TestJWTWrongIssuer:
 
     def test_correct_issuer_accepted(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "real-key")
         monkeypatch.setenv("AILINE_JWT_ISSUER", "ailine-auth")
         payload = _valid_payload(iss="ailine-auth")
         token = _make_signed_jwt(payload)
@@ -238,6 +246,7 @@ class TestJWTAlgorithmNone:
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "real-key")
         token = _make_unsigned_jwt(_valid_payload())
         claims, _error = _extract_teacher_id_from_jwt(token)
         assert claims.teacher_id is None
@@ -265,6 +274,7 @@ class TestJWTAlgorithmConfusion:
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "real-key")
         monkeypatch.setenv("AILINE_JWT_ALGORITHMS", "HS256")
         # Try to use RS256 algorithm in the header (algorithm confusion)
         # The verifier is configured for HS256 only, so RS256 must be rejected
@@ -292,6 +302,7 @@ class TestJWTMissingSub:
 
     def test_missing_sub_rejected(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "real-key")
         payload = {
             "exp": datetime.now(UTC) + timedelta(hours=1),
             "iat": datetime.now(UTC),
@@ -304,6 +315,7 @@ class TestJWTMissingSub:
 
     def test_empty_sub_rejected(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "real-key")
         payload = _valid_payload(sub="")
         token = _make_signed_jwt(payload)
         claims, _error = _extract_teacher_id_from_jwt(token)
@@ -319,6 +331,7 @@ class TestJWTReplayAttack:
         """A valid token should be accepted on each request (stateless JWT).
         Replay protection requires server-side jti tracking (out of scope for MVP)."""
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "real-key")
         token = _make_signed_jwt(_valid_payload())
         # Verify it works twice (stateless)
         c1, _ = _extract_teacher_id_from_jwt(token)
@@ -328,6 +341,7 @@ class TestJWTReplayAttack:
     def test_expired_replay_fails(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Even if a token was once valid, it should fail after expiry."""
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "real-key")
         payload = _valid_payload(exp=datetime.now(UTC) - timedelta(seconds=1))
         token = _make_signed_jwt(payload)
         claims, error = _extract_teacher_id_from_jwt(token)
@@ -342,6 +356,7 @@ class TestJWTTenantImpersonation:
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "real-key")
         payload = _valid_payload(sub="teacher-real")
         token = _make_signed_jwt(payload)
         claims, _ = _extract_teacher_id_from_jwt(token)
@@ -352,6 +367,7 @@ class TestJWTTenantImpersonation:
     ) -> None:
         """Extra claims like 'teacher_id' in payload should be ignored."""
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "real-key")
         payload = _valid_payload(sub="teacher-real", teacher_id="teacher-attacker")
         token = _make_signed_jwt(payload)
         claims, _ = _extract_teacher_id_from_jwt(token)
@@ -469,6 +485,7 @@ class TestJWTDevModeFallback:
         """When secret is set, dev mode should NOT bypass signature verification."""
         monkeypatch.setenv("AILINE_DEV_MODE", "true")
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "real-key")
         # Create unsigned JWT
         token = _make_unsigned_jwt({"sub": "teacher-attacker"})
         claims, _error = _extract_teacher_id_from_jwt(token)
@@ -743,6 +760,7 @@ class TestEnvironmentValidation:
 
     def test_production_rejects_sqlite(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "real-key")
         s = Settings(
             anthropic_api_key="real-key",
             openai_api_key="",
@@ -759,6 +777,7 @@ class TestEnvironmentValidation:
 
     def test_production_requires_llm_key(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "real-key")
         # Clear all possible API key env vars that pydantic-settings may pick up
         for key in (
             "ANTHROPIC_API_KEY",
@@ -806,6 +825,7 @@ class TestEnvironmentValidation:
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "real-key")
         s = Settings(
             anthropic_api_key="real-key",
             openai_api_key="",
@@ -848,6 +868,7 @@ class TestJWTMiddlewareIntegration:
         self, client: AsyncClient, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "real-key")
         token = _make_signed_jwt(_valid_payload(sub="teacher-e2e"))
         resp = await client.get(
             "/materials",
@@ -860,6 +881,7 @@ class TestJWTMiddlewareIntegration:
         self, client: AsyncClient, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.setenv("AILINE_JWT_SECRET", HMAC_SECRET)
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "real-key")
         payload = _valid_payload(exp=datetime.now(UTC) - timedelta(hours=1))
         token = _make_signed_jwt(payload)
         # Expired JWT should result in no tenant context -> endpoint gets 401

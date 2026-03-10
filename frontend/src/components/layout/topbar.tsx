@@ -259,7 +259,7 @@ function SystemStatusButton() {
 
   useEffect(() => {
     if (healthCache && Date.now() - healthCache.ts < HEALTH_TTL_MS) {
-      setStatus(healthCache.status)
+      setTimeout(() => setStatus(healthCache!.status), 0)
       return
     }
     fetch(`${API_BASE}/health/ready`)
