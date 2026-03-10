@@ -31,7 +31,8 @@ class TestHeartbeatLoop:
         queue: asyncio.Queue[dict[str, str] | None] = asyncio.Queue()
 
         # Run heartbeat with a very short interval
-        task = asyncio.create_task(_heartbeat_loop(emitter, queue, interval=0.05))
+        done_event = asyncio.Event()
+        task = asyncio.create_task(_heartbeat_loop(emitter, queue, done_event, interval=0.05))
 
         # Wait for at least one heartbeat
         await asyncio.sleep(0.15)
@@ -59,7 +60,8 @@ class TestHeartbeatLoop:
         emitter = SSEEventEmitter("test-run")
         queue: asyncio.Queue[dict[str, str] | None] = asyncio.Queue()
 
-        task = asyncio.create_task(_heartbeat_loop(emitter, queue, interval=0.5))
+        done_event = asyncio.Event()
+        task = asyncio.create_task(_heartbeat_loop(emitter, queue, done_event, interval=0.5))
         await asyncio.sleep(0.05)
         task.cancel()
         with contextlib.suppress(asyncio.CancelledError):
@@ -94,8 +96,9 @@ class TestRunPipelineError:
             "ailine_runtime.api.routers.plans_stream.AgentDepsFactory",
             mock_factory,
         ):
+            done_event = asyncio.Event()
             await _run_pipeline(
-                body, "teacher-001", settings, container, emitter, queue
+                body, "teacher-001", settings, container, emitter, queue, "idem_key", done_event
             )
 
         # Collect all events from queue

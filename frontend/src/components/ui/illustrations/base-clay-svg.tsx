@@ -37,9 +37,9 @@ export const BaseClaySvg = React.forwardRef<SVGSVGElement, BaseClaySvgProps>(
     },
     ref
   ) => {
-    const titleId = title ? React.useId() : undefined
-    const descId = desc ? React.useId() : undefined
-    const ariaLabelledBy = [titleId, descId].filter(Boolean).join(" ") || undefined
+    const titleId = React.useId(); const finalTitleId = title ? titleId : undefined
+    const descId = React.useId(); const finalDescId = desc ? descId : undefined
+    const ariaLabelledBy = [finalTitleId, finalDescId].filter(Boolean).join(" ") || undefined
 
     const width = sizeMap[size] || sizeMap.hero
 
@@ -57,8 +57,8 @@ export const BaseClaySvg = React.forwardRef<SVGSVGElement, BaseClaySvgProps>(
         aria-labelledby={!decorative ? ariaLabelledBy : undefined}
         {...props}
       >
-        {title && <title id={titleId}>{title}</title>}
-        {desc && <desc id={descId}>{desc}</desc>}
+        {title && <title id={finalTitleId}>{title}</title>}
+        {desc && <desc id={finalDescId}>{desc}</desc>}
 
         <defs>
           {/* Soft Clay Grain Texture + 3D Lighting */}

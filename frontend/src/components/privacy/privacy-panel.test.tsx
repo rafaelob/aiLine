@@ -88,7 +88,7 @@ describe('PrivacyPanel', () => {
 
     await waitFor(() => {
       expect(fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/api/v1/privacy/export'),
+        expect.stringContaining('/api/privacy/export'),
         expect.objectContaining({ method: 'POST' })
       )
     })

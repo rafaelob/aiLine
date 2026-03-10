@@ -25,6 +25,7 @@ from ailine_runtime.shared.config import (
     RedisConfig,
     Settings,
 )
+from ailine_runtime.shared.jwt_dev_secret import DEV_JWT_SECRET
 from ailine_runtime.shared.tenant import (
     TenantContext,
     clear_tenant_id,
@@ -39,6 +40,8 @@ from ailine_runtime.shared.tenant import (
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
+_DEV_SECRET = DEV_JWT_SECRET
 
 @pytest.fixture(autouse=True)
 def _enable_dev_mode(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -81,7 +84,7 @@ async def client(app) -> AsyncGenerator[AsyncClient]:
         yield c
 
 
-_DEV_SECRET = "dev-secret-not-for-production-use-32bytes!"
+
 
 
 def _make_jwt(payload: dict) -> str:

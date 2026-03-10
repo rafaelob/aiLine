@@ -24,6 +24,7 @@ from ailine_runtime.shared.config import (
     RedisConfig,
     Settings,
 )
+from ailine_runtime.shared.jwt_dev_secret import DEV_JWT_SECRET
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -88,7 +89,6 @@ def _get_jwt_secret() -> str:
     secret = os.getenv("AILINE_JWT_SECRET", "")
     if secret:
         return secret
-    from ailine_runtime.shared.jwt_dev_secret import DEV_JWT_SECRET
 
     return DEV_JWT_SECRET
 

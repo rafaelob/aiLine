@@ -19,12 +19,11 @@ from typing import Any
 
 import structlog
 from ailine_agents import AgentDepsFactory
+from ailine_agents.resilience import IdempotencyGuard
 from ailine_agents.workflows.plan_workflow import build_plan_workflow
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
-
-from ailine_agents.resilience import IdempotencyGuard
 
 from ...app.authz import require_authenticated
 from ...shared.review_store import get_review_store
