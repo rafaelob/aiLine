@@ -40,19 +40,19 @@ class TraceStore:
         self._lock = asyncio.Lock()
 
     async def get(
-        self, run_id: str, *, teacher_id: str | None = None
+        self, run_id: str, *, teacher_id: str
     ) -> RunTrace | None:
         """Get a trace by run_id, or None if not found / expired.
 
-        When *teacher_id* is provided, only returns the trace if it
-        belongs to the given teacher (tenant isolation).
+        Only returns the trace if it belongs to the given teacher
+        (tenant isolation). *teacher_id* is required.
         """
         async with self._lock:
             self._evict_expired()
             trace = self._traces.get(run_id)
             if trace is None:
                 return None
-            if teacher_id is not None and trace.teacher_id != teacher_id:
+            if trace.teacher_id != teacher_id:
                 return None
             return trace
 
@@ -76,13 +76,18 @@ class TraceStore:
                 self._traces[run_id].teacher_id = teacher_id
             return self._traces[run_id]
 
-    async def append_node(self, run_id: str, node: NodeTrace) -> None:
+    async def append_node(
+        self, run_id: str, node: NodeTrace, *, teacher_id: str = ""
+    ) -> None:
         """Append a node trace to a run.
 
         F-252: Does NOT auto-create a RunTrace.  If the run_id does not
         exist (i.e. was never initialised via ``get_or_create``), the
         call is silently ignored with a warning log.  This prevents
         tenant-integrity bypass through implicit trace creation.
+
+        When *teacher_id* is provided, validates it matches the stored
+        trace (tenant isolation).
         """
         async with self._lock:
             if run_id not in self._traces:
@@ -91,14 +96,28 @@ class TraceStore:
                     run_id,
                 )
                 return
-            self._traces[run_id].nodes.append(node)
+            trace = self._traces[run_id]
+            if teacher_id and trace.teacher_id and trace.teacher_id != teacher_id:
+                logger.warning(
+                    "append_node tenant mismatch run_id=%s expected=%s got=%s — ignored",
+                    run_id,
+                    trace.teacher_id,
+                    teacher_id,
+                )
+                return
+            trace.nodes.append(node)
             self._timestamps[run_id] = time.monotonic()
 
-    async def update_run(self, run_id: str, **kwargs: Any) -> None:
+    async def update_run(
+        self, run_id: str, *, teacher_id: str = "", **kwargs: Any
+    ) -> None:
         """Update top-level run fields (status, total_time_ms, etc.).
 
         F-252: Does NOT auto-create a RunTrace.  If the run_id does not
         exist, the call is silently ignored with a warning log.
+
+        When *teacher_id* is provided, validates it matches the stored
+        trace (tenant isolation).
         """
         async with self._lock:
             if run_id not in self._traces:
@@ -108,6 +127,14 @@ class TraceStore:
                 )
                 return
             trace = self._traces[run_id]
+            if teacher_id and trace.teacher_id and trace.teacher_id != teacher_id:
+                logger.warning(
+                    "update_run tenant mismatch run_id=%s expected=%s got=%s — ignored",
+                    run_id,
+                    trace.teacher_id,
+                    teacher_id,
+                )
+                return
             for key, value in kwargs.items():
                 if hasattr(trace, key):
                     setattr(trace, key, value)

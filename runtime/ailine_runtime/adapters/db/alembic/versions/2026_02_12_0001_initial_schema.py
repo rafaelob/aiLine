@@ -66,6 +66,9 @@ def upgrade() -> None:
         ),
     )
 
+    # UniqueConstraint needed by composite FK on lessons (PG16 requires it)
+    op.create_unique_constraint("uq_courses_teacher_id", "courses", ["teacher_id", "id"])
+
     # --- lessons (composite FK for tenant safety, ADR-053) -----------------
     op.create_table(
         "lessons",
@@ -267,5 +270,6 @@ def downgrade() -> None:
     op.drop_table("chunks")
     op.drop_table("materials")
     op.drop_table("lessons")
+    op.drop_constraint("uq_courses_teacher_id", "courses", type_="unique")
     op.drop_table("courses")
     op.drop_table("teachers")

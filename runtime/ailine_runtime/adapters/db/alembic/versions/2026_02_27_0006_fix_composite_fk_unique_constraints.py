@@ -24,7 +24,7 @@ depends_on: str | Sequence[str] | None = None
 
 # Tables that need UniqueConstraint("teacher_id", "id") for composite FK targets
 _TABLES = [
-    ("courses", "uq_courses_teacher_id"),
+    # ("courses", "uq_courses_teacher_id") — moved to 0001 (before composite FK)
     ("lessons", "uq_lessons_teacher_id"),
     ("materials", "uq_materials_teacher_id"),
     ("tutor_agents", "uq_tutor_agents_teacher_id"),

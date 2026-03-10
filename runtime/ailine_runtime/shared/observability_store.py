@@ -61,7 +61,7 @@ class ObservabilityStore:
             "last_success": None,
         }
         self._circuit_breaker_state: str = "closed"
-        self._standards_evidence: dict[str, dict[str, Any]] = {}
+        self._standards_evidence: dict[tuple[str, str], dict[str, Any]] = {}
         self._cost_model: str = "default"
 
     # --- SSE event tracking ---
@@ -163,27 +163,45 @@ class ObservabilityStore:
         standards: list[dict[str, Any]],
         bloom_level: str | None = None,
         alignment_explanation: str = "",
+        *,
+        teacher_id: str = "",
     ) -> None:
-        """Record standards alignment evidence for a run."""
+        """Record standards alignment evidence for a run.
+
+        When *teacher_id* is provided, the evidence is keyed by
+        ``(teacher_id, run_id)`` for tenant isolation.
+        """
+        key = (teacher_id, run_id) if teacher_id else ("", run_id)
         with self._lock:
-            self._standards_evidence[run_id] = {
+            self._standards_evidence[key] = {
                 "standards": standards,
                 "bloom_level": bloom_level,
                 "alignment_explanation": alignment_explanation,
                 "recorded_at": time.time(),
             }
 
-    def get_standards_evidence(self, run_id: str) -> dict[str, Any]:
-        """Return standards evidence for a run, or empty defaults."""
+    def get_standards_evidence(
+        self, run_id: str, *, teacher_id: str = ""
+    ) -> dict[str, Any]:
+        """Return standards evidence for a run, or empty defaults.
+
+        When *teacher_id* is provided, looks up by ``(teacher_id, run_id)``
+        for tenant isolation. Falls back to ``("", run_id)`` for
+        backward compatibility with evidence recorded without a tenant.
+        """
+        key = (teacher_id, run_id) if teacher_id else ("", run_id)
         with self._lock:
-            return self._standards_evidence.get(
-                run_id,
-                {
+            result = self._standards_evidence.get(key)
+            if result is None and teacher_id:
+                # Fallback: check legacy key without teacher_id
+                result = self._standards_evidence.get(("", run_id))
+            if result is None:
+                return {
                     "standards": [],
                     "bloom_level": None,
                     "alignment_explanation": "Standards evidence not yet captured for this run.",
-                },
-            )
+                }
+            return result
 
 
 # Module-level singleton

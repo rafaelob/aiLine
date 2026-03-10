@@ -33,8 +33,8 @@ export function TutorChat() {
     const el = scrollRef.current
     if (!el) return
     if (userScrolledUp.current) return
-    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
-  }, [messages])
+    el.scrollTo({ top: el.scrollHeight, behavior: isStreaming ? 'auto' : 'smooth' })
+  }, [messages, isStreaming])
 
   const isEmpty = messages.length === 0
 
@@ -54,8 +54,6 @@ export function TutorChat() {
         className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth"
         role="log"
         aria-label={t('messages_label')}
-        aria-live="polite"
-        aria-relevant="additions"
       >
         {isEmpty && (
           <div className="flex flex-col items-center justify-center h-full text-center px-8">

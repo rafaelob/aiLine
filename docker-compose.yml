@@ -1,9 +1,40 @@
-# AiLine -- Docker Compose (full dev stack)
-# Services: API + Frontend + PostgreSQL 16/pgvector + Redis 7
-# Usage: docker compose up -d --build
+# AiLine -- Docker Compose (full stack)
+# Services: DB (Postgres 16 + pgvector) | Redis 7 | Migrations | API | Frontend
+# Usage:
+#   docker compose up -d --build        # Full stack (dev, with override)
+#   docker compose -f docker-compose.yml up -d --build  # Production-like
+#   docker compose ps                   # Health status
+#   docker compose logs -f api          # Follow API logs
 name: ailine
 
+# ---------------------------------------------------------------------------
+# Shared anchors (DRY)
+# ---------------------------------------------------------------------------
+x-logging-default: &logging-default
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-db-env: &db-env
+  AILINE_DB_URL: postgresql+asyncpg://${POSTGRES_USER:-ailine}:${POSTGRES_PASSWORD:-ailine_dev}@db:5432/${POSTGRES_DB:-ailine}
+
+x-redis-env: &redis-env
+  AILINE_REDIS_URL: redis://:${REDIS_PASSWORD:-ailine_redis_dev}@redis:6379/0
+
+x-api-build: &api-build
+  context: .
+  dockerfile: runtime/Dockerfile
+  args:
+    INSTALL_DEV: "true"
+
+# ---------------------------------------------------------------------------
+# Services
+# ---------------------------------------------------------------------------
 services:
+
+  # --- Data Layer -----------------------------------------------------------
+
   db:
     image: pgvector/pgvector:0.8.2-pg16
     environment:
@@ -23,11 +54,7 @@ services:
     restart: unless-stopped
     networks:
       - backend
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
+    logging: *logging-default
     deploy:
       resources:
         limits:
@@ -37,7 +64,11 @@ services:
     image: redis:7.4-alpine
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:-ailine_redis_dev}
-    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru --requirepass ${REDIS_PASSWORD:-ailine_redis_dev}
+    command: >-
+      redis-server
+      --maxmemory 128mb
+      --maxmemory-policy allkeys-lru
+      --requirepass ${REDIS_PASSWORD:-ailine_redis_dev}
     ports:
       - "127.0.0.1:${REDIS_HOST_PORT:-6311}:6379"
     healthcheck:
@@ -58,21 +89,42 @@ services:
         limits:
           memory: 256M
 
+  # --- Migrations (one-shot, runs before API) --------------------------------
+
+  migrations:
+    build: *api-build
+    command: >-
+      python -m alembic -c alembic.ini upgrade head
+    working_dir: /app
+    environment:
+      <<: *db-env
+    env_file:
+      - path: .env
+        required: false
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - backend
+    logging: *logging-default
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # --- Backend API -----------------------------------------------------------
+
   api:
-    build:
-      context: .
-      dockerfile: runtime/Dockerfile
-      args:
-        INSTALL_DEV: "true"
+    build: *api-build
     ports:
       - "${API_HOST_PORT:-8011}:8000"
     environment:
-      AILINE_DB_URL: postgresql+asyncpg://${POSTGRES_USER:-ailine}:${POSTGRES_PASSWORD:-ailine_dev}@db:5432/${POSTGRES_DB:-ailine}
-      AILINE_REDIS_URL: redis://:${REDIS_PASSWORD:-ailine_redis_dev}@redis:6379/0
+      <<: [*db-env, *redis-env]
       AILINE_LLM_PROVIDER: ${AILINE_LLM_PROVIDER:-anthropic}
       AILINE_CORS_ORIGINS: "http://localhost:3011,http://127.0.0.1:3011,http://localhost:3000,http://127.0.0.1:3000,http://frontend:3000"
       AILINE_DEV_MODE: "${AILINE_DEV_MODE:-false}"
-      AILINE_DEMO_MODE: "${AILINE_DEMO_MODE:-1}"
+      AILINE_DEMO_MODE: "${AILINE_DEMO_MODE:-0}"
       AILINE_JWT_SECRET: "${AILINE_JWT_SECRET:-}"
       AILINE_LOCAL_STORE: /app/.local_store
     env_file:
@@ -83,6 +135,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/health').raise_for_status()"]
       interval: 10s
@@ -103,6 +157,8 @@ services:
       resources:
         limits:
           memory: 1G
+
+  # --- Frontend (Next.js 16) ------------------------------------------------
 
   frontend:
     build:
@@ -126,16 +182,15 @@ services:
     restart: unless-stopped
     networks:
       - frontend
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
+    logging: *logging-default
     deploy:
       resources:
         limits:
           memory: 2G
 
+# ---------------------------------------------------------------------------
+# Volumes & Networks
+# ---------------------------------------------------------------------------
 volumes:
   pgdata:
 

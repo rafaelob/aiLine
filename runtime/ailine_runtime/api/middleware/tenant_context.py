@@ -413,30 +413,56 @@ def extract_claims_from_jwt(token: str) -> tuple[_JwtClaims, str | None]:
     return _extract_teacher_id_from_jwt(token)
 
 
+# In-memory LRU fallback cache for JTI blacklist when Redis is down
+_REVOCATION_CACHE: dict[str, float] = {}
+_REVOCATION_CACHE_MAX = 1000
+_REVOCATION_CACHE_TTL = 300.0  # 5 minutes
+
+
 async def _is_jti_blacklisted(request: Request, jti: str) -> bool:
     """Check if a JWT ID (jti) has been revoked via Redis blacklist.
 
-    Returns False when Redis is unavailable (fail-open for availability).
-    The blacklist key format is ``jti_blacklist:{jti}`` with a TTL matching
-    the token's remaining lifetime (set by POST /auth/logout).
+    Fail-closed: returns True (treat as blacklisted) when Redis is
+    unavailable, to prevent accepting potentially revoked tokens.
+    Uses an in-memory LRU cache as fallback for known-good JTIs.
     """
-    # F-258: Use public EventBus.get_redis_client() instead of private _redis
+    import time as _time
+
+    # Check in-memory cache first (known-good JTIs)
+    cached_ts = _REVOCATION_CACHE.get(jti)
+    if cached_ts is not None:
+        if _time.monotonic() - cached_ts < _REVOCATION_CACHE_TTL:
+            return False  # Recently verified as not blacklisted
+        else:
+            del _REVOCATION_CACHE[jti]
+
     container = getattr(getattr(request.app, "state", None), "container", None)
     if container is None:
-        return False
+        logger.warning("jti_blacklist_check_failed_closed", jti=jti, reason="no_container")
+        return True  # Fail-closed
     event_bus = getattr(container, "event_bus", None)
     if event_bus is None:
-        return False
+        logger.warning("jti_blacklist_check_failed_closed", jti=jti, reason="no_event_bus")
+        return True  # Fail-closed
     redis_client = await event_bus.get_redis_client()
     if redis_client is None:
-        return False
+        logger.warning("jti_blacklist_check_failed_closed", jti=jti, reason="no_redis_client")
+        return True  # Fail-closed
     try:
         result = await redis_client.get(f"jti_blacklist:{jti}")
-        return result is not None
-    except Exception:
-        # Fail-open: if Redis is down, allow the request through
-        logger.warning("jti_blacklist_check_failed", jti=jti)
+        if result is not None:
+            return True  # Token IS blacklisted
+
+        # Cache as known-good
+        if len(_REVOCATION_CACHE) >= _REVOCATION_CACHE_MAX:
+            # Evict oldest entry
+            oldest_key = min(_REVOCATION_CACHE, key=_REVOCATION_CACHE.get)  # type: ignore[arg-type]
+            del _REVOCATION_CACHE[oldest_key]
+        _REVOCATION_CACHE[jti] = _time.monotonic()
         return False
+    except Exception:
+        logger.warning("jti_blacklist_check_failed_closed", jti=jti, reason="redis_error")
+        return True  # Fail-closed on Redis error
 
 
 class TenantContextMiddleware(BaseHTTPMiddleware):

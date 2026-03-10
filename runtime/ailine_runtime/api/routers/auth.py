@@ -197,6 +197,16 @@ def _verify_password(password: str, stored_hash: str) -> bool:
     return hmac.compare_digest(new_hash, stored_hash)
 
 
+async def _hash_password_async(password: str, salt: bytes | None = None) -> str:
+    """Async wrapper for _hash_password -- offloads to threadpool."""
+    return await asyncio.to_thread(_hash_password, password, salt)
+
+
+async def _verify_password_async(password: str, stored_hash: str) -> bool:
+    """Async wrapper for _verify_password -- offloads to threadpool."""
+    return await asyncio.to_thread(_verify_password, password, stored_hash)
+
+
 def _create_jwt(
     user_id: str,
     role: str,
@@ -336,7 +346,7 @@ async def login(body: LoginRequest, request: Request) -> TokenResponse:
             avatar_url="",
             accessibility_profile="",
             is_active=True,
-            hashed_password=_hash_password(body.password),
+            hashed_password=await _hash_password_async(body.password),
         )
         await _user_repo.create(user)
         logger.info("auth.auto_created_user", user_id=user.id, role=validated_role)
@@ -344,7 +354,7 @@ async def login(body: LoginRequest, request: Request) -> TokenResponse:
         # Verify password: if user has a hashed password, require correct password
         stored_hash = user.hashed_password or ""
         if stored_hash:
-            if not _verify_password(body.password, stored_hash):
+            if not await _verify_password_async(body.password, stored_hash):
                 raise HTTPException(status_code=401, detail="Invalid credentials")
         else:
             # User has no password (demo user) — only allow in dev mode.
@@ -381,7 +391,7 @@ async def register(body: RegisterRequest) -> TokenResponse:
         avatar_url="",
         accessibility_profile="",
         is_active=True,
-        hashed_password=_hash_password(body.password),
+        hashed_password=await _hash_password_async(body.password),
     )
     await _user_repo.create(user)
     logger.info("auth.registered", user_id=user.id, role=validated_role)
@@ -583,7 +593,7 @@ async def demo_login(body: DemoLoginRequest, request: Request) -> TokenResponse:
             avatar_url="",
             accessibility_profile=profile.get("accessibility", ""),
             is_active=True,
-            hashed_password=_hash_password("demo123"),
+            hashed_password=await _hash_password_async("demo123"),
         )
         await _user_repo.create(user)
         logger.info("auth.demo_login_created_user", demo_key=canonical_key)
@@ -640,7 +650,7 @@ async def seed_demo_users_async() -> None:
     """
     from .demo_profiles import DEMO_PROFILES
 
-    demo_pw_hash = _hash_password("demo123")
+    demo_pw_hash = await _hash_password_async("demo123")
     seeded = 0
     for key, profile in DEMO_PROFILES.items():
         email = f"{key}@ailine-demo.edu"

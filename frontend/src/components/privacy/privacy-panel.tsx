@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/cn'
-import { API_BASE } from '@/lib/api'
+import { API_BASE, getAuthHeaders } from '@/lib/api'
 
 interface DataSummary {
   plans: number
@@ -23,9 +23,13 @@ export function PrivacyPanel() {
   const [actionState, setActionState] = useState<'idle' | 'exporting' | 'deleting' | 'confirm_delete'>('idle')
 
   useEffect(() => {
+    const controller = new AbortController()
     async function fetchSummary() {
       try {
-        const res = await fetch(`${API_BASE}/api/v1/privacy/data-summary`)
+        const res = await fetch(`${API_BASE}/privacy/data-summary`, {
+          headers: getAuthHeaders(),
+          signal: controller.signal,
+        })
         if (res.ok) {
           const data: DataSummary = await res.json()
           setSummary(data)
@@ -37,12 +41,16 @@ export function PrivacyPanel() {
       }
     }
     fetchSummary()
+    return () => controller.abort()
   }, [])
 
   const handleExport = useCallback(async () => {
     setActionState('exporting')
     try {
-      await fetch(`${API_BASE}/api/v1/privacy/export`, { method: 'POST' })
+      await fetch(`${API_BASE}/privacy/export`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+      })
     } catch {
       // Demo mode: export simulated
     } finally {
@@ -57,7 +65,10 @@ export function PrivacyPanel() {
     }
     setActionState('deleting')
     try {
-      await fetch(`${API_BASE}/api/v1/privacy/delete`, { method: 'DELETE' })
+      await fetch(`${API_BASE}/privacy/delete`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      })
       setSummary({ plans: 0, sessions: 0, materials: 0, last_updated: new Date().toISOString() })
     } catch {
       // Demo mode: delete simulated
