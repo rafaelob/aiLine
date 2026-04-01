@@ -1,10 +1,24 @@
 # Dev/test overrides for AiLine Docker Compose.
 # Automatically merged with docker-compose.yml when running `docker compose up`.
-# For production, use: docker compose -f docker-compose.yml up
+# For production-like mode: docker compose -f docker-compose.yml up -d --build
 #
-# Frontend is built from the "test" stage so devDependencies are available
-# for `docker compose exec frontend pnpm test` and `pnpm typecheck`.
+# Adds:
+# - Frontend built from "test" stage (devDeps for pnpm test/typecheck)
+# - Frontend dev server with hot reload
+# - API source volume mount for live reload (uvicorn --reload)
+# - Dev mode enabled by default
 services:
+
+  api:
+    volumes:
+      - ./runtime/ailine_runtime:/app/ailine_runtime:ro
+      - ./runtime/tests:/app/tests:ro
+      - ./agents/ailine_agents:/usr/local/lib/python3.13/site-packages/ailine_agents:ro
+      - ./skills:/app/skills:ro
+    command: ["uvicorn", "ailine_runtime.api.app:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "/app/ailine_runtime"]
+    environment:
+      AILINE_DEV_MODE: "true"
+
   frontend:
     build:
       context: ./frontend

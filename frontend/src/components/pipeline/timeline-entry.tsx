@@ -148,7 +148,7 @@ export function TimelineEntry({ event, index, runStartTs }: TimelineEntryProps) 
       {/* Content */}
       <div className="flex-1 min-w-0">
         <span className="text-xs font-semibold text-[var(--color-text)]">
-          {t(`event_types.${event.type}` as Parameters<typeof t>[0])}
+          {t(`event_types.${event.type.replace(/\./g, '_')}` as Parameters<typeof t>[0])}
         </span>
         {rationale && (
           <p className="text-[11px] text-[var(--color-muted)] truncate mt-0.5">

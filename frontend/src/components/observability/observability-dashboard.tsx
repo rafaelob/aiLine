@@ -38,7 +38,7 @@ export default function ObservabilityDashboardContent() {
       setError(null)
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return
-      setError(err instanceof Error ? err.message : 'Unknown error')
+      setError(err instanceof Error ? err.message : t('unknown_error'))
     } finally {
       setLoading(false)
     }
@@ -87,7 +87,7 @@ export default function ObservabilityDashboardContent() {
         transition={{ type: 'spring', stiffness: 200, damping: 24 }}
       >
         <p className="text-sm text-[var(--color-error)]">
-          {t('fetch_error')}: {error ?? 'No data'}
+          {t('fetch_error')}: {error ?? t('no_data')}
         </p>
         <button
           onClick={fetchData}

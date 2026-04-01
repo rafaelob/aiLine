@@ -1,52 +1,28 @@
-"""Add UniqueConstraint(teacher_id, id) on parent tables for composite FKs.
+"""No-op: UniqueConstraints moved to migration 0002 (where composite FKs are created).
 
 Revision ID: 0006
 Revises: 0005
 Create Date: 2026-02-27
 
-PostgreSQL 16 rejects composite FK creation when the referenced columns
-lack a matching unique constraint. This migration adds
-UniqueConstraint("teacher_id", "id") on courses, lessons, materials,
-and tutor_agents — the four parent tables referenced by composite FKs
-in ADR-053 (chunks, pipeline_runs, tutor_sessions, lessons).
+Originally this migration added UniqueConstraint("teacher_id", "id") on
+lessons, materials, and tutor_agents. These constraints are now created
+in 0002 (before the composite FK creation) to satisfy PostgreSQL 16's
+requirement. This migration is kept as a no-op to preserve the revision chain.
 """
 
 from __future__ import annotations
 
 from collections.abc import Sequence
 
-from alembic import op
-
 revision: str = "0006"
 down_revision: str = "0005"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
-# Tables that need UniqueConstraint("teacher_id", "id") for composite FK targets
-_TABLES = [
-    # ("courses", "uq_courses_teacher_id") — moved to 0001 (before composite FK)
-    ("lessons", "uq_lessons_teacher_id"),
-    ("materials", "uq_materials_teacher_id"),
-    ("tutor_agents", "uq_tutor_agents_teacher_id"),
-]
-
 
 def upgrade() -> None:
-    bind = op.get_bind()
-    dialect = bind.dialect.name
-
-    if dialect == "postgresql":
-        for table, constraint_name in _TABLES:
-            op.create_unique_constraint(
-                constraint_name, table, ["teacher_id", "id"]
-            )
-    # SQLite: constraints are defined in ORM's create_all; no ALTER needed.
+    pass  # UniqueConstraints now created in 0002
 
 
 def downgrade() -> None:
-    bind = op.get_bind()
-    dialect = bind.dialect.name
-
-    if dialect == "postgresql":
-        for table, constraint_name in reversed(_TABLES):
-            op.drop_constraint(constraint_name, table, type_="unique")
+    pass  # UniqueConstraints now dropped in 0002 downgrade

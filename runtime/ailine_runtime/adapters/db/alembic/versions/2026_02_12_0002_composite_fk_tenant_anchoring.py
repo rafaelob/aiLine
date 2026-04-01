@@ -24,6 +24,15 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
+    # --- Add UniqueConstraint(teacher_id, id) on parent tables (PG16 requires
+    # a matching unique constraint for composite FK targets) ---
+    bind = op.get_bind()
+    if bind.dialect.name == "postgresql":
+        op.create_unique_constraint("uq_materials_teacher_id", "materials", ["teacher_id", "id"])
+        op.create_unique_constraint("uq_tutor_agents_teacher_id", "tutor_agents", ["teacher_id", "id"])
+        # lessons already has ix_lessons_teacher_course from 0001, but we need (teacher_id, id)
+        op.create_unique_constraint("uq_lessons_teacher_id", "lessons", ["teacher_id", "id"])
+
     # --- chunks: add teacher_id + composite FK ---
     op.add_column("chunks", sa.Column("teacher_id", sa.String(36), nullable=False))
     # Drop old simple FK on material_id
@@ -118,3 +127,10 @@ def downgrade() -> None:
         ondelete="CASCADE",
     )
     op.drop_column("chunks", "teacher_id")
+
+    # --- Drop UniqueConstraints added for composite FKs ---
+    bind = op.get_bind()
+    if bind.dialect.name == "postgresql":
+        op.drop_constraint("uq_lessons_teacher_id", "lessons", type_="unique")
+        op.drop_constraint("uq_tutor_agents_teacher_id", "tutor_agents", type_="unique")
+        op.drop_constraint("uq_materials_teacher_id", "materials", type_="unique")

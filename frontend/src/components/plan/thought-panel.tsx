@@ -422,7 +422,7 @@ function buildSteps(
       case 'quality.scored':
         steps.push({
           id,
-          label: tPipeline('event_types.quality.scored'),
+          label: tPipeline('event_types.quality_scored'),
           detail: typeof ev.payload?.score === 'number' ? `Score: ${ev.payload.score}` : null,
           status: 'completed',
           icon: 'quality',
@@ -433,7 +433,7 @@ function buildSteps(
       case 'run.completed':
         steps.push({
           id,
-          label: tPipeline('event_types.run.completed'),
+          label: tPipeline('event_types.run_completed'),
           detail: null,
           status: 'completed',
           icon: 'stage',
@@ -444,7 +444,7 @@ function buildSteps(
       case 'run.failed':
         steps.push({
           id,
-          label: tPipeline('event_types.run.failed'),
+          label: tPipeline('event_types.run_failed'),
           detail: ev.payload?.error ? String(ev.payload.error) : null,
           status: 'failed',
           icon: 'stage',

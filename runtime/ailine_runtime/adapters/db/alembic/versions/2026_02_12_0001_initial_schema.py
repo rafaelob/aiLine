@@ -122,7 +122,7 @@ def upgrade() -> None:
         sa.Column(
             "material_id",
             sa.String(36),
-            sa.ForeignKey("materials.id", ondelete="CASCADE"),
+            sa.ForeignKey("materials.id", name="fk_chunks_material_id", ondelete="CASCADE"),
             nullable=False,
             index=True,
         ),
@@ -151,7 +151,7 @@ def upgrade() -> None:
         sa.Column(
             "lesson_id",
             sa.String(36),
-            sa.ForeignKey("lessons.id", ondelete="SET NULL"),
+            sa.ForeignKey("lessons.id", name="fk_pipeline_runs_lesson_id", ondelete="SET NULL"),
             nullable=True,
         ),
         sa.Column("input_json", sa.JSON, server_default="{}"),
@@ -191,7 +191,7 @@ def upgrade() -> None:
         sa.Column(
             "tutor_id",
             sa.String(36),
-            sa.ForeignKey("tutor_agents.id", ondelete="CASCADE"),
+            sa.ForeignKey("tutor_agents.id", name="fk_tutor_sessions_tutor_id", ondelete="CASCADE"),
             nullable=False,
             index=True,
         ),
