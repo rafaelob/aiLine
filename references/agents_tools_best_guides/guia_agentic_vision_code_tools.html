@@ -1,0 +1,1705 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Agentic vision &amp; code tools — Code Interpreter, Code Execution, Shell e Tool Search</title>
+<meta name="description" content="Guia transversal de code tools para agentes: OpenAI Code Interpreter (python tool) e Shell, Gemini Code Execution, Anthropic Code Execution (20250825/20260120), Tool Search e defer_loading por provider, ToolRegistry de fallback no runtime, fallback local de visão com worker isolado, schemas de custom functions multi-provider, bloco de system prompt para visão, custos de containers e regra de gating. Verificado em 2026-06-19." />
+<meta name="last-checked" content="2026-06-19" />
+<meta name="robots" content="index,follow" />
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "name": "Agentic vision & code tools — Code Interpreter, Code Execution, Shell e Tool Search",
+  "inLanguage": "pt-BR",
+  "datePublished": "2026-06-10",
+  "dateModified": "2026-06-19",
+  "author": {
+    "@type": "Organization",
+    "name": "Referência técnica — documentação oficial OpenAI, Google Gemini e Anthropic"
+  },
+  "about": "Code tools para agentes multi-provider: OpenAI Code Interpreter e Shell (Responses API), Gemini Code Execution (Interactions API), Anthropic Code Execution (code_execution_20250825 / code_execution_20260120), Tool Search com defer_loading (OpenAI e Anthropic), seleção dinâmica de tools no runtime, fallback local de visão e schemas de custom functions.",
+  "keywords": [
+    "OpenAI", "Responses API", "gpt-5.5", "code interpreter", "python tool", "shell tool",
+    "tool search", "defer_loading", "container_auto", "container_reference",
+    "Google Gemini", "Interactions API", "gemini-3.5-flash", "code execution",
+    "Anthropic", "Claude", "claude-fable-5", "claude-opus-4-8",
+    "code_execution_20250825", "code_execution_20260120",
+    "tool_search_tool_bm25_20251119", "tool_search_tool_regex_20251119",
+    "agentic vision", "tool registry", "custom functions", "input_schema",
+    "verificado em 2026-06-19"
+  ]
+}
+</script>
+<style>
+  :root {
+    --c-bg: #ffffff;
+    --c-bg-elev: #f7f8fa;
+    --c-bg-code: #0e1116;
+    --c-fg: #1a1d23;
+    --c-fg-muted: #5b6472;
+    --c-fg-soft: #6b7480;
+    --c-border: #e4e7ec;
+    --c-border-strong: #cdd3dc;
+    --c-accent: #1a73e8;
+    --c-da: #1257b8;
+    --c-da-bg: #e6efff;
+    --c-warn: #b6541d;
+    --c-warn-bg: #fff4e6;
+    --c-ok: #157a33;
+    --c-ok-bg: #e8f5ea;
+    --c-bad: #c5221f;
+    --c-bad-bg: #fde8e6;
+    --c-na: #5f666f;
+    --c-na-bg: #eef0f3;
+    --c-info: #1257b8;
+    --c-info-bg: #e6efff;
+    --shadow-sm: 0 1px 2px rgba(15,23,42,.06), 0 1px 1px rgba(15,23,42,.04);
+    --shadow-md: 0 6px 24px rgba(15,23,42,.08), 0 2px 6px rgba(15,23,42,.06);
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --gutter: 24px;
+    --sidebar-w: 312px;
+  }
+  [data-theme="dark"] {
+    --c-bg: #0d1117;
+    --c-bg-elev: #161b22;
+    --c-bg-code: #010409;
+    --c-fg: #e6edf3;
+    --c-fg-muted: #9aa4b2;
+    --c-fg-soft: #828c9e;
+    --c-border: #20262d;
+    --c-border-strong: #2f3640;
+    --c-da: #4d9fff;
+    --c-accent: #4d9fff;
+    --c-ok: #3fb950;
+    --c-warn: #e3b341;
+    --c-bad: #ff7b72;
+    --c-na: #9aa4b2;
+    --c-info: #79b8ff;
+    --c-da-bg: #11233f;
+    --c-warn-bg: #2a1e0a;
+    --c-ok-bg: #0d2517;
+    --c-bad-bg: #2a1213;
+    --c-na-bg: #1a1f26;
+    --c-info-bg: #0c1e3a;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+    --shadow-md: 0 8px 28px rgba(0,0,0,.45);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-sans);
+    font-size: 15.5px;
+    line-height: 1.55;
+    color: var(--c-fg);
+    background: var(--c-bg);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  a { color: var(--c-accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, kbd, pre, samp { font-family: var(--font-mono); font-size: 0.92em; }
+  :focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; border-radius: 4px; }
+  .skip { position: absolute; left: -9999px; }
+  .skip:focus { left: 12px; top: 12px; background: var(--c-bg); padding: 8px 12px; border: 1px solid var(--c-border); border-radius: 6px; z-index: 100; }
+
+  header.site {
+    position: sticky; top: 0; z-index: 30;
+    background: rgba(255,255,255,.85);
+    backdrop-filter: saturate(180%) blur(10px);
+    border-bottom: 1px solid var(--c-border);
+  }
+  [data-theme="dark"] header.site { background: rgba(13,17,23,.82); }
+  .header-row {
+    max-width: 1440px; margin: 0 auto; padding: 12px 24px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .brand { font-weight: 700; letter-spacing: -.01em; font-size: 16px; }
+  .brand small { color: var(--c-fg-muted); font-weight: 500; margin-left: 8px; font-size: 12.5px; }
+  .header-right { margin-left: auto; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 999px;
+    background: var(--c-bg-elev); border: 1px solid var(--c-border);
+    color: var(--c-fg-muted); font-size: 12.5px; font-weight: 500;
+  }
+  .badge.ok { background: var(--c-ok-bg); color: var(--c-ok); border-color: transparent; }
+  .badge.da { background: var(--c-da-bg); color: var(--c-da); border-color: transparent; }
+  .badge.info { background: var(--c-info-bg); color: var(--c-info); border-color: transparent; }
+  .badge.warn { background: var(--c-warn-bg); color: var(--c-warn); border-color: transparent; }
+  .badge.bad { background: var(--c-bad-bg); color: var(--c-bad); border-color: transparent; }
+  .theme-btn {
+    border: 1px solid var(--c-border); background: var(--c-bg-elev); color: var(--c-fg);
+    padding: 5px 10px; border-radius: 8px; cursor: pointer; font: inherit; font-size: 12.5px;
+  }
+  .theme-btn:hover { border-color: var(--c-border-strong); }
+
+  .layout {
+    max-width: 1440px; margin: 0 auto;
+    display: grid; grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+    gap: 32px; padding: 24px;
+  }
+  nav.toc {
+    position: sticky; top: 64px;
+    align-self: start; max-height: calc(100vh - 80px); overflow: auto;
+    padding-right: 8px;
+    border-right: 1px solid var(--c-border);
+  }
+  nav.toc ol { list-style: none; padding: 0; margin: 0 0 16px; }
+  nav.toc li { line-height: 1.4; margin: 2px 0; }
+  nav.toc a {
+    display: block; padding: 4px 8px; border-radius: 5px;
+    color: var(--c-fg-muted); font-size: 13px;
+  }
+  nav.toc a:hover { background: var(--c-bg-elev); color: var(--c-fg); text-decoration: none; }
+  nav.toc a.active { color: var(--c-da); background: var(--c-da-bg); font-weight: 600; }
+  nav.toc .toc-section {
+    margin-top: 14px; padding: 2px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--c-fg-soft);
+    border-top: 1px solid var(--c-border); padding-top: 10px;
+  }
+  nav.toc .toc-section:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+
+  main { min-width: 0; max-width: 1040px; }
+
+  .hero {
+    border: 1px solid var(--c-border);
+    border-radius: 14px;
+    padding: 28px 28px 24px;
+    background: linear-gradient(135deg, var(--c-da-bg) 0%, var(--c-bg) 100%);
+    margin-bottom: 32px;
+  }
+  .hero h1 { font-size: 32px; line-height: 1.15; margin: 0 0 8px; letter-spacing: -.02em; }
+  .hero p.lead { margin: 0 0 16px; color: var(--c-fg-muted); font-size: 16px; max-width: 74ch; }
+  .hero-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+
+  section { margin: 48px 0; scroll-margin-top: 84px; }
+  section.chapter { padding-top: 16px; margin-top: 56px; border-top: 3px solid var(--c-da); }
+  section.ref { padding-top: 12px; margin-top: 48px; border-top: 2px dashed var(--c-border-strong); }
+  h2 {
+    font-size: 24px; line-height: 1.2; letter-spacing: -.015em;
+    margin: 0 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--c-border);
+    scroll-margin-top: 84px;
+  }
+  h3 { font-size: 18px; line-height: 1.3; margin: 28px 0 10px; scroll-margin-top: 84px; }
+  h4 { font-size: 15px; margin: 20px 0 8px; color: var(--c-fg); scroll-margin-top: 84px; }
+  p { margin: 0 0 12px; }
+  ul, ol { margin: 0 0 12px; padding-left: 22px; }
+  li { margin: 4px 0; }
+  hr { border: 0; border-top: 1px solid var(--c-border); margin: 24px 0; }
+
+  .table-wrap { overflow-x: auto; margin: 0 0 18px; border: 1px solid var(--c-border); border-radius: var(--radius); }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 580px; }
+  th, td { padding: 9px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--c-border); }
+  th { background: var(--c-bg-elev); font-weight: 600; color: var(--c-fg); position: sticky; top: 0; font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--c-bg-elev); }
+  td code, th code { background: var(--c-bg-elev); padding: 1px 5px; border-radius: 4px; font-size: 12.5px; color: var(--c-fg); }
+  [data-theme="dark"] td code, [data-theme="dark"] th code { background: #0b0e13; }
+
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; letter-spacing: .02em; }
+  .pill.ok { background: var(--c-ok-bg); color: var(--c-ok); }
+  .pill.partial { background: var(--c-warn-bg); color: var(--c-warn); }
+  .pill.bad { background: var(--c-bad-bg); color: var(--c-bad); }
+  .pill.na { background: var(--c-na-bg); color: var(--c-na); }
+  .pill.beta { background: var(--c-info-bg); color: var(--c-info); }
+
+  .callout {
+    border-left: 4px solid var(--c-accent);
+    background: var(--c-bg-elev);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  .callout.warn { border-left-color: var(--c-warn); background: var(--c-warn-bg); color: #5a3009; }
+  .callout.tip { border-left-color: var(--c-ok); background: var(--c-ok-bg); color: #1d4a25; }
+  .callout.danger { border-left-color: var(--c-bad); background: var(--c-bad-bg); color: #7a1a16; }
+  .callout.beta { border-left-color: var(--c-info); background: var(--c-info-bg); color: #123d75; }
+  .callout.info { border-left-color: var(--c-info); background: var(--c-info-bg); color: #123d75; }
+  .callout.partial { border-left-color: var(--c-warn); background: var(--c-warn-bg); color: #5a3009; }
+  [data-theme="dark"] .callout.warn { color: #f1c896; }
+  [data-theme="dark"] .callout.tip { color: #a7d8b1; }
+  [data-theme="dark"] .callout.danger { color: #f0a8a4; }
+  [data-theme="dark"] .callout.beta { color: #a8cdff; }
+  [data-theme="dark"] .callout.info { color: #a8cdff; }
+  [data-theme="dark"] .callout.partial { color: #f1c896; }
+  .callout strong { font-weight: 700; }
+  .callout a { color: var(--c-da); text-decoration: underline; }
+  [data-theme="dark"] .callout a { color: var(--c-da); }
+  footer.site a, .source-link a { text-decoration: underline; }
+
+  pre {
+    background: var(--c-bg-code);
+    color: #d1d5db;
+    padding: 14px 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 0 0 14px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    border: 1px solid #1f242c;
+  }
+  pre code { color: inherit; background: transparent; padding: 0; }
+
+  /* Blocos de código com abas por linguagem (Python / TypeScript / REST) */
+  .code-tabs { display: flex; gap: 4px; margin-bottom: 0; }
+  .code-tab {
+    border: 1px solid var(--c-border); border-bottom: none; background: var(--c-bg-elev);
+    color: var(--c-fg-muted); padding: 6px 14px; border-radius: 8px 8px 0 0;
+    cursor: pointer; font: inherit; font-size: 12.5px; font-weight: 600;
+  }
+  .code-tab[aria-selected="true"] { background: var(--c-bg-code); color: #f0e9e1; border-color: #2a241e; }
+  .code-pane { display: none; }
+  .code-pane[data-active="true"] { display: block; }
+  .code-group pre { border-radius: 0 8px 8px 8px; margin-top: -1px; }
+
+  details {
+    border: 1px solid var(--c-border); border-radius: var(--radius);
+    padding: 8px 14px; margin: 6px 0 10px; background: var(--c-bg-elev);
+  }
+  details > summary {
+    cursor: pointer; font-weight: 600; padding: 4px 0; list-style: none;
+    font-size: 13.5px;
+  }
+  details > summary::-webkit-details-marker { display: none; }
+  details > summary::before { content: "▸ "; color: var(--c-fg-soft); display: inline-block; }
+  details[open] > summary::before { content: "▾ "; }
+  details > .ref-body { padding: 8px 0 4px; }
+
+  .source-link {
+    font-size: 12.5px; color: var(--c-fg-muted);
+    margin: 6px 0 24px; padding: 6px 10px;
+    background: var(--c-bg-elev); border-left: 3px solid var(--c-da);
+    border-radius: 0 6px 6px 0;
+  }
+  .source-link a { color: var(--c-da); font-weight: 600; }
+
+  .figure { margin: 20px 0 26px; }
+  .figure svg { width: 100%; height: auto; display: block; border: 1px solid var(--c-border); border-radius: 10px; }
+  .figure figcaption { font-size: 12.5px; color: var(--c-fg-muted); margin-top: 10px; line-height: 1.5; padding: 0 4px; }
+
+  footer.site {
+    margin: 64px 0 24px; padding: 24px 0; border-top: 1px solid var(--c-border);
+    color: var(--c-fg-muted); font-size: 13px;
+  }
+
+  @media (max-width: 1080px) {
+    .layout { grid-template-columns: 1fr; }
+    nav.toc { position: static; max-height: none; border-right: none; border-bottom: 1px solid var(--c-border); padding-bottom: 16px; margin-bottom: 16px; }
+    main { max-width: 100%; }
+    .hero h1 { font-size: 24px; }
+  }
+  @media print {
+    nav.toc, header.site, .theme-btn { display: none; }
+    .layout { grid-template-columns: 1fr; }
+    a { color: inherit; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+    details[open] { padding: 8px 0; }
+    details > summary { display: none; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Pular para o conteúdo</a>
+
+<header class="site">
+  <div class="header-row">
+    <div class="brand">Agentic vision &amp; code tools <small>Code Interpreter · Code Execution · Shell · Tool Search</small></div>
+    <div class="header-right">
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-06-19</strong></span>
+      <span class="badge da">Transversal</span>
+      <span class="badge info">OpenAI</span>
+      <span class="badge info">Gemini</span>
+      <span class="badge info">Anthropic</span>
+      <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="Sumário">
+    <div class="toc-section">Início</div>
+    <ol>
+      <li><a href="#sobre-guia">Sobre este guia</a></li>
+      <li><a href="#mapa-de-fronteiras">Mapa de fronteiras &amp; cross-links</a></li>
+    </ol>
+
+    <div class="toc-section">Parte 1 — Decisão</div>
+    <ol>
+      <li><a href="#decisao-executiva">1. Decisão executiva: gating no runtime</a></li>
+    </ol>
+
+    <div class="toc-section">Parte 2 — Code tools por provider</div>
+    <ol>
+      <li><a href="#openai-code-interpreter">2. OpenAI Code Interpreter (python tool)</a></li>
+      <li><a href="#gemini-code-execution">3. Gemini Code Execution</a></li>
+      <li><a href="#anthropic-code-execution">4. Anthropic Code Execution</a></li>
+      <li><a href="#openai-shell">5. OpenAI Shell tool</a></li>
+    </ol>
+
+    <div class="toc-section">Parte 3 — Tool Search &amp; seleção dinâmica</div>
+    <ol>
+      <li><a href="#tool-search-providers">6. Tool Search &amp; defer_loading</a></li>
+      <li><a href="#tool-registry-runtime">7. ToolRegistry &amp; fallback no runtime</a></li>
+    </ol>
+
+    <div class="toc-section">Parte 4 — Fallback &amp; contratos</div>
+    <ol>
+      <li><a href="#vision-fallback-local">8. Fallback local de visão</a></li>
+      <li><a href="#schemas-multi-provider">9. Schemas de custom functions</a></li>
+      <li><a href="#system-prompt-vision">10. System prompt para visão</a></li>
+    </ol>
+
+    <div class="toc-section">Parte 5 — Operação &amp; frameworks</div>
+    <ol>
+      <li><a href="#custos-gating">11. Custos &amp; gating</a></li>
+      <li><a href="#mapeamento-frameworks">12. Mapeamento por framework</a></li>
+      <li><a href="#smoke-tests-checklist">13. Smoke tests &amp; checklist</a></li>
+    </ol>
+
+    <div class="toc-section">Referência</div>
+    <ol>
+      <li><a href="#fontes-oficiais">Fontes oficiais &amp; verificação</a></li>
+    </ol>
+  </nav>
+
+  <main id="main">
+
+    <div class="hero">
+      <h1>Agentic vision &amp; code tools</h1>
+      <p class="lead">
+        Como dar a um agente <strong>olhos com lupa e mãos com código</strong> — sem perder o controle.
+        Este guia cobre as code tools hospedadas dos três providers (OpenAI Code Interpreter e Shell,
+        Gemini Code Execution, Anthropic Code Execution), o mecanismo de <strong>Tool Search</strong> com
+        <code>defer_loading</code> onde ele existe, a seleção dinâmica de tools no runtime onde ele não
+        existe, o fallback local de visão em worker isolado e os contratos de schema que valem para
+        qualquer provider. O princípio transversal: <strong>quem decide quais code tools entram no payload
+        é o gating do runtime</strong>, não o provider.
+      </p>
+      <div class="hero-meta">
+        <span class="badge da">Transversal · OpenAI · Gemini · Anthropic</span>
+        <span class="badge info">Code tools + Tool Search</span>
+        <span class="badge ok">SOTA · verificado 2026-06-10</span>
+      </div>
+    </div>
+
+    <section id="sobre-guia">
+      <h2>Sobre este guia</h2>
+      <p>
+        Este é um guia <strong>para IA e humanos</strong>: prosa em PT-BR, identificadores, parâmetros e
+        código em inglês. Ele consolida os fatos verificados sobre as ferramentas de execução de código
+        e de descoberta dinâmica de tools, e os padrões de engenharia para usá-las em uma arquitetura
+        em que o runtime é dono do histórico, dos artefatos e das decisões de segurança.
+      </p>
+      <div class="callout">
+        <strong>Princípio central:</strong> code tools são as capabilities mais poderosas — e mais caras
+        e arriscadas — do catálogo. O modelo <em>solicita</em> execução; o runtime <em>decide antes da
+        request</em> se a ferramenta sequer aparece no payload (gating), <em>valida</em> argumentos e
+        <em>persiste</em> cada artefato. Esse é o mesmo invariante do
+        <a href="guia_arquitetura_orquestracao.html#capability-registry">capability registry</a> do
+        capítulo de arquitetura, aplicado aqui a Code Interpreter, Code Execution, Shell e Tool Search.
+      </div>
+      <div class="callout warn">
+        <strong>Fronteira de escopo (cross-link, sem duplicar):</strong> os princípios completos de
+        estado runtime-owned (<code>store:false</code>, ledger canônico, proibição de
+        <code>previous_response_id</code>/<code>previous_interaction_id</code>) vivem em
+        <a href="guia_estado_contexto_memoria.html">Estado, contexto &amp; memória</a> e
+        <a href="guia_file_inputs_no_storage.html">File inputs sem storage</a>. A leitura nativa de
+        PDF/imagem/planilha por provider vive em <a href="guia_multimodal.html">Multimodal</a>.
+        Governança, ACL e contratos de tool em geral vivem em
+        <a href="guia_ferramentas_mcp_rag.html">Ferramentas, MCP &amp; RAG</a>. Aqui tratamos apenas do
+        que é específico de <strong>code tools, shell e tool search</strong>.
+      </div>
+    </section>
+
+    <section id="mapa-de-fronteiras">
+      <h2>Mapa de fronteiras — onde cada assunto mora</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Você procura…</th><th>Vá para</th></tr></thead>
+        <tbody>
+          <tr><td>Ledger canônico, compaction, <code>store:false</code>, asset registry</td><td><a href="guia_estado_contexto_memoria.html">Núcleo · Estado, contexto &amp; memória</a></td></tr>
+          <tr><td>Enviar PDFs/imagens sem storage do provider (bytes, file IDs, limites)</td><td><a href="guia_file_inputs_no_storage.html">File inputs sem storage</a></td></tr>
+          <tr><td>Visão nativa, OCR, planilhas, vídeo, áudio por provider</td><td><a href="guia_multimodal.html">Multimodal</a></td></tr>
+          <tr><td>Capability registry, active plan, skeleton de loop de orquestração</td><td><a href="guia_arquitetura_orquestracao.html">Núcleo · Arquitetura &amp; orquestração</a></td></tr>
+          <tr><td>Contratos de tool, MCP, RAG, envelopes, segurança e HITL</td><td><a href="guia_ferramentas_mcp_rag.html">Ferramentas, MCP &amp; RAG</a></td></tr>
+          <tr><td>Contagem e custo detalhado de tokens por provider</td><td><a href="guia_token_counting.html">Token counting</a></td></tr>
+          <tr><td>Frameworks de orquestração (Agents SDK, LangGraph, DeepAgents, ADK)</td><td><a href="guia_agents_sdk_orquestracao.html">Agents SDK</a> · <a href="guia_langgraph_orquestracao.html">LangGraph</a> · <a href="guia_deepagents.html">Deep Agents</a> · <a href="guia_google_adk_orquestracao.html">Google ADK</a></td></tr>
+          <tr><td>Interactions API do Gemini em profundidade (steps, signatures, background)</td><td><a href="guia_gemini_interactions_api.html">Gemini Interactions API</a></td></tr>
+          <tr><td>Code tools deste guia: Code Interpreter, Code Execution, Shell, Tool Search</td><td><strong>Você está no lugar certo.</strong></td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <!-- ===================== PARTE 1 ===================== -->
+    <section class="chapter" id="parte-decisao">
+      <h2 style="border-bottom:3px solid var(--c-da);padding:14px 0 10px;font-size:28px">Parte 1 — Decisão</h2>
+      <p>Antes de qualquer parâmetro: quem liga e desliga as code tools, e com qual mecanismo.</p>
+    </section>
+
+    <section id="decisao-executiva">
+      <h2>1. Decisão executiva: gating no runtime</h2>
+      <div class="callout tip">
+        <strong>Decisão SOTA:</strong> o runtime deve fazer <em>gating</em> antes de chamar o provider.
+        Se a tarefa não precisa de visão agentic, não inclua Code Interpreter, Shell ou Code Execution
+        no payload. Se precisa de crop/zoom/renderização/rotação/contraste/validação visual fina,
+        inclua a ferramenta apropriada com <code>tool_choice: "auto"</code> (ou equivalente) e deixe o
+        modelo decidir o momento de uso.
+      </div>
+      <p>
+        <strong>Tool Search não é o botão para ligar/desligar Code Interpreter.</strong> Tool Search é
+        um mecanismo de <em>descoberta</em>: carrega definições de tools deferidas no contexto quando o
+        modelo precisa delas. Ele é excelente para grandes catálogos de custom functions, namespaces e
+        MCP servers — mas não controla provisionamento, custo ou risco das code tools hospedadas. Para
+        reduzir custo/risco de Code Interpreter, Shell ou Code Execution, o mecanismo correto é
+        roteamento/gating no runtime: a ferramenta simplesmente não entra no array <code>tools</code>
+        quando o turno não a justifica.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Provider</th><th>Code tool hospedada</th><th>Visão agentic</th><th>Tool Search nativo</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>OpenAI</strong> (Responses API)</td>
+            <td><code>code_interpreter</code> (python tool) e <code>shell</code> (hosted/local)</td>
+            <td>Visão nativa via <code>input_file</code>/<code>input_image</code> + python tool para crop/zoom/rotate</td>
+            <td><span class="pill ok">Sim</span> <code>{"type":"tool_search"}</code> + <code>defer_loading</code> (gpt-5.4+)</td>
+          </tr>
+          <tr>
+            <td><strong>Gemini</strong> (Interactions API)</td>
+            <td><code>code_execution</code> (Python-only, 30s) — Interactions API documentada/verificada só na <strong>Developer API</strong>; em Vertex use <code>generateContent</code> + <code>code_execution</code> (ver §3)</td>
+            <td>Visão nativa + Code Execution with images (documentado em Gemini 3 Flash; herdado pela linha 3.5)</td>
+            <td><span class="pill bad">Não</span> — seleção dinâmica no runtime (10–20 tools ativas)</td>
+          </tr>
+          <tr>
+            <td><strong>Anthropic</strong> (Messages API)</td>
+            <td><code>code_execution_20250825</code> / <code>code_execution_20260120</code> (Python + Bash + file ops)</td>
+            <td>Visão/PDF nativa + Code Execution para manipular/processar</td>
+            <td><span class="pill ok">Sim</span> <code>tool_search_tool_regex_20251119</code> / <code>tool_search_tool_bm25_20251119</code></td>
+          </tr>
+          <tr>
+            <td><strong>Fallback multi-provider</strong></td>
+            <td>Worker isolado próprio (Docker / Cloud Run / GKE)</td>
+            <td>Custom function restrita <code>vision_preprocess_document</code> com allowlist</td>
+            <td>ToolRegistry + busca híbrida BM25/embeddings + loop de duas fases (§7)</td>
+          </tr>
+        </tbody>
+      </table></div>
+      <div class="callout info">
+        <strong>Runtime-owned em uma frase:</strong> o provider é stateless do ponto de vista da
+        aplicação — cada chamada usa <code>store:false</code> (ou equivalente) e recebe o envelope
+        completo montado pelo runtime; histórico, tool calls, tool results e artefatos vivem no seu DB.
+        A mecânica completa (campos estruturais como <code>id</code>/<code>signature</code>,
+        anti-padrões de sessão provider-side) está em
+        <a href="guia_estado_contexto_memoria.html">Estado, contexto &amp; memória</a> e
+        <a href="guia_file_inputs_no_storage.html">File inputs sem storage</a>. Fica aqui o checklist
+        resumido do que o runtime deve persistir — os dois últimos itens são específicos das code tools
+        deste guia:
+        <ul style="margin:8px 0 2px">
+          <li>histórico normalizado: mensagens, multimodal parts, tool calls, tool results, outputs, recusas, erros e approvals;</li>
+          <li>envelope provider-specific enviado e resposta bruta recebida, com versionamento de adapter;</li>
+          <li>reasoning/assinaturas criptográficas quando o provider exige round-trip para continuidade técnica — sem tratá-las como estado semântico de negócio;</li>
+          <li>artefatos: arquivos originais, crops, páginas renderizadas, imagens derivadas, CSVs e logs de worker, com checksums;</li>
+          <li>tool registry e snapshots dos schemas efetivamente expostos por turno;</li>
+          <li>decisões de gating: por que uma tool foi incluída, bloqueada, exigiu aprovação ou foi omitida.</li>
+        </ul>
+      </div>
+      <h3>1.1. Tabela de roteamento rápido</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Necessidade do turno</th><th>Ferramenta certa</th><th>Mecanismo de controle</th></tr></thead>
+        <tbody>
+          <tr><td>Resumo/Q&amp;A sobre documento legível</td><td>Visão nativa, sem code tool</td><td>Gating: nenhuma code tool no payload</td></tr>
+          <tr><td>Crop/zoom/rotação/contraste, validar número pequeno em scan</td><td>Code Interpreter (OpenAI) · Code Execution (Gemini/Anthropic)</td><td>Gating inclui a tool; <code>tool_choice: auto</code></td></tr>
+          <tr><td>CLI, repositório, build/test, multimedia, scripts de sistema</td><td>Shell (OpenAI) · Code Execution com Bash (Anthropic)</td><td>Gating + sandbox + allowlist + auditoria</td></tr>
+          <tr><td>Catálogo com dezenas/centenas de custom functions ou MCP</td><td>Tool Search (OpenAI/Anthropic) · ToolRegistry no runtime (Gemini)</td><td><code>defer_loading</code> ou pré-seleção por turno</td></tr>
+          <tr><td>Provider sem code tool adequada / requisito de isolamento próprio</td><td><code>vision_preprocess_document</code> em worker isolado</td><td>Allowlist de operações + quotas + artifact store</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <!-- ===================== PARTE 2 ===================== -->
+    <section class="chapter" id="parte-providers">
+      <h2 style="border-bottom:3px solid var(--c-da);padding:14px 0 10px;font-size:28px">Parte 2 — Code tools por provider</h2>
+      <p>Os contratos verificados de cada ferramenta hospedada: parâmetros, limites, versões e exemplos
+      prontos para o padrão runtime-owned.</p>
+    </section>
+
+    <section id="openai-code-interpreter">
+      <h2>2. OpenAI Code Interpreter (python tool)</h2>
+      <p>
+        Code Interpreter permite ao modelo escrever e executar Python em sandbox hospedada. A
+        documentação cita explicitamente o uso para processar arquivos, gerar arquivos e melhorar a
+        <em>inteligência visual</em> com crop, zoom, rotação e transformações de imagem. Internamente,
+        o modelo conhece a ferramenta como <strong>python tool</strong> — e é assim que o system prompt
+        deve se referir a ela (ver §10).
+      </p>
+      <p>
+        Visão nativa vem primeiro: PDFs entram como <code>input_file</code> (texto + imagens das páginas
+        em modelos com visão) e imagens como <code>input_image</code> com <code>detail</code>
+        (<code>low</code>/<code>high</code>/<code>original</code>/<code>auto</code>; em
+        <code>gpt-5.5</code>, <code>auto</code> e omitido equivalem a <code>original</code>). Arquivos
+        não-PDF como <code>.docx</code> e <code>.pptx</code> são <strong>texto-only</strong> nesse fluxo
+        — sem imagens das páginas. Para documentos grandes com retrieval, a doc aponta File Search; para
+        planilhas pesadas (agregações, cálculos, custom charts), o Hosted Shell (§5). O detalhe
+        completo de file inputs e visão nativa está em <a href="guia_multimodal.html">Multimodal</a> e
+        <a href="guia_file_inputs_no_storage.html">File inputs sem storage</a>; aqui interessa o que a
+        python tool acrescenta quando a visão nativa não basta.
+      </p>
+      <h3>2.1. Configuração do container</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Config</th><th>Significado</th><th>Recomendação</th></tr></thead>
+        <tbody>
+          <tr><td><code>container.type = "auto"</code></td><td>Cria/reusa um container ativo presente no contexto do modelo.</td><td>Usar em chamadas simples quando o runtime não precisa gerenciar o container ID.</td></tr>
+          <tr><td><code>memory_limit</code></td><td>RAM do container: <code>1g</code> (default), <code>4g</code>, <code>16g</code>, <code>64g</code>.</td><td><code>4g</code> para agente de visão/PDF; <code>16g</code> só para PDFs/imagens pesados; <code>64g</code> é exceção justificada.</td></tr>
+          <tr><td>Arquivos no input</td><td>Arquivos presentes no input são automaticamente disponibilizados no container.</td><td>Mesmo assim, preferir <code>file_id</code> em produção para robustez e replay.</td></tr>
+          <tr><td>Expiração</td><td>Container auto expira após <strong>20 minutos sem uso</strong>.</td><td>Tratar como efêmero: baixar e persistir artefatos no artifact store do runtime a cada turno.</td></tr>
+        </tbody>
+      </table></div>
+      <h3>2.2. Exemplo runtime-owned com gating</h3>
+      <pre><code>from openai import OpenAI
+
+client = OpenAI()
+
+def build_tools(route: dict) -&gt; list[dict]:
+    """Gating: code tools so entram no payload quando o roteador decide."""
+    tools = []
+    if route.get("needs_agentic_vision"):
+        tools.append({
+            "type": "code_interpreter",
+            "container": {"type": "auto", "memory_limit": "4g"},
+        })
+    if route.get("needs_shell"):
+        # Hosted shell; use local shell apenas quando seu runtime executar shell_call com sandbox.
+        tools.append({"type": "shell", "environment": {"type": "container_auto"}})
+    if route.get("needs_file_retrieval"):
+        tools.append({"type": "file_search", "vector_store_ids": ["vs_..."]})
+    return tools
+
+# Runtime-owned: o DB/orquestrador monta o historico completo; o provider nao guarda estado.
+history = runtime_db.load_normalized_history(thread_id="thr_123")
+route = runtime_router.classify(history)
+
+response = client.responses.create(
+    model="gpt-5.5",
+    store=False,
+    instructions=runtime_db.load_system_prompt() + "\n\n" + VISION_TOOL_SYSTEM_SECTION,
+    input=runtime_adapter.to_openai_input(history),
+    tools=build_tools(route),
+    tool_choice="auto",
+    include=["reasoning.encrypted_content"],
+)
+
+runtime_db.persist_provider_output(
+    thread_id="thr_123",
+    provider="openai",
+    raw_output=response.output,
+    normalized_events=runtime_adapter.from_openai_output(response.output),
+)</code></pre>
+      <div class="callout warn">
+        <strong>Custo:</strong> Code Interpreter cobra container por tier de memória, além dos tokens —
+        e desde <strong>2026-06-02 a cobrança é por minuto, com mínimo de 5 minutos</strong> (detalhes e
+        tabela em <a href="#custos-gating">§11</a>). Mais um motivo para o gating: container não usado é
+        dinheiro queimado por turno.
+      </div>
+      <div class="source-link">
+        Fonte oficial: <a href="https://developers.openai.com/api/docs/guides/tools-code-interpreter" target="_blank" rel="noopener">OpenAI — Code Interpreter</a> ·
+        <a href="https://developers.openai.com/api/docs/guides/file-inputs" target="_blank" rel="noopener">File inputs</a> ·
+        <a href="https://developers.openai.com/api/docs/guides/images-vision" target="_blank" rel="noopener">Images and vision</a>. Verificado em 2026-06-10.
+      </div>
+    </section>
+
+    <section id="gemini-code-execution">
+      <h2>3. Gemini Code Execution</h2>
+      <p>
+        O Gemini Code Execution gera e executa <strong>Python</strong> em ambiente hospedado pelo Google.
+        Na Interactions API, habilita-se com <code>tools=[{"type": "code_execution"}]</code>. É a rota de
+        agentic vision do Gemini: o modelo escreve código que renderiza, recorta e amplia regiões de
+        imagens/PDFs e recebe os resultados de volta no mesmo turno.
+      </p>
+      <div class="callout warn">
+        <strong>Vertex AI (agora Gemini Enterprise Agent Platform): code execution via Interactions API.</strong>
+        A Interactions API existe em <strong>duas superfícies</strong> com status e documentação diferentes.
+        Na <strong>Gemini Developer API (AI Studio)</strong> — endpoint
+        <code>generativelanguage.googleapis.com/v1beta/interactions</code>, auth <code>x-goog-api-key</code>,
+        status <strong>Beta</strong> — o <code>code_execution</code> dentro de Interactions é
+        <strong>documentado e exemplificado por inteiro</strong>. Na <strong>Vertex AI / Gemini Enterprise
+        Agent Platform</strong> — endpoint
+        <code>aiplatform.googleapis.com/v1beta1/projects/{project}/locations/global/interactions</code>,
+        auth OAuth/ADC, status <strong>experimental</strong> — <code>CodeExecution</code> aparece no
+        <em>schema</em> de ferramentas, mas a página oficial de execução de código da Vertex documenta o
+        recurso <strong>apenas via <code>generateContent</code></strong> (sem exemplo de
+        <code>code_execution</code> dentro de Interactions).
+        <strong>Observado (não é limitação oficial):</strong> em teste, <code>code_execution</code> via
+        Interactions API <strong>falhou</strong> autenticando por Vertex e funcionou pela Developer API — os
+        docs nem confirmam nem negam essa combinação na Vertex.
+        <strong>Recomendação:</strong> use <strong>Developer API + Interactions</strong> para
+        <code>code_execution</code>, ou na <strong>Vertex use <code>generateContent</code> +
+        <code>code_execution</code></strong> (caminho oficialmente documentado). O exemplo 3.2 abaixo
+        assume a Developer API. <em>Verificado em 2026-06-19 contra fontes oficiais Google.</em>
+      </div>
+      <h3>3.1. Limites documentados</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Dimensão</th><th>Fato verificado</th></tr></thead>
+        <tbody>
+          <tr><td>Linguagem</td><td><strong>Somente Python</strong> — sem Bash, sem shell, sem outras linguagens.</td></tr>
+          <tr><td>Runtime máximo</td><td><strong>30 segundos</strong> por execução.</td></tr>
+          <tr><td>Retries</td><td>Até <strong>5 tentativas</strong> automáticas em caso de erro.</td></tr>
+          <tr><td>Bibliotecas</td><td>Conjunto fixo, sem <code>pip install</code>: inclui <code>pillow</code>, <code>opencv-python</code>, <code>PyPDF2</code>, <code>python-docx</code>, <code>python-pptx</code>, <code>numpy</code>, <code>pandas</code>, <code>matplotlib</code>, entre outras.</td></tr>
+          <tr><td>Entrada preferida</td><td>Funciona melhor com texto/CSV; imagens entram pelo fluxo "Code Execution with images".</td></tr>
+          <tr><td>Imagens</td><td>Code Execution with images é <strong>oficialmente documentado em Gemini 3 Flash</strong> e herdado pela linha GA <code>gemini-3.5-flash</code> — use <code>gemini-3.5-flash</code> nos exemplos e valide por evals.</td></tr>
+          <tr><td>Custo extra</td><td><span class="pill ok">Nenhum</span> além de tokens: código gerado e resultados são cobrados como <em>intermediate tokens</em> (ver <a href="#custos-gating">§11</a> e <a href="guia_token_counting.html">Token counting</a>).</td></tr>
+        </tbody>
+      </table></div>
+      <h3>3.2. Exemplo runtime-owned (Interactions API)</h3>
+      <pre><code>from google import genai
+
+client = genai.Client()   # Developer API (GEMINI_API_KEY); em Vertex use generateContent + code_execution (ver aviso da secao 3)
+
+# Runtime-owned: store=False, sem previous_interaction_id, sem background provider-managed.
+# O runtime monta o input/historico e preserva id/signature dos steps retornados.
+interaction = client.interactions.create(
+    model="gemini-3.5-flash",   # Code Execution with images: documentado em Gemini 3 Flash, herdado pela linha 3.5 GA
+    store=False,
+    input=runtime_adapter.to_gemini_interactions_input(thread_id="thr_123"),
+    tools=[
+        {"type": "code_execution"},
+        {   # tool combination: custom function de busca no registry (loop de duas fases, ver §7.3)
+            "type": "function",
+            "name": "search_internal_tools",
+            "description": "Search the runtime tool registry for relevant custom tools allowed for this tenant/user.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "goal": {"type": "string", "description": "Capability needed by the model."},
+                    "max_tools": {"type": "integer", "description": "Maximum tools to return."},
+                },
+                "required": ["goal"],
+            },
+        },
+    ],
+)
+
+runtime_db.persist_gemini_steps(
+    thread_id="thr_123",
+    steps=interaction.steps,
+    preserve_fields=["id", "signature"],  # integridade estrutural do protocolo, nao memoria do provider
+)</code></pre>
+      <div class="callout info">
+        <strong>Steps, signatures e modo stateless:</strong> quando o Gemini roda em modo
+        <code>store:false</code> com Code Execution ou combinação de tools, o runtime deve preservar e
+        reenviar os campos estruturais <code>id</code> e <code>signature</code> dos steps — isso é
+        integridade de protocolo, não estado semântico. A mecânica completa da Interactions API
+        (steps, tool combination, background) está em
+        <a href="guia_gemini_interactions_api.html">Gemini Interactions API</a>.
+      </div>
+      <div class="callout warn">
+        <strong>Sem Tool Search nativo:</strong> o Gemini não tem equivalente de
+        <code>defer_loading</code>. Para catálogos grandes, a melhor prática oficial é manter o conjunto
+        ativo pequeno — idealmente <strong>10–20 tools por chamada</strong> — com a seleção dinâmica
+        feita pelo runtime (§6.3 e §7).
+      </div>
+      <div class="source-link">
+        Fonte oficial: <a href="https://ai.google.dev/gemini-api/docs/code-execution" target="_blank" rel="noopener">Gemini — Code execution</a> ·
+        <a href="https://ai.google.dev/gemini-api/docs/interactions/code-execution" target="_blank" rel="noopener">Interactions — Code execution</a> ·
+        <a href="https://ai.google.dev/gemini-api/docs/interactions/tool-combination" target="_blank" rel="noopener">Interactions — Tool combination</a>. Verificado em 2026-06-10.
+      </div>
+    </section>
+
+    <section id="anthropic-code-execution">
+      <h2>4. Anthropic Code Execution</h2>
+      <p>
+        O Code Execution da Anthropic é a code tool mais ampla dos três providers: executa
+        <strong>Python e Bash</strong> em sandbox server-side, com comandos shell, operações de arquivo
+        (criar/editar/processar) e acesso aos arquivos enviados no request. Está <strong>GA — não exige
+        beta header</strong>. A arquitetura de agentic vision resultante é composição: visão/PDF nativa
+        para entender, Code Execution para manipular e processar, runtime para persistir artefatos.
+        <strong>Disponibilidade:</strong> Claude API, Claude Platform on AWS e Microsoft Foundry —
+        <strong>não</strong> em Amazon Bedrock nem Vertex AI (verificado em 2026-06-19; mesmo recorte do
+        <a href="guia_claude_api.html">guia Claude API</a>).
+      </p>
+      <h3>4.1. Versões da ferramenta</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Versão</th><th>Capacidades</th><th>Modelos suportados</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><code>code_execution_20250825</code></td>
+            <td>Python + Bash + file operations em sandbox server-side; execução por turno.</td>
+            <td><span class="pill ok">Todos os modelos</span> com tool use.</td>
+          </tr>
+          <tr>
+            <td><code>code_execution_20260120</code></td>
+            <td>Tudo da versão anterior + <strong>REPL persistence</strong> (estado Python mantido entre execuções no mesmo container) + <strong>programmatic tool calling</strong> (o código pode invocar outras tools).</td>
+            <td><span class="pill beta">Opus 4.5+ e Sonnet 4.5+</span> — <strong>não</strong> disponível em Haiku 4.5.</td>
+          </tr>
+        </tbody>
+      </table></div>
+      <div class="callout info">
+        <strong>Modelos (verificado em 2026-06-10):</strong> <code>claude-fable-5</code> (GA em
+        2026-06-09) é o modelo mais novo da Anthropic; <code>claude-opus-4-8</code> segue ativo e
+        excelente para produção. Os exemplos deste guia usam <code>claude-opus-4-8</code>; ambos
+        satisfazem o requisito "Opus 4.5+" da versão <code>20260120</code>.
+      </div>
+      <h3>4.2. Exemplo runtime-owned</h3>
+      <pre><code>import anthropic
+
+client = anthropic.Anthropic()
+
+response = client.messages.create(
+    model="claude-opus-4-8",   # claude-fable-5 (GA 2026-06-09) tambem suporta; Haiku 4.5 exige a versao 20250825
+    max_tokens=4096,
+    messages=runtime_adapter.to_anthropic_messages(thread_id="thr_123"),
+    tools=[
+        # 20260120: REPL persistente + programmatic tool calling (Opus 4.5+ / Sonnet 4.5+)
+        {"type": "code_execution_20260120", "name": "code_execution"},
+        {
+            "name": "vision_preprocess_document",
+            "description": (
+                "Render, crop, zoom, rotate, or enhance visual regions from a document/image. "
+                "Use only when native vision is insufficient for small text, charts, tables, "
+                "stamps, signatures, or diagrams."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "file_id": {"type": "string", "description": "Runtime artifact/file identifier."},
+                    "operations": {"type": "array", "items": {"type": "object"}},
+                },
+                "required": ["file_id", "operations"],
+            },
+            "strict": True,
+        },
+    ],
+    tool_choice={"type": "auto"},
+)
+runtime_db.persist_anthropic_response(thread_id="thr_123", response=response)</code></pre>
+      <div class="callout tip">
+        <strong>Quando usar cada versão:</strong> use <code>code_execution_20260120</code> por padrão em
+        Opus/Sonnet 4.5+ — REPL persistente reduz re-renderizações de página em fluxos de visão com
+        múltiplos crops, e programmatic tool calling permite que o código consulte outras tools sem
+        round-trip. Recue para <code>code_execution_20250825</code> quando o roteador puder cair em
+        Haiku 4.5 ou modelos anteriores.
+      </div>
+      <p>
+        Client tools continuam rodando no seu runtime e server tools na infraestrutura da Anthropic —
+        em ambos os casos o runtime persiste <code>tool_use</code>/<code>tool_result</code> e artefatos.
+        Server tools não substituem o DB do orquestrador. Visão/PDF nativos (resolução alta em Opus 4.7+
+        e posteriores, custo em tokens) estão detalhados em <a href="guia_multimodal.html">Multimodal</a>.
+      </p>
+      <div class="source-link">
+        Fonte oficial: <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool" target="_blank" rel="noopener">Anthropic — Code execution tool</a> ·
+        <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview" target="_blank" rel="noopener">Tool use overview</a> ·
+        <a href="https://platform.claude.com/docs/en/build-with-claude/vision" target="_blank" rel="noopener">Vision</a>. Verificado em 2026-06-10.
+      </div>
+    </section>
+
+    <section id="openai-shell">
+      <h2>5. OpenAI Shell tool</h2>
+      <p>
+        O Shell dá ao modelo um <strong>ambiente de terminal completo</strong>. Há dois modos: containers
+        hospedados pela OpenAI (hosted shell) e um runtime local que <em>você</em> hospeda e executa
+        (local shell). O Shell está disponível <strong>apenas na Responses API</strong> — não existe na
+        Chat Completions API.
+      </p>
+      <div class="callout danger">
+        <strong>Risco:</strong> executar comandos shell arbitrários é perigoso. Sempre sandbox a
+        execução, aplique allowlists/denylists onde possível e registre toda atividade da tool para
+        auditoria. Conteúdo obtido pela rede pode conter prompt injection — trate-o como adversarial e
+        exija revisão extra para ações que modificam dados ou sistemas.
+      </div>
+      <h3>5.1. Hosted shell: <code>container_auto</code> e <code>container_reference</code></h3>
+      <ul>
+        <li><code>environment.type = "container_auto"</code>: a OpenAI provisiona e gerencia o container da request.</li>
+        <li><code>environment.type = "container_reference"</code> + <code>container_id</code>: você cria o container via <code>client.containers.create(...)</code> (com <code>memory_limit</code> e <code>expires_after</code> ancorado em <code>last_active_at</code>) e o reutiliza entre requests para fluxos iterativos.</li>
+        <li>Runtime atual baseado em Debian 12; diretório de trabalho <code>/mnt/data</code> (caminho suportado para artefatos baixáveis); sem TTY interativo; sem <code>sudo</code>.</li>
+        <li><strong>Sem rede de saída por padrão.</strong> Habilitar exige allowlist de domínios no dashboard da org + <code>network_policy</code> explícita na request; <code>domain_secrets</code> injeta credenciais como placeholders (<code>$API_KEY</code>) sem expô-las ao modelo.</li>
+      </ul>
+      <pre><code>from openai import OpenAI
+
+client = OpenAI()
+
+response = client.responses.create(
+    model="gpt-5.5",
+    store=False,
+    tools=[{"type": "shell", "environment": {"type": "container_auto"}}],
+    input=[
+        {
+            "type": "message",
+            "role": "user",
+            "content": [
+                {"type": "input_text",
+                 "text": "Execute: ls -lah /mnt/data &amp;&amp; python --version &amp;&amp; node --version"},
+            ],
+        }
+    ],
+    tool_choice="auto",
+)
+print(response.output_text)</code></pre>
+      <div class="callout warn">
+        <strong>Multi-turn sem estado provider-side:</strong> a doc oficial demonstra continuação com
+        <code>previous_response_id</code> — sob a política runtime-owned deste portal isso é
+        anti-padrão. Reutilize apenas o <em>container</em> via <code>container_reference</code> e
+        reenvie o histórico montado pelo runtime com <code>store:false</code>
+        (ver <a href="guia_estado_contexto_memoria.html">Estado, contexto &amp; memória</a>).
+      </div>
+      <h3>5.2. Local shell: <code>shell_call</code> → <code>shell_call_output</code></h3>
+      <p>
+        Hosted e local usam os mesmos tipos de output item: <code>shell_call</code> (comandos pedidos
+        pelo modelo) e <code>shell_call_output</code> (saída e exit outcome). No modo local, sua
+        aplicação executa cada <code>shell_call</code> e devolve <code>shell_call_output</code> na
+        request seguinte:
+      </p>
+      <pre><code># Loop de local shell: o SEU runtime executa, nunca o provider.
+pending_input = runtime_adapter.to_openai_input(history)
+
+while True:
+    response = client.responses.create(
+        model="gpt-5.5",
+        store=False,
+        tools=[shell_tool_local],   # shell tool configurada para execucao local (ver doc oficial / Agents SDK shell executor)
+        input=pending_input,
+    )
+    shell_calls = [item for item in response.output if item.type == "shell_call"]
+    if not shell_calls:
+        break
+
+    outputs = []
+    for call in shell_calls:
+        guard.enforce_allowlist(call)              # sandbox + allow/deny lists + limites
+        result = local_sandbox.run(call)           # captura stdout, stderr e outcome (inclusive exit != 0)
+        runtime_db.persist_shell_call(call, result)
+        outputs.append({
+            "type": "shell_call_output",
+            "call_id": call.call_id,
+            "output": result.to_provider_payload(),  # respeite max_output_length quando presente no shell_call
+        })
+    pending_input = outputs</code></pre>
+      <ul>
+        <li>Timeout estourou? Devolva outcome de timeout com a saída parcial capturada.</li>
+        <li>Preserve outputs de exit code diferente de zero — o modelo precisa deles para raciocinar sobre recuperação.</li>
+        <li>Execução deve ser não-interativa; não dependa de comandos que esperam input.</li>
+      </ul>
+      <div class="callout tip">
+        <strong>Regra prática:</strong> para visão/PDF, prefira Code Interpreter/python tool. Use Shell
+        quando precisar de CLI, bibliotecas do sistema, scripts existentes, repositórios, build/test ou
+        worker local controlado. Para um simples crop/zoom, uma custom function restrita (§8) é mais
+        segura que shell arbitrário.
+      </div>
+      <div class="source-link">
+        Fonte oficial: <a href="https://developers.openai.com/api/docs/guides/tools-shell" target="_blank" rel="noopener">OpenAI — Shell</a>. Verificado em 2026-06-10.
+      </div>
+    </section>
+
+    <!-- ===================== PARTE 3 ===================== -->
+    <section class="chapter" id="parte-tool-search">
+      <h2 style="border-bottom:3px solid var(--c-da);padding:14px 0 10px;font-size:28px">Parte 3 — Tool Search &amp; seleção dinâmica</h2>
+      <p>Como expor catálogos grandes de tools sem afogar o contexto: nativo onde existe, registry no
+      runtime onde não existe.</p>
+    </section>
+
+    <section id="tool-search-providers">
+      <h2>6. Tool Search &amp; defer_loading por provider</h2>
+      <p>
+        Tool Search resolve um problema específico: catálogos grandes de definições de tools consomem
+        tokens e degradam a seleção. Com tools <em>deferidas</em>, o modelo vê inicialmente só nome e
+        descrição (ou só o nome/descrição do namespace/servidor MCP), busca quando precisa e carrega as
+        definições completas sob demanda.
+      </p>
+      <div class="callout warn">
+        <strong>Reprise da decisão executiva:</strong> Tool Search serve para <em>descobrir</em> custom
+        functions/MCP em catálogos grandes. Ele <strong>não</strong> é o mecanismo para ligar/desligar
+        Code Interpreter, Shell ou Code Execution — isso é gating no runtime (§1).
+      </div>
+
+      <h3>6.1. OpenAI — <code>{"type":"tool_search"}</code></h3>
+      <ul>
+        <li>Suportado apenas em <strong>gpt-5.4+</strong>.</li>
+        <li>Ativação: incluir <code>{"type": "tool_search"}</code> no array <code>tools</code> e marcar functions/MCP com <code>defer_loading: true</code>.</li>
+        <li><strong>Hosted tool search:</strong> a busca roda na OpenAI sobre as tools declaradas na própria request. Comece por aqui.</li>
+        <li><strong>Client-executed tool search:</strong> o modelo emite <code>tool_search_call</code>; sua aplicação responde com <code>tool_search_output</code>, podendo injetar definições novas via <code>additional_tools</code> — ideal quando a disponibilidade depende de tenant, projeto, permissões ou registry interno.</li>
+        <li><strong>Namespaces:</strong> agrupe funções deferidas em namespaces ou MCP servers com descrições de alto nível; <code>defer_loading</code> aplica-se às funções <em>dentro</em> do namespace, não ao objeto namespace. Melhor prática oficial: <strong>menos de 10 functions por namespace</strong>. Um namespace pode misturar tools deferidas e não-deferidas.</li>
+        <li>Para função deferida individual, o modelo continua vendo nome e descrição — na prática o que se difere é principalmente o <em>parameter schema</em>.</li>
+      </ul>
+      <pre><code>{
+  "model": "gpt-5.5",
+  "store": false,
+  "tools": [
+    { "type": "tool_search" },
+    {
+      "type": "function",
+      "name": "billing_list_invoices",
+      "description": "List invoices for the authenticated customer, filtered by period.",
+      "parameters": { "type": "object", "properties": { "period": { "type": "string" } },
+                      "required": ["period"], "additionalProperties": false },
+      "defer_loading": true
+    },
+    {
+      "type": "mcp",
+      "server_label": "crm",
+      "server_url": "https://mcp.example.internal/crm",
+      "defer_loading": true
+    }
+  ],
+  "input": "..."
+}</code></pre>
+
+      <h3>6.2. Anthropic — Regex e BM25</h3>
+      <ul>
+        <li>Duas variantes de server tool: <code>tool_search_tool_regex_20251119</code> e <code>tool_search_tool_bm25_20251119</code>.</li>
+        <li>Tools do catálogo levam <code>defer_loading: true</code>; a busca cobre nomes, descrições e argumentos.</li>
+        <li><strong>Pelo menos uma tool não-deferida</strong> é exigida no request.</li>
+        <li>Cada busca carrega tipicamente <strong>3–5 tools</strong> para o contexto; o mecanismo escala até <strong>~10.000 tools</strong> no catálogo.</li>
+      </ul>
+      <pre><code>{
+  "model": "claude-opus-4-8",
+  "max_tokens": 4096,
+  "tools": [
+    { "type": "tool_search_tool_bm25_20251119", "name": "tool_search" },
+    {
+      "name": "orders_get_order_status",
+      "description": "Look up the current status of a customer order by order ID. ...",
+      "input_schema": { "type": "object", "properties": { "order_id": { "type": "string" } },
+                        "required": ["order_id"] }
+    },
+    {
+      "name": "billing_list_invoices",
+      "description": "List invoices for the authenticated customer, filtered by period. ...",
+      "input_schema": { "type": "object", "properties": { "period": { "type": "string" } },
+                        "required": ["period"] },
+      "defer_loading": true
+    }
+  ],
+  "messages": [ ... ]
+}</code></pre>
+      <p class="small" style="font-size:13px;color:var(--c-fg-muted)">
+        No exemplo, <code>orders_get_order_status</code> permanece não-deferida (requisito mínimo) e
+        atua como "hot tool"; o resto do catálogo é deferido e descoberto via BM25.
+      </p>
+
+      <h3>6.3. Gemini — sem equivalente nativo</h3>
+      <p>
+        Não há, nas docs oficiais consultadas, equivalente direto ao Tool Search com
+        <code>defer_loading</code> nativo no Gemini. A recomendação oficial de function calling é manter
+        o conjunto ativo pequeno e relevante — <strong>idealmente 10–20 tools</strong> quando o catálogo
+        total é grande. Em outras palavras: a seleção dinâmica é responsabilidade do runtime, por
+        pré-seleção via registry antes da chamada ou por uma tool client-side
+        <code>search_internal_tools</code> com loop de duas fases (§7).
+      </p>
+
+      <h3>6.4. Comparativo</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Dimensão</th><th>OpenAI</th><th>Anthropic</th><th>Gemini</th></tr></thead>
+        <tbody>
+          <tr><td>Mecanismo nativo</td><td><code>{"type":"tool_search"}</code></td><td><code>tool_search_tool_regex_20251119</code> / <code>tool_search_tool_bm25_20251119</code></td><td><span class="pill na">N/D</span> — runtime decide</td></tr>
+          <tr><td>Flag de deferimento</td><td><code>defer_loading: true</code> (functions, MCP, funções de namespace)</td><td><code>defer_loading: true</code></td><td>—</td></tr>
+          <tr><td>Modelos</td><td>gpt-5.4+</td><td>Modelos com tool use atuais</td><td>—</td></tr>
+          <tr><td>Modos</td><td>Hosted e client-executed (<code>tool_search_call</code>/<code>tool_search_output</code> + <code>additional_tools</code>)</td><td>Server tool (busca na Anthropic)</td><td>Pré-seleção no runtime ou loop de duas fases</td></tr>
+          <tr><td>Restrições/escala</td><td>Namespaces &lt;10 functions (melhor prática)</td><td>≥1 tool não-deferida; 3–5 tools por busca; até ~10k tools</td><td>10–20 tools ativas (melhor prática oficial)</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout tip">
+        <strong>Quando usar Tool Search:</strong> muitos custom functions, muitos MCP servers,
+        namespaces grandes, catálogo por tenant/permissão, schemas consumindo tokens ou selection errors
+        por excesso de opções. <strong>Quando não usar:</strong> catálogos pequenos (&lt;20–30 tools) —
+        e nunca como substituto de gating de code tools.
+      </div>
+      <div class="source-link">
+        Fontes oficiais: <a href="https://developers.openai.com/api/docs/guides/tools-tool-search" target="_blank" rel="noopener">OpenAI — Tool search</a> ·
+        <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/tool-search-tool" target="_blank" rel="noopener">Anthropic — Tool search tool</a> ·
+        <a href="https://ai.google.dev/gemini-api/docs/function-calling" target="_blank" rel="noopener">Gemini — Function calling</a>. Verificado em 2026-06-10.
+      </div>
+    </section>
+
+    <section id="tool-registry-runtime">
+      <h2>7. ToolRegistry &amp; fallback de Tool Search no runtime</h2>
+      <p>
+        Para providers sem Tool Search nativo (Gemini) — ou quando você quer comportamento uniforme
+        entre providers — o runtime implementa um <strong>ToolRegistry</strong> e uma etapa de seleção
+        dinâmica. A meta: expor ao modelo apenas <em>hot tools</em> + tools relevantes para aquele turno,
+        preservando permissões, tenant, risco e custo.
+      </p>
+      <div class="callout info">
+        <strong>Dono do tema:</strong> o registry canônico, a ACL e a governança de capabilities são do
+        <a href="guia_arquitetura_orquestracao.html#capability-registry">capability registry</a>
+        (arquitetura) e dos contratos de
+        <a href="guia_ferramentas_mcp_rag.html">Ferramentas, MCP &amp; RAG</a>. Esta seção cobre apenas a
+        camada de <em>busca e seleção por turno</em> que emula Tool Search.
+      </div>
+      <h3>7.1. Arquitetura em seis passos</h3>
+      <ol>
+        <li><strong>Registry canônico:</strong> armazena schema, descrições, ACL, risco, side effects, versão, executor e tags.</li>
+        <li><strong>Roteador:</strong> classifica a tarefa — texto simples, retrieval, tool-needed, agentic vision, shell-needed, high-risk.</li>
+        <li><strong>Busca híbrida:</strong> BM25 sobre <code>name</code>/<code>description</code>/nomes de argumentos + embeddings sobre <code>description_full</code> + priors de namespace/tenant/uso.</li>
+        <li><strong>Filtro de segurança:</strong> tenant, user scopes, plano, risk gates, classificação de dados e confirmações.</li>
+        <li><strong>Chamada ao provider:</strong> payload com hot tools + top-k schemas; no Gemini, manter o conjunto ativo pequeno; em OpenAI/Anthropic, preferir o nativo quando disponível.</li>
+        <li><strong>Loop de duas fases:</strong> se o modelo pedir capacidade não carregada via <code>search_internal_tools</code>, o runtime busca e refaz a chamada com os schemas carregados.</li>
+      </ol>
+      <h3>7.2. Registry e busca</h3>
+      <pre><code>from dataclasses import dataclass
+from typing import Any, Literal
+
+@dataclass
+class ToolRegistryEntry:
+    name: str
+    namespace: str
+    version: str
+    description_short: str
+    description_full: str
+    parameters_json_schema: dict[str, Any]
+    executor_ref: str
+    tags: list[str]
+    required_scopes: list[str]
+    side_effects: Literal["none", "external_write", "payment", "message_send", "code_execution"]
+    read_only: bool
+    idempotent: bool
+    risk_level: Literal["low", "medium", "high", "critical"]
+    requires_confirmation: bool
+    hot: bool = False
+    defer_loading: bool = True
+
+class ToolRegistry:
+    def search(self, *, goal: str, tenant_id: str, user_scopes: list[str], max_tools: int = 5):
+        candidates = self._filter_by_tenant_acl(tenant_id, user_scopes)
+        # Hybrid rank: BM25 sobre names/descriptions/arg names + embeddings sobre description_full.
+        ranked = self._rank(goal, candidates)
+        return ranked[:max_tools]</code></pre>
+      <h3>7.3. Tool client-side de busca (loop de duas fases)</h3>
+      <pre><code>{
+  "type": "function",
+  "name": "search_internal_tools",
+  "description": "Search the runtime tool registry for relevant custom tools allowed for this tenant/user.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "goal": { "type": "string", "description": "Capability needed by the model." },
+      "max_tools": { "type": "integer", "description": "Maximum tools to return." }
+    },
+    "required": ["goal"]
+  }
+}</code></pre>
+      <h3>7.4. Pseudoprotocolo provider-agnostic</h3>
+      <pre><code># Phase 0: runtime-owned history
+history = db.load_history(thread_id)
+route = router.classify(history)
+
+# Phase 1: schema selection
+hot = registry.hot_tools(tenant_id, scopes)
+selected = registry.search(goal=route.goal, tenant_id=tenant_id, user_scopes=scopes, max_tools=route.max_tools)
+active_tools = merge_and_dedupe(hot, selected)
+
+# Phase 2: provider call
+request = adapter.build_request(
+    history=history,
+    tools=active_tools,
+    store_provider_state=False,
+    include_structural_roundtrip_fields=True,
+)
+response = provider.call(request)
+
+# Phase 3: execute client tools and persist
+for call in adapter.extract_tool_calls(response):
+    validate_args(call.schema, call.args)
+    enforce_acl(call, user, tenant)
+    if call.requires_confirmation:
+        pause_for_human_approval(call)
+    result = executor.run(call)
+    db.persist_tool_result(call, result)
+
+# Phase 4: continue until final or budget exhausted
+# Sempre persistir eventos raw + normalizados no runtime DB, nunca em sessions provider-managed.</code></pre>
+      <div class="callout tip">
+        <strong>Melhor prática:</strong> se o catálogo for pequeno, não use esse mecanismo. Se houver
+        &gt;20–30 tools, múltiplos tenants, MCP servers grandes ou selection errors recorrentes, use.
+      </div>
+    </section>
+
+    <!-- ===================== PARTE 4 ===================== -->
+    <section class="chapter" id="parte-contratos">
+      <h2 style="border-bottom:3px solid var(--c-da);padding:14px 0 10px;font-size:28px">Parte 4 — Fallback &amp; contratos</h2>
+      <p>O fallback local de visão em worker isolado, os schemas de custom functions que funcionam nos
+      três providers e o bloco de system prompt que disciplina o uso da code tool.</p>
+    </section>
+
+    <section id="vision-fallback-local">
+      <h2>8. Fallback local de visão</h2>
+      <h3>8.1. Por que não expor shell arbitrário?</h3>
+      <p>
+        Para providers/cenários sem Code Interpreter/Code Execution adequado, o melhor fallback de visão
+        <strong>não</strong> é dar um shell livre ao modelo. É criar uma custom function restrita, com
+        operações visualmente úteis e allowlisted. Shell local só entra para workloads confiáveis,
+        coding agents, testes de repositório ou quando o runtime consegue isolar de verdade.
+      </p>
+      <pre><code>@function_tool
+async def vision_preprocess_document(
+    file_id: str,
+    operations: list[dict],
+) -&gt; dict:
+    """
+    Preprocess a visual document/image through allowlisted operations only.
+    Allowed operations: render_pdf_page, crop, zoom, rotate, enhance_contrast, split_grid, thumbnail.
+    Returns runtime artifact IDs that the orchestrator can feed back as images/files.
+    """
+    # 1. Resolve file_id a partir do object store do runtime, nunca caminhos arbitrarios.
+    # 2. Execute em worker/container isolado com limites de CPU/memoria/tempo.
+    # 3. Use PyMuPDF/Pillow/OpenCV atras de allowlists estritas.
+    # 4. Armazene artefatos derivados no object storage.
+    # 5. Retorne apenas artifact IDs e metadata pequena, nunca segredos ou paths locais.
+    return {
+        "ok": True,
+        "artifacts": [
+            {"artifact_id": "art_crop_001", "mime_type": "image/png",
+             "description": "Cropped zoom from page 2."}
+        ],
+    }</code></pre>
+      <h3>8.2. Allowlist de operações</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Operação</th><th>Uso</th><th>Parâmetros</th><th>Risco a controlar</th></tr></thead>
+        <tbody>
+          <tr><td><code>render_pdf_page</code></td><td>Transformar página em PNG/JPEG para inspeção visual.</td><td><code>page</code>, <code>dpi/scale</code></td><td>Limitar páginas máximas e pixels.</td></tr>
+          <tr><td><code>crop</code></td><td>Recortar tabela, gráfico, assinatura, carimbo, texto pequeno.</td><td><code>bbox</code></td><td>Validar bounds.</td></tr>
+          <tr><td><code>zoom</code></td><td>Ampliar região.</td><td><code>scale</code></td><td>Limitar pixels finais.</td></tr>
+          <tr><td><code>rotate</code></td><td>Corrigir inclinação.</td><td><code>degrees</code></td><td>Limitar valores.</td></tr>
+          <tr><td><code>enhance_contrast</code></td><td>Melhorar legibilidade.</td><td><code>factor</code></td><td>Não "inventar" pixels; declarar incerteza.</td></tr>
+          <tr><td><code>split_grid</code></td><td>Dividir página complexa em tiles.</td><td><code>rows</code>, <code>cols</code></td><td>Limitar tiles.</td></tr>
+        </tbody>
+      </table></div>
+      <h3>8.3. Worker local em Docker Compose (testes)</h3>
+      <pre><code>services:
+  vision-worker:
+    build: ./vision-worker
+    read_only: true
+    network_mode: "none"
+    pids_limit: 256
+    mem_limit: 2g
+    cpus: "1.0"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp:size=256m,mode=1777
+    volumes:
+      - ./scratch/in:/work/in:ro
+      - ./scratch/out:/work/out:rw
+    environment:
+      MAX_PAGES: "20"
+      MAX_PIXELS: "12000000"
+      MAX_SECONDS: "30"</code></pre>
+      <h3>8.4. Produção: Cloud Run / GKE</h3>
+      <p>
+        Em produção, use Cloud Run Jobs/Services ou GKE como worker isolado: imagem imutável, Workload
+        Identity, rede sem egress por padrão, quotas de CPU/RAM, timeout curto, filesystem efêmero, GCS
+        para input/output, logs estruturados, trace ID por tool call e política de retenção para
+        artefatos. Use o pricing calculator do GCP no momento do deploy — o custo do worker local não é
+        cobrado pelo provider LLM, mas vira custo de infraestrutura, segurança e operação.
+      </p>
+    </section>
+
+    <section id="schemas-multi-provider">
+      <h2>9. Schemas de custom functions multi-provider</h2>
+      <p>
+        Esta seção é canônica para geração/validação de schemas de custom functions nos três providers
+        e deve ser indexada com <strong>alta prioridade</strong> em pipelines de RAG que consultam este
+        portal. Os princípios gerais de design de contrato de tool (envelopes, side-effect levels, HITL) vivem em
+        <a href="guia_ferramentas_mcp_rag.html#design-de-schema-de-tool">Ferramentas, MCP &amp; RAG</a>;
+        aqui fica a tabela de equivalência de campos e as regras de naming/description.
+      </p>
+      <h3>9.1. Equivalência de campos</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Conceito</th><th>OpenAI Responses / Agents</th><th>Anthropic Messages</th><th>Gemini Interactions / GenAI</th></tr></thead>
+        <tbody>
+          <tr><td>Tipo da tool</td><td><code>tools[].type = "function"</code></td><td>Client tool sem <code>type</code>; server tools têm <code>type</code> versionado</td><td>Interactions: <code>type:"function"</code>; <code>generateContent</code>: <code>functionDeclarations</code></td></tr>
+          <tr><td>Nome</td><td><code>name</code></td><td><code>name</code>, regex <code>^[a-zA-Z0-9_-]{1,64}$</code></td><td><code>name</code></td></tr>
+          <tr><td>Descrição</td><td><code>description</code></td><td><code>description</code> (fator mais importante na seleção)</td><td><code>description</code></td></tr>
+          <tr><td>Schema de entrada</td><td><code>parameters</code></td><td><code>input_schema</code></td><td><code>parameters</code></td></tr>
+          <tr><td>Strict mode</td><td><code>strict:true</code>; requer <code>additionalProperties:false</code> e todos os campos em <code>required</code></td><td><code>strict:true</code> disponível nas propriedades opcionais</td><td>Subset OpenAPI/JSON Schema; validar no runtime</td></tr>
+          <tr><td>Exemplos</td><td>Não é campo universal; colocar em description/registry</td><td><code>input_examples</code> opcional para client tools</td><td>Prompt/registry; o SDK Python pode converter docstrings no fluxo automático</td></tr>
+          <tr><td>Deferred loading</td><td><code>defer_loading:true</code> com Tool Search</td><td><code>defer_loading:true</code> com Tool Search</td><td><span class="pill na">N/D</span> — seleção no runtime (§7)</td></tr>
+        </tbody>
+      </table></div>
+      <p>
+        OpenAI recomenda strict mode para aderência ao schema, com <code>additionalProperties:false</code>
+        e todos os campos em <code>required</code> (use <code>null</code> para opcionais quando
+        necessário). Gemini recomenda nomes/descrições claros, tipos fortes, enums e conjunto ativo
+        pequeno. Anthropic dá peso especial à description — 3–4 frases ou mais para tools complexas,
+        cobrindo o que a tool faz, quando usar/não usar, parâmetros, caveats e limitações.
+      </p>
+      <h3>9.2. Schema canônico interno</h3>
+      <pre><code>{
+  "name": "orders_get_order_status",
+  "namespace": "orders",
+  "version": "v1",
+  "description_short": "Look up the current status of a customer order.",
+  "description_full": "Look up the current status of a customer order by order ID. Use this when the user asks where an order is, whether it shipped, whether it was delivered, or when it will arrive. Do not use this for refunds, invoice questions, account profile changes, or product recommendations. Required input: the internal order ID, such as ord_12345.",
+  "parameters_json_schema": {
+    "type": "object",
+    "properties": {
+      "order_id": {
+        "type": "string",
+        "description": "The internal order ID, for example ord_12345."
+      }
+    },
+    "required": ["order_id"],
+    "additionalProperties": false
+  },
+  "examples": [
+    {
+      "user_intent": "Where is my order ord_12345?",
+      "arguments": { "order_id": "ord_12345" }
+    }
+  ],
+  "side_effects": "none",
+  "read_only": true,
+  "idempotent": true,
+  "risk_level": "low",
+  "requires_confirmation": false,
+  "required_scopes": ["orders:read"],
+  "timeout_ms": 10000
+}</code></pre>
+      <h3>9.3. Regras para nomes</h3>
+      <ul>
+        <li>Use <code>snake_case</code> com prefixo por namespace: <code>orders_get_order_status</code>, <code>billing_list_invoices</code>, <code>vision_preprocess_document</code>.</li>
+        <li>Verbo + objeto. Evite <code>get_data</code>, <code>process</code>, <code>run</code>, <code>lookup</code> genérico.</li>
+        <li>Em Anthropic, respeite <code>^[a-zA-Z0-9_-]{1,64}$</code>.</li>
+      </ul>
+      <h3>9.4. Regras para descriptions</h3>
+      <p>
+        A description deve responder: o que a tool faz; quando usar; quando não usar; quais inputs são
+        necessários; o que retorna; caveats/limites; se causa side effect. Calibre o tamanho:
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Tipo de tool</th><th>Tamanho alvo</th><th>Exemplo</th></tr></thead>
+        <tbody>
+          <tr><td>Simples (read-only, escopo óbvio)</td><td>25–60 palavras</td><td rowspan="3"><strong>Boa:</strong> <code>Look up the current status of a customer order by order ID. Use this when the user asks where an order is, whether it shipped, whether it was delivered, or when it will arrive. Do not use this for refunds, billing disputes, product recommendations, or account profile updates. Required input: the internal order ID, such as ord_12345.</code><br/><br/><strong>Ruim:</strong> <code>Gets order info.</code></td></tr>
+          <tr><td>De negócio, com fronteiras de uso</td><td>60–120 palavras</td></tr>
+          <tr><td>Crítica / com side effects</td><td>100–180 palavras (ou mais se Anthropic for o provider primário e a seleção estiver ambígua)</td></tr>
+        </tbody>
+      </table></div>
+      <h3>9.5. Parameters / input_schema</h3>
+      <ul>
+        <li>Topo sempre object: <code>{"type":"object","properties":...}</code>.</li>
+        <li>Use <code>required</code> para indispensáveis; com OpenAI strict, todos os campos devem estar em <code>required</code>.</li>
+        <li>Use <code>additionalProperties:false</code> onde suportado.</li>
+        <li>Use <code>enum</code> para valores fechados.</li>
+        <li>Descreva formato: ISO date, timezone, currency code, prefixo de ID, unidades, locale.</li>
+        <li>Evite nested objects profundos; se passar de 2 níveis, reavalie.</li>
+        <li>Não use <code>query</code> genérico quando puder estruturar campos.</li>
+      </ul>
+      <h3>9.6. Side effects, guardrails e erros estruturados</h3>
+      <p>
+        O provider não é a autoridade de segurança. O registry interno marca <code>read_only</code>,
+        <code>idempotent</code>, <code>risk_level</code>, <code>requires_confirmation</code>,
+        <code>required_scopes</code>, <code>timeout_ms</code> e <code>audit_required</code>; o executor
+        valida JSON Schema, ACL, tenant, idempotency key, rate limits e approval antes de executar
+        (fluxo HITL completo em <a href="guia_ferramentas_mcp_rag.html">Ferramentas, MCP &amp; RAG</a>).
+        Erros voltam estruturados:
+      </p>
+      <pre><code>{
+  "ok": false,
+  "error_code": "ORDER_NOT_FOUND",
+  "message": "No order was found for order_id ord_12345.",
+  "retryable": false
+}</code></pre>
+      <div class="source-link">
+        Fontes oficiais: <a href="https://developers.openai.com/api/docs/guides/function-calling" target="_blank" rel="noopener">OpenAI — Function calling</a> ·
+        <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools" target="_blank" rel="noopener">Anthropic — Define tools</a> ·
+        <a href="https://ai.google.dev/gemini-api/docs/function-calling" target="_blank" rel="noopener">Gemini — Function calling</a>. Verificado em 2026-06-10.
+      </div>
+    </section>
+
+    <section id="system-prompt-vision">
+      <h2>10. Bloco de system prompt — uso da python/code tool para visão</h2>
+      <p>
+        Este é o bloco a injetar quando a chamada inclui uma ferramenta de code/vision. Ele não é o
+        system prompt inteiro; é apenas a seção de uso da tool. Injete-o condicionalmente — junto com o
+        gating do §1 — para não gastar tokens em turnos sem code tool.
+      </p>
+      <pre><code>## Uso da python/code tool em tarefas de visão
+
+Quando houver PDFs, imagens, screenshots, scans, gráficos, tabelas visuais, diagramas, plantas,
+assinaturas, carimbos ou texto pequeno, use primeiro a visão nativa do modelo.
+
+Use a python/code tool somente quando a visão nativa não for suficiente ou quando a tarefa exigir
+manipulação visual do arquivo.
+
+Use a python/code tool para:
+- renderizar páginas específicas de PDF como imagem;
+- dar zoom em regiões pequenas ou densas;
+- recortar tabela, gráfico, assinatura, carimbo, selo, QR code, diagrama ou região visual relevante;
+- girar páginas ou imagens inclinadas;
+- melhorar contraste, nitidez, escala ou legibilidade;
+- dividir uma página grande em regiões menores;
+- comparar regiões entre páginas ou imagens;
+- validar números em gráficos, tabelas ou documentos escaneados;
+- criar artefatos derivados úteis para inspeção visual.
+
+Não use a python/code tool quando:
+- a pergunta for simples e a resposta estiver claramente visível;
+- o usuário pedir apenas um resumo geral;
+- o conteúdo textual já estiver disponível de forma confiável no input;
+- a manipulação visual não mudar a qualidade da resposta.
+
+Quando usar a python/code tool:
+1. Identifique a página, imagem ou região relevante antes de processar.
+2. Renderize ou abra apenas os arquivos/páginas necessários.
+3. Faça o menor crop suficiente para resolver a dúvida.
+4. Aplique zoom, rotação ou contraste somente quando isso ajudar a leitura.
+5. Salve artefatos derivados apenas quando forem úteis para a análise.
+6. Baseie a resposta final na visão nativa e nos artefatos processados.
+7. Declare explicitamente qualquer incerteza quando o detalhe continuar ilegível.
+
+Controle de custo e latência:
+- não renderize o documento inteiro em alta resolução sem necessidade;
+- não use a python/code tool para todas as respostas por padrão;
+- prefira chamadas pontuais e direcionadas;
+- use a tool como lupa/processador visual, não como substituto da visão nativa.</code></pre>
+    </section>
+
+    <!-- ===================== PARTE 5 ===================== -->
+    <section class="chapter" id="parte-operacao">
+      <h2 style="border-bottom:3px solid var(--c-da);padding:14px 0 10px;font-size:28px">Parte 5 — Operação &amp; frameworks</h2>
+      <p>Quanto custa, como decidir por turno, como cada framework encaixa e o que testar antes de
+      produção.</p>
+    </section>
+
+    <section id="custos-gating">
+      <h2>11. Custos &amp; gating</h2>
+      <div class="callout info">
+        <strong>Escopo:</strong> esta seção cobre o custo <em>das code tools</em> (containers e taxas de
+        execução). O custo detalhado de tokens por modalidade/provider — incluindo tokenização de
+        imagens e PDFs — é dono do guia <a href="guia_token_counting.html">Token counting</a>.
+      </div>
+      <h3>11.1. OpenAI</h3>
+      <p>
+        Tokens do <code>gpt-5.5</code> (Standard, por 1M tokens): contexto curto (&lt;272K tokens de
+        input) — US$5,00 input, US$0,50 cached input, US$30,00 output; contexto longo (≥272K) —
+        US$10,00 input, US$1,00 cached input, US$45,00 output. Batch tem preços menores.
+      </p>
+      <p>
+        Containers de Hosted Shell e Code Interpreter têm preço-base por sessão de 20 minutos, por tier
+        de memória:
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th><code>memory_limit</code></th><th>Base (20 min)</th><th>Equivalente por minuto (derivado)</th></tr></thead>
+        <tbody>
+          <tr><td><code>1g</code> (default)</td><td>US$0,03</td><td>≈ US$0,0015/min</td></tr>
+          <tr><td><code>4g</code></td><td>US$0,12</td><td>≈ US$0,006/min</td></tr>
+          <tr><td><code>16g</code></td><td>US$0,48</td><td>≈ US$0,024/min</td></tr>
+          <tr><td><code>64g</code></td><td>US$1,92</td><td>≈ US$0,096/min</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout warn">
+        <strong>Mudança de billing (2026-06-02):</strong> desde 02/06/2026, containers são cobrados
+        <strong>por minuto</strong> de atividade, com <strong>mínimo de 5 minutos</strong> por container
+        — os valores da tabela são a taxa-base de 20 minutos usada como referência de proporção. Um
+        container <code>4g</code> usado por 6 minutos custa ~US$0,036; usado por 3 minutos, cobra o
+        mínimo de 5 (~US$0,03). Decisão comercial deve reconsultar o
+        <a href="https://developers.openai.com/api/docs/pricing" target="_blank" rel="noopener">pricing oficial</a>.
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Tool</th><th>Custo adicional do provider</th><th>Uso recomendado</th></tr></thead>
+        <tbody>
+          <tr><td>Code Interpreter</td><td>Container por tier (por minuto, mín. 5) + tokens</td><td>Python, arquivos, crop/zoom visual, plots, análise numérica.</td></tr>
+          <tr><td>Hosted Shell</td><td>Mesma tabela de containers + tokens</td><td>CLI, repositórios, builds, multimedia, scripts de sistema.</td></tr>
+          <tr><td>Local Shell</td><td>Sem container OpenAI; o custo é a sua infra</td><td>Quando precisa de controle total do ambiente e aceita executar <code>shell_call</code>.</td></tr>
+        </tbody>
+      </table></div>
+      <h3>11.2. Anthropic</h3>
+      <ul>
+        <li>Code Execution é <strong>gratuito quando usado junto com</strong> <code>web_search_20260209</code> ou <code>web_fetch_20260209</code>.</li>
+        <li>Sem essas tools: cobrança por tempo de execução com <strong>mínimo de 5 minutos</strong>; <strong>1.550 horas grátis por organização/mês</strong>; <strong>US$0,05 por hora/container</strong> além disso.</li>
+        <li>Arquivos incluídos no request podem gerar cobrança <em>mesmo se a tool não for invocada</em>, porque são pré-carregados no container.</li>
+      </ul>
+      <h3>11.3. Gemini</h3>
+      <p>
+        Code Execution não tem cobrança adicional por habilitação: paga-se apenas tokens do modelo,
+        incluindo o código gerado e os resultados de execução, contabilizados como <em>intermediate
+        tokens</em>. Runtime máximo de 30s e até 5 retries valem como teto prático de custo por turno.
+        Detalhe de contagem em <a href="guia_token_counting.html">Token counting</a>.
+      </p>
+      <h3>11.4. Regra de gating</h3>
+      <pre><code>def classify_tool_needs(turn):
+    if turn.has_file_or_image and turn.user_asks_zoom_crop_rotate_validate_visual:
+        return {"needs_agentic_vision": True}
+    if turn.has_pdf_with_small_text_or_visual_tables and turn.requires_exact_numbers:
+        return {"needs_agentic_vision": True}
+    if turn.requires_repo_build_cli_or_system_tools:
+        return {"needs_shell": True}
+    if turn.requires_large_document_retrieval:
+        return {"needs_file_retrieval": True}
+    return {"needs_native_model_only": True}</code></pre>
+      <p>
+        O retorno alimenta o <code>build_tools(route)</code> do §2.2: cada flag liga exatamente uma
+        ferramenta, e o caso default não inclui nenhuma code tool — zero custo de container, zero
+        superfície de risco.
+      </p>
+      <div class="source-link">
+        Fontes oficiais: <a href="https://developers.openai.com/api/docs/pricing" target="_blank" rel="noopener">OpenAI — Pricing</a> ·
+        <a href="https://platform.claude.com/docs/en/about-claude/pricing" target="_blank" rel="noopener">Anthropic — Pricing</a> ·
+        <a href="https://ai.google.dev/gemini-api/docs/code-execution" target="_blank" rel="noopener">Gemini — Code execution</a>. Verificado em 2026-06-10.
+      </div>
+    </section>
+
+    <section id="mapeamento-frameworks">
+      <h2>12. Mapeamento por framework</h2>
+      <p>
+        As code tools deste guia aparecem em qualquer framework de orquestração — o que muda é onde o
+        gating e a persistência se encaixam. A regra é a mesma em todos: <strong>o framework é
+        runner/abstração; o runtime DB é a fonte autoritativa</strong> de histórico, tool calls,
+        artefatos e checkpoints.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Framework</th><th>Papel no stack</th><th>Regras essenciais (runtime-owned)</th><th>Guia dedicado</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>OpenAI Agents SDK</strong></td>
+            <td>Runner com agents, tools, guardrails, HITL, tracing; provider-agnostic.</td>
+            <td>Defina agents especialistas com instructions e tools, mas monte o input a partir do runtime DB; decida tools por turno via wrapper (Code Interpreter, Shell, File Search, functions, MCP); em agents-as-tools o manager é dono da resposta final — subagents são ferramentas, não donos do estado; para Shell/local tools, logue tool call/output/exit code/artefatos no DB; não use sessões automáticas como fonte autoritativa.</td>
+            <td><a href="guia_agents_sdk_orquestracao.html">Agents SDK · Orquestração</a></td>
+          </tr>
+          <tr>
+            <td><strong>LangGraph</strong></td>
+            <td>Grafo com camada de persistência (checkpoints/threads), HITL, time travel.</td>
+            <td>Implemente o checkpointer contra o banco do runtime, nunca contra armazenamento temporário/local sem governança; guarde o estado normalizado do grafo e também os envelopes provider-specific por chamada; nós separados para router/gating → tool selection → provider call → tool execution → artifact handling → finalization; checkpoint de grafo não é conversation provider-side — o checkpoint é seu.</td>
+            <td><a href="guia_langgraph_orquestracao.html">LangGraph · Orquestração</a></td>
+          </tr>
+          <tr>
+            <td><strong>DeepAgents</strong></td>
+            <td>Harness opinativo sobre LangGraph: durable execution, planning, subagents, filesystem.</td>
+            <td>Substitua/integre o backend de filesystem com o artifact store do runtime; filesystem efêmero não vira fonte de verdade; code execution do harness segue as mesmas regras de sandbox/allowlist/timeout/persistência.</td>
+            <td><a href="guia_deepagents.html">Deep Agents</a></td>
+          </tr>
+          <tr>
+            <td><strong>Google ADK v2+</strong></td>
+            <td>Agentes multi-linguagem, graph workflows, deploy em Cloud Run/GKE.</td>
+            <td>Sessions/events do ADK são projeção/adapter local, não estado autoritativo; o runtime DB guarda a timeline canônica e o ADK recebe uma visão montada dela; deploy em Cloud Run/GKE pode ser o runtime de execução, mas artifact store/checkpoints/ACL continuam sob seu controle; SessionService é cache operacional — reidrate do DB canônico.</td>
+            <td><a href="guia_google_adk_orquestracao.html">Google ADK · Orquestração</a></td>
+          </tr>
+        </tbody>
+      </table></div>
+      <p>
+        Sketch dos nós LangGraph sob estado runtime-owned (expansão da linha da tabela — o mesmo
+        desenho vale como referência para os demais frameworks):
+      </p>
+      <pre><code># Sketch: LangGraph nodes under runtime-owned state
+START -&gt; load_runtime_history -&gt; route_capabilities -&gt; select_tools -&gt; call_provider
+call_provider -&gt; execute_client_tools -&gt; persist_tool_results -&gt; call_provider
+call_provider -&gt; finalize_response -&gt; END
+
+# A implementacao do checkpointer escreve no runtime DB: threads, checkpoints, eventos, artefatos.</code></pre>
+      <div class="callout warn">
+        <strong>Versões de SDK/pacotes:</strong> este guia <em>não</em> mantém matriz de versões própria
+        — versões são perecíveis. Consulte os badges "Verificado em" dos guias de framework acima e
+        faça o CI revalidar antes de cada release (<code>pip index versions ...</code>,
+        <code>npm view &lt;pkg&gt; version</code> e smoke tests reais por provider).
+      </div>
+    </section>
+
+    <section id="smoke-tests-checklist">
+      <h2>13. Smoke tests &amp; checklist de produção</h2>
+      <h3>13.1. Smoke tests por provider</h3>
+      <ul>
+        <li><strong>OpenAI:</strong> <code>store:false</code> + histórico manual + resposta final coerente.</li>
+        <li><strong>OpenAI:</strong> PDF como <code>input_file</code> + visão nativa + Code Interpreter acionado <em>só</em> quando o prompt pede crop/zoom.</li>
+        <li><strong>OpenAI:</strong> Hosted Shell (<code>container_auto</code> e <code>container_reference</code>) e Local Shell em cenários separados, com <code>shell_call_output</code> persistido.</li>
+        <li><strong>OpenAI:</strong> Tool Search hosted e client-executed com function deferida, <code>tool_search_call</code>/<code>tool_search_output</code> e function call final.</li>
+        <li><strong>Gemini Interactions:</strong> <code>store:false</code> sem <code>previous_interaction_id</code>; steps persistidos.</li>
+        <li><strong>Gemini Interactions:</strong> Code Execution com imagem em <code>gemini-3.5-flash</code>; verificar retorno de code/result/text. Confirmar o <strong>backend de auth</strong>: este teste passa na Developer API e pode <strong>falhar</strong> em Vertex — se o alvo for Vertex, validar <code>generateContent</code> + <code>code_execution</code> como caminho alternativo (§3).</li>
+        <li><strong>Gemini Interactions:</strong> tool combination stateless preservando <code>id</code>/<code>signature</code>.</li>
+        <li><strong>Anthropic:</strong> custom tool com <code>input_schema</code> + strict + <code>tool_result</code>.</li>
+        <li><strong>Anthropic:</strong> Code Execution com arquivo/imagem e artefatos persistidos no runtime — testar <code>code_execution_20250825</code> e, em Opus/Sonnet 4.5+, <code>code_execution_20260120</code> com REPL persistente entre execuções.</li>
+        <li><strong>Anthropic:</strong> Tool Search BM25 e Regex com deferred tools e ≥1 tool não-deferida.</li>
+        <li><strong>Fallback local:</strong> <code>vision_preprocess_document</code> em Docker sem rede, com quotas, timeouts e artifact IDs.</li>
+      </ul>
+      <h3>13.2. Checklist de produção</h3>
+      <ul>
+        <li>☐ Runtime DB é fonte autoritativa de histórico/envelope/tool calls/tool results.</li>
+        <li>☐ Nenhum caminho depende de <code>previous_response_id</code>, <code>previous_interaction_id</code> ou conversations/sessions provider-side.</li>
+        <li>☐ Gating decide as tools <em>antes</em> da request; Tool Search não é usado como liga/desliga de code tools.</li>
+        <li>☐ Todos os schemas têm descriptions suficientes, enums, <code>required</code> e validação no runtime.</li>
+        <li>☐ Tool executors têm ACL, tenant isolation, idempotency, approval e audit logs.</li>
+        <li>☐ Artifact store tem checksums, validação de MIME, lifecycle policy e redaction.</li>
+        <li>☐ Worker local tem <code>no-new-privileges</code>, sem rede, quotas, tmpfs e allowlist.</li>
+        <li>☐ Custos de container monitorados por turno (billing por minuto, mínimos de 5 min na OpenAI e na Anthropic sem web tools).</li>
+        <li>☐ CI revalida versões de SDK (PyPI/npm) e executa smoke tests reais por provider.</li>
+        <li>☐ Preços são snapshot de 2026-06-10; decisão comercial reconsulta o pricing oficial.</li>
+      </ul>
+    </section>
+
+    <!-- ===================== REFERÊNCIA ===================== -->
+    <section class="ref" id="fontes-oficiais">
+      <h2>Fontes oficiais &amp; verificação</h2>
+      <p>
+        Fatos perecíveis (parâmetros de tools, versões de ferramentas, limites, preços, modelos) foram
+        conferidos contra a documentação oficial em <strong>2026-06-10</strong>. Padrões de registry,
+        fallback e schemas são recomendações de engenharia derivadas dos contratos oficiais.
+        O caveat de superfície <strong>Developer API vs Vertex AI</strong> (§1, §3, §4) e as versões de SDK
+        foram reconferidos em <strong>2026-06-19</strong>.
+      </p>
+      <h3>OpenAI</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Tema</th><th>Fonte oficial</th></tr></thead>
+        <tbody>
+          <tr><td>Code Interpreter</td><td><a href="https://developers.openai.com/api/docs/guides/tools-code-interpreter" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/tools-code-interpreter</a></td></tr>
+          <tr><td>Shell tool</td><td><a href="https://developers.openai.com/api/docs/guides/tools-shell" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/tools-shell</a></td></tr>
+          <tr><td>Tool Search</td><td><a href="https://developers.openai.com/api/docs/guides/tools-tool-search" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/tools-tool-search</a></td></tr>
+          <tr><td>File inputs</td><td><a href="https://developers.openai.com/api/docs/guides/file-inputs" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/file-inputs</a></td></tr>
+          <tr><td>Images and vision</td><td><a href="https://developers.openai.com/api/docs/guides/images-vision" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/images-vision</a></td></tr>
+          <tr><td>Function calling</td><td><a href="https://developers.openai.com/api/docs/guides/function-calling" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/function-calling</a></td></tr>
+          <tr><td>Conversation state</td><td><a href="https://developers.openai.com/api/docs/guides/conversation-state" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/conversation-state</a></td></tr>
+          <tr><td>Pricing (tokens + containers)</td><td><a href="https://developers.openai.com/api/docs/pricing" target="_blank" rel="noopener">developers.openai.com/api/docs/pricing</a></td></tr>
+          <tr><td>Agents SDK overview</td><td><a href="https://developers.openai.com/api/docs/guides/agents" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/agents</a></td></tr>
+          <tr><td>PyPI — <code>openai</code> / <code>openai-agents</code></td><td><a href="https://pypi.org/project/openai/" target="_blank" rel="noopener">pypi.org/project/openai</a> · <a href="https://pypi.org/project/openai-agents/" target="_blank" rel="noopener">pypi.org/project/openai-agents</a></td></tr>
+        </tbody>
+      </table></div>
+      <h3>Google Gemini</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Tema</th><th>Fonte oficial</th></tr></thead>
+        <tbody>
+          <tr><td>Interactions API — overview</td><td><a href="https://ai.google.dev/gemini-api/docs/interactions/interactions-overview" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/interactions/interactions-overview</a></td></tr>
+          <tr><td>Interactions — Code Execution (com imagens)</td><td><a href="https://ai.google.dev/gemini-api/docs/interactions/code-execution" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/interactions/code-execution</a></td></tr>
+          <tr><td>Interactions — Tool combination</td><td><a href="https://ai.google.dev/gemini-api/docs/interactions/tool-combination" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/interactions/tool-combination</a></td></tr>
+          <tr><td>Code Execution (limites, libs, billing)</td><td><a href="https://ai.google.dev/gemini-api/docs/code-execution" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/code-execution</a></td></tr>
+          <tr><td>Function calling (best practices, 10–20 tools)</td><td><a href="https://ai.google.dev/gemini-api/docs/function-calling" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/function-calling</a></td></tr>
+          <tr><td>Libraries</td><td><a href="https://ai.google.dev/gemini-api/docs/libraries" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/libraries</a></td></tr>
+          <tr><td>Google ADK · PyPI — <code>google-genai</code> / <code>google-adk</code></td><td><a href="https://adk.dev/" target="_blank" rel="noopener">adk.dev</a> · <a href="https://pypi.org/project/google-genai/" target="_blank" rel="noopener">pypi.org/project/google-genai</a> · <a href="https://pypi.org/project/google-adk/" target="_blank" rel="noopener">pypi.org/project/google-adk</a></td></tr>
+        </tbody>
+      </table></div>
+      <h3>Anthropic</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Tema</th><th>Fonte oficial</th></tr></thead>
+        <tbody>
+          <tr><td>Code Execution tool (20250825 / 20260120)</td><td><a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool" target="_blank" rel="noopener">platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool</a></td></tr>
+          <tr><td>Tool Search tool (Regex/BM25)</td><td><a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/tool-search-tool" target="_blank" rel="noopener">platform.claude.com/docs/en/agents-and-tools/tool-use/tool-search-tool</a></td></tr>
+          <tr><td>Tool use — overview</td><td><a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview" target="_blank" rel="noopener">platform.claude.com/docs/en/agents-and-tools/tool-use/overview</a></td></tr>
+          <tr><td>Define tools (<code>input_schema</code>, <code>input_examples</code>, regex de nome)</td><td><a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools" target="_blank" rel="noopener">platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools</a></td></tr>
+          <tr><td>Vision</td><td><a href="https://platform.claude.com/docs/en/build-with-claude/vision" target="_blank" rel="noopener">platform.claude.com/docs/en/build-with-claude/vision</a></td></tr>
+          <tr><td>Pricing</td><td><a href="https://platform.claude.com/docs/en/about-claude/pricing" target="_blank" rel="noopener">platform.claude.com/docs/en/about-claude/pricing</a></td></tr>
+          <tr><td>PyPI — <code>anthropic</code></td><td><a href="https://pypi.org/project/anthropic/" target="_blank" rel="noopener">pypi.org/project/anthropic</a></td></tr>
+        </tbody>
+      </table></div>
+      <h3>Frameworks</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Tema</th><th>Fonte oficial</th></tr></thead>
+        <tbody>
+          <tr><td>LangGraph — Persistence</td><td><a href="https://docs.langchain.com/oss/python/langgraph/persistence" target="_blank" rel="noopener">docs.langchain.com/oss/python/langgraph/persistence</a> · <a href="https://pypi.org/project/langgraph/" target="_blank" rel="noopener">pypi.org/project/langgraph</a></td></tr>
+          <tr><td>Deep Agents — overview</td><td><a href="https://docs.langchain.com/oss/python/deepagents/overview" target="_blank" rel="noopener">docs.langchain.com/oss/python/deepagents/overview</a> · <a href="https://pypi.org/project/deepagents/" target="_blank" rel="noopener">pypi.org/project/deepagents</a></td></tr>
+        </tbody>
+      </table></div>
+      <p style="font-size:13px;color:var(--c-fg-muted)">
+        Legenda dos selos: <span class="pill ok">Verificado</span> confirmado na doc oficial ·
+        <span class="pill beta">Novo</span> recurso recente ·
+        <span class="pill partial">UNVERIFIED</span> não confirmado dentro do orçamento de verificação ·
+        <span class="pill na">N/D</span> não documentado.
+      </p>
+      <h3>Notas de verificação desta edição</h3>
+      <ul>
+        <li><span class="pill ok">Corrigido</span> <strong>Billing de containers OpenAI:</strong> a edição anterior do material-fonte descrevia cobrança "por sessão de 20 minutos"; desde <strong>2026-06-02</strong> a cobrança é por minuto com mínimo de 5 minutos — os valores por tier viram taxa-base proporcional (§11.1).</li>
+        <li><span class="pill ok">Atualizado</span> <strong>Anthropic Code Execution:</strong> incluída a versão <code>code_execution_20260120</code> (REPL persistence + programmatic tool calling; Opus 4.5+/Sonnet 4.5+, não Haiku 4.5), além da <code>code_execution_20250825</code>; GA sem beta header (§4).</li>
+        <li><span class="pill ok">Atualizado</span> <strong>Modelos:</strong> <code>claude-fable-5</code> (GA 2026-06-09) registrado como o mais novo da Anthropic; exemplos mantêm <code>claude-opus-4-8</code> (ativo/excelente). Exemplos Gemini usam <code>gemini-3.5-flash</code>; Code Execution with images é documentado em Gemini 3 Flash e herdado pela linha 3.5 GA (§3–§4).</li>
+        <li><span class="pill ok">Removido</span> <strong>Referência local:</strong> a citação a um arquivo local anexado em conversa, presente no material-fonte, foi removida — todas as fontes desta página são URLs oficiais públicas.</li>
+        <li><span class="pill ok">Delegado</span> <strong>Matriz de versões:</strong> snapshots de versão de SDK saíram deste guia; consulte os badges dos guias de framework e a revalidação no CI (§12).</li>
+        <li><span class="pill partial">UNVERIFIED</span> <strong>Shape exato da configuração local do Shell:</strong> a doc oficial documenta o loop <code>shell_call</code>/<code>shell_call_output</code> e o shell executor do Agents SDK; o literal de <code>environment</code> para modo local não foi reproduzido aqui — consulte a página oficial do Shell antes de implementar.</li>
+        <li><span class="pill beta">Novo</span> <strong>Vertex AI vs Developer API (code execution + Interactions):</strong> a Interactions API existe na Developer API (AI Studio, <code>generativelanguage.googleapis.com</code>, status <em>Beta</em>) e na Vertex / Gemini Enterprise Agent Platform (<code>aiplatform.googleapis.com</code>, status <em>experimental</em>). <code>code_execution</code> dentro de Interactions é documentado/exemplificado só na Developer API; na Vertex a execução de código é documentada via <code>generateContent</code>. Observado em teste: <code>code_execution</code> via Interactions falhou em Vertex e funcionou na Developer API (não é limitação oficial). Caveats adicionados em §1, §3 e §4 (verificado em 2026-06-19, fontes oficiais Google).</li>
+        <li><span class="pill ok">Atualizado</span> <strong>SDKs (varredura 2026-06-19):</strong> o tool <code>code_execution_20260120</code> da Anthropic ganhou suporte tipado no SDK (<code>anthropic</code> 0.110.0 / <code>@anthropic-ai/sdk</code> 0.105.0) — a capacidade já estava documentada (§4); <code>google-genai</code> 2.9.0 reimplementou a Interactions internamente mantendo a API pública compatível. Sem mudança de comportamento nos exemplos.</li>
+      </ul>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site">
+  <div style="max-width:1440px;margin:0 auto;padding:0 24px;display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;justify-content:space-between;">
+    <div style="max-width:540px">
+      <div class="brand" style="font-size:15px">Agentic vision &amp; code tools <small>Code Interpreter · Code Execution · Shell · Tool Search</small></div>
+      <p style="margin:8px 0 0;color:var(--c-fg-muted);font-size:13.5px;line-height:1.55">
+        Guia transversal de code tools construído a partir da documentação oficial pública de OpenAI,
+        Google Gemini e Anthropic, verificada em <strong>2026-06-10</strong>. Preços, versões de tools e
+        modelos são perecíveis — reconsulte as <a href="#fontes-oficiais">fontes oficiais</a> antes de
+        decisões de produção.
+      </p>
+    </div>
+    <div style="font-size:13.5px;color:var(--c-fg-muted);line-height:1.7">
+      <div><strong>Crédito de produção</strong></div>
+      <div>Gerado por <strong>subagente Claude Fable 5</strong></div>
+      <div>revisão e montagem pelo orquestrador · 2026-06-10</div>
+      <div style="margin-top:6px">
+        <span class="badge da">Transversal</span>
+        <span class="badge info">OpenAI · Gemini · Anthropic</span>
+      </div>
+    </div>
+    <div style="font-size:12.5px;color:var(--c-fg-soft)">
+      <div><strong>Navegação rápida</strong></div>
+      <div><a href="#decisao-executiva">Decisão</a> · <a href="#openai-code-interpreter">Code Interpreter</a> · <a href="#anthropic-code-execution">Code Execution</a></div>
+      <div><a href="#tool-search-providers">Tool Search</a> · <a href="#custos-gating">Custos</a> · <a href="#smoke-tests-checklist">Checklist</a></div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  /* Toggle de tema com persistência em localStorage (chave compartilhada do super-guia). */
+  (function(){
+    var KEY = 'super-guia-theme';
+    var btn = document.getElementById('theme-toggle');
+    var pref = localStorage.getItem(KEY);
+    if (pref) document.documentElement.setAttribute('data-theme', pref);
+    if (btn) btn.addEventListener('click', function(){
+      var cur = document.documentElement.getAttribute('data-theme') || 'light';
+      var nxt = cur === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', nxt);
+      localStorage.setItem(KEY, nxt);
+    });
+  })();
+  /* Scroll-spy: destaca no TOC a seção visível. */
+  (function(){
+    var links = document.querySelectorAll('nav.toc a[href^="#"]');
+    var map = {};
+    links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        var id = e.target.id; if (!map[id]) return;
+        if (e.isIntersecting) {
+          links.forEach(function(l){ l.classList.remove('active'); });
+          map[id].classList.add('active');
+        }
+      });
+    }, { rootMargin: '-40% 0% -55% 0%', threshold: 0 });
+    Object.keys(map).forEach(function(id){ var el = document.getElementById(id); if (el) io.observe(el); });
+  })();
+  /* Abas de código (code-group): clique + navegação por setas. */
+  function activateTab(group, tab){
+    group.querySelectorAll('.code-tab').forEach(function(b){
+      var on = b === tab;
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+      b.setAttribute('tabindex', on ? '0' : '-1');
+    });
+    var lang = tab.dataset.lang;
+    group.querySelectorAll('.code-pane').forEach(function(p){ p.setAttribute('data-active', p.dataset.lang===lang ? 'true' : 'false'); });
+  }
+  document.querySelectorAll('.code-group').forEach(function(group){
+    group.querySelectorAll('.code-pane').forEach(function(p){ p.setAttribute('role', 'tabpanel'); });
+    var tabs = group.querySelectorAll('.code-tab');
+    tabs.forEach(function(b){ b.setAttribute('tabindex', b.getAttribute('aria-selected') === 'true' ? '0' : '-1'); });
+  });
+  document.addEventListener('click', function(e){
+    var t = e.target;
+    if (!t.classList || !t.classList.contains('code-tab')) return;
+    var group = t.closest('.code-group'); if (!group) return;
+    activateTab(group, t);
+  });
+  document.addEventListener('keydown', function(e){
+    var t = e.target;
+    if (!t.classList || !t.classList.contains('code-tab')) return;
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    var group = t.closest('.code-group'); if (!group) return;
+    var tabs = Array.prototype.slice.call(group.querySelectorAll('.code-tab'));
+    var idx = tabs.indexOf(t);
+    var next = e.key === 'ArrowRight' ? (idx + 1) % tabs.length : (idx - 1 + tabs.length) % tabs.length;
+    activateTab(group, tabs[next]);
+    tabs[next].focus();
+    e.preventDefault();
+  });
+</script>
+</body>
+</html>

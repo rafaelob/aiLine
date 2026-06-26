@@ -1,0 +1,1946 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Guia de Agent Skills — Autoria, Ativação &amp; Harness</title>
+<meta name="description" content="Guia agnóstico do padrão Agent Skills: SKILL.md, progressive disclosure (L1/L2/L3), autoria portável, ativação por description, recursos/scripts/assets, implementação em harness próprio, contexto/budget/eviction, segurança e avaliação." />
+<meta name="last-checked" content="2026-06-25" />
+<meta name="robots" content="index,follow" />
+<style>
+  :root {
+    --c-bg: #ffffff;
+    --c-bg-elev: #f7f8fa;
+    --c-bg-code: #0e1116;
+    --c-fg: #1a1d23;
+    --c-fg-muted: #5b6472;
+    --c-fg-soft: #6b7480;
+    --c-border: #e4e7ec;
+    --c-border-strong: #cdd3dc;
+    --c-accent: #1a73e8;
+    --c-da: #1257b8;
+    --c-da-bg: #e6efff;
+    --c-warn: #b6541d;
+    --c-warn-bg: #fff4e6;
+    --c-ok: #157a33;
+    --c-ok-bg: #e8f5ea;
+    --c-bad: #c5221f;
+    --c-bad-bg: #fde8e6;
+    --c-na: #5f666f;
+    --c-na-bg: #eef0f3;
+    --c-info: #1257b8;
+    --c-info-bg: #e6efff;
+    --shadow-sm: 0 1px 2px rgba(15,23,42,.06), 0 1px 1px rgba(15,23,42,.04);
+    --shadow-md: 0 6px 24px rgba(15,23,42,.08), 0 2px 6px rgba(15,23,42,.06);
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --gutter: 24px;
+    --sidebar-w: 312px;
+  }
+  [data-theme="dark"] {
+    --c-bg: #0d1117;
+    --c-bg-elev: #161b22;
+    --c-bg-code: #010409;
+    --c-fg: #e6edf3;
+    --c-fg-muted: #9aa4b2;
+    --c-fg-soft: #828c9e;
+    --c-border: #20262d;
+    --c-border-strong: #2f3640;
+    --c-da: #4d9fff;
+    --c-accent: #4d9fff;
+    --c-ok: #3fb950;
+    --c-warn: #e3b341;
+    --c-bad: #ff7b72;
+    --c-na: #9aa4b2;
+    --c-info: #79b8ff;
+    --c-da-bg: #11233f;
+    --c-warn-bg: #2a1e0a;
+    --c-ok-bg: #0d2517;
+    --c-bad-bg: #2a1213;
+    --c-na-bg: #1a1f26;
+    --c-info-bg: #0c1e3a;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+    --shadow-md: 0 8px 28px rgba(0,0,0,.45);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-sans);
+    font-size: 15.5px;
+    line-height: 1.55;
+    color: var(--c-fg);
+    background: var(--c-bg);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  a { color: var(--c-accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, kbd, pre, samp { font-family: var(--font-mono); font-size: 0.92em; }
+  :focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; border-radius: 4px; }
+  .skip { position: absolute; left: -9999px; }
+  .skip:focus { left: 12px; top: 12px; background: var(--c-bg); padding: 8px 12px; border: 1px solid var(--c-border); border-radius: 6px; z-index: 100; }
+
+  header.site {
+    position: sticky; top: 0; z-index: 30;
+    background: rgba(255,255,255,.85);
+    backdrop-filter: saturate(180%) blur(10px);
+    border-bottom: 1px solid var(--c-border);
+  }
+  [data-theme="dark"] header.site { background: rgba(13,17,23,.82); }
+  .header-row {
+    max-width: 1440px; margin: 0 auto; padding: 12px 24px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .brand { font-weight: 700; letter-spacing: -.01em; font-size: 16px; }
+  .brand small { color: var(--c-fg-muted); font-weight: 500; margin-left: 8px; font-size: 12.5px; }
+  .header-right { margin-left: auto; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 999px;
+    background: var(--c-bg-elev); border: 1px solid var(--c-border);
+    color: var(--c-fg-muted); font-size: 12.5px; font-weight: 500;
+  }
+  .badge.ok { background: var(--c-ok-bg); color: var(--c-ok); border-color: transparent; }
+  .badge.da { background: var(--c-da-bg); color: var(--c-da); border-color: transparent; }
+  .badge.info { background: var(--c-info-bg); color: var(--c-info); border-color: transparent; }
+  .badge.warn { background: var(--c-warn-bg); color: var(--c-warn); border-color: transparent; }
+  .badge.bad { background: var(--c-bad-bg); color: var(--c-bad); border-color: transparent; }
+  .theme-btn {
+    border: 1px solid var(--c-border); background: var(--c-bg-elev); color: var(--c-fg);
+    padding: 5px 10px; border-radius: 8px; cursor: pointer; font: inherit; font-size: 12.5px;
+  }
+  .theme-btn:hover { border-color: var(--c-border-strong); }
+
+  .layout {
+    max-width: 1440px; margin: 0 auto;
+    display: grid; grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+    gap: 32px; padding: 24px;
+  }
+  nav.toc {
+    position: sticky; top: 64px;
+    align-self: start; max-height: calc(100vh - 80px); overflow: auto;
+    padding-right: 8px;
+    border-right: 1px solid var(--c-border);
+  }
+  nav.toc ol { list-style: none; padding: 0; margin: 0 0 16px; }
+  nav.toc li { line-height: 1.4; margin: 2px 0; }
+  nav.toc a {
+    display: block; padding: 4px 8px; border-radius: 5px;
+    color: var(--c-fg-muted); font-size: 13px;
+  }
+  nav.toc a:hover { background: var(--c-bg-elev); color: var(--c-fg); text-decoration: none; }
+  nav.toc a.active { color: var(--c-da); background: var(--c-da-bg); font-weight: 600; }
+  nav.toc .toc-section {
+    margin-top: 14px; padding: 2px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--c-fg-soft);
+    border-top: 1px solid var(--c-border); padding-top: 10px;
+  }
+  nav.toc .toc-section:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+
+  main { min-width: 0; max-width: 1040px; }
+
+  .hero {
+    border: 1px solid var(--c-border);
+    border-radius: 14px;
+    padding: 28px 28px 24px;
+    background: linear-gradient(135deg, var(--c-da-bg) 0%, var(--c-bg) 100%);
+    margin-bottom: 32px;
+  }
+  .hero h1 { font-size: 32px; line-height: 1.15; margin: 0 0 8px; letter-spacing: -.02em; }
+  .hero p.lead { margin: 0 0 16px; color: var(--c-fg-muted); font-size: 16px; max-width: 74ch; }
+  .hero-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+
+  section { margin: 48px 0; scroll-margin-top: 84px; }
+  section.chapter { padding-top: 16px; margin-top: 56px; border-top: 3px solid var(--c-da); }
+  section.ref { padding-top: 12px; margin-top: 48px; border-top: 2px dashed var(--c-border-strong); }
+  h2 {
+    font-size: 24px; line-height: 1.2; letter-spacing: -.015em;
+    margin: 0 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--c-border);
+    scroll-margin-top: 84px;
+  }
+  h3 { font-size: 18px; line-height: 1.3; margin: 28px 0 10px; scroll-margin-top: 84px; }
+  h4 { font-size: 15px; margin: 20px 0 8px; color: var(--c-fg); scroll-margin-top: 84px; }
+  p { margin: 0 0 12px; }
+  ul, ol { margin: 0 0 12px; padding-left: 22px; }
+  li { margin: 4px 0; }
+  hr { border: 0; border-top: 1px solid var(--c-border); margin: 24px 0; }
+
+  .table-wrap { overflow-x: auto; margin: 0 0 18px; border: 1px solid var(--c-border); border-radius: var(--radius); }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 580px; }
+  th, td { padding: 9px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--c-border); }
+  th { background: var(--c-bg-elev); font-weight: 600; color: var(--c-fg); position: sticky; top: 0; font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--c-bg-elev); }
+  td code, th code { background: var(--c-bg-elev); padding: 1px 5px; border-radius: 4px; font-size: 12.5px; color: var(--c-fg); }
+  [data-theme="dark"] td code, [data-theme="dark"] th code { background: #0b0e13; }
+
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; letter-spacing: .02em; }
+  .pill.ok { background: var(--c-ok-bg); color: var(--c-ok); }
+  .pill.partial { background: var(--c-warn-bg); color: var(--c-warn); }
+  .pill.bad { background: var(--c-bad-bg); color: var(--c-bad); }
+  .pill.na { background: var(--c-na-bg); color: var(--c-na); }
+  .pill.beta { background: var(--c-info-bg); color: var(--c-info); }
+
+  .callout {
+    border-left: 4px solid var(--c-accent);
+    background: var(--c-bg-elev);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  .callout.warn { border-left-color: var(--c-warn); background: var(--c-warn-bg); color: #5a3009; }
+  .callout.tip { border-left-color: var(--c-ok); background: var(--c-ok-bg); color: #1d4a25; }
+  .callout.danger { border-left-color: var(--c-bad); background: var(--c-bad-bg); color: #7a1a16; }
+  .callout.beta { border-left-color: var(--c-info); background: var(--c-info-bg); color: #123d75; }
+  .callout.info { border-left-color: var(--c-info); background: var(--c-info-bg); color: #123d75; }
+  .callout.partial { border-left-color: var(--c-warn); background: var(--c-warn-bg); color: #5a3009; }
+  [data-theme="dark"] .callout.warn { color: #f1c896; }
+  [data-theme="dark"] .callout.tip { color: #a7d8b1; }
+  [data-theme="dark"] .callout.danger { color: #f0a8a4; }
+  [data-theme="dark"] .callout.beta { color: #a8cdff; }
+  [data-theme="dark"] .callout.info { color: #a8cdff; }
+  [data-theme="dark"] .callout.partial { color: #f1c896; }
+  .callout strong { font-weight: 700; }
+  .callout a { color: var(--c-da); text-decoration: underline; }
+  [data-theme="dark"] .callout a { color: var(--c-da); }
+  footer.site a, .source-link a { text-decoration: underline; }
+
+  pre {
+    background: var(--c-bg-code);
+    color: #d1d5db;
+    padding: 14px 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 0 0 14px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    border: 1px solid #1f242c;
+  }
+  pre code { color: inherit; background: transparent; padding: 0; }
+
+  /* Blocos de código com abas por linguagem (Python / TypeScript / REST) */
+  .code-tabs { display: flex; gap: 4px; margin-bottom: 0; }
+  .code-tab {
+    border: 1px solid var(--c-border); border-bottom: none; background: var(--c-bg-elev);
+    color: var(--c-fg-muted); padding: 6px 14px; border-radius: 8px 8px 0 0;
+    cursor: pointer; font: inherit; font-size: 12.5px; font-weight: 600;
+  }
+  .code-tab[aria-selected="true"] { background: var(--c-bg-code); color: #f0e9e1; border-color: #2a241e; }
+  .code-pane { display: none; }
+  .code-pane[data-active="true"] { display: block; }
+  .code-group pre { border-radius: 0 8px 8px 8px; margin-top: -1px; }
+
+  details {
+    border: 1px solid var(--c-border); border-radius: var(--radius);
+    padding: 8px 14px; margin: 6px 0 10px; background: var(--c-bg-elev);
+  }
+  details > summary {
+    cursor: pointer; font-weight: 600; padding: 4px 0; list-style: none;
+    font-size: 13.5px;
+  }
+  details > summary::-webkit-details-marker { display: none; }
+  details > summary::before { content: "▸ "; color: var(--c-fg-soft); display: inline-block; }
+  details[open] > summary::before { content: "▾ "; }
+  details > .ref-body { padding: 8px 0 4px; }
+
+  .source-link {
+    font-size: 12.5px; color: var(--c-fg-muted);
+    margin: 6px 0 24px; padding: 6px 10px;
+    background: var(--c-bg-elev); border-left: 3px solid var(--c-da);
+    border-radius: 0 6px 6px 0;
+  }
+  .source-link a { color: var(--c-da); font-weight: 600; }
+
+  .figure { margin: 20px 0 26px; }
+  .figure svg { width: 100%; height: auto; display: block; border: 1px solid var(--c-border); border-radius: 10px; }
+  .figure figcaption { font-size: 12.5px; color: var(--c-fg-muted); margin-top: 10px; line-height: 1.5; padding: 0 4px; }
+
+  footer.site {
+    margin: 64px 0 24px; padding: 24px 0; border-top: 1px solid var(--c-border);
+    color: var(--c-fg-muted); font-size: 13px;
+  }
+
+  @media (max-width: 1080px) {
+    .layout { grid-template-columns: 1fr; }
+    nav.toc { position: static; max-height: none; border-right: none; border-bottom: 1px solid var(--c-border); padding-bottom: 16px; margin-bottom: 16px; }
+    main { max-width: 100%; }
+    .hero h1 { font-size: 24px; }
+  }
+  @media print {
+    nav.toc, header.site, .theme-btn { display: none; }
+    .layout { grid-template-columns: 1fr; }
+    a { color: inherit; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+    details[open] { padding: 8px 0; }
+    details > summary { display: none; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Pular para o conteúdo</a>
+
+<header class="site">
+  <div class="header-row">
+    <div class="brand">Guia de Agent Skills <small>Autoria, ativação &amp; harness — agnóstico</small></div>
+    <div class="header-right">
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-06-25</strong></span>
+      <span class="badge da">Spec Agent Skills</span>
+      <span class="badge info">PT-BR</span>
+      <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="Sumário">
+    <div class="toc-section">Início</div>
+    <ol>
+      <li><a href="#sobre-guia">Sobre este guia &amp; fronteira</a></li>
+      <li><a href="#vocabulario">Vocabulário &amp; modelo mental</a></li>
+      <li><a href="#topologias-sessao">Topologias de sessão</a></li>
+    </ol>
+
+    <div class="toc-section">Parte 1 — O padrão</div>
+    <ol>
+      <li><a href="#padrao-agent-skills">1. Padrão Agent Skills</a></li>
+      <li><a href="#skill-md">2. Formato do SKILL.md</a></li>
+      <li><a href="#progressive-disclosure">3. Progressive disclosure</a></li>
+    </ol>
+
+    <div class="toc-section">Parte 2 — Autoria</div>
+    <ol>
+      <li><a href="#autoria">4. Autoria de skills portáveis</a></li>
+      <li><a href="#ativacao-descriptions">5. Ativação &amp; descriptions</a></li>
+      <li><a href="#recursos-scripts-assets">6. Recursos, scripts &amp; assets</a></li>
+    </ol>
+
+    <div class="toc-section">Parte 3 — Implementação</div>
+    <ol>
+      <li><a href="#implementacao-harness">7. Implementação em harness próprio</a></li>
+      <li><a href="#contexto-budget-eviction">8. Contexto, budget &amp; eviction</a></li>
+      <li><a href="#seguranca-governanca">9. Segurança &amp; governança</a></li>
+      <li><a href="#avaliacao-observabilidade">10. Avaliação &amp; observabilidade</a></li>
+    </ol>
+
+    <div class="toc-section">Referência</div>
+    <ol>
+      <li><a href="#templates">Templates copy-paste</a></li>
+      <li><a href="#troubleshooting">Troubleshooting</a></li>
+      <li><a href="#fontes-oficiais">Fontes &amp; verificação</a></li>
+    </ol>
+  </nav>
+
+  <main id="main">
+
+    <div class="hero">
+      <h1>Guia de Agent Skills</h1>
+      <p class="lead">
+        O ciclo completo do padrão <strong>Agent Skills</strong> de forma agnóstica de framework: o que é uma
+        skill, como escrever um <code>SKILL.md</code> portável, como a <em>description</em> governa a ativação,
+        como expor recursos/scripts/assets sob demanda, e como implementar a mecânica de progressive disclosure,
+        budget e eviction em um harness próprio — com segurança e avaliação. Prosa em PT-BR; identificadores,
+        campos e código em inglês.
+      </p>
+      <div class="hero-meta">
+        <span class="badge da">Spec Agent Skills</span>
+        <span class="badge info">PT-BR</span>
+        <span class="badge ok">SOTA · verificado 2026-06-25</span>
+      </div>
+    </div>
+
+    <section id="sobre-guia">
+      <h2>Sobre este guia &amp; fronteira</h2>
+      <p>
+        Este é um guia <strong>para IA e humanos</strong>: combina o conceito ("o que é, quando usar") com
+        referência rápida (campos do frontmatter, contratos de tool, templates copy-paste e checklists). Ele
+        cobre a <strong>autoria e o padrão portável</strong> de Agent Skills — deliberadamente
+        <em>agnóstico</em> de provedor e framework.
+      </p>
+      <div class="callout beta" style="overflow-wrap:anywhere">
+        <strong>Fronteira deste guia (leia primeiro):</strong> aqui está a <strong>autoria/padrão</strong> de
+        skills. A <strong>integração específica por framework</strong> mora em outros guias e deve ser lida lá:
+        <a href="guia_claude_api.html#c-skills">guia_claude_api.html#c-skills</a> (skills no Claude / Anthropic),
+        <a href="guia_deepagents.html#s-skills">guia_deepagents.html#s-skills</a> (SkillsMiddleware do Deep Agents),
+        <a href="guia_agents_sdk.html">guia_agents_sdk.html</a> (skills no Sandbox do OpenAI Agents SDK) e
+        <a href="guia_agents_sdk_orquestracao.html">guia_agents_sdk_orquestracao.html</a>. A teoria geral de
+        contexto/compactação fica em
+        <a href="guia_contexto_compactacao_estrategias.html">guia_contexto_compactacao_estrategias.html</a> e
+        <a href="guia_estado_contexto_memoria.html">guia_estado_contexto_memoria.html</a>; o threat model e os
+        evals gerais em <a href="guia_operacao_seguranca_evals.html">guia_operacao_seguranca_evals.html</a>.
+      </div>
+      <div class="callout">
+        <strong>Alinhamento de terminologia:</strong> o que o núcleo de arquitetura chama de
+        <strong>"skill packs" / modos de injeção</strong> (catalog, hot, pinned, child, specialist) é o mesmo
+        objeto descrito aqui pela ótica da autoria — ver
+        <a href="guia_arquitetura_orquestracao.html">guia_arquitetura_orquestracao.html</a>. Este guia define o
+        artefato; o núcleo define como injetá-lo na topologia de orquestração.
+      </div>
+      <p>O escopo cobre o ciclo completo, aplicável a contextos diversos — chatbots simples, agentes de
+      sessão única, sessões longas, agentes multi-sessão, copilotos de desenvolvimento, agentes em sandbox,
+      agentes com ferramentas externas e arquiteturas multiagente:</p>
+      <ul>
+        <li><strong>O padrão:</strong> definição, <code>SKILL.md</code>, frontmatter, progressive disclosure.</li>
+        <li><strong>Autoria:</strong> o que faz uma boa skill, processo, unidade, grau de liberdade, anti-padrões.</li>
+        <li><strong>Ativação:</strong> por que a <em>description</em> decide tudo, catálogo L1, contratos, evals.</li>
+        <li><strong>Recursos:</strong> <code>references/</code>, <code>scripts/</code>, <code>assets/</code>, carregamento sob demanda.</li>
+        <li><strong>Harness:</strong> discovery, parsing, prompt base, ativação por file-read vs tool, agents-as-tools.</li>
+        <li><strong>Contexto:</strong> budget, máquina de estados, eviction sem perder autoridade, stale ledger.</li>
+        <li><strong>Operação:</strong> segurança/governança, avaliação, observabilidade, CI/CD.</li>
+      </ul>
+    </section>
+
+    <section id="vocabulario">
+      <h2>Vocabulário &amp; modelo mental</h2>
+      <p>Termos usados de forma consistente em todo o guia. As três distinções do modelo mental abaixo são a
+      base de toda a política de contexto.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Termo</th><th>Definição operacional</th></tr></thead>
+        <tbody>
+          <tr><td><code>Skill</code></td><td>Diretório versionável com <code>SKILL.md</code> obrigatório e recursos opcionais.</td></tr>
+          <tr><td><code>SKILL.md</code></td><td>Arquivo com frontmatter YAML (metadados) e corpo Markdown com as instruções principais.</td></tr>
+          <tr><td><code>L1 catalog</code></td><td>Lista leve de skills elegíveis: <code>name</code>, <code>description</code> e, opcionalmente, <code>location</code>.</td></tr>
+          <tr><td><code>L2 instructions</code></td><td>Corpo completo do <code>SKILL.md</code> de uma skill ativada.</td></tr>
+          <tr><td><code>L3 resources</code></td><td>Arquivos em <code>references/</code>, <code>scripts/</code>, <code>assets/</code> carregados sob demanda.</td></tr>
+          <tr><td><code>Active skill set</code></td><td>Conjunto de skills cujo <code>SKILL.md</code> está renderizado no contexto atual.</td></tr>
+          <tr><td><code>Stale ledger</code></td><td>Registro de skills usadas antes, mas não renderizadas agora; exige recarga antes de uso exato.</td></tr>
+          <tr><td><code>Reload required</code></td><td>Marcador que proíbe confiar em instruções exatas de uma skill que saiu do contexto ativo.</td></tr>
+          <tr><td><code>Tool</code></td><td>Capacidade invocável com schema, executada pelo runtime/host.</td></tr>
+          <tr><td><code>MCP</code></td><td>Protocolo para expor ferramentas, recursos e prompts externos a clientes de IA.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Modelo mental correto</h3>
+      <p>A confusão mais comum em harnesses de skills é tratar "disponível", "montado" e "ativo" como
+      sinônimos. São coisas diferentes:</p>
+      <pre><code class="language-text">Skill disponível no registry  ≠  Skill ativa no prompt atual
+Skill montada no sandbox      ≠  Skill lida pelo modelo
+Skill usada em turno anterior ≠  Skill ainda confiável agora
+Skill ativa no contexto       =  SKILL.md renderizado deliberadamente no request atual</code></pre>
+      <div class="callout warn">
+        <strong>Sobre "desfazer disclosure":</strong> um harness não apaga retroativamente o que o modelo já
+        viu em uma geração anterior. O que ele controla é a <strong>renderização do próximo contexto</strong>.
+        Portanto "desfazer disclosure" significa: parar de reinjetar o corpo completo da skill, mover a skill
+        para o stale ledger, preservar nome/hash/versão/último uso e exigir reativação antes de seguir regras
+        exatas. Não é apagamento; é parar de reafirmar.
+      </div>
+    </section>
+
+    <section id="topologias-sessao">
+      <h2>Topologias de sessão</h2>
+      <p>A política de compaction/eviction de skills depende de como a sessão vive no tempo. Escolha a linha
+      que descreve seu agente; o resto do guia assume que você sabe em qual está.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Topologia</th><th>Como tratar skills</th><th>Compaction / eviction</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Única sessão episódica</strong></td><td>Hot set efêmero. O contexto nasce e morre no episódio.</td><td>Aceitável remover payload L2 quando a tarefa muda ou o budget estoura; registre stale se o chat continuar.</td></tr>
+          <tr><td><strong>Chat único longo</strong></td><td>UI contínua, mas o backend deve dividir em episódios internos.</td><td>Fechar episódio move skills antigas para stale; recarregar antes de usar instruções exatas.</td></tr>
+          <tr><td><strong>Híbrida retomável</strong></td><td>A conversa pode persistir, mas o payload exato da skill deve ser reidratado sob demanda.</td><td>Memória pode ser resumida; skill ativa não. Se saiu do payload, vira reload-required.</td></tr>
+          <tr><td><strong>Multi-sessão persistente</strong></td><td>Registry, permissões, hashes e ledger persistem entre sessões.</td><td>Nunca assuma que o modelo ainda tem o corpo da skill; reative na retomada quando necessário.</td></tr>
+          <tr><td><strong>Especialista task-scoped</strong></td><td>Pode pré-carregar 1–3 skills essenciais se o escopo for estreito.</td><td>Encerrar a chamada descarta o hot set; o agente principal recebe apenas resultado estruturado.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout" style="overflow-wrap:anywhere">
+        <strong>Cross-link:</strong> a teoria de episódios, teto de compactação e snapshots cumulativos é
+        aprofundada em
+        <a href="guia_contexto_compactacao_estrategias.html#topologia">guia_contexto_compactacao_estrategias.html#topologia</a>.
+        Aqui ficamos com o invariante específico de skills: <em>instrução normativa não se resume como memória</em>.
+      </div>
+    </section>
+
+    <section class="chapter" id="parte-padrao">
+      <h2 style="border-bottom:3px solid var(--c-da);padding:14px 0 10px;font-size:28px">Parte 1 — O padrão Agent Skills</h2>
+      <p>O que é uma skill, qual é o formato canônico do <code>SKILL.md</code> e como o carregamento em
+      camadas (progressive disclosure) reduz custo e interferência instrucional.</p>
+    </section>
+
+    <section id="padrao-agent-skills">
+      <h2>1. Padrão Agent Skills</h2>
+      <p>
+        No padrão <strong>Agent Skills</strong>, uma skill é um <strong>diretório</strong> que contém, no
+        mínimo, um arquivo <code>SKILL.md</code>. Esse arquivo traz frontmatter YAML com metadados
+        (especialmente <code>name</code> e <code>description</code>) e um corpo Markdown com instruções. A
+        pasta pode incluir scripts, referências, assets e outros recursos auxiliares. A ideia central: skills
+        são <em>folders de instruções, scripts e recursos que agentes descobrem e usam</em> para executar
+        tarefas com mais precisão e eficiência.
+      </p>
+      <pre><code class="language-text">my-skill/
+├── SKILL.md          # obrigatório: metadados (frontmatter) + instruções (corpo)
+├── scripts/          # opcional: código executável determinístico
+├── references/       # opcional: documentação carregada sob demanda
+├── assets/           # opcional: templates, schemas, imagens, exemplos
+└── ...               # outros arquivos, se fizer sentido</code></pre>
+      <div class="callout info">
+        <strong>Skill ≠ tool.</strong> A skill ensina o <em>workflow</em> (procedimento, critérios, validação,
+        gotchas); tools e MCP fornecem ações e dados externos. Uma skill pode <em>dizer</em> quais ferramentas
+        usar, mas é o framework que decide quais tools expor, com quais permissões e em qual escopo. Pense em
+        uma skill como onboarding procedural — não como uma capacidade invocável.
+      </div>
+      <h3>Regras de design do padrão</h3>
+      <ul>
+        <li>O <code>SKILL.md</code> principal deve ser o <strong>mapa de execução</strong>, não uma enciclopédia.</li>
+        <li>Se o arquivo ficar longo, mova detalhes para <code>references/</code> e indique <em>quando</em> carregar cada referência.</li>
+        <li>Use paths relativos à raiz da skill e evite cadeias profundas de referências.</li>
+        <li>Scripts devem ser autocontidos, documentados e não interativos.</li>
+        <li>Assets devem ter nome descritivo e função clara.</li>
+        <li>O catálogo nunca deve conter <em>todos</em> os corpos completos de todas as skills em um agente generalista.</li>
+      </ul>
+      <div class="source-link">Fonte oficial: <a href="https://agentskills.io/specification" target="_blank" rel="noopener">agentskills.io/specification</a> · <a href="https://agentskills.io/home" target="_blank" rel="noopener">agentskills.io/home</a></div>
+    </section>
+
+    <section id="skill-md">
+      <h2>2. Formato do <code>SKILL.md</code></h2>
+      <p>O <code>SKILL.md</code> combina frontmatter YAML e um corpo Markdown. O frontmatter carrega os
+      metadados que o harness lê sem renderizar o corpo inteiro; o corpo carrega as instruções normativas.</p>
+      <pre><code class="language-markdown">---
+name: skill-name
+description: A description of what this skill does and when to use it.
+license: Apache-2.0
+compatibility: Requires Python 3.11+ and read-only filesystem access.
+metadata:
+  org.example.version: "1.0.0"
+  org.example.owner: platform-team
+allowed-tools: Bash(git:*) Read
+---
+
+# Skill Title
+
+## When to use
+Use this skill when...
+
+## Workflow
+1. ...
+2. ...
+
+## Validation
+Before final output, verify...</code></pre>
+
+      <h3>Campos do frontmatter</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Campo</th><th>Obrigatório</th><th>Regra prática</th></tr></thead>
+        <tbody>
+          <tr><td><code>name</code></td><td><span class="pill ok">Sim</span></td><td>1–64 caracteres; apenas minúsculas, números e hífens; não começa/termina com hífen; sem hífen duplo; deve corresponder ao diretório pai. <span class="pill ok">Verificado</span></td></tr>
+          <tr><td><code>description</code></td><td><span class="pill ok">Sim</span></td><td>1–1024 caracteres, não-vazio; descreve o que faz, quando usar, termos de gatilho e limites de escopo. <span class="pill ok">Verificado</span></td></tr>
+          <tr><td><code>license</code></td><td><span class="pill na">Não</span></td><td>Nome curto da licença ou referência a um arquivo de licença.</td></tr>
+          <tr><td><code>compatibility</code></td><td><span class="pill na">Não</span></td><td>1–500 caracteres se presente. Requisitos de ambiente: produto-alvo, pacotes de sistema, runtime, rede. <span class="pill ok">Verificado</span></td></tr>
+          <tr><td><code>metadata</code></td><td><span class="pill na">Não</span></td><td>Mapa chave/valor para versão, owner, trust, dependências ou dados de registry.</td></tr>
+          <tr><td><code>allowed-tools</code></td><td><span class="pill beta">Experimental</span></td><td>Pode pré-aprovar ferramentas em clientes que suportam essa semântica, mas <strong>não substitui policy/sandbox</strong>.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout tip">
+        <strong>Limites verificados:</strong> os limites de <code>name</code> (1–64), <code>description</code>
+        (1–1024) e <code>compatibility</code> (1–500) foram confirmados contra a
+        <a href="https://agentskills.io/specification" target="_blank" rel="noopener">AgentSkills Specification</a>
+        em 2026-06-10. A doc da Anthropic adiciona regras próprias para clientes Claude (o <code>name</code>
+        não pode conter tags XML nem as palavras reservadas "anthropic"/"claude") — ver
+        <a href="https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview" target="_blank" rel="noopener">platform.claude.com</a>.
+      </div>
+
+      <h3>Estrutura recomendada do corpo</h3>
+      <p>O corpo é o mapa de execução. Esta espinha cobre os pontos que mais influenciam a qualidade de uma
+      skill — ajuste as seções ao domínio, mas não esconda regras críticas em referências:</p>
+      <pre><code class="language-markdown"># Nome legível da skill
+
+## Quando usar
+Declare intenções do usuário, domínios, arquivos, formatos e gatilhos.
+
+## Quando não usar
+Declare limites para reduzir overtriggering e conflitos.
+
+## Arquivos disponíveis
+Liste references, scripts e assets com triggers de carregamento.
+
+## Workflow
+Passos observáveis, em ordem, com defaults claros.
+
+## Validação
+Como saber que a saída está correta; checks finais.
+
+## Gotchas
+Armadilhas que o agente provavelmente erraria sem a skill.
+
+## Output format
+Template ou schema esperado.
+
+## Segurança
+Permissões, confirmações, ações proibidas e escalonamento humano.</code></pre>
+      <div class="source-link">Fonte oficial: <a href="https://agentskills.io/specification" target="_blank" rel="noopener">agentskills.io/specification</a> (frontmatter, campos, validação)</div>
+    </section>
+
+    <section id="progressive-disclosure">
+      <h2>3. Progressive disclosure</h2>
+      <p>O padrão reduz custo e interferência instrucional dividindo o carregamento em camadas. O modelo só vê
+      o que a tarefa atual justifica — o catálogo está sempre presente, mas o corpo e os recursos entram sob
+      demanda.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Camada</th><th>Conteúdo</th><th>Quando entra no contexto</th><th>Política</th></tr></thead>
+        <tbody>
+          <tr><td><strong>L1 Catálogo</strong></td><td><code>name</code>, <code>description</code>, opcionalmente <code>location</code></td><td>No início da sessão/request, ou após filtro de registry.</td><td>Leve, roteável, dentro de budget.</td></tr>
+          <tr><td><strong>L2 Instruções</strong></td><td><code>SKILL.md</code> completo</td><td>Quando a skill é ativada por correspondência de intenção ou invocação explícita.</td><td>Manter <strong>exato</strong> enquanto ativo.</td></tr>
+          <tr><td><strong>L3 Recursos</strong></td><td><code>references/</code>, <code>scripts/</code>, <code>assets/</code></td><td>Somente quando o workflow da skill ou a tarefa atual exigir.</td><td>TTL curto, nunca bulk-load.</td></tr>
+        </tbody>
+      </table></div>
+
+      <div class="figure">
+        <svg viewBox="0 0 760 250" role="img" aria-labelledby="pd-title">
+          <title id="pd-title">Progressive disclosure: as três camadas e o que entra no contexto em cada momento</title>
+          <rect x="0" y="0" width="760" height="250" fill="transparent"/>
+          <!-- L1 -->
+          <rect x="24" y="30" width="220" height="190" rx="10" fill="var(--c-da-bg)" stroke="var(--c-da)" stroke-width="1.5"/>
+          <text x="134" y="56" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="700" fill="var(--c-da)">L1 · Catálogo</text>
+          <text x="134" y="80" text-anchor="middle" font-family="sans-serif" font-size="11.5" fill="var(--c-fg)">name + description</text>
+          <text x="134" y="98" text-anchor="middle" font-family="sans-serif" font-size="11.5" fill="var(--c-fg)">(+ location opcional)</text>
+          <text x="134" y="130" text-anchor="middle" font-family="sans-serif" font-size="11" fill="var(--c-fg-muted)">SEMPRE presente</text>
+          <text x="134" y="148" text-anchor="middle" font-family="sans-serif" font-size="11" fill="var(--c-fg-muted)">(dentro do budget)</text>
+          <text x="134" y="190" text-anchor="middle" font-family="monospace" font-size="10.5" fill="var(--c-ok)">~ centenas de tokens</text>
+          <!-- arrow -->
+          <line x1="244" y1="125" x2="288" y2="125" stroke="var(--c-fg-muted)" stroke-width="1.5" marker-end="url(#arr)"/>
+          <text x="266" y="116" text-anchor="middle" font-family="sans-serif" font-size="9.5" fill="var(--c-fg-muted)">ativa</text>
+          <!-- L2 -->
+          <rect x="290" y="30" width="220" height="190" rx="10" fill="var(--c-ok-bg)" stroke="var(--c-ok)" stroke-width="1.5"/>
+          <text x="400" y="56" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="700" fill="var(--c-ok)">L2 · Instruções</text>
+          <text x="400" y="80" text-anchor="middle" font-family="sans-serif" font-size="11.5" fill="var(--c-fg)">SKILL.md completo</text>
+          <text x="400" y="112" text-anchor="middle" font-family="sans-serif" font-size="11" fill="var(--c-fg-muted)">só enquanto ativa</text>
+          <text x="400" y="130" text-anchor="middle" font-family="sans-serif" font-size="11" fill="var(--c-fg-muted)">mantido exato</text>
+          <text x="400" y="190" text-anchor="middle" font-family="monospace" font-size="10.5" fill="var(--c-warn)">soft cap &lt; 5k tokens</text>
+          <!-- arrow -->
+          <line x1="510" y1="125" x2="554" y2="125" stroke="var(--c-fg-muted)" stroke-width="1.5" marker-end="url(#arr)"/>
+          <text x="532" y="116" text-anchor="middle" font-family="sans-serif" font-size="9.5" fill="var(--c-fg-muted)">passo</text>
+          <!-- L3 -->
+          <rect x="556" y="30" width="180" height="190" rx="10" fill="var(--c-warn-bg)" stroke="var(--c-warn)" stroke-width="1.5"/>
+          <text x="646" y="56" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="700" fill="var(--c-warn)">L3 · Recursos</text>
+          <text x="646" y="80" text-anchor="middle" font-family="sans-serif" font-size="11" fill="var(--c-fg)">references / scripts</text>
+          <text x="646" y="96" text-anchor="middle" font-family="sans-serif" font-size="11" fill="var(--c-fg)">/ assets</text>
+          <text x="646" y="128" text-anchor="middle" font-family="sans-serif" font-size="11" fill="var(--c-fg-muted)">sob demanda</text>
+          <text x="646" y="146" text-anchor="middle" font-family="sans-serif" font-size="11" fill="var(--c-fg-muted)">TTL curto</text>
+          <text x="646" y="190" text-anchor="middle" font-family="monospace" font-size="10.5" fill="var(--c-bad)">nunca bulk-load</text>
+          <defs>
+            <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+              <path d="M0,0 L8,4 L0,8 Z" fill="var(--c-fg-muted)"/>
+            </marker>
+          </defs>
+        </svg>
+        <figcaption>Progressive disclosure em três camadas. O catálogo L1 está sempre no contexto (leve);
+        o corpo L2 entra ao ativar e é mantido exato; os recursos L3 entram só quando um passo do workflow os
+        exige. O harness adiciona ainda L0 (registry), L4 (arquivos montados) e L5 (binding de tools/MCP) —
+        ver <a href="#contexto-budget-eviction">§8</a>.</figcaption>
+      </div>
+      <div class="source-link">Fonte oficial: <a href="https://agentskills.io/skill-creation/best-practices" target="_blank" rel="noopener">agentskills.io/skill-creation/best-practices</a> · <a href="https://developers.openai.com/codex/skills" target="_blank" rel="noopener">developers.openai.com/codex/skills</a></div>
+    </section>
+
+    <section class="chapter" id="parte-autoria">
+      <h2 style="border-bottom:3px solid var(--c-da);padding:14px 0 10px;font-size:28px">Parte 2 — Autoria de skills portáveis</h2>
+      <p>Como planejar, escrever e revisar skills genéricas, úteis e compatíveis com diferentes agentes — e
+      como projetar a <em>description</em>, que é o que realmente decide quando uma skill ativa.</p>
+    </section>
+
+    <section id="autoria">
+      <h2>4. Autoria de skills portáveis</h2>
+      <h3>O que faz uma skill ser boa</h3>
+      <p>Uma boa skill captura conhecimento operacional que o agente não teria de forma confiável: sequência
+      de execução, critérios de decisão, validações, formatos de saída, gotchas, integrações, limites e regras
+      de segurança. Ela <strong>não</strong> deve ensinar conceitos básicos que o modelo já sabe.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Atributo</th><th>O que significa</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Recorrência</strong></td><td>Resolve uma família de tarefas que aparece mais de uma vez.</td></tr>
+          <tr><td><strong>Especialização</strong></td><td>Adiciona conhecimento de domínio, ambiente ou workflow.</td></tr>
+          <tr><td><strong>Verificabilidade</strong></td><td>Define checks, critérios de sucesso e falhas legíveis.</td></tr>
+          <tr><td><strong>Portabilidade</strong></td><td>Não depende de nomes internos, paths proprietários ou estado vivo de um projeto específico.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Processo de autoria</h3>
+      <ol>
+        <li><strong>Comece por casos reais.</strong> Extraia o workflow de incidentes, runbooks, tarefas repetidas, revisões de código, tickets ou guias internos.</li>
+        <li><strong>Defina 2–3 casos de uso concretos.</strong> Uma skill deve ter escopo coerente, não ser genérica demais.</li>
+        <li><strong>Escreva a description antes do corpo.</strong> Se você não consegue dizer quando a skill deve ativar, o escopo ainda está confuso.</li>
+        <li><strong>Escolha o grau de prescrição.</strong> Tarefas frágeis precisam de scripts e passos estritos; tarefas abertas precisam de heurísticas e critérios.</li>
+        <li><strong>Inclua gotchas.</strong> A parte mais valiosa costuma ser o que o agente erraria sem ajuda.</li>
+        <li><strong>Inclua validação.</strong> Não deixe a skill terminar sem um check de qualidade.</li>
+        <li><strong>Teste em execuções reais.</strong> Refine a partir de traces, não apenas do output final.</li>
+      </ol>
+
+      <h3>Escolhendo a unidade correta</h3>
+      <p>A maioria dos problemas de skill é, na verdade, um problema de granularidade. Diagnostique pelo sintoma:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Sintoma</th><th>Provável problema</th><th>Correção</th></tr></thead>
+        <tbody>
+          <tr><td>A skill ativa em quase qualquer pedido.</td><td>Escopo amplo demais.</td><td>Dividir por intenção ou adicionar limites de "quando não usar".</td></tr>
+          <tr><td>Uma tarefa precisa ativar 5+ skills pequenas.</td><td>Skills estreitas demais ou unidade errada.</td><td>Consolidar em skill de workflow com referências internas.</td></tr>
+          <tr><td>O agente lê referências demais.</td><td>Triggers ruins ou <code>SKILL.md</code> pouco navegável.</td><td>Listar recursos com condições explícitas.</td></tr>
+          <tr><td>O agente ignora uma regra crítica.</td><td>Regra escondida em referência ou em prosa fraca.</td><td>Mover para workflow/gotchas e usar linguagem operacional.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Grau de liberdade</h3>
+      <p>Calibre quanta autonomia a skill concede ao agente conforme a fragilidade e a auditabilidade da
+      operação:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Grau</th><th>Use quando</th><th>Formato ideal</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Alto</strong></td><td>Múltiplas abordagens válidas; decisões dependem do contexto.</td><td>Heurísticas, critérios, exemplos, checklist flexível.</td></tr>
+          <tr><td><strong>Médio</strong></td><td>Há padrão preferencial, mas parâmetros variam.</td><td>Pseudocódigo, template, scripts com flags justificadas.</td></tr>
+          <tr><td><strong>Baixo</strong></td><td>Operação frágil, auditável ou com risco operacional.</td><td>Script específico, comandos exatos, validação, confirmação.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Anti-padrões de autoria</h3>
+      <ul>
+        <li><strong>Prompt monolítico:</strong> jogar toda a documentação dentro do <code>SKILL.md</code>.</li>
+        <li><strong>Catálogo enganoso:</strong> description vaga como "ajuda com documentos".</li>
+        <li><strong>Menu infinito:</strong> oferecer muitas opções sem default.</li>
+        <li><strong>Reference crítica escondida:</strong> deixar uma regra obrigatória fora do corpo principal, sem trigger claro.</li>
+        <li><strong>Dependência implícita:</strong> assumir que uma ferramenta, pacote ou credencial existe.</li>
+        <li><strong>Instruções temporais frágeis:</strong> "antes de agosto use X, depois use Y"; prefira uma seção "legado/deprecated".</li>
+        <li><strong>Path específico de máquina/projeto:</strong> use paths relativos à skill ou variáveis de ambiente documentadas.</li>
+      </ul>
+
+      <h3>Checklist de autoria</h3>
+      <ul>
+        <li>☐ <code>name</code> válido, curto, estável e igual ao diretório.</li>
+        <li>☐ <code>description</code> explica o que faz e quando usar.</li>
+        <li>☐ <code>description</code> contém termos que usuários realmente diriam.</li>
+        <li>☐ Há seção "quando não usar" se houver risco de overlap.</li>
+        <li>☐ <code>SKILL.md</code> tem workflow observável e ordem de execução.</li>
+        <li>☐ Gotchas críticos estão no <code>SKILL.md</code>, não escondidos.</li>
+        <li>☐ References têm triggers explícitos.</li>
+        <li>☐ Scripts têm <code>--help</code>, argumentos, erros úteis e saída estruturada.</li>
+        <li>☐ Output format é concreto.</li>
+        <li>☐ Validação final está definida.</li>
+        <li>☐ Permissões e ações sensíveis estão claras.</li>
+        <li>☐ Há evals de ativação e qualidade.</li>
+      </ul>
+      <div class="source-link">Fonte oficial: <a href="https://agentskills.io/skill-creation/best-practices" target="_blank" rel="noopener">agentskills.io/skill-creation/best-practices</a> · <a href="https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills" target="_blank" rel="noopener">anthropic.com/engineering · Agent Skills</a></div>
+    </section>
+
+    <section id="ativacao-descriptions">
+      <h2>5. Ativação &amp; descriptions</h2>
+      <h3>Por que a description decide tudo</h3>
+      <p>Na maioria dos clientes, o agente vê primeiro apenas <code>name</code> e <code>description</code>. A
+      description carrega a responsabilidade de ativação: se for vaga, a skill não ativa quando deveria; se for
+      ampla demais, ativa quando não deveria.</p>
+      <div class="callout info">
+        <strong>Regra prática:</strong> escreva a description como um <em>roteador de intenção</em> — "faz X;
+        use quando o usuário pedir Y, Z ou mencionar A/B/C; não use para W".
+      </div>
+
+      <h3>Modelo de description</h3>
+      <p>O mesmo exemplo, do template ao bom e ao ruim:</p>
+      <div class="code-group">
+        <div class="code-tabs" role="tablist">
+          <button class="code-tab" role="tab" data-lang="template" aria-selected="true">Template</button>
+          <button class="code-tab" role="tab" data-lang="bom" aria-selected="false">Exemplo bom</button>
+          <button class="code-tab" role="tab" data-lang="ruim" aria-selected="false">Exemplo ruim</button>
+        </div>
+        <div class="code-pane" data-lang="template" data-active="true">
+<pre><code class="language-yaml">description: [verbo + objeto principal]. Use when the user asks to [intenções reais],
+  mentions [termos/arquivos/formats], or needs [resultado]. Do not use for [limites/overlap].</code></pre>
+        </div>
+        <div class="code-pane" data-lang="bom" data-active="false">
+<pre><code class="language-yaml">description: Review diffs and pull requests for correctness, security, tests, and
+  maintainability. Use when the user asks to review code, a PR, a diff, or changed
+  files. Do not use for general programming explanations without code changes.</code></pre>
+        </div>
+        <div class="code-pane" data-lang="ruim" data-active="false">
+<pre><code class="language-yaml">description: Helps with code.</code></pre>
+        </div>
+      </div>
+
+      <h3>Catálogo L1</h3>
+      <p>O catálogo é o índice de skills elegíveis. Ele deve conter apenas o necessário para roteamento — não
+      o corpo das skills:</p>
+      <pre><code class="language-xml">&lt;available_skills&gt;
+  &lt;skill&gt;
+    &lt;name&gt;code-review&lt;/name&gt;
+    &lt;description&gt;Review diffs and pull requests for correctness, security, tests, and maintainability. Use when reviewing code, PRs, diffs, or changed files.&lt;/description&gt;
+    &lt;location&gt;/skills/code-review/SKILL.md&lt;/location&gt;
+  &lt;/skill&gt;
+  &lt;skill&gt;
+    &lt;name&gt;report-packaging&lt;/name&gt;
+    &lt;description&gt;Create final report packages from structured findings. Use when the user asks for a formatted deliverable, executive report, PDF export, or packaged analysis.&lt;/description&gt;
+    &lt;location&gt;/skills/report-packaging/SKILL.md&lt;/location&gt;
+  &lt;/skill&gt;
+&lt;/available_skills&gt;</code></pre>
+
+      <h3>Quando ativar</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Situação</th><th>Ação recomendada</th></tr></thead>
+        <tbody>
+          <tr><td>Usuário invoca explicitamente uma skill disponível.</td><td>Ativar, salvo se bloqueada por política/trust.</td></tr>
+          <tr><td>Tarefa combina claramente com a description.</td><td>Ativar <strong>antes</strong> de tools de domínio, shell, MCP, APIs externas ou resposta final.</td></tr>
+          <tr><td>Tarefa é simples e o agente já resolve sem conhecimento especializado.</td><td>Não ativar; responda normalmente.</td></tr>
+          <tr><td>Múltiplas skills são relevantes.</td><td>Ativar cada uma no máximo uma vez e aplicar em ordem de tarefa.</td></tr>
+          <tr><td>Skill usada antes está stale.</td><td>Não confiar em detalhes; reativar antes de seguir regras exatas.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Contratos de ativação</h3>
+      <p>Há duas formas canônicas de o modelo passar de L1 (catálogo) para L2 (corpo ativo):</p>
+      <h4>File-read activation</h4>
+      <p>O catálogo inclui <code>location</code> e o agente usa uma ferramenta de leitura para carregar o
+      <code>SKILL.md</code>:</p>
+      <pre><code class="language-text">When a task matches a skill's description, use the file-read tool to load the SKILL.md
+at the listed location before proceeding.
+Resolve relative paths against the skill directory.</code></pre>
+      <h4>Tool dedicada (<code>activate_skill</code>)</h4>
+      <p>O harness oferece uma tool com enum das skills elegíveis — mais controle de trust, hash e logging:</p>
+      <pre><code class="language-json">{
+  "name": "activate_skill",
+  "description": "Load the full instructions for one available Agent Skill.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "name": { "type": "string", "enum": ["code-review", "report-packaging"] },
+      "reason": { "type": "string" }
+    },
+    "required": ["name", "reason"],
+    "additionalProperties": false
+  }
+}</code></pre>
+
+      <h3>Entrega de L1/L2/L3 por provider</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Camada</th><th>OpenAI Responses</th><th>Gemini Interactions</th><th>Anthropic Messages</th></tr></thead>
+        <tbody>
+          <tr><td>L1 (catálogo)</td><td><code>instructions</code></td><td><code>system_instruction</code></td><td>top-level <code>system</code></td></tr>
+          <tr><td>L2 disclosure (ativação)</td><td><code>function_call_output(call_id=...)</code></td><td><code>function_result(call_id=...)</code></td><td><code>user.content[].tool_result(tool_use_id=...)</code></td></tr>
+          <tr><td>L2 ativo (follow-up)</td><td colspan="3">Re-renderizado como corpo exato no bloco de autoridade (<code>instructions</code>/<code>system_instruction</code>/<code>system</code>), a partir do skill store — não do tool result histórico.</td></tr>
+          <tr><td>L3 (on-demand)</td><td><code>function_call_output</code></td><td><code>function_result</code></td><td><code>tool_result</code></td></tr>
+        </tbody>
+      </table></div>
+      <p>
+        O formato nativo de tool result (com <code>call_id</code>/<code>tool_use_id</code> pareado) só é exigido
+        enquanto há um tool loop aberto. Detalhe dos loops nativos em
+        <a href="guia_paralelismo_tools_openai_gemini_anthropic.html">Paralelismo &amp; tools</a>.
+      </p>
+
+      <h3>Evals de ativação</h3>
+      <p>Teste a description com prompts <em>should-trigger</em> e <em>should-not-trigger</em>. Separe
+      treino/validação para evitar overfitting da description aos próprios casos de teste:</p>
+      <pre><code class="language-json">{
+  "skill_name": "code-review",
+  "should_trigger": [
+    "Revise este diff e aponte riscos de segurança.",
+    "Pode olhar este pull request antes de eu mergear?",
+    "Analise os arquivos alterados e diga se falta teste."
+  ],
+  "should_not_trigger": [
+    "Explique o que é programação orientada a objetos.",
+    "Escreva um algoritmo de ordenação do zero.",
+    "Qual a diferença entre TCP e UDP?"
+  ]
+}</code></pre>
+
+      <h3>Sinais de problemas</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Sinal</th><th>Provável causa</th><th>Correção</th></tr></thead>
+        <tbody>
+          <tr><td>Undertriggering</td><td>Description não cita intenções/termos reais.</td><td>Adicionar gatilhos e exemplos de linguagem do usuário.</td></tr>
+          <tr><td>Overtriggering</td><td>Description ampla, sem limites.</td><td>Adicionar "do not use" e escopo negativo.</td></tr>
+          <tr><td>Ativação tardia</td><td>Prompt não exige carregar antes de tools.</td><td>Reforçar a regra de ativação antes de ações externas.</td></tr>
+          <tr><td>Skills conflitantes</td><td>Catálogo sem namespaces/limites.</td><td>Melhorar descriptions e usar policy de composição.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="source-link">Fonte oficial: <a href="https://agentskills.io/skill-creation/optimizing-descriptions" target="_blank" rel="noopener">agentskills.io/skill-creation/optimizing-descriptions</a> · <a href="https://agentskills.io/skill-creation/evaluating-skills" target="_blank" rel="noopener">agentskills.io/skill-creation/evaluating-skills</a></div>
+    </section>
+
+    <section id="recursos-scripts-assets">
+      <h2>6. Recursos, scripts &amp; assets</h2>
+      <p>L3 é onde a maior parte do conteúdo de uma skill deve viver. Bem projetado, o agente lê só o que o
+      passo atual exige — sem explodir o contexto nem aumentar o risco desnecessariamente.</p>
+
+      <h3>O papel de <code>references/</code></h3>
+      <p>Referências são documentação auxiliar carregada apenas quando necessária: detalhes extensos, tabelas,
+      rubricas, esquemas, edge cases, exemplos longos, documentação de API. No <code>SKILL.md</code>, cada
+      referência deve vir com <strong>condição de uso</strong>:</p>
+      <pre><code class="language-markdown">## References
+- Read `references/security-checklist.md` only when the user asks for a security review
+  or the diff touches authentication, authorization, secrets, or data access.
+- Read `references/output-format.md` before producing the final report.
+- Read `references/api-reference.md` only when calling or validating API integration behavior.</code></pre>
+
+      <h3>O papel de <code>scripts/</code></h3>
+      <p>Scripts servem quando <em>variação é bug</em>: validação determinística, parsing, transformação de
+      arquivos, geração de artefatos, linting, sumarização mecânica, checks repetíveis. Regras:</p>
+      <ul>
+        <li>Não use prompts interativos; aceite argumentos.</li>
+        <li>Documente <code>--help</code>.</li>
+        <li>Retorne erros úteis em <code>stderr</code> e dados estruturados em <code>stdout</code>.</li>
+        <li>Implemente <code>--dry-run</code> em ações de escrita.</li>
+        <li>Seja idempotente sempre que possível.</li>
+        <li>Declare dependências e versões quando relevantes.</li>
+      </ul>
+      <pre><code class="language-python">#!/usr/bin/env python3
+import argparse, json, sys
+
+parser = argparse.ArgumentParser(description="Validate an input file against a schema.")
+parser.add_argument("--input", required=True)
+parser.add_argument("--schema", required=True)
+parser.add_argument("--json", action="store_true")
+args = parser.parse_args()
+
+# Perform deterministic validation here.
+result = {"status": "ok", "errors": []}
+print(json.dumps(result, ensure_ascii=False))</code></pre>
+
+      <h3>O papel de <code>assets/</code></h3>
+      <p>Assets são recursos estáticos: templates, schemas, imagens, exemplos de arquivo, tabelas de lookup,
+      modelos de configuração. <strong>Assets não devem virar contexto textual por padrão</strong> — o runtime
+      ou uma tool os consome; o prompt não.</p>
+
+      <h3>Carregamento sob demanda</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Recurso</th><th>Quando carregar</th><th>Quando não carregar</th></tr></thead>
+        <tbody>
+          <tr><td>Reference</td><td>Quando a etapa atual exige regra, rubrica ou documentação detalhada.</td><td>No momento da ativação, só para "ver o que tem".</td></tr>
+          <tr><td>Script</td><td>Quando o workflow manda executar ou quando determinismo reduz risco.</td><td>Para ler o código inteiro no contexto sem necessidade.</td></tr>
+          <tr><td>Asset textual</td><td>Quando template/schema precisa ser usado diretamente.</td><td>Como parte fixa do catálogo.</td></tr>
+          <tr><td>Asset binário</td><td>Quando runtime/ferramenta precisa do arquivo.</td><td>Como texto no prompt.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Contrato para <code>load_skill_resource</code></h3>
+      <p>Uma tool dedicada para carregar um recurso específico — com TTL e validações de segurança
+      obrigatórias:</p>
+      <pre><code class="language-json">{
+  "name": "load_skill_resource",
+  "description": "Loads one specific bundled resource from an active or eligible skill.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "skill_name": { "type": "string" },
+      "relative_path": { "type": "string" },
+      "reason": { "type": "string" },
+      "ttl_turns": { "type": "integer", "default": 2 }
+    },
+    "required": ["skill_name", "relative_path", "reason"],
+    "additionalProperties": false
+  }
+}</code></pre>
+      <div class="callout danger">
+        <strong>Validações obrigatórias (path traversal):</strong> caminho relativo à raiz da skill; bloquear
+        <code>..</code>, path absoluto e symlink escape; bloquear leitura fora da skill; impor limite de
+        tamanho; não aceitar diretórios inteiros; respeitar trust, permissões e escopo do usuário; registrar
+        skill, path, hash, turn, motivo e resultado. Carregar recurso de skill é leitura privilegiada — trate
+        como superfície de ataque.
+      </div>
+
+      <h3>Recursos e MCP</h3>
+      <p>Reafirmando a fronteira skill/tool: a skill ensina o workflow; tools e MCP fornecem ações e dados.</p>
+      <pre><code class="language-text">Skill = instrução, workflow, exemplos, scripts, references, assets.
+Tool  = ação invocável com schema e execução pelo host.
+MCP   = protocolo para expor tools, resources e prompts externos.</code></pre>
+      <div class="callout">
+        <strong>Cross-link:</strong> o MCP como fronteira de segurança (host/client/server, primitivas,
+        hardening) é tratado no núcleo em
+        <a href="guia_ferramentas_mcp_rag.html">guia_ferramentas_mcp_rag.html</a>, e por framework em
+        <a href="guia_claude_api.html#c-mcp">guia_claude_api.html#c-mcp</a> e
+        <a href="guia_deepagents.html#s-mcp">guia_deepagents.html#s-mcp</a>. Para construir um servidor MCP do
+        zero, a skill <code>mcp-server-builder</code> é o recurso de referência. A spec MCP alvo é
+        <strong>2025-11-25</strong> <span class="pill ok">Verificado</span> (versão canônica do super-guia).
+      </div>
+      <div class="source-link">Fonte oficial: <a href="https://agentskills.io/skill-creation/using-scripts" target="_blank" rel="noopener">agentskills.io/skill-creation/using-scripts</a> · <a href="https://modelcontextprotocol.io/specification/2025-11-25" target="_blank" rel="noopener">modelcontextprotocol.io/specification/2025-11-25</a></div>
+    </section>
+
+    <section class="chapter" id="parte-implementacao">
+      <h2 style="border-bottom:3px solid var(--c-da);padding:14px 0 10px;font-size:28px">Parte 3 — Implementação em harness próprio</h2>
+      <p>Se você está construindo o agente — não apenas escrevendo skills — esta parte cobre o ciclo de vida
+      do cliente, a política de contexto/budget/eviction, a segurança e a avaliação.</p>
+    </section>
+
+    <section id="implementacao-harness">
+      <h2>7. Implementação em harness próprio</h2>
+      <h3>Ciclo de vida de um cliente compatível</h3>
+      <p>Um agente/harness compatível com o padrão implementa cinco fases: descobrir skills, parsear o
+      <code>SKILL.md</code>, divulgar o catálogo ao modelo, ativar skills relevantes e gerenciar o contexto ao
+      longo da sessão.</p>
+      <pre><code class="language-text">1. Discover skills
+2. Parse SKILL.md files
+3. Disclose available skills to the model
+4. Activate skills
+5. Manage skill context over time</code></pre>
+
+      <h3>Discovery</h3>
+      <ul>
+        <li>Escaneie diretórios configurados: usuário, organização, projeto, plugins, registry remoto ou assets embutidos.</li>
+        <li>Considere <code>.agents/skills/</code> (ou diretório equivalente) para interoperabilidade.</li>
+        <li>Ignore diretórios volumosos/irrelevantes: <code>.git</code>, <code>node_modules</code>, build artifacts, caches.</li>
+        <li>Aplique profundidade máxima e limites de tamanho.</li>
+        <li>Resolva colisões por escopo/trust/precedência — nunca por ordem aleatória.</li>
+      </ul>
+
+      <h3>Parsing e validação</h3>
+      <pre><code class="language-python">def parse_skill_dir(path):
+    skill_md = path / "SKILL.md"
+    if not skill_md.exists():
+        return None
+    frontmatter, body = parse_yaml_frontmatter(skill_md.read_text())
+    validate_name(frontmatter["name"], expected_dir=path.name)
+    validate_description(frontmatter["description"])
+    return {
+        "name": frontmatter["name"],
+        "description": frontmatter["description"],
+        "location": str(skill_md),
+        "base_dir": str(path),
+        "metadata": frontmatter.get("metadata", {}),
+        "hash": sha256_package(path),
+        "trust": classify_trust(path),
+    }</code></pre>
+
+      <h3>Arquitetura recomendada para agente generalista</h3>
+      <pre><code class="language-text">system/developer prompt:
+  - regras globais e segurança;
+  - mecanismo de skills;
+  - catálogo L1: name + description + optional location.
+
+tools:
+  - activate_skill(name, reason)            -> retorna SKILL.md estruturado;
+  - load_skill_resource(skill_name, path, reason) -> retorna L3;
+  - tools de domínio, shell, file-read, MCP, APIs externas.
+
+context manager:
+  - active_skill_set;
+  - active_resources;
+  - stale_skill_ledger;
+  - token budgets;
+  - dedup, pinning, eviction, reload_required.</code></pre>
+
+      <h3>Prompt base de mecanismo de skills</h3>
+      <p>O texto abaixo é o contrato que ensina o modelo a usar progressive disclosure. Cole-o (adaptado) no
+      system/developer prompt do harness:</p>
+      <pre><code class="language-text">You have access to Agent Skills through progressive disclosure.
+
+At startup, you see only the skill catalog: name, description, and optional location.
+Full SKILL.md instructions are not active until loaded.
+
+When the current task clearly matches an available skill, call activate_skill(skill_name, reason)
+before using domain-specific tools, shell commands, MCP tools, external APIs, or producing the
+final answer.
+
+After a skill is loaded, follow its SKILL.md instructions unless they conflict with
+higher-priority system/developer policy, safety requirements, explicit user constraints,
+or tool permission policy.
+
+Do not bulk-load references, scripts, or assets. Load a bundled resource only when the active
+SKILL.md instructs you to do so or the current step requires it.
+
+If a previously used skill appears in stale_skills, do not rely on its exact workflow.
+Reactivate it before using exact instructions.
+
+If multiple skills are relevant, activate each relevant skill once, keep them conceptually
+separate, and apply them in task order.</code></pre>
+
+      <h3>File-read activation vs tool dedicada</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Abordagem</th><th>Vantagens</th><th>Riscos</th><th>Quando usar</th></tr></thead>
+        <tbody>
+          <tr><td>File-read activation</td><td>Simples; aproveita o filesystem existente.</td><td>Menos controle de envelope, permissões, analytics e dedup.</td><td>Agentes locais com leitura de arquivo confiável.</td></tr>
+          <tr><td><code>activate_skill</code></td><td>Controle de enum, trust, hash, structured wrapping, dedup, logs e resources listados.</td><td>Exige infraestrutura adicional.</td><td>Framework próprio, produção, multiagente, compliance.</td></tr>
+          <tr><td>Catálogo na tool description</td><td>Prompt global mais limpo.</td><td>Descrição da tool pode ficar grande; menos transparente.</td><td>Catálogo pequeno ou ambiente com prompt muito restrito.</td></tr>
+          <tr><td>Especialista com skills pré-carregadas</td><td>Baixa latência e foco.</td><td>Vira prompt monolítico se usado para agentes amplos.</td><td>Agente task-scoped com 1–3 skills essenciais.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Agents-as-tools</h3>
+      <p>Use agentes especialistas como tools quando o agente principal deve continuar dono da resposta final,
+      mas precisa delegar subtarefas delimitadas. O especialista pode ter skills <em>pinned</em> e retornar
+      apenas resultado estruturado:</p>
+      <pre><code class="language-json">{
+  "agent_profile": "document_reviewer",
+  "base_instructions": "Review documents and return structured findings.",
+  "pinned_skills": ["document-review"],
+  "optional_skills": ["report-packaging"],
+  "allowed_tools": ["read_file", "load_skill_resource"],
+  "history_policy": "task_scoped",
+  "output_contract": "ReviewFindings"
+}</code></pre>
+      <p>O agente principal <strong>não</strong> deve receber o <code>SKILL.md</code> inteiro do especialista,
+      referências completas ou logs internos. Deve receber resumo, achados, artefatos, skills/resources usados
+      e limitações.</p>
+      <div class="callout">
+        <strong>Cross-link:</strong> o contraste entre <em>handoff</em> (transferência de ownership) e
+        <em>agent-as-tool</em> (delegação) como primitivos de orquestração está em
+        <a href="guia_arquitetura_orquestracao.html">guia_arquitetura_orquestracao.html</a>; a implementação
+        concreta por framework em
+        <a href="guia_agents_sdk_orquestracao.html">guia_agents_sdk_orquestracao.html</a>,
+        <a href="guia_langgraph_orquestracao.html">guia_langgraph_orquestracao.html</a> e
+        <a href="guia_google_adk_orquestracao.html">guia_google_adk_orquestracao.html</a>.
+      </div>
+
+      <h3>Integração com estado local e memória</h3>
+      <p>Separe o <strong>contexto do modelo</strong> do <strong>contexto local do runtime</strong>. Dados como
+      usuário autenticado, clients de banco, conexões MCP, logs e permissões podem ficar no runtime e ser
+      acessados por tools — sem serem despejados no prompt. Se o modelo precisa decidir com base em uma
+      informação, exponha-a por instrução, tool, retrieval ou input explícito.</p>
+      <div class="callout">
+        <strong>Cross-link:</strong> a teoria de <em>ledger canônico</em> (estado durável vs payload do
+        provider, ciclo registrar/reduzir/projetar) que sustenta essa separação está em
+        <a href="guia_estado_contexto_memoria.html">guia_estado_contexto_memoria.html</a>. Não reexplicamos o
+        ledger aqui; tratamos apenas o que é específico de skills.
+      </div>
+      <div class="source-link">Fonte oficial: <a href="https://agentskills.io/client-implementation/adding-skills-support" target="_blank" rel="noopener">agentskills.io/client-implementation/adding-skills-support</a> · <a href="https://developers.openai.com/api/docs/guides/agents/orchestration" target="_blank" rel="noopener">developers.openai.com · Agents SDK orchestration</a></div>
+    </section>
+
+    <section id="contexto-budget-eviction">
+      <h2>8. Contexto, budget, compaction &amp; eviction</h2>
+      <p>Política universal de gestão de contexto para skills: active skill set, stale ledger, budget,
+      eviction e a regra que evita regressão silenciosa.</p>
+      <div class="callout danger">
+        <strong>Regra central — skill ativa não se compacta como conversa.</strong> Uma skill ativa contém
+        <em>instruções normativas</em>. Se você resumir livremente o <code>SKILL.md</code> e continuar tratando
+        o resumo como instrução exata, cria uma regressão silenciosa. A política correta é binária: manter o
+        corpo inteiro <strong>ou</strong> removê-lo e marcar <code>reload_required</code>. Não há meio-termo
+        "resumido mas confiável".
+      </div>
+      <pre><code class="language-text">Active skill L2:
+  manter exata enquanto ativa;
+  deduplicar por name+hash;
+  proteger contra pruning destrutivo;
+  remover como unidade inteira se necessário;
+  marcar stale/reload_required ao sair do contexto.</code></pre>
+      <div class="callout" style="overflow-wrap:anywhere">
+        <strong>Cross-link (fronteira de compaction):</strong> o <em>contrato</em> de compaction acima é o
+        invariante específico de skills. A <em>estratégia operacional</em> geral — escada de compactação, teto
+        X, snapshots cumulativos — está em
+        <a href="guia_contexto_compactacao_estrategias.html#escada">guia_contexto_compactacao_estrategias.html#escada</a>,
+        <a href="guia_contexto_compactacao_estrategias.html#subdividir-x">#subdividir-x</a> e
+        <a href="guia_contexto_compactacao_estrategias.html#snapshots">#snapshots</a>; o contrato de compaction
+        do ledger em
+        <a href="guia_estado_contexto_memoria.html">guia_estado_contexto_memoria.html</a>. Não reexplicamos a
+        escada aqui.
+      </div>
+
+      <h3>Níveis de carregamento (L0–L5)</h3>
+      <p>O harness vê mais camadas do que o modelo. As três da §3 (L1/L2/L3) são as que entram no prompt; o
+      registry (L0), os arquivos montados (L4) e o binding de tools (L5) são estado do runtime:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Nível</th><th>Nome</th><th>Significado</th><th>Persistência</th></tr></thead>
+        <tbody>
+          <tr><td>L0</td><td>Registry</td><td>Skill existe com hash, versão, trust, path, scope e status.</td><td>Persistente.</td></tr>
+          <tr><td>L1</td><td>Catalog disclosure</td><td>Modelo vê <code>name</code>, <code>description</code> e talvez <code>location</code>.</td><td>Presente dentro de budget.</td></tr>
+          <tr><td>L2</td><td>Hydrated skill</td><td><code>SKILL.md</code> completo está no contexto atual.</td><td>Só enquanto ativa.</td></tr>
+          <tr><td>L3</td><td>Hydrated resource</td><td>Reference/asset textual está no contexto atual.</td><td>TTL curto.</td></tr>
+          <tr><td>L4</td><td>Runtime-mounted files</td><td>Arquivos/scripts montados no sandbox/container.</td><td>Por episódio/container.</td></tr>
+          <tr><td>L5</td><td>Tool/MCP binding</td><td>Ferramentas externas habilitadas.</td><td>Por escopo, risco e permissão.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Estado canônico recomendado</h3>
+      <p>O estado que o context manager mantém para implementar dedup, pinning, eviction e o stale ledger:</p>
+      <pre><code class="language-json">{
+  "skill_registry": {
+    "invoice-audit": {
+      "version": "1.2.0",
+      "hash": "sha256:abc...",
+      "scope": "org",
+      "trust": "trusted",
+      "location": "/skills/invoice-audit/SKILL.md",
+      "status": "eligible"
+    }
+  },
+  "active_skill_set": [
+    {
+      "name": "invoice-audit",
+      "hash": "sha256:abc...",
+      "loaded_turn": 42,
+      "last_used_turn": 45,
+      "pin": "task",
+      "reason": "current task requires invoice validation"
+    }
+  ],
+  "active_resources": [
+    {
+      "skill": "invoice-audit",
+      "path": "references/output-format.md",
+      "loaded_turn": 44,
+      "last_used_turn": 44,
+      "ttl_turns": 2
+    }
+  ],
+  "stale_skills": [
+    {
+      "name": "report-packaging",
+      "hash": "sha256:def...",
+      "last_used_turn": 18,
+      "reload_required": true,
+      "note": "reload before relying on exact output rules"
+    }
+  ]
+}</code></pre>
+
+      <h3>Máquina de estados de uma skill</h3>
+      <p>Toda skill percorre um ciclo de vida explícito. O ramo <code>STALE → RELOAD_REQUIRED → ACTIVE</code>
+      é o que impede o uso de instruções desatualizadas:</p>
+      <pre><code class="language-text">DISCOVERED -> PARSED -> ELIGIBLE -> DISCLOSED -> ACTIVATION_REQUESTED -> ACTIVE
+ACTIVE -> RESOURCE_ACTIVE
+ACTIVE -> STALE -> RELOAD_REQUIRED -> ACTIVE
+ACTIVE -> EVICTED -> STALE
+ANY    -> QUARANTINED</code></pre>
+      <div class="figure">
+        <svg viewBox="0 0 760 280" role="img" aria-labelledby="sm-title">
+          <title id="sm-title">Máquina de estados de uma skill, do descobrimento à quarentena</title>
+          <defs>
+            <marker id="arr2" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+              <path d="M0,0 L8,4 L0,8 Z" fill="var(--c-fg-muted)"/>
+            </marker>
+          </defs>
+          <!-- linear chain -->
+          <g font-family="sans-serif" font-size="11" text-anchor="middle">
+            <rect x="14" y="24" width="92" height="34" rx="8" fill="var(--c-na-bg)" stroke="var(--c-border-strong)"/><text x="60" y="45" fill="var(--c-fg)">DISCOVERED</text>
+            <rect x="130" y="24" width="78" height="34" rx="8" fill="var(--c-na-bg)" stroke="var(--c-border-strong)"/><text x="169" y="45" fill="var(--c-fg)">PARSED</text>
+            <rect x="232" y="24" width="86" height="34" rx="8" fill="var(--c-na-bg)" stroke="var(--c-border-strong)"/><text x="275" y="45" fill="var(--c-fg)">ELIGIBLE</text>
+            <rect x="342" y="24" width="92" height="34" rx="8" fill="var(--c-da-bg)" stroke="var(--c-da)"/><text x="388" y="45" fill="var(--c-da)">DISCLOSED</text>
+            <rect x="458" y="24" width="138" height="34" rx="8" fill="var(--c-da-bg)" stroke="var(--c-da)"/><text x="527" y="45" fill="var(--c-da)">ACTIVATION_REQ.</text>
+            <rect x="620" y="24" width="80" height="34" rx="8" fill="var(--c-ok-bg)" stroke="var(--c-ok)"/><text x="660" y="45" fill="var(--c-ok)">ACTIVE</text>
+          </g>
+          <g stroke="var(--c-fg-muted)" stroke-width="1.4" fill="none">
+            <line x1="106" y1="41" x2="128" y2="41" marker-end="url(#arr2)"/>
+            <line x1="208" y1="41" x2="230" y2="41" marker-end="url(#arr2)"/>
+            <line x1="318" y1="41" x2="340" y2="41" marker-end="url(#arr2)"/>
+            <line x1="434" y1="41" x2="456" y2="41" marker-end="url(#arr2)"/>
+            <line x1="596" y1="41" x2="618" y2="41" marker-end="url(#arr2)"/>
+          </g>
+          <!-- second row: stale / reload / evicted -->
+          <g font-family="sans-serif" font-size="11" text-anchor="middle">
+            <rect x="620" y="120" width="80" height="34" rx="8" fill="var(--c-warn-bg)" stroke="var(--c-warn)"/><text x="660" y="141" fill="var(--c-warn)">STALE</text>
+            <rect x="468" y="120" width="120" height="34" rx="8" fill="var(--c-warn-bg)" stroke="var(--c-warn)"/><text x="528" y="141" fill="var(--c-warn)">RELOAD_REQUIRED</text>
+            <rect x="468" y="184" width="120" height="34" rx="8" fill="var(--c-na-bg)" stroke="var(--c-border-strong)"/><text x="528" y="205" fill="var(--c-fg)">EVICTED</text>
+            <rect x="14" y="120" width="120" height="34" rx="8" fill="var(--c-bad-bg)" stroke="var(--c-bad)"/><text x="74" y="141" fill="var(--c-bad)">QUARANTINED</text>
+          </g>
+          <g stroke="var(--c-fg-muted)" stroke-width="1.4" fill="none">
+            <line x1="660" y1="58" x2="660" y2="118" marker-end="url(#arr2)"/>            <!-- active -> stale -->
+            <line x1="620" y1="137" x2="590" y2="137" marker-end="url(#arr2)"/>            <!-- stale -> reload -->
+            <line x1="528" y1="120" x2="528" y2="64" marker-end="url(#arr2)"/>             <!-- reload -> active path up -->
+            <line x1="660" y1="184" x2="660" y2="156" marker-end="url(#arr2)"/>            <!-- evicted -> stale -->
+            <line x1="588" y1="201" x2="640" y2="180" marker-end="url(#arr2)"/>
+          </g>
+          <text x="540" y="92" font-family="sans-serif" font-size="9.5" fill="var(--c-fg-muted)" text-anchor="middle">reload antes de usar regra exata</text>
+          <text x="74" y="240" font-family="sans-serif" font-size="9.5" fill="var(--c-bad)" text-anchor="middle">ANY → QUARANTINED (origem/risco/policy)</text>
+        </svg>
+        <figcaption>Ciclo de vida. Note que <code>EVICTED</code> não apaga a skill: ela vai para
+        <code>STALE</code> com <code>reload_required</code>, e só volta a <code>ACTIVE</code> após reativação
+        explícita. Qualquer estado pode ir para <code>QUARANTINED</code> por origem, risco, policy ou
+        incompatibilidade.</figcaption>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Estado</th><th>Uso</th></tr></thead>
+        <tbody>
+          <tr><td><code>DISCOVERED</code></td><td>Diretório ou pacote encontrado.</td></tr>
+          <tr><td><code>PARSED</code></td><td><code>SKILL.md</code> validado ou aceito com warnings.</td></tr>
+          <tr><td><code>ELIGIBLE</code></td><td>Skill permitida para usuário, agente, escopo e trust.</td></tr>
+          <tr><td><code>DISCLOSED</code></td><td>Skill aparece no catálogo L1.</td></tr>
+          <tr><td><code>ACTIVE</code></td><td><code>SKILL.md</code> completo será renderizado no request atual.</td></tr>
+          <tr><td><code>STALE</code></td><td>Usada antes, ausente agora.</td></tr>
+          <tr><td><code>RELOAD_REQUIRED</code></td><td>Deve reativar antes de confiar em detalhes exatos.</td></tr>
+          <tr><td><code>QUARANTINED</code></td><td>Bloqueada por origem, risco, policy ou compatibilidade.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>L2 em follow-ups: reinjeção exata vs tool result histórico</h3>
+      <p>
+        Depois que o disclosure terminou e o modelo já respondeu ao usuário, o <code>tool_result</code> que
+        entregou o <code>SKILL.md</code> <strong>não</strong> deve seguir como fonte operacional primária da
+        skill. Tool results antigos são histórico — podem ser compactados ou ficar soterrados. Enquanto a skill
+        está ativa, o runtime <strong>promove</strong> a skill no ledger e o projection builder
+        <strong>re-renderiza o corpo L2 exato a cada turno a partir do skill store</strong>, não do tool result
+        histórico.
+      </p>
+      <pre><code class="language-json">{
+  "type": "SkillActivationItem",
+  "skill_name": "contract-review",
+  "version": "1.4.2",
+  "hash": "sha256:...",
+  "loaded_turn": 18,
+  "last_used_turn": 20,
+  "runtime_status": "active",
+  "l2_raw_ref": "skill://contract-review/1.4.2/SKILL.md",
+  "projection_policy": "inject_l2_exact_while_active"
+}</code></pre>
+      <p>O projection builder então renderiza, no bloco de autoridade, o corpo exato:</p>
+      <pre><code class="language-xml">&lt;active_skills_l2 budget_slice="skills_l2_authority"&gt;
+  &lt;skill name="contract-review" version="1.4.2" hash="sha256:..."&gt;
+    &lt;![CDATA[
+    ... corpo exato do SKILL.md ...
+    ]]&gt;
+  &lt;/skill&gt;
+&lt;/active_skills_l2&gt;</code></pre>
+      <div class="callout tip">
+        <strong>Exato-ou-reload, sempre do store.</strong> A reinjeção parte do skill store versionado (por
+        <code>hash</code>), nunca de um resumo nem do tool result antigo. Se o L2 não couber, evicte a skill
+        inteira e marque <code>stale/reload_required</code> — nunca mantenha um L2 resumido se passando por ativo.
+      </div>
+
+      <h3>Orçamento de skills</h3>
+      <p>Use um sub-budget explícito para skills (o nome é livre; aqui <code>skill_budget</code>). O ponto-chave:
+      references, outputs de script e artefatos grandes <strong>não</strong> pertencem ao hot set — são payloads
+      voláteis de execução, com TTL e ponteiros de artefato.</p>
+      <pre><code class="language-text">total_context     = X
+core_prompt_budget = A
+tool_output_budget = B
+skill_budget       = S
+
+S_catalog = metadata for eligible skills
+S_hot     = full SKILL.md bodies currently active
+
+references, script outputs, external evidence and large artifacts do not belong to S_hot;
+they are volatile execution payloads with TTL and artifact pointers.</code></pre>
+      <h4>Defaults iniciais adaptáveis</h4>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Parâmetro</th><th>Valor inicial</th><th>Observação</th></tr></thead>
+        <tbody>
+          <tr><td><code>S_target</code></td><td>15–35% do prompt-base disponível</td><td>Ajustar por modelo e domínio.</td></tr>
+          <tr><td><code>S_catalog_cap</code></td><td>até 5k tokens ou 10–15% de S</td><td>Se passar disso, filtrar/hierarquizar/buscar skills.</td></tr>
+          <tr><td><code>skill_body_soft_cap</code></td><td>preferencialmente &lt; 5k tokens</td><td>Acima disso, refatorar para references.</td></tr>
+          <tr><td><code>N_active_max</code></td><td>2–4 em generalistas; 1–3 em especialistas</td><td>Protege contra conflito instrucional.</td></tr>
+          <tr><td><code>min_residency_turns</code></td><td>3–5 turnos</td><td>Evita thrashing.</td></tr>
+          <tr><td><code>swap_margin</code></td><td>1.15–1.30</td><td>Nova skill só substitui se o ganho esperado superar a perda.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout warn">
+        <strong>UNVERIFIED — heurísticas de budget:</strong> os valores acima (<code>S_target</code>,
+        <code>swap_margin</code> etc.) são <em>heurísticas iniciais</em> propostas pelo material-fonte, não
+        números oficiais da spec. Calibre por evals, modelo, contexto e risco; não cite como limite normativo.
+      </div>
+
+      <h3>L3 e return packets em follow-up: hot por 1 turno, depois ref</h3>
+      <p>
+        L3 (referências, templates, scripts, assets) é carregado sob demanda via <code>load_skill_resource</code>
+        e, por default, <strong>não</strong> é memória permanente. No follow-up imediato, um L3 pequeno pode
+        sobreviver por ~1 turno num slot <code>hot_followup</code>; depois vira digest/ref/reload. O mesmo vale
+        para o <code>return_packet</code> de um agent-as-tool.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Tipo de L3</th><th>Política default em follow-up</th></tr></thead>
+        <tbody>
+          <tr><td><code>reference_normative_small</code></td><td>Pode entrar em <code>hot_followup</code> por 1 turno; se ainda necessário, reidratar exato.</td></tr>
+          <tr><td><code>template_small</code></td><td><code>hot_followup</code> por 1 turno; útil para geração imediata.</td></tr>
+          <tr><td><code>reference_evidential</code></td><td>Preferir digest/ref; hot só se usado na resposta anterior.</td></tr>
+          <tr><td><code>large_reference</code></td><td>Digest + raw_ref; reidratar se o exato for necessário.</td></tr>
+          <tr><td><code>script</code></td><td>Executar no runtime/sandbox; retornar output/artifacts/provenance — não colar o script inteiro.</td></tr>
+          <tr><td><code>asset</code></td><td>Ref/digest/crop/chunk; reidratar conforme a necessidade.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout danger">
+        <strong>Onde o hot follow-up entra — e segurança.</strong> O dado transitório de follow-up entra como
+        bloco tagueado no próximo turno <code>role=user</code> (com <code>ttl_turns=1</code>,
+        <code>source_item_ids</code>, <code>trust_tier</code>), <strong>nunca</strong> no <code>system</code> nem
+        como <code>tool_result</code> fabricado — detalhe no
+        <a href="guia_estado_contexto_memoria.html#zonas-canonicas">invariante de colocação</a>. As tags são
+        organização, não fronteira de segurança: serialize com schema fechado, sanitize e cubra com evals de
+        prompt-injection.
+      </div>
+
+      <h3>Eviction sem perder autoridade</h3>
+      <p>Quando uma nova skill precisa entrar e o budget não comporta, remova <strong>skills inteiras</strong>.
+      Não faça LRU puro — calcule a menor perda total de valor de retenção:</p>
+      <pre><code class="language-text">needed = max(0, current_skill_tokens + token_cost(new_skill) - S_target)
+
+Choose evict_set V that minimizes:
+  sum(retention_value(skill) for skill in V)
+subject to:
+  sum(token_cost(skill) for skill in V) >= needed
+
+retention_value considers:
+  - current task relevance;
+  - recency and frequency;
+  - open dependencies;
+  - output format still pending;
+  - safety/compliance criticality;
+  - pinning/min residency;
+  - expected reactivation cost;
+  - trust and user scope.</code></pre>
+
+      <h3>Single-session e limite de compressão</h3>
+      <p>Em agente de sessão única ou episódio curto, é aceitável descartar o payload L2 para liberar espaço —
+      mas o descarte tem de ser <strong>explícito no estado</strong>: a skill deixa de estar ativa, entra no
+      ledger como stale e deve ser recarregada se voltar a ser necessária:</p>
+      <pre><code class="language-python">if context_pressure and session_topology == "single_session":
+    evict_full_skill_payload(skill)
+    stale_ledger.add({
+        "name": skill.name,
+        "hash": skill.hash,
+        "reload_required": True,
+        "reason": "context pressure",
+    })</code></pre>
+
+      <h3>Ordem recomendada de renderização</h3>
+      <p>A ordem em que o harness monta o prompt importa: política primeiro, conteúdo volátil por último. Isso
+      mitiga o efeito "lost-in-the-middle" para as instruções normativas:</p>
+      <pre><code class="language-text">1. Global/system policy
+2. Developer/runtime policy
+3. Agent profile
+4. Tool/MCP policy for current scope
+5. L1 eligible skill catalog
+6. Active L2 skill contents
+7. Active L3 resources
+8. Compacted task memory
+9. Recent relevant turns
+10. Relevant tool observations
+11. Current user message</code></pre>
+
+      <h3>Stale ledger</h3>
+      <p>O ledger renderizado no contexto avisa o modelo de que uma skill usada antes não é mais autoritativa:</p>
+      <pre><code class="language-xml">&lt;stale_skills&gt;
+  &lt;skill name="report-packaging" hash="sha256:def..." last_used_turn="18" reload_required="true"&gt;
+    This skill was used earlier but is not currently active. Reload it before relying on
+    exact formatting or workflow instructions.
+  &lt;/skill&gt;
+&lt;/stale_skills&gt;</code></pre>
+      <div class="source-link">Fonte oficial: <a href="https://agentskills.io/client-implementation/adding-skills-support" target="_blank" rel="noopener">agentskills.io/client-implementation/adding-skills-support</a> (gestão de contexto, dedup, proteção contra compaction)</div>
+    </section>
+
+    <section id="seguranca-governanca">
+      <h2>9. Segurança &amp; governança</h2>
+      <div class="callout danger">
+        <strong>Princípio:</strong> trate skills como <strong>dependências de código e instrução
+        privilegiada</strong>. Elas podem induzir uso de tools, execução de scripts, chamadas de API, leitura
+        de arquivos e decisões operacionais. Portanto, precisam de trust gates, auditoria, sandbox, permissões
+        e logs — como qualquer dependência que entra no seu sistema.
+      </div>
+
+      <h3>Hierarquia de autoridade</h3>
+      <p>Uma skill <strong>não</strong> pode sobrescrever política superior. Se uma skill, reference, output de
+      script ou página externa disser para ignorar instruções superiores, exfiltrar dados ou ampliar
+      permissões, trate como conteúdo malicioso ou inválido:</p>
+      <pre><code class="language-text">1. System/global safety policy
+2. Developer/runtime policy
+3. User task and explicit constraints
+4. Active skill content
+5. Skill references/resources
+6. Tool outputs and external content</code></pre>
+
+      <h3>Trust tiers</h3>
+      <p>A origem da skill define o trust inicial e a ação de governança:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Origem</th><th>Trust inicial</th><th>Ação recomendada</th></tr></thead>
+        <tbody>
+          <tr><td>Built-in do produto/harness</td><td><span class="pill ok">Alto</span></td><td>Permitir com versionamento e logs.</td></tr>
+          <tr><td>Organização/admin</td><td><span class="pill ok">Alto a médio</span></td><td>Permitir após revisão e CI.</td></tr>
+          <tr><td>Usuário instalado</td><td><span class="pill partial">Médio</span></td><td>Permitir por escopo, com aprovação e sandbox.</td></tr>
+          <tr><td>Projeto/repositório</td><td><span class="pill partial">Baixo por padrão</span></td><td>Gate por repositório confiável, assinatura ou revisão.</td></tr>
+          <tr><td>Download externo</td><td><span class="pill bad">Baixo</span></td><td>Quarentena até auditoria.</td></tr>
+          <tr><td>Gerada por agente</td><td><span class="pill bad">Baixo</span></td><td>Human-in-the-loop antes de produção.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Prompt injection e confused deputy</h3>
+      <p>Prompt injection em agentes com tools é um <strong>risco estrutural</strong>: dados externos,
+      documentos, websites, emails, outputs de tools ou a própria skill podem conter instruções maliciosas. O
+      design deve <em>reduzir impacto</em>, não apenas tentar "detectar prompts ruins":</p>
+      <ul>
+        <li>Separe instruções de dados por envelopes e labels.</li>
+        <li>Não deixe conteúdo externo elevar autoridade.</li>
+        <li>Restrinja as tools disponíveis ao mínimo necessário.</li>
+        <li>Use allowlists, confirmação humana, dry-run e escopos de escrita.</li>
+        <li>Monitore tool calls anômalas, tentativas de leitura sensível e mudanças de comportamento.</li>
+        <li>Não use o LLM como único controle de segurança para ações destrutivas.</li>
+      </ul>
+      <div class="callout">
+        <strong>Cross-link:</strong> o threat model completo de agentes (incluindo guardrails em 3 pontos e
+        políticas de execução) está no núcleo em
+        <a href="guia_operacao_seguranca_evals.html">guia_operacao_seguranca_evals.html</a>; a segurança de
+        ferramentas/MCP (hardening de servidor, trust boundary) em
+        <a href="guia_ferramentas_mcp_rag.html">guia_ferramentas_mcp_rag.html</a>. Aqui ficamos com o que é
+        específico de skills: hierarquia de autoridade, trust tiers de skill e política de scripts.
+      </div>
+
+      <h3>Checklist de auditoria de skill</h3>
+      <ul>
+        <li>☐ Ler o <code>SKILL.md</code> integralmente.</li>
+        <li>☐ Verificar se tenta sobrescrever políticas superiores.</li>
+        <li>☐ Verificar scripts e dependências.</li>
+        <li>☐ Buscar comandos destrutivos ou rede inesperada.</li>
+        <li>☐ Buscar leitura de arquivos sensíveis.</li>
+        <li>☐ Buscar exfiltração de dados ou envio para URLs externas.</li>
+        <li>☐ Validar <code>allowed-tools</code> — não aceitar permissões amplas por conveniência.</li>
+        <li>☐ Validar references e assets, inclusive arquivos binários se relevantes.</li>
+        <li>☐ Validar licença e provenance.</li>
+        <li>☐ Executar evals de ativação, segurança e comportamento.</li>
+        <li>☐ Registrar hash e versão aprovados.</li>
+      </ul>
+
+      <h3>Política para scripts</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Tipo de script</th><th>Política</th></tr></thead>
+        <tbody>
+          <tr><td>Não confiável</td><td>Não executar. Quarentena e revisão.</td></tr>
+          <tr><td>Usuário instalado</td><td>Sandbox, confirmação para risco, sem secrets por padrão.</td></tr>
+          <tr><td>Aprovado pela organização</td><td>Executar conforme allowlist, sandbox e logging.</td></tr>
+          <tr><td>Escrita/destrutivo</td><td>Plano, dry-run se possível, confirmação explícita e audit log.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Permissões de tools e MCP</h3>
+      <ul>
+        <li>Não exponha todas as tools globais; exponha apenas por active skill, tarefa, escopo, risco e usuário.</li>
+        <li>Readonly pode ser auto-enabled se o trust permitir.</li>
+        <li>Write tools exigem confirmação, salvo automação previamente aprovada.</li>
+        <li>Destructive tools exigem confirmação forte, plano e rollback/dry-run quando possível.</li>
+        <li>Use nomes fully qualified para tools MCP quando houver múltiplos servidores.</li>
+      </ul>
+
+      <h3>Logs mínimos de segurança</h3>
+      <pre><code class="language-text">- skill name, version, hash, source, trust tier;
+- activation trigger and reason;
+- user/session/project scope;
+- resources loaded;
+- tools exposed while skill active;
+- tool calls made and outputs summarized;
+- permission prompts and approvals;
+- evictions and reload_required events;
+- blocks/refusals/quarantine decisions.</code></pre>
+      <div class="source-link">Fonte oficial: <a href="https://genai.owasp.org/llmrisk/llm01-prompt-injection/" target="_blank" rel="noopener">OWASP LLM01 · Prompt Injection</a> · <a href="https://www.ncsc.gov.uk/blog-post/prompt-injection-is-not-sql-injection" target="_blank" rel="noopener">UK NCSC · Prompt injection</a> · <a href="https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices" target="_blank" rel="noopener">MCP · Security best practices</a></div>
+    </section>
+
+    <section id="avaliacao-observabilidade">
+      <h2>10. Avaliação &amp; observabilidade</h2>
+      <p>Skills devem ser avaliadas com tarefas reais, casos negativos, edge cases, baseline sem skill e
+      métricas de custo. <strong>"Funcionou uma vez" não é evidência.</strong> A avaliação cobre ativação,
+      execução, segurança, qualidade final e impacto de contexto.</p>
+
+      <h3>Tipos de teste</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Teste</th><th>Objetivo</th><th>Exemplo de métrica</th></tr></thead>
+        <tbody>
+          <tr><td>Trigger eval</td><td>A description ativa na hora certa?</td><td>Precision, recall, false positives/negatives.</td></tr>
+          <tr><td>Functional eval</td><td>O workflow produz resultado correto?</td><td>Taxa de sucesso, assertions, erros críticos.</td></tr>
+          <tr><td>Baseline A/B</td><td>A skill melhora o agente?</td><td>Delta de qualidade, latência e tokens.</td></tr>
+          <tr><td>Context eval</td><td>Dedup, stale, compaction e reload funcionam?</td><td>Reativações corretas, zero uso de stale exato.</td></tr>
+          <tr><td>Security eval</td><td>A skill resiste a prompt injection e permissões indevidas?</td><td>Bloqueios corretos, zero tool write sem confirmação.</td></tr>
+          <tr><td>Operational eval</td><td>Funciona em runtime real?</td><td>Erros de script, missing dependencies, timeouts.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Exemplo de evals</h3>
+      <pre><code class="language-json">{
+  "skill_name": "invoice-audit",
+  "evals": [
+    {
+      "id": "trigger-001",
+      "prompt": "Audite esta fatura e veja se tem cobrança duplicada.",
+      "expected_active_skills": ["invoice-audit"],
+      "expected_output": "Relatório com campos ausentes, duplicidades e próximos passos."
+    },
+    {
+      "id": "no-trigger-001",
+      "prompt": "Explique a diferença entre lucro e caixa.",
+      "expected_active_skills": [],
+      "expected_output": "Resposta conceitual sem ativar invoice-audit."
+    },
+    {
+      "id": "stale-001",
+      "setup": { "stale_skills": ["report-packaging"] },
+      "prompt": "Use o mesmo formato de relatório de antes.",
+      "expected_behavior": "reactivate report-packaging before relying on exact formatting"
+    }
+  ]
+}</code></pre>
+
+      <h3>Métricas recomendadas</h3>
+      <pre><code class="language-text">skill_activation_precision        avg_L1_catalog_tokens
+skill_activation_recall           avg_L2_active_tokens
+skill_false_positive_rate         avg_L3_resource_tokens
+skill_false_negative_rate         avg_active_skill_count
+quality_delta_vs_baseline         reload_required_followed_rate
+latency_delta_vs_baseline         stale_instruction_violation_rate
+token_delta_vs_baseline           duplicate_activation_prevented
+resource_overload_rate            policy_block_rate
+unsafe_tool_call_attempt_rate     thrash_rate</code></pre>
+
+      <h3>Observabilidade</h3>
+      <p>Os traces devem permitir responder: por que a skill ativou, qual versão foi usada, quais recursos
+      foram lidos, quais tools foram expostas, qual budget foi consumido e se houve eviction:</p>
+      <pre><code class="language-json">{
+  "event": "skill_activated",
+  "turn": 42,
+  "skill": "invoice-audit",
+  "version": "1.2.0",
+  "hash": "sha256:abc...",
+  "trigger": "implicit_description_match",
+  "reason": "user asked to audit an invoice for duplicates",
+  "tokens_l2": 3120,
+  "resources_listed": 4,
+  "trust": "trusted",
+  "scope": "current_task"
+}</code></pre>
+      <div class="callout" style="overflow-wrap:anywhere">
+        <strong>Cross-link:</strong> os acceptance gates gerais (SCHEMA/TOOL/RAG/CTX/ZDR/BUDGET/PROVIDER/SEC),
+        a instrumentação de tracing/cost ledger e os evals code-first vivem no núcleo de operação em
+        <a href="guia_operacao_seguranca_evals.html">guia_operacao_seguranca_evals.html</a>. Os evals de
+        skills acima alimentam esses gates.
+      </div>
+
+      <h3>CI/CD para skills</h3>
+      <ul>
+        <li>☐ Validar frontmatter e naming.</li>
+        <li>☐ Validar links relativos e ausência de referências profundas desnecessárias.</li>
+        <li>☐ Rodar lint dos scripts.</li>
+        <li>☐ Rodar testes unitários dos scripts.</li>
+        <li>☐ Rodar trigger evals.</li>
+        <li>☐ Rodar functional evals.</li>
+        <li>☐ Rodar security evals para prompt injection e tool misuse.</li>
+        <li>☐ Calcular hash/manifest.</li>
+        <li>☐ Publicar somente se passar gates de trust e qualidade.</li>
+        <li>☐ Registrar versão, changelog e rollback.</li>
+      </ul>
+      <div class="source-link">Fonte oficial: <a href="https://agentskills.io/skill-creation/evaluating-skills" target="_blank" rel="noopener">agentskills.io/skill-creation/evaluating-skills</a> · <a href="https://www.nist.gov/itl/ai-risk-management-framework" target="_blank" rel="noopener">NIST AI RMF</a> · <a href="https://owasp.org/www-project-top-10-for-large-language-model-applications/" target="_blank" rel="noopener">OWASP Top 10 for LLM Applications</a></div>
+    </section>
+
+    <section class="ref" id="templates">
+      <h2>Templates copy-paste</h2>
+      <p>Modelos prontos para <code>SKILL.md</code>, catálogo, ativação, manifest e prompt de agente. Recolha
+      o que não usar; copie o que precisar.</p>
+
+      <h3>Template universal de <code>SKILL.md</code></h3>
+      <details>
+        <summary>Ver template completo de SKILL.md</summary>
+        <div class="ref-body">
+<pre><code class="language-markdown">---
+name: example-skill
+description: Do a specific recurring task with clear output and validation. Use when the user asks for [intentions], mentions [keywords/files/formats], or needs [deliverable]. Do not use for [negative scope].
+license: Apache-2.0
+compatibility: Requires [runtime/tools] if applicable. Omit this field if there are no special requirements.
+metadata:
+  org.example.version: "1.0.0"
+  org.example.owner: "team-or-person"
+  org.example.trust: "approved|review-required|experimental"
+---
+
+# Example Skill
+
+## When to use
+Use this skill when...
+
+## When not to use
+Do not use this skill when...
+
+## Available files
+- `references/output-format.md`: read before final output.
+- `references/edge-cases.md`: read when the task includes unusual constraints.
+- `scripts/validate.py`: run when validation is required.
+- `assets/template.json`: use when generating structured output.
+
+## Workflow
+1. Confirm the target input/artifact.
+2. Load only the references required by the current step.
+3. Execute deterministic scripts when instructed.
+4. Produce the requested output using the output format.
+5. Run validation.
+6. Report limitations and unresolved items.
+
+## Gotchas
+- Do not infer missing required fields.
+- Do not call write tools unless explicitly requested and permitted.
+- Do not treat stale prior skill usage as active instructions.
+
+## Output format
+Return:
+- Summary
+- Findings
+- Evidence
+- Recommended next action
+- Limitations
+
+## Validation
+Before final output:
+- Check all required fields are present.
+- Check references were loaded only when needed.
+- Check no prohibited action was taken.</code></pre>
+        </div>
+      </details>
+
+      <h3>Catálogo L1, resposta de ativação &amp; manifest</h3>
+      <div class="code-group">
+        <div class="code-tabs" role="tablist">
+          <button class="code-tab" role="tab" data-lang="catalog" aria-selected="true">Catálogo L1</button>
+          <button class="code-tab" role="tab" data-lang="activation" aria-selected="false">Resposta de ativação</button>
+          <button class="code-tab" role="tab" data-lang="manifest" aria-selected="false">Manifest</button>
+        </div>
+        <div class="code-pane" data-lang="catalog" data-active="true">
+<pre><code class="language-xml">&lt;available_skills&gt;
+  &lt;skill&gt;
+    &lt;name&gt;example-skill&lt;/name&gt;
+    &lt;description&gt;Do a specific recurring task with clear output and validation. Use when the user asks for ...&lt;/description&gt;
+    &lt;location&gt;/skills/example-skill/SKILL.md&lt;/location&gt;
+  &lt;/skill&gt;
+&lt;/available_skills&gt;</code></pre>
+        </div>
+        <div class="code-pane" data-lang="activation" data-active="false">
+<pre><code class="language-xml">&lt;skill_content name="example-skill" version="1.0.0" hash="sha256:..." source="/skills/example-skill/SKILL.md"&gt;
+  &lt;!-- exact SKILL.md body here --&gt;
+  &lt;skill_directory&gt;/skills/example-skill&lt;/skill_directory&gt;
+  &lt;skill_resources&gt;
+    &lt;file kind="reference"&gt;references/output-format.md&lt;/file&gt;
+    &lt;file kind="script"&gt;scripts/validate.py&lt;/file&gt;
+    &lt;file kind="asset"&gt;assets/template.json&lt;/file&gt;
+  &lt;/skill_resources&gt;
+&lt;/skill_content&gt;</code></pre>
+        </div>
+        <div class="code-pane" data-lang="manifest" data-active="false">
+<pre><code class="language-json">{
+  "name": "example-skill",
+  "version": "1.0.0",
+  "hash": "sha256:...",
+  "status": "approved",
+  "files": [
+    { "path": "SKILL.md", "hash": "sha256:..." },
+    { "path": "references/output-format.md", "hash": "sha256:..." },
+    { "path": "scripts/validate.py", "hash": "sha256:..." }
+  ],
+  "permissions": {
+    "filesystem": "read-skill-dir-only",
+    "network": "none",
+    "write_tools": "confirmation-required"
+  }
+}</code></pre>
+        </div>
+      </div>
+
+      <h3>Prompt curto para agente usando skills</h3>
+      <pre><code class="language-text">Use Agent Skills only when they are relevant.
+You initially see only the skill catalog. Full SKILL.md instructions are inactive until loaded.
+If the task clearly matches a skill, activate it before domain tools or final output.
+Do not bulk-load references, scripts, or assets.
+If a skill is stale, reload it before relying on exact instructions.
+Keep multiple active skills separate and apply them in task order.</code></pre>
+
+      <h3>Checklists de publicação e de harness</h3>
+      <details>
+        <summary>Checklist de publicação da skill</summary>
+        <div class="ref-body">
+          <ul>
+            <li>☐ <code>SKILL.md</code> tem frontmatter válido.</li>
+            <li>☐ <code>name</code> corresponde ao diretório.</li>
+            <li>☐ <code>description</code> tem gatilhos e limites.</li>
+            <li>☐ <code>SKILL.md</code> é enxuto; detalhes longos estão em references.</li>
+            <li>☐ Arquivos referenciados existem.</li>
+            <li>☐ References estão a um nível a partir do <code>SKILL.md</code>.</li>
+            <li>☐ Scripts não são interativos e têm <code>--help</code>.</li>
+            <li>☐ Scripts têm testes e mensagens de erro úteis.</li>
+            <li>☐ Assets são nomeados por função.</li>
+            <li>☐ Segurança/trust/permissions foram revisados.</li>
+            <li>☐ Evals cobrem trigger, no-trigger, função e segurança.</li>
+            <li>☐ Manifest, hash e changelog foram gerados.</li>
+          </ul>
+        </div>
+      </details>
+      <details>
+        <summary>Checklist de implementação do harness</summary>
+        <div class="ref-body">
+          <ul>
+            <li>☐ Discovery com escopos e trust tiers.</li>
+            <li>☐ Parsing e validação de <code>SKILL.md</code>.</li>
+            <li>☐ Catálogo L1 com budget e filtro de permissões.</li>
+            <li>☐ <code>activate_skill</code> com enum e structured wrapping.</li>
+            <li>☐ <code>load_skill_resource</code> com path traversal bloqueado.</li>
+            <li>☐ Dedup por name+hash.</li>
+            <li>☐ Active skill set explícito.</li>
+            <li>☐ Stale ledger com <code>reload_required</code>.</li>
+            <li>☐ Eviction por menor perda, não LRU puro.</li>
+            <li>☐ Context compaction separa memória de instrução.</li>
+            <li>☐ Logs de ativação, recursos, tools, eviction e segurança.</li>
+            <li>☐ Evals de regressão em CI.</li>
+          </ul>
+        </div>
+      </details>
+    </section>
+
+    <section class="ref" id="troubleshooting">
+      <h2>Troubleshooting</h2>
+      <p>Sintomas, causas prováveis e correções para ativação, contexto, scripts, stale ledger, segurança e
+      catálogo.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Problema</th><th>Causa provável</th><th>Correção</th></tr></thead>
+        <tbody>
+          <tr><td>Skill não ativa</td><td>Description vaga, catálogo ausente, skill filtrada por trust, prompt não instrui ativação.</td><td>Melhorar description, verificar L1, adicionar trigger evals e logs.</td></tr>
+          <tr><td>Skill ativa demais</td><td>Description ampla, sem escopo negativo, skill genérica demais.</td><td>Adicionar "do not use", dividir ou restringir escopo.</td></tr>
+          <tr><td>Agente usa tool antes da skill</td><td>Regra operacional ausente ou fraca.</td><td>Instruir: ativar <code>SKILL.md</code> antes de tools de domínio quando houver match claro.</td></tr>
+          <tr><td>Contexto explode</td><td>Carrega <code>SKILL.md</code>/references demais.</td><td>Progressive disclosure, L3 sob demanda, catálogo filtrado, <code>N_active_max</code>.</td></tr>
+          <tr><td>Skill resumida perde regra</td><td>Compaction mistura instrução com memória.</td><td>Manter exata ou remover com <code>reload_required</code>.</td></tr>
+          <tr><td>Thrashing</td><td>Eviction agressiva ou sem pinning.</td><td>Min residency, swap margin, retention score.</td></tr>
+          <tr><td>Scripts falham</td><td>Dependências ausentes, prompt interativo, path errado.</td><td>Documentar <code>compatibility</code>, <code>--help</code>, paths relativos, testes.</td></tr>
+          <tr><td>Conflito entre skills</td><td>Scopes sobrepostos, múltiplas skills ativas sem ordem.</td><td>Descriptions com limites, orquestração explícita, regras de prioridade.</td></tr>
+          <tr><td>Risco de segurança</td><td>Skill não auditada, tools amplas, script não confiável.</td><td>Quarentena, sandbox, allowlist, confirmação e logs.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Correção para skill pesada</h3>
+      <pre><code class="language-text">1. Identifique se o SKILL.md contém documentação longa.
+2. Mova detalhes para references/*.md.
+3. No SKILL.md, mantenha só workflow, gotchas críticos e triggers para references.
+4. Divida referências por domínio/feature.
+5. Teste se o agente carrega o arquivo certo no momento certo.
+6. Meça tokens L2 e L3 separadamente.</code></pre>
+
+      <h3>Correção para references em cascata</h3>
+      <p>Evite referências que apontam para outras referências que apontam para outras — o agente pode ler
+      parcialmente e perder regras importantes:</p>
+      <pre><code class="language-text">Bad:
+SKILL.md -> references/advanced.md -> references/details.md -> actual rule
+
+Good:
+SKILL.md -> references/advanced.md
+SKILL.md -> references/details.md
+SKILL.md states when each one is needed.</code></pre>
+
+      <h3>Correção para catálogo enorme</h3>
+      <ul>
+        <li>Filtre por escopo do agente, usuário, projeto, idioma, tipo de tarefa e permissões.</li>
+        <li>Use namespaces e capability tags.</li>
+        <li>Trunque descriptions menos relevantes, preservando termos front-loaded.</li>
+        <li>Use skill search/retrieval antes de renderizar o L1 completo.</li>
+        <li>Mostre warning/diagnóstico quando skills forem omitidas por budget.</li>
+      </ul>
+    </section>
+
+    <section class="ref" id="fontes-oficiais">
+      <h2>Fontes &amp; verificação</h2>
+      <p>Todo fato relevante deste guia deve ser conferido contra a documentação oficial. As fontes abaixo
+      fundamentam as recomendações; o guia privilegia a especificação aberta Agent Skills, documentação oficial
+      de plataformas e referências reconhecidas de segurança/governança.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Fonte</th><th>URL</th><th>Uso</th></tr></thead>
+        <tbody>
+          <tr><td>Agent Skills · Overview</td><td><a href="https://agentskills.io/home" target="_blank" rel="noopener">agentskills.io/home</a></td><td>Definição de skills, estrutura geral e progressive disclosure.</td></tr>
+          <tr><td>Agent Skills · Specification</td><td><a href="https://agentskills.io/specification" target="_blank" rel="noopener">agentskills.io/specification</a></td><td>Contrato de diretórios, <code>SKILL.md</code>, campos de frontmatter, references/scripts/assets e validação. <span class="pill ok">Versão verificada</span> (spec sem mudanças; último commit 20/05/2026, rechecado em 2026-06-10).</td></tr>
+          <tr><td>Agent Skills · Adding skills support</td><td><a href="https://agentskills.io/client-implementation/adding-skills-support" target="_blank" rel="noopener">agentskills.io/client-implementation/adding-skills-support</a></td><td>Discovery, parsing, catálogo, ativação, gestão de contexto, dedup, proteção contra compaction.</td></tr>
+          <tr><td>Agent Skills · Best practices</td><td><a href="https://agentskills.io/skill-creation/best-practices" target="_blank" rel="noopener">agentskills.io/skill-creation/best-practices</a></td><td>Boas práticas de autoria, progressive disclosure, instruções úteis e controle de contexto.</td></tr>
+          <tr><td>Agent Skills · Optimizing descriptions</td><td><a href="https://agentskills.io/skill-creation/optimizing-descriptions" target="_blank" rel="noopener">agentskills.io/skill-creation/optimizing-descriptions</a></td><td>Como escrever e testar descriptions para ativação correta.</td></tr>
+          <tr><td>Agent Skills · Evaluating skills</td><td><a href="https://agentskills.io/skill-creation/evaluating-skills" target="_blank" rel="noopener">agentskills.io/skill-creation/evaluating-skills</a></td><td>Eval-driven iteration, casos de teste, assertions, grading, custo/qualidade.</td></tr>
+          <tr><td>Agent Skills · Using scripts</td><td><a href="https://agentskills.io/skill-creation/using-scripts" target="_blank" rel="noopener">agentskills.io/skill-creation/using-scripts</a></td><td>Scripts, interfaces não interativas, saída estruturada.</td></tr>
+          <tr><td>OpenAI Codex · Skills</td><td><a href="https://developers.openai.com/codex/skills" target="_blank" rel="noopener">developers.openai.com/codex/skills</a></td><td>Skills no Codex, progressive disclosure, budget da lista inicial, ativação implícita/explícita.</td></tr>
+          <tr><td>OpenAI API · Skills (tools)</td><td><a href="https://developers.openai.com/api/docs/guides/tools-skills" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/tools-skills</a></td><td>Skills como bundles versionados, compatíveis com o padrão aberto Agent Skills.</td></tr>
+          <tr><td>Anthropic · Agent Skills Overview</td><td><a href="https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview" target="_blank" rel="noopener">platform.claude.com · agent-skills/overview</a></td><td>Skills como recursos filesystem-based; carregamento automático quando relevante. <span class="pill ok">Domínio verificado</span> (<code>platform.claude.com</code> é canônico, 2026-05-25).</td></tr>
+          <tr><td>Anthropic · Skill authoring best practices</td><td><a href="https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices" target="_blank" rel="noopener">platform.claude.com · agent-skills/best-practices</a></td><td>Naming, descriptions, progressive disclosure, paths, scripts e testes.</td></tr>
+          <tr><td>Anthropic Engineering · Agent Skills</td><td><a href="https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills" target="_blank" rel="noopener">anthropic.com/engineering · Agent Skills</a></td><td>Engenharia de skills como onboarding procedural para agentes.</td></tr>
+          <tr><td>Microsoft Learn · Agent Skills</td><td><a href="https://learn.microsoft.com/en-us/agent-framework/agents/skills" target="_blank" rel="noopener">learn.microsoft.com · agent-framework/agents/skills</a></td><td>Agent Skills como pacotes portáveis com progressive disclosure.</td></tr>
+          <tr><td>Model Context Protocol · Specification</td><td><a href="https://modelcontextprotocol.io/specification/2025-11-25" target="_blank" rel="noopener">modelcontextprotocol.io/specification/2025-11-25</a></td><td>MCP como protocolo para tools, resources e prompts externos. <span class="pill ok">Versão verificada</span> (<code>2025-11-25</code> é a revisão atual, rechecada em 2026-06-10). <span class="pill beta">Novo</span> Próxima revisão <code>2026-07-28</code> anunciada (ainda em draft; em evolução até a publicação), com breaking changes: protocolo stateless (sem handshake <code>initialize</code>/<code>Mcp-Session-Id</code>) e Tasks movido para a extensão <code>io.modelcontextprotocol/tasks</code>.</td></tr>
+          <tr><td>MCP · Security best practices</td><td><a href="https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices" target="_blank" rel="noopener">modelcontextprotocol.io · security best practices</a></td><td>Riscos e boas práticas para integrações MCP.</td></tr>
+          <tr><td>OWASP · Top 10 for LLM Applications</td><td><a href="https://owasp.org/www-project-top-10-for-large-language-model-applications/" target="_blank" rel="noopener">owasp.org · Top 10 LLM</a></td><td>Riscos de LLMs: prompt injection, output handling, supply chain.</td></tr>
+          <tr><td>OWASP · LLM01 Prompt Injection</td><td><a href="https://genai.owasp.org/llmrisk/llm01-prompt-injection/" target="_blank" rel="noopener">genai.owasp.org · LLM01</a></td><td>Prompt injection e cenários de manipulação de comportamento.</td></tr>
+          <tr><td>UK NCSC · Prompt injection is not SQL injection</td><td><a href="https://www.ncsc.gov.uk/blog-post/prompt-injection-is-not-sql-injection" target="_blank" rel="noopener">ncsc.gov.uk · prompt injection</a></td><td>Prompt injection como confused deputy e risco residual.</td></tr>
+          <tr><td>NIST · AI Risk Management Framework</td><td><a href="https://www.nist.gov/itl/ai-risk-management-framework" target="_blank" rel="noopener">nist.gov · AI RMF</a></td><td>Governança e gerenciamento de riscos de sistemas de IA.</td></tr>
+        </tbody>
+      </table></div>
+      <p style="font-size:13px;color:var(--c-fg-muted)">
+        Legenda dos selos: <span class="pill ok">Verificado</span> confirmado na doc oficial ·
+        <span class="pill beta">Novo</span> recurso recente ·
+        <span class="pill partial">UNVERIFIED</span> não confirmado dentro do orçamento — exige checagem ·
+        <span class="pill bad">Removido</span> descontinuado ·
+        <span class="pill na">N/D</span> não documentado.
+      </p>
+
+      <h3>Notas de verificação &amp; itens UNVERIFIED</h3>
+      <p>Os fatos perecíveis deste guia foram confirmados contra a doc oficial em 2026-06-10. Nenhuma versão
+      foi inventada; o que permanece como heurística está rotulado como tal.</p>
+      <ul style="overflow-wrap:anywhere">
+        <li><span class="pill ok">Verificado</span> <strong>Spec MCP <code>2025-11-25</code></strong> — confirmada como a revisão atual em <a href="https://modelcontextprotocol.io/specification" target="_blank" rel="noopener">modelcontextprotocol.io/specification</a> (schema <code>schema/2025-11-25/schema.ts</code>). É a versão canônica do super-guia. Nota: <a href="guia_agents_sdk.html">guia_agents_sdk.html</a> (guia pré-existente) referencia versões anteriores (<code>2024-11-05</code>/<code>2025-03-26</code>); por decisão do time, não reescrevemos o guia existente — a versão canônica aqui é a atual.</li>
+        <li><span class="pill ok">Verificado</span> <strong>Limites de frontmatter</strong> — <code>name</code> 1–64, <code>description</code> 1–1024 e <code>compatibility</code> 1–500 caracteres confirmados na <a href="https://agentskills.io/specification" target="_blank" rel="noopener">AgentSkills Specification</a>. A doc da Anthropic adiciona, para clientes Claude, a proibição de tags XML e das palavras reservadas "anthropic"/"claude" no <code>name</code>.</li>
+        <li><span class="pill ok">Verificado</span> <strong>Domínio da doc Anthropic</strong> — <code>platform.claude.com/docs/en/...</code> carrega como canônico (não redireciona para <code>docs.anthropic.com</code>). Verificado 2026-05-25.</li>
+        <li><span class="pill partial">Heurística</span> <strong>Budget de skills</strong> (§8: <code>S_target</code>, <code>swap_margin</code>, <code>N_active_max</code> etc.) — valores iniciais propostos, <em>não</em> números oficiais da spec. Mantidos deliberadamente como heurística: calibrar por evals/modelo/risco; não citar como limite normativo.</li>
+        <li><span class="pill ok">Resolvido</span> <strong>Fronteira autoria vs integração</strong> — declarada no topo (<a href="#sobre-guia">§ Sobre este guia</a>); cross-links para <a href="guia_claude_api.html#c-skills">guia_claude_api.html#c-skills</a>, <a href="guia_deepagents.html#s-skills">guia_deepagents.html#s-skills</a> e <a href="guia_agents_sdk.html">guia_agents_sdk.html</a> verificados contra as âncoras reais desses arquivos.</li>
+        <li><span class="pill ok">Resolvido</span> <strong>Sem IDs de modelo hardcoded</strong> — este guia é agnóstico de provedor e não fixa nomes de modelo; fatos de modelo ficam no portal e na folha de fatos SOTA.</li>
+        <li><span class="pill beta">Novo</span> <strong>Integração da proposta v0.6</strong> (2026-05-26) — reinjeção de L2 em follow-up a partir do skill store (não do tool result histórico, §8), política de L3/return packets em <code>hot_followup</code> (§8) e mapeamento de entrega de L1/L2/L3 por provider (§5).</li>
+        <li><span class="pill ok">Verificado</span> <strong>Varredura 2026-06-10</strong> — re-checagem contra as fontes oficiais: spec MCP <code>2025-11-25</code> segue atual, com próxima revisão <code>2026-07-28</code> anunciada (ainda em draft; em evolução até a publicação; protocolo stateless sem handshake <code>initialize</code>/<code>Mcp-Session-Id</code>, novo <code>server/discover</code>, Tasks movido para a extensão <code>io.modelcontextprotocol/tasks</code>, Roots/Sampling/Logging deprecados); spec AgentSkills sem mudanças (último commit 20/05/2026) — limites de frontmatter inalterados.</li>
+      </ul>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site">
+  <div style="max-width:1440px;margin:0 auto;padding:0 24px;display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;justify-content:space-between;">
+    <div style="max-width:540px">
+      <div class="brand" style="font-size:15px">Guia de Agent Skills <small>Autoria, ativação &amp; harness — agnóstico</small></div>
+      <p style="margin:8px 0 0;color:var(--c-fg-muted);font-size:13.5px;line-height:1.55">
+        Referência técnica construída a partir da documentação oficial pública do padrão Agent Skills em
+        <strong>2026-06-10</strong>. Cobre autoria/padrão; a integração por framework está nos guias
+        cross-linkados. Para informação sempre atualizada, consulte as
+        <a href="#fontes-oficiais">fontes oficiais</a>.
+      </p>
+    </div>
+    <div style="font-size:13.5px;color:var(--c-fg-muted);line-height:1.7">
+      <div><strong>Crédito de produção</strong></div>
+      <div>Gerado por <strong>subagentes Claude Opus 4.7 (xhigh)</strong></div>
+      <div>revisão e montagem pelo orquestrador · 2026-05-26</div>
+      <div style="margin-top:6px">
+        <span class="badge da">Spec Agent Skills</span>
+        <span class="badge info">PT-BR</span>
+      </div>
+    </div>
+    <div style="font-size:12.5px;color:var(--c-fg-soft)">
+      <div><strong>Navegação rápida</strong></div>
+      <div><a href="#padrao-agent-skills">Padrão</a> · <a href="#skill-md">SKILL.md</a> · <a href="#autoria">Autoria</a> · <a href="#ativacao-descriptions">Ativação</a></div>
+      <div><a href="#implementacao-harness">Harness</a> · <a href="#contexto-budget-eviction">Contexto</a> · <a href="#templates">Templates</a> · <a href="#fontes-oficiais">Fontes</a></div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  /* Toggle de tema com persistência em localStorage (chave compartilhada do super-guia). */
+  (function(){
+    var KEY = 'super-guia-theme';
+    var btn = document.getElementById('theme-toggle');
+    var pref = localStorage.getItem(KEY);
+    if (pref) document.documentElement.setAttribute('data-theme', pref);
+    if (btn) btn.addEventListener('click', function(){
+      var cur = document.documentElement.getAttribute('data-theme') || 'light';
+      var nxt = cur === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', nxt);
+      localStorage.setItem(KEY, nxt);
+    });
+  })();
+  /* Scroll-spy: destaca no TOC a seção visível. */
+  (function(){
+    var links = document.querySelectorAll('nav.toc a[href^="#"]');
+    var map = {};
+    links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        var id = e.target.id; if (!map[id]) return;
+        if (e.isIntersecting) {
+          links.forEach(function(l){ l.classList.remove('active'); });
+          map[id].classList.add('active');
+        }
+      });
+    }, { rootMargin: '-40% 0% -55% 0%', threshold: 0 });
+    Object.keys(map).forEach(function(id){ var el = document.getElementById(id); if (el) io.observe(el); });
+  })();
+  /* Abas de código (code-group): clique + navegação por setas. */
+  function activateTab(group, tab){
+    group.querySelectorAll('.code-tab').forEach(function(b){
+      var on = b === tab;
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+      b.setAttribute('tabindex', on ? '0' : '-1');
+    });
+    var lang = tab.dataset.lang;
+    group.querySelectorAll('.code-pane').forEach(function(p){ p.setAttribute('data-active', p.dataset.lang===lang ? 'true' : 'false'); });
+  }
+  document.querySelectorAll('.code-group').forEach(function(group){
+    group.querySelectorAll('.code-pane').forEach(function(p){ p.setAttribute('role', 'tabpanel'); });
+    var tabs = group.querySelectorAll('.code-tab');
+    tabs.forEach(function(b){ b.setAttribute('tabindex', b.getAttribute('aria-selected') === 'true' ? '0' : '-1'); });
+  });
+  document.addEventListener('click', function(e){
+    var t = e.target;
+    if (!t.classList || !t.classList.contains('code-tab')) return;
+    var group = t.closest('.code-group'); if (!group) return;
+    activateTab(group, t);
+  });
+  document.addEventListener('keydown', function(e){
+    var t = e.target;
+    if (!t.classList || !t.classList.contains('code-tab')) return;
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    var group = t.closest('.code-group'); if (!group) return;
+    var tabs = Array.prototype.slice.call(group.querySelectorAll('.code-tab'));
+    var idx = tabs.indexOf(t);
+    var next = e.key === 'ArrowRight' ? (idx + 1) % tabs.length : (idx - 1 + tabs.length) % tabs.length;
+    activateTab(group, tabs[next]);
+    tabs[next].focus();
+    e.preventDefault();
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,1043 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Arquitetura &amp; Orquestração de Agentes — Núcleo agnóstico</title>
+<meta name="description" content="Arquitetura de runtime agnóstica de provider para sistemas agentic: primitivos canônicos, matriz de escolha agent/workflow/agent-as-tool/handoff, capability registry, microcontextos e active plan, skeleton de orquestrador, antipadrões, runtime por maturidade, model router, modos de injeção de skills, long-running jobs e blueprint SOTA." />
+<meta name="last-checked" content="2026-06-11" />
+<meta name="robots" content="index,follow" />
+<style>
+  :root {
+    --c-bg: #ffffff;
+    --c-bg-elev: #f7f8fa;
+    --c-bg-code: #0e1116;
+    --c-fg: #1a1d23;
+    --c-fg-muted: #5b6472;
+    --c-fg-soft: #6b7480;
+    --c-border: #e4e7ec;
+    --c-border-strong: #cdd3dc;
+    --c-accent: #1a73e8;
+    --c-da: #1257b8;
+    --c-da-bg: #e6efff;
+    --c-warn: #b6541d;
+    --c-warn-bg: #fff4e6;
+    --c-ok: #157a33;
+    --c-ok-bg: #e8f5ea;
+    --c-bad: #c5221f;
+    --c-bad-bg: #fde8e6;
+    --c-na: #5f666f;
+    --c-na-bg: #eef0f3;
+    --c-info: #1257b8;
+    --c-info-bg: #e6efff;
+    --shadow-sm: 0 1px 2px rgba(15,23,42,.06), 0 1px 1px rgba(15,23,42,.04);
+    --shadow-md: 0 6px 24px rgba(15,23,42,.08), 0 2px 6px rgba(15,23,42,.06);
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --gutter: 24px;
+    --sidebar-w: 312px;
+  }
+  [data-theme="dark"] {
+    --c-bg: #0d1117;
+    --c-bg-elev: #161b22;
+    --c-bg-code: #010409;
+    --c-fg: #e6edf3;
+    --c-fg-muted: #9aa4b2;
+    --c-fg-soft: #828c9e;
+    --c-border: #20262d;
+    --c-border-strong: #2f3640;
+    --c-da: #4d9fff;
+    --c-accent: #4d9fff;
+    --c-ok: #3fb950;
+    --c-warn: #e3b341;
+    --c-bad: #ff7b72;
+    --c-na: #9aa4b2;
+    --c-info: #79b8ff;
+    --c-da-bg: #11233f;
+    --c-warn-bg: #2a1e0a;
+    --c-ok-bg: #0d2517;
+    --c-bad-bg: #2a1213;
+    --c-na-bg: #1a1f26;
+    --c-info-bg: #0c1e3a;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+    --shadow-md: 0 8px 28px rgba(0,0,0,.45);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-sans);
+    font-size: 15.5px;
+    line-height: 1.55;
+    color: var(--c-fg);
+    background: var(--c-bg);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  a { color: var(--c-accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, kbd, pre, samp { font-family: var(--font-mono); font-size: 0.92em; }
+  :focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; border-radius: 4px; }
+  .skip { position: absolute; left: -9999px; }
+  .skip:focus { left: 12px; top: 12px; background: var(--c-bg); padding: 8px 12px; border: 1px solid var(--c-border); border-radius: 6px; z-index: 100; }
+
+  header.site {
+    position: sticky; top: 0; z-index: 30;
+    background: rgba(255,255,255,.85);
+    backdrop-filter: saturate(180%) blur(10px);
+    border-bottom: 1px solid var(--c-border);
+  }
+  [data-theme="dark"] header.site { background: rgba(13,17,23,.82); }
+  .header-row {
+    max-width: 1440px; margin: 0 auto; padding: 12px 24px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .brand { font-weight: 700; letter-spacing: -.01em; font-size: 16px; }
+  .brand small { color: var(--c-fg-muted); font-weight: 500; margin-left: 8px; font-size: 12.5px; }
+  .header-right { margin-left: auto; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 999px;
+    background: var(--c-bg-elev); border: 1px solid var(--c-border);
+    color: var(--c-fg-muted); font-size: 12.5px; font-weight: 500;
+  }
+  .badge.ok { background: var(--c-ok-bg); color: var(--c-ok); border-color: transparent; }
+  .badge.da { background: var(--c-da-bg); color: var(--c-da); border-color: transparent; }
+  .badge.info { background: var(--c-info-bg); color: var(--c-info); border-color: transparent; }
+  .badge.warn { background: var(--c-warn-bg); color: var(--c-warn); border-color: transparent; }
+  .badge.bad { background: var(--c-bad-bg); color: var(--c-bad); border-color: transparent; }
+  .theme-btn {
+    border: 1px solid var(--c-border); background: var(--c-bg-elev); color: var(--c-fg);
+    padding: 5px 10px; border-radius: 8px; cursor: pointer; font: inherit; font-size: 12.5px;
+  }
+  .theme-btn:hover { border-color: var(--c-border-strong); }
+
+  .layout {
+    max-width: 1440px; margin: 0 auto;
+    display: grid; grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+    gap: 32px; padding: 24px;
+  }
+  nav.toc {
+    position: sticky; top: 64px;
+    align-self: start; max-height: calc(100vh - 80px); overflow: auto;
+    padding-right: 8px;
+    border-right: 1px solid var(--c-border);
+  }
+  nav.toc ol { list-style: none; padding: 0; margin: 0 0 16px; }
+  nav.toc li { line-height: 1.4; margin: 2px 0; }
+  nav.toc a {
+    display: block; padding: 4px 8px; border-radius: 5px;
+    color: var(--c-fg-muted); font-size: 13px;
+  }
+  nav.toc a:hover { background: var(--c-bg-elev); color: var(--c-fg); text-decoration: none; }
+  nav.toc a.active { color: var(--c-da); background: var(--c-da-bg); font-weight: 600; }
+  nav.toc .toc-section {
+    margin-top: 14px; padding: 2px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--c-fg-soft);
+    border-top: 1px solid var(--c-border); padding-top: 10px;
+  }
+  nav.toc .toc-section:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+
+  main { min-width: 0; max-width: 1040px; }
+
+  .hero {
+    border: 1px solid var(--c-border);
+    border-radius: 14px;
+    padding: 28px 28px 24px;
+    background: linear-gradient(135deg, var(--c-da-bg) 0%, var(--c-bg) 100%);
+    margin-bottom: 32px;
+  }
+  .hero h1 { font-size: 32px; line-height: 1.15; margin: 0 0 8px; letter-spacing: -.02em; }
+  .hero p.lead { margin: 0 0 16px; color: var(--c-fg-muted); font-size: 16px; max-width: 74ch; }
+  .hero-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+
+  section { margin: 48px 0; scroll-margin-top: 84px; }
+  section.chapter { padding-top: 16px; margin-top: 56px; border-top: 3px solid var(--c-da); }
+  section.ref { padding-top: 12px; margin-top: 48px; border-top: 2px dashed var(--c-border-strong); }
+  h2 {
+    font-size: 24px; line-height: 1.2; letter-spacing: -.015em;
+    margin: 0 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--c-border);
+    scroll-margin-top: 84px;
+  }
+  h3 { font-size: 18px; line-height: 1.3; margin: 28px 0 10px; scroll-margin-top: 84px; }
+  h4 { font-size: 15px; margin: 20px 0 8px; color: var(--c-fg); scroll-margin-top: 84px; }
+  p { margin: 0 0 12px; }
+  ul, ol { margin: 0 0 12px; padding-left: 22px; }
+  li { margin: 4px 0; }
+  hr { border: 0; border-top: 1px solid var(--c-border); margin: 24px 0; }
+
+  .table-wrap { overflow-x: auto; margin: 0 0 18px; border: 1px solid var(--c-border); border-radius: var(--radius); }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 580px; }
+  th, td { padding: 9px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--c-border); }
+  th { background: var(--c-bg-elev); font-weight: 600; color: var(--c-fg); position: sticky; top: 0; font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--c-bg-elev); }
+  td code, th code { background: var(--c-bg-elev); padding: 1px 5px; border-radius: 4px; font-size: 12.5px; color: var(--c-fg); }
+  [data-theme="dark"] td code, [data-theme="dark"] th code { background: #0b0e13; }
+
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; letter-spacing: .02em; }
+  .pill.ok { background: var(--c-ok-bg); color: var(--c-ok); }
+  .pill.partial { background: var(--c-warn-bg); color: var(--c-warn); }
+  .pill.bad { background: var(--c-bad-bg); color: var(--c-bad); }
+  .pill.na { background: var(--c-na-bg); color: var(--c-na); }
+  .pill.beta { background: var(--c-info-bg); color: var(--c-info); }
+
+  .callout {
+    border-left: 4px solid var(--c-accent);
+    background: var(--c-bg-elev);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  .callout.warn { border-left-color: var(--c-warn); background: var(--c-warn-bg); color: #5a3009; }
+  .callout.tip { border-left-color: var(--c-ok); background: var(--c-ok-bg); color: #1d4a25; }
+  .callout.danger { border-left-color: var(--c-bad); background: var(--c-bad-bg); color: #7a1a16; }
+  .callout.beta { border-left-color: var(--c-info); background: var(--c-info-bg); color: #123d75; }
+  .callout.info { border-left-color: var(--c-info); background: var(--c-info-bg); color: #123d75; }
+  .callout.partial { border-left-color: var(--c-warn); background: var(--c-warn-bg); color: #5a3009; }
+  [data-theme="dark"] .callout.warn { color: #f1c896; }
+  [data-theme="dark"] .callout.tip { color: #a7d8b1; }
+  [data-theme="dark"] .callout.danger { color: #f0a8a4; }
+  [data-theme="dark"] .callout.beta { color: #a8cdff; }
+  [data-theme="dark"] .callout.info { color: #a8cdff; }
+  [data-theme="dark"] .callout.partial { color: #f1c896; }
+  .callout strong { font-weight: 700; }
+  .callout a { color: var(--c-da); text-decoration: underline; }
+  [data-theme="dark"] .callout a { color: var(--c-da); }
+  footer.site a, .source-link a { text-decoration: underline; }
+
+  pre {
+    background: var(--c-bg-code);
+    color: #d1d5db;
+    padding: 14px 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 0 0 14px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    border: 1px solid #1f242c;
+  }
+  pre code { color: inherit; background: transparent; padding: 0; }
+
+  /* Blocos de código com abas por linguagem (Python / TypeScript / REST) */
+  .code-tabs { display: flex; gap: 4px; margin-bottom: 0; }
+  .code-tab {
+    border: 1px solid var(--c-border); border-bottom: none; background: var(--c-bg-elev);
+    color: var(--c-fg-muted); padding: 6px 14px; border-radius: 8px 8px 0 0;
+    cursor: pointer; font: inherit; font-size: 12.5px; font-weight: 600;
+  }
+  .code-tab[aria-selected="true"] { background: var(--c-bg-code); color: #f0e9e1; border-color: #2a241e; }
+  .code-pane { display: none; }
+  .code-pane[data-active="true"] { display: block; }
+  .code-group pre { border-radius: 0 8px 8px 8px; margin-top: -1px; }
+
+  details {
+    border: 1px solid var(--c-border); border-radius: var(--radius);
+    padding: 8px 14px; margin: 6px 0 10px; background: var(--c-bg-elev);
+  }
+  details > summary {
+    cursor: pointer; font-weight: 600; padding: 4px 0; list-style: none;
+    font-size: 13.5px;
+  }
+  details > summary::-webkit-details-marker { display: none; }
+  details > summary::before { content: "▸ "; color: var(--c-fg-soft); display: inline-block; }
+  details[open] > summary::before { content: "▾ "; }
+  details > .ref-body { padding: 8px 0 4px; }
+
+  .source-link {
+    font-size: 12.5px; color: var(--c-fg-muted);
+    margin: 6px 0 24px; padding: 6px 10px;
+    background: var(--c-bg-elev); border-left: 3px solid var(--c-da);
+    border-radius: 0 6px 6px 0;
+  }
+  .source-link a { color: var(--c-da); font-weight: 600; }
+
+  .figure { margin: 20px 0 26px; }
+  .figure svg { width: 100%; height: auto; display: block; border: 1px solid var(--c-border); border-radius: 10px; }
+  .figure figcaption { font-size: 12.5px; color: var(--c-fg-muted); margin-top: 10px; line-height: 1.5; padding: 0 4px; }
+
+  footer.site {
+    margin: 64px 0 24px; padding: 24px 0; border-top: 1px solid var(--c-border);
+    color: var(--c-fg-muted); font-size: 13px;
+  }
+
+  @media (max-width: 1080px) {
+    .layout { grid-template-columns: 1fr; }
+    nav.toc { position: static; max-height: none; border-right: none; border-bottom: 1px solid var(--c-border); padding-bottom: 16px; margin-bottom: 16px; }
+    main { max-width: 100%; }
+    .hero h1 { font-size: 24px; }
+  }
+  @media print {
+    nav.toc, header.site, .theme-btn { display: none; }
+    .layout { grid-template-columns: 1fr; }
+    a { color: inherit; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+    details[open] { padding: 8px 0; }
+    details > summary { display: none; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Pular para o conteúdo</a>
+
+<header class="site">
+  <div class="header-row">
+    <div class="brand">Arquitetura &amp; Orquestração <small>Núcleo agnóstico de agentes</small></div>
+    <div class="header-right">
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-06-11</strong></span>
+      <span class="badge da">Núcleo · agnóstico de provider</span>
+      <span class="badge info">Conceitual + referência</span>
+      <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="Sumário">
+    <div class="toc-section">Início</div>
+    <ol>
+      <li><a href="#sobre-guia">Sobre este guia</a></li>
+      <li><a href="#fontes-oficiais">Fontes &amp; verificação</a></li>
+      <li><a href="#mapa-do-nucleo">Mapa do núcleo</a></li>
+    </ol>
+
+    <div class="toc-section">Parte 1 — Fundamentos</div>
+    <ol>
+      <li><a href="#escopo-orquestracao">1. Escopo universal de orquestração</a></li>
+      <li><a href="#primitivos-canonicos">2. Primitivos canônicos</a></li>
+      <li><a href="#arquitetura-referencia">3. Arquitetura de referência</a></li>
+      <li><a href="#matriz-de-escolha">4. Matriz de escolha de topologia</a></li>
+    </ol>
+
+    <div class="toc-section">Parte 2 — Contratos do runtime</div>
+    <ol>
+      <li><a href="#capability-registry">5. Capability registry</a></li>
+      <li><a href="#microcontextos-active-plan">6. Microcontextos &amp; active plan</a></li>
+      <li><a href="#skeleton-orquestrador">7. Skeleton de orquestrador</a></li>
+      <li><a href="#handoff-vs-agent-as-tool">8. Handoff vs agent-as-tool</a></li>
+      <li><a href="#skill-packs">9. Modos de injeção de skills</a></li>
+    </ol>
+
+    <div class="toc-section">Parte 3 — Operação &amp; escala</div>
+    <ol>
+      <li><a href="#antipadroes">10. Antipadrões arquiteturais</a></li>
+      <li><a href="#runtime-por-maturidade">11. Runtime por maturidade</a></li>
+      <li><a href="#model-router">12. Model router</a></li>
+      <li><a href="#long-running-deep-research">13. Long-running jobs &amp; deep research</a></li>
+      <li><a href="#blueprint-sota">14. Blueprint SOTA</a></li>
+    </ol>
+
+    <div class="toc-section">Referência</div>
+    <ol>
+      <li><a href="#checklist-aceitacao">Checklist de aceitação</a></li>
+      <li><a href="#verificacao">Notas de verificação</a></li>
+    </ol>
+  </nav>
+
+  <main id="main">
+
+    <div class="hero">
+      <h1>Arquitetura &amp; Orquestração de Agentes</h1>
+      <p class="lead">
+        O capítulo de fundação do núcleo agnóstico: como projetar o <strong>runtime</strong> que decide,
+        a cada ciclo, qual contexto projetar, qual modelo chamar, quais capabilities expor, como validar
+        chamadas, como reduzir resultados e como registrar evidência. Vale para qualquer provider
+        (OpenAI, Anthropic, Google) e qualquer framework de agentes. Os outros capítulos do núcleo —
+        estado, ferramentas, providers e operação — usam o vocabulário definido aqui.
+      </p>
+      <div class="hero-meta">
+        <span class="badge da">Núcleo · agnóstico de provider</span>
+        <span class="badge info">Conceitual + referência</span>
+        <span class="badge ok">SOTA · verificado 2026-06-10</span>
+      </div>
+    </div>
+
+    <section id="sobre-guia">
+      <h2>Sobre este guia</h2>
+      <p>
+        Este é um guia <strong>para IA e humanos</strong>: combina decisões de arquitetura ("quando usar
+        o quê") com contratos tipados prontos para copiar (capability registry, active plan, delegation
+        packet, skeleton de loop). Toda a prosa é em PT-BR; nomes de classes, parâmetros e código
+        permanecem em inglês, como nas APIs oficiais.
+      </p>
+      <div class="callout">
+        <strong>Regra de desenho que atravessa todo o núcleo:</strong> o modelo pode planejar e
+        <em>solicitar</em> ações, mas o runtime governa autorização, execução, limites, persistência,
+        redaction e replay. O payload enviado ao provider é sempre uma <strong>projeção</strong>
+        reconstruída do seu estado durável — nunca a fonte única da verdade.
+      </div>
+      <div class="callout tip">
+        <strong>Princípio agnóstico:</strong> nada neste capítulo depende de um provider específico.
+        As decisões valem se você orquestra com a Responses API da OpenAI, a Messages API da Anthropic,
+        o <code>google-genai</code> ou um framework como OpenAI Agents SDK, LangGraph ou Google ADK.
+        A camada de adapter (capítulo de providers) traduz estes contratos para cada API.
+      </div>
+      <div class="callout warn">
+        <strong>O que este capítulo não faz:</strong> ele não reescreve a referência de cada framework
+        nem repete contagem de tokens, compaction detalhada ou parâmetros de provider. Quando o assunto
+        já tem guia dedicado, há um <em>cross-link</em>. Veja o <a href="#mapa-do-nucleo">mapa do núcleo</a>.
+      </div>
+    </section>
+
+    <section id="fontes-oficiais">
+      <h2>Fontes &amp; verificação</h2>
+      <p>
+        As afirmações perecíveis (parâmetros de API, versões de spec, comportamento de SDK) foram
+        conferidas contra a documentação oficial em <strong>2026-06-10</strong> e consolidadas na folha
+        de fatos SOTA do projeto. Os contratos de arquitetura (registry, active plan, ledger) são
+        recomendações de engenharia derivadas dos padrões oficiais de cada provider.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Tema</th><th>Fonte oficial</th></tr></thead>
+        <tbody>
+          <tr><td>Orquestração multi-agente (LLM-orchestrated vs code-orchestrated)</td><td><a href="https://openai.github.io/openai-agents-python/multi_agent/" target="_blank" rel="noopener">openai.github.io/openai-agents-python/multi_agent</a></td></tr>
+          <tr><td>OpenAI Agents SDK (primitivos: agents, handoffs, tools, guardrails)</td><td><a href="https://openai.github.io/openai-agents-python/" target="_blank" rel="noopener">openai.github.io/openai-agents-python</a></td></tr>
+          <tr><td>OpenAI Responses API (loop próprio, tools, estado)</td><td><a href="https://developers.openai.com/api/docs/guides/tools" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/tools</a></td></tr>
+          <tr><td>Model Context Protocol — spec <strong>2025-11-25</strong></td><td><a href="https://modelcontextprotocol.io/specification/2025-11-25" target="_blank" rel="noopener">modelcontextprotocol.io/specification/2025-11-25</a></td></tr>
+          <tr><td>Multi-agente em LangGraph (supervisor/swarm)</td><td><a href="https://docs.langchain.com/oss/python/langgraph/multi-agent" target="_blank" rel="noopener">docs.langchain.com/oss/python/langgraph/multi-agent</a></td></tr>
+          <tr><td>Multi-agente em Google ADK</td><td><a href="https://google.github.io/adk-docs/agents/multi-agents/" target="_blank" rel="noopener">google.github.io/adk-docs/agents/multi-agents</a></td></tr>
+        </tbody>
+      </table></div>
+      <p style="font-size:13px;color:var(--c-fg-muted)">
+        Legenda dos selos: <span class="pill ok">Verificado</span> confirmado na doc oficial ·
+        <span class="pill beta">Novo</span> recurso recente ·
+        <span class="pill partial">Experimental</span> marcado experimental ·
+        <span class="pill na">N/D</span> não documentado.
+      </p>
+    </section>
+
+    <section id="mapa-do-nucleo">
+      <h2>Mapa do núcleo — onde cada assunto mora</h2>
+      <p>
+        Este capítulo é a porta de entrada. Quando precisar de profundidade em um assunto adjacente,
+        siga o cross-link em vez de procurar duplicação aqui.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Você procura…</th><th>Vá para</th></tr></thead>
+        <tbody>
+          <tr><td>Ledger canônico, compaction, reasoning/thinking carriers, budgets de contexto</td><td><a href="guia_estado_contexto_memoria.html">Núcleo · Estado, contexto &amp; memória</a></td></tr>
+          <tr><td>Tool result envelopes, MCP como fronteira, RAG como capability, multimodal</td><td><a href="guia_ferramentas_mcp_rag.html">Núcleo · Ferramentas, MCP &amp; RAG</a></td></tr>
+          <tr><td>Parâmetros de provider, adapters, provider-switching, Pydantic AI</td><td><a href="guia_providers_adapters.html">Núcleo · Providers &amp; adapters</a></td></tr>
+          <tr><td>Guardrails, tracing/cost ledger, evals, runbooks, threat model</td><td><a href="guia_operacao_seguranca_evals.html">Núcleo · Operação, segurança &amp; evals</a></td></tr>
+          <tr><td>Como implementar este blueprint no OpenAI Agents SDK</td><td><a href="guia_agents_sdk_orquestracao.html">Framework · Orquestração no Agents SDK</a></td></tr>
+          <tr><td>Como implementar este blueprint em LangGraph</td><td><a href="guia_langgraph_orquestracao.html">Framework · Orquestração em LangGraph</a></td></tr>
+          <tr><td>Como implementar este blueprint no Google ADK (1.x/2.x)</td><td><a href="guia_google_adk_orquestracao.html">Framework · Orquestração no Google ADK</a></td></tr>
+          <tr><td>Autoria de Agent Skills (SKILL.md, ativação, progressive disclosure)</td><td><a href="guia_skills.html">Guia de Skills</a></td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <!-- ===================== PARTE 1 ===================== -->
+    <section class="chapter" id="parte-fundamentos">
+      <h2 style="border-bottom:3px solid var(--c-da);padding:14px 0 10px;font-size:28px">Parte 1 — Fundamentos</h2>
+      <p>O vocabulário e os mapas de decisão que sustentam todo o restante: o que é um sistema agentic,
+      quais são as peças que você combina e como escolher entre elas.</p>
+    </section>
+
+    <section id="escopo-orquestracao">
+      <h2>1. Escopo universal de orquestração</h2>
+      <p>
+        Um sistema agentic universal não é "um chatbot com ferramentas". É um <strong>runtime</strong>
+        que decide, em cada ciclo, qual contexto projetar, qual modelo chamar, quais capabilities expor,
+        como validar chamadas, como reduzir resultados e como registrar evidência. A unidade de projeto
+        não é a mensagem isolada; é o <strong>turn bundle</strong>: instruções, histórico projetado,
+        assets, tools, planos ativos, políticas, budgets, traces e estado de execução.
+      </p>
+      <div class="callout">
+        <strong>Decisão do modelo × decisão do código × política da organização.</strong> Um runtime
+        SOTA separa explicitamente os três. O modelo decide o conteúdo da resposta e quais ações pedir;
+        o código decide se, quando e como executar; a política define retenção, aprovação, quotas e
+        fronteiras. Misturar os três no prompt é a origem da maioria das falhas de segurança e custo.
+      </div>
+      <p>
+        O OpenAI Agents SDK documenta dois estilos centrais de orquestração: deixar o LLM orquestrar com
+        tools e handoffs, ou orquestrar por código para mais determinismo. A arquitetura universal deve
+        permitir <em>misturar</em> os dois, com fronteiras explícitas — e é exatamente isso que os
+        primitivos abaixo viabilizam.
+      </p>
+      <div class="source-link">Fonte oficial: <a href="https://openai.github.io/openai-agents-python/multi_agent/" target="_blank" rel="noopener">openai.github.io/openai-agents-python/multi_agent</a> (orquestração via LLM vs via código).</div>
+    </section>
+
+    <section id="primitivos-canonicos">
+      <h2>2. Primitivos canônicos</h2>
+      <p>
+        Sete primitivos cobrem praticamente toda topologia agentic. Conhecê-los explicitamente evita o
+        erro de transformar todo problema em "um agente autônomo".
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Primitivo</th><th>Definição universal</th><th>Quando usar</th><th>Risco de mau uso</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Agent</strong></td><td>Entidade com instructions, modelo, tools, guardrails e política de execução.</td><td>Tarefas com objetivo claro, contexto controlado e capacidade de invocar tools.</td><td>Tornar tudo um agente autônomo sem budget, avaliação ou fronteira.</td></tr>
+          <tr><td><strong>Workflow determinístico</strong></td><td>Grafo/código que chama modelos em pontos específicos.</td><td>Processos com etapas estáveis, compliance forte ou baixa tolerância a variação.</td><td>Forçar fluxo rígido quando o problema exige exploração/adaptação.</td></tr>
+          <tr><td><strong>Agent-as-tool</strong></td><td>Subagente chamado como uma tool; o parent mantém controle e recebe output reduzido.</td><td>Especialização delimitada: análise de arquivo, pesquisa, classificação, normalização.</td><td>Permitir que o subagente despeje histórico bruto no parent.</td></tr>
+          <tr><td><strong>Handoff</strong></td><td>Transferência de controle para outro agente ativo.</td><td>Mudança real de ownership: atendimento, triagem, especialista humano/IA.</td><td>Usar handoff quando bastava uma chamada subordinada.</td></tr>
+          <tr><td><strong>MCP tool/resource/prompt</strong></td><td>Capability publicada em protocolo padronizado, acessada por host/client.</td><td>Integrar sistemas, dados e ferramentas reusáveis com schema e segurança.</td><td>Tratar MCP como túnel irrestrito para ações perigosas.</td></tr>
+          <tr><td><strong>Provider built-in</strong></td><td>Tool executada no lado do provider (web/file/code conforme a API).</td><td>Quando a ferramenta oficial reduz integração e oferece rastreabilidade adequada.</td><td>Presumir retenção, ZDR, paralelismo e billing sem validar a doc.</td></tr>
+          <tr><td><strong>Function tool</strong></td><td>Schema exposto ao modelo, execução feita pelo cliente/orquestrador.</td><td>Integrações internas, chamadas a APIs próprias, validação local.</td><td>Schemas vagos, side effects sem aprovação e tool result gigante.</td></tr>
+        </tbody>
+      </table></div>
+      <p>
+        O OpenAI Agents SDK cobre agents, handoffs, agents-as-tools, guardrails, sessions, tracing e MCP;
+        a Responses API subjacente é apropriada quando o runtime precisa <em>possuir</em> o loop e o
+        dispatch. A escolha entre os dois é tratada no
+        <a href="guia_providers_adapters.html">capítulo de providers</a> e nos guias de framework.
+      </p>
+      <div class="source-link">Fontes oficiais: <a href="https://openai.github.io/openai-agents-python/" target="_blank" rel="noopener">Agents SDK</a> · <a href="https://developers.openai.com/api/docs/guides/tools" target="_blank" rel="noopener">OpenAI tools guide</a> · <a href="https://modelcontextprotocol.io/specification/2025-11-25" target="_blank" rel="noopener">MCP 2025-11-25</a>.</div>
+    </section>
+
+    <section id="arquitetura-referencia">
+      <h2>3. Arquitetura de referência</h2>
+      <p>
+        A figura abaixo separa as quatro camadas que nunca devem ser confundidas. Trocar de provider,
+        reduzir contexto, auditar tools e manter invariantes só é possível quando o estado real vive no
+        runtime, e o payload do provider é tratado como projeção.
+      </p>
+      <div class="figure">
+        <svg viewBox="0 0 760 430" role="img" aria-labelledby="arch-title arch-desc" xmlns="http://www.w3.org/2000/svg">
+          <title id="arch-title">Arquitetura de referência em camadas</title>
+          <desc id="arch-desc">Aplicação no topo; orquestrador agentic abaixo; e três pilares na base — ledger canônico, capability registry e provider adapters.</desc>
+          <style>
+            .box{fill:var(--c-bg-elev);stroke:var(--c-border-strong);stroke-width:1.5;rx:10;}
+            .lbl{fill:var(--c-fg);font-family:var(--font-sans);font-size:14px;font-weight:600;}
+            .sub{fill:var(--c-fg-muted);font-family:var(--font-sans);font-size:11.5px;}
+            .arrow{stroke:var(--c-da);stroke-width:2;fill:none;marker-end:url(#ah);}
+          </style>
+          <defs>
+            <marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="var(--c-da)"/></marker>
+          </defs>
+          <rect class="box" x="170" y="14" width="420" height="56" rx="10"/>
+          <text class="lbl" x="380" y="38" text-anchor="middle">Aplicação / Produto / Canal</text>
+          <text class="sub" x="380" y="56" text-anchor="middle">autenticação · tenancy · UX · políticas e dados do usuário</text>
+
+          <rect class="box" x="170" y="110" width="420" height="60" rx="10" style="stroke:var(--c-da);stroke-width:2"/>
+          <text class="lbl" x="380" y="134" text-anchor="middle">Orquestrador agentic</text>
+          <text class="sub" x="380" y="153" text-anchor="middle">active plan · budget · model router · guardrails · tracing</text>
+
+          <rect class="box" x="40" y="232" width="200" height="78" rx="10"/>
+          <text class="lbl" x="140" y="256" text-anchor="middle">Ledger canônico</text>
+          <text class="sub" x="140" y="276" text-anchor="middle">assets · compaction</text>
+          <text class="sub" x="140" y="292" text-anchor="middle">provenance · replay</text>
+
+          <rect class="box" x="280" y="232" width="200" height="78" rx="10"/>
+          <text class="lbl" x="380" y="256" text-anchor="middle">Capability registry</text>
+          <text class="sub" x="380" y="276" text-anchor="middle">tools · MCP · RAG</text>
+          <text class="sub" x="380" y="292" text-anchor="middle">functions · agents · approvals</text>
+
+          <rect class="box" x="520" y="232" width="200" height="78" rx="10"/>
+          <text class="lbl" x="620" y="256" text-anchor="middle">Provider adapters</text>
+          <text class="sub" x="620" y="276" text-anchor="middle">OpenAI · Anthropic · Google</text>
+          <text class="sub" x="620" y="292" text-anchor="middle">Responses · Messages · Gemini</text>
+
+          <path class="arrow" d="M380,70 L380,108"/>
+          <path class="arrow" d="M330,170 L160,230"/>
+          <path class="arrow" d="M380,170 L380,230"/>
+          <path class="arrow" d="M430,170 L600,230"/>
+
+          <text class="sub" x="140" y="340" text-anchor="middle">estado durável</text>
+          <text class="sub" x="380" y="340" text-anchor="middle">capabilities tipadas</text>
+          <text class="sub" x="620" y="340" text-anchor="middle">projeção / chamadas de API</text>
+        </svg>
+        <figcaption>
+          As quatro camadas. O orquestrador lê e escreve no ledger canônico, expõe um subconjunto do
+          capability registry por turno e fala com os providers por meio de adapters que projetam o
+          estado durável. Nenhum segredo, token de tenant ou autorização trafega "pelo prompt".
+        </figcaption>
+      </div>
+      <div class="callout tip">
+        <strong>Detalhe de cada camada:</strong> o ledger canônico tem capítulo próprio
+        (<a href="guia_estado_contexto_memoria.html">Estado, contexto &amp; memória</a>); o capability
+        registry e os adapters também (<a href="guia_ferramentas_mcp_rag.html">Ferramentas, MCP &amp; RAG</a>
+        e <a href="guia_providers_adapters.html">Providers &amp; adapters</a>). Aqui interessa apenas a
+        relação entre elas.
+      </div>
+    </section>
+
+    <section id="matriz-de-escolha">
+      <h2>4. Matriz de escolha: agent, workflow, agent-as-tool ou handoff</h2>
+      <p>
+        A primeira decisão de arquitetura é a topologia. Use a situação concreta — não a preferência por
+        "ser agêntico" — para escolher.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Situação</th><th>Escolha recomendada</th><th>Critério operacional</th></tr></thead>
+        <tbody>
+          <tr><td>Etapas conhecidas, dados sensíveis, pouca ambiguidade</td><td>Workflow determinístico com chamadas LLM pontuais</td><td>Minimiza variabilidade e simplifica auditoria.</td></tr>
+          <tr><td>Tarefa exploratória, baixo risco e tools seguras</td><td>Agent com loop controlado</td><td>Limitar max turns, allowed tools, budgets e final reserve.</td></tr>
+          <tr><td>Especialista precisa analisar um subproblema e devolver síntese</td><td>Agent-as-tool</td><td>O parent mantém a conversa; o child recebe pacote mínimo e retorna envelope reduzido.</td></tr>
+          <tr><td>O usuário deve passar para outro especialista/fluxo ativo</td><td>Handoff</td><td>A nova entidade assume o controle com contexto mínimo e consentimento quando necessário.</td></tr>
+          <tr><td>Integração reusável por muitos hosts</td><td>MCP server/tool/resource</td><td>Schemas, auth, rate limits e escopo explicitados fora do prompt.</td></tr>
+          <tr><td>Consulta de conhecimento com provenance</td><td>RAG como capability/tool</td><td>A tool retorna trechos, citações, score, freshness e limites de confiança.</td></tr>
+          <tr><td>Operação com side effect financeiro/legal/externo</td><td>Tool com HITL ou workflow aprovado</td><td>O modelo nunca autoriza sozinho; o runtime valida e pede aprovação.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout warn">
+        <strong>Agent-as-tool ≠ handoff.</strong> A confusão entre os dois é tão comum que tem seção
+        própria (<a href="#handoff-vs-agent-as-tool">§8</a>). Em resumo: agent-as-tool é delegação
+        subordinada; handoff é transferência de ownership.
+      </div>
+    </section>
+
+    <!-- ===================== PARTE 2 ===================== -->
+    <section class="chapter" id="parte-contratos">
+      <h2 style="border-bottom:3px solid var(--c-da);padding:14px 0 10px;font-size:28px">Parte 2 — Contratos do runtime</h2>
+      <p>Os artefatos tipados que tornam a orquestração auditável e portável: o registry de capabilities,
+      o estado de plano, o loop e os modos de delegação.</p>
+    </section>
+
+    <section id="capability-registry">
+      <h2>5. Contrato de capability registry</h2>
+      <p>
+        Toda ferramenta, subagente, handoff ou endpoint MCP deve ser registrado como uma
+        <strong>capability</strong> com metadados suficientes para roteamento, segurança e avaliação. O
+        registro não deve depender de nomes naturais no prompt — depende de um contrato.
+      </p>
+      <pre><code class="language-json">{
+  "capability_id": "retrieve_domain_evidence.v1",
+  "kind": "mcp_tool | function_tool | agent_as_tool | handoff | provider_builtin",
+  "description_for_model": "Recupera evidências com proveniência e limites de confiança.",
+  "input_schema":  { "type": "object", "properties": {} },
+  "output_schema": { "type": "object", "required": ["summary", "citations", "confidence"] },
+  "side_effect_level": "none | read | write_low | write_high",
+  "auth_scope": "derived_from_runtime_not_model",
+  "tenant_boundary": "required",
+  "max_input_tokens": 2000,
+  "max_output_tokens": 1200,
+  "timeout_ms": 15000,
+  "approval_policy": "auto | human_required | forbidden",
+  "observability": ["trace_span", "cost", "source_hashes", "tool_args_redacted"]
+}</code></pre>
+      <p>
+        O mesmo contrato suporta ferramentas locais, MCP, RAG, agentes especializados e built-ins; o
+        adapter converte para o formato aceito por cada provider. As regras de design do schema de tool
+        (nomes, descrições, caps de output) e o envelope de resultado estão no
+        <a href="guia_ferramentas_mcp_rag.html">capítulo de ferramentas</a>.
+      </p>
+      <div class="callout tip">
+        <strong>Por que <code>auth_scope</code> deriva do runtime:</strong> se o escopo de autorização
+        viesse do modelo, um prompt injection em um documento poderia escalar privilégio. O runtime
+        resolve tenant e scope a partir de claims autenticados, nunca a partir do texto.
+      </div>
+    </section>
+
+    <section id="microcontextos-active-plan">
+      <h2>6. Microcontextos &amp; active plan</h2>
+      <p>
+        Dois padrões evitam que o contexto do parent vire um depósito e que o raciocínio fique implícito:
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Padrão</th><th>O que é</th><th>Por que importa</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Microcontexto</strong></td><td>Subexecução isolada com input mínimo, policy, budget, tools permitidas e envelope de retorno.</td><td>Evita que subagentes herdem todo o histórico — só entram fatos necessários, assets autorizados e schema de saída.</td></tr>
+          <tr><td><strong>Active plan</strong></td><td>Estado explícito do que está em andamento: objetivo, etapas, pendências, constraints, decisões e condição de finalização.</td><td>Substitui raciocínio implícito por estado auditável, com budgets e gates.</td></tr>
+          <tr><td><strong>Delegation packet</strong></td><td>Pacote tipado para agent-as-tool/handoff/MCP: tarefa, contexto reduzido, constraints, capabilities, output contract e trace do parent.</td><td>Torna a delegação verificável e impede vazamento de contexto.</td></tr>
+        </tbody>
+      </table></div>
+      <p>O active plan vive no ledger e é reprojetado a cada turno:</p>
+      <pre><code class="language-json">{
+  "active_plan": {
+    "goal": "produzir resposta verificável",
+    "stage": "collect_evidence | analyze | synthesize | finalize",
+    "open_questions": [],
+    "constraints": ["não vazar dados sensíveis", "citar fontes"],
+    "budgets": { "turns_remaining": 3, "tool_calls_remaining": 8, "tokens_remaining": 24000 },
+    "finalization_policy": { "reserve_tokens": 4000, "reserve_seconds": 20 }
+  }
+}</code></pre>
+      <div class="callout">
+        <strong>Budgets aparecem aqui e no ledger.</strong> A fórmula de orçamento de contexto (entrada
+        projetada + reasoning + saída final + margem) e a contagem de tokens em si pertencem ao
+        <a href="guia_estado_contexto_memoria.html">capítulo de estado</a> e ao
+        <a href="guia_token_counting.html">guia de token counting</a>. Aqui o budget é apenas uma propriedade
+        do plano que o loop respeita.
+      </div>
+    </section>
+
+    <section id="skeleton-orquestrador">
+      <h2>7. Skeleton de orquestrador</h2>
+      <p>
+        O loop é intencionalmente <strong>provider-neutral</strong>: registrar, validar, executar,
+        reduzir e reprojetar. Um framework de agentes pode gerenciar boa parte deste loop; quando o
+        projeto exige controle fino, implemente-o sobre a API direta do provider e adapters próprios.
+      </p>
+      <pre><code class="language-python">from dataclasses import dataclass
+from typing import Any
+
+@dataclass
+class TurnPolicy:
+    allowed_capabilities: list[str]
+    max_agent_turns: int
+    max_tool_calls: int
+    final_reserve_tokens: int
+    require_human_for: list[str]
+
+async def run_agent_turn(user_input: str, ledger, policy: TurnPolicy) -> dict[str, Any]:
+    ledger.record_user_input(user_input)
+    projected = ledger.project_for_provider(
+        provider="openai_responses",          # ou anthropic_messages, gemini, ...
+        allowed_capabilities=policy.allowed_capabilities,
+        reserve_tokens=policy.final_reserve_tokens,
+    )
+    for _step in range(policy.max_agent_turns):
+        response = await call_model(projected)
+        ledger.ingest_provider_response(response)
+        calls = ledger.extract_pending_tool_calls(limit=policy.max_tool_calls)
+        if not calls:
+            return ledger.final_answer()
+        safe_calls = authorize_tool_calls(calls, policy)   # runtime decide, não o modelo
+        results = await execute_capabilities(safe_calls)
+        ledger.record_tool_results(results)                # reduzir + provenance antes de registrar
+        projected = ledger.project_for_provider(provider="openai_responses")
+    return ledger.force_wind_down_summary()                # respeita o final reserve</code></pre>
+      <div class="callout tip">
+        <strong>Mesmo quando o framework gerencia o loop</strong>, mantenha registro externo de traces,
+        usage, tool results e decisões críticas se o sistema precisa ser auditável. O mapeamento deste
+        skeleton para cada framework está nos guias de
+        <a href="guia_agents_sdk_orquestracao.html">Agents SDK</a>,
+        <a href="guia_langgraph_orquestracao.html">LangGraph</a> e
+        <a href="guia_google_adk_orquestracao.html">Google ADK</a>.
+      </div>
+    </section>
+
+    <section id="handoff-vs-agent-as-tool">
+      <h2>8. Handoff versus agent-as-tool em detalhe</h2>
+      <p>
+        <strong>Agent-as-tool</strong> é delegação subordinada: o parent formula a tarefa, envia um
+        pacote mínimo e consome o retorno. <strong>Handoff</strong> é transferência de ownership: o
+        agente-alvo vira a entidade ativa e deve receber contexto suficiente para continuar. Confundir
+        os dois aumenta o risco de vazamento de contexto e de loops.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Dimensão</th><th>Agent-as-tool</th><th>Handoff</th></tr></thead>
+        <tbody>
+          <tr><td>Controle da conversa</td><td>Permanece com o parent.</td><td>Passa para o target.</td></tr>
+          <tr><td>Contexto enviado</td><td>Mínimo e específico da tarefa.</td><td>Resumo de continuidade + consentimentos/políticas.</td></tr>
+          <tr><td>Output esperado</td><td>Envelope tipado e reduzido.</td><td>Nova interação ou resolução no fluxo alvo.</td></tr>
+          <tr><td>Uso típico</td><td>Pesquisa, análise, extração, validação.</td><td>Especialista ativo, humano, atendimento, workflow setorial.</td></tr>
+          <tr><td>Risco principal</td><td>O child retornar demais.</td><td>Transferir dados/autoridade demais.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout">
+        <strong>Implementações concretas:</strong> handoffs e agents-as-tools no OpenAI Agents SDK
+        (incluindo filtros de input e <em>collapse</em> de transcript) estão no
+        <a href="guia_agents_sdk_orquestracao.html">guia do Agents SDK</a>; o equivalente multi-agente
+        em LangGraph (supervisor/swarm) e no Google ADK (coordenador + subagentes) está nos respectivos
+        guias de framework e nos guias dedicados <a href="guia_langgraph.html">LangGraph</a> e
+        <a href="guia_google_adk.html">Google ADK</a>.
+      </div>
+    </section>
+
+    <section id="skill-packs">
+      <h2>9. Skill packs e modos de injeção</h2>
+      <p>
+        Skills devem ser versionadas, testadas e injetadas no <strong>menor escopo possível</strong>. O
+        erro mais comum é carregar tudo sempre — isso degrada o contexto, aumenta o custo e cria
+        conflitos de instrução. Os modos de injeção são uma decisão de arquitetura; a <em>autoria</em>
+        das skills (formato <code>SKILL.md</code>, progressive disclosure, ativação por description) tem
+        guia próprio.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Modo</th><th>Descrição</th><th>Quando usar</th></tr></thead>
+        <tbody>
+          <tr><td><code>catalog_only</code></td><td>O modelo vê apenas nomes/descrições de skills.</td><td>Muitos recursos disponíveis, mas poucos necessários por turno.</td></tr>
+          <tr><td><code>hot_dynamic</code></td><td>O runtime injeta o corpo completo da skill só quando relevante.</td><td>Especialização contextual sem poluir o prompt base.</td></tr>
+          <tr><td><code>pinned_system</code></td><td>Skill crítica fica sempre nas instruções.</td><td>Regras de segurança ou formato que nunca podem faltar.</td></tr>
+          <tr><td><code>child_frozen_pack</code></td><td>O subagente recebe um pacote fixo e isolado.</td><td>Especialista repetível com contrato estável.</td></tr>
+          <tr><td><code>specialist_catalog</code></td><td>O parent conhece especialistas e delega via agent-as-tool/handoff.</td><td>Arquiteturas multiagente com fronteiras claras.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout tip">
+        <strong>Cross-link:</strong> a autoria de skills portáveis, os contratos de ativação, o orçamento
+        de skills e a eviction sem perder autoridade estão no <a href="guia_skills.html">Guia de Skills</a>.
+        A teoria de budget/compaction que sustenta o <code>hot_dynamic</code> está no
+        <a href="guia_estado_contexto_memoria.html">capítulo de estado</a> e no
+        <a href="guia_contexto_compactacao_estrategias.html">guia de contexto &amp; compactação</a>.
+      </div>
+    </section>
+
+    <!-- ===================== PARTE 3 ===================== -->
+    <section class="chapter" id="parte-operacao">
+      <h2 style="border-bottom:3px solid var(--c-da);padding:14px 0 10px;font-size:28px">Parte 3 — Operação &amp; escala</h2>
+      <p>Como evitar as armadilhas conhecidas, fazer o sistema crescer sem virar cosmético, rotear
+      modelos e modelar execuções longas — culminando no blueprint SOTA.</p>
+    </section>
+
+    <section id="antipadroes">
+      <h2>10. Antipadrões arquiteturais</h2>
+      <p>Cada antipadrão abaixo corresponde a um invariante violado em algum lugar do núcleo:</p>
+      <ul>
+        <li>☐ <strong>Contexto bruto sem fronteira:</strong> anexar toda saída de tool/RAG/subagente no histórico do parent.</li>
+        <li>☐ <strong>Provider como banco de estado:</strong> depender de <code>previous_response_id</code>, cache ou session como único histórico durável.</li>
+        <li>☐ <strong>Tool schema permissivo:</strong> aceitar argumentos arbitrários ou filtros definidos pelo modelo sem sanitização.</li>
+        <li>☐ <strong>Subagente sem envelope:</strong> permitir que o child retorne narrativa longa em vez de output tipado e reduzido.</li>
+        <li>☐ <strong>Handoff opaco:</strong> transferir controle sem registrar por quê, para quem, com qual contexto e qual consentimento.</li>
+        <li>☐ <strong>Paralelismo sem fase:</strong> misturar built-ins, funções externas, side effects e síntese no mesmo boundary.</li>
+        <li>☐ <strong>Sem wind-down:</strong> continuar abrindo tools quando o orçamento da resposta final já acabou.</li>
+      </ul>
+      <div class="callout danger">
+        <strong>O antipadrão mais caro</strong> costuma ser "provider como banco de estado": quando um
+        incidente exige replay e o histórico só existia no lado do provider (sujeito a retenção, ZDR e
+        expiração de cache), a auditoria fica impossível. O ledger canônico existe para evitar isso —
+        ver <a href="guia_estado_contexto_memoria.html">Estado, contexto &amp; memória</a>.
+      </div>
+    </section>
+
+    <section id="runtime-por-maturidade">
+      <h2>11. Padrões de runtime por maturidade</h2>
+      <p>
+        O salto de maturidade não deve ser cosmético: cada fase adiciona uma peça <em>verificável</em>
+        — política, schema, trace, eval ou manifest.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Maturidade</th><th>Arquitetura aceitável</th><th>Critério para evoluir</th></tr></thead>
+        <tbody>
+          <tr><td>Protótipo controlado</td><td>Um agente com poucas tools read-only, logging básico e output schema simples.</td><td>Quando houver side effects, dados sensíveis, múltiplos providers ou necessidade de replay.</td></tr>
+          <tr><td>MVP auditável</td><td>Framework de agentes + ledger externo + capability registry + guardrails de entrada/saída.</td><td>Quando subagentes, RAG, anexos e custos começarem a competir por contexto.</td></tr>
+          <tr><td>Produção regulada</td><td>Ledger canônico, policy-as-code, ZDR/retention, evals, traces, approvals e compaction versionada.</td><td>Quando volume ou criticidade pedirem roteamento multi-provider e runbooks.</td></tr>
+          <tr><td>Plataforma corporativa</td><td>Múltiplos agentes/skills/MCP servers, active plans, provider adapters, eval harness e observabilidade central.</td><td>Quando times diferentes criarem capabilities e precisarem de governança comum.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout">
+        <strong>Critério de maturidade prático:</strong> se a equipe não consegue desenhar o fluxo com
+        entradas, saídas, estado, tools, budgets, aprovações e pontos de replay, o sistema ainda está em
+        protótipo — mesmo que responda bem em demonstrações.
+      </div>
+    </section>
+
+    <section id="model-router">
+      <h2>12. Model router e seleção de agente</h2>
+      <p>
+        O roteador deve considerar capacidade, latência, custo, janela de contexto, política de dados,
+        suporte a tools, suporte multimodal, structured outputs, reasoning/thinking e histórico
+        necessário. Não escolha o modelo apenas por "qualidade média".
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Critério</th><th>Sinal de roteamento</th><th>Exemplo de decisão</th></tr></thead>
+        <tbody>
+          <tr><td>Context window</td><td>Input projetado + output + margem excede o modelo atual.</td><td>Compactar ou trocar para um modelo com janela maior.</td></tr>
+          <tr><td>Tool semantics</td><td>O fluxo exige built-in específica ou MCP remoto.</td><td>Usar o provider/SDK que suporte a capability com governança adequada.</td></tr>
+          <tr><td>Reasoning budget</td><td>A tarefa requer deliberação profunda ou matemática/código.</td><td>Aumentar o esforço/budget de reasoning ou delegar para um especialista.</td></tr>
+          <tr><td>Data policy</td><td>Dados sensíveis não podem ser retidos pelo provider.</td><td>Usar <code>store=false</code> quando aplicável, redaction ou rota autorizada.</td></tr>
+          <tr><td>Structured output</td><td>Schema crítico precisa de alta aderência.</td><td>Usar structured outputs/validação e retry controlado.</td></tr>
+          <tr><td>Latency/cost</td><td>Fan-out custoso com baixo valor marginal.</td><td>Reduzir tools, limitar subagentes ou usar um modelo menor para triagem.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout warn">
+        <strong>IDs de modelo são perecíveis.</strong> Este capítulo deliberadamente não fixa nomes de
+        modelo. Para o catálogo atual e os controles de reasoning/thinking por modelo, consulte os guias
+        dedicados: <a href="guia_openai_modelos.html">OpenAI (§ Seleção de modelo)</a>,
+        <a href="guia_claude_api.html">Claude API</a>,
+        <a href="guia_gemini_interactions_api.html">Gemini Interactions API</a> e a matriz cruzada em
+        <a href="guia_paralelismo_tools_openai_gemini_anthropic.html">Paralelismo &amp; tools</a>.
+      </div>
+    </section>
+
+    <section id="long-running-deep-research">
+      <h2>13. Long-running jobs e deep research</h2>
+      <p>
+        Execuções longas devem ser modeladas como <strong>jobs</strong>, não como uma conversa gigante.
+        Um job tem estado persistido, etapas, checkpoints, retries, evidência acumulada, budgets e
+        condição de encerramento.
+      </p>
+      <div class="figure">
+        <svg viewBox="0 0 760 200" role="img" aria-labelledby="job-title job-desc" xmlns="http://www.w3.org/2000/svg">
+          <title id="job-title">Ciclo de vida de um long-running job</title>
+          <desc id="job-desc">Sequência: criado, planning, coleta de evidência, revisão intermediária, síntese, validação, entrega final; com resume, checkpoints, provenance, budget gates, citations e eval gates por baixo.</desc>
+          <style>
+            .jb{fill:var(--c-bg-elev);stroke:var(--c-border-strong);stroke-width:1.5;}
+            .jl{fill:var(--c-fg);font-family:var(--font-sans);font-size:11px;font-weight:600;}
+            .js{fill:var(--c-fg-muted);font-family:var(--font-sans);font-size:9.5px;}
+            .ja{stroke:var(--c-da);stroke-width:1.6;fill:none;marker-end:url(#ah2);}
+          </style>
+          <defs><marker id="ah2" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="var(--c-da)"/></marker></defs>
+          <g>
+            <rect class="jb" x="10"  y="40" width="96" height="40" rx="8"/><text class="jl" x="58"  y="64" text-anchor="middle">created</text>
+            <rect class="jb" x="120" y="40" width="96" height="40" rx="8"/><text class="jl" x="168" y="64" text-anchor="middle">planning</text>
+            <rect class="jb" x="230" y="40" width="120" height="40" rx="8"/><text class="jl" x="290" y="64" text-anchor="middle">evidence</text>
+            <rect class="jb" x="364" y="40" width="120" height="40" rx="8"/><text class="jl" x="424" y="64" text-anchor="middle">review</text>
+            <rect class="jb" x="498" y="40" width="96" height="40" rx="8"/><text class="jl" x="546" y="64" text-anchor="middle">synthesis</text>
+            <rect class="jb" x="608" y="40" width="96" height="40" rx="8"/><text class="jl" x="656" y="64" text-anchor="middle">validation</text>
+          </g>
+          <path class="ja" d="M106,60 L118,60"/>
+          <path class="ja" d="M216,60 L228,60"/>
+          <path class="ja" d="M350,60 L362,60"/>
+          <path class="ja" d="M484,60 L496,60"/>
+          <path class="ja" d="M594,60 L606,60"/>
+          <text class="js" x="168" y="110" text-anchor="middle">resume / checkpoints</text>
+          <text class="js" x="290" y="110" text-anchor="middle">provenance</text>
+          <text class="js" x="424" y="110" text-anchor="middle">budget gates</text>
+          <text class="js" x="546" y="110" text-anchor="middle">citations</text>
+          <text class="js" x="656" y="110" text-anchor="middle">eval gates</text>
+          <rect class="jb" x="608" y="140" width="120" height="36" rx="8" style="stroke:var(--c-da);stroke-width:2"/><text class="jl" x="668" y="162" text-anchor="middle">final delivery</text>
+          <path class="ja" d="M656,80 L668,138"/>
+        </svg>
+        <figcaption>Um job longo é uma máquina de estados persistida, não uma conversa. Cada transição
+        tem checkpoint, provenance e gate.</figcaption>
+      </div>
+      <ul>
+        <li>☑ Persistir o estado do job <strong>fora</strong> do provider.</li>
+        <li>☑ Registrar checkpoints e permitir replay parcial.</li>
+        <li>☑ Definir budget por etapa, não apenas global.</li>
+        <li>☑ Reduzir evidências antes de cada síntese intermediária.</li>
+        <li>☑ Encerrar com declaração de cobertura, lacunas e fontes.</li>
+      </ul>
+      <div class="callout">
+        <strong>Implementações de deep research e background jobs</strong> (com webhooks, retomada e
+        modo assíncrono) estão nos guias de provider/framework:
+        <a href="guia_deepagents.html">Deep Agents</a> (receita de deep research),
+        <a href="guia_gemini_interactions_api.html">Gemini Interactions API</a> (Deep Research, background &amp; webhooks)
+        e <a href="guia_openai_modelos.html">OpenAI</a> (background &amp; webhooks).
+      </div>
+    </section>
+
+    <section id="blueprint-sota">
+      <h2>14. Blueprint SOTA de orquestração</h2>
+      <p>
+        Um runtime de agentes moderno separa claramente o que é decisão do modelo, decisão do código e
+        política organizacional. As seis camadas abaixo são responsabilidades, não necessariamente
+        processos separados — em um sistema pequeno várias podem coexistir no mesmo código, desde que a
+        fronteira lógica seja clara.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Camada</th><th>Responsabilidade</th><th>Controle SOTA</th><th>Falha típica evitada</th></tr></thead>
+        <tbody>
+          <tr><td>Intent router</td><td>Classificar pedido, risco, dados e rota.</td><td>Structured output + schema versionado.</td><td>Delegar para o agente errado ou expor tool indevida.</td></tr>
+          <tr><td>Planner</td><td>Construir o plano ativo e decompor subtarefas.</td><td>Plano explícito com budgets e stop conditions.</td><td>Loop indefinido, fan-out excessivo e perda de objetivo.</td></tr>
+          <tr><td>Manager</td><td>Manter a conversa e consolidar especialistas.</td><td>Agents-as-tools para subtarefas bounded.</td><td>Vários agentes disputando a resposta final.</td></tr>
+          <tr><td>Specialist</td><td>Executar competência estreita com contexto mínimo.</td><td>Microcontexto, capability registry e output contract.</td><td>Subagente herdando o histórico inteiro ou vazando dados.</td></tr>
+          <tr><td>Policy engine</td><td>Aplicar retenção, side effects, aprovação e quotas.</td><td>Policy-as-code fora do prompt.</td><td>Modelo tomando decisão de compliance sozinho.</td></tr>
+          <tr><td>Observer</td><td>Registrar trace, custos, tool calls, decisões e erros.</td><td>Spans por model/tool/guardrail/handoff.</td><td>Incidente sem replay auditável.</td></tr>
+        </tbody>
+      </table></div>
+      <pre><code class="language-text">pedido → classificação → plano ativo → exposição mínima de capabilities → execução
+       → validação de tool/result → síntese → checagem de saída → trace/replay</code></pre>
+      <div class="callout tip">
+        <strong>Onde cada camada é detalhada:</strong> policy engine e observer no
+        <a href="guia_operacao_seguranca_evals.html">capítulo de operação</a>; specialist/manager nos
+        guias de framework; intent router e structured output no
+        <a href="guia_providers_adapters.html">capítulo de providers</a>.
+      </div>
+    </section>
+
+    <!-- ===================== REFERÊNCIA ===================== -->
+    <section class="ref" id="checklist-aceitacao">
+      <h2>Checklist de aceitação arquitetural</h2>
+      <p>Use como gate antes de promover qualquer arquitetura de agentes para produção:</p>
+      <ul>
+        <li>☐ Existe um ledger canônico separado dos payloads de provider.</li>
+        <li>☐ Cada capability tem schema, side-effect level, auth scope, budget e policy de aprovação.</li>
+        <li>☐ Agent-as-tool e handoff usam delegation packet e envelope de retorno.</li>
+        <li>☐ O sistema separa as fases de recuperação, ação, análise e síntese.</li>
+        <li>☐ O modelo nunca recebe segredos, tokens de tenant ou autorização "por prompt".</li>
+        <li>☐ Há limites explícitos para turns, tool calls, fan-out, tempo, tokens, output e custo.</li>
+        <li>☐ Traces e usage ledger permitem replay ou auditoria sem depender do provider.</li>
+      </ul>
+    </section>
+
+    <section class="ref" id="verificacao">
+      <h2>Notas de verificação</h2>
+      <ul>
+        <li><span class="pill ok">Resolvido</span> <strong>Spec MCP = 2025-11-25.</strong> Versão alvo confirmada na folha de fatos SOTA (2026-05-25) e na documentação oficial do protocolo. Guias mais antigos do pacote podem citar revisões anteriores (2024-11-05 / 2025-03-26); a versão canônica do super-guia é <code>2025-11-25</code>. Re-verificado em 2026-06-10: a revisão <strong>2026-07-28</strong> foi anunciada (ainda em draft; em evolução até a publicação) com breaking changes — protocolo stateless sem handshake <code>initialize</code>/<code>Mcp-Session-Id</code>, novo <code>server/discover</code>, Tasks como extensão; <code>2025-11-25</code> segue sendo a versão alvo até a nova revisão entrar em vigor.</li>
+        <li><span class="pill ok">Resolvido</span> <strong>Agents SDK ↔ Responses API.</strong> O OpenAI Agents SDK usa a Responses API por baixo para modelos OpenAI; este capítulo trata o SDK como uma base de orquestração possível, não como a única.</li>
+        <li><span class="pill ok">Resolvido</span> <strong>Sem IDs de modelo fixos.</strong> Nomes de modelo são perecíveis e ficam concentrados nos guias de provider e na folha de fatos SOTA; este capítulo permanece agnóstico (<code>model="..."</code>).</li>
+        <li><span class="pill ok">Resolvido</span> <strong>Cross-links robustos.</strong> Os links apontam para o arquivo do guia e nomeiam a seção em prosa; âncoras profundas só são usadas onde o guia-alvo expõe <code>id</code> estável.</li>
+      </ul>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site">
+  <div style="max-width:1440px;margin:0 auto;padding:0 24px;display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;justify-content:space-between;">
+    <div style="max-width:540px">
+      <div class="brand" style="font-size:15px">Arquitetura &amp; Orquestração <small>Núcleo agnóstico de agentes</small></div>
+      <p style="margin:8px 0 0;color:var(--c-fg-muted);font-size:13.5px;line-height:1.55">
+        Capítulo de fundação do núcleo agnóstico, construído a partir da documentação oficial pública em
+        <strong>2026-06-10</strong>. Para fatos perecíveis (modelos, versões, parâmetros), consulte
+        sempre os guias de provider e as
+        <a href="https://modelcontextprotocol.io/specification/2025-11-25" target="_blank" rel="noopener">fontes oficiais</a>.
+      </p>
+    </div>
+    <div style="font-size:13.5px;color:var(--c-fg-muted);line-height:1.7">
+      <div><strong>Crédito de produção</strong></div>
+      <div>Gerado por <strong>subagentes Claude Opus 4.7 (xhigh)</strong></div>
+      <div>revisão e montagem pelo orquestrador · 2026-05-25</div>
+      <div style="margin-top:6px">
+        <span class="badge da">Núcleo · agnóstico de provider</span>
+        <span class="badge info">Conceitual + referência</span>
+      </div>
+    </div>
+    <div style="font-size:12.5px;color:var(--c-fg-soft)">
+      <div><strong>Navegação rápida</strong></div>
+      <div><a href="#escopo-orquestracao">Escopo</a> · <a href="#primitivos-canonicos">Primitivos</a> · <a href="#matriz-de-escolha">Matriz</a></div>
+      <div><a href="#blueprint-sota">Blueprint SOTA</a> · <a href="#checklist-aceitacao">Checklist</a></div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  /* Toggle de tema com persistência em localStorage (chave compartilhada do super-guia). */
+  (function(){
+    var KEY = 'super-guia-theme';
+    var btn = document.getElementById('theme-toggle');
+    var pref = localStorage.getItem(KEY);
+    if (pref) document.documentElement.setAttribute('data-theme', pref);
+    if (btn) btn.addEventListener('click', function(){
+      var cur = document.documentElement.getAttribute('data-theme') || 'light';
+      var nxt = cur === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', nxt);
+      localStorage.setItem(KEY, nxt);
+    });
+  })();
+  /* Scroll-spy: destaca no TOC a seção visível. */
+  (function(){
+    var links = document.querySelectorAll('nav.toc a[href^="#"]');
+    var map = {};
+    links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        var id = e.target.id; if (!map[id]) return;
+        if (e.isIntersecting) {
+          links.forEach(function(l){ l.classList.remove('active'); });
+          map[id].classList.add('active');
+        }
+      });
+    }, { rootMargin: '-40% 0% -55% 0%', threshold: 0 });
+    Object.keys(map).forEach(function(id){ var el = document.getElementById(id); if (el) io.observe(el); });
+  })();
+  /* Abas de código (code-group): clique + navegação por setas. */
+  function activateTab(group, tab){
+    group.querySelectorAll('.code-tab').forEach(function(b){
+      var on = b === tab;
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+      b.setAttribute('tabindex', on ? '0' : '-1');
+    });
+    var lang = tab.dataset.lang;
+    group.querySelectorAll('.code-pane').forEach(function(p){ p.setAttribute('data-active', p.dataset.lang===lang ? 'true' : 'false'); });
+  }
+  document.querySelectorAll('.code-group').forEach(function(group){
+    group.querySelectorAll('.code-pane').forEach(function(p){ p.setAttribute('role', 'tabpanel'); });
+    var tabs = group.querySelectorAll('.code-tab');
+    tabs.forEach(function(b){ b.setAttribute('tabindex', b.getAttribute('aria-selected') === 'true' ? '0' : '-1'); });
+  });
+  document.addEventListener('click', function(e){
+    var t = e.target;
+    if (!t.classList || !t.classList.contains('code-tab')) return;
+    var group = t.closest('.code-group'); if (!group) return;
+    activateTab(group, t);
+  });
+  document.addEventListener('keydown', function(e){
+    var t = e.target;
+    if (!t.classList || !t.classList.contains('code-tab')) return;
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    var group = t.closest('.code-group'); if (!group) return;
+    var tabs = Array.prototype.slice.call(group.querySelectorAll('.code-tab'));
+    var idx = tabs.indexOf(t);
+    var next = e.key === 'ArrowRight' ? (idx + 1) % tabs.length : (idx - 1 + tabs.length) % tabs.length;
+    activateTab(group, tabs[next]);
+    tabs[next].focus();
+    e.preventDefault();
+  });
+</script>
+</body>
+</html>

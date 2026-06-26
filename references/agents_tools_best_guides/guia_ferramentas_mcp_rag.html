@@ -1,0 +1,1001 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ferramentas, MCP &amp; RAG — Núcleo agnóstico de agentes</title>
+<meta name="description" content="Ferramentas como capabilities com contrato, na orquestração agnóstica de provider: ontologia de tools, fases de execução (built-in vs function paralela), MCP como fronteira formal (spec 2025-11-25), RAG como capability com provenance, tool result envelopes, segurança e fluxo de aprovação (HITL), fan-out/wind-down, design de schema de tool, hardening de MCP server e métricas. Multimodal e paralelismo entram por cross-link aos guias dedicados." />
+<meta name="last-checked" content="2026-06-25" />
+<meta name="robots" content="index,follow" />
+<style>
+  :root {
+    --c-bg: #ffffff;
+    --c-bg-elev: #f7f8fa;
+    --c-bg-code: #0e1116;
+    --c-fg: #1a1d23;
+    --c-fg-muted: #5b6472;
+    --c-fg-soft: #6b7480;
+    --c-border: #e4e7ec;
+    --c-border-strong: #cdd3dc;
+    --c-accent: #1a73e8;
+    --c-da: #1257b8;
+    --c-da-bg: #e6efff;
+    --c-warn: #b6541d;
+    --c-warn-bg: #fff4e6;
+    --c-ok: #157a33;
+    --c-ok-bg: #e8f5ea;
+    --c-bad: #c5221f;
+    --c-bad-bg: #fde8e6;
+    --c-na: #5f666f;
+    --c-na-bg: #eef0f3;
+    --c-info: #1257b8;
+    --c-info-bg: #e6efff;
+    --shadow-sm: 0 1px 2px rgba(15,23,42,.06), 0 1px 1px rgba(15,23,42,.04);
+    --shadow-md: 0 6px 24px rgba(15,23,42,.08), 0 2px 6px rgba(15,23,42,.06);
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --gutter: 24px;
+    --sidebar-w: 312px;
+  }
+  [data-theme="dark"] {
+    --c-bg: #0d1117;
+    --c-bg-elev: #161b22;
+    --c-bg-code: #010409;
+    --c-fg: #e6edf3;
+    --c-fg-muted: #9aa4b2;
+    --c-fg-soft: #828c9e;
+    --c-border: #20262d;
+    --c-border-strong: #2f3640;
+    --c-da: #4d9fff;
+    --c-accent: #4d9fff;
+    --c-ok: #3fb950;
+    --c-warn: #e3b341;
+    --c-bad: #ff7b72;
+    --c-na: #9aa4b2;
+    --c-info: #79b8ff;
+    --c-da-bg: #11233f;
+    --c-warn-bg: #2a1e0a;
+    --c-ok-bg: #0d2517;
+    --c-bad-bg: #2a1213;
+    --c-na-bg: #1a1f26;
+    --c-info-bg: #0c1e3a;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+    --shadow-md: 0 8px 28px rgba(0,0,0,.45);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-sans);
+    font-size: 15.5px;
+    line-height: 1.55;
+    color: var(--c-fg);
+    background: var(--c-bg);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  a { color: var(--c-accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, kbd, pre, samp { font-family: var(--font-mono); font-size: 0.92em; }
+  :focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; border-radius: 4px; }
+  .skip { position: absolute; left: -9999px; }
+  .skip:focus { left: 12px; top: 12px; background: var(--c-bg); padding: 8px 12px; border: 1px solid var(--c-border); border-radius: 6px; z-index: 100; }
+
+  header.site {
+    position: sticky; top: 0; z-index: 30;
+    background: rgba(255,255,255,.85);
+    backdrop-filter: saturate(180%) blur(10px);
+    border-bottom: 1px solid var(--c-border);
+  }
+  [data-theme="dark"] header.site { background: rgba(13,17,23,.82); }
+  .header-row {
+    max-width: 1440px; margin: 0 auto; padding: 12px 24px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .brand { font-weight: 700; letter-spacing: -.01em; font-size: 16px; }
+  .brand small { color: var(--c-fg-muted); font-weight: 500; margin-left: 8px; font-size: 12.5px; }
+  .header-right { margin-left: auto; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 999px;
+    background: var(--c-bg-elev); border: 1px solid var(--c-border);
+    color: var(--c-fg-muted); font-size: 12.5px; font-weight: 500;
+  }
+  .badge.ok { background: var(--c-ok-bg); color: var(--c-ok); border-color: transparent; }
+  .badge.da { background: var(--c-da-bg); color: var(--c-da); border-color: transparent; }
+  .badge.info { background: var(--c-info-bg); color: var(--c-info); border-color: transparent; }
+  .badge.warn { background: var(--c-warn-bg); color: var(--c-warn); border-color: transparent; }
+  .badge.bad { background: var(--c-bad-bg); color: var(--c-bad); border-color: transparent; }
+  .theme-btn {
+    border: 1px solid var(--c-border); background: var(--c-bg-elev); color: var(--c-fg);
+    padding: 5px 10px; border-radius: 8px; cursor: pointer; font: inherit; font-size: 12.5px;
+  }
+  .theme-btn:hover { border-color: var(--c-border-strong); }
+
+  .layout {
+    max-width: 1440px; margin: 0 auto;
+    display: grid; grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+    gap: 32px; padding: 24px;
+  }
+  nav.toc {
+    position: sticky; top: 64px;
+    align-self: start; max-height: calc(100vh - 80px); overflow: auto;
+    padding-right: 8px;
+    border-right: 1px solid var(--c-border);
+  }
+  nav.toc ol { list-style: none; padding: 0; margin: 0 0 16px; }
+  nav.toc li { line-height: 1.4; margin: 2px 0; }
+  nav.toc a {
+    display: block; padding: 4px 8px; border-radius: 5px;
+    color: var(--c-fg-muted); font-size: 13px;
+  }
+  nav.toc a:hover { background: var(--c-bg-elev); color: var(--c-fg); text-decoration: none; }
+  nav.toc a.active { color: var(--c-da); background: var(--c-da-bg); font-weight: 600; }
+  nav.toc .toc-section {
+    margin-top: 14px; padding: 2px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--c-fg-soft);
+    border-top: 1px solid var(--c-border); padding-top: 10px;
+  }
+  nav.toc .toc-section:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+
+  main { min-width: 0; max-width: 1040px; }
+
+  .hero {
+    border: 1px solid var(--c-border);
+    border-radius: 14px;
+    padding: 28px 28px 24px;
+    background: linear-gradient(135deg, var(--c-da-bg) 0%, var(--c-bg) 100%);
+    margin-bottom: 32px;
+  }
+  .hero h1 { font-size: 32px; line-height: 1.15; margin: 0 0 8px; letter-spacing: -.02em; }
+  .hero p.lead { margin: 0 0 16px; color: var(--c-fg-muted); font-size: 16px; max-width: 74ch; }
+  .hero-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+
+  section { margin: 48px 0; scroll-margin-top: 84px; }
+  section.chapter { padding-top: 16px; margin-top: 56px; border-top: 3px solid var(--c-da); }
+  section.ref { padding-top: 12px; margin-top: 48px; border-top: 2px dashed var(--c-border-strong); }
+  h2 {
+    font-size: 24px; line-height: 1.2; letter-spacing: -.015em;
+    margin: 0 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--c-border);
+    scroll-margin-top: 84px;
+  }
+  h3 { font-size: 18px; line-height: 1.3; margin: 28px 0 10px; scroll-margin-top: 84px; }
+  h4 { font-size: 15px; margin: 20px 0 8px; color: var(--c-fg); scroll-margin-top: 84px; }
+  p { margin: 0 0 12px; }
+  ul, ol { margin: 0 0 12px; padding-left: 22px; }
+  li { margin: 4px 0; }
+  hr { border: 0; border-top: 1px solid var(--c-border); margin: 24px 0; }
+
+  .table-wrap { overflow-x: auto; margin: 0 0 18px; border: 1px solid var(--c-border); border-radius: var(--radius); }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 580px; }
+  th, td { padding: 9px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--c-border); }
+  th { background: var(--c-bg-elev); font-weight: 600; color: var(--c-fg); position: sticky; top: 0; font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--c-bg-elev); }
+  td code, th code { background: var(--c-bg-elev); padding: 1px 5px; border-radius: 4px; font-size: 12.5px; color: var(--c-fg); }
+  [data-theme="dark"] td code, [data-theme="dark"] th code { background: #0b0e13; }
+
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; letter-spacing: .02em; }
+  .pill.ok { background: var(--c-ok-bg); color: var(--c-ok); }
+  .pill.partial { background: var(--c-warn-bg); color: var(--c-warn); }
+  .pill.bad { background: var(--c-bad-bg); color: var(--c-bad); }
+  .pill.na { background: var(--c-na-bg); color: var(--c-na); }
+  .pill.beta { background: var(--c-info-bg); color: var(--c-info); }
+
+  .callout {
+    border-left: 4px solid var(--c-accent);
+    background: var(--c-bg-elev);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  .callout.warn { border-left-color: var(--c-warn); background: var(--c-warn-bg); color: #5a3009; }
+  .callout.tip { border-left-color: var(--c-ok); background: var(--c-ok-bg); color: #1d4a25; }
+  .callout.danger { border-left-color: var(--c-bad); background: var(--c-bad-bg); color: #7a1a16; }
+  .callout.beta { border-left-color: var(--c-info); background: var(--c-info-bg); color: #123d75; }
+  .callout.info { border-left-color: var(--c-info); background: var(--c-info-bg); color: #123d75; }
+  .callout.partial { border-left-color: var(--c-warn); background: var(--c-warn-bg); color: #5a3009; }
+  [data-theme="dark"] .callout.warn { color: #f1c896; }
+  [data-theme="dark"] .callout.tip { color: #a7d8b1; }
+  [data-theme="dark"] .callout.danger { color: #f0a8a4; }
+  [data-theme="dark"] .callout.beta { color: #a8cdff; }
+  [data-theme="dark"] .callout.info { color: #a8cdff; }
+  [data-theme="dark"] .callout.partial { color: #f1c896; }
+  .callout strong { font-weight: 700; }
+  .callout a { color: var(--c-da); text-decoration: underline; }
+  [data-theme="dark"] .callout a { color: var(--c-da); }
+  footer.site a, .source-link a { text-decoration: underline; }
+
+  pre {
+    background: var(--c-bg-code);
+    color: #d1d5db;
+    padding: 14px 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 0 0 14px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    border: 1px solid #1f242c;
+  }
+  pre code { color: inherit; background: transparent; padding: 0; }
+
+  /* Blocos de código com abas por linguagem (Python / TypeScript / REST) */
+  .code-tabs { display: flex; gap: 4px; margin-bottom: 0; }
+  .code-tab {
+    border: 1px solid var(--c-border); border-bottom: none; background: var(--c-bg-elev);
+    color: var(--c-fg-muted); padding: 6px 14px; border-radius: 8px 8px 0 0;
+    cursor: pointer; font: inherit; font-size: 12.5px; font-weight: 600;
+  }
+  .code-tab[aria-selected="true"] { background: var(--c-bg-code); color: #f0e9e1; border-color: #2a241e; }
+  .code-pane { display: none; }
+  .code-pane[data-active="true"] { display: block; }
+  .code-group pre { border-radius: 0 8px 8px 8px; margin-top: -1px; }
+
+  details {
+    border: 1px solid var(--c-border); border-radius: var(--radius);
+    padding: 8px 14px; margin: 6px 0 10px; background: var(--c-bg-elev);
+  }
+  details > summary {
+    cursor: pointer; font-weight: 600; padding: 4px 0; list-style: none;
+    font-size: 13.5px;
+  }
+  details > summary::-webkit-details-marker { display: none; }
+  details > summary::before { content: "▸ "; color: var(--c-fg-soft); display: inline-block; }
+  details[open] > summary::before { content: "▾ "; }
+  details > .ref-body { padding: 8px 0 4px; }
+
+  .source-link {
+    font-size: 12.5px; color: var(--c-fg-muted);
+    margin: 6px 0 24px; padding: 6px 10px;
+    background: var(--c-bg-elev); border-left: 3px solid var(--c-da);
+    border-radius: 0 6px 6px 0;
+  }
+  .source-link a { color: var(--c-da); font-weight: 600; }
+
+  .figure { margin: 20px 0 26px; }
+  .figure svg { width: 100%; height: auto; display: block; border: 1px solid var(--c-border); border-radius: 10px; }
+  .figure figcaption { font-size: 12.5px; color: var(--c-fg-muted); margin-top: 10px; line-height: 1.5; padding: 0 4px; }
+
+  footer.site {
+    margin: 64px 0 24px; padding: 24px 0; border-top: 1px solid var(--c-border);
+    color: var(--c-fg-muted); font-size: 13px;
+  }
+
+  @media (max-width: 1080px) {
+    .layout { grid-template-columns: 1fr; }
+    nav.toc { position: static; max-height: none; border-right: none; border-bottom: 1px solid var(--c-border); padding-bottom: 16px; margin-bottom: 16px; }
+    main { max-width: 100%; }
+    .hero h1 { font-size: 24px; }
+  }
+  @media print {
+    nav.toc, header.site, .theme-btn { display: none; }
+    .layout { grid-template-columns: 1fr; }
+    a { color: inherit; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+    details[open] { padding: 8px 0; }
+    details > summary { display: none; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Pular para o conteúdo</a>
+
+<header class="site">
+  <div class="header-row">
+    <div class="brand">Ferramentas, MCP &amp; RAG <small>Núcleo agnóstico de agentes</small></div>
+    <div class="header-right">
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-06-25</strong></span>
+      <span class="badge da">Núcleo · agnóstico de provider</span>
+      <span class="badge info">Conceitual + referência</span>
+      <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="Sumário">
+    <div class="toc-section">Início</div>
+    <ol>
+      <li><a href="#sobre-guia">Sobre este guia</a></li>
+      <li><a href="#fontes-oficiais">Fontes &amp; verificação</a></li>
+      <li><a href="#mapa-do-nucleo">Mapa do núcleo</a></li>
+    </ol>
+
+    <div class="toc-section">Parte 1 — Capabilities &amp; fronteiras</div>
+    <ol>
+      <li><a href="#ontologia-tools">1. Ontologia de tools e capabilities</a></li>
+      <li><a href="#tools-openai-fases">2. Tools OpenAI &amp; fases de execução</a></li>
+      <li><a href="#mcp-como-fronteira">3. MCP como fronteira formal</a></li>
+      <li><a href="#rag-capability">4. RAG como capability</a></li>
+    </ol>
+
+    <div class="toc-section">Parte 2 — Contratos de tool</div>
+    <ol>
+      <li><a href="#tool-result-envelopes">5. Tool result envelopes</a></li>
+      <li><a href="#design-de-schema-de-tool">6. Design de schema de tool</a></li>
+      <li><a href="#multimodal">7. Multimodal (princípio + cross-link)</a></li>
+    </ol>
+
+    <div class="toc-section">Parte 3 — Segurança &amp; operação</div>
+    <ol>
+      <li><a href="#seguranca-ferramentas">8. Segurança de ferramentas</a></li>
+      <li><a href="#fluxo-de-aprovacao-hitl">9. Fluxo de aprovação (HITL)</a></li>
+      <li><a href="#fan-out-e-wind-down">10. Fan-out e wind-down</a></li>
+      <li><a href="#hardening-de-mcp-server">11. Hardening de MCP server</a></li>
+      <li><a href="#metricas-rag">12. Métricas para RAG &amp; arquivos</a></li>
+    </ol>
+
+    <div class="toc-section">Referência</div>
+    <ol>
+      <li><a href="#checklist-tools">Checklist de tools</a></li>
+      <li><a href="#verificacao">Notas de verificação</a></li>
+    </ol>
+  </nav>
+
+  <main id="main">
+
+    <div class="hero">
+      <h1>Ferramentas, MCP &amp; RAG</h1>
+      <p class="lead">
+        Ferramentas são <strong>superfície de autoridade</strong>. Este capítulo trata cada tool como
+        uma capability versionada com contrato de entrada e saída, side-effect level, aprovação, timeout,
+        idempotência, provenance e política de dados. Cobre a fronteira formal do MCP (spec
+        <strong>2025-11-25</strong>), RAG como capability (não despejo de chunks), envelopes de resultado,
+        segurança, aprovação humana e métricas — tudo agnóstico de provider.
+      </p>
+      <div class="hero-meta">
+        <span class="badge da">Núcleo · agnóstico de provider</span>
+        <span class="badge info">Conceitual + referência</span>
+        <span class="badge ok">SOTA · verificado 2026-06-25</span>
+      </div>
+    </div>
+
+    <section id="sobre-guia">
+      <h2>Sobre este guia</h2>
+      <p>
+        Este é um guia <strong>para IA e humanos</strong>: combina o modelo conceitual de ferramentas
+        como capabilities com contratos tipados prontos para copiar (capability, tool result envelope,
+        schema estrito) e tabelas de decisão de segurança. A prosa é em PT-BR; nomes de campos,
+        parâmetros e código permanecem em inglês.
+      </p>
+      <div class="callout">
+        <strong>Princípio central:</strong> o modelo <em>solicita</em> ações; o runtime <em>autoriza,
+        valida e executa</em>. Credenciais, <code>tenant_id</code> confiável e a aprovação final nunca
+        vêm de campos preenchidos pelo modelo — vêm do runtime, do usuário autenticado ou de um workflow
+        humano. Esse é o mesmo invariante do
+        <a href="guia_arquitetura_orquestracao.html#capability-registry">capability registry</a> do
+        capítulo de arquitetura; aqui ele é aplicado a tools, MCP e RAG.
+      </div>
+      <div class="callout warn">
+        <strong>Fronteira de escopo (cross-link, sem duplicar):</strong> a mecânica completa de
+        <em>paralelismo</em> de tools por provider (schedulers, truth tables, built-ins) vive em
+        <a href="guia_paralelismo_tools_openai_gemini_anthropic.html">Paralelismo &amp; tools</a>; a
+        leitura de <em>PDF, imagem e planilha</em> em profundidade vive em
+        <a href="guia_multimodal.html">Multimodal</a>. Aqui tratamos do <strong>contrato</strong> e da
+        <strong>fronteira de segurança</strong> — o que vale para qualquer provider.
+      </div>
+    </section>
+
+    <section id="fontes-oficiais">
+      <h2>Fontes &amp; verificação</h2>
+      <p>
+        Os fatos perecíveis (parâmetros de tools, versão da spec MCP, restrições de paralelismo) foram
+        conferidos contra a documentação oficial em <strong>2026-06-10</strong> e consolidados na folha
+        de fatos SOTA do projeto. Os contratos de dados (capability, envelope, schema) são recomendações
+        de engenharia derivadas dos padrões oficiais.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Tema</th><th>Fonte oficial</th></tr></thead>
+        <tbody>
+          <tr><td>OpenAI — tools (built-ins, function tools, MCP remoto, tool search)</td><td><a href="https://developers.openai.com/api/docs/guides/tools" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/tools</a></td></tr>
+          <tr><td>OpenAI — function calling (<code>parallel_tool_calls</code>, <code>tool_choice</code>)</td><td><a href="https://developers.openai.com/api/docs/guides/function-calling" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/function-calling</a></td></tr>
+          <tr><td>MCP — especificação <strong>2025-11-25</strong> (arquitetura host/client/server)</td><td><a href="https://modelcontextprotocol.io/specification/2025-11-25" target="_blank" rel="noopener">modelcontextprotocol.io/specification/2025-11-25</a></td></tr>
+          <tr><td>MCP — tools (schemas, <code>structuredContent</code>, <code>outputSchema</code>, HITL)</td><td><a href="https://modelcontextprotocol.io/specification/2025-11-25/server/tools" target="_blank" rel="noopener">.../2025-11-25/server/tools</a></td></tr>
+          <tr><td>MCP — elicitation (consentimento/entrada do usuário)</td><td><a href="https://modelcontextprotocol.io/specification/2025-11-25/client/elicitation" target="_blank" rel="noopener">.../2025-11-25/client/elicitation</a></td></tr>
+          <tr><td>Google — document processing (assets multimodais)</td><td><a href="https://ai.google.dev/gemini-api/docs/document-processing" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/document-processing</a></td></tr>
+        </tbody>
+      </table></div>
+      <p style="font-size:13px;color:var(--c-fg-muted)">
+        Legenda dos selos: <span class="pill ok">Verificado</span> confirmado na doc oficial ·
+        <span class="pill beta">Novo</span> recurso recente ·
+        <span class="pill partial">UNVERIFIED</span> não confirmado dentro do orçamento de verificação ·
+        <span class="pill na">N/D</span> não documentado.
+      </p>
+    </section>
+
+    <section id="mapa-do-nucleo">
+      <h2>Mapa do núcleo — onde cada assunto mora</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Você procura…</th><th>Vá para</th></tr></thead>
+        <tbody>
+          <tr><td>Primitivos, capability registry, active plan, skeleton de loop</td><td><a href="guia_arquitetura_orquestracao.html">Núcleo · Arquitetura &amp; orquestração</a></td></tr>
+          <tr><td>Ledger canônico, compaction, asset registry detalhado, budgets</td><td><a href="guia_estado_contexto_memoria.html">Núcleo · Estado, contexto &amp; memória</a></td></tr>
+          <tr><td>Parâmetros de provider, adapters, structured output por API</td><td><a href="guia_providers_adapters.html">Núcleo · Providers &amp; adapters</a></td></tr>
+          <tr><td>Guardrails, tracing/cost ledger, evals, runbooks, threat model</td><td><a href="guia_operacao_seguranca_evals.html">Núcleo · Operação, segurança &amp; evals</a></td></tr>
+          <tr><td>Paralelismo de tools (scheduler, built-ins, truth tables) por provider</td><td><a href="guia_paralelismo_tools_openai_gemini_anthropic.html">Paralelismo &amp; tools</a></td></tr>
+          <tr><td>Leitura de PDF/imagem/planilha, visual RAG, OCR</td><td><a href="guia_multimodal.html">Multimodal</a></td></tr>
+          <tr><td>Construir um MCP server do zero (TypeScript/Python, spec 2025-11-25)</td><td>skill <code>mcp-server-builder</code></td></tr>
+          <tr><td>MCP por framework (Agents SDK / Claude / Deep Agents / ADK)</td><td><a href="guia_agents_sdk_orquestracao.html">Agents SDK</a> · <a href="guia_claude_api.html">Claude API</a> · <a href="guia_deepagents.html">Deep Agents</a> · <a href="guia_google_adk_orquestracao.html">Google ADK</a></td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <!-- ===================== PARTE 1 ===================== -->
+    <section class="chapter" id="parte-capabilities">
+      <h2 style="border-bottom:3px solid var(--c-da);padding:14px 0 10px;font-size:28px">Parte 1 — Capabilities &amp; fronteiras</h2>
+      <p>A taxonomia das ferramentas, como a OpenAI separa fases de execução, o MCP como fronteira formal
+      de segurança e o RAG tratado como capability — não como despejo de chunks.</p>
+    </section>
+
+    <section id="ontologia-tools">
+      <h2>1. Ontologia de tools e capabilities</h2>
+      <p>
+        "Tool" é um termo sobrecarregado. Antes de projetar segurança ou paralelismo, separe os tipos —
+        cada um tem fronteira de execução e risco diferentes. Todos são registrados sob o mesmo
+        <a href="guia_arquitetura_orquestracao.html#capability-registry">contrato de capability</a>; o que
+        muda é onde o código roda e quem é responsável por validá-lo.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Tipo</th><th>Onde executa</th><th>Quem valida/autoriza</th><th>Risco característico</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Function tool</strong></td><td>No cliente/orquestrador.</td><td>O seu runtime (schema + regra de negócio).</td><td>Schema vago, side effect sem aprovação, output gigante.</td></tr>
+          <tr><td><strong>Provider built-in</strong></td><td>No lado do provider (web/file/code).</td><td>O provider executa; você governa exposição e billing.</td><td>Presumir retenção/ZDR/paralelismo sem validar a doc.</td></tr>
+          <tr><td><strong>MCP tool</strong></td><td>Em um servidor MCP (host/client/server).</td><td>O host controla permissões; o servidor resolve auth.</td><td>Tratar MCP como túnel irrestrito para ações perigosas.</td></tr>
+          <tr><td><strong>MCP resource</strong></td><td>Servidor MCP expõe dado/documento.</td><td>O host filtra por tenant e minimiza exposição.</td><td>Recurso retornado tratado como instrução (injection).</td></tr>
+          <tr><td><strong>RAG (capability)</strong></td><td>No retriever/index, atrás de uma tool.</td><td>O runtime reduz, atribui provenance e aplica caps.</td><td>Injetar chunks brutos como verdade automática.</td></tr>
+          <tr><td><strong>Agent-as-tool</strong></td><td>Subagente chamado como tool.</td><td>O parent envia pacote mínimo e consome envelope.</td><td>O child despejar histórico bruto no parent.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout tip">
+        <strong>Por que isso importa para segurança:</strong> a fronteira de execução define quem pode
+        injetar instruções no agente. Um resource MCP e um chunk de RAG são <em>dados não confiáveis</em>
+        — nunca comandos. Esse princípio reaparece no
+        <a href="#hardening-de-mcp-server">hardening de MCP (§11)</a> e na
+        <a href="#seguranca-ferramentas">segurança de ferramentas (§8)</a>.
+      </div>
+    </section>
+
+    <section id="tools-openai-fases">
+      <h2>2. Tools OpenAI: built-ins, functions e fases de execução</h2>
+      <p>
+        Na Responses API, <code>tools</code> pode incluir built-ins, MCP tools e function tools;
+        <code>tool_choice</code> controla a seleção; <code>parallel_tool_calls</code> permite que o modelo
+        emita várias function calls; <code>max_tool_calls</code> limita as chamadas de built-in
+        processadas numa response. A documentação oficial ressalta que <strong>parallel function calling
+        não é possível ao usar built-in tools</strong> — então o padrão seguro é separar fases.
+      </p>
+      <div class="figure">
+        <svg viewBox="0 0 760 220" role="img" aria-labelledby="phase-title phase-desc" xmlns="http://www.w3.org/2000/svg">
+          <title id="phase-title">Separação de fases de execução de tools</title>
+          <desc id="phase-desc">Fase A: recuperação e built-ins permitidos. Fase B: funções externas paralelizáveis. Fase C: síntese sem novas tools perigosas.</desc>
+          <style>
+            .pb{fill:var(--c-bg-elev);stroke:var(--c-border-strong);stroke-width:1.5;}
+            .pbh{fill:var(--c-da-bg);stroke:var(--c-da);stroke-width:2;}
+            .pl{fill:var(--c-fg);font-family:var(--font-sans);font-size:13px;font-weight:700;}
+            .ps{fill:var(--c-fg-muted);font-family:var(--font-sans);font-size:11px;}
+            .pa{stroke:var(--c-da);stroke-width:2;fill:none;marker-end:url(#pah);}
+          </style>
+          <defs><marker id="pah" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="var(--c-da)"/></marker></defs>
+          <rect class="pb" x="20"  y="40" width="210" height="110" rx="10"/>
+          <text class="pl" x="125" y="68" text-anchor="middle">Fase A</text>
+          <text class="ps" x="125" y="92" text-anchor="middle">recuperação / built-ins</text>
+          <text class="ps" x="125" y="110" text-anchor="middle">permitidos</text>
+          <text class="ps" x="125" y="132" text-anchor="middle">obter evidências e registrar</text>
+          <rect class="pb" x="275" y="40" width="210" height="110" rx="10"/>
+          <text class="pl" x="380" y="68" text-anchor="middle">Fase B</text>
+          <text class="ps" x="380" y="92" text-anchor="middle">funções externas</text>
+          <text class="ps" x="380" y="110" text-anchor="middle">paralelizáveis</text>
+          <text class="ps" x="380" y="132" text-anchor="middle">client-side · validação · caps</text>
+          <rect class="pbh" x="530" y="40" width="210" height="110" rx="10"/>
+          <text class="pl" x="635" y="68" text-anchor="middle">Fase C</text>
+          <text class="ps" x="635" y="92" text-anchor="middle">síntese</text>
+          <text class="ps" x="635" y="110" text-anchor="middle">sem novas tools perigosas</text>
+          <text class="ps" x="635" y="132" text-anchor="middle">resposta com citações</text>
+          <path class="pa" d="M230,95 L273,95"/>
+          <path class="pa" d="M485,95 L528,95"/>
+        </svg>
+        <figcaption>A separação de fases melhora a previsibilidade, reduz loops e evita que uma built-in
+        consuma orçamento antes das function calls necessárias. Built-ins e function calls paralelas não
+        coexistem no mesmo boundary.</figcaption>
+      </div>
+      <div class="callout warn">
+        <strong>Limite verificado:</strong> "parallel function calling não é possível ao usar built-in
+        tools" é uma restrição atual da OpenAI (folha de fatos SOTA, 2026-05-25). A mecânica completa de
+        paralelismo — quem paraleliza o quê em cada provider, schedulers recomendados, truth tables — está
+        em <a href="guia_paralelismo_tools_openai_gemini_anthropic.html">Paralelismo &amp; tools</a>.
+        Aqui fica apenas o padrão de orquestração (fases).
+      </div>
+      <div class="source-link">Fontes oficiais: <a href="https://developers.openai.com/api/docs/guides/tools" target="_blank" rel="noopener">OpenAI tools guide</a> · <a href="https://developers.openai.com/api/docs/guides/function-calling" target="_blank" rel="noopener">OpenAI function calling guide</a>.</div>
+    </section>
+
+    <section id="mcp-como-fronteira">
+      <h2>3. MCP como fronteira formal</h2>
+      <p>
+        O Model Context Protocol define uma arquitetura host/client/server sobre JSON-RPC, com tools,
+        resources, prompts e outras primitivas. Use MCP quando quiser expor capabilities reusáveis para
+        muitos agentes/hosts, com schemas e fronteiras de segurança claras. <strong>Não</strong> use MCP
+        como desculpa para expor um shell irrestrito. A versão alvo do super-guia é a spec
+        <strong>2025-11-25</strong>.
+      </p>
+      <div class="callout warn">
+        <strong>Próxima revisão MCP — alvo 2026-07-28 (ainda em <em>draft</em>; mudanças seguem entrando até a publicação — verificado 2026-06-11):</strong> protocolo
+        <em>stateless</em> sem handshake <code>initialize</code>/<code>Mcp-Session-Id</code> (versão,
+        identidade e capabilities passam a viajar em <code>_meta</code>), novo <code>server/discover</code>,
+        <code>subscriptions/listen</code> (substitui o GET e <code>resources/subscribe</code>/<code>unsubscribe</code>), Tasks vira a extensão <code>io.modelcontextprotocol/tasks</code>
+        e Roots/Sampling/Logging ficam deprecados. Itens mais recentes do draft: <strong>MRTR</strong> (Multi Round-Trip Requests, SEP-2322 — substitui requests iniciadas pelo servidor como <code>sampling/createMessage</code> por <code>inputRequests</code>/<code>inputResponses</code>), interface <code>CacheableResult</code> (<code>ttlMs</code>/<code>cacheScope</code> em <code>tools/list</code> &amp; afins, SEP-2549), headers obrigatórios <code>Mcp-Method</code>/<code>Mcp-Name</code> no Streamable HTTP, e deprecação do OAuth Dynamic Client Registration (RFC 7591) em favor de Client ID Metadata Documents. No SDK Python, o <code>mcp</code> <strong>v2.0.0a1</strong> (alpha, 2026-06-11) antecipa a arquitetura nova — <code>FastMCP</code> renomeado para <code>MCPServer</code>, pipeline <em>Dispatcher</em> no lugar de <code>ServerSession</code>; v2.0.0 estável tem alvo em 2026-07-28, junto com a spec. Planeje a adoção desde já; a <strong>2025-11-25</strong>
+        segue sendo a revisão vigente hoje (SDK estável: <code>mcp</code> 1.27.2).
+      </div>
+      <div class="figure">
+        <svg viewBox="0 0 760 230" role="img" aria-labelledby="mcp-title mcp-desc" xmlns="http://www.w3.org/2000/svg">
+          <title id="mcp-title">Arquitetura host/client/server do MCP</title>
+          <desc id="mcp-desc">Um host agentic com três clients MCP, cada um falando com um servidor MCP distinto: conhecimento interno, ações de negócio e ferramentas de arquivo.</desc>
+          <style>
+            .mb{fill:var(--c-bg-elev);stroke:var(--c-border-strong);stroke-width:1.5;}
+            .mbh{fill:var(--c-da-bg);stroke:var(--c-da);stroke-width:2;}
+            .ml{fill:var(--c-fg);font-family:var(--font-sans);font-size:12px;font-weight:600;}
+            .ms{fill:var(--c-fg-muted);font-family:var(--font-sans);font-size:10.5px;}
+            .ma{stroke:var(--c-da);stroke-width:1.8;fill:none;marker-end:url(#mah);}
+          </style>
+          <defs><marker id="mah" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="var(--c-da)"/></marker></defs>
+          <rect class="mbh" x="280" y="14" width="200" height="50" rx="10"/>
+          <text class="ml" x="380" y="36" text-anchor="middle">Host agentic</text>
+          <text class="ms" x="380" y="52" text-anchor="middle">permissões · consentimento · agregação</text>
+          <rect class="mb" x="60"  y="100" width="180" height="40" rx="8"/><text class="ml" x="150" y="124" text-anchor="middle">MCP client A</text>
+          <rect class="mb" x="290" y="100" width="180" height="40" rx="8"/><text class="ml" x="380" y="124" text-anchor="middle">MCP client B</text>
+          <rect class="mb" x="520" y="100" width="180" height="40" rx="8"/><text class="ml" x="610" y="124" text-anchor="middle">MCP client C</text>
+          <rect class="mb" x="40"  y="178" width="220" height="44" rx="8"/><text class="ml" x="150" y="198" text-anchor="middle">server: conhecimento</text><text class="ms" x="150" y="214" text-anchor="middle">resources + tools read-only</text>
+          <rect class="mb" x="290" y="178" width="180" height="44" rx="8"/><text class="ml" x="380" y="198" text-anchor="middle">server: ações</text><text class="ms" x="380" y="214" text-anchor="middle">tools write (HITL)</text>
+          <rect class="mb" x="500" y="178" width="220" height="44" rx="8"/><text class="ml" x="610" y="198" text-anchor="middle">server: arquivos</text><text class="ms" x="610" y="214" text-anchor="middle">sandbox + allowlist</text>
+          <path class="ma" d="M330,64 L165,98"/>
+          <path class="ma" d="M380,64 L380,98"/>
+          <path class="ma" d="M430,64 L595,98"/>
+          <path class="ma" d="M150,140 L150,176"/>
+          <path class="ma" d="M380,140 L380,176"/>
+          <path class="ma" d="M610,140 L610,176"/>
+        </svg>
+        <figcaption>O host controla permissões, consentimento e agregação. Cada servidor declara suas
+        capabilities no lifecycle e recebe apenas o necessário — nunca a conversa inteira.</figcaption>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Primitiva</th><th>Lado</th><th>Uso correto</th><th>Regra de segurança</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Tool</strong></td><td>servidor</td><td>Ação ou consulta invocável pelo modelo.</td><td>Classificar side effect e exigir aprovação quando necessário.</td></tr>
+          <tr><td><strong>Resource</strong></td><td>servidor</td><td>Dado ou documento acessível pelo host/modelo.</td><td>Filtrar por tenant e minimizar exposição; resource é dado, não comando.</td></tr>
+          <tr><td><strong>Prompt</strong></td><td>servidor</td><td>Template/rotina controlada pelo servidor.</td><td>Versionar e auditar mudanças.</td></tr>
+          <tr><td><strong>Sampling</strong></td><td>cliente</td><td><em>Capability de cliente</em>: o servidor pede ao cliente para rodar uma completação de LLM.</td><td>Controlar consentimento/escopo; o host media o modelo — servidor não chama o modelo direto.</td></tr>
+          <tr><td><strong>Elicitation</strong></td><td>cliente</td><td><em>Capability de cliente</em>: o servidor solicita input estruturado ao usuário via cliente.</td><td>Introduzida em <strong>2025-06-18</strong> (2025-11-25 refina: modo URL, schema/result). Não é o mecanismo geral de aprovação de tools perigosas — isso é separado (host/HITL).</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout beta">
+        <strong>Atribuição de versão (precisa).</strong> Nem tudo é "novo" na 2025-11-25: o
+        <strong>Streamable HTTP</strong> e o framework <strong>OAuth</strong> entraram em
+        <strong>2025-03-26</strong>; <strong>structured tool output</strong>, OAuth Resource Server
+        (Protected Resource Metadata + Resource Indicators) e <strong>elicitation</strong> entraram em
+        <strong>2025-06-18</strong>. A revisão <strong>2025-11-25</strong> adiciona, entre outros,
+        consentimento incremental de escopo, descoberta OIDC, elicitation em modo URL e o default de
+        JSON Schema 2020-12. Cite a revisão certa ao afirmar um recurso.
+      </div>
+      <div class="callout tip">
+        <strong>Construir um servidor MCP:</strong> a skill <code>mcp-server-builder</code> guia a
+        implementação em TypeScript/Python contra a spec 2025-11-25 (Streamable HTTP, OAuth com
+        consentimento incremental de escopo, paginação, tratamento de erros). A integração de MCP em cada
+        framework está nos guias de framework (ver mapa acima).
+      </div>
+      <div class="source-link">Fonte oficial: <a href="https://modelcontextprotocol.io/specification/2025-11-25" target="_blank" rel="noopener">MCP specification 2025-11-25</a> · <a href="https://modelcontextprotocol.io/specification/2025-11-25/server/tools" target="_blank" rel="noopener">server/tools</a>.</div>
+    </section>
+
+    <section id="rag-capability">
+      <h2>4. RAG como capability, não como despejo de chunks</h2>
+      <p>
+        O padrão recomendado é encapsular RAG como uma capability com contrato de input/output. A tool
+        deve retornar um objeto <strong>reduzido</strong>, com evidências, citações, scores, freshness,
+        limitações e campos adequados à síntese. Não injete chunks brutos indiscriminadamente — chunks com
+        score não viram verdade automática, e documentos podem conter prompt injection.
+      </p>
+      <pre><code class="language-json">{
+  "query": "string",
+  "filters": {"tenant_id": "derived_by_runtime", "doc_types": ["policy", "ticket"]},
+  "max_evidence_items": 8,
+  "freshness_required": "2025-01-01..present",
+  "return": {
+    "answerable": true,
+    "summary": "síntese curta do que foi encontrado",
+    "evidence": [
+      {"source_id": "doc:abc", "span": "p. 3 §2", "quote": "trecho curto", "score": 0.82, "hash": "..."}
+    ],
+    "missing_evidence": [],
+    "confidence": "medium"
+  }
+}</code></pre>
+      <div class="callout">
+        <strong>RAG é conteúdo novo neste super-guia</strong> — nenhum guia dedicado o cobre. O contrato
+        acima atravessa quatro pontos: <code>filters.tenant_id</code> derivado pelo runtime (não pelo
+        modelo); <code>evidence</code> com <code>source_id</code>/<code>span</code>/<code>hash</code> para
+        citação verificável; <code>answerable</code>/<code>missing_evidence</code> para forçar lacuna
+        explícita em vez de alucinação; e <code>max_evidence_items</code> como cap de contexto. As
+        <a href="#metricas-rag">métricas de RAG (§12)</a> medem cada um desses campos.
+      </div>
+    </section>
+
+    <!-- ===================== PARTE 2 ===================== -->
+    <section class="chapter" id="parte-contratos">
+      <h2 style="border-bottom:3px solid var(--c-da);padding:14px 0 10px;font-size:28px">Parte 2 — Contratos de tool</h2>
+      <p>O envelope tipado que todo resultado de ferramenta deve usar, as regras de design do schema de
+      entrada e o tratamento de multimodal como asset.</p>
+    </section>
+
+    <section id="tool-result-envelopes">
+      <h2>5. Tool result envelopes</h2>
+      <p>
+        Todo resultado de ferramenta deve voltar em um envelope com status, dados reduzidos, erros,
+        provenance e limites. Mesmo uma <strong>falha</strong> é evidência operacional e deve ser
+        registrada — nunca silenciada.
+      </p>
+      <div class="callout warn">
+        <strong>Este é um payload de aplicação, não o envelope MCP de fio.</strong> O contrato abaixo é a
+        <em>forma recomendada do super-guia</em> para o conteúdo de um resultado de tool. No protocolo MCP,
+        o resultado de <code>tools/call</code> (<code>CallToolResult</code>) usa <code>content[]</code>
+        (blocos), <code>structuredContent</code> (dados tipados) e <code>isError</code>. Ao expor isto via
+        MCP, coloque este objeto em <code>structuredContent</code> (e espelhe um resumo em
+        <code>content[]</code>) — não o devolva como se fosse o <code>CallToolResult</code> inteiro.
+      </div>
+      <pre><code class="language-json">{
+  "tool_result": {
+    "tool_call_id": "call_123",
+    "capability_id": "read_spreadsheet.v1",
+    "status": "success | partial | error | denied | timeout",
+    "summary": "o que a ferramenta encontrou em até N tokens",
+    "data": {"rows_sampled": 100, "columns": ["..."], "findings": []},
+    "provenance": [{"asset_id": "asset_1", "sheet": "Q1", "range": "A1:G120", "sha256": "..."}],
+    "tokens_estimate": 700,
+    "redactions": ["tenant_secret", "personal_identifier"],
+    "next_allowed_actions": ["ask_user", "query_more", "finalize"]
+  }
+}</code></pre>
+      <div class="callout tip">
+        <strong>Por que <code>next_allowed_actions</code>:</strong> o envelope não só devolve dados — ele
+        guia o próximo passo do loop dentro da política. Combinado com o
+        <code>status</code> estruturado, permite autocorreção (em <code>error</code>/<code>partial</code>)
+        sem vazar segredos e sem o modelo inventar a próxima ação. O envelope é ingerido no ledger do
+        <a href="guia_estado_contexto_memoria.html#ledger-canonico">capítulo de estado</a>.
+      </div>
+    </section>
+
+    <section id="design-de-schema-de-tool">
+      <h2>6. Regras de design de schema de tool</h2>
+      <p>O schema de entrada é a primeira linha de defesa. Schemas frouxos transferem decisão de segurança
+      para o modelo — exatamente o que se quer evitar.</p>
+      <ul>
+        <li>☐ Use nomes de campos específicos, não <code>data</code>, <code>payload</code> ou <code>query</code> genéricos sem constraints.</li>
+        <li>☐ Defina enums para modos críticos; evite strings livres para ações perigosas.</li>
+        <li>☐ Separe filtros <em>sugeridos pelo modelo</em> de filtros <em>impostos pelo runtime</em>.</li>
+        <li>☐ Adicione <code>dry_run</code>, <code>idempotency_key</code> e <code>approval_token</code> quando houver side effect.</li>
+        <li>☐ Retorne status estruturado: <code>success</code>, <code>partial</code>, <code>error</code>, <code>denied</code>, <code>timeout</code>.</li>
+        <li>☐ Inclua provenance e limites de confiança; não retorne apenas texto narrativo.</li>
+      </ul>
+      <pre><code class="language-json">{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["subject", "intent", "max_results"],
+  "properties": {
+    "subject": {"type": "string", "minLength": 3, "maxLength": 200},
+    "intent": {"type": "string", "enum": ["retrieve", "compare", "summarize"]},
+    "max_results": {"type": "integer", "minimum": 1, "maximum": 10}
+  }
+}</code></pre>
+      <div class="callout warn">
+        <strong><code>additionalProperties: false</code> quando suportado.</strong> Schema estrito impede
+        que o modelo "invente" campos que o runtime não validou. A aderência ao schema (structured output)
+        por provider — OpenAI <code>text.format</code>, Anthropic <code>output_config.format</code>,
+        Gemini <code>response_json_schema</code> — está no
+        <a href="guia_providers_adapters.html">capítulo de providers</a>. O <code>inputSchema</code> de uma
+        tool MCP é JSON Schema válido; <strong>mas</strong> os schemas de structured output de cada provider
+        aceitam apenas <em>subconjuntos</em> de JSON Schema (constraints como <code>minimum</code>/
+        <code>maxLength</code> podem ser ignoradas ou rejeitadas) — valide contra o subconjunto do provider,
+        não assuma portabilidade 1:1.
+      </div>
+    </section>
+
+    <section id="multimodal">
+      <h2>7. Multimodal: o princípio (e o cross-link)</h2>
+      <p>
+        A regra universal de multimodal é simples: <strong>arquivos entram por um asset registry, não
+        pelo prompt</strong>. Tipo, tamanho, hash, classificação, origem, permissões, parser usado, versão
+        do parser e provenance de trechos viram metadados; o modelo recebe somente a projeção útil ao
+        turno. O pipeline:
+      </p>
+      <pre class="diagram">upload/anexo
+  → asset registry + hash + classificação
+  → escolha de parser: texto nativo | visão multimodal | tabela/planilha | OCR de último recurso
+  → extração com provenance e bounding/posição quando aplicável
+  → redução / caps
+  → RAG ou tool result tipado
+  → projeção mínima ao modelo</pre>
+      <div class="callout beta">
+        <strong>Profundidade no guia dedicado.</strong> Como extrair PDF textual vs escaneado, quando usar
+        visão direta vs OCR de último recurso, leitura de planilha sem despejar o workbook, visual RAG e
+        reidratação de imagens antigas, e os detalhes operacionais por SDK estão inteiramente em
+        <a href="guia_multimodal.html">Multimodal</a>. O <em>asset registry</em> em si (campos,
+        <code>projection_policy</code>) está no
+        <a href="guia_estado_contexto_memoria.html#asset-registry">capítulo de estado</a>. Aqui multimodal
+        é só uma fonte de tool results/evidência tipada — não reescrevemos o guia dedicado.
+      </div>
+      <div class="callout danger">
+        <strong>Código/shell nunca por sugestão do modelo:</strong> execução de código, shell ou rede vai
+        para sandbox com allowlist, timeout e captura de stdout/stderr — e jamais executa comandos
+        sugeridos pelo modelo sem política. Ver <a href="#seguranca-ferramentas">segurança de
+        ferramentas (§8)</a>.
+      </div>
+      <div class="source-link">Fonte oficial (exemplo de processamento de documentos): <a href="https://ai.google.dev/gemini-api/docs/document-processing" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/document-processing</a>.</div>
+    </section>
+
+    <!-- ===================== PARTE 3 ===================== -->
+    <section class="chapter" id="parte-seguranca">
+      <h2 style="border-bottom:3px solid var(--c-da);padding:14px 0 10px;font-size:28px">Parte 3 — Segurança &amp; operação</h2>
+      <p>Níveis de risco e política mínima por tool, o fluxo de aprovação com human-in-the-loop, o controle
+      de fan-out/wind-down, o hardening de servidores MCP e as métricas de RAG.</p>
+    </section>
+
+    <section id="seguranca-ferramentas">
+      <h2>8. Segurança de ferramentas</h2>
+      <p>Classifique cada tool por side-effect level e aplique a política mínima correspondente. O nível
+      decide o grau de automação aceitável.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Nível</th><th>Exemplos</th><th>Política mínima</th></tr></thead>
+        <tbody>
+          <tr><td><span class="pill ok">none / read-only</span></td><td>Busca, leitura de docs, cálculo local sem side effect.</td><td>Auto permitido com caps e logging.</td></tr>
+          <tr><td><span class="pill ok">write_low</span></td><td>Criar rascunho, salvar nota, gerar arquivo local.</td><td>Auto ou aprovação leve conforme contexto.</td></tr>
+          <tr><td><span class="pill partial">write_high</span></td><td>Enviar mensagem, alterar registro, atualizar sistema externo.</td><td>Aprovação explícita e preview.</td></tr>
+          <tr><td><span class="pill bad">financial / legal / security</span></td><td>Pagamento, contrato, acesso, deleção, permissão.</td><td>Human-in-the-loop obrigatório, idempotência e dupla validação.</td></tr>
+          <tr><td><span class="pill bad">dangerous execution</span></td><td>Shell, rede, código arbitrário, acesso a secrets.</td><td>Sandbox, allowlist, bloqueio por padrão e revisão.</td></tr>
+        </tbody>
+      </table></div>
+      <ul>
+        <li>☐ Argumentos de tool são validados por schema <em>e</em> por regra de negócio.</li>
+        <li>☐ Auth/tenant vêm do runtime, nunca de campos livres preenchidos pelo modelo.</li>
+        <li>☐ Tool outputs têm limite de tamanho e redaction antes de voltar ao modelo.</li>
+        <li>☐ Side effects são idempotentes ou têm confirmação humana.</li>
+        <li>☐ Traces registram quem pediu, quem aprovou, o que executou e o que retornou.</li>
+      </ul>
+      <div class="callout tip">
+        <strong>Cross-link:</strong> os guardrails de entrada/tool/saída em três pontos, o threat model de
+        agentes (prompt injection, confused deputy, BOLA/IDOR em tools) e os gates de eval de segurança
+        estão em <a href="guia_operacao_seguranca_evals.html">Operação, segurança &amp; evals</a>.
+      </div>
+    </section>
+
+    <section id="fluxo-de-aprovacao-hitl">
+      <h2>9. Fluxo de aprovação de tool (HITL)</h2>
+      <p>
+        O caminho de uma tool call, do emissor (modelo) até o ledger, passa por validações que o modelo
+        não controla. O modelo nunca fornece credenciais, <code>tenant_id</code> confiável ou a aprovação
+        final.
+      </p>
+      <pre class="diagram">model emits tool_call
+  → schema validation
+  → policy validation
+  → side-effect classification
+  → auth/tenant injection by runtime
+  → human approval if required
+  → execution in sandbox/client/server
+  → reduced tool_result
+  → ledger + trace + projection</pre>
+      <div class="callout warn">
+        <strong>Timing da aprovação importa.</strong> Para side effects altos, a aprovação deve ser
+        <em>block-until-validated</em> (a execução só ocorre após o humano aprovar), não assíncrona depois
+        do fato. O MCP 2025-11-25 prevê <em>elicitation</em> para coletar consentimento/entrada do
+        usuário; tools MCP devem expor indicadores claros ao usuário quando invocadas. O HITL por
+        framework (interrupt do LangGraph, Tool Confirmation do ADK, approvals do Agents SDK) está nos
+        guias de framework.
+      </div>
+      <div class="source-link">Fonte oficial: <a href="https://modelcontextprotocol.io/specification/2025-11-25/client/elicitation" target="_blank" rel="noopener">MCP elicitation 2025-11-25</a>.</div>
+    </section>
+
+    <section id="fan-out-e-wind-down">
+      <h2>10. Fan-out e wind-down</h2>
+      <p>
+        Fan-out é útil para pesquisa, RAG multi-índice, avaliação multi-modelo ou subagentes especialistas
+        — mas deve ser <strong>encerrado por política</strong>. O runtime precisa saber quando parar de
+        abrir novas chamadas e reservar orçamento para a síntese.
+      </p>
+      <pre><code class="language-python">if tokens_remaining &lt; final_reserve_tokens:
+    disable_new_tools()
+    synthesize_from_current_evidence()
+
+if fanout_results_total_tokens &gt; aggregate_cap:
+    rank_reduce_before_parent_ingest()
+
+if tool_errors_consecutive &gt;= threshold:
+    switch_strategy_or_ask_user()</code></pre>
+      <div class="callout">
+        <strong>Wind-down é o par do fan-out.</strong> Abrir muitas chamadas sem reservar a resposta final
+        é o antipadrão "sem wind-down" do
+        <a href="guia_arquitetura_orquestracao.html#blueprint-sota">capítulo de arquitetura</a>. O
+        <code>final_reserve_tokens</code> vem do active plan; a reserva inclui reasoning/thinking (ver
+        <a href="guia_estado_contexto_memoria.html#budgets-e-invariantes">budgets</a>). A latência e o
+        custo do fan-out por provider estão em
+        <a href="guia_paralelismo_tools_openai_gemini_anthropic.html">Paralelismo &amp; tools</a>.
+      </div>
+    </section>
+
+    <section id="hardening-de-mcp-server">
+      <h2>11. Hardening de MCP server</h2>
+      <p>
+        A especificação MCP destaca consentimento, controle do usuário, privacidade e segurança de
+        ferramentas. Estes são os controles operacionais que transformam esses princípios em prática:
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Controle</th><th>Implementação prática</th></tr></thead>
+        <tbody>
+          <tr><td>Tool allowlist</td><td>Expor somente as tools necessárias ao host/agent.</td></tr>
+          <tr><td>Auth contextual</td><td>Resolver usuário/tenant no servidor ou gateway, não por argumento livre.</td></tr>
+          <tr><td>Rate limit</td><td>Limites por tool, tenant e agent.</td></tr>
+          <tr><td>Output caps</td><td>Reduzir respostas grandes antes de retornar ao host.</td></tr>
+          <tr><td>Audit log</td><td>Registrar <code>request_id</code>, actor, tool, args hash, status e duration.</td></tr>
+          <tr><td>Prompt-injection boundary</td><td>Recursos retornados são dados, não instruções.</td></tr>
+          <tr><td>Human-in-loop</td><td>Obrigatório para side effects altos.</td></tr>
+          <tr><td>Transporte (Streamable HTTP)</td><td>Validar o header <code>Origin</code> (responder 403 a origens inválidas) contra DNS rebinding; em servidor local, fazer bind em <code>127.0.0.1</code>, não <code>0.0.0.0</code>; autenticar toda conexão; honrar <code>MCP-Protocol-Version</code>.</td></tr>
+          <tr><td>Sessão</td><td><code>Mcp-Session-Id</code> não-determinístico e seguro; sessão <strong>não</strong> é mecanismo de auth — autenticar cada request.</td></tr>
+          <tr><td>OAuth (Resource Server)</td><td>Validar <strong>audience</strong>/resource do token (Resource Indicators, RFC 8707); expor Protected Resource Metadata; <strong>nunca</strong> repassar tokens de terceiros (token passthrough proibido); consentimento incremental de escopo (2025-11-25).</td></tr>
+          <tr><td>SSRF na descoberta</td><td>Ao buscar metadata OAuth/cards, bloquear IPs privados/link-local e cadeias de redirect; allowlist de hosts.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout danger">
+        <strong>O confused deputy do MCP:</strong> um servidor MCP que confia em <code>tenant_id</code>
+        vindo de um argumento livre pode ser induzido por prompt injection a operar no contexto de outro
+        tenant. Resolva auth/tenant <em>no servidor ou gateway</em> a partir de claims autenticados —
+        nunca de um campo que o modelo preenche.
+      </div>
+      <div class="source-link">Fonte oficial: <a href="https://modelcontextprotocol.io/specification/2025-11-25" target="_blank" rel="noopener">MCP specification 2025-11-25</a>. Para construir o servidor: skill <code>mcp-server-builder</code>.</div>
+    </section>
+
+    <section id="metricas-rag">
+      <h2>12. Métricas para RAG e leitura de arquivos</h2>
+      <p>Cada métrica mapeia a um campo do <a href="#rag-capability">envelope de RAG (§4)</a> e a um gate
+      de qualidade. Sem elas, "o RAG funciona" é uma afirmação não verificável.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Métrica</th><th>O que mede</th><th>Como usar</th></tr></thead>
+        <tbody>
+          <tr><td><code>citation_precision</code></td><td>Se as citações suportam as alegações.</td><td>Gate antes da resposta final.</td></tr>
+          <tr><td><code>recall@k</code></td><td>Se as evidências relevantes aparecem entre os top-k.</td><td>Tuning de retriever/ranker.</td></tr>
+          <tr><td><code>freshness</code></td><td>Idade das fontes usadas.</td><td>Filtrar ou marcar incerteza.</td></tr>
+          <tr><td><code>chunk_coverage</code></td><td>Cobertura de páginas/abas/seções importantes.</td><td>Detectar leitura parcial.</td></tr>
+          <tr><td><code>answerability</code></td><td>Se há evidência suficiente para responder.</td><td>Forçar pergunta ao usuário ou lacuna explícita.</td></tr>
+          <tr><td><code>parser_error_rate</code></td><td>Falhas de extração por tipo de arquivo.</td><td>Escolher parser/visual model/OCR.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout tip">
+        <strong>Onde estes gates rodam:</strong> <code>citation_precision</code> e
+        <code>answerability</code> correspondem aos gates <code>RAG-001</code> e <code>SEC-001</code>
+        (prompt injection) do <a href="guia_operacao_seguranca_evals.html">capítulo de operação</a>.
+        Métricas de retrieval mais profundas (nDCG, MRR, faithfulness) e tuning de retriever são domínio
+        de RAG dedicado — a skill <code>rag-systems</code> cobre a engenharia de retrieval em detalhe.
+      </div>
+    </section>
+
+    <!-- ===================== REFERÊNCIA ===================== -->
+    <section class="ref" id="checklist-tools">
+      <h2>Checklist de tools, MCP &amp; RAG</h2>
+      <p>Gate antes de promover qualquer superfície de ferramentas para produção:</p>
+      <ul>
+        <li>☐ Cada tool é uma capability versionada com contrato de entrada/saída, side-effect level e approval policy.</li>
+        <li>☐ Built-ins e function calls paralelas não coexistem no mesmo boundary (fases separadas).</li>
+        <li>☐ Servidores MCP expõem allowlist mínima; auth/tenant resolvidos no servidor/gateway.</li>
+        <li>☐ RAG retorna envelope reduzido com provenance, score, freshness e <code>answerable</code> — não chunks brutos.</li>
+        <li>☐ Todo tool result usa envelope tipado com <code>status</code> e provenance, inclusive falhas.</li>
+        <li>☐ Side effects altos exigem HITL block-until-validated, idempotency key e preview.</li>
+        <li>☐ Resources MCP e chunks de RAG são tratados como dados não confiáveis (boundary de injection).</li>
+        <li>☐ Fan-out tem aggregate cap e wind-down que reserva a resposta final.</li>
+        <li>☐ Métricas de RAG/arquivo (citation precision, answerability, parser error rate) são gates.</li>
+      </ul>
+    </section>
+
+    <section class="ref" id="verificacao">
+      <h2>Notas de verificação</h2>
+      <ul>
+        <li><span class="pill ok">Resolvido</span> <strong>Spec MCP = 2025-11-25.</strong> Versão alvo reconfirmada contra a doc oficial em 2026-06-10; as primitivas (tools/resources/prompts) e o fluxo HITL valem nesta revisão. <code>structuredContent</code>/<code>outputSchema</code> e elicitation foram introduzidos em <strong>2025-06-18</strong> — a 2025-11-25 refina (ver "Atribuição de versão" no §3). SDK Python de referência: <code>mcp</code> 1.27.2 (PyPI, 2026-06-10).</li>
+        <li><span class="pill ok">Resolvido</span> <strong>Parallel function calling × built-ins (OpenAI).</strong> "Parallel function calling não é possível ao usar built-in tools" — confirmado contra a doc oficial de tools/function calling; daí o padrão de fases.</li>
+        <li><span class="pill ok">Resolvido</span> <strong>Sem duplicação.</strong> Paralelismo profundo fica em Paralelismo &amp; tools; leitura multimodal fica em Multimodal; engenharia de retrieval fica na skill <code>rag-systems</code>. Aqui só o contrato e a fronteira.</li>
+        <li><span class="pill ok">Resolvido</span> <strong>Sem IDs de modelo fixos.</strong> O capítulo cita parâmetros (perenes) e tipos de tool, não modelos (perecíveis).</li>
+        <li><span class="pill partial">UNVERIFIED</span> <strong>Detalhes de built-ins por provider.</strong> O conjunto exato de hosted/built-in tools (web search, file search, code interpreter, computer use, image gen) e suas restrições muda com frequência — consulte os guias de provider e a folha de fatos antes de afirmar disponibilidade específica.</li>
+      </ul>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site">
+  <div style="max-width:1440px;margin:0 auto;padding:0 24px;display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;justify-content:space-between;">
+    <div style="max-width:540px">
+      <div class="brand" style="font-size:15px">Ferramentas, MCP &amp; RAG <small>Núcleo agnóstico de agentes</small></div>
+      <p style="margin:8px 0 0;color:var(--c-fg-muted);font-size:13.5px;line-height:1.55">
+        Capítulo de ferramentas do núcleo agnóstico, construído a partir da documentação oficial pública
+        em <strong>2026-06-10</strong>. Para fatos perecíveis (built-ins por provider, versão de spec),
+        consulte os guias de provider e as
+        <a href="https://modelcontextprotocol.io/specification/2025-11-25" target="_blank" rel="noopener">fontes oficiais</a>.
+      </p>
+    </div>
+    <div style="font-size:13.5px;color:var(--c-fg-muted);line-height:1.7">
+      <div><strong>Crédito de produção</strong></div>
+      <div>Gerado por <strong>subagentes Claude Opus 4.7 (xhigh)</strong></div>
+      <div>revisão e montagem pelo orquestrador · 2026-05-25</div>
+      <div style="margin-top:6px">
+        <span class="badge da">Núcleo · agnóstico de provider</span>
+        <span class="badge info">Conceitual + referência</span>
+      </div>
+    </div>
+    <div style="font-size:12.5px;color:var(--c-fg-soft)">
+      <div><strong>Navegação rápida</strong></div>
+      <div><a href="#ontologia-tools">Ontologia</a> · <a href="#mcp-como-fronteira">MCP</a> · <a href="#rag-capability">RAG</a></div>
+      <div><a href="#seguranca-ferramentas">Segurança</a> · <a href="#checklist-tools">Checklist</a></div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  /* Toggle de tema com persistência em localStorage (chave compartilhada do super-guia). */
+  (function(){
+    var KEY = 'super-guia-theme';
+    var btn = document.getElementById('theme-toggle');
+    var pref = localStorage.getItem(KEY);
+    if (pref) document.documentElement.setAttribute('data-theme', pref);
+    if (btn) btn.addEventListener('click', function(){
+      var cur = document.documentElement.getAttribute('data-theme') || 'light';
+      var nxt = cur === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', nxt);
+      localStorage.setItem(KEY, nxt);
+    });
+  })();
+  /* Scroll-spy: destaca no TOC a seção visível. */
+  (function(){
+    var links = document.querySelectorAll('nav.toc a[href^="#"]');
+    var map = {};
+    links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        var id = e.target.id; if (!map[id]) return;
+        if (e.isIntersecting) {
+          links.forEach(function(l){ l.classList.remove('active'); });
+          map[id].classList.add('active');
+        }
+      });
+    }, { rootMargin: '-40% 0% -55% 0%', threshold: 0 });
+    Object.keys(map).forEach(function(id){ var el = document.getElementById(id); if (el) io.observe(el); });
+  })();
+  /* Abas de código (code-group): clique + navegação por setas. */
+  function activateTab(group, tab){
+    group.querySelectorAll('.code-tab').forEach(function(b){
+      var on = b === tab;
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+      b.setAttribute('tabindex', on ? '0' : '-1');
+    });
+    var lang = tab.dataset.lang;
+    group.querySelectorAll('.code-pane').forEach(function(p){ p.setAttribute('data-active', p.dataset.lang===lang ? 'true' : 'false'); });
+  }
+  document.querySelectorAll('.code-group').forEach(function(group){
+    group.querySelectorAll('.code-pane').forEach(function(p){ p.setAttribute('role', 'tabpanel'); });
+    var tabs = group.querySelectorAll('.code-tab');
+    tabs.forEach(function(b){ b.setAttribute('tabindex', b.getAttribute('aria-selected') === 'true' ? '0' : '-1'); });
+  });
+  document.addEventListener('click', function(e){
+    var t = e.target;
+    if (!t.classList || !t.classList.contains('code-tab')) return;
+    var group = t.closest('.code-group'); if (!group) return;
+    activateTab(group, t);
+  });
+  document.addEventListener('keydown', function(e){
+    var t = e.target;
+    if (!t.classList || !t.classList.contains('code-tab')) return;
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    var group = t.closest('.code-group'); if (!group) return;
+    var tabs = Array.prototype.slice.call(group.querySelectorAll('.code-tab'));
+    var idx = tabs.indexOf(t);
+    var next = e.key === 'ArrowRight' ? (idx + 1) % tabs.length : (idx - 1 + tabs.length) % tabs.length;
+    activateTab(group, tabs[next]);
+    tabs[next].focus();
+    e.preventDefault();
+  });
+</script>
+</body>
+</html>

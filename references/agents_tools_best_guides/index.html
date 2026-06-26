@@ -1,0 +1,903 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Guia Completo de Agentes — Portal</title>
+<meta name="description" content="Portal mestre do Guia Completo de Agentes: porta de entrada única para os guias de orquestração de agentes de IA (núcleo agnóstico, frameworks Agents SDK / LangGraph / Google ADK, providers OpenAI / Anthropic / Google, contexto, tokens, multimodal, paralelismo, skills, operação e segurança). Tese operacional (estado durável vs projeção vs execução), os 4 planos, matriz de navegação tópico→guia e mapa de decisões rápidas. Verificado em 2026-06-25." />
+<meta name="last-checked" content="2026-06-25" />
+<meta name="robots" content="index,follow" />
+<style>
+  :root {
+    --c-bg: #ffffff;
+    --c-bg-elev: #f7f8fa;
+    --c-bg-code: #0e1116;
+    --c-fg: #1a1d23;
+    --c-fg-muted: #5b6472;
+    --c-fg-soft: #6b7480;
+    --c-border: #e4e7ec;
+    --c-border-strong: #cdd3dc;
+    --c-accent: #1a73e8;
+    --c-da: #1257b8;
+    --c-da-bg: #e6efff;
+    --c-warn: #b6541d;
+    --c-warn-bg: #fff4e6;
+    --c-ok: #157a33;
+    --c-ok-bg: #e8f5ea;
+    --c-bad: #c5221f;
+    --c-bad-bg: #fde8e6;
+    --c-na: #5f666f;
+    --c-na-bg: #eef0f3;
+    --c-info: #1257b8;
+    --c-info-bg: #e6efff;
+    --shadow-sm: 0 1px 2px rgba(15,23,42,.06), 0 1px 1px rgba(15,23,42,.04);
+    --shadow-md: 0 6px 24px rgba(15,23,42,.08), 0 2px 6px rgba(15,23,42,.06);
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --gutter: 24px;
+    --sidebar-w: 312px;
+  }
+  [data-theme="dark"] {
+    --c-bg: #0d1117;
+    --c-bg-elev: #161b22;
+    --c-bg-code: #010409;
+    --c-fg: #e6edf3;
+    --c-fg-muted: #9aa4b2;
+    --c-fg-soft: #828c9e;
+    --c-border: #20262d;
+    --c-border-strong: #2f3640;
+    --c-da: #4d9fff;
+    --c-accent: #4d9fff;
+    --c-ok: #3fb950;
+    --c-warn: #e3b341;
+    --c-bad: #ff7b72;
+    --c-na: #9aa4b2;
+    --c-info: #79b8ff;
+    --c-da-bg: #11233f;
+    --c-warn-bg: #2a1e0a;
+    --c-ok-bg: #0d2517;
+    --c-bad-bg: #2a1213;
+    --c-na-bg: #1a1f26;
+    --c-info-bg: #0c1e3a;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+    --shadow-md: 0 8px 28px rgba(0,0,0,.45);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-sans);
+    font-size: 15.5px;
+    line-height: 1.55;
+    color: var(--c-fg);
+    background: var(--c-bg);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  a { color: var(--c-accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, kbd, pre, samp { font-family: var(--font-mono); font-size: 0.92em; }
+  :focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; border-radius: 4px; }
+  .skip { position: absolute; left: -9999px; }
+  .skip:focus { left: 12px; top: 12px; background: var(--c-bg); padding: 8px 12px; border: 1px solid var(--c-border); border-radius: 6px; z-index: 100; }
+
+  header.site {
+    position: sticky; top: 0; z-index: 30;
+    background: rgba(255,255,255,.85);
+    backdrop-filter: saturate(180%) blur(10px);
+    border-bottom: 1px solid var(--c-border);
+  }
+  [data-theme="dark"] header.site { background: rgba(13,17,23,.82); }
+  .header-row {
+    max-width: 1440px; margin: 0 auto; padding: 12px 24px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .brand { font-weight: 700; letter-spacing: -.01em; font-size: 16px; }
+  .brand small { color: var(--c-fg-muted); font-weight: 500; margin-left: 8px; font-size: 12.5px; }
+  .header-right { margin-left: auto; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 999px;
+    background: var(--c-bg-elev); border: 1px solid var(--c-border);
+    color: var(--c-fg-muted); font-size: 12.5px; font-weight: 500;
+  }
+  .badge.ok { background: var(--c-ok-bg); color: var(--c-ok); border-color: transparent; }
+  .badge.da { background: var(--c-da-bg); color: var(--c-da); border-color: transparent; }
+  .badge.info { background: var(--c-info-bg); color: var(--c-info); border-color: transparent; }
+  .badge.warn { background: var(--c-warn-bg); color: var(--c-warn); border-color: transparent; }
+  .badge.bad { background: var(--c-bad-bg); color: var(--c-bad); border-color: transparent; }
+  .theme-btn {
+    border: 1px solid var(--c-border); background: var(--c-bg-elev); color: var(--c-fg);
+    padding: 5px 10px; border-radius: 8px; cursor: pointer; font: inherit; font-size: 12.5px;
+  }
+  .theme-btn:hover { border-color: var(--c-border-strong); }
+
+  .layout {
+    max-width: 1440px; margin: 0 auto;
+    display: grid; grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+    gap: 32px; padding: 24px;
+  }
+  nav.toc {
+    position: sticky; top: 64px;
+    align-self: start; max-height: calc(100vh - 80px); overflow: auto;
+    padding-right: 8px;
+    border-right: 1px solid var(--c-border);
+  }
+  nav.toc ol { list-style: none; padding: 0; margin: 0 0 16px; }
+  nav.toc li { line-height: 1.4; margin: 2px 0; }
+  nav.toc a {
+    display: block; padding: 4px 8px; border-radius: 5px;
+    color: var(--c-fg-muted); font-size: 13px;
+  }
+  nav.toc a:hover { background: var(--c-bg-elev); color: var(--c-fg); text-decoration: none; }
+  nav.toc a.active { color: var(--c-da); background: var(--c-da-bg); font-weight: 600; }
+  nav.toc .toc-section {
+    margin-top: 14px; padding: 2px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--c-fg-soft);
+    border-top: 1px solid var(--c-border); padding-top: 10px;
+  }
+  nav.toc .toc-section:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+
+  main { min-width: 0; max-width: 1040px; }
+
+  .hero {
+    border: 1px solid var(--c-border);
+    border-radius: 14px;
+    padding: 28px 28px 24px;
+    background: linear-gradient(135deg, var(--c-da-bg) 0%, var(--c-bg) 100%);
+    margin-bottom: 32px;
+  }
+  .hero h1 { font-size: 32px; line-height: 1.15; margin: 0 0 8px; letter-spacing: -.02em; }
+  .hero p.lead { margin: 0 0 16px; color: var(--c-fg-muted); font-size: 16px; max-width: 74ch; }
+  .hero-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+
+  section { margin: 48px 0; scroll-margin-top: 84px; }
+  section.chapter { padding-top: 16px; margin-top: 56px; border-top: 3px solid var(--c-da); }
+  section.ref { padding-top: 12px; margin-top: 48px; border-top: 2px dashed var(--c-border-strong); }
+  h2 {
+    font-size: 24px; line-height: 1.2; letter-spacing: -.015em;
+    margin: 0 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--c-border);
+    scroll-margin-top: 84px;
+  }
+  h3 { font-size: 18px; line-height: 1.3; margin: 28px 0 10px; scroll-margin-top: 84px; }
+  h4 { font-size: 15px; margin: 20px 0 8px; color: var(--c-fg); scroll-margin-top: 84px; }
+  p { margin: 0 0 12px; }
+  ul, ol { margin: 0 0 12px; padding-left: 22px; }
+  li { margin: 4px 0; }
+  hr { border: 0; border-top: 1px solid var(--c-border); margin: 24px 0; }
+
+  .table-wrap { overflow-x: auto; margin: 0 0 18px; border: 1px solid var(--c-border); border-radius: var(--radius); }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 580px; }
+  th, td { padding: 9px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--c-border); }
+  th { background: var(--c-bg-elev); font-weight: 600; color: var(--c-fg); position: sticky; top: 0; font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--c-bg-elev); }
+  td code, th code { background: var(--c-bg-elev); padding: 1px 5px; border-radius: 4px; font-size: 12.5px; color: var(--c-fg); }
+  [data-theme="dark"] td code, [data-theme="dark"] th code { background: #0b0e13; }
+
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; letter-spacing: .02em; }
+  .pill.ok { background: var(--c-ok-bg); color: var(--c-ok); }
+  .pill.partial { background: var(--c-warn-bg); color: var(--c-warn); }
+  .pill.bad { background: var(--c-bad-bg); color: var(--c-bad); }
+  .pill.na { background: var(--c-na-bg); color: var(--c-na); }
+  .pill.beta { background: var(--c-info-bg); color: var(--c-info); }
+
+  .callout {
+    border-left: 4px solid var(--c-accent);
+    background: var(--c-bg-elev);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  .callout.warn { border-left-color: var(--c-warn); background: var(--c-warn-bg); color: #5a3009; }
+  .callout.tip { border-left-color: var(--c-ok); background: var(--c-ok-bg); color: #1d4a25; }
+  .callout.danger { border-left-color: var(--c-bad); background: var(--c-bad-bg); color: #7a1a16; }
+  .callout.beta { border-left-color: var(--c-info); background: var(--c-info-bg); color: #123d75; }
+  .callout.info { border-left-color: var(--c-info); background: var(--c-info-bg); color: #123d75; }
+  .callout.partial { border-left-color: var(--c-warn); background: var(--c-warn-bg); color: #5a3009; }
+  [data-theme="dark"] .callout.warn { color: #f1c896; }
+  [data-theme="dark"] .callout.tip { color: #a7d8b1; }
+  [data-theme="dark"] .callout.danger { color: #f0a8a4; }
+  [data-theme="dark"] .callout.beta { color: #a8cdff; }
+  [data-theme="dark"] .callout.info { color: #a8cdff; }
+  [data-theme="dark"] .callout.partial { color: #f1c896; }
+  .callout strong { font-weight: 700; }
+  .callout a { color: var(--c-da); text-decoration: underline; }
+  [data-theme="dark"] .callout a { color: var(--c-da); }
+  footer.site a, .source-link a { text-decoration: underline; }
+
+  pre {
+    background: var(--c-bg-code);
+    color: #d1d5db;
+    padding: 14px 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 0 0 14px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    border: 1px solid #1f242c;
+  }
+  pre code { color: inherit; background: transparent; padding: 0; }
+
+  details {
+    border: 1px solid var(--c-border); border-radius: var(--radius);
+    padding: 8px 14px; margin: 6px 0 10px; background: var(--c-bg-elev);
+  }
+  details > summary {
+    cursor: pointer; font-weight: 600; padding: 4px 0; list-style: none;
+    font-size: 13.5px;
+  }
+  details > summary::-webkit-details-marker { display: none; }
+  details > summary::before { content: "▸ "; color: var(--c-fg-soft); display: inline-block; }
+  details[open] > summary::before { content: "▾ "; }
+  details > .ref-body { padding: 8px 0 4px; }
+
+  .source-link {
+    font-size: 12.5px; color: var(--c-fg-muted);
+    margin: 6px 0 24px; padding: 6px 10px;
+    background: var(--c-bg-elev); border-left: 3px solid var(--c-da);
+    border-radius: 0 6px 6px 0;
+  }
+  .source-link a { color: var(--c-da); font-weight: 600; }
+
+  .figure { margin: 20px 0 26px; }
+  .figure svg { width: 100%; height: auto; display: block; border: 1px solid var(--c-border); border-radius: 10px; }
+  .figure figcaption { font-size: 12.5px; color: var(--c-fg-muted); margin-top: 10px; line-height: 1.5; padding: 0 4px; }
+
+  footer.site {
+    margin: 64px 0 24px; padding: 24px 0; border-top: 1px solid var(--c-border);
+    color: var(--c-fg-muted); font-size: 13px;
+  }
+
+  /* ---- Portal: filtro + grade de cards (usa só tokens/classes existentes) ---- */
+  .filter-bar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 0 0 8px; }
+  .filter-input {
+    flex: 1 1 280px; min-width: 220px;
+    border: 1px solid var(--c-border); background: var(--c-bg-elev); color: var(--c-fg);
+    padding: 9px 14px; border-radius: 999px; font: inherit; font-size: 14px;
+  }
+  .filter-input::placeholder { color: var(--c-fg-soft); }
+  .filter-input:focus-visible { border-color: var(--c-accent); }
+  .filter-count { font-size: 12.5px; color: var(--c-fg-muted); }
+  .card-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px; margin: 8px 0 8px;
+  }
+  .card {
+    display: flex; flex-direction: column; gap: 8px;
+    border: 1px solid var(--c-border); border-radius: var(--radius);
+    background: var(--c-bg-elev); padding: 16px 16px 14px;
+    color: inherit;
+  }
+  a.card:hover { text-decoration: none; border-color: var(--c-border-strong); box-shadow: var(--shadow-sm); }
+  a.card:hover .card-title { color: var(--c-da); }
+  .card-title { font-weight: 700; font-size: 15px; letter-spacing: -.01em; color: var(--c-fg); }
+  .card-desc { font-size: 13px; color: var(--c-fg-muted); line-height: 1.5; margin: 0; flex: 1 1 auto; }
+  .card-badges { display: flex; flex-wrap: wrap; gap: 6px; }
+  .card.soon { border-style: dashed; background: transparent; }
+  .card.soon .card-title { color: var(--c-fg-muted); }
+  .card-arrow { font-size: 12.5px; color: var(--c-fg-muted); font-weight: 600; }
+  .no-results { display: none; color: var(--c-fg-muted); font-size: 14px; padding: 8px 2px; }
+
+  @media (max-width: 1080px) {
+    .layout { grid-template-columns: 1fr; }
+    nav.toc { position: static; max-height: none; border-right: none; border-bottom: 1px solid var(--c-border); padding-bottom: 16px; margin-bottom: 16px; }
+    main { max-width: 100%; }
+    .hero h1 { font-size: 24px; }
+  }
+  @media print {
+    nav.toc, header.site, .theme-btn, .filter-bar { display: none; }
+    .layout { grid-template-columns: 1fr; }
+    a { color: inherit; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+    details[open] { padding: 8px 0; }
+    details > summary { display: none; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Pular para o conteúdo</a>
+
+<header class="site">
+  <div class="header-row">
+    <div class="brand">Guia Completo de Agentes <small>Portal mestre · orquestração de agentes de IA</small></div>
+    <div class="header-right">
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-06-25</strong></span>
+      <span class="badge da">23 guias</span>
+      <span class="badge info">multi-provedor</span>
+      <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="Sumário">
+    <div class="toc-section">Início</div>
+    <ol>
+      <li><a href="#sobre-portal">Sobre o portal</a></li>
+      <li><a href="#por-onde-comecar">Por onde começar</a></li>
+    </ol>
+
+    <div class="toc-section">Mapa conceitual</div>
+    <ol>
+      <li><a href="#tese-operacional">Tese operacional</a></li>
+      <li><a href="#quatro-planos">Os 4 planos</a></li>
+      <li><a href="#qual-base">Qual base usar</a></li>
+      <li><a href="#decisoes-rapidas">Decisões rápidas</a></li>
+    </ol>
+
+    <div class="toc-section">Todos os guias</div>
+    <ol>
+      <li><a href="#biblioteca">Biblioteca (busca)</a></li>
+      <li><a href="#trilha-nucleo">Núcleo de orquestração</a></li>
+      <li><a href="#trilha-frameworks">Frameworks de agentes</a></li>
+      <li><a href="#trilha-providers">Providers &amp; modelos</a></li>
+      <li><a href="#trilha-contexto">Contexto &amp; tokens</a></li>
+      <li><a href="#trilha-multimodal">Multimodal &amp; paralelismo</a></li>
+      <li><a href="#trilha-skills">Skills</a></li>
+      <li><a href="#trilha-operacao">Operação &amp; segurança</a></li>
+    </ol>
+
+    <div class="toc-section">Referência</div>
+    <ol>
+      <li><a href="#matriz-navegacao">Matriz de navegação</a></li>
+      <li><a href="#garantias">As 6 garantias</a></li>
+      <li><a href="#fontes-oficiais">Fontes &amp; verificação</a></li>
+    </ol>
+  </nav>
+
+  <main id="main">
+
+    <div class="hero">
+      <h1>Guia Completo de Agentes — Portal</h1>
+      <p class="lead">
+        Porta de entrada única para construir <strong>sistemas de agentes de IA</strong> de forma
+        portável entre provedores. O portal organiza um <strong>núcleo de orquestração agnóstico</strong>
+        (arquitetura, estado, ferramentas, providers, operação), os <strong>guias de framework</strong>
+        (OpenAI Agents SDK, LangGraph, Google ADK), as <strong>referências de provedor</strong>
+        (OpenAI, Anthropic, Google) e os temas transversais — contexto, tokens, multimodal, paralelismo e
+        Agent Skills. Para IA e humanos: prosa em PT-BR, identificadores e código em inglês.
+      </p>
+      <div class="hero-meta">
+        <span class="badge da">23 guias</span>
+        <span class="badge info">OpenAI · Anthropic · Google</span>
+        <span class="badge ok">SOTA · verificado 2026-06-25</span>
+      </div>
+    </div>
+
+    <section id="sobre-portal">
+      <h2>Sobre o portal</h2>
+      <p>
+        Este portal não repete o conteúdo dos guias: ele os <strong>relaciona</strong>. Cada tema profundo
+        (modelos, streaming, thinking, multimodal, paralelismo, tokens, skills) tem um guia dedicado; o
+        <strong>núcleo de orquestração</strong> define o vocabulário agnóstico (estado durável, projeções,
+        capability registry, handoff vs agent-as-tool) e aponta para esses guias em vez de duplicá-los.
+      </p>
+      <div class="callout tip">
+        <strong>Como ler:</strong> comece por <a href="#por-onde-comecar">Por onde começar</a> para escolher
+        uma trilha pelo seu perfil; use a <a href="#biblioteca">Biblioteca</a> (com busca) para localizar um
+        guia específico; e consulte a <a href="#matriz-navegacao">Matriz de navegação</a> para ir direto do
+        tópico ao guia que o cobre.
+      </div>
+    </section>
+
+    <section id="por-onde-comecar">
+      <h2>Por onde começar</h2>
+      <p>Trilhas de leitura por perfil. Cada uma encadeia guias na ordem recomendada.</p>
+
+      <h3>Iniciante em agentes</h3>
+      <ol>
+        <li>Entenda a <a href="#tese-operacional">tese operacional</a> e os <a href="#quatro-planos">4 planos</a> aqui no portal.</li>
+        <li>Leia o futuro <strong>guia de arquitetura &amp; orquestração</strong> (núcleo) para o vocabulário comum.</li>
+        <li>Escolha <strong>um</strong> provedor: <a href="guia_openai_modelos.html">Modelos OpenAI</a>, <a href="guia_claude_api.html">Claude API</a> ou <a href="guia_gemini_interactions_api.html">Gemini Interactions API</a>.</li>
+        <li>Aprenda a contar custo desde cedo: <a href="guia_token_counting.html">Contagem de tokens</a>.</li>
+      </ol>
+
+      <h3>Arquiteto de sistemas de agentes</h3>
+      <ol>
+        <li>Núcleo completo: arquitetura, <strong>estado/contexto/memória</strong>, <strong>ferramentas/MCP/RAG</strong>, <strong>providers/adapters</strong>, <strong>operação/segurança/evals</strong>.</li>
+        <li>Aprofunde estado longo: <a href="guia_contexto_compactacao_estrategias.html">Contexto &amp; compactação</a>.</li>
+        <li>Decida a base de framework no <a href="#qual-base">comparativo</a> e leia o guia de orquestração correspondente.</li>
+      </ol>
+
+      <h3>Implementador por framework</h3>
+      <ol>
+        <li><strong>OpenAI Agents SDK:</strong> <a href="guia_agents_sdk.html">referência da API</a> + <a href="guia_agents_sdk_orquestracao.html">guia de orquestração no SDK</a>.</li>
+        <li><strong>LangGraph:</strong> <a href="guia_langgraph.html">referência (StateGraph/checkpointers/HITL)</a> + <a href="guia_langgraph_orquestracao.html">guia de orquestração</a>.</li>
+        <li><strong>Google ADK:</strong> <a href="guia_google_adk.html">referência (1.x/2.0)</a> + <a href="guia_google_adk_orquestracao.html">guia de orquestração</a>.</li>
+        <li><strong>Deep agents / long-horizon:</strong> <a href="guia_deepagents.html">DeepAgents</a>.</li>
+      </ol>
+
+      <h3>Operação &amp; segurança</h3>
+      <ol>
+        <li>Futuro <strong>guia de operação, segurança &amp; evals</strong> (núcleo): guardrails, tracing, ZDR, runbooks, threat model.</li>
+        <li>Padronize automações reutilizáveis com o futuro <strong>guia de Agent Skills</strong>.</li>
+        <li>Use a <a href="#matriz-navegacao">matriz</a> para localizar a seção de segurança de cada framework.</li>
+      </ol>
+    </section>
+
+    <section class="chapter" id="tese-operacional">
+      <h2 style="border-bottom:3px solid var(--c-da);padding:14px 0 10px;font-size:28px">Mapa conceitual do super-guia</h2>
+      <p>Três ideias atravessam todos os guias do núcleo. Entendê-las aqui torna o resto previsível.</p>
+
+      <h3>Tese operacional: estado durável vs projeção vs execução</h3>
+      <p>
+        O segredo de um sistema de agentes portável é separar três coisas que os SDKs tendem a misturar:
+      </p>
+      <ul>
+        <li><strong>Estado durável</strong> — um <em>ledger canônico</em> de itens tipados que <em>você</em> controla (mensagens, tool calls, resultados, reasoning, assets, decisões). É a fonte da verdade.</li>
+        <li><strong>Projeção</strong> — o <em>payload</em> que cada provedor exige é uma <em>visão</em> derivada do ledger, não a verdade. Trocar de provedor = trocar a projeção, não perder o estado.</li>
+        <li><strong>Execução</strong> — o loop de runtime (registrar → reduzir → projetar → chamar modelo/tool → reduzir de novo) é separado de ambos.</li>
+      </ul>
+      <div class="callout info">
+        <strong>Por que importa:</strong> com essa separação, <code>previous_response_id</code> (OpenAI),
+        thread/checkpointer (LangGraph) ou session/state (ADK) viram <em>projeções</em> intercambiáveis do
+        mesmo ledger — e não três arquiteturas incompatíveis. O <a href="guia_estado_contexto_memoria.html">núcleo de estado</a> detalha o contrato.
+      </div>
+    </section>
+
+    <section id="quatro-planos">
+      <h2>Os 4 planos que não devem ser misturados</h2>
+      <p>Toda decisão de design cai em um destes planos. Misturá-los é a causa mais comum de acoplamento.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Plano</th><th>Pergunta que responde</th><th>Onde ler</th></tr></thead>
+        <tbody>
+          <tr><td><strong>1. Protocolo</strong></td><td>Como o agente fala com tools/outros agentes? (MCP, A2A, function calling)</td><td><a href="guia_ferramentas_mcp_rag.html">Núcleo de ferramentas/MCP</a> · <a href="guia_paralelismo_tools_openai_gemini_anthropic.html">paralelismo</a></td></tr>
+          <tr><td><strong>2. Adapter</strong></td><td>Como o ledger vira o payload de cada provedor?</td><td><a href="guia_providers_adapters.html">Núcleo de providers</a> · <a href="guia_openai_modelos.html">OpenAI</a> · <a href="guia_claude_api.html">Claude</a> · <a href="guia_gemini_interactions_api.html">Gemini</a></td></tr>
+          <tr><td><strong>3. Capabilities</strong></td><td>O que o agente sabe fazer? (tools, skills, RAG, multimodal)</td><td><a href="guia_ferramentas_mcp_rag.html">Núcleo de ferramentas</a> · <a href="guia_multimodal.html">multimodal</a> · <a href="guia_skills.html">guia de skills</a></td></tr>
+          <tr><td><strong>4. Estado + observabilidade</strong></td><td>O que aconteceu e como auditar/repetir?</td><td><a href="guia_estado_contexto_memoria.html">Núcleo de estado</a> · <a href="guia_token_counting.html">tokens</a> · <a href="guia_contexto_compactacao_estrategias.html">contexto</a> · <a href="guia_operacao_seguranca_evals.html">operação</a></td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="qual-base">
+      <h2>Qual base usar: Agents SDK, Responses, LangGraph, ADK ou Pydantic AI</h2>
+      <p>
+        Não há base única vencedora — há critérios. As três bases de framework são legítimas; o núcleo é
+        agnóstico e cada guia de orquestração mostra como mapear o blueprint comum à base escolhida.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Base</th><th>Escolha quando…</th><th>Guia</th></tr></thead>
+        <tbody>
+          <tr><td><strong>OpenAI Agents SDK</strong></td><td>ecossistema OpenAI; quer handoffs/guardrails/sessions/tracing prontos sobre a Responses API.</td><td><a href="guia_agents_sdk.html">guia_agents_sdk</a></td></tr>
+          <tr><td><strong>OpenAI Responses API (direta)</strong></td><td>controle máximo do loop e do estado, sem framework por cima.</td><td><a href="guia_openai_modelos.html">guia_openai_modelos</a></td></tr>
+          <tr><td><strong>LangGraph</strong></td><td>orquestração explícita em grafo, persistência durável (checkpointers) e HITL fino.</td><td><a href="guia_langgraph.html">guia_langgraph</a></td></tr>
+          <tr><td><strong>Google ADK</strong></td><td>ecossistema Google/Vertex; workflow agents e, no ADK 2.0, execução em grafo.</td><td><a href="guia_google_adk.html">guia_google_adk</a></td></tr>
+          <tr><td><strong>Pydantic AI</strong></td><td>camada de tipagem/evals/observabilidade complementar a qualquer base.</td><td><a href="guia_providers_adapters.html">Núcleo de providers</a></td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout warn">
+        <strong>Sem bala de prata:</strong> o Agents SDK é <em>uma</em> base recomendada (forte no
+        ecossistema OpenAI), não a única. LangGraph e ADK são alternativas de primeira classe — use o
+        critério acima, não a moda.
+      </div>
+    </section>
+
+    <section id="decisoes-rapidas">
+      <h2>Mapa de decisões rápidas</h2>
+      <p>Pergunta de projeto → resposta curta + onde ler em profundidade.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Pergunta</th><th>Resposta curta</th><th>Onde ler</th></tr></thead>
+        <tbody>
+          <tr><td>Onde guardo o histórico?</td><td>No seu ledger canônico; o estado do provedor é projeção.</td><td><a href="guia_estado_contexto_memoria.html">Núcleo de estado</a> · <a href="guia_contexto_compactacao_estrategias.html">contexto</a></td></tr>
+          <tr><td>Como reduzo custo de prompt longo?</td><td>Prompt caching + compactação rastreável + contar tokens.</td><td><a href="guia_token_counting.html">tokens</a> · <a href="guia_contexto_compactacao_estrategias.html">contexto</a> · <a href="guia_claude_api.html">caching (Claude)</a></td></tr>
+          <tr><td>Várias tools ao mesmo tempo?</td><td>Paralelize functions; cuidado com built-ins.</td><td><a href="guia_paralelismo_tools_openai_gemini_anthropic.html">paralelismo de tools</a></td></tr>
+          <tr><td>Conectar tools externas com segurança?</td><td>MCP como fronteira formal (host/client/server).</td><td><a href="guia_ferramentas_mcp_rag.html">Núcleo de ferramentas/MCP</a></td></tr>
+          <tr><td>Ler PDF/imagem/planilha?</td><td>Trate como asset com provenance; use o guia dedicado.</td><td><a href="guia_multimodal.html">multimodal</a></td></tr>
+          <tr><td>Crop/zoom/validação visual fina?</td><td>Gating no runtime + code tool como lupa (visão nativa primeiro).</td><td><a href="guia_agentic_vision_code_tools.html">agentic vision &amp; code tools</a></td></tr>
+          <tr><td>Delegar para subagente?</td><td>Handoff (transfere o turno) vs agent-as-tool (delega e retorna).</td><td><a href="guia_arquitetura_orquestracao.html">Núcleo de arquitetura</a> · guias de framework</td></tr>
+          <tr><td>Humano no loop (aprovação)?</td><td>Contrato HITL agnóstico; cada framework tem o seu.</td><td><a href="guia_ferramentas_mcp_rag.html">Núcleo de ferramentas</a> · <a href="guia_langgraph.html">LangGraph interrupt</a> · <a href="guia_google_adk.html">ADK confirmations</a></td></tr>
+          <tr><td>Trocar de provedor sem reescrever tudo?</td><td>Provider-switching contract + loss declaration.</td><td><a href="guia_providers_adapters.html">Núcleo de providers</a></td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section class="chapter" id="biblioteca">
+      <h2 style="border-bottom:3px solid var(--c-da);padding:14px 0 10px;font-size:28px">Biblioteca de guias</h2>
+      <p>
+        Todos os guias, agrupados por trilha. Use a busca para filtrar por título ou escopo. Os guias do
+        <span class="pill partial">núcleo</span> de orquestração são novos e complementam os guias dedicados já existentes.
+      </p>
+      <div class="filter-bar">
+        <input type="search" id="card-filter" class="filter-input" placeholder="Buscar guia por título ou tema (ex.: MCP, streaming, tokens, handoff)…" aria-label="Buscar guia por título ou tema" autocomplete="off" />
+        <span class="filter-count" id="filter-count" aria-live="polite"></span>
+      </div>
+      <p class="no-results" id="no-results">Nenhum guia corresponde à busca. Limpe o filtro para ver todos.</p>
+    </section>
+
+    <!-- Cada card carrega data-keywords para a busca. Cards "soon" são <div> (sem href) até o arquivo existir. -->
+
+    <section id="trilha-nucleo" data-trail>
+      <h2>Núcleo de orquestração <span class="pill partial">novo</span></h2>
+      <p>Camada agnóstica e complementar: o vocabulário comum a todos os frameworks.</p>
+      <div class="card-grid">
+        <a class="card" href="guia_arquitetura_orquestracao.html" data-card data-keywords="arquitetura orquestração primitivos agent workflow handoff agent-as-tool capability registry router blueprint topologia">
+          <div class="card-title">Arquitetura &amp; orquestração</div>
+          <p class="card-desc">Primitivos canônicos (agent/workflow/agent-as-tool/handoff/MCP/builtin/function), arquitetura de referência, capability registry, model router e blueprint SOTA.</p>
+          <div class="card-badges"><span class="badge da">Núcleo</span><span class="badge">Agnóstico</span><span class="badge ok">Publicado</span></div>
+          <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
+        </a>
+        <a class="card" href="guia_estado_contexto_memoria.html" data-card data-keywords="estado contexto memória ledger canônico projeção compaction reidratação reasoning thinking budget asset registry">
+          <div class="card-title">Estado, contexto &amp; memória</div>
+          <p class="card-desc">Ledger canônico como fonte da verdade; ciclo registrar/reduzir/projetar; carriers de reasoning/thinking; budgets; contrato de compaction; asset registry.</p>
+          <div class="card-badges"><span class="badge da">Núcleo</span><span class="badge">Agnóstico</span><span class="badge ok">Publicado</span></div>
+          <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
+        </a>
+        <a class="card" href="guia_ferramentas_mcp_rag.html" data-card data-keywords="ferramentas tools mcp rag capabilities envelope schema hitl aprovação hardening fan-out provenance">
+          <div class="card-title">Ferramentas, MCP &amp; RAG</div>
+          <p class="card-desc">Ontologia de tools; MCP como fronteira de segurança; RAG como capability com provenance; envelopes de resultado; HITL; hardening de MCP server; métricas.</p>
+          <div class="card-badges"><span class="badge da">Núcleo</span><span class="badge">MCP · RAG</span><span class="badge ok">Publicado</span></div>
+          <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
+        </a>
+        <a class="card" href="guia_providers_adapters.html" data-card data-keywords="providers adapters sdk responses api pydantic ai anthropic google structured output provider switching contract roles">
+          <div class="card-title">Providers &amp; adapters</div>
+          <p class="card-desc">Camada de adapter agnóstica: papel de cada SDK, parâmetros críticos da Responses API, Pydantic AI complementar, provider-switching contract + loss declaration.</p>
+          <div class="card-badges"><span class="badge da">Núcleo</span><span class="badge">Adapters</span><span class="badge ok">Publicado</span></div>
+          <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
+        </a>
+        <a class="card" href="guia_operacao_seguranca_evals.html" data-card data-keywords="operação segurança evals guardrails tracing cost ledger zdr retenção runbooks policy threat model slo sli release incidente">
+          <div class="card-title">Operação, segurança &amp; evals</div>
+          <p class="card-desc">Operação como arquitetura: privacidade/ZDR, guardrails em 3 pontos, tracing/cost ledger, acceptance gates, runbooks, policy-as-code, threat model, SLIs/SLOs.</p>
+          <div class="card-badges"><span class="badge da">Núcleo</span><span class="badge">Segurança</span><span class="badge ok">Publicado</span></div>
+          <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
+        </a>
+      </div>
+    </section>
+
+    <section id="trilha-frameworks" data-trail>
+      <h2>Frameworks de agentes</h2>
+      <p>Referências de API publicadas, mais os guias de orquestração que mapeiam o blueprint do núcleo a cada base.</p>
+      <div class="card-grid">
+        <a class="card" href="guia_agents_sdk.html" data-card data-keywords="openai agents sdk handoffs guardrails sessions tracing runner function tool tripwire">
+          <div class="card-title">OpenAI Agents SDK</div>
+          <p class="card-desc">openai-agents: agentes, handoffs, guardrails (tripwire), sessions, tracing e integração com a Responses API.</p>
+          <div class="card-badges"><span class="badge da">Framework</span><span class="badge info">Python</span><span class="badge ok">openai-agents 0.17.7</span></div>
+          <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
+        </a>
+        <a class="card" href="guia_langgraph.html" data-card data-keywords="langgraph stategraph checkpointers hitl interrupt command grafo supervisor swarm streaming reducers">
+          <div class="card-title">LangGraph</div>
+          <p class="card-desc">Orquestração baseada em grafo: StateGraph e reducers, checkpointers, human-in-the-loop (interrupt/Command), streaming tipado.</p>
+          <div class="card-badges"><span class="badge da">Framework</span><span class="badge info">Python</span><span class="badge ok">langgraph 1.2.6 GA</span></div>
+          <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
+        </a>
+        <a class="card" href="guia_google_adk.html" data-card data-keywords="google adk agent development kit llmagent workflow sequential parallel loop tools mcp a2a workflow runtime grafo 2.0">
+          <div class="card-title">Google ADK 1.x/2.0</div>
+          <p class="card-desc">Agent Development Kit: LlmAgent e workflow agents, tools/MCP/A2A, e o Workflow Runtime em grafo do ADK 2.0.</p>
+          <div class="card-badges"><span class="badge da">Framework</span><span class="badge info">Python</span><span class="badge ok">ADK 2.0 GA · 2.3.0</span></div>
+          <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
+        </a>
+        <a class="card" href="guia_deepagents.html" data-card data-keywords="deepagents deep agents long-horizon harness planejamento subagentes sistema de arquivos">
+          <div class="card-title">DeepAgents</div>
+          <p class="card-desc">Harness de agentes profundos para tarefas long-horizon: planejamento, subagentes e ferramentas de longo alcance sobre LangGraph.</p>
+          <div class="card-badges"><span class="badge da">Framework</span><span class="badge info">Python</span><span class="badge ok">deepagents 0.6.12</span></div>
+          <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
+        </a>
+        <a class="card" href="guia_agents_sdk_orquestracao.html" data-card data-keywords="agents sdk orquestração blueprint núcleo handoff agent-as-tool guardrails sessions tracing ledger externo">
+          <div class="card-title">Orquestração no Agents SDK</div>
+          <p class="card-desc">Como aplicar o blueprint do núcleo (capability registry, microcontexto, handoff vs delegação, ledger externo) usando o OpenAI Agents SDK como base. Complementa o guia do Agents SDK.</p>
+          <div class="card-badges"><span class="badge da">Framework</span><span class="badge">Orquestração</span><span class="badge ok">Publicado</span></div>
+          <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
+        </a>
+        <a class="card" href="guia_langgraph_orquestracao.html" data-card data-keywords="langgraph orquestração stategraph ledger checkpointer durável interrupt command supervisor swarm streaming blueprint">
+          <div class="card-title">Orquestração em LangGraph</div>
+          <p class="card-desc">StateGraph/reducers como ledger tipado, checkpointers como estado durável, interrupt/Command como HITL, e supervisor/swarm vs handoff do núcleo. Complementa o guia do LangGraph.</p>
+          <div class="card-badges"><span class="badge da">Framework</span><span class="badge">Orquestração</span><span class="badge ok">Publicado</span></div>
+          <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
+        </a>
+        <a class="card" href="guia_google_adk_orquestracao.html" data-card data-keywords="google adk orquestração llmagent workflow runtime graph sessions state memory callbacks plugins a2a action confirmations migração 1.x 2.0">
+          <div class="card-title">Orquestração no Google ADK</div>
+          <p class="card-desc">Aplicar o blueprint do núcleo no ADK 1.x e 2.0: workflow agents, graph-based workflows, sessions/state como ledger, callbacks como guardrails, migração 1.x→2.0. Complementa o guia do Google ADK.</p>
+          <div class="card-badges"><span class="badge da">Framework</span><span class="badge">Orquestração</span><span class="badge ok">Publicado</span></div>
+          <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
+        </a>
+      </div>
+    </section>
+
+    <section id="trilha-providers" data-trail>
+      <h2>Providers &amp; modelos</h2>
+      <p>Referências de API por provedor de modelo.</p>
+      <div class="card-grid">
+        <a class="card" href="guia_openai_modelos.html" data-card data-keywords="openai modelos gpt-5.5 responses api reasoning effort streaming function calling structured output">
+          <div class="card-title">Modelos OpenAI</div>
+          <p class="card-desc">Família GPT-5.x e a Responses API: seleção de modelo, reasoning.effort, streaming, function calling e structured outputs.</p>
+          <div class="card-badges"><span class="badge da">Provider</span><span class="badge info">OpenAI</span><span class="badge ok">gpt-5.5</span></div>
+          <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
+        </a>
+        <a class="card" href="guia_claude_api.html" data-card data-keywords="anthropic claude messages api streaming tools thinking adaptive prompt caching batches structured output">
+          <div class="card-title">Anthropic Claude API</div>
+          <p class="card-desc">Messages API: streaming, tool use, adaptive/extended thinking, prompt caching, batches e structured output.</p>
+          <div class="card-badges"><span class="badge da">Provider</span><span class="badge info">Anthropic</span><span class="badge ok">Fable 5 · Opus 4.8</span></div>
+          <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
+        </a>
+        <a class="card" href="guia_gemini_interactions_api.html" data-card data-keywords="google gemini interactions api google-genai thinking level thought signatures streaming function calling antigravity agentes gerenciados managed agents environment sandbox deep research quickstart">
+          <div class="card-title">Gemini Interactions API</div>
+          <p class="card-desc">Google Gemini via a Interactions API e o SDK google-genai: thinking_level, thought signatures, streaming, function calling e agentes gerenciados (Deep Research, Antigravity).</p>
+          <div class="card-badges"><span class="badge da">Provider</span><span class="badge info">Google</span><span class="badge ok">Gemini 3.x · API GA</span></div>
+          <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
+        </a>
+      </div>
+    </section>
+
+    <section id="trilha-contexto" data-trail>
+      <h2>Contexto &amp; tokens</h2>
+      <p>Temas transversais de janela de contexto, custo e estratégias de compactação.</p>
+      <div class="card-grid">
+        <a class="card" href="guia_contexto_compactacao_estrategias.html" data-card data-keywords="contexto compactação estratégias escada teto snapshots janela longa reidratação memória">
+          <div class="card-title">Contexto &amp; compactação</div>
+          <p class="card-desc">Estratégias para janelas longas: escada de compactação, teto X, snapshots cumulativos e reidratação de contexto.</p>
+          <div class="card-badges"><span class="badge da">Transversal</span><span class="badge info">multi-provedor</span></div>
+          <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
+        </a>
+        <a class="card" href="guia_token_counting.html" data-card data-keywords="tokens contagem token counting custo orçamento openai anthropic google tokenizer">
+          <div class="card-title">Contagem de tokens</div>
+          <p class="card-desc">Contar tokens entre provedores (OpenAI/Anthropic/Google) para orçamento, roteamento de modelo e controle de custo.</p>
+          <div class="card-badges"><span class="badge da">Transversal</span><span class="badge info">multi-provedor</span></div>
+          <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
+        </a>
+      </div>
+    </section>
+
+    <section id="trilha-multimodal" data-trail>
+      <h2>Multimodal &amp; paralelismo</h2>
+      <p>Entrada multimodal, visão agentic com code tools e execução paralela de ferramentas entre provedores.</p>
+      <div class="card-grid">
+        <a class="card" href="guia_agentic_vision_code_tools.html" data-card data-keywords="agentic vision code interpreter code execution shell tool search defer_loading tool registry seleção dinâmica crop zoom rotate render pdf gating custos containers worker sandbox vision_preprocess_document schemas descriptions strict">
+          <div class="card-title">Agentic vision &amp; code tools</div>
+          <p class="card-desc">Code Interpreter / Code Execution / Shell como lupa visual (crop, zoom, render de PDF), gating de tools no runtime, Tool Search e defer_loading (OpenAI/Anthropic), ToolRegistry com seleção dinâmica para Gemini, worker isolado de visão e schemas de custom functions multi-provider.</p>
+          <div class="card-badges"><span class="badge da">Transversal</span><span class="badge info">OpenAI · Gemini · Anthropic</span><span class="badge ok">Publicado</span></div>
+          <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
+        </a>
+        <a class="card" href="guia_multimodal.html" data-card data-keywords="multimodal imagem visão pdf vision openai gemini anthropic documento ocr">
+          <div class="card-title">Multimodal (imagem, visão, PDF)</div>
+          <p class="card-desc">Entrada multimodal em OpenAI, Gemini e Anthropic: imagens, visão e PDFs, com foco em provenance e citações.</p>
+          <div class="card-badges"><span class="badge da">Transversal</span><span class="badge info">OpenAI · Gemini · Anthropic</span></div>
+          <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
+        </a>
+        <a class="card" href="guia_file_inputs_no_storage.html" data-card data-keywords="file inputs sem provider storage zdr phi hosted execution code interpreter hosted shell code execution base64 signed url sourcerecord evidencecard payload por turno modo a modo b retenção privacidade openai gemini anthropic">
+          <div class="card-title">File inputs sem provider storage</div>
+          <p class="card-desc">Ingestão de arquivos sob ZDR/PHI sem estado retido no provider (Modo A) vs hosted execution opcional (Modo B): SourceRecord/EvidenceCard, payload por turno, pipeline de imagem web e adapters em OpenAI/Gemini/Anthropic sobre Agents SDK, LangGraph, Deep Agents e ADK.</p>
+          <div class="card-badges"><span class="badge da">Transversal</span><span class="badge info">ZDR · multimodal</span><span class="badge ok">Publicado</span></div>
+          <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
+        </a>
+        <a class="card" href="guia_paralelismo_tools_openai_gemini_anthropic.html" data-card data-keywords="paralelismo tools chamadas paralelas function calling scheduler latência throughput openai gemini anthropic tool loop">
+          <div class="card-title">Paralelismo de tools</div>
+          <p class="card-desc">Chamadas de ferramentas em paralelo entre provedores: protocolo de tool loop, quando paralelizar vs serializar, scheduler e trade-offs de latência.</p>
+          <div class="card-badges"><span class="badge da">Transversal</span><span class="badge info">OpenAI · Gemini · Anthropic</span></div>
+          <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
+        </a>
+      </div>
+    </section>
+
+    <section id="trilha-skills" data-trail>
+      <h2>Skills</h2>
+      <p>Padrão de Agent Skills portável (autoria, ativação, governança).</p>
+      <div class="card-grid">
+        <a class="card" href="guia_skills.html" data-card data-keywords="skills agent skills skill.md progressive disclosure autoria ativação description recursos governança trust tiers eviction templates">
+          <div class="card-title">Agent Skills padronizado</div>
+          <p class="card-desc">Agent Skills (AgentSkills.io): padrão, SKILL.md, progressive disclosure (L1/L2/L3), autoria portável, ativação/descriptions, recursos, governança e templates.</p>
+          <div class="card-badges"><span class="badge da">Skills</span><span class="badge">Portável</span><span class="badge ok">Publicado</span></div>
+          <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
+        </a>
+      </div>
+    </section>
+
+    <section id="trilha-operacao" data-trail>
+      <h2>Operação &amp; segurança</h2>
+      <p>Camada de operação agnóstica (consolidada no núcleo). Veja também a seção do núcleo acima.</p>
+      <div class="card-grid">
+        <!-- Mesmo arquivo da trilha Núcleo; mantido aqui como ponto de entrada da trilha de operação. -->
+        <a class="card" href="guia_operacao_seguranca_evals.html" data-card data-keywords="operação segurança evals guardrails tracing zdr runbooks policy threat model slo release incidente production hardening">
+          <div class="card-title">Operação, segurança &amp; evals</div>
+          <p class="card-desc">Guardrails, tracing/cost ledger, ZDR/retenção, acceptance gates, runbooks, policy-as-code, threat model e production hardening — agnóstico de provedor.</p>
+          <div class="card-badges"><span class="badge da">Núcleo</span><span class="badge">Segurança</span><span class="badge ok">Publicado</span></div>
+          <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
+        </a>
+      </div>
+    </section>
+
+    <section class="ref" id="matriz-navegacao">
+      <h2>Matriz de navegação — tópico → guia</h2>
+      <p>Vá direto do que você precisa ao guia que cobre. Cada tópico aponta para o guia dedicado e, quando aplicável, para o capítulo do núcleo agnóstico.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Tópico</th><th>Guia(s)</th></tr></thead>
+        <tbody>
+          <tr><td>Seleção de modelo &amp; reasoning</td><td><a href="guia_openai_modelos.html">OpenAI</a> · <a href="guia_claude_api.html">Claude</a> · <a href="guia_gemini_interactions_api.html">Gemini</a></td></tr>
+          <tr><td>Streaming</td><td><a href="guia_openai_modelos.html">OpenAI</a> · <a href="guia_claude_api.html">Claude</a> · <a href="guia_gemini_interactions_api.html">Gemini</a> · <a href="guia_langgraph.html">LangGraph</a></td></tr>
+          <tr><td>Tool / function calling</td><td><a href="guia_paralelismo_tools_openai_gemini_anthropic.html">paralelismo</a> · <a href="guia_agents_sdk.html">Agents SDK</a> · <a href="guia_ferramentas_mcp_rag.html">núcleo de ferramentas</a></td></tr>
+          <tr><td>MCP (Model Context Protocol)</td><td><a href="guia_ferramentas_mcp_rag.html">núcleo de ferramentas</a> · <a href="guia_claude_api.html">Claude</a> · <a href="guia_google_adk.html">ADK</a> · <a href="guia_deepagents.html">DeepAgents</a></td></tr>
+          <tr><td>Thinking / reasoning preservation</td><td><a href="guia_claude_api.html">Claude</a> · <a href="guia_gemini_interactions_api.html">Gemini</a> · <a href="guia_openai_modelos.html">OpenAI</a> · <a href="guia_estado_contexto_memoria.html">núcleo de estado</a></td></tr>
+          <tr><td>Prompt caching</td><td><a href="guia_claude_api.html">Claude</a> · <a href="guia_openai_modelos.html">OpenAI</a> · <a href="guia_contexto_compactacao_estrategias.html">contexto</a></td></tr>
+          <tr><td>Contexto longo &amp; compactação</td><td><a href="guia_contexto_compactacao_estrategias.html">contexto</a> · <a href="guia_estado_contexto_memoria.html">núcleo de estado</a></td></tr>
+          <tr><td>Contagem de tokens / custo</td><td><a href="guia_token_counting.html">tokens</a> · <a href="guia_operacao_seguranca_evals.html">operação</a></td></tr>
+          <tr><td>Multimodal (imagem/PDF)</td><td><a href="guia_multimodal.html">multimodal</a> · <a href="guia_ferramentas_mcp_rag.html">núcleo de ferramentas</a></td></tr>
+          <tr><td>Agentic vision (crop/zoom/render) &amp; code/shell tools</td><td><a href="guia_agentic_vision_code_tools.html">agentic vision &amp; code tools</a> · <a href="guia_multimodal.html">multimodal</a></td></tr>
+          <tr><td>Tool Search / defer_loading / seleção dinâmica de tools</td><td><a href="guia_agentic_vision_code_tools.html">agentic vision &amp; code tools</a> · <a href="guia_agents_sdk.html">Agents SDK</a> · <a href="guia_claude_api.html">Claude</a></td></tr>
+          <tr><td>Schemas de custom functions (descriptions, strict)</td><td><a href="guia_agentic_vision_code_tools.html">agentic vision &amp; code tools</a> · <a href="guia_ferramentas_mcp_rag.html">núcleo de ferramentas</a></td></tr>
+          <tr><td>File inputs sem provider storage / ZDR · hosted execution</td><td><a href="guia_file_inputs_no_storage.html">file inputs (ZDR)</a> · <a href="guia_multimodal.html">multimodal</a> · <a href="guia_operacao_seguranca_evals.html">operação</a></td></tr>
+          <tr><td>Handoff / multi-agente</td><td><a href="guia_arquitetura_orquestracao.html">núcleo de arquitetura</a> · <a href="guia_agents_sdk.html">Agents SDK</a> · <a href="guia_langgraph.html">LangGraph</a> · <a href="guia_google_adk.html">ADK</a></td></tr>
+          <tr><td>HITL (human-in-the-loop)</td><td><a href="guia_langgraph.html">LangGraph</a> · <a href="guia_google_adk.html">ADK</a> · <a href="guia_deepagents.html">DeepAgents</a> · <a href="guia_ferramentas_mcp_rag.html">núcleo de ferramentas</a></td></tr>
+          <tr><td>Persistência / checkpoints</td><td><a href="guia_langgraph.html">LangGraph</a> · <a href="guia_estado_contexto_memoria.html">núcleo de estado</a> · <a href="guia_operacao_seguranca_evals.html">operação</a></td></tr>
+          <tr><td>Guardrails / segurança</td><td><a href="guia_agents_sdk.html">Agents SDK</a> · <a href="guia_google_adk.html">ADK</a> · <a href="guia_operacao_seguranca_evals.html">operação</a></td></tr>
+          <tr><td>Tracing / observabilidade</td><td><a href="guia_agents_sdk.html">Agents SDK</a> · <a href="guia_google_adk.html">ADK</a> · <a href="guia_operacao_seguranca_evals.html">operação</a></td></tr>
+          <tr><td>Agent Skills (autoria)</td><td><a href="guia_skills.html">guia de skills</a></td></tr>
+          <tr><td>RAG</td><td><a href="guia_ferramentas_mcp_rag.html">núcleo de ferramentas</a> (conteúdo novo)</td></tr>
+          <tr><td>Deep research / long-horizon</td><td><a href="guia_deepagents.html">DeepAgents</a> · <a href="guia_gemini_interactions_api.html">Gemini</a> · <a href="guia_openai_modelos.html">OpenAI</a></td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section class="ref" id="garantias">
+      <h2>As 6 garantias do super-guia</h2>
+      <ul>
+        <li>☑ <strong>Fonte oficial:</strong> todo fato perecível (modelos, parâmetros, versões) é verificado contra a doc oficial e consolidado numa folha de fatos única.</li>
+        <li>☑ <strong>SOTA:</strong> modelos e SDKs sempre na versão mais recente — nunca IDs antigos ou deprecados.</li>
+        <li>☑ <strong>Agnóstico por padrão:</strong> o núcleo não hardcoda provedor; o específico de framework vive em guias próprios.</li>
+        <li>☑ <strong>Sem duplicação:</strong> cada tema tem um dono; os demais guias fazem cross-link em vez de repetir.</li>
+        <li>☑ <strong>Para IA e humanos:</strong> prosa PT-BR + referência consultável; identificadores e código em inglês.</li>
+        <li>☑ <strong>Acessível e portável:</strong> tema claro/escuro, navegação por teclado, HTML auto-contido sem dependências externas.</li>
+      </ul>
+    </section>
+
+    <section class="ref" id="fontes-oficiais">
+      <h2>Fontes oficiais &amp; verificação</h2>
+      <p>
+        Os fatos perecíveis citados nos cards (versões de SDK, IDs de modelo, status GA) vêm da folha de
+        fatos verificada do super-guia (2026-06-10), conferida contra as docs oficiais de cada provedor.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Provedor / projeto</th><th>Doc oficial</th></tr></thead>
+        <tbody>
+          <tr><td>OpenAI</td><td><a href="https://developers.openai.com/" target="_blank" rel="noopener">developers.openai.com</a></td></tr>
+          <tr><td>Anthropic (Claude)</td><td><a href="https://platform.claude.com/docs/" target="_blank" rel="noopener">platform.claude.com/docs</a></td></tr>
+          <tr><td>Google (Gemini)</td><td><a href="https://ai.google.dev/gemini-api/docs" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs</a></td></tr>
+          <tr><td>OpenAI Agents SDK</td><td><a href="https://openai.github.io/openai-agents-python/" target="_blank" rel="noopener">openai.github.io/openai-agents-python</a></td></tr>
+          <tr><td>LangGraph</td><td><a href="https://docs.langchain.com/" target="_blank" rel="noopener">docs.langchain.com</a></td></tr>
+          <tr><td>Google ADK</td><td><a href="https://adk.dev/" target="_blank" rel="noopener">adk.dev</a></td></tr>
+          <tr><td>Model Context Protocol</td><td><a href="https://modelcontextprotocol.io/" target="_blank" rel="noopener">modelcontextprotocol.io</a></td></tr>
+        </tbody>
+      </table></div>
+      <p style="font-size:13px;color:var(--c-fg-muted)">
+        Legenda dos selos dos cards: <span class="badge da">Núcleo/Framework/Provider/Transversal/Skills</span> trilha ·
+        <span class="badge ok">versão/GA · Publicado</span> fato verificado 2026-06-10.
+      </p>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site">
+  <div style="max-width:1440px;margin:0 auto;padding:0 24px;display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;justify-content:space-between;">
+    <div style="max-width:540px">
+      <div class="brand" style="font-size:15px">Guia Completo de Agentes <small>Portal mestre</small></div>
+      <p style="margin:8px 0 0;color:var(--c-fg-muted);font-size:13.5px;line-height:1.55">
+        Portal de navegação para os guias de orquestração de agentes de IA, verificado contra as docs
+        oficiais em <strong>2026-06-11</strong> (versões de libs reconferidas em 2026-06-19). Os guias são auto-contidos e podem ser lidos isoladamente.
+      </p>
+    </div>
+    <div style="font-size:13.5px;color:var(--c-fg-muted);line-height:1.7">
+      <div><strong>Crédito de produção</strong></div>
+      <div>Construído por <strong>time de subagentes Claude Opus 4.7 (xhigh)</strong></div>
+      <div>revisão e montagem pelo orquestrador · 2026-05-25</div>
+      <div>varredura de atualização (versões, breaking changes, novo guia) · 2026-06-10</div>
+      <div>delta sweep (changelogs OpenAI/Anthropic/Google, MCP draft, agentes Gemini, versões PyPI/npm) · 2026-06-11</div>
+      <div>micro-sweep de versões (anthropic 0.109.2, langgraph 1.2.5, deepagents 0.6.10 — só patches) · 2026-06-16</div>
+      <div>SOTA sweep — versões (openai-agents 0.17.6, langgraph 1.2.6, deepagents 0.6.11, google-adk 2.3.0, google-genai 2.9.0, anthropic 0.111.0) + caveat Vertex/Interactions no agentic-vision e no guia de Interactions · 2026-06-19</div>
+      <div>freshness sweep — Gemini Interactions API <strong>GA</strong> (jun/2026); versões (openai-agents 0.17.7, deepagents 0.6.12, anthropic 0.112.0, google-genai 2.10.0, pydantic-ai 2.0.0, ADK 1.x→1.36.0); correção Sonnet 4.6 saída 128k; Fable 5 GA porém indisponível no momento · 2026-06-25</div>
+      <div style="margin-top:6px">
+        <span class="badge da">23 guias</span>
+        <span class="badge info">multi-provedor</span>
+      </div>
+    </div>
+    <div style="font-size:12.5px;color:var(--c-fg-soft)">
+      <div><strong>Navegação rápida</strong></div>
+      <div><a href="#por-onde-comecar">Por onde começar</a> · <a href="#biblioteca">Biblioteca</a> · <a href="#matriz-navegacao">Matriz</a></div>
+      <div><a href="#quatro-planos">Os 4 planos</a> · <a href="#qual-base">Qual base</a> · <a href="#decisoes-rapidas">Decisões</a></div>
+    </div>
+  </div>
+</footer>
+
+<!-- Sumário legível por IA (JSON-LD): lista de guias publicados do portal. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "name": "Guia Completo de Agentes — Portal",
+  "inLanguage": "pt-BR",
+  "description": "Portal mestre de guias de orquestração de agentes de IA (núcleo agnóstico, frameworks, providers, contexto, tokens, multimodal, skills, operação).",
+  "dateModified": "2026-06-19",
+  "hasPart": [
+    { "@type": "TechArticle", "name": "OpenAI Agents SDK", "url": "guia_agents_sdk.html" },
+    { "@type": "TechArticle", "name": "LangGraph", "url": "guia_langgraph.html" },
+    { "@type": "TechArticle", "name": "Google ADK 1.x/2.0", "url": "guia_google_adk.html" },
+    { "@type": "TechArticle", "name": "DeepAgents", "url": "guia_deepagents.html" },
+    { "@type": "TechArticle", "name": "Modelos OpenAI", "url": "guia_openai_modelos.html" },
+    { "@type": "TechArticle", "name": "Anthropic Claude API", "url": "guia_claude_api.html" },
+    { "@type": "TechArticle", "name": "Gemini Interactions API", "url": "guia_gemini_interactions_api.html" },
+    { "@type": "TechArticle", "name": "Contexto e compactacao", "url": "guia_contexto_compactacao_estrategias.html" },
+    { "@type": "TechArticle", "name": "Contagem de tokens", "url": "guia_token_counting.html" },
+    { "@type": "TechArticle", "name": "Multimodal", "url": "guia_multimodal.html" },
+    { "@type": "TechArticle", "name": "File inputs sem provider storage + Hosted execution", "url": "guia_file_inputs_no_storage.html" },
+    { "@type": "TechArticle", "name": "Paralelismo de tools", "url": "guia_paralelismo_tools_openai_gemini_anthropic.html" },
+    { "@type": "TechArticle", "name": "Agentic vision e code tools", "url": "guia_agentic_vision_code_tools.html" },
+    { "@type": "TechArticle", "name": "Arquitetura e orquestracao", "url": "guia_arquitetura_orquestracao.html" },
+    { "@type": "TechArticle", "name": "Estado, contexto e memoria", "url": "guia_estado_contexto_memoria.html" },
+    { "@type": "TechArticle", "name": "Ferramentas, MCP e RAG", "url": "guia_ferramentas_mcp_rag.html" },
+    { "@type": "TechArticle", "name": "Providers e adapters", "url": "guia_providers_adapters.html" },
+    { "@type": "TechArticle", "name": "Operacao, seguranca e evals", "url": "guia_operacao_seguranca_evals.html" },
+    { "@type": "TechArticle", "name": "Orquestracao no OpenAI Agents SDK", "url": "guia_agents_sdk_orquestracao.html" },
+    { "@type": "TechArticle", "name": "Orquestracao em LangGraph", "url": "guia_langgraph_orquestracao.html" },
+    { "@type": "TechArticle", "name": "Orquestracao no Google ADK", "url": "guia_google_adk_orquestracao.html" },
+    { "@type": "TechArticle", "name": "Agent Skills", "url": "guia_skills.html" }
+  ]
+}
+</script>
+
+<script>
+  /* Toggle de tema com persistência (chave compartilhada do super-guia). */
+  (function(){
+    var KEY = 'super-guia-theme';
+    var btn = document.getElementById('theme-toggle');
+    var pref = localStorage.getItem(KEY);
+    if (pref) document.documentElement.setAttribute('data-theme', pref);
+    if (btn) btn.addEventListener('click', function(){
+      var cur = document.documentElement.getAttribute('data-theme') || 'light';
+      var nxt = cur === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', nxt);
+      localStorage.setItem(KEY, nxt);
+    });
+  })();
+  /* Scroll-spy: destaca no TOC a seção visível. */
+  (function(){
+    var links = document.querySelectorAll('nav.toc a[href^="#"]');
+    var map = {};
+    links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        var id = e.target.id; if (!map[id]) return;
+        if (e.isIntersecting) {
+          links.forEach(function(l){ l.classList.remove('active'); });
+          map[id].classList.add('active');
+        }
+      });
+    }, { rootMargin: '-40% 0% -55% 0%', threshold: 0 });
+    Object.keys(map).forEach(function(id){ var el = document.getElementById(id); if (el) io.observe(el); });
+  })();
+  /* Filtro de cards do portal: filtra por título + data-keywords; esconde trilhas vazias. */
+  (function(){
+    var input = document.getElementById('card-filter');
+    if (!input) return;
+    var cards = Array.prototype.slice.call(document.querySelectorAll('[data-card]'));
+    var trails = Array.prototype.slice.call(document.querySelectorAll('[data-trail]'));
+    var countEl = document.getElementById('filter-count');
+    var noResults = document.getElementById('no-results');
+    var total = cards.length;
+
+    function norm(s){
+      // Remove acentos (combining marks U+0300–U+036F) para busca tolerante a diacríticos.
+      return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    }
+    function apply(){
+      var q = norm(input.value.trim());
+      var shown = 0;
+      cards.forEach(function(card){
+        var hay = norm(card.textContent + ' ' + (card.getAttribute('data-keywords') || ''));
+        var match = q === '' || hay.indexOf(q) !== -1;
+        card.style.display = match ? '' : 'none';
+        if (match) shown++;
+      });
+      // Esconde trilhas (seções) que ficaram sem cards visíveis.
+      trails.forEach(function(tr){
+        var visibleCards = 0;
+        tr.querySelectorAll('[data-card]').forEach(function(c){ if (c.style.display !== 'none') visibleCards++; });
+        tr.style.display = visibleCards > 0 ? '' : 'none';
+      });
+      if (countEl) countEl.textContent = q === '' ? (total + ' guias') : (shown + ' de ' + total);
+      if (noResults) noResults.style.display = (q !== '' && shown === 0) ? 'block' : 'none';
+    }
+    input.addEventListener('input', apply);
+    apply();
+  })();
+</script>
+</body>
+</html>
