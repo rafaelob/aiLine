@@ -4,8 +4,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Guia Gemini Interactions API — Referência completa + Migração de generateContent</title>
-<meta name="description" content="Guia técnico exaustivo e SOTA da Google Gemini Interactions API em PT-BR: visão geral, texto, streaming, multimodal (imagem, áudio, vídeo, documentos), function calling, structured output, thinking, caching, Deep Research, ferramentas server-side, referência REST completa, e seção dedicada de migração de generateContent. Interactions API em GA desde junho/2026. Verificado em 2026-06-25." />
-<meta name="last-checked" content="2026-06-25" />
+<meta name="description" content="Guia técnico exaustivo e SOTA da Google Gemini Interactions API em PT-BR: visão geral, texto, streaming, multimodal (imagem, áudio, vídeo, documentos), function calling, structured output, thinking, caching, Deep Research, ferramentas server-side, referência REST completa, e seção dedicada de migração de generateContent. Interactions API em GA desde junho/2026. Verificado em 2026-06-29." />
+<meta name="last-checked" content="2026-06-29" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -321,7 +321,7 @@
   <div class="header-row">
     <div class="brand">Guia Gemini Interactions API <small>PT-BR · Referência completa + Migração</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-06-25</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-06-29</strong></span>
       <span class="badge gemini">google-genai</span>
       <span class="badge ok">GA</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
@@ -454,7 +454,7 @@
         <span class="badge gemini">google-genai · Python ≥ 2.0.0 (último 2.10.0)</span>
         <span class="badge gemini">@google/genai · JS ≥ 2.0.0 (último 2.10.0)</span>
         <span class="badge ok">GA · jun/2026</span>
-        <span class="badge ok">SOTA · 2026-06-25</span>
+        <span class="badge ok">SOTA · 2026-06-29</span>
         <span class="badge info">Schema steps · Api-Revision ignorado</span>
       </div>
     </div>
@@ -518,7 +518,7 @@
         <a href="#s-code-execution">§17.3</a> e o <a href="guia_agentic_vision_code_tools.html">guia de code tools</a>).
         <strong>Em produção na Vertex, valide a disponibilidade de cada recurso antes de migrar de
         <code>generateContent</code> para Interactions.</strong>
-        <em>Verificado em 2026-06-25, fontes oficiais Google.</em>
+        <em>Verificado em 2026-06-29, fontes oficiais Google.</em>
       </div>
     </section>
 
@@ -673,7 +673,7 @@
       </tbody>
     </table>
   </div>
-  <p style="margin:8px 0 0;font-size:13.5px;color:var(--c-fg-muted)"><strong>Nota (2026-06-25):</strong> o último <code>google-genai</code> / <code>@google/genai</code> é <code>2.10.0</code> (ambos; 2026-06-24). A 2.9.0 <strong>reimplementou a Interactions internamente mantendo a API pública compatível</strong> e a 2.10.0 segue compatível, então os exemplos deste guia seguem válidos; mantenha o piso prático <strong>&ge; 2.0.0</strong> (1.x falha desde 08/06/2026).</p>
+  <p style="margin:8px 0 0;font-size:13.5px;color:var(--c-fg-muted)"><strong>Nota (2026-06-29):</strong> o último <code>google-genai</code> / <code>@google/genai</code> é <code>2.10.0</code> (ambos; 2026-06-24). A 2.9.0 <strong>reimplementou a Interactions internamente mantendo a API pública compatível</strong> e a 2.10.0 segue compatível, então os exemplos deste guia seguem válidos; mantenha o piso prático <strong>&ge; 2.0.0</strong> (1.x falha desde 08/06/2026).</p>
   <div class="callout warn">
     <strong>Bibliotecas legadas descontinuadas em 30/11/2025:</strong>
     <code>google-generativeai</code> (Python), <code>@google/generativeai</code> (JS), <code>google.golang.org/generative-ai</code> (Go),
@@ -3808,7 +3808,7 @@ console.log(interaction.status); // cancelled</code></pre>
   <div class="callout warn">
     <p><strong>✅ Status em 2026-06-10 — transição concluída.</strong> Desde <strong>08/06/2026</strong> o schema novo (<code>steps</code> + <code>response_format</code> polimórfico) é o <strong>único</strong> aceito: o schema legado (<code>outputs</code>) foi <strong>removido permanentemente</strong>, o header <code>Api-Revision</code> passou a ser <strong>ignorado</strong> e a janela de rollback com <code>Api-Revision: 2026-05-07</code> <strong>fechou em 08/06/2026</strong> — não há mais como voltar. SDKs <code>google-genai</code>/<code>@google/genai</code> <strong>1.x estão quebrados</strong> para Interactions; se algo ainda lê <code>outputs</code> ou envia <code>response_mime_type</code>, está falhando em produção — atualize para v2.0.0+ e o schema <code>steps</code> imediatamente. <a class="ref" href="https://ai.google.dev/gemini-api/docs/interactions-breaking-changes-may-2026" target="_blank" rel="noopener">[guia oficial de migração]</a></p>
   </div>
-  <p>A versão de Maio/2026 do schema da Interactions API (SDK <code>google-genai</code> v2.0.0+; último PyPI <code>2.10.0</code>, verificado em 2026-06-25) introduziu mudanças incompatíveis. Durante a transição o header <code>Api-Revision</code> controlava o opt-in e depois o rollback; desde <strong>08/06/2026</strong> ele é <strong>ignorado</strong> e não há rollback (ver status acima).</p>
+  <p>A versão de Maio/2026 do schema da Interactions API (SDK <code>google-genai</code> v2.0.0+; último PyPI <code>2.10.0</code>, verificado em 2026-06-29) introduziu mudanças incompatíveis. Durante a transição o header <code>Api-Revision</code> controlava o opt-in e depois o rollback; desde <strong>08/06/2026</strong> ele é <strong>ignorado</strong> e não há rollback (ver status acima).</p>
 
   <h3>Mudanças de formato</h3>
   <div class="migration-pair">

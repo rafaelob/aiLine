@@ -4083,7 +4083,7 @@ Headers:
     <caption>Campos aceitos por <code>messages/count_tokens</code> e impacto em <code>input_tokens</code></caption>
     <thead><tr><th>Campo</th><th>Conta para <code>input_tokens</code>?</th><th>Observação</th></tr></thead>
     <tbody>
-      <tr><td><code>model</code></td><td>—</td><td>Obrigatório; tokenização varia entre famílias (Haiku/Sonnet/Opus) — sempre passe o modelo de destino real. Opus 4.8 usa tokenizador novo (+35%).</td></tr>
+      <tr><td><code>model</code></td><td>—</td><td>Obrigatório; tokenização varia entre famílias (Haiku/Sonnet/Opus) — sempre passe o modelo de destino real. Opus 4.7/4.8 e Fable 5 usam tokenizador novo (~30% mais tokens; Opus 4.6 e Sonnet 4.6 mantêm o antigo).</td></tr>
       <tr><td><code>system</code> (string ou array de blocos)</td><td><span class="pill ok">Sim</span></td><td>Cada bloco com <code>cache_control</code> é tokenizado normalmente — marcação de cache não desconta no count.</td></tr>
       <tr><td><code>tools</code> (function definitions)</td><td><span class="pill ok">Sim</span></td><td>Schema JSON serializado pesa muito; ver §A.4.</td></tr>
       <tr><td><code>tool_choice</code></td><td><span class="pill ok">Sim</span></td><td>Contribuição pequena, mas conta (~313 tk para <code>any</code>/<code>tool</code>, ~346 tk para <code>auto</code>/<code>none</code> em Claude 4.x).</td></tr>
@@ -4108,7 +4108,7 @@ Headers:
     <strong>Todos os modelos ativos</strong> suportam token counting (citação literal da doc: <em>"All active models support token counting"</em>). Em 24/maio/2026 isto inclui:
   </p>
   <ul>
-    <li><code>claude-opus-4-8</code> — frontier, 1M ctx, hi-res vision (4784 tk / imagem em até 2576 px), tokenizador novo (+35% vs gerações anteriores)</li>
+    <li><code>claude-opus-4-8</code> — frontier, 1M ctx, hi-res vision (4784 tk / imagem em até 2576 px), tokenizador novo (~30% mais tokens vs gerações anteriores ao Opus 4.7; também em Opus 4.7 e Fable 5)</li>
     <li><code>claude-sonnet-4-6</code> — workhorse, 1M ctx, extended thinking, vision std (1568 tk / imagem)</li>
     <li><code>claude-haiku-4-5</code> — low-latency, 200k ctx, vision std</li>
   </ul>
@@ -4854,7 +4854,7 @@ console.log(respRaw.input_tokens);</code></pre>
 
   <h3 id="anthropic-tc-tier-comparison">A.12 Comparação entre modelos — mesmo payload <a class="anchor" href="#anthropic-tc-tier-comparison">¶</a></h3>
   <p>
-    Tokenizações entre famílias divergem em pequena escala — exceto Opus 4.8, que usa um <em>tokenizador novo</em> e pode contar até 35% mais para o mesmo texto. Sempre conte com o modelo de destino real antes de rotear.
+    Tokenizações entre famílias divergem em pequena escala — exceto Opus 4.7, Opus 4.8 e Fable 5, que usam um <em>tokenizador novo</em> e contam ~30% mais para o mesmo texto. Sempre conte com o modelo de destino real antes de rotear.
   </p>
   <div class="code-group">
     <div class="code-tabs" role="tablist">
@@ -5145,7 +5145,7 @@ console.log("batch id:", batch.id);</code></pre>
     <li><strong>Estimate, não exato:</strong> aceite ±2–5% de variação entre <code>count_tokens</code> e o <code>usage.input_tokens</code> real do <code>messages.create</code>.</li>
     <li><strong>System-added tokens:</strong> podem aparecer na contagem (e no usage), mas você não é cobrado por eles. Não use o número para <em>calcular</em> custo cru — use para <em>cap</em> de janela.</li>
     <li><strong>Cache silencioso:</strong> <code>cache_control</code> em <code>count_tokens</code> é no-op; nunca confunda o número retornado com <em>"input não-cacheado"</em>. Para isso, faça a chamada real e leia <code>usage.cache_read_input_tokens</code> + <code>usage.cache_creation_input_tokens</code>.</li>
-    <li><strong>Modelo importa muito em Opus 4.8:</strong> tokenizador novo, +35% no pior caso. Sempre passe o modelo de destino exato — não conte com Sonnet/Haiku e use com Opus 4.8.</li>
+    <li><strong>Modelo importa muito em Opus 4.7/4.8 e Fable 5:</strong> tokenizador novo, ~30% mais tokens. Sempre passe o modelo de destino exato — não conte com Sonnet/Haiku e use com Opus 4.7+/Fable 5.</li>
     <li><strong>Tokenize o que você vai enviar:</strong> mesma resolução de imagem, mesmo PDF, mesmo histórico, mesmos tools, mesmos betas. Mudar qualquer coisa invalida a contagem.</li>
     <li><strong>Server tools:</strong> contagem cobre só a primeira sampling call do loop — não some "tools × turnos" para projetar custo.</li>
     <li><strong>Extended thinking:</strong> thinking de turnos anteriores é ignorado no count, mas no <code>messages.create</code> real (Opus 4.8 / Sonnet 4.6) eles podem entrar como cache reads. Use o usage real para reconciliação.</li>

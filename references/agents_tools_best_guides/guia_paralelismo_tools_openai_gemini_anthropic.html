@@ -1142,7 +1142,7 @@ response = client.models.generate_content(
         <p><strong>TL;DR (5 segundos).</strong> O SDK <code>google-genai</code> tem <strong>duas APIs distintas</strong> que podem entregar JSON estruturado combinado com Google Search:</p>
         <ul>
           <li><strong>Forma A — <code>client.models.generate_content()</code></strong>: API clássica (GA, estável). Schema via <code>response_mime_type</code> + <code>response_schema</code>. Tools como objetos <code>types.Tool(...)</code>. <em>Combo schema+search funciona apenas em <code>gemini-3.1-flash-lite</code> e <code>gemini-3-flash-preview</code>.</em></li>
-          <li><strong>Forma B — <code>client.interactions.create()</code></strong>: API agentic nova (Beta). Schema via <code>response_format={...}</code>. Tools como dicts <code>{"type":"google_search"}</code>. <em>Combo funciona em todos os 4 modelos Gemini-3.</em></li>
+          <li><strong>Forma B — <code>client.interactions.create()</code></strong>: API agentic (<strong>GA</strong> desde jun/2026; recomendada para novos projetos). Schema via <code>response_format={...}</code>. Tools como dicts <code>{"type":"google_search"}</code>. <em>Combo funciona em todos os 4 modelos Gemini-3.</em></li>
         </ul>
         <p><strong>O doc oficial mistura as duas no mesmo snippet</strong>: chama <code>client.models.generate_content(config={"response_format": ...})</code>. Isso não roda — pydantic rejeita porque <code>response_format</code> não é campo da generate_content API. Para usar <code>response_format</code>, você precisa chamar <code>client.interactions.create</code>. <a href="https://github.com/googleapis/python-genai/pull/2379" class="ref">PR #2379</a> que adicionou o campo só toca <code>google/genai/_interactions/</code> — nunca tocou <code>GenerateContentConfig</code>.</p>
       </div>
@@ -1270,7 +1270,7 @@ Headers:  x-goog-api-key: $GEMINI_API_KEY
         </ul>
       </div>
 
-      <h4>5.8.3 FORMA B — <code>client.interactions.create()</code> (nova, Beta) — DEEP DIVE</h4>
+      <h4>5.8.3 FORMA B — <code>client.interactions.create()</code> (GA) — DEEP DIVE</h4>
       <div class="callout ok">
         <p><strong>Quando usar:</strong> sempre que você precisar de qualquer um dos seguintes:</p>
         <ul>
@@ -1282,14 +1282,14 @@ Headers:  x-goog-api-key: $GEMINI_API_KEY
           <li>agentes preset (Deep Research) ou customizados (<code>DynamicAgentConfig</code>);</li>
           <li>controle fino de tier (<code>flex</code>/<code>standard</code>/<code>priority</code>) e nível de raciocínio (<code>thinking_level=minimal|low|medium|high</code>).</li>
         </ul>
-        <p><strong>Status oficial:</strong> Beta. SDK emite <code>UserWarning: "Interactions usage is experimental and may change in future versions."</code> na primeira chamada. Pinning de versão (<code>google-genai==2.6.0</code>) é recomendado.</p>
+        <p><strong>Status oficial:</strong> <strong>GA</strong> (desde junho/2026) — é a interface <strong>recomendada por padrão</strong> para novos projetos; o endpoint permanece em <code>/v1beta/interactions</code> (o rótulo GA não muda o caminho). Use <code>google-genai &gt;= 2.0.0</code> (último <code>2.10.0</code>); versões 1.x falham desde 08/06/2026. <em>Atenção ao breaking de 08/06/2026:</em> <code>outputs[]</code> virou <code>steps[]</code> e <code>response_mime_type</code> virou <code>response_format</code> polimórfico.</p>
       </div>
 
       <h5>5.8.3.1 Modelo conceitual — por que existe a Interactions API</h5>
       <div class="callout">
         <p>A <code>generate_content</code> API original assume um modelo <em>request→response</em> de texto: você manda <code>contents</code>, ele devolve <code>text</code>. Quando o modelo passou a executar múltiplas tools internas (Google Search, URL Context, Code Execution, File Search, MCP, function-calling, computer-use) e a produzir cadeias de raciocínio com <em>thought signatures</em>, a Google precisou de um novo formato de resposta que pudesse <strong>representar a sequência de operações</strong>, não só o texto final.</p>
         <p>A Interactions API resolve isso introduzindo <strong>steps</strong> como primitiva: cada coisa que o modelo faz vira um <code>Step</code> na lista <code>resp.steps[]</code>, na ordem de execução. Conceitualmente é o mesmo modelo que o <strong>OpenAI Responses API</strong> usa (<code>output: [reasoning, tool_call, message, ...]</code>), e a Anthropic com <code>content</code> blocks (<code>[server_tool_use, web_search_tool_result, text, tool_use, ...]</code>). Os três providers convergiram independentemente para "modelo agentic = lista de passos heterogêneos".</p>
-        <p><strong>Endpoint:</strong> <code>POST /v1beta/interactions</code>. <strong>Status em 2026-06-10:</strong> o schema novo (steps) é o <strong>único schema</strong> — virou default em 26/05/2026 e o legado foi <strong>removido em 08/06/2026</strong>. O header <code>Api-Revision</code> agora é <strong>ignorado</strong>: não é preciso enviá-lo, e o rollback com <code>Api-Revision: 2026-05-07</code> deixou de existir. SDKs <code>google-genai</code>/<code>@google/genai</code> 1.x ficaram <strong>quebrados</strong> para Interactions — use as linhas 2.x. A página oficial de migração passou a chamar a Interactions API de <em>"the standard interface for building with Gemini"</em> e a recomendá-la para todo desenvolvimento novo (a overview ainda mantém Beta + <code>generateContent</code> para produção estável). <a class="ref" href="https://ai.google.dev/gemini-api/docs/interactions-breaking-changes-may-2026" target="_blank" rel="noopener">[migração]</a></p>
+        <p><strong>Endpoint:</strong> <code>POST /v1beta/interactions</code>. <strong>Status em 2026-06-10:</strong> o schema novo (steps) é o <strong>único schema</strong> — virou default em 26/05/2026 e o legado foi <strong>removido em 08/06/2026</strong>. O header <code>Api-Revision</code> agora é <strong>ignorado</strong>: não é preciso enviá-lo, e o rollback com <code>Api-Revision: 2026-05-07</code> deixou de existir. SDKs <code>google-genai</code>/<code>@google/genai</code> 1.x ficaram <strong>quebrados</strong> para Interactions — use as linhas 2.x. A página oficial passou a chamar a Interactions API de <em>"the standard interface for building with Gemini"</em> e a recomendá-la para todo desenvolvimento novo. Desde junho/2026 ela é <strong>GA</strong> e recomendada por padrão; <code>generateContent</code> segue válido para casos request→response simples. <a class="ref" href="https://ai.google.dev/gemini-api/docs/interactions-breaking-changes-may-2026" target="_blank" rel="noopener">[migração]</a></p>
       </div>
 
       <h5>5.8.3.2 Assinatura completa de <code>client.interactions.create()</code></h5>
@@ -1814,7 +1814,7 @@ Headers:
           <li><strong>Header <code>Api-Revision</code> (desde 08/06/2026):</strong> o schema novo é o <strong>único</strong> — era default desde 26/05/2026 e o legado foi <strong>removido em 08/06/2026</strong>. O header agora é <strong>ignorado</strong>: <code>2026-05-20</code> é desnecessário e <code>2026-05-07</code> não faz mais rollback. SDKs <code>google-genai</code>/<code>@google/genai</code> 1.x estão quebrados para Interactions — use as linhas 2.x.</li>
           <li><strong>Output em <code>resp.output_text</code></strong>, não <code>resp.text</code>.</li>
           <li><strong>Grounding em <code>resp.steps[GoogleSearchCallStep].arguments.queries</code></strong>, não em <code>resp.candidates[].grounding_metadata</code> (este último é da Forma A).</li>
-          <li><strong>Aviso de Beta</strong>: a primeira chamada emite <code>UserWarning: "Interactions usage is experimental..."</code>. Silencie ou aceite.</li>
+          <li><strong>Agora é GA</strong>: a Interactions API saiu de beta (jun/2026) — não há mais o <code>UserWarning</code> de "experimental". Use <code>google-genai &gt;= 2.0.0</code> (último <code>2.10.0</code>).</li>
           <li><strong>Status <code>"requires_action"</code></strong>: o modelo está esperando você devolver <code>function_result</code>. Sem isso a interaction nunca completa.</li>
           <li><strong>Tier <code>"flex"</code> não garante latência</strong>: para SLA usar <code>"priority"</code>.</li>
           <li><strong>O snippet do doc oficial em "Structured outputs with tools" mistura métodos</strong> — usa <code>client.models.generate_content(config={"response_format":...})</code>, que não funciona. O caminho correto é este (<code>client.interactions.create</code>).</li>
@@ -1899,7 +1899,7 @@ Headers:
         </thead>
         <tbody>
           <tr><td>Método SDK</td><td><code>client.models.generate_content(...)</code></td><td><code>client.interactions.create(...)</code></td></tr>
-          <tr><td>Status SDK</td><td>GA (sem warning)</td><td>Beta (<code>UserWarning: "Interactions usage is experimental"</code>)</td></tr>
+          <tr><td>Status SDK</td><td>GA</td><td><strong>GA</strong> (desde jun/2026; recomendada para novos projetos)</td></tr>
           <tr><td>URL REST</td><td><code>/v1beta/models/{model}:generateContent</code></td><td><code>/v1beta/interactions</code></td></tr>
           <tr><td>Header obrigatório</td><td><code>x-goog-api-key</code></td><td><code>x-goog-api-key</code> <span class="small">(<code>Api-Revision</code> ignorado desde 08/06/2026)</span></td></tr>
           <tr><td>Prompt</td><td><code>contents=</code> (lista de Content ou string)</td><td><code>input=</code> (string ou estrutura)</td></tr>

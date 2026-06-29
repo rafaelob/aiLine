@@ -4,8 +4,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Guia Deep Agents — Referência completa (Python)</title>
-<meta name="description" content="Guia técnico SOTA do Deep Agents (LangChain OSS) em Python: os quatro pilares (system prompt, planning, sub-agents, virtual filesystem), create_deep_agent, middleware, backends pluggable, sandboxes, skills, memória, profiles, HITL, dcode CLI e ACP. Verificado em 2026-06-25." />
-<meta name="last-checked" content="2026-06-25" />
+<meta name="description" content="Guia técnico SOTA do Deep Agents (LangChain OSS) em Python: os quatro pilares (system prompt, planning, sub-agents, virtual filesystem), create_deep_agent, middleware, backends pluggable, sandboxes, skills, memória, profiles, HITL, dcode CLI e ACP. Verificado em 2026-06-29." />
+<meta name="last-checked" content="2026-06-29" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -259,7 +259,7 @@
   <div class="header-row">
     <div class="brand">Guia Deep Agents <small>Python — Referência completa</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-06-25</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-06-29</strong></span>
       <span class="badge da">deepagents</span>
       <span class="badge info">Python 3.11+</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
@@ -358,14 +358,14 @@
       <div class="hero-meta">
         <span class="badge da">deepagents 0.6.12</span>
         <span class="badge info">Python ≥ 3.11</span>
-        <span class="badge ok">SOTA · 2026-06-25</span>
+        <span class="badge ok">SOTA · 2026-06-29</span>
       </div>
     </div>
 
     <section id="sobre">
       <h2>Sobre este guia</h2>
       <div class="callout tip">
-        <strong>Atualização 2026-06-25 — deepagents 0.6.12 é o último no PyPI (release de 2026-06-25; a 0.6.11 era de 2026-06-18).</strong> Desde a 0.6.3: <code>RubricMiddleware</code> (auto-avaliação iterativa do agente, 0.6.5); <code>state_schema</code> aceitável em <code>create_deep_agent</code> (0.6.6); Commands retornados por tools propagam <code>goto</code>/<code>graph</code> e <code>DeepAgentState</code> passou a ser exportado (0.6.7); <code>CodeInterpreterMiddleware</code> experimental (runtime QuickJS) e adoção de <code>DeltaChannel</code> + event streaming v3 (0.6.0). <strong>Breaking (0.6.8):</strong> removidos os exports públicos <code>SubagentRunStream</code>/<code>AsyncSubagentRunStream</code>/<code>SubagentTransformer</code> (eram internos da API beta <code>stream_events(version="v3")</code>). <strong>0.6.9:</strong> formato de resposta de subagente configurável (nova opção pública), além de bugfixes/perf (token counting na summarization middleware, cache de prompts de filesystem e de matchers de glob). <strong>0.6.10:</strong> bugfix — passa a comparar o provider em <code>model_matches_spec</code>. <strong>0.6.11:</strong> bugfix — roteia os helpers async do <code>BaseSandbox</code> por <code>aexecute</code>. <strong>0.6.12:</strong> adicionou <code>BedrockPromptCachingMiddleware</code> (middleware de prompt-caching para Amazon Bedrock). <strong>Compatibilidade:</strong> exige <code>langchain-core &gt;=1.4,&lt;2</code>, <code>langchain &gt;=1.3.4,&lt;2</code>, <code>langchain-anthropic &gt;=1.4.3,&lt;2</code>, <code>langchain-google-genai &gt;=4.2.2,&lt;5</code> — compatível com o LangChain/LangGraph mais novos. <span class="small">O modelo default resolve via HarnessProfile/<code>init_chat_model</code>; passe o ID explicitamente (ex.: <code>"anthropic:claude-sonnet-4-6"</code>) em vez de depender do default.</span>
+        <strong>Atualização 2026-06-29 — deepagents 0.6.12 é o último no PyPI (release de 2026-06-29; a 0.6.11 era de 2026-06-18).</strong> Desde a 0.6.3: <code>RubricMiddleware</code> (auto-avaliação iterativa do agente, 0.6.5); <code>state_schema</code> aceitável em <code>create_deep_agent</code> (0.6.6); Commands retornados por tools propagam <code>goto</code>/<code>graph</code> e <code>DeepAgentState</code> passou a ser exportado (0.6.7); <code>CodeInterpreterMiddleware</code> experimental (runtime QuickJS) e adoção de <code>DeltaChannel</code> + event streaming v3 (0.6.0). <strong>Breaking (0.6.8):</strong> removidos os exports públicos <code>SubagentRunStream</code>/<code>AsyncSubagentRunStream</code>/<code>SubagentTransformer</code> (eram internos da API beta <code>stream_events(version="v3")</code>). <strong>0.6.9:</strong> formato de resposta de subagente configurável (nova opção pública), além de bugfixes/perf (token counting na summarization middleware, cache de prompts de filesystem e de matchers de glob). <strong>0.6.10:</strong> bugfix — passa a comparar o provider em <code>model_matches_spec</code>. <strong>0.6.11:</strong> bugfix — roteia os helpers async do <code>BaseSandbox</code> por <code>aexecute</code>. <strong>0.6.12:</strong> adicionou <code>BedrockPromptCachingMiddleware</code> (middleware de prompt-caching para Amazon Bedrock). <strong>Compatibilidade:</strong> exige <code>langchain-core &gt;=1.4,&lt;2</code>, <code>langchain &gt;=1.3.4,&lt;2</code>, <code>langchain-anthropic &gt;=1.4.3,&lt;2</code>, <code>langchain-google-genai &gt;=4.2.2,&lt;5</code> — compatível com o LangChain/LangGraph mais novos. <span class="small">O modelo default resolve via HarnessProfile/<code>init_chat_model</code>; passe o ID explicitamente (ex.: <code>"anthropic:claude-sonnet-4-6"</code>) em vez de depender do default.</span>
       </div>
       <p>
         Este guia é uma <strong>conversão fiel</strong> da documentação oficial pública
@@ -474,7 +474,7 @@
   </div>
   <div class="source-link">Fontes: <a href="https://www.langchain.com/blog/deep-agents" target="_blank" rel="noopener">blog</a>, <a href="https://docs.langchain.com/oss/python/deepagents/overview" target="_blank" rel="noopener">overview</a>.</div>
   <div class="callout tip" style="margin-top:12px">
-    <strong>Nota (docs oficiais, verificado 2026-06-25):</strong> a documentação oficial enquadra as quatro capacidades como: (1) <strong>Execution environment</strong> — tools, filesystem virtual, sandbox opcional e REPL; (2) <strong>Context management</strong> — skills, memória, sumarização e caching de prompt; (3) <strong>Delegation</strong> — subagents e planejamento de tarefas; (4) <strong>Steering</strong> — HITL e interrupts. Mapeamento com os pilares acima: <em>System prompt detalhado</em> ≈ Execution environment + Context management; <em>Planning tool</em> e <em>Sub-agents</em> ≈ Delegation; <em>Sistema de arquivos virtual</em> ≈ Execution environment.
+    <strong>Nota (docs oficiais, verificado 2026-06-29):</strong> a documentação oficial enquadra as quatro capacidades como: (1) <strong>Execution environment</strong> — tools, filesystem virtual, sandbox opcional e REPL; (2) <strong>Context management</strong> — skills, memória, sumarização e caching de prompt; (3) <strong>Delegation</strong> — subagents e planejamento de tarefas; (4) <strong>Steering</strong> — HITL e interrupts. Mapeamento com os pilares acima: <em>System prompt detalhado</em> ≈ Execution environment + Context management; <em>Planning tool</em> e <em>Sub-agents</em> ≈ Delegation; <em>Sistema de arquivos virtual</em> ≈ Execution environment.
   </div>
 </section>
 
@@ -547,7 +547,7 @@ uv add deepagents tavily-python</code></pre>
     <table>
       <thead><tr><th>Item</th><th>Valor</th></tr></thead>
       <tbody>
-        <tr><td>Versão atual</td><td><code>deepagents == 0.6.12</code> (2026-06-25)</td></tr>
+        <tr><td>Versão atual</td><td><code>deepagents == 0.6.12</code> (2026-06-29)</td></tr>
         <tr><td>Python</td><td><code>&gt;= 3.11, &lt; 4.0</code> (3.11 – 3.14)</td></tr>
         <tr><td>Licença</td><td>MIT</td></tr>
         <tr><td>Dependências principais</td><td><code>langgraph</code>, <code>langchain</code> (<code>create_agent</code> + middleware framework)</td></tr>

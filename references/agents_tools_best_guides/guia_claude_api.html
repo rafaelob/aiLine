@@ -4,8 +4,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Guia Claude API (Anthropic) — Referência completa · Opus 4.8 · Sonnet 4.6 · Haiku 4.5</title>
-<meta name="description" content="Guia técnico exaustivo e SOTA da API da Anthropic (Claude) em PT-BR: Messages API, modelos Opus 4.8 / Sonnet 4.6 / Haiku 4.5, streaming, thinking (adaptive + extended), tool use, multimodal (vision/PDF/files), prompt caching, batch, structured outputs, citations, embeddings, Agent Skills, MCP, Managed Agents, referência REST/SDK, governança e plataformas de nuvem. Verificado em 2026-06-25." />
-<meta name="last-checked" content="2026-06-25" />
+<meta name="description" content="Guia técnico exaustivo e SOTA da API da Anthropic (Claude) em PT-BR: Messages API, modelos Opus 4.8 / Sonnet 4.6 / Haiku 4.5, streaming, thinking (adaptive + extended), tool use, multimodal (vision/PDF/files), prompt caching, batch, structured outputs, citations, embeddings, Agent Skills, MCP, Managed Agents, referência REST/SDK, governança e plataformas de nuvem. Verificado em 2026-06-29." />
+<meta name="last-checked" content="2026-06-29" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -294,7 +294,7 @@
   <div class="header-row">
     <div class="brand">Guia Claude API <small>Anthropic · PT-BR · Referência completa</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-06-25</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-06-29</strong></span>
       <span class="badge claude">anthropic · @anthropic-ai/sdk</span>
       <span class="badge ok">Opus 4.8 · Sonnet 4.6 · Haiku 4.5</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
@@ -427,7 +427,7 @@
         <span class="badge claude">@anthropic-ai/sdk · Node ≥ 20</span>
         <span class="badge ok">Opus 4.8 · Sonnet 4.6 · Haiku 4.5</span>
         <span class="badge info">anthropic-version: 2023-06-01</span>
-        <span class="badge">Verificado em 2026-06-25</span>
+        <span class="badge">Verificado em 2026-06-29</span>
       </div>
     </div>
 
@@ -901,11 +901,11 @@ console.log(message.content);</code></pre>
     </tbody>
   </table></div>
 
-  <div class="callout warn"><strong>Atenção:</strong> Opus 4.8 usa um <strong>tokenizer novo</strong> em relação a gerações anteriores, o que contribui para seu desempenho — mas pode consumir até <strong>35% mais tokens</strong> para o mesmo texto. Considere isso ao estimar custos ao migrar de versões anteriores.</div>
+  <div class="callout warn"><strong>Atenção (tokenizer):</strong> Opus 4.7, Opus 4.8 e Fable 5 usam um <strong>tokenizer novo</strong> em relação a gerações anteriores (Opus 4.6 e Sonnet 4.6 mantêm o antigo), o que contribui para o desempenho — mas produz <strong>~30% mais tokens</strong> para o mesmo texto. Recalibre <code>max_tokens</code> e re-baseie estimativas de custo ao migrar; a API de <em>token counting</em> aceita <code>model:"claude-fable-5"</code> para medir com o novo tokenizer.</div>
 
   <div class="callout tip"><strong>Opus 4.8 — atual e recomendado (verificado 2026-06-03):</strong> o <code>claude-opus-4-8</code> é o Opus atual e <strong>sucessor direto do 4.7</strong> (agora <span class="pill info">Legacy</span>). As specs centrais são <em>idênticas</em> às do 4.7 (confirmado em <code>models/overview</code>): janela de <strong>1M tokens</strong>, saída de <strong>128k</strong>, <strong>adaptive thinking</strong> (sem extended), preço <strong>$5 / $25</strong> por MTok. Diferença de comportamento: no 4.8 o <code>effort</code> assume <strong><code>high</code> por padrão</strong> em todas as superfícies (Claude API e Claude Code) — defina-o explicitamente para usar outro nível. O suporte a ferramentas e headers beta (computer use, code execution, web fetch, fast mode, <code>inference_geo</code>) é herdado da superfície do 4.7; para betas de borda, confirme sempre na documentação oficial.</div>
 
-  <div class="callout warn"><strong>Atualização 2026-06-25:</strong> a Anthropic lançou o <strong>Claude Fable 5</strong> (<code>claude-fable-5</code>, GA em <strong>2026-06-09</strong>, mas <strong>indisponível no momento</strong> — confirme o status atual em <code>models/overview</code> antes de planejar uso) — o modelo mais capaz amplamente lançado da Anthropic: <strong>$10 / $50</strong> por MTok, contexto de <strong>1M tokens</strong>, saída máxima de <strong>128k</strong> e <strong>adaptive thinking sempre ativo</strong> — <code>thinking: {"type": "disabled"}</code>, budget manual (<code>enabled</code> + <code>budget_tokens</code>) e prefill do turno <code>assistant</code> retornam <strong><code>400</code></strong>; <code>thinking.display</code> assume <code>"omitted"</code> por padrão. Usa o tokenizer do Opus 4.7 (~30% mais tokens que gerações pré-4.7 para o mesmo texto), traz classificadores de segurança com <code>stop_reason: "refusal"</code> (sem cobrança se nada for gerado — política de toda a Claude API desde <strong>02/06/2026</strong>, não exclusiva do Fable 5) e o parâmetro <code>fallbacks</code> <span class="pill beta">Beta</span>, exige <strong>retenção de 30 dias</strong> (<em>não</em> elegível a ZDR) e tem cache mínimo de <strong>512 tokens</strong>. O <strong>Claude Mythos 5</strong> (<code>claude-mythos-5</code>) está em disponibilidade limitada. O <strong>Opus 4.8 segue ativo e recomendado</strong> — este guia permanece centrado nele (com Sonnet 4.6 e Haiku 4.5). Deprecações: <strong>Sonnet 4</strong> e <strong>Opus 4</strong> aposentam em <strong>2026-06-15</strong>; <strong>Opus 4.1</strong> (anúncio de 2026-06-05) aposenta em <strong>2026-08-05</strong>. Desde 2026-05-27, a API reporta <code>usage.output_tokens_details.thinking_tokens</code> no <code>message_delta</code> final.
+  <div class="callout warn"><strong>Atualização 2026-06-29:</strong> a Anthropic lançou o <strong>Claude Fable 5</strong> (<code>claude-fable-5</code>, GA em <strong>2026-06-09</strong>, mas <strong>indisponível no momento</strong> — confirme o status atual em <code>models/overview</code> antes de planejar uso) — o modelo mais capaz amplamente lançado da Anthropic: <strong>$10 / $50</strong> por MTok, contexto de <strong>1M tokens</strong>, saída máxima de <strong>128k</strong> e <strong>adaptive thinking sempre ativo</strong> — <code>thinking: {"type": "disabled"}</code>, budget manual (<code>enabled</code> + <code>budget_tokens</code>) e prefill do turno <code>assistant</code> retornam <strong><code>400</code></strong>; <code>thinking.display</code> assume <code>"omitted"</code> por padrão. Usa o tokenizer do Opus 4.7 (~30% mais tokens que gerações pré-4.7 para o mesmo texto), traz classificadores de segurança com <code>stop_reason: "refusal"</code> (sem cobrança se nada for gerado — política de toda a Claude API desde <strong>02/06/2026</strong>, não exclusiva do Fable 5) e o parâmetro <code>fallbacks</code> <span class="pill beta">Beta</span>, exige <strong>retenção de 30 dias</strong> (<em>não</em> elegível a ZDR) e tem cache mínimo de <strong>512 tokens</strong>. O <strong>Claude Mythos 5</strong> (<code>claude-mythos-5</code>) está em disponibilidade limitada. O <strong>Opus 4.8 segue ativo e recomendado</strong> — este guia permanece centrado nele (com Sonnet 4.6 e Haiku 4.5). Deprecações: <strong>Sonnet 4</strong> e <strong>Opus 4</strong> aposentam em <strong>2026-06-15</strong>; <strong>Opus 4.1</strong> (anúncio de 2026-06-05) aposenta em <strong>2026-08-05</strong>. Desde 2026-05-27, a API reporta <code>usage.output_tokens_details.thinking_tokens</code> no <code>message_delta</code> final.
     <span class="source-link"><a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener">models/overview</a> · <a href="https://platform.claude.com/docs/en/about-claude/model-deprecations" target="_blank" rel="noopener">model-deprecations</a></span>
   </div>
 
@@ -1000,7 +1000,7 @@ curl https://api.anthropic.com/v1/models/claude-opus-4-8 \
       <tr><td><code>max_tokens</code></td><td>integer (obrigatório)</td><td>Máximo de tokens a gerar. Limitado pelo <code>max_tokens</code> do modelo (ver <a href="#a-modelos">seção 3</a>).</td></tr>
       <tr><td><code>messages</code></td><td>array (obrigatório)</td><td>Histórico de turnos. Cada item tem <code>role</code> (<code>user</code> ou <code>assistant</code>) e <code>content</code> (string ou array de blocos).</td></tr>
       <tr><td><code>system</code></td><td>string ou array</td><td>Prompt de sistema — instruções, persona, regras. Não é um turno de <code>messages</code>; é um campo de topo.</td></tr>
-      <tr><td><code>temperature</code></td><td>number (0–1)</td><td>Aleatoriedade da amostragem. Mais baixo &rarr; mais determinístico.</td></tr>
+      <tr><td><code>temperature</code></td><td>number (0–1)</td><td>Aleatoriedade da amostragem. Mais baixo &rarr; mais determinístico. <strong>⚠️ Depreciado</strong> em Opus 4.7/4.8 e Fable 5 — ver aviso abaixo.</td></tr>
       <tr><td><code>stop_sequences</code></td><td>array de strings</td><td>Sequências que, ao serem geradas, encerram a resposta (<code>stop_reason: "stop_sequence"</code>).</td></tr>
       <tr><td><code>stream</code></td><td>boolean</td><td><code>true</code> para streaming via SSE (ver <a href="#a-streaming">seção 5</a>).</td></tr>
     </tbody>
@@ -4185,6 +4185,7 @@ console.log(finalMessage.usage);</code></pre>
       <tr><td><code>inference_geo</code></td><td>string</td><td>Não</td><td><code>"global"</code> (default) ou <code>"us"</code> — residência de inferência (veja a <a href="#d-gov-residencia">seção 11.6</a>)</td></tr>
     </tbody>
   </table></div>
+  <div class="callout warn"><strong>Atenção (sampling depreciado):</strong> <code>temperature</code>, <code>top_p</code> e <code>top_k</code> retornam <strong><code>400</code></strong> quando definidos com valor <em>não-default</em> em <strong>Claude Opus 4.7, Opus 4.8 e Fable 5</strong> (seguem válidos em Opus 4.6, Sonnet 4.6 e modelos anteriores). Os campos continuam nos tipos do SDK para compatibilidade de <em>type-check</em>, mas a API rejeita valores não-default — <strong>omita-os</strong> e guie o comportamento por <em>prompting</em>. Fonte: <a href="https://platform.claude.com/docs/en/about-claude/model-deprecations" target="_blank" rel="noopener">model-deprecations</a>.</div>
   <div class="callout warn"><strong>Atenção (prefill):</strong> Claude Opus 4.8 e Sonnet 4.6 <strong>não suportam</strong> pré-preencher (prefill) a última mensagem <code>assistant</code>. Enviar um turno <code>assistant</code> final retorna <code>400 invalid_request_error</code>. Use <a href="#d-rest-messages-resp">saída estruturada</a> (<code>output_config.format</code>), instruções no system prompt ou structured outputs.</div>
 
   <h3 id="d-rest-messages-resp">3.2. Objeto de resposta (<code>Message</code>)</h3>
@@ -6381,10 +6382,21 @@ const msg = await bedrock.messages.create({
       <code>output-300k-2026-03-24</code>. O <strong>Claude Fable 5</strong> segue GA (09/06) porém
       <strong>indisponível no momento</strong> (confirmar status atual). Sem endpoint, parâmetro ou
       modelo novo.</li>
+    <li><strong>2026-06-29 (varredura de freshness — changelogs oficiais reverificados)</strong> — SDK
+      <code>anthropic</code> <strong>0.113.0</strong> (Python, 29/06; adiciona web fetch/support tools
+      <code>20260318</code>) e <code>@anthropic-ai/sdk</code> <strong>0.107.0</strong> (Node). <strong>Sampling
+      depreciado:</strong> <code>temperature</code>/<code>top_p</code>/<code>top_k</code> retornam <code>400</code>
+      com valor não-default em Opus 4.7/4.8 e Fable 5. <strong>Tokenizer novo</strong> (~30% mais tokens) em
+      Opus 4.7+/Fable 5. <strong>Depreciações de modelo:</strong> Opus 4.1 (<code>claude-opus-4-1-20250805</code>)
+      deprecado 05/06, retirement <strong>05/08/2026</strong> → Opus 4.8; Sonnet 4 e Opus 4
+      (<code>*-20250514</code>) já <strong>retired</strong> em 15/06/2026; <em>fast mode</em> do Opus 4.7 removido
+      em <strong>24/07/2026</strong>. Confirmado: Fable 5 = GA porém <strong>temporariamente indisponível para
+      usuários regulares</strong>; Sonnet 4.6 = 128k e Haiku 4.5 = 64k de saída máxima. Fonte:
+      <code>platform.claude.com/docs/.../model-deprecations</code>.</li>
   </ul>
   <p style="color:var(--c-fg-muted);font-size:13px">Fontes primárias: <code>platform.claude.com/docs</code>
   (export <code>llms-full.txt</code>) e <code>github.com/anthropics/anthropic-cookbook</code>.
-  Verificado em 2026-06-25 — para fatos perecíveis (modelos, datas, preços, limites, headers beta),
+  Verificado em 2026-06-29 — para fatos perecíveis (modelos, datas, preços, limites, headers beta),
   consulte sempre a fonte oficial.</p>
 </section>
   </main>

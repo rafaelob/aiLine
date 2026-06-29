@@ -4,8 +4,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Guia OpenAI — Modelos mais recentes & API (Responses, Realtime, Imagem, Áudio)</title>
-<meta name="description" content="Guia técnico exaustivo e SOTA dos modelos OpenAI mais recentes em PT-BR: gpt-5.5, gpt-5.4-mini, gpt-5.4-nano (texto/reasoning via Responses API), gpt-image-2 (imagem/visão), áudio e realtime (gpt-realtime-2, gpt-4o-transcribe, gpt-4o-mini-tts), embeddings, moderation, preços, limites e operação. Verificado em 2026-06-25." />
-<meta name="last-checked" content="2026-06-25" />
+<meta name="description" content="Guia técnico exaustivo e SOTA dos modelos OpenAI mais recentes em PT-BR: gpt-5.5, gpt-5.4-mini, gpt-5.4-nano (texto/reasoning via Responses API), gpt-image-2 (imagem/visão), áudio e realtime (gpt-realtime-2, gpt-4o-transcribe, gpt-4o-mini-tts), embeddings, moderation, preços, limites e operação. Verificado em 2026-06-29." />
+<meta name="last-checked" content="2026-06-29" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -294,7 +294,7 @@
   <div class="header-row">
     <div class="brand">Guia OpenAI <small>PT-BR · Modelos mais recentes &amp; API</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-06-25</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-06-29</strong></span>
       <span class="badge openai">SDK openai</span>
       <span class="badge ok">SOTA</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
@@ -387,7 +387,7 @@
       <div class="hero-meta">
         <span class="badge openai">SDK openai · Python &amp; JavaScript</span>
         <span class="badge info">Responses API</span>
-        <span class="badge ok">SOTA · 2026-06-25</span>
+        <span class="badge ok">SOTA · 2026-06-29</span>
       </div>
     </div>
 
@@ -495,7 +495,7 @@
       <thead><tr><th>Família</th><th>Modelo atual</th><th>Para quê</th><th>Onde</th></tr></thead>
       <tbody>
         <tr><td>Coding</td><td><code>gpt-5.3-codex</code></td><td>Modelo especializado em código (agentes de coding, Codex). Para a maioria dos fluxos, <code>gpt-5.5</code> + <code>apply_patch</code>/<code>shell</code> já cobre; use o codex quando o ferramental Codex for o alvo.</td><td>Parte A (<a href="#s-tools-applypatch">§11.6</a>)</td></tr>
-        <tr><td>Imagem</td><td><code>gpt-image-2</code> (SOTA) · <code>gpt-image-1-mini</code> (econômico)</td><td>Geração e edição de imagens via API e como ferramenta integrada. <code>gpt-image-1-mini</code> prioriza custo e throughput; use para lotes, prototipagem e rascunhos.</td><td>Parte B</td></tr>
+        <tr><td>Imagem</td><td><code>gpt-image-2</code> (SOTA, default)</td><td>Geração e edição de imagens via API e como ferramenta integrada — único modelo de imagem recomendado. Os econômicos <code>gpt-image-1-mini</code>/<code>gpt-image-1.5</code> estão depreciados (sunset 2026-12-01); <code>gpt-image-1</code> sunset 2026-10-23. Migre tudo para <code>gpt-image-2</code>.</td><td>Parte B</td></tr>
         <tr><td>Realtime</td><td><code>gpt-realtime-2</code>, <code>gpt-realtime-translate</code>, <code>gpt-realtime-whisper</code></td><td>Voz <em>speech-to-speech</em>, tradução e transcrição em streaming de baixa latência.</td><td>Parte C</td></tr>
         <tr><td>Áudio no chat</td><td><code>gpt-audio-1.5</code></td><td>Entrada/saída de áudio em fluxos de chat.</td><td>Parte C</td></tr>
         <tr><td>STT de arquivo</td><td><code>gpt-4o-transcribe</code>, <code>gpt-4o-mini-transcribe</code>, <code>gpt-4o-transcribe-diarize</code>, <code>whisper-1</code></td><td>Transcrição de arquivos, diarização, timestamps e tradução de áudio.</td><td>Parte C</td></tr>
@@ -2160,7 +2160,7 @@ console.log(count.input_tokens);</code></pre>
 
   <div class="callout info"><strong>Nota — referência de API desatualizada:</strong> alguns exemplos na <em>API Reference</em> de <code>/v1/images</code> ainda mostram um ID de modelo de imagem anterior no campo <code>model</code>. Isso é apenas texto de exemplo desatualizado — o ID canônico e recomendado para geração e edição é <code>gpt-image-2</code>.</div>
 
-  <div class="callout info"><strong>Nota — família de modelos de imagem (2026-06-25):</strong> além do <code>gpt-image-2</code>, estão disponíveis: <code>gpt-image-1-mini</code> (otimizado para custo e throughput — ideal para lotes, prototipagem e rascunhos), <code>gpt-image-1.5</code> (transição) e <code>gpt-image-1</code> (legado — <strong>sunset 2026-10-23</strong>, migre para <code>gpt-image-2</code>). Para novos projetos, prefira sempre <code>gpt-image-2</code>. Fonte: <a href="https://developers.openai.com/api/docs/deprecations" target="_blank" rel="noopener">developers.openai.com/api/docs/deprecations</a>.</div>
+  <div class="callout info"><strong>Nota — família de modelos de imagem (2026-06-29):</strong> o default e SOTA é <code>gpt-image-2</code> — <strong>use sempre ele em novos projetos</strong>. Os demais estão <strong>todos depreciados</strong>: <code>gpt-image-1-mini</code>, <code>gpt-image-1.5</code> e <code>chatgpt-image-latest</code> têm <strong>sunset em 2026-12-01</strong> (anunciado 2026-06-02); <code>gpt-image-1</code> tem <strong>sunset em 2026-10-23</strong>. <code>dall-e-2</code>/<code>dall-e-3</code> já foram <strong>removidos</strong> da API (2026-05-12). Em todos os casos migre para <code>gpt-image-2</code>. Fonte: <a href="https://developers.openai.com/api/docs/deprecations" target="_blank" rel="noopener">developers.openai.com/api/docs/deprecations</a>.</div>
 
   <h3 id="s-image-gen-call">17.1 Gerar e salvar a imagem</h3>
   <p>
@@ -4200,7 +4200,7 @@ curl https://api.openai.com/v1/audio/translations \
   <p>O endpoint <code>/v1/audio/speech</code> transforma texto em áudio falado usando o modelo <code>gpt-4o-mini-tts</code>, o modelo de TTS mais recente e confiável da OpenAI. Os três insumos principais são: <strong>model</strong>, <strong>input</strong> (o texto, máximo de 4096 caracteres) e <strong>voice</strong>. Um diferencial do <code>gpt-4o-mini-tts</code> é o parâmetro <code>instructions</code>, que controla <em>como</em> o modelo fala (sotaque, faixa emocional, entonação, velocidade, tom, sussurro).</p>
   <div class="callout warn"><strong>Atenção:</strong> as políticas de uso exigem que você informe claramente aos usuários finais que a voz TTS é gerada por IA e não é uma voz humana.</div>
 
-  <div class="callout info"><strong>Nota — modelos TTS (2026-06-25):</strong> além do <code>gpt-4o-mini-tts</code>, está disponível o <code>gpt-4o-tts</code> (modelo TTS completo, maior qualidade). Atenção: o snapshot <code>gpt-4o-mini-tts-2025-03-20</code> encerra em <strong>2026-07-23</strong> — migre para o snapshot <code>gpt-4o-mini-tts-2025-12-15</code> ou use o alias <code>gpt-4o-mini-tts</code>. Fonte: <a href="https://developers.openai.com/api/docs/deprecations" target="_blank" rel="noopener">developers.openai.com/api/docs/deprecations</a>.</div>
+  <div class="callout info"><strong>Nota — modelos TTS (2026-06-29):</strong> além do <code>gpt-4o-mini-tts</code>, está disponível o <code>gpt-4o-tts</code> (modelo TTS completo, maior qualidade). Atenção: o snapshot <code>gpt-4o-mini-tts-2025-03-20</code> encerra em <strong>2026-07-23</strong> — migre para o snapshot <code>gpt-4o-mini-tts-2025-12-15</code> ou use o alias <code>gpt-4o-mini-tts</code>. Fonte: <a href="https://developers.openai.com/api/docs/deprecations" target="_blank" rel="noopener">developers.openai.com/api/docs/deprecations</a>.</div>
 
   <h3 id="s-tts-quickstart">26.1 Gerar fala</h3>
   <div class="code-group">
@@ -5857,6 +5857,7 @@ console.log(resp.output_text);
         <tr><td>2026-05-24</td><td>Preços de áudio verificados na tabela oficial (Realtime/Transcription); modelos sem linha própria explicitados. Adicionado código real do Cookbook (Python + JavaScript) em cada parte. Fechadas lacunas in-scope: <code>input_file</code> (PDF/documentos/planilhas), <code>gpt-5.5-pro</code>/<code>gpt-5.4-pro</code>, ponteiro <code>gpt-5.3-codex</code>, campo <code>safety_identifier</code>.</td></tr>
         <tr><td>2026-05-24</td><td>Resolvidos os 2 itens pendentes: <code>file_search</code> usa <code>purpose="assistants"</code> (valor documentado para ingestão em vector store, confirmado no Cookbook + OpenAPI); orquestração <code>web_search</code>+<code>file_search</code> documentada como mecanismo de array de ferramentas (cada shape oficial; modelo roteia via <code>tool_choice: auto</code>). Zero itens UNVERIFIED de preço/código restantes.</td></tr>
         <tr><td>2026-06-25</td><td>Adicionados <code>gpt-image-1-mini</code> (imagem econômica) e <code>gpt-4o-tts</code> (TTS completo) na tabela de modelos e nas seções de referência. Nota de sunset <code>gpt-image-1</code> (2026-10-23 → migrar para <code>gpt-image-2</code>) e snapshot <code>gpt-4o-mini-tts-2025-03-20</code> (sunset 2026-07-23 → migrar para <code>gpt-4o-mini-tts-2025-12-15</code>). Nota de depreciação de 2026-06-11: snapshots <code>gpt-5-2025-08-07</code>, <code>gpt-5-mini-2025-08-07</code>, <code>gpt-5-nano-2025-08-07</code>, <code>gpt-5-pro-2025-10-06</code>, <code>o3-2025-04-16</code> e <code>o3-pro-2025-06-10</code> encerram em 2026-12-11 (substitutos: <code>gpt-5.5</code> / <code>gpt-5.4-mini</code> / <code>gpt-5.4-nano</code> / <code>gpt-5.5-pro</code>). Verificado em <a href="https://developers.openai.com/api/docs/deprecations" target="_blank" rel="noopener">developers.openai.com/api/docs/deprecations</a>.</td></tr>
+        <tr><td>2026-06-29</td><td>Varredura de freshness (changelogs oficiais reverificados): <code>gpt-image-1-mini</code>, <code>gpt-image-1.5</code> e <code>chatgpt-image-latest</code> com <strong>sunset 2026-12-01</strong> (anunciado 2026-06-02 → migrar para <code>gpt-image-2</code>); SDK <code>openai</code> 2.44.0 (Python) / 6.45.0 (Node). Confirmados <code>gpt-5.5</code> como flagship recomendado e <code>gpt-image-2</code> como default de imagem. Sunsets adicionais verificados: Assistants API 2026-08-26; Evals/Agent Builder/v1-prompts 2026-11-30; <code>gpt-4.1-nano</code>/<code>o1</code>/<code>o3-mini</code>/<code>o4-mini</code> 2026-10-23; Sora 2 / Videos API 2026-09-24. Fonte: <a href="https://developers.openai.com/api/docs/deprecations" target="_blank" rel="noopener">developers.openai.com/api/docs/deprecations</a>.</td></tr>
         <tr><td>2026-06-10</td><td>Varredura de atualização contra doc oficial: billing de containers (Hosted Shell/Code Interpreter) agora é <strong>por minuto</strong> com mínimo de 5 min por sessão (mudança de 2026-06-02; taxas por 20 min seguem como base de preço); default de <code>prompt_cache_retention</code> passou a <code>24h</code> para organizações sem ZDR em <code>v1/responses</code>, <code>v1/chat/completions</code> e <code>v1/batch</code> (mudança de 2026-05-29); deprecação da plataforma Evals anunciada em 2026-06-03 sinalizada na tabela do Cookbook; IDs de Embeddings/Moderation preenchidos no catálogo §1.2 (<code>text-embedding-3-small</code>/<code>-large</code>, <code>omni-moderation-latest</code>); marcadores de verificação atualizados para 2026-06-10.</td></tr>
       </tbody>
     </table>

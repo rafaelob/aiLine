@@ -4,8 +4,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Guia LangGraph — Referência completa (Python)</title>
-<meta name="description" content="Guia técnico SOTA do LangGraph em Python: StateGraph, nodes, edges, Send, Command, persistência (checkpointers), human-in-the-loop, streaming, memória, multi-agent, time travel, durable execution e Functional API. Verificado em 2026-06-25." />
-<meta name="last-checked" content="2026-06-25" />
+<meta name="description" content="Guia técnico SOTA do LangGraph em Python: StateGraph, nodes, edges, Send, Command, persistência (checkpointers), human-in-the-loop, streaming, memória, multi-agent, time travel, durable execution e Functional API. Verificado em 2026-06-29." />
+<meta name="last-checked" content="2026-06-29" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -264,7 +264,7 @@
   <div class="header-row">
     <div class="brand">Guia LangGraph <small>Python — Referência completa</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-06-25</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-06-29</strong></span>
       <span class="badge lc">langgraph</span>
       <span class="badge info">Python</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
@@ -394,7 +394,7 @@
       <div class="hero-meta">
         <span class="badge lc">langgraph</span>
         <span class="badge info">Python 3.10+</span>
-        <span class="badge ok">SOTA · 2026-06-25</span>
+        <span class="badge ok">SOTA · 2026-06-29</span>
       </div>
     </div>
 
@@ -852,7 +852,12 @@ class State(MessagesState):
     <code>add_messages(format="langchain-openai")</code> reformata o conteúdo em
     blocos <code>text</code>/<code>image_url</code> e converte respostas de
     ferramenta em <code>ToolMessage</code>. Requer
-    <code>langchain-core &gt;= 0.3.11</code>.
+    <code>langchain-core &gt;= 0.3.11</code> (piso mínimo do recurso). <strong>Atenção:</strong> a linha atual de
+    <code>langchain-core</code> é a <strong>1.x</strong> (último <code>1.4.8</code>) — a virada 0.3.x→1.0 trouxe
+    mudanças incompatíveis (ex.: <code>AIMessage</code> como tipo concreto de retorno, <code>.text()</code> virou
+    <em>property</em>, Python 3.9 removido); o 0.3.x está em <em>maintenance mode</em> até dez/2026. Pacotes
+    relacionados na 1.x: <code>langchain</code> 1.3.11, <code>langchain-anthropic</code> 1.4.8,
+    <code>langchain-google-genai</code> 4.2.6 (requer <code>langchain-core&gt;=1.4.7</code>).
   </p>
 </section>
 

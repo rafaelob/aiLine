@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Providers &amp; adapters — camada de portabilidade entre OpenAI, Anthropic e Google</title>
 <meta name="description" content="Guia agnóstico de adapters e portabilidade entre providers de agentes: papel de cada SDK, provider switching contract, equivalência de roles, structured outputs cross-provider e receitas de adapter. Para IA e humanos, PT-BR." />
-<meta name="last-checked" content="2026-06-25" />
+<meta name="last-checked" content="2026-06-29" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -285,7 +285,7 @@
   <div class="header-row">
     <div class="brand">Providers &amp; adapters <small>Núcleo · portabilidade entre providers</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-06-25</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-06-29</strong></span>
       <span class="badge da">Super-guia de Agentes</span>
       <span class="badge info">PT-BR</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
@@ -346,7 +346,7 @@
       <div class="hero-meta">
         <span class="badge da">Super-guia de Agentes</span>
         <span class="badge info">PT-BR</span>
-        <span class="badge ok">SOTA · verificado 2026-06-25</span>
+        <span class="badge ok">SOTA · verificado 2026-06-29</span>
       </div>
     </div>
 
@@ -444,9 +444,9 @@
         </tbody>
       </table></div>
       <div class="callout warn">
-        <strong>Pin de versões (2026-06-25):</strong> <code>openai-agents</code> 0.17.7 (release 2026-06-19; pré-1.0; superfície ainda
-        evolui; piso <code>openai&gt;=2.36.0,&lt;3</code> desde a 0.17.4),
-        <code>anthropic</code> 0.112.0, <code>google-genai</code> 2.10.0, <code>pydantic-ai</code> 2.0.0 (série 2.x estável; o PyPI saltou de 0.0.x direto para 2.0.0 — não existiu série 1.x).
+        <strong>Pin de versões (2026-06-29):</strong> <code>openai-agents</code> 0.17.7 (release 2026-06-24; pré-1.0; superfície ainda
+        evolui; piso <code>openai&gt;=2.36.0,&lt;3</code> desde a 0.17.4; SDK <code>openai</code> 2.44.0 / <code>@openai/agents</code> 0.12.0),
+        <code>anthropic</code> 0.113.0, <code>google-genai</code> 2.10.0, <code>pydantic-ai</code> 2.1.0 (série 2.x estável, lançada 2026-06-23; a 2.x traz mudanças incompatíveis — ex.: prefixo <code>openai:</code> passa a usar a Responses API, <code>builtin_tools</code>→<code>native_tools</code>, <code>end_strategy</code> default <code>early</code>→<code>graceful</code>; <strong>houve sim série 1.x</strong>, de 1.0.0 a 1.99.0, antes da 2.0).
         Confirme antes de fixar — ver <a href="#verificacao">Notas de verificação</a>.
       </div>
     </section>
@@ -790,11 +790,12 @@ resp = client.models.generate_content(
       de modelo não são hardcoded no corpo agnóstico — aparecem só em exemplos e nesta seção.</p>
       <ul>
         <li><span class="pill ok">Resolvido</span> URL oficial do Pydantic AI é <code>pydantic.dev/docs/ai</code> (verificação ao vivo 2026-05-25: <code>ai.pydantic.dev/</code> retorna <strong>301</strong> para <code>pydantic.dev/docs/ai/overview/</code>; <code>/evals/evals/</code> e <code>/integrations/logfire/</code> também resolvem sob <code>pydantic.dev/docs/ai/</code>). O domínio <code>ai.pydantic.dev</code> não é fabricado — é o domínio antigo, hoje redirecionado. Alinhado com <a href="guia_operacao_seguranca_evals.html#verificacao">guia_operacao_seguranca_evals.html</a>.</li>
-        <li><span class="pill ok">Resolvido</span> Versões instaláveis (PyPI, 2026-06-25): <code>openai-agents</code> 0.17.7 (release 2026-06-19; piso <code>openai&gt;=2.36.0,&lt;3</code>), <code>anthropic</code> 0.112.0, <code>google-genai</code> 2.10.0, <code>pydantic-ai</code> 2.0.0 (lançada 2026-06-23; o PyPI foi de 0.0.55 direto para 2.0.0 — <strong>não existe série 1.x</strong>; a 2.0 traz mudanças incompatíveis vs 0.0.x, confira o changelog ao atualizar).</li>
+        <li><span class="pill ok">Resolvido</span> Versões instaláveis (PyPI/npm, 2026-06-29): <code>openai-agents</code> 0.17.7 (release 2026-06-24; piso <code>openai&gt;=2.36.0,&lt;3</code>; SDK <code>openai</code> 2.44.0 Python / 6.45.0 Node; <code>@openai/agents</code> 0.12.0), <code>anthropic</code> 0.113.0 (<code>@anthropic-ai/sdk</code> 0.107.0), <code>google-genai</code> 2.10.0, <code>pydantic-ai</code> 2.1.0 (V2 estável; <strong>a série 1.x existiu</strong> — 1.0.0 a 1.99.0 — antes da 2.0; caminho de upgrade recomendado: ir primeiro a uma 1.x recente para ver os <em>deprecation warnings</em>, depois migrar para V2), <code>langchain-core</code> 1.4.8, <code>langchain-anthropic</code> 1.4.8, <code>langchain-google-genai</code> 4.2.6 (requer <code>langchain-core&gt;=1.4.7,&lt;2</code>), <code>langgraph</code> 1.2.6, <code>langgraph-api</code> 0.10.0.</li>
         <li><span class="pill ok">Resolvido</span> Structured output nativo da Anthropic é <code>output_config.format</code> (não <code>response_format</code>).</li>
         <li><span class="pill ok">Resolvido</span> Gemini série 3 usa <code>thinking_level</code> (não <code>thinking_budget</code>); misturar os dois retorna 400.</li>
         <li><span class="pill ok">Resolvido</span> Thinking por modelo Anthropic: Opus 4.8 só adaptive; Fable 5 adaptive sempre ativo (desativar retorna 400); Haiku 4.5 só enabled; Sonnet 4.6 ambos.</li>
-        <li><span class="pill ok">Novo</span> Claude Fable 5 (<code>claude-fable-5</code>, GA 2026-06-09) é o modelo mais capaz amplamente disponível da Anthropic: 1M de contexto, 128k max output, adaptive thinking sempre ativo. Opus 4.8 segue ativo e recomendado — os exemplos deste guia permanecem com <code>claude-opus-4-8</code>.</li>
+        <li><span class="pill ok">Novo</span> Claude Fable 5 (<code>claude-fable-5</code>, GA 2026-06-09): 1M de contexto, 128k max output, adaptive thinking sempre ativo — porém <strong>temporariamente indisponível para usuários regulares</strong> no momento. Opus 4.8 é o flagship ativo e recomendado — os exemplos deste guia permanecem com <code>claude-opus-4-8</code>.</li>
+        <li><span class="pill warn">Atenção</span> <strong>Sampling deprecado:</strong> <code>temperature</code>, <code>top_p</code> e <code>top_k</code> retornam <strong>erro 400</strong> com valor não-default em Claude Opus 4.7, 4.8 e Fable 5 (ainda válidos em Opus 4.6, Sonnet 4.6 e anteriores). Omita e guie por <em>prompting</em>. Opus 4.7+/Fable 5 também usam novo tokenizer (~30% mais tokens) — recalibre <code>max_tokens</code>.</li>
         <li><span class="pill ok">Resolvido</span> IDs SOTA usados nos exemplos: <code>gpt-5.5</code>, <code>claude-opus-4-8</code>, <code>gemini-3.1-pro-preview</code>.</li>
         <li><span class="pill ok">Resolvido</span> Campo de reasoning cifrado <code>include=["reasoning.encrypted_content"]</code> confirmado na Responses API (guia Reasoning &gt; <em>Encrypted reasoning items</em> e API Reference de <code>responses.create</code>): habilita reusar reasoning items em modo stateless (<code>store=false</code> ou ZDR). Verificado 2026-05-25 em <a href="https://developers.openai.com/api/docs/guides/reasoning#encrypted-reasoning-items" target="_blank" rel="noopener">developers.openai.com · reasoning</a>.</li>
         <li><span class="pill ok">Resolvido</span> Superfície do Pydantic AI confirmada em <code>pydantic.dev/docs/ai</code>: <code>Agent(model, deps_type=, output_type=, instructions=)</code>, <code>@agent.tool</code>/<code>@agent.tool_plain</code>, <code>RunContext</code>, <code>run_sync</code>/<code>run</code>, <code>ToolOutput</code>. Verificado 2026-05-25.</li>
