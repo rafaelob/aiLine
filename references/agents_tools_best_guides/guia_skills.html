@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Guia de Agent Skills — Autoria, Ativação &amp; Harness</title>
 <meta name="description" content="Guia agnóstico do padrão Agent Skills: SKILL.md, progressive disclosure (L1/L2/L3), autoria portável, ativação por description, recursos/scripts/assets, implementação em harness próprio, contexto/budget/eviction, segurança e avaliação." />
-<meta name="last-checked" content="2026-06-29" />
+<meta name="last-checked" content="2026-07-05" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -285,7 +285,7 @@
   <div class="header-row">
     <div class="brand">Guia de Agent Skills <small>Autoria, ativação &amp; harness — agnóstico</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-06-29</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-05</strong></span>
       <span class="badge da">Spec Agent Skills</span>
       <span class="badge info">PT-BR</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
@@ -1816,7 +1816,7 @@ SKILL.md states when each one is needed.</code></pre>
           <tr><td>Anthropic · Skill authoring best practices</td><td><a href="https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices" target="_blank" rel="noopener">platform.claude.com · agent-skills/best-practices</a></td><td>Naming, descriptions, progressive disclosure, paths, scripts e testes.</td></tr>
           <tr><td>Anthropic Engineering · Agent Skills</td><td><a href="https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills" target="_blank" rel="noopener">anthropic.com/engineering · Agent Skills</a></td><td>Engenharia de skills como onboarding procedural para agentes.</td></tr>
           <tr><td>Microsoft Learn · Agent Skills</td><td><a href="https://learn.microsoft.com/en-us/agent-framework/agents/skills" target="_blank" rel="noopener">learn.microsoft.com · agent-framework/agents/skills</a></td><td>Agent Skills como pacotes portáveis com progressive disclosure.</td></tr>
-          <tr><td>Model Context Protocol · Specification</td><td><a href="https://modelcontextprotocol.io/specification/2025-11-25" target="_blank" rel="noopener">modelcontextprotocol.io/specification/2025-11-25</a></td><td>MCP como protocolo para tools, resources e prompts externos. <span class="pill ok">Versão verificada</span> (<code>2025-11-25</code> é a revisão atual, rechecada em 2026-06-10). <span class="pill beta">Novo</span> Próxima revisão <code>2026-07-28</code> anunciada (ainda em draft; em evolução até a publicação), com breaking changes: protocolo stateless (sem handshake <code>initialize</code>/<code>Mcp-Session-Id</code>) e Tasks movido para a extensão <code>io.modelcontextprotocol/tasks</code>.</td></tr>
+          <tr><td>Model Context Protocol · Specification</td><td><a href="https://modelcontextprotocol.io/specification/2025-11-25" target="_blank" rel="noopener">modelcontextprotocol.io/specification/2025-11-25</a></td><td>MCP como protocolo para tools, resources e prompts externos. <span class="pill ok">Versão verificada</span> (<code>2025-11-25</code> é a revisão atual, rechecada em 2026-06-10). <span class="pill beta">Novo</span> Próxima revisão <code>2026-07-28</code> — Release Candidate travada em 2026-05-21 (publicação em 28/07), com breaking changes: protocolo stateless (sem handshake <code>initialize</code>/<code>Mcp-Session-Id</code>) e Tasks movido para a extensão <code>io.modelcontextprotocol/tasks</code>.</td></tr>
           <tr><td>MCP · Security best practices</td><td><a href="https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices" target="_blank" rel="noopener">modelcontextprotocol.io · security best practices</a></td><td>Riscos e boas práticas para integrações MCP.</td></tr>
           <tr><td>OWASP · Top 10 for LLM Applications</td><td><a href="https://owasp.org/www-project-top-10-for-large-language-model-applications/" target="_blank" rel="noopener">owasp.org · Top 10 LLM</a></td><td>Riscos de LLMs: prompt injection, output handling, supply chain.</td></tr>
           <tr><td>OWASP · LLM01 Prompt Injection</td><td><a href="https://genai.owasp.org/llmrisk/llm01-prompt-injection/" target="_blank" rel="noopener">genai.owasp.org · LLM01</a></td><td>Prompt injection e cenários de manipulação de comportamento.</td></tr>
@@ -1843,7 +1843,7 @@ SKILL.md states when each one is needed.</code></pre>
         <li><span class="pill ok">Resolvido</span> <strong>Fronteira autoria vs integração</strong> — declarada no topo (<a href="#sobre-guia">§ Sobre este guia</a>); cross-links para <a href="guia_claude_api.html#c-skills">guia_claude_api.html#c-skills</a>, <a href="guia_deepagents.html#s-skills">guia_deepagents.html#s-skills</a> e <a href="guia_agents_sdk.html">guia_agents_sdk.html</a> verificados contra as âncoras reais desses arquivos.</li>
         <li><span class="pill ok">Resolvido</span> <strong>Sem IDs de modelo hardcoded</strong> — este guia é agnóstico de provedor e não fixa nomes de modelo; fatos de modelo ficam no portal e na folha de fatos SOTA.</li>
         <li><span class="pill beta">Novo</span> <strong>Integração da proposta v0.6</strong> (2026-05-26) — reinjeção de L2 em follow-up a partir do skill store (não do tool result histórico, §8), política de L3/return packets em <code>hot_followup</code> (§8) e mapeamento de entrega de L1/L2/L3 por provider (§5).</li>
-        <li><span class="pill ok">Verificado</span> <strong>Varredura 2026-06-10</strong> — re-checagem contra as fontes oficiais: spec MCP <code>2025-11-25</code> segue atual, com próxima revisão <code>2026-07-28</code> anunciada (ainda em draft; em evolução até a publicação; protocolo stateless sem handshake <code>initialize</code>/<code>Mcp-Session-Id</code>, novo <code>server/discover</code>, Tasks movido para a extensão <code>io.modelcontextprotocol/tasks</code>, Roots/Sampling/Logging deprecados); spec AgentSkills sem mudanças (último commit 20/05/2026) — limites de frontmatter inalterados.</li>
+        <li><span class="pill ok">Verificado</span> <strong>Varredura 2026-07-05</strong> — re-checagem contra as fontes oficiais: spec MCP <code>2025-11-25</code> segue atual, com próxima revisão <code>2026-07-28</code> agora em <strong>Release Candidate travada (2026-05-21), publicação em 28/07</strong>: protocolo stateless sem handshake <code>initialize</code>/<code>Mcp-Session-Id</code>, novo <code>server/discover</code>, Tasks movido para a extensão <code>io.modelcontextprotocol/tasks</code>, Roots/Sampling/Logging deprecados (SEP-2577) — fixe <code>mcp&lt;2</code> antes de 28/07; spec AgentSkills sem mudanças (último commit 20/05/2026) — limites de frontmatter inalterados.</li>
       </ul>
     </section>
 

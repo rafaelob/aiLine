@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Operação, Segurança &amp; Evals de Agentes — Núcleo</title>
 <meta name="description" content="Operação como parte da arquitetura: privacidade/retenção/ZDR, guardrails em 3 pontos (L0/L1/L2), tracing/replay/cost ledger, evals e acceptance gates, runbooks, policy-as-code, RACI, threat model alinhado a OWASP LLM Top 10 e Agentic (ASI), SLIs/SLOs, release controlado e kit de evidência de incidente — agnóstico de provider." />
-<meta name="last-checked" content="2026-06-11" />
+<meta name="last-checked" content="2026-07-05" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -285,7 +285,7 @@
   <div class="header-row">
     <div class="brand">Operação, Segurança &amp; Evals <small>Núcleo agnóstico · super-guia de agentes</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-06-11</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-05</strong></span>
       <span class="badge da">Núcleo · v1</span>
       <span class="badge info">PT-BR · agnóstico</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
@@ -795,9 +795,9 @@
         determina que descrições/anotações de tool de servidores não confiáveis sejam tratadas como
         <em>não confiáveis</em>, que o host obtenha consentimento explícito antes de invocar uma tool, e que o
         usuário controle exposição de dados e <em>sampling</em>. Isso reforça as camadas de input e tool selection
-        acima. A revisão <code>2026-07-28</code> já anunciada (ainda em draft; em evolução até a publicação) torna o protocolo
-        stateless e deprecia <em>Roots/Sampling/Logging</em> — reavalie os fluxos de consentimento e sampling
-        ao migrar.
+        acima. A revisão <code>2026-07-28</code> é uma <strong>Release Candidate travada (2026-05-21), publicação em 28/07/2026</strong>: torna o protocolo
+        stateless e deprecia <em>Roots/Sampling/Logging</em> (SEP-2577, substituídos por MRTR) — reavalie os fluxos de consentimento e sampling
+        ao migrar e fixe <code>mcp&lt;2</code> antes de 28/07 para não sofrer auto-upgrade do SDK para v2.
       </div>
       <div class="callout warn">
         <strong>EU AI Act (cronograma, perecível):</strong> em vigor desde 01/08/2024; práticas proibidas desde
@@ -1036,9 +1036,9 @@
           desatualizada; <code>guia_providers_adapters.html</code> foi alinhado a este mesmo destino.</li>
         <li><span class="pill ok">Resolvido</span> <strong>Spec MCP <code>2025-11-25</code>.</strong> Confirmada como a
           revisão autoritativa (host/client/server; princípios de consentimento, tool safety e sampling controls).
-          Usada uniformemente aqui. Re-verificado em 2026-06-10: segue a revisão atual; a próxima revisão
-          (<code>2026-07-28</code>, ainda em draft; em evolução até a publicação) traz protocolo stateless (sem handshake
-          <code>initialize</code>/<code>Mcp-Session-Id</code>) e deprecia Roots/Sampling/Logging.
+          Usada uniformemente aqui. Re-verificado em 2026-07-05: segue a revisão atual; a próxima revisão
+          (<code>2026-07-28</code>) é uma <strong>Release Candidate travada em 2026-05-21</strong> (publicação em 28/07): traz protocolo stateless (sem handshake
+          <code>initialize</code>/<code>Mcp-Session-Id</code>) e deprecia Roots/Sampling/Logging. Fixe <code>mcp&lt;2</code> antes de 28/07 (o SDK v2.0.0 sai junto).
           Observação para o validador: <code>guia_agents_sdk.html</code> existente cita
           <code>2024-11-05</code>/<code>2025-03-26</code> — não modificar o guia existente; o portal/validação deve
           marcar a versão canônica.</li>

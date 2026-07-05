@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Guia OpenAI — Modelos mais recentes & API (Responses, Realtime, Imagem, Áudio)</title>
 <meta name="description" content="Guia técnico exaustivo e SOTA dos modelos OpenAI mais recentes em PT-BR: gpt-5.5, gpt-5.4-mini, gpt-5.4-nano (texto/reasoning via Responses API), gpt-image-2 (imagem/visão), áudio e realtime (gpt-realtime-2, gpt-4o-transcribe, gpt-4o-mini-tts), embeddings, moderation, preços, limites e operação. Verificado em 2026-06-29." />
-<meta name="last-checked" content="2026-06-29" />
+<meta name="last-checked" content="2026-07-05" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -294,7 +294,7 @@
   <div class="header-row">
     <div class="brand">Guia OpenAI <small>PT-BR · Modelos mais recentes &amp; API</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-06-29</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-05</strong></span>
       <span class="badge openai">SDK openai</span>
       <span class="badge ok">SOTA</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
@@ -444,6 +444,7 @@
 <section id="s-catalogo">
   <h2>1. Catálogo de modelos</h2>
   <p>A família GPT-5 é composta por <strong>modelos de raciocínio</strong>: eles geram <em>reasoning tokens</em> internos antes de produzir a resposta, o que melhora planejamento, uso de ferramentas, recuperação de ambiguidade e tarefas multi-etapa. O modelo de uso geral recomendado para a maioria das cargas é o <code>gpt-5.5</code>; quando latência ou custo pesam mais, considere as variantes menores <code>gpt-5.4-mini</code> e <code>gpt-5.4-nano</code>. Todos funcionam melhor pela <a href="#s-responses">Responses API</a>.</p>
+  <div class="callout info"><strong>O que é atual (linhagem GPT-5.x):</strong> os flagships evoluíram <code>gpt-5.1</code> → <code>gpt-5.2</code> → <code>gpt-5.3</code> (com variante <code>gpt-5.3-codex</code>) → <code>gpt-5.4</code> (com <code>-mini</code>/<code>-nano</code>/<code>-pro</code>) → <strong><code>gpt-5.5</code> (flagship atual)</strong> + <code>gpt-5.5-pro</code>. Ou seja, <code>gpt-5.5</code> não sucede o <code>5.4</code> diretamente — há releases intermediários (<code>5.2</code>, <code>5.3</code>) que são GA e podem estar em uso/pinned. <strong>Não existe <code>gpt-5.6</code></strong> em nenhuma fonte oficial (verificado 2026-07-05). Para código novo, use <code>gpt-5.5</code>; ao pinar, prefira o snapshot exato retornado pela pág. de modelos oficial em vez de assumir uma data.</div>
 
   <div class="callout info"><strong>Nota:</strong> raciocínio mais alto não é automaticamente melhor. Com critérios de parada fracos ou acesso aberto a ferramentas, esforço alto pode levar a <em>overthinking</em>, buscas desnecessárias ou regressão de qualidade. Aumente o esforço só quando seus <em>evals</em> mostrarem ganho mensurável.</div>
 
@@ -2084,7 +2085,7 @@ app.post("/webhook", async (req, res) => {
   "prompt_cache_key": "checkout-v3",
   "prompt_cache_retention": "24h"
 }</code></pre>
-  <p>O parâmetro <code>prompt_cache_retention</code> aceita <code>in_memory</code> (cache em memória volátil, 5–10 min de inatividade até ~1h) e <code>24h</code> (retenção estendida, até 24h, descarregando tensores key/value para storage GPU-local). Desde <strong>2026-05-29</strong>, o padrão é <code>24h</code> para organizações <strong>sem ZDR</strong> (Zero Data Retention) em todos os modelos elegíveis de <code>v1/responses</code>, <code>v1/chat/completions</code> e <code>v1/batch</code> — antes, a maioria dos modelos usava <code>in_memory</code> por padrão. Para <code>gpt-5.5</code> e modelos futuros o padrão já era <code>24h</code> e <code>in_memory</code> segue não suportado.</p>
+  <p>O parâmetro <code>prompt_cache_retention</code> aceita <code>in_memory</code> (cache em memória volátil, 5–10 min de inatividade até ~1h) e <code>24h</code> (retenção estendida, até 24h, descarregando tensores key/value para storage GPU-local). <strong>Atual (confirmado no changelog oficial):</strong> o padrão é <code>24h</code> para organizações <strong>sem ZDR</strong> (Zero Data Retention) em todos os modelos elegíveis de <code>v1/responses</code>, <code>v1/chat/completions</code> e <code>v1/batch</code> — antes, a maioria dos modelos usava <code>in_memory</code> por padrão. Para <code>gpt-5.5</code>, <code>gpt-5.5-pro</code> e modelos futuros, o padrão é <code>24h</code> e <code>in_memory</code> <strong>não é mais suportado</strong> (retorna erro de request). <span class="pill" style="background:var(--c-na-bg);color:var(--c-na)">Data UNVERIFIED</span> A mudança consta na seção "May 2026" do changelog; o dia exato (citado antes como 2026-05-29) não foi confirmável linha a linha na fonte — o fato em si está confirmado.</p>
   <div class="callout info"><strong>Nota:</strong> caches não são compartilhados entre organizações; o caching não altera a saída gerada (só o prefixo é cacheado, a resposta é recalculada) nem isenta tokens dos limites de TPM. Não há limpeza manual de cache.</div>
 
   <p class="source-link"><strong>Fonte:</strong> <a href="https://developers.openai.com/api/docs/guides/prompt-caching" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/prompt-caching</a></p>

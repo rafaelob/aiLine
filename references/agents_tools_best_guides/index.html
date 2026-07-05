@@ -4,8 +4,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Guia Completo de Agentes — Portal</title>
-<meta name="description" content="Portal mestre do Guia Completo de Agentes: porta de entrada única para os guias de orquestração de agentes de IA (núcleo agnóstico, frameworks Agents SDK / LangGraph / Google ADK, providers OpenAI / Anthropic / Google, contexto, tokens, multimodal, paralelismo, skills, operação e segurança). Tese operacional (estado durável vs projeção vs execução), os 4 planos, matriz de navegação tópico→guia e mapa de decisões rápidas. Verificado em 2026-06-29." />
-<meta name="last-checked" content="2026-06-29" />
+<meta name="description" content="Portal mestre do Guia Completo de Agentes: porta de entrada única para os guias de orquestração de agentes de IA (núcleo agnóstico, frameworks Agents SDK / LangGraph / Google ADK, providers OpenAI / Anthropic / Google, contexto, tokens, multimodal, paralelismo, skills, operação e segurança). Tese operacional (estado durável vs projeção vs execução), os 4 planos, matriz de navegação tópico→guia e mapa de decisões rápidas. Verificado em 2026-07-05." />
+<meta name="last-checked" content="2026-07-05" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -303,7 +303,7 @@
   <div class="header-row">
     <div class="brand">Guia Completo de Agentes <small>Portal mestre · orquestração de agentes de IA</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-06-29</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-05</strong></span>
       <span class="badge da">23 guias</span>
       <span class="badge info">multi-provedor</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
@@ -558,7 +558,7 @@
         <a class="card" href="guia_langgraph.html" data-card data-keywords="langgraph stategraph checkpointers hitl interrupt command grafo supervisor swarm streaming reducers">
           <div class="card-title">LangGraph</div>
           <p class="card-desc">Orquestração baseada em grafo: StateGraph e reducers, checkpointers, human-in-the-loop (interrupt/Command), streaming tipado.</p>
-          <div class="card-badges"><span class="badge da">Framework</span><span class="badge info">Python</span><span class="badge ok">langgraph 1.2.6 GA</span></div>
+          <div class="card-badges"><span class="badge da">Framework</span><span class="badge info">Python</span><span class="badge ok">langgraph 1.2.7 GA</span></div>
           <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
         </a>
         <a class="card" href="guia_google_adk.html" data-card data-keywords="google adk agent development kit llmagent workflow sequential parallel loop tools mcp a2a workflow runtime grafo 2.0">
@@ -607,7 +607,7 @@
         <a class="card" href="guia_claude_api.html" data-card data-keywords="anthropic claude messages api streaming tools thinking adaptive prompt caching batches structured output">
           <div class="card-title">Anthropic Claude API</div>
           <p class="card-desc">Messages API: streaming, tool use, adaptive/extended thinking, prompt caching, batches e structured output.</p>
-          <div class="card-badges"><span class="badge da">Provider</span><span class="badge info">Anthropic</span><span class="badge ok">Fable 5 · Opus 4.8</span></div>
+          <div class="card-badges"><span class="badge da">Provider</span><span class="badge info">Anthropic</span><span class="badge ok">Opus 4.8 · Sonnet 5 · Fable 5</span></div>
           <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
         </a>
         <a class="card" href="guia_gemini_interactions_api.html" data-card data-keywords="google gemini interactions api google-genai thinking level thought signatures streaming function calling antigravity agentes gerenciados managed agents environment sandbox deep research quickstart">
@@ -785,6 +785,7 @@
       <div>SOTA sweep — versões (openai-agents 0.17.6, langgraph 1.2.6, deepagents 0.6.11, google-adk 2.3.0, google-genai 2.9.0, anthropic 0.111.0) + caveat Vertex/Interactions no agentic-vision e no guia de Interactions · 2026-06-19</div>
       <div>freshness sweep — Gemini Interactions API <strong>GA</strong> (jun/2026); versões (openai-agents 0.17.7, deepagents 0.6.12, anthropic 0.112.0, google-genai 2.10.0, pydantic-ai 2.0.0, ADK 1.x→1.36.0); correção Sonnet 4.6 saída 128k; Fable 5 GA porém indisponível no momento · 2026-06-25</div>
       <div>deep freshness sweep (6 agentes Sonnet 4.6 + verificação manual contra changelogs oficiais) — versões para latest (<strong>anthropic 0.113.0</strong>, <strong>pydantic-ai 2.1.0</strong>, openai 2.44.0/6.45.0, @openai/agents 0.12.0, langchain-core 1.4.8, langchain-google-genai 4.2.6); <strong>calendário de sunsets</strong> por provedor (gpt-image-1-mini/1.5 01/12, Assistants API 08/26, Veo 2/3 30/06, Imagen 4 17/08, Opus 4.1 05/08); <strong>breaking</strong>: sampling 400 em Opus 4.7+/Fable 5, tokenizer ~30%, Interactions Beta→GA, default model gpt-5.4-mini (Agents SDK) e gemini-3-flash-preview (ADK); correções (mito "pydantic-ai sem 1.x", gpt-image-1-mini data) · 2026-06-29</div>
+      <div>freshness sweep (4 agentes Sonnet 5 + verificação/edição manual pelo Opus contra fontes oficiais) — <strong>Claude Sonnet 5 GA</strong> (30/06; Sonnet 4.6 → Legacy; intro $2/$10 até 31/08); <strong>Fable 5 reimplantado</strong> (01/07, pós-suspensão por export controls); <strong>MCP spec 2026-07-28 = Release Candidate travada</strong> (21/05) + alerta de auto-upgrade do pacote <code>mcp</code>→v2 (pinar <code>mcp&lt;2</code>); versões (langgraph 1.2.7, mcp 1.28.1, anthropic 0.116.0/@anthropic-ai/sdk 0.110.0, openai-agents 0.17.7); <strong>Nano Banana Lite</strong> (gemini-3.1-flash-lite-image) GA 30/06. 10 guias atualizados · 2026-07-05</div>
       <div style="margin-top:6px">
         <span class="badge da">23 guias</span>
         <span class="badge info">multi-provedor</span>

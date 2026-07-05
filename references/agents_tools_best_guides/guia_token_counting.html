@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Guia de Contagem de Tokens — OpenAI, Gemini e Anthropic (texto, imagens, PDFs, arquivos, reasoning/thinking, cache)</title>
 <meta name="description" content="Guia técnico exaustivo e comparativo de como OpenAI (Responses API), Google Gemini (generateContent) e Anthropic Claude (Messages API) contam tokens para texto, imagens (lidas e geradas), PDFs, arquivos, vídeo, áudio, tools, cache e reasoning/thinking. Endpoints, fórmulas, exemplos rodáveis em Python/TS e armadilhas práticas. Verificado em 2026-06-11." />
-<meta name="last-checked" content="2026-06-11" />
+<meta name="last-checked" content="2026-07-05" />
 <meta name="robots" content="index,follow" />
 <style>
   /* ------- design tokens ------- */
@@ -328,7 +328,7 @@
   <div class="header-row">
     <div class="brand">Guia de Contagem de Tokens <small>OpenAI · Gemini · Anthropic</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-06-11</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-05</strong></span>
       <span class="badge openai">OpenAI</span>
       <span class="badge gemini">Gemini</span>
       <span class="badge anthropic">Claude</span>
@@ -4059,7 +4059,7 @@ log = logging.getLogger(<span class="tok-s">"gemini-interactions"</span>)
   <h3 id="anthropic-tc-overview">A.1 Por que contar antes de criar <a class="anchor" href="#anthropic-tc-overview">¶</a></h3>
   <ul>
     <li><strong>Gerenciar rate limits e custo proativamente:</strong> ITPM (input tokens-per-minute) é um limite duro em cada tier — bater no teto causa <code>429</code>. Contar antes evita explodir orçamento de janela.</li>
-    <li><strong>Roteamento inteligente de modelo:</strong> decidir entre <code>claude-haiku-4-5</code> (200k ctx) e <code>claude-sonnet-4-6</code>/<code>claude-opus-4-8</code> (1M ctx, premium) com base no tamanho real do payload composto (system + tools + history + anexos).</li>
+    <li><strong>Roteamento inteligente de modelo:</strong> decidir entre <code>claude-haiku-4-5</code> (200k ctx) e <code>claude-sonnet-5</code>/<code>claude-opus-4-8</code> (1M ctx, premium) com base no tamanho real do payload composto (system + tools + history + anexos).</li>
     <li><strong>Otimização de prompt:</strong> ajustar tamanho de system prompt, número de imagens, resolução, ou poda de history para caber em uma janela alvo (ex.: 180k para deixar headroom).</li>
     <li><strong>Pré-validação de cache:</strong> mesmo que <code>count_tokens</code> <em>não</em> dispare cache, ele ajuda a planejar o ponto ideal para inserir <code>cache_control</code> em prefixos longos.</li>
   </ul>
@@ -4083,7 +4083,7 @@ Headers:
     <caption>Campos aceitos por <code>messages/count_tokens</code> e impacto em <code>input_tokens</code></caption>
     <thead><tr><th>Campo</th><th>Conta para <code>input_tokens</code>?</th><th>Observação</th></tr></thead>
     <tbody>
-      <tr><td><code>model</code></td><td>—</td><td>Obrigatório; tokenização varia entre famílias (Haiku/Sonnet/Opus) — sempre passe o modelo de destino real. Opus 4.7/4.8 e Fable 5 usam tokenizador novo (~30% mais tokens; Opus 4.6 e Sonnet 4.6 mantêm o antigo).</td></tr>
+      <tr><td><code>model</code></td><td>—</td><td>Obrigatório; tokenização varia entre famílias (Haiku/Sonnet/Opus) — sempre passe o modelo de destino real. Opus 4.7/4.8, <strong>Sonnet 5</strong> e Fable 5 usam tokenizador novo (~mais tokens; Opus 4.6 e Sonnet 4.6 mantêm o antigo). <strong>Atenção ao migrar Sonnet 4.6 → Sonnet 5:</strong> muda o tokenizer (e o cap de tokens por imagem passa a seguir o do Opus, não os 1568 do 4.6) — re-baseie contagens e custos.</td></tr>
       <tr><td><code>system</code> (string ou array de blocos)</td><td><span class="pill ok">Sim</span></td><td>Cada bloco com <code>cache_control</code> é tokenizado normalmente — marcação de cache não desconta no count.</td></tr>
       <tr><td><code>tools</code> (function definitions)</td><td><span class="pill ok">Sim</span></td><td>Schema JSON serializado pesa muito; ver §A.4.</td></tr>
       <tr><td><code>tool_choice</code></td><td><span class="pill ok">Sim</span></td><td>Contribuição pequena, mas conta (~313 tk para <code>any</code>/<code>tool</code>, ~346 tk para <code>auto</code>/<code>none</code> em Claude 4.x).</td></tr>
@@ -4108,8 +4108,9 @@ Headers:
     <strong>Todos os modelos ativos</strong> suportam token counting (citação literal da doc: <em>"All active models support token counting"</em>). Em 24/maio/2026 isto inclui:
   </p>
   <ul>
-    <li><code>claude-opus-4-8</code> — frontier, 1M ctx, hi-res vision (4784 tk / imagem em até 2576 px), tokenizador novo (~30% mais tokens vs gerações anteriores ao Opus 4.7; também em Opus 4.7 e Fable 5)</li>
-    <li><code>claude-sonnet-4-6</code> — workhorse, 1M ctx, extended thinking, vision std (1568 tk / imagem)</li>
+    <li><code>claude-opus-4-8</code> — frontier, 1M ctx, hi-res vision (4784 tk / imagem em até 2576 px), tokenizador novo (~30% mais tokens vs gerações anteriores ao Opus 4.7; também em Opus 4.7, Sonnet 5 e Fable 5)</li>
+    <li><code>claude-sonnet-5</code> <span class="pill ok">recomendado</span> — Sonnet atual (GA 2026-06-30), 1M ctx, adaptive thinking, <strong>tokenizador novo</strong> (mesma família do Opus 4.7+/Fable 5; cap de vision segue o do Opus, não os 1568 do 4.6)</li>
+    <li><code>claude-sonnet-4-6</code> <span class="pill info">Legacy</span> — geração Sonnet anterior, 1M ctx, extended thinking, vision std (1568 tk / imagem), <strong>tokenizador antigo</strong></li>
     <li><code>claude-haiku-4-5</code> — low-latency, 200k ctx, vision std</li>
   </ul>
   <div class="callout tip">
@@ -5092,11 +5093,11 @@ console.log("batch id:", batch.id);</code></pre>
   </div>
   <p>Para limites maiores, contato com vendas via <code>console.anthropic.com → Settings → Limits</code>. Tiers acima de 4 são por enterprise contract.</p>
 
-  <h3 id="anthropic-tc-pricing">A.16 Pricing comparativo — Opus 4.8 / Sonnet 4.6 / Haiku 4.5 <a class="anchor" href="#anthropic-tc-pricing">¶</a></h3>
+  <h3 id="anthropic-tc-pricing">A.16 Pricing comparativo — Opus 4.8 / Sonnet 5 / Haiku 4.5 <a class="anchor" href="#anthropic-tc-pricing">¶</a></h3>
   <div class="callout tip">
     <strong>Token counting é gratuito.</strong> Você é cobrado apenas pelas chamadas reais a <code>messages.create</code>. O único custo de chamar <code>count_tokens</code> é o seu RPM no tier — o que torna seguro chamar antes de <em>cada</em> request crítico em produção, ou em batch para auditoria de pipelines.
   </div>
-  <p>Preços oficiais (USD/MTok) coletados em <strong>claude.com/pricing</strong> em 24/maio/2026:</p>
+  <p>Preços oficiais (USD/MTok) coletados em <strong>claude.com/pricing</strong> (revisado 2026-07-05). <strong>Sonnet 5:</strong> preço padrão $3/$15 (mesma faixa do 4.6), mas com <strong>promoção introdutória de $2/$10 até 2026-08-31</strong>; a partir de 2026-09-01 vale o padrão da tabela.</p>
   <div class="table-wrap">
   <table>
     <caption>Tabela de preços por modelo — input, cache writes (5m/1h), cache reads, output</caption>
@@ -5112,7 +5113,8 @@ console.log("batch id:", batch.id);</code></pre>
     </thead>
     <tbody>
       <tr><td><code>claude-opus-4-8</code></td>   <td class="num">$5,00</td> <td class="num">$6,25</td> <td class="num">$10,00</td> <td class="num">$0,50</td> <td class="num">$25,00</td></tr>
-      <tr><td><code>claude-sonnet-4-6</code></td> <td class="num">$3,00</td> <td class="num">$3,75</td> <td class="num">$6,00</td>  <td class="num">$0,30</td> <td class="num">$15,00</td></tr>
+      <tr><td><code>claude-sonnet-5</code> <span class="pill ok">atual</span></td> <td class="num">$3,00</td> <td class="num">$3,75</td> <td class="num">$6,00</td>  <td class="num">$0,30</td> <td class="num">$15,00</td></tr>
+      <tr><td><code>claude-sonnet-4-6</code> <span class="pill info">legacy</span></td> <td class="num">$3,00</td> <td class="num">$3,75</td> <td class="num">$6,00</td>  <td class="num">$0,30</td> <td class="num">$15,00</td></tr>
       <tr><td><code>claude-haiku-4-5</code></td>  <td class="num">$1,00</td> <td class="num">$1,25</td> <td class="num">$2,00</td>  <td class="num">$0,10</td> <td class="num">$5,00</td></tr>
     </tbody>
   </table>
@@ -5181,7 +5183,7 @@ def pick_model(messages, system=None, tools=None):
     if n &lt; 150_000:          # cabe folgado em 200k
         return "claude-haiku-4-5"
     if n &lt; 800_000:          # cabe em 1M com headroom
-        return "claude-sonnet-4-6"
+        return "claude-sonnet-5"  # Sonnet atual; usa tokenizador novo (mais tokens) — mantenha a margem
     # Recheca em Opus 4.8 (tokenizador novo, +35%)
     re_probe = client.messages.count_tokens(
         model="claude-opus-4-8",
@@ -5212,7 +5214,7 @@ async function pickModel(args: {
   });
   const n = probe.input_tokens;
   if (n < 150_000) return "claude-haiku-4-5";
-  if (n < 800_000) return "claude-sonnet-4-6";
+  if (n < 800_000) return "claude-sonnet-5"; // Sonnet atual; tokenizador novo (mais tokens) — mantenha a margem
   const reProbe = await client.messages.countTokens({
     model: "claude-opus-4-8",
     system: args.system ?? "",
@@ -6141,7 +6143,8 @@ r2 = client.messages.create(
       <thead><tr><th>Modelo</th><th>Input base</th><th>5m write (1.25×)</th><th>1h write (2×)</th><th>Cache read (0.1×)</th><th>Output</th></tr></thead>
       <tbody>
         <tr><td><code>claude-opus-4-8</code></td><td>$5.00</td><td>$6.25</td><td>$10.00</td><td>$0.50</td><td>$25.00</td></tr>
-        <tr><td><code>claude-sonnet-4-6</code></td><td>$3.00</td><td>$3.75</td><td>$6.00</td><td>$0.30</td><td>$15.00</td></tr>
+        <tr><td><code>claude-sonnet-5</code> <span class="pill ok">atual</span></td><td>$3.00 <span class="small">(intro $2 até 31/08)</span></td><td>$3.75</td><td>$6.00</td><td>$0.30</td><td>$15.00 <span class="small">(intro $10)</span></td></tr>
+        <tr><td><code>claude-sonnet-4-6</code> <span class="pill info">legacy</span></td><td>$3.00</td><td>$3.75</td><td>$6.00</td><td>$0.30</td><td>$15.00</td></tr>
         <tr><td><code>claude-haiku-4-5</code></td><td>$1.00</td><td>$1.25</td><td>$2.00</td><td>$0.10</td><td>$5.00</td></tr>
       </tbody>
     </table>
@@ -6383,6 +6386,7 @@ PRICING = {  <span class="tok-c"># valores em Decimal para preservar precisão n
 
     <span class="tok-c"># Anthropic (input, 5m_write, 1h_write, cache_read, output)</span>
     <span class="tok-s">"claude-opus-4-8"</span>:   {<span class="tok-s">"in"</span>: Decimal(<span class="tok-s">"5.00"</span>), <span class="tok-s">"w5m"</span>: Decimal(<span class="tok-s">"6.25"</span>), <span class="tok-s">"w1h"</span>: Decimal(<span class="tok-s">"10.00"</span>), <span class="tok-s">"read"</span>: Decimal(<span class="tok-s">"0.50"</span>), <span class="tok-s">"out"</span>: Decimal(<span class="tok-s">"25.00"</span>)},
+    <span class="tok-s">"claude-sonnet-5"</span>:   {<span class="tok-s">"in"</span>: Decimal(<span class="tok-s">"3.00"</span>), <span class="tok-s">"w5m"</span>: Decimal(<span class="tok-s">"3.75"</span>), <span class="tok-s">"w1h"</span>: Decimal(<span class="tok-s">"6.00"</span>),  <span class="tok-s">"read"</span>: Decimal(<span class="tok-s">"0.30"</span>), <span class="tok-s">"out"</span>: Decimal(<span class="tok-s">"15.00"</span>)},  <span class="tok-c"># intro $2/$10 até 2026-08-31</span>
     <span class="tok-s">"claude-sonnet-4-6"</span>: {<span class="tok-s">"in"</span>: Decimal(<span class="tok-s">"3.00"</span>), <span class="tok-s">"w5m"</span>: Decimal(<span class="tok-s">"3.75"</span>), <span class="tok-s">"w1h"</span>: Decimal(<span class="tok-s">"6.00"</span>),  <span class="tok-s">"read"</span>: Decimal(<span class="tok-s">"0.30"</span>), <span class="tok-s">"out"</span>: Decimal(<span class="tok-s">"15.00"</span>)},
     <span class="tok-s">"claude-haiku-4-5"</span>:  {<span class="tok-s">"in"</span>: Decimal(<span class="tok-s">"1.00"</span>), <span class="tok-s">"w5m"</span>: Decimal(<span class="tok-s">"1.25"</span>), <span class="tok-s">"w1h"</span>: Decimal(<span class="tok-s">"2.00"</span>),  <span class="tok-s">"read"</span>: Decimal(<span class="tok-s">"0.10"</span>), <span class="tok-s">"out"</span>: Decimal(<span class="tok-s">"5.00"</span>)},
 }

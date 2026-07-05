@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Guia Claude API (Anthropic) — Referência completa · Opus 4.8 · Sonnet 4.6 · Haiku 4.5</title>
-<meta name="description" content="Guia técnico exaustivo e SOTA da API da Anthropic (Claude) em PT-BR: Messages API, modelos Opus 4.8 / Sonnet 4.6 / Haiku 4.5, streaming, thinking (adaptive + extended), tool use, multimodal (vision/PDF/files), prompt caching, batch, structured outputs, citations, embeddings, Agent Skills, MCP, Managed Agents, referência REST/SDK, governança e plataformas de nuvem. Verificado em 2026-06-29." />
-<meta name="last-checked" content="2026-06-29" />
+<title>Guia Claude API (Anthropic) — Referência completa · Opus 4.8 · Sonnet 5 · Haiku 4.5</title>
+<meta name="description" content="Guia técnico exaustivo e SOTA da API da Anthropic (Claude) em PT-BR: Messages API, modelos Opus 4.8 / Sonnet 5 / Haiku 4.5 (Sonnet 4.6 legado), streaming, thinking (adaptive + extended), tool use, multimodal (vision/PDF/files), prompt caching, batch, structured outputs, citations, embeddings, Agent Skills, MCP, Managed Agents, referência REST/SDK, governança e plataformas de nuvem. Verificado em 2026-07-05." />
+<meta name="last-checked" content="2026-07-05" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -294,9 +294,9 @@
   <div class="header-row">
     <div class="brand">Guia Claude API <small>Anthropic · PT-BR · Referência completa</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-06-29</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-05</strong></span>
       <span class="badge claude">anthropic · @anthropic-ai/sdk</span>
-      <span class="badge ok">Opus 4.8 · Sonnet 4.6 · Haiku 4.5</span>
+      <span class="badge ok">Opus 4.8 · Sonnet 5 · Haiku 4.5</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
     </div>
   </div>
@@ -314,7 +314,7 @@
 <div class="toc-section"><a href="#part-a-divider" style="color:inherit">Parte A — Fundamentos, Modelos & Mensagens</a></div><ol>
 <li><a href="#a-visao-geral">A1. Visão geral da plataforma &amp; primeira chamada</a></li>
 <li><a href="#a-sdks">A2. SDKs &amp; instalação</a></li>
-<li><a href="#a-modelos">A3. Modelos Claude (Opus 4.8 · Sonnet 4.6 · Haiku 4.5)</a></li>
+<li><a href="#a-modelos">A3. Modelos Claude (Opus 4.8 · Sonnet 5 · Haiku 4.5)</a></li>
 <li><a href="#a-models-api">A3.1 Endpoint Models API</a></li>
 <li><a href="#a-mensagens">A4. API de Mensagens — anatomia</a></li>
 <li><a href="#a-streaming">A5. Geração de texto &amp; streaming (SSE)</a></li>
@@ -414,8 +414,8 @@
       <h1>Guia Claude API (Anthropic) — Referência completa</h1>
       <p class="lead">
         Documentação técnica exaustiva, em português brasileiro, da <strong>API da Anthropic (Claude)</strong>,
-        focada nos modelos gerais mais recentes — <strong>Claude Opus 4.8</strong>, <strong>Claude Sonnet 4.6</strong>
-        e <strong>Claude Haiku 4.5</strong>. Cobre a Messages API, streaming (SSE), raciocínio
+        focada nos modelos gerais mais recentes — <strong>Claude Opus 4.8</strong>, <strong>Claude Sonnet 5</strong>
+        e <strong>Claude Haiku 4.5</strong> (com <strong>Sonnet 4.6</strong> como legado ainda suportado). Cobre a Messages API, streaming (SSE), raciocínio
         (adaptive &amp; extended thinking), tool use (todas as ferramentas client- e server-side),
         multimodal (visão, PDF, Files), prompt caching, context editing, batch, structured outputs,
         citations, embeddings, Agent Skills, MCP, Managed Agents, a referência REST/SDK completa,
@@ -425,9 +425,9 @@
       <div class="hero-meta">
         <span class="badge claude">anthropic · Python ≥ 3.9</span>
         <span class="badge claude">@anthropic-ai/sdk · Node ≥ 20</span>
-        <span class="badge ok">Opus 4.8 · Sonnet 4.6 · Haiku 4.5</span>
+        <span class="badge ok">Opus 4.8 · Sonnet 5 · Haiku 4.5</span>
         <span class="badge info">anthropic-version: 2023-06-01</span>
-        <span class="badge">Verificado em 2026-06-29</span>
+        <span class="badge">Verificado em 2026-07-05</span>
       </div>
     </div>
 
@@ -436,7 +436,7 @@
       <p>
         Este é um guia técnico exaustivo, em português brasileiro, da <strong>API da Anthropic</strong> —
         a interface para construir aplicações sobre os modelos Claude. O guia é deliberadamente restrito
-        aos <strong>modelos gerais mais recentes</strong> (Opus 4.8, Sonnet 4.6 e Haiku 4.5); modelos de
+        aos <strong>modelos gerais mais recentes</strong> (Opus 4.8, Sonnet 5 e Haiku 4.5; Sonnet 4.6 consta como legado); modelos de
         gerações anteriores foram omitidos por design. Para fatos perecíveis — IDs de modelo, preços,
         limites, datas e headers beta — a documentação oficial em <code>platform.claude.com</code> é
         sempre a fonte autoritativa.
@@ -484,7 +484,7 @@
             structured outputs, batch, embeddings, tool use e todas as ferramentas, Agent Skills, MCP),
             mais o <strong>SDK Python (<code>anthropic</code>)</strong> e o
             <strong>SDK JavaScript/TypeScript (<code>@anthropic-ai/sdk</code>)</strong> em profundidade —
-            tudo restrito aos modelos atuais (Opus 4.8, Sonnet 4.6, Haiku 4.5).</li>
+            tudo restrito aos modelos atuais (Opus 4.8, Sonnet 5, Haiku 4.5; Sonnet 4.6 legado).</li>
           <li><strong>Resumido (não detalhado página a página, com link canônico para aprofundar):</strong>
             as subpáginas individuais de <a href="#d-managed-agents">Managed Agents</a> (cobertas em nível de
             visão geral e superfície REST/governança, não uma a uma — veja a lista completa em
@@ -539,7 +539,8 @@
           <thead><tr><th>Modelo</th><th>ID de API</th><th>Contexto</th><th>Saída máx.</th><th>Raciocínio</th><th>Melhor para</th></tr></thead>
           <tbody>
             <tr><td><strong>Claude Opus 4.8</strong></td><td><code>claude-opus-4-8</code></td><td>1M tokens</td><td>128K</td><td>Adaptive thinking + <code>effort</code></td><td>Tarefas complexas, coding, agentes</td></tr>
-            <tr><td><strong>Claude Sonnet 4.6</strong></td><td><code>claude-sonnet-4-6</code></td><td>1M tokens</td><td>128K</td><td><code>effort</code></td><td>Equilíbrio capacidade/custo</td></tr>
+            <tr><td><strong>Claude Sonnet 5</strong> <span class="pill ok">recomendado</span></td><td><code>claude-sonnet-5</code></td><td>1M tokens</td><td>128K</td><td>Adaptive thinking + <code>effort</code></td><td>Equilíbrio capacidade/custo (Sonnet atual)</td></tr>
+            <tr><td><strong>Claude Sonnet 4.6</strong> <span class="pill info">Legacy</span></td><td><code>claude-sonnet-4-6</code></td><td>1M tokens</td><td>128K</td><td><code>effort</code></td><td>Geração Sonnet anterior (suportada)</td></tr>
             <tr><td><strong>Claude Haiku 4.5</strong></td><td><code>claude-haiku-4-5</code></td><td>200K tokens</td><td>64K</td><td>Extended thinking</td><td>Baixa latência e custo</td></tr>
           </tbody>
         </table>
@@ -586,7 +587,7 @@ console.log(message.content[0].text);</code></pre>
       </div>
       <div class="callout warn">
         <strong>Política de modelos deste guia:</strong> citamos apenas os modelos gerais mais recentes
-        (Opus 4.8, Sonnet 4.6, Haiku 4.5). Gerações anteriores foram intencionalmente omitidas.
+        (Opus 4.8, Sonnet 5, Haiku 4.5), mantendo o Sonnet 4.6 como legado ainda suportado. Gerações anteriores foram intencionalmente omitidas.
       </div>
     </section>
 
@@ -844,26 +845,39 @@ console.log(message.content);</code></pre>
 
 <!-- ============================ 3. MODELOS CLAUDE ============================ -->
 <section class="chapter" id="a-modelos">
-  <h2>3. Modelos Claude (Opus 4.8 · Sonnet 4.6 · Haiku 4.5)</h2>
-  <p>Esta é a <strong>seção canônica de modelos</strong> do guia — as demais partes a referenciam. A geração atual tem três modelos de uso geral. <strong>Use apenas estes IDs</strong> em código novo.</p>
+  <h2>3. Modelos Claude (Opus 4.8 · Sonnet 5 · Haiku 4.5)</h2>
+  <p>Esta é a <strong>seção canônica de modelos</strong> do guia — as demais partes a referenciam. A geração atual de uso geral é <strong>Opus 4.8</strong>, <strong>Sonnet 5</strong> e <strong>Haiku 4.5</strong>. <strong>Use apenas estes IDs</strong> em código novo; <code>claude-sonnet-4-6</code> passou a <span class="pill info">Legacy</span> (ainda funcional e suportado) com a chegada do Sonnet 5.</p>
+
+  <div class="callout ok"><strong>Novo (2026-06-30): Claude Sonnet 5.</strong> A Anthropic lançou <strong>Claude Sonnet 5</strong> (<code>claude-sonnet-5</code>) em GA em <strong>2026-06-30</strong>. Ele substitui o Sonnet 4.6 como o <strong>modelo Sonnet recomendado</strong> e é o default para os planos Free/Pro no claude.ai; disponível também em Claude API, Claude Code, Amazon Bedrock, Vertex AI e Microsoft Foundry. Contexto de <strong>1M tokens</strong>, saída máxima de <strong>128k</strong>, <strong>adaptive thinking ligado por padrão</strong> (<code>thinking.type:"adaptive"</code> é o default; <code>enabled</code> manual retorna <code>400</code> — para desligar use <code>thinking:{"type":"disabled"}</code>), suporta os <strong>5 níveis de <code>effort</code></strong> (<code>low·medium·high·xhigh·max</code>) — inclusive <code>max</code>, o nível mais alto (<code>xhigh</code> <em>não</em> é o teto). Usa o <strong>tokenizer novo</strong> (geração pós-4.7). Cutoff confiável <strong>Jan 2026</strong>. Na doc oficial, o <strong>Sonnet 4.6 foi movido para "Legacy models"</strong> (segue suportado). <span class="source-link"><a href="https://www.anthropic.com/news/claude-sonnet-5" target="_blank" rel="noopener">news/claude-sonnet-5</a> · <a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener">models/overview</a></span></div>
+
+  <div class="callout warn"><strong>Checklist de migração <code>claude-sonnet-4-6</code> → <code>claude-sonnet-5</code></strong> (trocar o ID não é drop-in — há mudanças de comportamento que falham/silenciam sem aviso):
+    <ol style="margin:8px 0 0;padding-left:20px">
+      <li><strong>Thinking manual quebra:</strong> <code>thinking:{type:"enabled", budget_tokens:N}</code> retorna <code>400</code> no Sonnet 5. Troque por <code>thinking:{type:"adaptive"}</code> + <code>output_config.effort</code> (ou <code>{type:"disabled"}</code>).</li>
+      <li><strong>Sampling params quebram:</strong> <code>temperature</code>/<code>top_p</code>/<code>top_k</code> não-default retornam <code>400</code> (em toda requisição). Remova-os e controle variedade por prompting.</li>
+      <li><strong>Raciocínio some da UI (silencioso):</strong> <code>thinking.display</code> passa a <code>"omitted"</code> por padrão — se sua UI mostra o raciocínio, defina <code>display:"summarized"</code> explicitamente.</li>
+      <li><strong>Tokenizer novo (~30% mais tokens):</strong> revise/aumente <code>max_tokens</code> para não truncar (<code>stop_reason:"max_tokens"</code>), sobretudo em <code>high</code>/<code>xhigh</code>/<code>max</code>.</li>
+      <li><strong>Recalibre effort:</strong> Sonnet 5 em <code>medium</code> ≈ Sonnet 4.6 em <code>high</code> — geralmente dá para baixar um nível e economizar.</li>
+      <li><strong>Custo:</strong> preço intro $2/$10 até 31/08/2026 (depois $3/$15) — re-baseie projeções considerando a data-limite e o tokenizer.</li>
+    </ol>
+  </div>
 
   <h3 id="a-modelos-comparacao">Tabela comparativa</h3>
   <div class="table-wrap"><table>
     <thead><tr>
-      <th>Característica</th><th>Claude Opus 4.8</th><th>Claude Sonnet 4.6</th><th>Claude Haiku 4.5</th>
+      <th>Característica</th><th>Claude Opus 4.8</th><th>Claude Sonnet 5</th><th>Claude Sonnet 4.6 <span class="pill info">Legacy</span></th><th>Claude Haiku 4.5</th>
     </tr></thead>
     <tbody>
-      <tr><td><strong>Descrição</strong></td><td>O modelo GA mais capaz, para raciocínio complexo e coding agêntico</td><td>A melhor combinação de velocidade e inteligência</td><td>O modelo mais rápido, com inteligência quase de fronteira</td></tr>
-      <tr><td><strong>ID de API</strong></td><td><code>claude-opus-4-8</code></td><td><code>claude-sonnet-4-6</code></td><td><code>claude-haiku-4-5</code></td></tr>
-      <tr><td><strong>Snapshot fixo</strong></td><td><code>claude-opus-4-8</code> <span class="pill info">o ID puro já é o snapshot (geração 4.6+)</span></td><td><code>claude-sonnet-4-6</code> <span class="pill info">o ID puro já é o snapshot (geração 4.6+)</span></td><td><code>claude-haiku-4-5-20251001</code> <span class="pill info">alias: <code>claude-haiku-4-5</code></span></td></tr>
-      <tr><td><strong>Janela de contexto</strong></td><td>1M tokens</td><td>1M tokens</td><td>200k tokens</td></tr>
-      <tr><td><strong>Máx. de saída (Messages API)</strong></td><td>128k tokens</td><td>128k tokens</td><td>64k tokens</td></tr>
-      <tr><td><strong>Modalidades</strong></td><td>Texto + imagem &rarr; texto; PDF</td><td>Texto + imagem &rarr; texto; PDF</td><td>Texto + imagem &rarr; texto; PDF</td></tr>
-      <tr><td><strong>Adaptive thinking</strong></td><td><span class="pill ok">Sim</span> (modo recomendado)</td><td><span class="pill ok">Sim</span></td><td><span class="pill na">Não</span></td></tr>
-      <tr><td><strong>Extended thinking (manual)</strong></td><td><span class="pill na">Não</span></td><td><span class="pill ok">Sim</span></td><td><span class="pill ok">Sim</span></td></tr>
-      <tr><td><strong><code>effort</code></strong></td><td><code>low·medium·high·xhigh·max</code></td><td><code>low·medium·high·max</code></td><td><span class="pill na">Não suportado</span></td></tr>
-      <tr><td><strong>Latência comparativa</strong></td><td>Moderada</td><td>Rápida</td><td>A mais rápida</td></tr>
-      <tr><td><strong>Knowledge cutoff (confiável)</strong></td><td>Jan 2026</td><td>Ago 2025</td><td>Fev 2025</td></tr>
+      <tr><td><strong>Descrição</strong></td><td>O modelo GA mais capaz, para raciocínio complexo e coding agêntico</td><td>A melhor combinação de velocidade e inteligência (Sonnet recomendado)</td><td>Geração Sonnet anterior — legada, ainda suportada</td><td>O modelo mais rápido, com inteligência quase de fronteira</td></tr>
+      <tr><td><strong>ID de API</strong></td><td><code>claude-opus-4-8</code></td><td><code>claude-sonnet-5</code></td><td><code>claude-sonnet-4-6</code></td><td><code>claude-haiku-4-5</code></td></tr>
+      <tr><td><strong>Snapshot fixo</strong></td><td><code>claude-opus-4-8</code> <span class="pill info">o ID puro já é o snapshot (geração 4.6+)</span></td><td><code>claude-sonnet-5</code> <span class="pill info">o ID puro já é o snapshot</span></td><td><code>claude-sonnet-4-6</code> <span class="pill info">o ID puro já é o snapshot (geração 4.6+)</span></td><td><code>claude-haiku-4-5-20251001</code> <span class="pill info">alias: <code>claude-haiku-4-5</code></span></td></tr>
+      <tr><td><strong>Janela de contexto</strong></td><td>1M tokens</td><td>1M tokens</td><td>1M tokens</td><td>200k tokens</td></tr>
+      <tr><td><strong>Máx. de saída (Messages API)</strong></td><td>128k tokens</td><td>128k tokens</td><td>128k tokens</td><td>64k tokens</td></tr>
+      <tr><td><strong>Modalidades</strong></td><td>Texto + imagem &rarr; texto; PDF</td><td>Texto + imagem &rarr; texto; PDF</td><td>Texto + imagem &rarr; texto; PDF</td><td>Texto + imagem &rarr; texto; PDF</td></tr>
+      <tr><td><strong>Adaptive thinking</strong></td><td><span class="pill ok">Sim</span> (modo recomendado)</td><td><span class="pill ok">Sim</span> (default ligado)</td><td><span class="pill ok">Sim</span></td><td><span class="pill na">Não</span></td></tr>
+      <tr><td><strong>Extended thinking (manual)</strong></td><td><span class="pill na">Não</span></td><td><span class="pill na">Não</span></td><td><span class="pill ok">Sim</span></td><td><span class="pill ok">Sim</span></td></tr>
+      <tr><td><strong><code>effort</code></strong></td><td><code>low·medium·high·xhigh·max</code></td><td><code>low·medium·high·xhigh·max</code></td><td><code>low·medium·high·max</code></td><td><span class="pill na">Não suportado</span></td></tr>
+      <tr><td><strong>Latência comparativa</strong></td><td>Moderada</td><td>Rápida</td><td>Rápida</td><td>A mais rápida</td></tr>
+      <tr><td><strong>Knowledge cutoff (confiável)</strong></td><td>Jan 2026</td><td>Jan 2026</td><td>Ago 2025</td><td>Fev 2025</td></tr>
     </tbody>
   </table></div>
 
@@ -880,39 +894,43 @@ console.log(message.content);</code></pre>
   </div>
 
   <h3 id="a-modelos-preco">Preços por MTok (milhão de tokens, USD)</h3>
-  <p>Todos os preços abaixo são da API de primeira parte (Claude API), em rota <code>global</code> (padrão). A janela completa de 1M tokens (Opus 4.8 e Sonnet 4.6) é cobrada na <strong>mesma taxa por token</strong> em todo o contexto — um request de 900k tokens custa por token o mesmo que um de 9k.</p>
+  <p>Todos os preços abaixo são da API de primeira parte (Claude API), em rota <code>global</code> (padrão). A janela completa de 1M tokens (Opus 4.8, Sonnet 5 e Sonnet 4.6) é cobrada na <strong>mesma taxa por token</strong> em todo o contexto — um request de 900k tokens custa por token o mesmo que um de 9k.</p>
   <div class="table-wrap"><table>
     <thead><tr>
       <th>Modelo</th><th>Entrada</th><th>Saída</th><th>Cache write 5m</th><th>Cache write 1h</th><th>Cache hit (leitura)</th>
     </tr></thead>
     <tbody>
       <tr><td>Claude Opus 4.8</td><td>$5</td><td>$25</td><td>$6.25</td><td>$10</td><td>$0.50</td></tr>
-      <tr><td>Claude Sonnet 4.6</td><td>$3</td><td>$15</td><td>$3.75</td><td>$6</td><td>$0.30</td></tr>
+      <tr><td>Claude Sonnet 5 <span class="pill ok">intro</span></td><td>$2 <span class="pill info">→ $3</span></td><td>$10 <span class="pill info">→ $15</span></td><td>$2.50</td><td>$4</td><td>$0.20</td></tr>
+      <tr><td>Claude Sonnet 4.6 <span class="pill info">Legacy</span></td><td>$3</td><td>$15</td><td>$3.75</td><td>$6</td><td>$0.30</td></tr>
       <tr><td>Claude Haiku 4.5</td><td>$1</td><td>$5</td><td>$1.25</td><td>$2</td><td>$0.10</td></tr>
     </tbody>
   </table></div>
+  <div class="callout info"><strong>Sonnet 5 — preço introdutório.</strong> Até <strong>2026-08-31</strong>, o <code>claude-sonnet-5</code> tem preço promocional de <strong>$2 / $10</strong> por MTok (entrada/saída); a partir de <strong>2026-09-01</strong> passa ao preço padrão de <strong>$3 / $15</strong> (mesma faixa do Sonnet 4.6). As colunas de cache acima usam o preço padrão como base ($3 de entrada). Confirme sempre em <code>pricing</code> antes de projetar custo. <span class="source-link"><a href="https://platform.claude.com/docs/en/about-claude/pricing" target="_blank" rel="noopener">pricing</a></span></div>
   <p>O cache write de 5 minutos custa 1,25× o preço de entrada base; o de 1 hora custa 2×; a leitura de cache (hit) custa 0,1× (10%) do preço de entrada. Pela <strong>Batch API</strong> os tokens saem com 50% de desconto (ver <a href="#a-batch">seção 12</a>):</p>
   <div class="table-wrap"><table>
     <thead><tr><th>Modelo</th><th>Batch entrada</th><th>Batch saída</th></tr></thead>
     <tbody>
       <tr><td>Claude Opus 4.8</td><td>$2.50</td><td>$12.50</td></tr>
-      <tr><td>Claude Sonnet 4.6</td><td>$1.50</td><td>$7.50</td></tr>
+      <tr><td>Claude Sonnet 5 <span class="pill info">(preço padrão)</span></td><td>$1.50</td><td>$7.50</td></tr>
+      <tr><td>Claude Sonnet 4.6 <span class="pill info">Legacy</span></td><td>$1.50</td><td>$7.50</td></tr>
       <tr><td>Claude Haiku 4.5</td><td>$0.50</td><td>$2.50</td></tr>
     </tbody>
   </table></div>
 
-  <div class="callout warn"><strong>Atenção (tokenizer):</strong> Opus 4.7, Opus 4.8 e Fable 5 usam um <strong>tokenizer novo</strong> em relação a gerações anteriores (Opus 4.6 e Sonnet 4.6 mantêm o antigo), o que contribui para o desempenho — mas produz <strong>~30% mais tokens</strong> para o mesmo texto. Recalibre <code>max_tokens</code> e re-baseie estimativas de custo ao migrar; a API de <em>token counting</em> aceita <code>model:"claude-fable-5"</code> para medir com o novo tokenizer.</div>
+  <div class="callout warn"><strong>Atenção (tokenizer):</strong> Opus 4.7, Opus 4.8, Sonnet 5 e Fable 5 usam um <strong>tokenizer novo</strong> em relação a gerações anteriores (Opus 4.6 e Sonnet 4.6 mantêm o antigo), o que contribui para o desempenho — mas produz mais tokens para o mesmo texto (~1,0–1,35× conforme o texto; da ordem de <strong>~30% a mais</strong> nos piores casos). Recalibre <code>max_tokens</code> e re-baseie estimativas de custo ao migrar (inclusive ao trocar Sonnet 4.6 → Sonnet 5); a API de <em>token counting</em> aceita <code>model:"claude-sonnet-5"</code> ou <code>model:"claude-fable-5"</code> para medir com o novo tokenizer.</div>
 
   <div class="callout tip"><strong>Opus 4.8 — atual e recomendado (verificado 2026-06-03):</strong> o <code>claude-opus-4-8</code> é o Opus atual e <strong>sucessor direto do 4.7</strong> (agora <span class="pill info">Legacy</span>). As specs centrais são <em>idênticas</em> às do 4.7 (confirmado em <code>models/overview</code>): janela de <strong>1M tokens</strong>, saída de <strong>128k</strong>, <strong>adaptive thinking</strong> (sem extended), preço <strong>$5 / $25</strong> por MTok. Diferença de comportamento: no 4.8 o <code>effort</code> assume <strong><code>high</code> por padrão</strong> em todas as superfícies (Claude API e Claude Code) — defina-o explicitamente para usar outro nível. O suporte a ferramentas e headers beta (computer use, code execution, web fetch, fast mode, <code>inference_geo</code>) é herdado da superfície do 4.7; para betas de borda, confirme sempre na documentação oficial.</div>
 
-  <div class="callout warn"><strong>Atualização 2026-06-29:</strong> a Anthropic lançou o <strong>Claude Fable 5</strong> (<code>claude-fable-5</code>, GA em <strong>2026-06-09</strong>, mas <strong>indisponível no momento</strong> — confirme o status atual em <code>models/overview</code> antes de planejar uso) — o modelo mais capaz amplamente lançado da Anthropic: <strong>$10 / $50</strong> por MTok, contexto de <strong>1M tokens</strong>, saída máxima de <strong>128k</strong> e <strong>adaptive thinking sempre ativo</strong> — <code>thinking: {"type": "disabled"}</code>, budget manual (<code>enabled</code> + <code>budget_tokens</code>) e prefill do turno <code>assistant</code> retornam <strong><code>400</code></strong>; <code>thinking.display</code> assume <code>"omitted"</code> por padrão. Usa o tokenizer do Opus 4.7 (~30% mais tokens que gerações pré-4.7 para o mesmo texto), traz classificadores de segurança com <code>stop_reason: "refusal"</code> (sem cobrança se nada for gerado — política de toda a Claude API desde <strong>02/06/2026</strong>, não exclusiva do Fable 5) e o parâmetro <code>fallbacks</code> <span class="pill beta">Beta</span>, exige <strong>retenção de 30 dias</strong> (<em>não</em> elegível a ZDR) e tem cache mínimo de <strong>512 tokens</strong>. O <strong>Claude Mythos 5</strong> (<code>claude-mythos-5</code>) está em disponibilidade limitada. O <strong>Opus 4.8 segue ativo e recomendado</strong> — este guia permanece centrado nele (com Sonnet 4.6 e Haiku 4.5). Deprecações: <strong>Sonnet 4</strong> e <strong>Opus 4</strong> aposentam em <strong>2026-06-15</strong>; <strong>Opus 4.1</strong> (anúncio de 2026-06-05) aposenta em <strong>2026-08-05</strong>. Desde 2026-05-27, a API reporta <code>usage.output_tokens_details.thinking_tokens</code> no <code>message_delta</code> final.
-    <span class="source-link"><a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener">models/overview</a> · <a href="https://platform.claude.com/docs/en/about-claude/model-deprecations" target="_blank" rel="noopener">model-deprecations</a></span>
+  <div class="callout warn"><strong>Atualização 2026-07-05:</strong> a Anthropic lançou o <strong>Claude Fable 5</strong> (<code>claude-fable-5</code>, GA em <strong>2026-06-09</strong>) — o modelo mais capaz amplamente lançado da Anthropic: <strong>$10 / $50</strong> por MTok, contexto de <strong>1M tokens</strong>, saída máxima de <strong>128k</strong> e <strong>adaptive thinking sempre ativo</strong> — <code>thinking: {"type": "disabled"}</code>, budget manual (<code>enabled</code> + <code>budget_tokens</code>) e prefill do turno <code>assistant</code> retornam <strong><code>400</code></strong>; <code>thinking.display</code> assume <code>"omitted"</code> por padrão. Usa o tokenizer do Opus 4.7 (~30% mais tokens que gerações pré-4.7 para o mesmo texto), traz classificadores de segurança com <code>stop_reason: "refusal"</code> (sem cobrança se nada for gerado — política de toda a Claude API desde <strong>02/06/2026</strong>, não exclusiva do Fable 5) e o parâmetro <code>fallbacks</code> <span class="pill beta">Beta</span>, exige <strong>retenção de 30 dias</strong> (<em>não</em> elegível a ZDR) e tem cache mínimo de <strong>512 tokens</strong>. <strong>Disponibilidade:</strong> o Fable 5 (e o Mythos 5) ficaram <strong>suspensos globalmente entre 12/06 e 30/06/2026</strong> por controles de exportação dos EUA; a exigência de licença foi retirada em 30/06 e o modelo foi <strong>reimplantado ("redeployed") a partir de 01/07/2026</strong> com um classificador de segurança reforçado (requests bloqueados são redirecionados automaticamente para o Opus 4.8). Model ID, preço e specs permanecem os mesmos — confirme o status atual em <code>models/overview</code>. O <strong>Claude Mythos 5</strong> (<code>claude-mythos-5</code>) está em disponibilidade limitada. O <strong>Opus 4.8 segue ativo e recomendado</strong> como o modelo mais capaz; o <strong>Sonnet 5</strong> (GA 2026-06-30) é agora o Sonnet recomendado (ver callout acima), com Sonnet 4.6 rebaixado a <span class="pill info">Legacy</span> e Haiku 4.5 para baixa latência. Deprecações: <strong>Sonnet 4</strong> e <strong>Opus 4</strong> aposentam em <strong>2026-06-15</strong>; <strong>Opus 4.1</strong> (anúncio de 2026-06-05) aposenta em <strong>2026-08-05</strong>. Desde 2026-05-27, a API reporta <code>usage.output_tokens_details.thinking_tokens</code> no <code>message_delta</code> final.
+    <span class="source-link"><a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener">models/overview</a> · <a href="https://www.anthropic.com/news/redeploying-fable-5" target="_blank" rel="noopener">redeploying-fable-5</a> · <a href="https://platform.claude.com/docs/en/about-claude/model-deprecations" target="_blank" rel="noopener">model-deprecations</a></span>
   </div>
 
   <h3 id="a-modelos-escolha">Quando usar cada modelo</h3>
   <ul>
     <li><strong>Opus 4.8</strong> — tarefas complexas, raciocínio profundo e coding agêntico de longo horizonte. Comece com <code>effort: "xhigh"</code> para coding/agentes; é o padrão recomendado para os casos mais difíceis.</li>
-    <li><strong>Sonnet 4.6</strong> — equilíbrio de velocidade, custo e inteligência para a maioria das cargas de produção (coding, agentes, fluxos enterprise). Defina <code>effort</code> explicitamente (recomendado <code>medium</code>) para evitar latência inesperada.</li>
+    <li><strong>Sonnet 5</strong> <span class="pill ok">recomendado</span> — equilíbrio de velocidade, custo e inteligência para a maioria das cargas de produção (coding, agentes, fluxos enterprise); é o Sonnet atual e sucessor do 4.6. Adaptive thinking vem ligado por padrão; defina <code>effort</code> explicitamente (todos os 5 níveis, <code>low</code>…<code>max</code>) conforme o trade-off latência/qualidade. <strong>Ao migrar do 4.6, recalibre o effort:</strong> segundo a Anthropic, Sonnet 5 em <code>medium</code> ≈ Sonnet 4.6 em <code>high</code>, e Sonnet 5 em <code>high</code> ≈ Sonnet 4.6 em <code>max</code> — ou seja, você pode baixar um nível e manter qualidade equivalente, reduzindo custo/latência.</li>
+    <li><strong>Sonnet 4.6</strong> <span class="pill info">Legacy</span> — geração Sonnet anterior, ainda funcional e suportada; prefira o Sonnet 5 em código novo. Migração é trocar o ID (<code>claude-sonnet-4-6</code> → <code>claude-sonnet-5</code>) — reveja <code>max_tokens</code> por causa do tokenizer novo e note que <code>thinking.display</code> passa a <code>"omitted"</code> por padrão no Sonnet 5.</li>
     <li><strong>Haiku 4.5</strong> — baixa latência e baixo custo: classificação, lookups rápidos, subagentes e volumes altos onde ganhos marginais de qualidade não compensam latência/custo.</li>
   </ul>
 
@@ -1703,7 +1721,7 @@ for await (const result of await client.messages.batches.results(batch.id)) {
       <tr><td><code>claude-haiku-4-5</code></td><td><span class="pill na">não</span></td><td><span class="pill na">não</span></td><td>Usa <strong>extended thinking manual</strong>: <code>thinking: {type: "enabled", budget_tokens: N}</code>. Não tem adaptive nem <code>effort</code>.</td></tr>
     </tbody>
   </table></div>
-  <div class="callout warn"><strong>Atenção:</strong> o parâmetro <code>effort</code> está disponível em <code>claude-opus-4-8</code> (com <code>xhigh</code>) e <code>claude-sonnet-4-6</code>; com adaptive thinking é o controle de profundidade recomendado, mas <code>effort</code> <strong>também funciona sem thinking</strong>, controlando o gasto geral da resposta. No <code>claude-haiku-4-5</code> não há adaptive nem <code>effort</code>: controle o raciocínio apenas via <code>budget_tokens</code> (ver <a href="#b-extended-thinking">capítulo 2</a>).</div>
+  <div class="callout warn"><strong>Atenção:</strong> o parâmetro <code>effort</code> está disponível em <code>claude-opus-4-8</code>, <code>claude-sonnet-5</code> (ambos com <code>xhigh</code> e <code>max</code>) e <code>claude-sonnet-4-6</code> (até <code>max</code>, sem <code>xhigh</code>); com adaptive thinking é o controle de profundidade recomendado, mas <code>effort</code> <strong>também funciona sem thinking</strong>, controlando o gasto geral da resposta. No <code>claude-haiku-4-5</code> não há adaptive nem <code>effort</code>: controle o raciocínio apenas via <code>budget_tokens</code> (ver <a href="#b-extended-thinking">capítulo 2</a>).</div>
 
   <h3>1.3. Como usar</h3>
   <p>Defina <code>thinking.type</code> como <code>"adaptive"</code>. No nível padrão de <code>effort</code> (<code>high</code>), o Claude quase sempre raciocina; em níveis mais baixos pode pular o raciocínio em perguntas simples.</p>
@@ -1903,11 +1921,11 @@ console.log(response.content[0].text);</code></pre>
   <div class="table-wrap"><table>
     <thead><tr><th>Valor</th><th>Comportamento</th><th>Padrão em</th></tr></thead>
     <tbody>
-      <tr><td><code>"summarized"</code></td><td>Blocos contêm o texto resumido do pensamento.</td><td>Sonnet 4.6 e modelos Claude 4 anteriores</td></tr>
-      <tr><td><code>"omitted"</code></td><td>Blocos voltam com <code>thinking</code> vazio; o campo <code>signature</code> ainda carrega o pensamento completo criptografado para continuidade multi-turno.</td><td><code>claude-opus-4-8</code></td></tr>
+      <tr><td><code>"summarized"</code></td><td>Blocos contêm o texto resumido do pensamento.</td><td>Sonnet 4.6 e modelos Claude 4 anteriores (default nessas gerações)</td></tr>
+      <tr><td><code>"omitted"</code></td><td>Blocos voltam com <code>thinking</code> vazio; o campo <code>signature</code> ainda carrega o pensamento completo criptografado para continuidade multi-turno.</td><td>Default em <code>claude-opus-4-8</code>, <code>claude-opus-4-7</code>, <code>claude-sonnet-5</code>, <code>claude-fable-5</code> e <code>claude-mythos-5</code></td></tr>
     </tbody>
   </table></div>
-  <div class="callout warn"><strong>Atenção:</strong> no <code>claude-opus-4-8</code>, <code>display</code> é <code>"omitted"</code> por padrão — os blocos de pensamento aparecem no stream, mas com <code>thinking</code> vazio. Para receber o resumo, defina explicitamente <code>display: "summarized"</code>. <code>display</code> é inválido com <code>thinking.type: "disabled"</code>. Mesmo com <code>"omitted"</code>, você continua sendo cobrado pelos tokens completos de pensamento — omitir reduz <em>latência</em>, não custo.</div>
+  <div class="callout warn"><strong>Atenção (mudança silenciosa):</strong> nos modelos mais novos — <code>claude-opus-4-8</code>, <code>claude-opus-4-7</code>, <code>claude-sonnet-5</code>, <code>claude-fable-5</code> e <code>claude-mythos-5</code> — <code>display</code> é <code>"omitted"</code> por padrão (era <code>"summarized"</code> em Opus 4.6 / Sonnet 4.6): os blocos de pensamento aparecem no stream, mas com <code>thinking</code> vazio. Quem migra de Sonnet 4.6 para <strong>Sonnet 5</strong> esperando ver o raciocínio precisa definir explicitamente <code>display: "summarized"</code>. <code>display</code> é inválido com <code>thinking.type: "disabled"</code>. Mesmo com <code>"omitted"</code>, você continua sendo cobrado pelos tokens completos de pensamento — omitir reduz <em>latência</em>, não custo.</div>
 <pre><code class="language-python"># Restaurar resumo do pensamento no Opus 4.8:
 thinking = {"type": "adaptive", "display": "summarized"}
 
@@ -4185,7 +4203,7 @@ console.log(finalMessage.usage);</code></pre>
       <tr><td><code>inference_geo</code></td><td>string</td><td>Não</td><td><code>"global"</code> (default) ou <code>"us"</code> — residência de inferência (veja a <a href="#d-gov-residencia">seção 11.6</a>)</td></tr>
     </tbody>
   </table></div>
-  <div class="callout warn"><strong>Atenção (sampling depreciado):</strong> <code>temperature</code>, <code>top_p</code> e <code>top_k</code> retornam <strong><code>400</code></strong> quando definidos com valor <em>não-default</em> em <strong>Claude Opus 4.7, Opus 4.8 e Fable 5</strong> (seguem válidos em Opus 4.6, Sonnet 4.6 e modelos anteriores). Os campos continuam nos tipos do SDK para compatibilidade de <em>type-check</em>, mas a API rejeita valores não-default — <strong>omita-os</strong> e guie o comportamento por <em>prompting</em>. Fonte: <a href="https://platform.claude.com/docs/en/about-claude/model-deprecations" target="_blank" rel="noopener">model-deprecations</a>.</div>
+  <div class="callout warn"><strong>Atenção (sampling depreciado):</strong> <code>temperature</code>, <code>top_p</code> e <code>top_k</code> retornam <strong><code>400</code></strong> quando definidos com valor <em>não-default</em> em <strong>Claude Opus 4.7, Opus 4.8, Sonnet 5, Fable 5 e Mythos 5</strong> (seguem válidos em Opus 4.6, Sonnet 4.6 e modelos anteriores). Isso vale em <strong>toda requisição</strong>, independentemente de <em>thinking</em> estar ativo. Os campos continuam nos tipos do SDK para compatibilidade de <em>type-check</em>, mas a API rejeita valores não-default — <strong>omita-os</strong> e guie a variedade estilística por <em>prompting</em> (recomendação oficial). <strong>Ao migrar de Sonnet 4.6 → Sonnet 5, audite chamadas com <code>temperature</code>/<code>top_p</code> explícitos antes de trocar o ID.</strong> Fonte: <a href="https://platform.claude.com/docs/en/about-claude/model-deprecations" target="_blank" rel="noopener">model-deprecations</a>.</div>
   <div class="callout warn"><strong>Atenção (prefill):</strong> Claude Opus 4.8 e Sonnet 4.6 <strong>não suportam</strong> pré-preencher (prefill) a última mensagem <code>assistant</code>. Enviar um turno <code>assistant</code> final retorna <code>400 invalid_request_error</code>. Use <a href="#d-rest-messages-resp">saída estruturada</a> (<code>output_config.format</code>), instruções no system prompt ou structured outputs.</div>
 
   <h3 id="d-rest-messages-resp">3.2. Objeto de resposta (<code>Message</code>)</h3>
@@ -6252,7 +6270,7 @@ const msg = await bedrock.messages.create({
 <tr><td><code>display</code></td><td>Como o pensamento volta na resposta: <code>summarized</code> ou <code>omitted</code> (padrão no Opus 4.8).</td></tr>
 <tr><td><code>document</code></td><td>Bloco de conteúdo para PDF/texto/conteúdo customizado; suporta <code>citations</code> e <code>cache_control</code>.</td></tr>
 <tr><td><code>eager_input_streaming</code></td><td>Habilita fine-grained tool streaming (sem buffering/validação de JSON) em ferramentas de usuário.</td></tr>
-<tr><td><code>effort</code></td><td>Em output_config.effort: controla o gasto de tokens (low, medium, high, xhigh [só Opus 4.8], max). Padrão = high.</td></tr>
+<tr><td><code>effort</code></td><td>Em output_config.effort: controla o gasto de tokens (low, medium, high, xhigh, max). Padrão = high. <code>xhigh</code> disponível em Opus 4.8/4.7, Sonnet 5, Fable 5, Mythos 5; <code>max</code> em todos com adaptive thinking (inclui Sonnet 5 e Sonnet 4.6).</td></tr>
 <tr><td><code>fetchOptions</code></td><td>RequestInit repassado ao fetch (proxy/agent/dispatcher por runtime).</td></tr>
 <tr><td><code>file_id</code></td><td>Identificador de arquivo da Files API (beta <code>files-api-2025-04-14</code>) referenciável por <code>source.type: "file"</code>.</td></tr>
 <tr><td><code>image</code></td><td>Bloco de conteúdo de imagem com <code>source</code> <code>base64</code>/<code>url</code>/<code>file</code>.</td></tr>
@@ -6393,10 +6411,24 @@ const msg = await bedrock.messages.create({
       em <strong>24/07/2026</strong>. Confirmado: Fable 5 = GA porém <strong>temporariamente indisponível para
       usuários regulares</strong>; Sonnet 4.6 = 128k e Haiku 4.5 = 64k de saída máxima. Fonte:
       <code>platform.claude.com/docs/.../model-deprecations</code>.</li>
+    <li><strong>2026-07-05 (varredura de freshness)</strong> — <strong>Claude Sonnet 5</strong>
+      (<code>claude-sonnet-5</code>) lançado em <strong>GA em 2026-06-30</strong>: passa a ser o Sonnet
+      recomendado e default de Free/Pro no claude.ai; 1M ctx, 128k saída, adaptive thinking ligado por
+      padrão, <code>effort</code> nos 5 níveis (<code>low</code>…<code>max</code>), tokenizer novo, cutoff Jan 2026. Preço intro
+      <strong>$2/$10</strong> por MTok até <strong>31/08/2026</strong>, depois <strong>$3/$15</strong>. O
+      <strong>Sonnet 4.6 foi rebaixado a "Legacy"</strong> na doc oficial (ainda suportado). <strong>Fable 5:</strong>
+      após suspensão global por controles de exportação dos EUA (12–30/06), foi <strong>reimplantado a partir
+      de 01/07/2026</strong> com classificador de segurança reforçado (fallback automático p/ Opus 4.8) — model
+      ID/preço/specs inalterados; portanto o "indisponível" das entradas anteriores está <strong>resolvido</strong>.
+      SDKs: <code>anthropic</code> <strong>0.116.0</strong> (Python, 02/07) e <code>@anthropic-ai/sdk</code>
+      <strong>0.110.0</strong> (Node, 02/07 — 0.108.0 adicionou suporte a <code>claude-sonnet-5</code>; 0.109.0
+      trouxe Managed Agents com streaming de eventos/overrides/webhooks; 0.110.0 introduziu o beta header
+      <code>agent-memory-2026-07-22</code>). Fonte: <code>anthropic.com/news/claude-sonnet-5</code>,
+      <code>anthropic.com/news/redeploying-fable-5</code>, PyPI e GitHub releases.</li>
   </ul>
   <p style="color:var(--c-fg-muted);font-size:13px">Fontes primárias: <code>platform.claude.com/docs</code>
   (export <code>llms-full.txt</code>) e <code>github.com/anthropics/anthropic-cookbook</code>.
-  Verificado em 2026-06-29 — para fatos perecíveis (modelos, datas, preços, limites, headers beta),
+  Verificado em 2026-07-05 — para fatos perecíveis (modelos, datas, preços, limites, headers beta),
   consulte sempre a fonte oficial.</p>
 </section>
   </main>

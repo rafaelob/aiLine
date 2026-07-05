@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Ferramentas, MCP &amp; RAG — Núcleo agnóstico de agentes</title>
 <meta name="description" content="Ferramentas como capabilities com contrato, na orquestração agnóstica de provider: ontologia de tools, fases de execução (built-in vs function paralela), MCP como fronteira formal (spec 2025-11-25), RAG como capability com provenance, tool result envelopes, segurança e fluxo de aprovação (HITL), fan-out/wind-down, design de schema de tool, hardening de MCP server e métricas. Multimodal e paralelismo entram por cross-link aos guias dedicados." />
-<meta name="last-checked" content="2026-06-29" />
+<meta name="last-checked" content="2026-07-05" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -285,7 +285,7 @@
   <div class="header-row">
     <div class="brand">Ferramentas, MCP &amp; RAG <small>Núcleo agnóstico de agentes</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-06-29</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-05</strong></span>
       <span class="badge da">Núcleo · agnóstico de provider</span>
       <span class="badge info">Conceitual + referência</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
@@ -519,12 +519,21 @@
         <strong>2025-11-25</strong>.
       </p>
       <div class="callout warn">
-        <strong>Próxima revisão MCP — alvo 2026-07-28 (ainda em <em>draft</em>; mudanças seguem entrando até a publicação — verificado 2026-06-11):</strong> protocolo
-        <em>stateless</em> sem handshake <code>initialize</code>/<code>Mcp-Session-Id</code> (versão,
+        <strong>Próxima revisão MCP — <span class="pill info">Release Candidate</span> publicada em 2026-05-21, publicação final marcada para 2026-07-28 (verificado 2026-07-05):</strong> deixou de ser um <em>draft</em> em fluxo — é uma RC substancialmente estável em janela de validação de ~10 semanas, a maior revisão desde o lançamento do MCP, com <strong>breaking changes</strong> confirmados oficialmente. <strong>Ressalva:</strong> o blog oficial (post de 2026-06-29 sobre os SDKs beta) avisa que "as APIs públicas ainda podem mudar entre o beta e o release estável" — trate os detalhes técnicos abaixo como substancialmente estáveis para <em>planejamento</em>, mas <em>não</em> como imutáveis até a publicação final em 28/07. Protocolo
+        <em>stateless</em> no core, sem handshake <code>initialize</code>/<code>initialized</code> nem header <code>Mcp-Session-Id</code> (versão,
         identidade e capabilities passam a viajar em <code>_meta</code>), novo <code>server/discover</code>,
-        <code>subscriptions/listen</code> (substitui o GET e <code>resources/subscribe</code>/<code>unsubscribe</code>), Tasks vira a extensão <code>io.modelcontextprotocol/tasks</code>
-        e Roots/Sampling/Logging ficam deprecados. Itens mais recentes do draft: <strong>MRTR</strong> (Multi Round-Trip Requests, SEP-2322 — substitui requests iniciadas pelo servidor como <code>sampling/createMessage</code> por <code>inputRequests</code>/<code>inputResponses</code>), interface <code>CacheableResult</code> (<code>ttlMs</code>/<code>cacheScope</code> em <code>tools/list</code> &amp; afins, SEP-2549), headers obrigatórios <code>Mcp-Method</code>/<code>Mcp-Name</code> no Streamable HTTP, e deprecação do OAuth Dynamic Client Registration (RFC 7591) em favor de Client ID Metadata Documents. No SDK Python, o <code>mcp</code> <strong>v2.0.0a1</strong> (alpha, 2026-06-11) antecipa a arquitetura nova — <code>FastMCP</code> renomeado para <code>MCPServer</code>, pipeline <em>Dispatcher</em> no lugar de <code>ServerSession</code>; v2.0.0 estável tem alvo em 2026-07-28, junto com a spec. Planeje a adoção desde já; a <strong>2025-11-25</strong>
-        segue sendo a revisão vigente hoje (SDK estável: <code>mcp</code> 1.27.2).
+        <code>subscriptions/listen</code> (substitui o GET e <code>resources/subscribe</code>/<code>unsubscribe</code>), Tasks vira a extensão <code>io.modelcontextprotocol/tasks</code> (com <code>tasks/list</code> removido) e <strong>Roots/Sampling/Logging ficam deprecados (SEP-2577)</strong> — ainda funcionam, com janela mínima de 12 meses até remoção possível. <strong>MRTR</strong> (Multi Round-Trip Requests, SEP-2322 — substitui requests iniciadas pelo servidor como <code>sampling/createMessage</code> por um padrão baseado em <code>InputRequiredResult</code>/<code>inputRequests</code>), interface <code>CacheableResult</code> (<code>ttlMs</code>/<code>cacheScope</code> em <code>tools/list</code> &amp; afins, SEP-2549), extensões formais via IDs reverse-DNS (SEP-2133, ex.: MCP Apps com UIs HTML sandboxed), tool schemas migram para <strong>JSON Schema 2020-12</strong> completo, autorização alinhada a OAuth/OIDC (validação obrigatória de <code>iss</code>, entre 6 mudanças; DCR RFC 7591 substituído por Client ID Metadata Documents), e o erro de recurso ausente muda de <code>-32002</code> para o padrão <code>-32602</code>. No SDK Python, os pré-releases da <code>mcp</code> v2 já avançaram de alpha para <strong>beta (<code>2.0.0b1</code>, 2026-06-30)</strong> e antecipam a arquitetura nova — <code>FastMCP</code> renomeado para <code>MCPServer</code>, pipeline <em>Dispatcher</em>/<em>Runner</em> no lugar de <code>ServerSession</code>, <code>mcp-types</code> como pacote separado; o <strong>v2.0.0 estável sai por volta de 2026-07-28</strong>, junto com a spec. A <strong>2025-11-25</strong> segue sendo a revisão vigente hoje (SDK estável: <code>mcp</code> <strong>1.28.1</strong>, PyPI, 2026-06-26).
+      </div>
+      <div class="callout warn">
+        <strong>⚠ Risco operacional de auto-upgrade (antes de 2026-07-28):</strong> a própria página do pacote no PyPI recomenda adicionar um teto de versão (<code>mcp&gt;=1.27,&lt;2</code>) <em>antes</em> do release estável da v2. Os pré-releases (2.0.0aN/bN) <strong>não</strong> são instalados automaticamente — <code>pip</code>/<code>uv</code> só selecionam pré-lançamentos quando explicitamente pedido. O risco concreto surge quando o <strong>v2.0.0 estável</strong> for publicado (~28/07): qualquer projeto que dependa de <code>mcp</code> <strong>sem upper bound</strong> resolverá para a v2 (arquitetura stateless, breaking changes — remove <code>initialize</code>/session) no próximo install/update. <strong>Fixe <code>mcp&gt;=1.28,&lt;2</code></strong> em produção agora e planeje a migração controlada quando o migration guide oficial da v2 sair. Dica de CI: <code>pip install --dry-run --pre mcp</code> para detectar quando o estável chegar.
+      </div>
+      <div class="callout">
+        <strong>Detalhes técnicos da RC (para quem já implementa contra a nova revisão):</strong>
+        <ul style="margin:6px 0 0;padding-left:20px">
+          <li><strong>Renumeração de códigos de erro:</strong> além de recurso ausente <code>-32002</code> → <code>-32602</code> (padrão JSON-RPC), a faixa <code>-32020…-32099</code> passa a ser <em>reservada ao MCP</em> (e <code>-32000…-32019</code> fica livre para implementações). Erros pré-RC migram: <code>HeaderMismatch</code> <code>-32001</code>→<code>-32020</code>, <code>MissingRequiredClientCapability</code> <code>-32003</code>→<code>-32021</code>, <code>UnsupportedProtocolVersion</code> <code>-32004</code>→<code>-32022</code>. <strong>Não faça match em literais numéricos</strong> — use as constantes nomeadas do SDK, senão quebra na virada.</li>
+          <li><strong>Política de ciclo de vida (SEP-2596):</strong> define estados <em>Active → Deprecated → Removed</em> com <strong>janela mínima de 12 meses</strong> entre depreciação e remoção. Como Roots/Sampling/Logging só ficam deprecados na 2026-07-28, a remoção só pode ocorrer <strong>não antes de ~2027-05</strong> — há prazo real para migrar, sem pressa de última hora.</li>
+          <li><strong>Descoberta e transporte:</strong> novo método <code>server/discover</code> (SEP-2575) para negociação inicial no core stateless; <code>subscriptions/listen</code> substitui o GET+SSE e <code>resources/subscribe</code>; headers obrigatórios <code>Mcp-Method</code>/<code>Mcp-Name</code> no Streamable HTTP (SEP-2243).</li>
+        </ul>
       </div>
       <div class="figure">
         <svg viewBox="0 0 760 230" role="img" aria-labelledby="mcp-title mcp-desc" xmlns="http://www.w3.org/2000/svg">
@@ -894,7 +903,7 @@ if tool_errors_consecutive &gt;= threshold:
     <section class="ref" id="verificacao">
       <h2>Notas de verificação</h2>
       <ul>
-        <li><span class="pill ok">Resolvido</span> <strong>Spec MCP = 2025-11-25.</strong> Versão alvo reconfirmada contra a doc oficial em 2026-06-10; as primitivas (tools/resources/prompts) e o fluxo HITL valem nesta revisão. <code>structuredContent</code>/<code>outputSchema</code> e elicitation foram introduzidos em <strong>2025-06-18</strong> — a 2025-11-25 refina (ver "Atribuição de versão" no §3). SDK Python de referência: <code>mcp</code> 1.27.2 (PyPI, 2026-06-10).</li>
+        <li><span class="pill ok">Resolvido</span> <strong>Spec MCP = 2025-11-25.</strong> Versão alvo reconfirmada contra a doc oficial em 2026-06-10; as primitivas (tools/resources/prompts) e o fluxo HITL valem nesta revisão. <code>structuredContent</code>/<code>outputSchema</code> e elicitation foram introduzidos em <strong>2025-06-18</strong> — a 2025-11-25 refina (ver "Atribuição de versão" no §3). SDK Python de referência: <code>mcp</code> <strong>1.28.1</strong> (PyPI, 2026-06-26). A revisão RC <strong>2026-07-28</strong> está travada (v2.0.0 do SDK sai junto, stateless) — fixe <code>mcp&lt;2</code> em produção antes dessa data.</li>
         <li><span class="pill ok">Resolvido</span> <strong>Parallel function calling × built-ins (OpenAI).</strong> "Parallel function calling não é possível ao usar built-in tools" — confirmado contra a doc oficial de tools/function calling; daí o padrão de fases.</li>
         <li><span class="pill ok">Resolvido</span> <strong>Sem duplicação.</strong> Paralelismo profundo fica em Paralelismo &amp; tools; leitura multimodal fica em Multimodal; engenharia de retrieval fica na skill <code>rag-systems</code>. Aqui só o contrato e a fronteira.</li>
         <li><span class="pill ok">Resolvido</span> <strong>Sem IDs de modelo fixos.</strong> O capítulo cita parâmetros (perenes) e tipos de tool, não modelos (perecíveis).</li>

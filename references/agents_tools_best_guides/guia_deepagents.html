@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Guia Deep Agents — Referência completa (Python)</title>
 <meta name="description" content="Guia técnico SOTA do Deep Agents (LangChain OSS) em Python: os quatro pilares (system prompt, planning, sub-agents, virtual filesystem), create_deep_agent, middleware, backends pluggable, sandboxes, skills, memória, profiles, HITL, dcode CLI e ACP. Verificado em 2026-06-29." />
-<meta name="last-checked" content="2026-06-29" />
+<meta name="last-checked" content="2026-07-05" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -259,7 +259,7 @@
   <div class="header-row">
     <div class="brand">Guia Deep Agents <small>Python — Referência completa</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-06-29</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-05</strong></span>
       <span class="badge da">deepagents</span>
       <span class="badge info">Python 3.11+</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
@@ -365,7 +365,8 @@
     <section id="sobre">
       <h2>Sobre este guia</h2>
       <div class="callout tip">
-        <strong>Atualização 2026-06-29 — deepagents 0.6.12 é o último no PyPI (release de 2026-06-29; a 0.6.11 era de 2026-06-18).</strong> Desde a 0.6.3: <code>RubricMiddleware</code> (auto-avaliação iterativa do agente, 0.6.5); <code>state_schema</code> aceitável em <code>create_deep_agent</code> (0.6.6); Commands retornados por tools propagam <code>goto</code>/<code>graph</code> e <code>DeepAgentState</code> passou a ser exportado (0.6.7); <code>CodeInterpreterMiddleware</code> experimental (runtime QuickJS) e adoção de <code>DeltaChannel</code> + event streaming v3 (0.6.0). <strong>Breaking (0.6.8):</strong> removidos os exports públicos <code>SubagentRunStream</code>/<code>AsyncSubagentRunStream</code>/<code>SubagentTransformer</code> (eram internos da API beta <code>stream_events(version="v3")</code>). <strong>0.6.9:</strong> formato de resposta de subagente configurável (nova opção pública), além de bugfixes/perf (token counting na summarization middleware, cache de prompts de filesystem e de matchers de glob). <strong>0.6.10:</strong> bugfix — passa a comparar o provider em <code>model_matches_spec</code>. <strong>0.6.11:</strong> bugfix — roteia os helpers async do <code>BaseSandbox</code> por <code>aexecute</code>. <strong>0.6.12:</strong> adicionou <code>BedrockPromptCachingMiddleware</code> (middleware de prompt-caching para Amazon Bedrock). <strong>Compatibilidade:</strong> exige <code>langchain-core &gt;=1.4,&lt;2</code>, <code>langchain &gt;=1.3.4,&lt;2</code>, <code>langchain-anthropic &gt;=1.4.3,&lt;2</code>, <code>langchain-google-genai &gt;=4.2.2,&lt;5</code> — compatível com o LangChain/LangGraph mais novos. <span class="small">O modelo default resolve via HarnessProfile/<code>init_chat_model</code>; passe o ID explicitamente (ex.: <code>"anthropic:claude-sonnet-4-6"</code>) em vez de depender do default.</span>
+        <strong>Atualização 2026-07-05 — deepagents 0.6.12 (2026-06-25) segue o último ESTÁVEL no PyPI.</strong> Já existe uma linha de <strong>pre-release alpha 0.7.0a3</strong> (2026-07-01) trazendo, entre outros, override de middleware por nome em <code>create_deep_agent</code>, otimização de sandbox (menos round-trips), suporte a prompt caching no Bedrock (<code>deepagents[aws]</code>), e — na linha 0.7.x — <code>CodeInterpreterMiddleware</code>, <code>DeltaChannel</code> para histórico, Harness profiles e <code>ContextHubBackend</code> (LangSmith Hub). <span class="pill beta">preview</span> Não usar em produção ainda; mantenha <code>deepagents==0.6.12</code>. Desde a 0.6.3: <code>RubricMiddleware</code> (auto-avaliação iterativa do agente, 0.6.5); <code>state_schema</code> aceitável em <code>create_deep_agent</code> (0.6.6); Commands retornados por tools propagam <code>goto</code>/<code>graph</code> e <code>DeepAgentState</code> passou a ser exportado (0.6.7); <code>CodeInterpreterMiddleware</code> experimental (runtime QuickJS) e adoção de <code>DeltaChannel</code> + event streaming v3 (0.6.0). <strong>Breaking (0.6.8):</strong> removidos os exports públicos <code>SubagentRunStream</code>/<code>AsyncSubagentRunStream</code>/<code>SubagentTransformer</code> (eram internos da API beta <code>stream_events(version="v3")</code>). <strong>0.6.9:</strong> formato de resposta de subagente configurável (nova opção pública), além de bugfixes/perf (token counting na summarization middleware, cache de prompts de filesystem e de matchers de glob). <strong>0.6.10:</strong> bugfix — passa a comparar o provider em <code>model_matches_spec</code>. <strong>0.6.11:</strong> bugfix — roteia os helpers async do <code>BaseSandbox</code> por <code>aexecute</code>. <strong>0.6.12:</strong> adicionou <code>BedrockPromptCachingMiddleware</code> (middleware de prompt-caching para Amazon Bedrock). <strong>Compatibilidade:</strong> exige <code>langchain-core &gt;=1.4,&lt;2</code>, <code>langchain &gt;=1.3.4,&lt;2</code>, <code>langchain-anthropic &gt;=1.4.3,&lt;2</code>, <code>langchain-google-genai &gt;=4.2.2,&lt;5</code> — compatível com o LangChain/LangGraph mais novos. <span class="small">O modelo default resolve via HarnessProfile/<code>init_chat_model</code>; passe o ID explicitamente (ex.: <code>"anthropic:claude-sonnet-5"</code>) em vez de depender do default.</span>
+        <div class="callout warn" style="margin-top:10px"><strong>Nota de compatibilidade (Sonnet 5 × langchain-anthropic):</strong> o <code>langchain-anthropic</code> aceita qualquer string em <code>model=</code> sem validação de enum, então <code>"anthropic:claude-sonnet-5"</code> <strong>funciona por passthrough</strong>. Porém a última versão publicada (1.4.8, 26/06/2026) saiu <em>antes</em> do lançamento do Sonnet 5 (30/06/2026) e nenhum changelog menciona suporte testado — features beta específicas do modelo (novo tokenizer, headers beta) podem não estar cobertas. Faça uma chamada real de validação antes de usar em produção e acompanhe releases &gt;1.4.8 do connector para suporte oficial.</div>
       </div>
       <p>
         Este guia é uma <strong>conversão fiel</strong> da documentação oficial pública
@@ -488,7 +489,7 @@ def get_weather(city: str) -&gt; str:
     return f"It's always sunny in {city}!"
 
 agent = create_deep_agent(
-    model="anthropic:claude-sonnet-4-6",
+    model="anthropic:claude-sonnet-5",
     tools=[get_weather],
     system_prompt="You are a helpful assistant",
 )
@@ -518,7 +519,7 @@ def internet_search(
     )
 
 agent = create_deep_agent(
-    model="anthropic:claude-sonnet-4-6",
+    model="anthropic:claude-sonnet-5",
     tools=[internet_search],
     system_prompt="You are an expert researcher...",
 )
@@ -637,7 +638,7 @@ create_deep_agent(
             <td>Anthropic</td>
             <td><code>langchain-anthropic</code> · <code>ChatAnthropic</code></td>
             <td>Fala direto com a Messages API nativa da Anthropic (SDK
-              <code>anthropic</code>). <code>ChatAnthropic(model="claude-sonnet-4-6")</code>.
+              <code>anthropic</code>). <code>ChatAnthropic(model="claude-sonnet-5")</code>.
               Bedrock/Vertex são classes separadas
               (<code>ChatBedrockConverse</code>, <code>ChatAnthropicVertex</code>).</td>
           </tr>
@@ -661,7 +662,7 @@ from deepagents import create_deep_agent
 # OpenAI — Responses API garantida via objeto configurado (NÃO use a string solta):
 openai_llm = ChatOpenAI(model="gpt-5.5", use_responses_api=True)
 # Anthropic — Messages API nativa:
-anthropic_llm = ChatAnthropic(model="claude-sonnet-4-6")
+anthropic_llm = ChatAnthropic(model="claude-sonnet-5")
 # Google — SDK google-genai (langchain-google-genai &gt;= 4.0):
 google_llm = ChatGoogleGenerativeAI(model="gemini-3.5-flash", temperature=0.7)
 
@@ -913,7 +914,7 @@ findings = result["structured_response"]   # instância do Schema</code></pre>
     "tools": [web_search],
     "response_format": ResearchFindings,   # Pydantic / ToolStrategy / ProviderStrategy / raw schema
 }
-agent = create_deep_agent(model="claude-sonnet-4-6", subagents=[research_subagent])</code></pre>
+agent = create_deep_agent(model="claude-sonnet-5", subagents=[research_subagent])</code></pre>
   <div class="source-link">Fontes: <a href="https://docs.langchain.com/oss/python/deepagents/subagents" target="_blank" rel="noopener">deepagents/subagents</a></div>
 </section>
 
@@ -987,7 +988,7 @@ backend = AgentCoreSandbox(interpreter=interpreter)
 
 try:
     agent = create_deep_agent(
-        model=ChatAnthropic(model="claude-sonnet-4-6"),
+        model=ChatAnthropic(model="claude-sonnet-5"),
         backend=backend,
     )
     # ... usar o agente ...
@@ -1175,7 +1176,7 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.store.memory import InMemoryStore
 
 agent = create_deep_agent(
-    model="anthropic:claude-sonnet-4-6",
+    model="anthropic:claude-sonnet-5",
     memory=["/memories/AGENTS.md"],
     backend=CompositeBackend(
         default=StateBackend(),
@@ -1491,7 +1492,7 @@ stream.submit(input, {
       <tbody>
         <tr><td>OpenAI</td><td><code>gpt-5.5</code></td><td><code>gpt-5.4-mini</code></td><td><code>gpt-5.4-nano</code></td></tr>
         <tr><td>Google</td><td><code>gemini-3.1-pro-preview</code></td><td><code>gemini-3.5-flash</code></td><td><code>gemini-3.1-flash-lite</code></td></tr>
-        <tr><td>Anthropic</td><td><code>claude-opus-4-8</code></td><td><code>claude-sonnet-4-6</code></td><td><code>claude-haiku-4-5</code></td></tr>
+        <tr><td>Anthropic</td><td><code>claude-opus-4-8</code></td><td><code>claude-sonnet-5</code></td><td><code>claude-haiku-4-5</code></td></tr>
       </tbody>
     </table>
   </div>
@@ -1708,7 +1709,7 @@ SubAgentMiddleware(
 )</code></pre>
   <p>Exemplo:</p>
   <pre><code class="language-python">SubAgentMiddleware(
-    default_model="claude-sonnet-4-6",
+    default_model="claude-sonnet-5",
     subagents=[{
         "name": "weather",
         "description": "Gets weather in cities.",
@@ -2036,7 +2037,7 @@ deepagents deploy        # bundle + deploy para a LangGraph Platform (LangSmith 
   <p>Seções confirmadas: <code>[agent]</code>, <code>[sandbox]</code>, <code>[memories]</code>, <code>[auth]</code>, <code>[frontend]</code>. O formato do <code>model</code> é <code>provider:model</code> e o <code>provider:</code> determina o pacote <code>langchain-*</code> necessário.</p>
   <pre><code class="language-toml">[agent]
 name = "my-agent"
-model = "anthropic:claude-sonnet-4-6"   # formato provider:model
+model = "anthropic:claude-sonnet-5"   # formato provider:model
 
 [sandbox]
 provider = "daytona"                     # mapeia para langchain-daytona
@@ -2203,7 +2204,7 @@ client = MultiServerMCPClient(
 
 tools = await client.get_tools()          # carrega todas as tools dos servidores
 agent = create_deep_agent(
-    model="claude-sonnet-4-6",
+    model="claude-sonnet-5",
     tools=tools,                          # mistura com built-ins via FilesystemMiddleware
     system_prompt="You help users automate tasks across our stack.",
 )

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Guia Multimodal — OpenAI, Gemini e Anthropic (imagens, PDFs, Office, vídeo, áudio, code interpreter)</title>
 <meta name="description" content="Guia técnico exaustivo e comparativo de como OpenAI (Responses API), Google Gemini (generateContent) e Anthropic Claude (Messages API) tratam imagens, PDFs, Office, planilhas, vídeo, áudio e code interpreter, com parâmetros, limites, exemplos e equivalências. Verificado em 2026-06-11." />
-<meta name="last-checked" content="2026-06-11" />
+<meta name="last-checked" content="2026-07-05" />
 <meta name="robots" content="index,follow" />
 <style>
   /* ------- design tokens ------- */
@@ -321,7 +321,7 @@
   <div class="header-row">
     <div class="brand">Guia Multimodal <small>OpenAI · Gemini · Anthropic</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-06-11</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-05</strong></span>
       <span class="badge openai">OpenAI</span>
       <span class="badge gemini">Gemini</span>
       <span class="badge anthropic">Claude</span>
@@ -6167,10 +6167,12 @@ response_format = {
       <thead><tr><th>Model ID</th><th>Categoria</th><th>Notas</th></tr></thead>
       <tbody>
         <tr><td><code>gemini-3.1-pro-preview</code></td><td>SOTA reasoning</td><td>Preview; complexidade alta, código, raciocínio.</td></tr>
-        <tr><td><code>gemini-3.5-flash</code></td><td>Flash 1M, multimodal, default</td><td>Estável; padrão recomendado para a maioria das aplicações.</td></tr>
-        <tr><td><code>gemini-3.1-flash-lite</code></td><td>Cost-efficient</td><td>Estável; alto volume.</td></tr>
+        <tr><td><code>gemini-3.5-flash</code></td><td>Flash 1M, multimodal, default</td><td><strong>Atual/recomendado.</strong> GA desde 19/05/2026; é o alias <code>gemini-flash-latest</code>. Padrão para a maioria das aplicações.</td></tr>
+        <tr><td><code>gemini-3.1-flash-lite</code></td><td>Cost-efficient</td><td>Estável (GA desde 07/05/2026); alto volume.</td></tr>
         <tr><td><code>gemini-3.1-flash-image</code></td><td>Geração de imagem (Nano Banana 2)</td><td><strong>GA desde 28/05/2026</strong> (saiu de preview). 32k input / 65k output em tokens.</td></tr>
+        <tr><td><code>gemini-3.1-flash-lite-image</code></td><td>Geração de imagem (Nano Banana Lite)</td><td><strong>GA desde 30/06/2026</strong>. Opção de menor custo/latência para geração de imagem, ao lado do Nano Banana 2/Pro.</td></tr>
         <tr><td><code>gemini-3-pro-image</code></td><td>Imagem (Nano Banana Pro)</td><td><strong>GA desde 28/05/2026</strong>. Geração/edição de imagem de alta fidelidade.</td></tr>
+        <tr><td><code>gemini-omni-flash-preview</code> <span class="pill beta">preview</span></td><td>Multimodal (geração/edição de vídeo conversacional, 720p, 3–10s, via Interactions API)</td><td><strong>Preview desde 30/06/2026</strong>. Model code de API é <code>gemini-omni-flash-preview</code> (o card "Gemini Omni Flash" é nome de marketing); confirme o ID via <code>models.list()</code> antes de usar. Exclusivo da Interactions API (não em <code>generateContent</code>).</td></tr>
         <tr><td><code>gemini-3.1-flash-tts-preview</code></td><td>TTS expressivo</td><td>Baixa latência.</td></tr>
         <tr><td><code>gemini-3.1-flash-live-preview</code></td><td>Live API (áudio/vídeo bidir)</td><td>Superfície WebSocket separada; ver Live API.</td></tr>
         <tr><td><code>gemini-3.5-live-translate-preview</code></td><td>Tradução de fala ao vivo (speech-to-speech)</td><td>Preview (novo); superfície Live, com suporte no SDK via <code>TranslationConfig</code> (google-genai 2.8.0+).</td></tr>

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Arquitetura &amp; Orquestração de Agentes — Núcleo agnóstico</title>
 <meta name="description" content="Arquitetura de runtime agnóstica de provider para sistemas agentic: primitivos canônicos, matriz de escolha agent/workflow/agent-as-tool/handoff, capability registry, microcontextos e active plan, skeleton de orquestrador, antipadrões, runtime por maturidade, model router, modos de injeção de skills, long-running jobs e blueprint SOTA." />
-<meta name="last-checked" content="2026-06-11" />
+<meta name="last-checked" content="2026-07-05" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -285,7 +285,7 @@
   <div class="header-row">
     <div class="brand">Arquitetura &amp; Orquestração <small>Núcleo agnóstico de agentes</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-06-11</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-05</strong></span>
       <span class="badge da">Núcleo · agnóstico de provider</span>
       <span class="badge info">Conceitual + referência</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
@@ -937,7 +937,7 @@ async def run_agent_turn(user_input: str, ledger, policy: TurnPolicy) -> dict[st
     <section class="ref" id="verificacao">
       <h2>Notas de verificação</h2>
       <ul>
-        <li><span class="pill ok">Resolvido</span> <strong>Spec MCP = 2025-11-25.</strong> Versão alvo confirmada na folha de fatos SOTA (2026-05-25) e na documentação oficial do protocolo. Guias mais antigos do pacote podem citar revisões anteriores (2024-11-05 / 2025-03-26); a versão canônica do super-guia é <code>2025-11-25</code>. Re-verificado em 2026-06-10: a revisão <strong>2026-07-28</strong> foi anunciada (ainda em draft; em evolução até a publicação) com breaking changes — protocolo stateless sem handshake <code>initialize</code>/<code>Mcp-Session-Id</code>, novo <code>server/discover</code>, Tasks como extensão; <code>2025-11-25</code> segue sendo a versão alvo até a nova revisão entrar em vigor.</li>
+        <li><span class="pill ok">Resolvido</span> <strong>Spec MCP = 2025-11-25.</strong> Versão alvo confirmada na folha de fatos SOTA (2026-05-25) e na documentação oficial do protocolo. Guias mais antigos do pacote podem citar revisões anteriores (2024-11-05 / 2025-03-26); a versão canônica do super-guia é <code>2025-11-25</code>. Re-verificado em 2026-07-05: a revisão <strong>2026-07-28</strong> deixou de ser draft — é uma <strong>Release Candidate travada em 2026-05-21</strong> com publicação final confirmada para 28/07/2026, trazendo breaking changes: protocolo stateless sem handshake <code>initialize</code>/<code>Mcp-Session-Id</code>, novo <code>server/discover</code>, Tasks como extensão, Roots/Sampling/Logging deprecados (SEP-2577, substituídos por MRTR). O SDK <code>mcp</code> v2.0.0 sai junto — <strong>fixe <code>mcp&lt;2</code> em produção antes de 28/07</strong> para evitar auto-upgrade. <code>2025-11-25</code> segue sendo a versão alvo até a nova revisão entrar em vigor.</li>
         <li><span class="pill ok">Resolvido</span> <strong>Agents SDK ↔ Responses API.</strong> O OpenAI Agents SDK usa a Responses API por baixo para modelos OpenAI; este capítulo trata o SDK como uma base de orquestração possível, não como a única.</li>
         <li><span class="pill ok">Resolvido</span> <strong>Sem IDs de modelo fixos.</strong> Nomes de modelo são perecíveis e ficam concentrados nos guias de provider e na folha de fatos SOTA; este capítulo permanece agnóstico (<code>model="..."</code>).</li>
         <li><span class="pill ok">Resolvido</span> <strong>Cross-links robustos.</strong> Os links apontam para o arquivo do guia e nomeiam a seção em prosa; âncoras profundas só são usadas onde o guia-alvo expõe <code>id</code> estável.</li>
