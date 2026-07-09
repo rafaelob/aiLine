@@ -442,6 +442,7 @@ Modelo recebe resultados e continua ou finaliza</div>
 
     <section id="comparison">
       <h2>2. Matriz comparativa multi-provider</h2>
+      <div class="callout info"><strong>Novo (2026-07-09) — dois mecanismos de paralelismo server-side no GPT-5.6:</strong> (1) <strong>Programmatic Tool Calling</strong> — o modelo escreve JavaScript num runtime V8 isolado hospedado que chama tools <em>em paralelo</em> (<code>Promise.all</code>), com loops/condições, devolvendo um resultado agregado menor ao contexto; as function calls client-owned continuam executadas pela SUA aplicação (análogo funcional ao <em>programmatic tool calling</em> da Anthropic via <code>code_execution_20260120</code>, mas em V8 efêmero sem filesystem, ZDR-ok). (2) <strong>Orquestração multi-agente (beta)</strong> na Responses API — subagentes paralelos no provider; atenção: o custo é a <strong>soma de todos os subagentes</strong>. Detalhe e configuração: <a href="guia_openai_modelos.html#s-tools-ptc">guia OpenAI §11.9</a>.</div>
       <div class="scroll">
       <table class="matrix">
         <thead>

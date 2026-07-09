@@ -629,6 +629,14 @@
         <code>known:false</code> / estimado — jamais como <code>0</code>. Custo "zero" silencioso é a causa
         número um de <em>cost spike</em> não detectado.
       </div>
+      <div class="callout tip">
+        <strong>KPI que decide upgrade/downgrade de modelo: custo por sucesso.</strong>
+        <code>custo_por_sucesso = custo_total_da_carga / tarefas_APROVADAS_no_eval</code> — não compare modelos por
+        preço de tabela nem por custo médio por chamada. Um modelo 2× mais caro por token que resolve em 1 tentativa
+        e menos tool calls costuma vencer um "barato" que exige retries e reparo. Meça junto: pass rate no golden
+        set, taxa de retry/reparo, tool calls por tarefa e refusals. Isso vale também para decidir <em>reasoning
+        effort</em> e paralelismo multi-agente (onde o custo é a soma de todos os subagentes).
+      </div>
       <h3>O que um span precisa permitir</h3>
       <ul>
         <li><strong>Replay sem dados sensíveis:</strong> hashes e ponteiros em vez do conteúdo bruto quando a classe de dado exigir.</li>

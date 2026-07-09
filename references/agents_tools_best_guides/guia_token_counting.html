@@ -544,7 +544,7 @@
           <tr><td>Auditar gasto real após a chamada</td><td><code>response.usage</code> (incluindo <code>cached_tokens</code> e <code>reasoning_tokens</code>)</td><td><code>response.usage_metadata</code></td><td><code>response.usage</code> (incl. <code>cache_read_input_tokens</code>)</td></tr>
           <tr><td>Roteamento: prompt &gt; X tokens → modelo maior</td><td>Pré-flight no <code>input_tokens</code></td><td>Pré-flight no <code>count_tokens</code></td><td>Pré-flight no <code>count_tokens</code></td></tr>
           <tr><td>Estimar tokens só de texto offline (dev)</td><td><code>tiktoken</code> (limitado)</td><td><span class="pill bad">Sem tokenizer offline</span></td><td><span class="pill bad">Sem tokenizer offline</span></td></tr>
-          <tr><td>Saber tokens de "raciocínio" (reasoning/thinking)</td><td><code>output_tokens_details.reasoning_tokens</code> (pós)</td><td><code>thoughts_token_count</code> (pós)</td><td><code>usage</code> da chamada com extended thinking</td></tr>
+          <tr><td>Saber tokens de "raciocínio" (reasoning/thinking)</td><td><code>output_tokens_details.reasoning_tokens</code> (pós)</td><td><code>thoughts_token_count</code> (pós)</td><td><code>output_tokens_details.thinking_tokens</code> (pós; desde 27/05/2026)</td></tr>
           <tr><td>Saber quanto foi servido do cache</td><td><code>input_tokens_details.cached_tokens</code></td><td><code>cached_content_token_count</code></td><td><code>cache_read_input_tokens</code></td></tr>
           <tr><td>Contar tokens de tools/function schemas</td><td>Sim, em <code>input_tokens.count</code></td><td>Sim, em <code>count_tokens</code></td><td>Sim, em <code>messages.count_tokens</code></td></tr>
           <tr><td>Imagens <strong>geradas</strong> (saída)</td><td>Imagem &amp; vídeo cobrados por API/duração, <strong>não</strong> via <code>input_tokens</code></td><td>Imagem cobrada por imagem em Nano Banana; <strong>não</strong> via <code>count_tokens</code></td><td><span class="pill bad">Não gera imagens</span></td></tr>
@@ -584,12 +584,20 @@
           <tr><td>Output pós-chamada</td><td><code>usage.output_tokens</code></td><td><code>usage_metadata.candidates_token_count</code></td><td><code>usage.output_tokens</code></td></tr>
           <tr><td>Total pós-chamada</td><td><code>usage.total_tokens</code></td><td><code>usage_metadata.total_token_count</code></td><td>Sum manual</td></tr>
           <tr><td>Tokens servidos do cache</td><td><code>usage.input_tokens_details.cached_tokens</code></td><td><code>usage_metadata.cached_content_token_count</code></td><td><code>usage.cache_read_input_tokens</code></td></tr>
-          <tr><td>Tokens de raciocínio</td><td><code>usage.output_tokens_details.reasoning_tokens</code></td><td><code>usage_metadata.thoughts_token_count</code></td><td>Embutido em <code>output_tokens</code> quando <code>thinking.enabled</code></td></tr>
+          <tr><td>Tokens de raciocínio</td><td><code>usage.output_tokens_details.reasoning_tokens</code> (já DENTRO de <code>output_tokens</code>)</td><td><code>usage_metadata.thoughts_token_count</code> (<strong>FORA</strong> de <code>candidates_token_count</code> — some os dois no custo)</td><td><code>usage.output_tokens_details.thinking_tokens</code> <span class="pill new">27/05/2026</span> (já DENTRO de <code>output_tokens</code>; no streaming, só no <code>message_delta</code> final)</td></tr>
           <tr><td>Quebra por modalidade</td><td><span class="pill partial">Só agregado</span></td><td><code>promptTokensDetails[]</code> com <code>ModalityTokenCount</code></td><td><span class="pill partial">Só agregado</span></td></tr>
           <tr><td>Tokens system-added (não cobrados)</td><td>—</td><td>—</td><td>Podem estar somados; explicitado nas docs</td></tr>
         </tbody>
       </table>
       </div>
+
+      <div class="callout danger"><strong>A REGRA que evita custo errado (verificada nas 3 fontes, 2026-07-09): quem inclui o quê no output.</strong>
+        <ul style="margin:8px 0 0">
+          <li><strong>OpenAI:</strong> <code>usage.output_tokens</code> <strong>JÁ INCLUI</strong> reasoning (ex. oficial: <code>output_tokens: 1186</code> com <code>reasoning_tokens: 1024</code> dentro do details → 162 visíveis). Custo de output = <code>output_tokens × preço</code>. <strong>Somar <code>reasoning_tokens</code> por fora = contar 2× (superfatura).</strong></li>
+          <li><strong>Anthropic:</strong> <code>usage.output_tokens</code> <strong>JÁ INCLUI</strong> o thinking — e é o thinking <strong>FULL</strong>, mesmo com <code>display: "summarized"</code> ou <code>"omitted"</code> ("the billed output token count will not match the count of tokens you see"). Desde <strong>27/05/2026</strong> o breakdown vem em <code>usage.output_tokens_details.thinking_tokens</code> (streaming: só no <code>message_delta</code> final; sem beta header). Mesmo aviso: <strong>é breakdown, não parcela extra.</strong></li>
+          <li><strong>Gemini (generateContent):</strong> o inverso — <code>candidatesTokenCount</code> <strong>NÃO inclui</strong> os thoughts; <code>thoughtsTokenCount</code> é campo separado e <code>totalTokenCount = prompt + thoughts + candidates</code> (descrição oficial). Custo de output = <code>(candidates + thoughts) × preço</code>. <strong>Esquecer os thoughts = SUBfaturar</strong> (e a fatura do console não vai bater). Na Interactions API idem: <code>total_thought_tokens</code> separado de <code>total_output_tokens</code>.</li>
+        </ul>
+        Assimetria a memorizar: <strong>OpenAI/Anthropic = incluído (risco de dobrar); Gemini = separado (risco de faltar).</strong> Fontes: guia oficial de reasoning (OpenAI), release notes 27/05/2026 + extended thinking (Anthropic), referência <code>UsageMetadata</code> (Gemini).</div>
 
       <h3 id="cmp-text">5.3 Texto puro <a class="anchor" href="#cmp-text">¶</a></h3>
       <div class="table-wrap">
@@ -5293,8 +5301,10 @@ console.log("routing →", model);</code></pre>
     <li><strong>Pin de shard / cache resource.</strong> OpenAI: <code>prompt_cache_key=hash(tenant+session)</code> (cap ~15 RPM/key). Gemini/Vertex (implícito-only neste projeto): <strong>não há pin user-facing</strong> — o backend faz prefix-match oportunístico e cobra com desconto se bater. Anthropic: cache é determinístico por (workspace × prefix bytes × model). Detalhe em §<a href="#caching-zdr-shard-pin">10.8</a>.</li>
     <li><strong>Serialização determinística.</strong> JSON com <code>sort_keys=True</code> para tools/schemas. Go <code>map</code> default e Swift Dictionary reorderam — quebra o hash silenciosamente.</li>
     <li><strong>Bytes idênticos em mídia.</strong> Imagens, áudio, vídeo, PDFs precisam ser byte-a-byte iguais. Re-encode, EXIF strip, recompressão JPEG = miss. OpenAI exige também <code>input_image.detail</code> constante entre requests. Detalhe em §<a href="#caching-zdr-multimodal">10.9</a>.</li>
-    <li><strong>Model promotion = cache reset.</strong> Cache é por-modelo. <code>gpt-5.5</code> → <code>gpt-5.6</code> (família Sol/Terra/Luna, lançada 2026-07-09) = miss total. Pinar snapshot exato (ex.: <code>gpt-5.5-2026-04-23</code>, <code>claude-opus-4-8</code>) em produção sensível. Obs.: <code>gpt-5.6</code>+ traz <strong>caching explícito</strong> (<code>prompt_cache_breakpoint</code>, <code>prompt_cache_options.mode</code>, <code>ttl</code> mínimo <code>30m</code>) e cobra escrita de cache a <strong>1,25×</strong> o input — ver o guia de modelos OpenAI, §15.1.</li>
+    <li><strong>Model promotion = cache reset.</strong> Cache é por-modelo. <code>gpt-5.5</code> → <code>gpt-5.6</code> (família Sol/Terra/Luna, lançada 2026-07-09) = miss total. Pinar snapshot exato (ex.: <code>gpt-5.5-2026-04-23</code>, <code>claude-opus-4-8</code>) em produção sensível. Obs.: <code>gpt-5.6</code>+ traz <strong>caching explícito</strong> (<code>prompt_cache_breakpoint</code>, <code>prompt_cache_options.mode</code>, <code>ttl</code> mínimo <code>30m</code>) e cobra escrita de cache a <strong>1,25×</strong> o input — ver o guia de modelos OpenAI, <a href="guia_openai_modelos.html#s-caching-explicito">§15.3</a>.</li>
   </ol>
+
+  <div class="callout tip"><strong>Breakeven do write 1,25× (gpt-5.6+):</strong> a escrita custa <strong>+0,25×</strong> sobre o input do bloco cacheado; cada leitura posterior economiza <strong>0,9×</strong> (paga 0,1× em vez de 1×). Logo, com <em>R</em> reusos do prefixo: custo com cache = 1,25 + 0,1·R vs sem cache = 1 + R → <strong>1 único reuso já paga a escrita</strong> (2,0 &gt; 1,35). O caso ruim é write <em>sem nenhum</em> reuso: +25% sobre aquele bloco (prêmio de 25%, não "+125%" — o 1,25× substitui o 1× do input, não soma). Regra prática: não marque breakpoint em prompt one-shot; monitore <code>cache_write_tokens</code> alto com <code>cached_tokens</code> baixo como sinal de writes desperdiçados.</div>
 
   <div class="callout tip">
     <strong>Veja também.</strong> As subseções pré-existentes do guia cobrem mecânica básica de cada provider; este §10 consolida o que é cross-provider e o que é específico do modo stateless. Cross-links: <a href="#openai-tc-cache">§5.7 OpenAI cache (mecânica básica)</a> · <a href="#gemini-tc-cache">§Gemini context caching</a> · <a href="#gti-cache-implicit">§GTI cache implícito</a> · <a href="#gti-vertex">§GTI Vertex/ZDR</a> · <a href="#anthropic-tc-cache">§A.10 Anthropic cache (no count)</a> · <a href="#anthropic-tc-bedrock-vertex">§A.17 Anthropic Bedrock/Vertex</a>.
@@ -6511,8 +6521,11 @@ PRICING = {  <span class="tok-c"># valores em Decimal para preservar precisão n
         input_tokens_cached_read=read,
         input_tokens_cached_write_5m=write_5m,
         input_tokens_cached_write_1h=write_1h,
-        output_tokens_visible=out_tok,                    <span class="tok-c"># Anthropic não separa thinking aqui</span>
-        output_tokens_reasoning=<span class="tok-n">0</span>,                       <span class="tok-c"># thinking somado em output_tokens com thinking.enabled</span>
+        <span class="tok-c"># Desde 27/05/2026 a Messages API SEPARA o breakdown: usage.output_tokens_details.thinking_tokens</span>
+        <span class="tok-c"># (no streaming, o breakdown vem SÓ no message_delta final; sem beta header).</span>
+        <span class="tok-c"># thinking_tok JÁ ESTÁ DENTRO de out_tok — é breakdown, NUNCA some de novo no custo.</span>
+        output_tokens_visible=out_tok - thinking_tok,
+        output_tokens_reasoning=thinking_tok,             <span class="tok-c"># thinking_tok = getattr(u.output_tokens_details, "thinking_tokens", 0) or 0</span>
         output_tokens_rejected_pred=<span class="tok-n">0</span>,
         cost_usd=cost, provider_response_id=resp.id,
     )</code></pre>
@@ -6942,7 +6955,7 @@ PROVIDER_ORDER = [<span class="tok-s">"openai"</span>, <span class="tok-s">"gemi
           <p><strong>Cenário:</strong> entender por que a chamada custou 5× o esperado.</p>
           <ul>
             <li>Sempre logue <code>reasoning_tokens</code> (OpenAI) / <code>thoughts_token_count</code> (Gemini).</li>
-            <li>Em Anthropic, log <code>output_tokens</code> com <code>thinking.enabled</code>: pico de output indica raciocínio longo.</li>
+            <li>Em Anthropic, log <code>output_tokens</code> E o breakdown <code>output_tokens_details.thinking_tokens</code> (desde 27/05/2026): pico de thinking_tokens indica raciocínio longo sem precisar inferir pelo total.</li>
             <li>Configure alertas para razão <code>reasoning/output_visible &gt; 5</code>.</li>
           </ul>
         </article>
@@ -7211,7 +7224,7 @@ resp = client.models.generate_content(model=model, contents=contents)
     { "@type": "PropertyValue", "propertyID": "anthropic.pricing", "name": "Anthropic — preço/limites", "value": "Grátis. RPM independente da criação: 100/2000/4000/8000 por tier 1–4." },
 
     { "@type": "PropertyValue", "propertyID": "cross.tiktoken_local", "name": "Cross — local tokenizer", "value": "Só OpenAI publica (tiktoken) e é insuficiente para mídia/tools/reasoning. Gemini e Anthropic: use o endpoint remoto." },
-    { "@type": "PropertyValue", "propertyID": "cross.reasoning", "name": "Cross — reasoning visibility", "value": "OpenAI: reasoning_tokens. Gemini: thoughts_token_count. Anthropic: somado em output_tokens com thinking.enabled. NENHUM aparece no endpoint pré-flight." },
+    { "@type": "PropertyValue", "propertyID": "cross.reasoning", "name": "Cross — reasoning visibility", "value": "OpenAI: output_tokens_details.reasoning_tokens (DENTRO de output_tokens). Anthropic: output_tokens_details.thinking_tokens desde 27/05/2026 (DENTRO de output_tokens; streaming só no message_delta final). Gemini: thoughts_token_count (FORA de candidates — somar no custo). NENHUM aparece no endpoint pré-flight." },
     { "@type": "PropertyValue", "propertyID": "cross.cache_visibility", "name": "Cross — cache visibility", "value": "OpenAI: cached_tokens. Gemini: cached_content_token_count. Anthropic: cache_read_input_tokens. Nenhum aparece pré-flight." },
     { "@type": "PropertyValue", "propertyID": "cross.generated_media", "name": "Cross — generated media", "value": "Imagens e vídeos gerados são cobrados FORA do token counting nos três providers (por imagem, por segundo)." },
 
