@@ -1,7 +1,7 @@
 # LangGraph 1.2.x + Deep Agents 0.6.x — SOTA notes
 
 > Scope: deltas vs the previous LangGraph 1.1.x / Deep Agents 0.5.x lines.
-> Verified 2026-06-04 against the local SOTA guides
+> Verified 2026-07-05 against the local SOTA guides
 > (`guia_completo_agentes/guia_langgraph_orquestracao.html` and
 > `guia_completo_agentes/guia_deepagents.html`, at the repo root)
 > and live docs.
@@ -17,7 +17,8 @@
 
 ## SOTA delta
 
-- **Versions:** `langgraph == 1.2.4` and `deepagents == 0.6.8` (released 2026-06-03). Python `>=3.11,<4.0` for Deep Agents.
+- **Versions:** `langgraph == 1.2.8` (2026-07-06 bugfix over 1.2.7) and `deepagents == 0.6.12` (stable, released 2026-06-25). Python `>=3.11,<4.0` for Deep Agents. Compatibility: `langchain-core >=1.4,<2`, `langchain >=1.3.4,<2`, `langchain-anthropic >=1.4.3,<2`, `langchain-google-genai >=4.2.2,<5`.
+- **Preview-only, not for production:** `deepagents == 0.7.0a3` (alpha, 2026-07-01) previews middleware override by name in `create_deep_agent`, sandbox round-trip optimization, and Bedrock prompt-caching under `deepagents[aws]`. The wider 0.7.x line also previews `CodeInterpreterMiddleware` (stabilized), a `DeltaChannel` for history, Harness profiles, and a `ContextHubBackend` backed by LangSmith Hub. Keep production pinned to `0.6.12`; do not recommend the alpha line for production use.
 - **LangGraph 1.x stable surface:** durable state, built-in persistence, first-class HITL (interrupt before/after, dynamic `interrupt()`, `Command(resume=)`). v2 typed streaming with Pydantic/dataclass coercion and time-travel fixes for RESUME values and subgraph parent checkpoints. `langgraph.prebuilt` deprecated — use `langchain.agents` (`create_agent`, middleware framework).
 - **Deep Agents 0.6 pillars unchanged:** `BASE_AGENT_PROMPT` + feature prompts (TASK / FILESYSTEM / SKILLS / MEMORY / SUMMARIZATION); `write_todos` planning tool; `task(...)` subagent spawning; virtual filesystem (`ls`, `read_file`, `write_file`, `edit_file`, `glob`, `grep`).
 - **New tooling extras to know:**

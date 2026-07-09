@@ -188,7 +188,7 @@ graph.add_conditional_edges("agent", tools_condition)
 app = create_react_agent(model, tools=tools, checkpointer=checkpointer)
 ```
 
-- **Deep Agents** (`pip install deepagents`, MIT license, current line `deepagents == 0.6.8` released 2026-06-03; Python `>=3.11,<4.0` — 3.11 through 3.14; verify at https://pypi.org/project/deepagents/):
+- **Deep Agents** (`pip install deepagents`, MIT license, current stable line `deepagents == 0.6.12` released 2026-06-25; Python `>=3.11,<4.0` — 3.11 through 3.14; verify at https://pypi.org/project/deepagents/). A preview-only `0.7.0a3` alpha (2026-07-01) exists with middleware override by name, sandbox round-trip optimization, and Bedrock prompt-caching (`deepagents[aws]`) — do not use the alpha line in production:
 
 ```python
 from deepagents import create_deep_agent
@@ -200,11 +200,13 @@ result = agent.invoke({"messages": [{"role": "user", "content": "Research and su
 
 # Custom configuration
 agent = create_deep_agent(
-    model=init_chat_model("openai:gpt-5.4-mini"),
+    model=init_chat_model("anthropic:claude-sonnet-5"),
     tools=[my_custom_tool],
     system_prompt="You are a research assistant.",
 )
 ```
+
+**Model-selection caveat:** `langchain-anthropic` accepts any model string via passthrough (no enum validation), so `"anthropic:claude-sonnet-5"` works as shown above -- but the last published connector (`1.4.8`, 2026-06-26) predates Sonnet 5's GA (2026-06-30), and no changelog confirms tested support for Sonnet-5-specific beta features (new tokenizer, beta headers). Run a real validation call before production and track `langchain-anthropic` releases newer than `1.4.8`.
 
 Deep Agents middleware (auto-attached):
 1. **write_todos middleware**: Adds `write_todos` tool + instructions for explicit planning and todo tracking.
