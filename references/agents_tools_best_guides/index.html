@@ -304,7 +304,7 @@
     <div class="brand">Guia Completo de Agentes <small>Portal mestre · orquestração de agentes de IA</small></div>
     <div class="header-right">
       <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-09</strong></span>
-      <span class="badge da">23 guias</span>
+      <span class="badge da">24 guias</span>
       <span class="badge info">multi-provedor</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
     </div>
@@ -360,7 +360,7 @@
         Agent Skills. Para IA e humanos: prosa em PT-BR, identificadores e código em inglês.
       </p>
       <div class="hero-meta">
-        <span class="badge da">23 guias</span>
+        <span class="badge da">24 guias</span>
         <span class="badge info">OpenAI · Anthropic · Google</span>
         <span class="badge ok">SOTA · verificado 2026-06-29</span>
       </div>
@@ -666,6 +666,12 @@
           <div class="card-badges"><span class="badge da">Transversal</span><span class="badge info">OpenAI · Gemini · Anthropic</span></div>
           <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
         </a>
+        <a class="card" href="guia_streaming_durabilidade_resume.html" data-card data-keywords="streaming durável resumível resume reconexão sse websocket mode last-event-id event store redis streams seq replay cursor snapshot execução desacoplada background mode zdr store false idempotência tool ledger fencing failover cross-provider timestamps primeiro token">
+          <div class="card-title">Streaming durável &amp; resumível</div>
+          <p class="card-desc">A resposta agêntica que sobrevive a fechar a aba: as duas camadas de transporte (provider vs frontend), HTTP/SSE vs WebSocket mode, event store com seq + replay Last-Event-ID, execução desacoplada, timestamps do 1º token, idempotência/tool ledger e failover cross-provider como nova tentativa. Padrões de maturidade M0–M3.</p>
+          <div class="card-badges"><span class="badge da">Transversal</span><span class="badge info">OpenAI · Gemini · Anthropic</span><span class="badge ok">Novo · 2026-07-09</span></div>
+          <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
+        </a>
       </div>
     </section>
 
@@ -718,6 +724,7 @@
           <tr><td>Handoff / multi-agente</td><td><a href="guia_arquitetura_orquestracao.html">núcleo de arquitetura</a> · <a href="guia_agents_sdk.html">Agents SDK</a> · <a href="guia_langgraph.html">LangGraph</a> · <a href="guia_google_adk.html">ADK</a></td></tr>
           <tr><td>HITL (human-in-the-loop)</td><td><a href="guia_langgraph.html">LangGraph</a> · <a href="guia_google_adk.html">ADK</a> · <a href="guia_deepagents.html">DeepAgents</a> · <a href="guia_ferramentas_mcp_rag.html">núcleo de ferramentas</a></td></tr>
           <tr><td>Persistência / checkpoints</td><td><a href="guia_langgraph.html">LangGraph</a> · <a href="guia_estado_contexto_memoria.html">núcleo de estado</a> · <a href="guia_operacao_seguranca_evals.html">operação</a></td></tr>
+          <tr><td>Streaming durável / resume / SSE · WebSocket · Last-Event-ID</td><td><a href="guia_streaming_durabilidade_resume.html">streaming durável &amp; resumível</a> · <a href="guia_openai_modelos.html#s-streaming-websocket">OpenAI §12.2</a> · <a href="guia_providers_adapters.html">providers &amp; adapters</a></td></tr>
           <tr><td>Guardrails / segurança</td><td><a href="guia_agents_sdk.html">Agents SDK</a> · <a href="guia_google_adk.html">ADK</a> · <a href="guia_operacao_seguranca_evals.html">operação</a></td></tr>
           <tr><td>Tracing / observabilidade</td><td><a href="guia_agents_sdk.html">Agents SDK</a> · <a href="guia_google_adk.html">ADK</a> · <a href="guia_operacao_seguranca_evals.html">operação</a></td></tr>
           <tr><td>Agent Skills (autoria)</td><td><a href="guia_skills.html">guia de skills</a></td></tr>
@@ -787,8 +794,9 @@
       <div>deep freshness sweep (6 agentes Sonnet 4.6 + verificação manual contra changelogs oficiais) — versões para latest (<strong>anthropic 0.113.0</strong>, <strong>pydantic-ai 2.1.0</strong>, openai 2.44.0/6.45.0, @openai/agents 0.12.0, langchain-core 1.4.8, langchain-google-genai 4.2.6); <strong>calendário de sunsets</strong> por provedor (gpt-image-1-mini/1.5 01/12, Assistants API 08/26, Veo 2/3 30/06, Imagen 4 17/08, Opus 4.1 05/08); <strong>breaking</strong>: sampling 400 em Opus 4.7+/Fable 5, tokenizer ~30%, Interactions Beta→GA, default model gpt-5.4-mini (Agents SDK) e gemini-3-flash-preview (ADK); correções (mito "pydantic-ai sem 1.x", gpt-image-1-mini data) · 2026-06-29</div>
       <div>freshness sweep (4 agentes Sonnet 5 + verificação/edição manual pelo Opus contra fontes oficiais) — <strong>Claude Sonnet 5 GA</strong> (30/06; Sonnet 4.6 → Legacy; intro $2/$10 até 31/08); <strong>Fable 5 reimplantado</strong> (01/07, pós-suspensão por export controls); <strong>MCP spec 2026-07-28 = Release Candidate travada</strong> (21/05) + alerta de auto-upgrade do pacote <code>mcp</code>→v2 (pinar <code>mcp&lt;2</code>); versões (langgraph 1.2.7, mcp 1.28.1, anthropic 0.116.0/@anthropic-ai/sdk 0.110.0, openai-agents 0.17.7); <strong>Nano Banana Lite</strong> (gemini-3.1-flash-lite-image) GA 30/06. 10 guias atualizados · 2026-07-05</div>
       <div>freshness sweep (8 agentes Sonnet 5 + validação adversarial e edição pelo Opus contra fontes oficiais) — <strong>OpenAI GPT-5.6 (Sol/Terra/Luna)</strong> lançado 09/07 via API em preview limitado (sol $5/$30, terra $2,50/$15, luna $1/$6; effort <code>max</code>, Programmatic Tool Calling, multi-agente beta) + <strong>caching explícito</strong> (<code>prompt_cache_breakpoint</code>, <code>ttl</code> 30m, escrita 1,25×) que modelos ≤5.5 rejeitam; <strong>gpt-realtime-2.1</strong>/<code>-mini</code> (06/07, novo default de voz); <strong>Fable 5</strong> — acesso incluído estendido a 12/07, usage credits a partir de 13/07; <strong>EU AI Act</strong> — enforcement/multas GPAI em 02/08/2026; versões (langgraph 1.2.8, google-genai 2.11.0, google-adk 2.4.0/ADK Go 2.0, MCP TS SDK v2 beta.3). Confirmado que Gemini 3.5 Flash já constava correto; MCP RC 2026-07-28 segue RC. 6 guias atualizados · 2026-07-09</div>
+      <div><strong>NOVO GUIA: Streaming Durável &amp; Resumível</strong> (estudo aprofundado + 3 rodadas adversariais com modelos frontier externos e reconferência na fonte oficial) — as duas camadas de transporte (backend↔provider vs backend↔frontend), HTTP/SSE como baseline vs <strong>WebSocket mode</strong> da Responses como capability opt-in (reconexão = novo socket; sob <code>store=false</code> a cadeia se perde), <strong>background mode não-ZDR</strong>, event store com <code>seq</code> + replay <code>Last-Event-ID</code> sem janela (<code>XREAD BLOCK</code>), dois timestamps do "1º token", semântica correta de <code>phase</code> (mensagem, não delta), idempotência com tool ledger/<code>outcome_unknown</code>, failover cross-provider como nova tentativa e padrões de maturidade M0–M3. Cross-links adicionados em OpenAI §12.2, Providers &amp; Adapters, Arquitetura §13 e File Inputs · 2026-07-09</div>
       <div style="margin-top:6px">
-        <span class="badge da">23 guias</span>
+        <span class="badge da">24 guias</span>
         <span class="badge info">multi-provedor</span>
       </div>
     </div>
@@ -821,6 +829,7 @@
     { "@type": "TechArticle", "name": "Contagem de tokens", "url": "guia_token_counting.html" },
     { "@type": "TechArticle", "name": "Multimodal", "url": "guia_multimodal.html" },
     { "@type": "TechArticle", "name": "File inputs sem provider storage + Hosted execution", "url": "guia_file_inputs_no_storage.html" },
+    { "@type": "TechArticle", "name": "Streaming durável e resumível", "url": "guia_streaming_durabilidade_resume.html" },
     { "@type": "TechArticle", "name": "Paralelismo de tools", "url": "guia_paralelismo_tools_openai_gemini_anthropic.html" },
     { "@type": "TechArticle", "name": "Agentic vision e code tools", "url": "guia_agentic_vision_code_tools.html" },
     { "@type": "TechArticle", "name": "Arquitetura e orquestracao", "url": "guia_arquitetura_orquestracao.html" },

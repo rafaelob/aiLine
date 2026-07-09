@@ -1908,6 +1908,8 @@ for await (const event of stream) {
 
   <div class="callout tip"><strong>HTTP é o padrão — e o fallback.</strong> Se o fluxo é <em>uma requisição, uma resposta</em>, fique no HTTP/SSE: o ganho do WebSocket só aparece em agentes de longa duração com muitas chamadas de ferramenta na mesma cadeia. O modo WebSocket é uma otimização de latência opt-in, não o transporte default da Responses API. No Agents SDK (Python) o mesmo transporte é controlado por <code>set_default_openai_responses_transport("websocket")</code> — ver <a href="guia_agents_sdk.html#s-models-ws">guia_agents_sdk §8.4</a>.</div>
 
+  <div class="callout warn"><strong>WebSocket Mode não fornece resume de UX.</strong> Ele otimiza a conversa backend↔OpenAI dentro de <em>uma</em> conexão — a reconexão após queda/60&nbsp;min abre novo socket e, sob <code>store=false</code>/ZDR, a cadeia se perde (<code>previous_response_id=null</code> + reenvio do contexto completo ou compactado). O usuário que fechou a aba e voltou é atendido por outra camada: event store durável + replay por cursor no SEU backend — arquitetura completa no <a href="guia_streaming_durabilidade_resume.html">guia Streaming Durável &amp; Resumível</a>.</div>
+
   <p class="source-link"><strong>Fonte:</strong> <a href="https://developers.openai.com/api/docs/guides/streaming-responses" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/streaming-responses</a> · <a href="https://developers.openai.com/api/docs/guides/websocket-mode" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/websocket-mode</a></p>
 </section>
 

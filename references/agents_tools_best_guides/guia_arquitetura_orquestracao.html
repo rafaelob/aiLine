@@ -880,6 +880,7 @@ async def run_agent_turn(user_input: str, ledger, policy: TurnPolicy) -> dict[st
         <li>☑ Definir budget por etapa, não apenas global.</li>
         <li>☑ Reduzir evidências antes de cada síntese intermediária.</li>
         <li>☑ Encerrar com declaração de cobertura, lacunas e fontes.</li>
+        <li>☑ Se o usuário acompanha o job por streaming (fecha/volta, reconexão, replay de eventos, timestamps do 1º token), a camada de entrega é o <a href="guia_streaming_durabilidade_resume.html">guia Streaming Durável &amp; Resumível</a> — event store com seq, <code>Last-Event-ID</code>, executor durável e failover como nova tentativa.</li>
       </ul>
       <div class="callout">
         <strong>Implementações de deep research e background jobs</strong> (com webhooks, retomada e
