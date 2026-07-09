@@ -4,8 +4,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Guia OpenAI — Modelos mais recentes & API (Responses, Realtime, Imagem, Áudio)</title>
-<meta name="description" content="Guia técnico exaustivo e SOTA dos modelos OpenAI mais recentes em PT-BR: gpt-5.5, gpt-5.4-mini, gpt-5.4-nano (texto/reasoning via Responses API), gpt-image-2 (imagem/visão), áudio e realtime (gpt-realtime-2, gpt-4o-transcribe, gpt-4o-mini-tts), embeddings, moderation, preços, limites e operação. Verificado em 2026-06-29." />
-<meta name="last-checked" content="2026-07-05" />
+<meta name="description" content="Guia técnico exaustivo e SOTA dos modelos OpenAI mais recentes em PT-BR: gpt-5.6 (Sol/Terra/Luna), gpt-5.5, gpt-5.4-mini/nano (texto/reasoning via Responses API), gpt-image-2 (imagem/visão), áudio e realtime (gpt-realtime-2.1, gpt-4o-transcribe, gpt-4o-mini-tts), embeddings, moderation, preços, caching explícito, limites e operação. Verificado em 2026-07-09." />
+<meta name="last-checked" content="2026-07-09" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -294,7 +294,7 @@
   <div class="header-row">
     <div class="brand">Guia OpenAI <small>PT-BR · Modelos mais recentes &amp; API</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-05</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-09</strong></span>
       <span class="badge openai">SDK openai</span>
       <span class="badge ok">SOTA</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
@@ -377,9 +377,9 @@
       <h1>Guia OpenAI — Modelos mais recentes &amp; API</h1>
       <p class="lead">
         Referência técnica exaustiva, em PT-BR, dos modelos OpenAI <strong>mais recentes</strong> e de
-        como usá-los: <strong>gpt-5.5 / gpt-5.4-mini / gpt-5.4-nano</strong> (texto e raciocínio pela
+        como usá-los: <strong>gpt-5.6 (Sol/Terra/Luna)</strong> e <strong>gpt-5.5 / gpt-5.4-mini / gpt-5.4-nano</strong> (texto e raciocínio pela
         <strong>Responses API</strong>), <strong>gpt-image-2</strong> (geração e edição de imagens, visão),
-        áudio e tempo real (<strong>gpt-realtime-2</strong>, <strong>gpt-realtime-translate</strong>,
+        áudio e tempo real (<strong>gpt-realtime-2.1</strong>, <strong>gpt-realtime-translate</strong>,
         <strong>gpt-realtime-whisper</strong>, <strong>gpt-4o-transcribe</strong>,
         <strong>gpt-4o-mini-tts</strong>, <strong>gpt-audio-1.5</strong>), além de embeddings,
         moderation, preços, limites e operação. Feito para leitura por humanos <em>e</em> por IA.
@@ -444,7 +444,20 @@
 <section id="s-catalogo">
   <h2>1. Catálogo de modelos</h2>
   <p>A família GPT-5 é composta por <strong>modelos de raciocínio</strong>: eles geram <em>reasoning tokens</em> internos antes de produzir a resposta, o que melhora planejamento, uso de ferramentas, recuperação de ambiguidade e tarefas multi-etapa. O modelo de uso geral recomendado para a maioria das cargas é o <code>gpt-5.5</code>; quando latência ou custo pesam mais, considere as variantes menores <code>gpt-5.4-mini</code> e <code>gpt-5.4-nano</code>. Todos funcionam melhor pela <a href="#s-responses">Responses API</a>.</p>
-  <div class="callout info"><strong>O que é atual (linhagem GPT-5.x):</strong> os flagships evoluíram <code>gpt-5.1</code> → <code>gpt-5.2</code> → <code>gpt-5.3</code> (com variante <code>gpt-5.3-codex</code>) → <code>gpt-5.4</code> (com <code>-mini</code>/<code>-nano</code>/<code>-pro</code>) → <strong><code>gpt-5.5</code> (flagship atual)</strong> + <code>gpt-5.5-pro</code>. Ou seja, <code>gpt-5.5</code> não sucede o <code>5.4</code> diretamente — há releases intermediários (<code>5.2</code>, <code>5.3</code>) que são GA e podem estar em uso/pinned. <strong>Não existe <code>gpt-5.6</code></strong> em nenhuma fonte oficial (verificado 2026-07-05). Para código novo, use <code>gpt-5.5</code>; ao pinar, prefira o snapshot exato retornado pela pág. de modelos oficial em vez de assumir uma data.</div>
+  <div class="callout info"><strong>O que é atual (linhagem GPT-5.x):</strong> os flagships evoluíram <code>gpt-5.1</code> → <code>gpt-5.2</code> → <code>gpt-5.3</code> (com variante <code>gpt-5.3-codex</code>) → <code>gpt-5.4</code> (com <code>-mini</code>/<code>-nano</code>/<code>-pro</code>) → <code>gpt-5.5</code> + <code>gpt-5.5-pro</code> → <strong>família <code>gpt-5.6</code> (Sol/Terra/Luna), lançada 2026-07-09</strong>. Ou seja, <code>gpt-5.5</code> não sucede o <code>5.4</code> diretamente — há releases intermediários (<code>5.2</code>, <code>5.3</code>) que são GA e podem estar em uso/pinned. <strong>A família <code>gpt-5.6</code> já está disponível via API</strong> (endpoints <code>responses</code>/<code>chat/completions</code>/<code>batch</code> e Codex) em <em>preview limitado</em>, com GA anunciada "nas próximas semanas"; ainda não está no ChatGPT. São três tiers duráveis: <strong><code>gpt-5.6-sol</code></strong> (frontier/flagship), <strong><code>gpt-5.6-terra</code></strong> (equilíbrio inteligência/custo, ~2× mais barato que o <code>5.5</code> com desempenho competitivo) e <strong><code>gpt-5.6-luna</code></strong> (mais rápido e econômico). O alias <code>gpt-5.6</code> roteia para <code>gpt-5.6-sol</code>. O <code>gpt-5.5</code> <strong>não</strong> foi depreciado e continua opção estável/madura. Para código novo, prefira <code>gpt-5.6-sol</code> (ou <code>-terra</code>/<code>-luna</code> por custo); ao pinar, use o snapshot exato retornado pela pág. de modelos oficial. Verificado 2026-07-09 em <a href="https://developers.openai.com/api/docs/changelog" target="_blank" rel="noopener">developers.openai.com/api/docs/changelog</a> e <a href="https://developers.openai.com/api/docs/pricing" target="_blank" rel="noopener">/pricing</a>.</div>
+
+  <div class="callout tip"><strong>Novidades da família <code>gpt-5.6</code> (2026-07-09):</strong> <strong>Programmatic Tool Calling</strong>, <strong>persisted reasoning</strong>, novo nível de <em>reasoning effort</em> <code>max</code>, <strong>Pro mode</strong>, <strong>orquestração multi-agente em beta</strong> na Responses API, e aceite de imagens em dimensões originais (<code>image detail</code> <code>original</code>/<code>auto</code>). Traz ainda <strong>caching explícito</strong> (ver Parte de tokens/custos): <code>prompt_cache_breakpoint</code>, <code>prompt_cache_options.mode</code> (<code>implicit</code>/<code>explicit</code>) e <code>ttl</code> mínimo de <code>30m</code> — recursos que os modelos <code>gpt-5.5</code> e anteriores <strong>não</strong> aceitam.</div>
+
+  <table>
+    <caption>Preços da família GPT-5.6 (USD por 1M tokens, <em>short context</em> ≤272K; <em>long context</em> &gt;272K = 2× input/output). Verificado 2026-07-09.</caption>
+    <thead><tr><th>Modelo</th><th>Input</th><th>Cached input (−90%)</th><th>Cache write (1,25×)</th><th>Output</th></tr></thead>
+    <tbody>
+      <tr><td><code>gpt-5.6-sol</code></td><td>$5,00</td><td>$0,50</td><td>$6,25</td><td>$30,00</td></tr>
+      <tr><td><code>gpt-5.6-terra</code></td><td>$2,50</td><td>$0,25</td><td>$3,125</td><td>$15,00</td></tr>
+      <tr><td><code>gpt-5.6-luna</code></td><td>$1,00</td><td>$0,10</td><td>$1,25</td><td>$6,00</td></tr>
+      <tr><td><code>gpt-5.5</code> (referência)</td><td>$5,00</td><td>$0,50</td><td>—</td><td>$30,00</td></tr>
+    </tbody>
+  </table>
 
   <div class="callout info"><strong>Nota:</strong> raciocínio mais alto não é automaticamente melhor. Com critérios de parada fracos ou acesso aberto a ferramentas, esforço alto pode levar a <em>overthinking</em>, buscas desnecessárias ou regressão de qualidade. Aumente o esforço só quando seus <em>evals</em> mostrarem ganho mensurável.</div>
 
@@ -497,7 +510,7 @@
       <tbody>
         <tr><td>Coding</td><td><code>gpt-5.3-codex</code></td><td>Modelo especializado em código (agentes de coding, Codex). Para a maioria dos fluxos, <code>gpt-5.5</code> + <code>apply_patch</code>/<code>shell</code> já cobre; use o codex quando o ferramental Codex for o alvo.</td><td>Parte A (<a href="#s-tools-applypatch">§11.6</a>)</td></tr>
         <tr><td>Imagem</td><td><code>gpt-image-2</code> (SOTA, default)</td><td>Geração e edição de imagens via API e como ferramenta integrada — único modelo de imagem recomendado. Os econômicos <code>gpt-image-1-mini</code>/<code>gpt-image-1.5</code> estão depreciados (sunset 2026-12-01); <code>gpt-image-1</code> sunset 2026-10-23. Migre tudo para <code>gpt-image-2</code>.</td><td>Parte B</td></tr>
-        <tr><td>Realtime</td><td><code>gpt-realtime-2</code>, <code>gpt-realtime-translate</code>, <code>gpt-realtime-whisper</code></td><td>Voz <em>speech-to-speech</em>, tradução e transcrição em streaming de baixa latência.</td><td>Parte C</td></tr>
+        <tr><td>Realtime</td><td><code>gpt-realtime-2.1</code> (+ <code>-mini</code>), <code>gpt-realtime-translate</code>, <code>gpt-realtime-whisper</code></td><td>Voz <em>speech-to-speech</em>, tradução e transcrição em streaming de baixa latência.</td><td>Parte C</td></tr>
         <tr><td>Áudio no chat</td><td><code>gpt-audio-1.5</code></td><td>Entrada/saída de áudio em fluxos de chat.</td><td>Parte C</td></tr>
         <tr><td>STT de arquivo</td><td><code>gpt-4o-transcribe</code>, <code>gpt-4o-mini-transcribe</code>, <code>gpt-4o-transcribe-diarize</code>, <code>whisper-1</code></td><td>Transcrição de arquivos, diarização, timestamps e tradução de áudio.</td><td>Parte C</td></tr>
         <tr><td>TTS</td><td><code>gpt-4o-tts</code> · <code>gpt-4o-mini-tts</code></td><td>Síntese de fala (text-to-speech). <code>gpt-4o-tts</code> é o modelo completo; <code>gpt-4o-mini-tts</code> é a variante econômica.</td><td>Parte C</td></tr>
@@ -2088,7 +2101,18 @@ app.post("/webhook", async (req, res) => {
   <p>O parâmetro <code>prompt_cache_retention</code> aceita <code>in_memory</code> (cache em memória volátil, 5–10 min de inatividade até ~1h) e <code>24h</code> (retenção estendida, até 24h, descarregando tensores key/value para storage GPU-local). <strong>Atual (confirmado no changelog oficial):</strong> o padrão é <code>24h</code> para organizações <strong>sem ZDR</strong> (Zero Data Retention) em todos os modelos elegíveis de <code>v1/responses</code>, <code>v1/chat/completions</code> e <code>v1/batch</code> — antes, a maioria dos modelos usava <code>in_memory</code> por padrão. Para <code>gpt-5.5</code>, <code>gpt-5.5-pro</code> e modelos futuros, o padrão é <code>24h</code> e <code>in_memory</code> <strong>não é mais suportado</strong> (retorna erro de request). <span class="pill" style="background:var(--c-na-bg);color:var(--c-na)">Data UNVERIFIED</span> A mudança consta na seção "May 2026" do changelog; o dia exato (citado antes como 2026-05-29) não foi confirmável linha a linha na fonte — o fato em si está confirmado.</p>
   <div class="callout info"><strong>Nota:</strong> caches não são compartilhados entre organizações; o caching não altera a saída gerada (só o prefixo é cacheado, a resposta é recalculada) nem isenta tokens dos limites de TPM. Não há limpeza manual de cache.</div>
 
-  <p class="source-link"><strong>Fonte:</strong> <a href="https://developers.openai.com/api/docs/guides/prompt-caching" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/prompt-caching</a></p>
+  <h3>15.1 Caching explícito (família <code>gpt-5.6</code> e posteriores) <span class="pill new">2026-07-09</span></h3>
+  <p>A partir de <code>gpt-5.6</code>, o caching ficou <strong>mais previsível e controlável</strong>. Além do caching implícito (que detecta prefixos automaticamente), você pode marcar <strong>breakpoints explícitos</strong> no fim de um prefixo reutilizável:</p>
+  <ul>
+    <li><code>prompt_cache_breakpoint: {"mode":"explicit"}</code> em blocos de conteúdo suportados (<code>input_text</code>, <code>input_image</code>, <code>input_file</code>) na Responses API — marca onde termina o prefixo reaproveitável.</li>
+    <li><code>prompt_cache_options.mode</code>: <code>implicit</code> (padrão — coloca um breakpoint automático na última mensagem, além dos explícitos que você adicionar) ou <code>explicit</code> (desativa o automático; só os breakpoints explícitos são usados para leitura/escrita de cache).</li>
+    <li><code>prompt_cache_options.ttl</code>: define uma <strong>vida mínima</strong> do cache (piso, não teto). O único valor suportado é <code>"30m"</code> — o prefixo fica reutilizável por <strong>ao menos 30 minutos</strong> (a OpenAI pode mantê-lo ativo por mais).</li>
+    <li><code>prompt_cache_key</code> passa a ser <strong>obrigatório</strong> para matching confiável (tanto no modo implícito quanto no explícito).</li>
+    <li>Limites: até <strong>4 escritas de cache por request</strong>; a leitura considera os <strong>últimos 50 breakpoints</strong> da conversa.</li>
+  </ul>
+  <div class="callout warn"><strong>Mudança de custo:</strong> em <code>gpt-5.6</code>+, a <strong>escrita de cache passa a custar 1,25×</strong> a taxa de input não-cacheado (rastreada no campo <code>cache_write_tokens</code>) — antes as escritas eram gratuitas. A <strong>leitura de cache</strong> mantém o desconto de <strong>90%</strong> (input cacheado = 10% do input padrão). Modelos <code>gpt-5.5</code> e anteriores usam apenas o caching implícito com <code>prompt_cache_retention</code> e <strong>rejeitam</strong> <code>prompt_cache_options</code> / <code>prompt_cache_breakpoint</code> se enviados.</div>
+
+  <p class="source-link"><strong>Fonte:</strong> <a href="https://developers.openai.com/api/docs/guides/prompt-caching" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/prompt-caching</a> · <a href="https://developers.openai.com/api/docs/pricing" target="_blank" rel="noopener">/pricing</a></p>
 </section>
 
 <section id="s-tokens">
@@ -3270,7 +3294,7 @@ console.log(response2.output_text);
 
 <section id="s-realtime">
   <h2>22. Realtime API (gpt-realtime-2)</h2>
-  <p>A <strong>Realtime API</strong> mantém uma conexão aberta enquanto sua aplicação envia áudio, recebe eventos e atualiza o estado da sessão. O modelo principal é o <code>gpt-realtime-2</code>, o modelo de voz mais capaz da OpenAI: fala↔fala com <strong>reasoning effort configurável</strong>, melhor obediência a instruções e uso de tools mais confiável para fluxos de agente complexos. Para um modelo fala↔fala rápido e sem reasoning, há o <code>gpt-realtime-1.5</code> (speech-to-speech rápido e confiável, sem reasoning; tem guia de prompting dedicado na doc oficial).</p>
+  <p>A <strong>Realtime API</strong> mantém uma conexão aberta enquanto sua aplicação envia áudio, recebe eventos e atualiza o estado da sessão. O modelo principal <strong>atual é o <code>gpt-realtime-2.1</code></strong> (lançado 2026-07-06), que atualiza o <code>gpt-realtime-2</code> com melhor reconhecimento alfanumérico, tratamento de silêncio/ruído e comportamento de interrupção, mantendo fala↔fala com <strong>reasoning effort configurável</strong>, obediência a instruções e uso de tools para fluxos de agente complexos. Há também o <code>gpt-realtime-2.1-mini</code>, versão destilada mais rápida e barata. Para um modelo fala↔fala rápido e sem reasoning, há o <code>gpt-realtime-1.5</code> (speech-to-speech rápido e confiável, sem reasoning; tem guia de prompting dedicado na doc oficial). O SDK Agents (Python e TS) já usa <code>gpt-realtime-2.1</code> como default do <code>RealtimeAgent</code>.</p>
   <p class="source-link"><strong>Fonte:</strong> <a href="https://developers.openai.com/api/docs/models/gpt-realtime-2" target="_blank" rel="noopener">developers.openai.com/api/docs/models/gpt-realtime-2</a> (família realtime; <code>gpt-realtime-2</code> com reasoning effort configurável) · <a href="https://developers.openai.com/api/docs/guides/realtime-models-prompting" target="_blank" rel="noopener">guides/realtime-models-prompting</a> (inclui o guia de prompting do <code>gpt-realtime-1.5</code>).</p>
   <div class="callout tip"><strong>Dica:</strong> em produção, comece com <code>reasoning.effort: "low"</code> na maioria dos agentes de voz e suba só se a tarefa exigir — reasoning maior aumenta latência e tokens de saída.</div>
 

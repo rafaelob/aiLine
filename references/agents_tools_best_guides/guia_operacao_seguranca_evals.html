@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Operação, Segurança &amp; Evals de Agentes — Núcleo</title>
 <meta name="description" content="Operação como parte da arquitetura: privacidade/retenção/ZDR, guardrails em 3 pontos (L0/L1/L2), tracing/replay/cost ledger, evals e acceptance gates, runbooks, policy-as-code, RACI, threat model alinhado a OWASP LLM Top 10 e Agentic (ASI), SLIs/SLOs, release controlado e kit de evidência de incidente — agnóstico de provider." />
-<meta name="last-checked" content="2026-07-05" />
+<meta name="last-checked" content="2026-07-09" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -285,7 +285,7 @@
   <div class="header-row">
     <div class="brand">Operação, Segurança &amp; Evals <small>Núcleo agnóstico · super-guia de agentes</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-05</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-09</strong></span>
       <span class="badge da">Núcleo · v1</span>
       <span class="badge info">PT-BR · agnóstico</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
@@ -802,12 +802,12 @@
       <div class="callout warn">
         <strong>EU AI Act (cronograma, perecível):</strong> em vigor desde 01/08/2024; práticas proibidas desde
         02/02/2025; obrigações de GPAI desde 02/08/2025; obrigações de alto risco do Anexo III a partir de
-        <strong>02/08/2026</strong> (sistemas embarcados de alto risco até 02/08/2027). Um pacote "Digital Omnibus"
-        proposto poderia adiar parte das obrigações de alto risco — <strong>não assuma</strong> que passará; planeje
-        para agosto/2026 (a menos de dois meses; cronograma re-verificado em 2026-06-10, datas inalteradas).
+        <strong>02/08/2026</strong> (sistemas embarcados de alto risco até 02/08/2027). <strong>Marco imediato: em 02/08/2026 entram em vigor os poderes de <em>enforcement</em> e multas da Comissão para GPAI</strong> (as obrigações em si já valem desde 02/08/2025) — é a data a monitorar agora. Um pacote "Digital Omnibus"
+        (acordo político de 07/05/2026) adiou obrigações de alto risco (Anexo III → 02/12/2027; Anexo I → 02/08/2028), mas <strong>não afeta GPAI nem práticas proibidas</strong>. Planeje
+        para agosto/2026 (cronograma re-verificado em 2026-07-09).
         Classifique cada tool por tier (Low/Medium/High/Critical) alinhado a esse risco.
       </div>
-      <div class="source-link">Fonte oficial: OWASP — <a href="https://genai.owasp.org/llm-top-10/" target="_blank" rel="noopener">LLM Top 10 (2025)</a> · <a href="https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/" target="_blank" rel="noopener">Top 10 for Agentic Applications (2026)</a> · MCP — <a href="https://modelcontextprotocol.io/specification/2025-11-25" target="_blank" rel="noopener">spec 2025-11-25</a> · <a href="https://artificialintelligenceact.eu/implementation-timeline/" target="_blank" rel="noopener">EU AI Act timeline</a></div>
+      <div class="source-link">Fonte oficial: OWASP — <a href="https://genai.owasp.org/llm-top-10/" target="_blank" rel="noopener">LLM Top 10 (2025)</a> · <a href="https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/" target="_blank" rel="noopener">Top 10 for Agentic Applications (2026)</a> · MCP — <a href="https://modelcontextprotocol.io/specification/2026-07-28" target="_blank" rel="noopener">spec RC 2026-07-28</a> (Release Candidate; final prevista para 28/07) · <a href="https://artificialintelligenceact.eu/implementation-timeline/" target="_blank" rel="noopener">EU AI Act timeline</a></div>
       <div class="callout beta">
         <strong>Segurança de tools/MCP (cross-link):</strong> o hardening de MCP server, os trust tiers e o
         contrato de tool result envelope estão em <a href="guia_ferramentas_mcp_rag.html">Ferramentas, MCP &amp;
@@ -1047,9 +1047,7 @@
           skill <code>agent-guardrails</code> (last verified 2026-04-21) e as URLs oficiais
           <code>genai.owasp.org</code>. Re-verificado em 2026-06-10: ambos seguem vigentes (novo projeto
           incubado: Agentic Skills Top 10 — AST10, sem lista publicada).</li>
-        <li><span class="pill ok">Resolvido</span> <strong>EU AI Act (cronograma).</strong> Anexo III de alto risco a
-          partir de 02/08/2026; "Digital Omnibus" como possível adiamento — tratado como não garantido.
-          Re-verificado em 2026-06-10: datas inalteradas; o marco do Anexo III está a menos de dois meses.</li>
+        <li><span class="pill ok">Resolvido</span> <strong>EU AI Act (cronograma).</strong> <strong>Enforcement/multas de GPAI começam em 02/08/2026</strong> (obrigações GPAI já vigentes desde 02/08/2025). O "Digital Omnibus" (acordo político de 07/05/2026) adiou o Anexo III de alto risco para 02/12/2027, mas <strong>não</strong> afeta GPAI. Re-verificado em 2026-07-09.</li>
         <li><span class="pill ok">Resolvido</span> <strong>Sem IDs de modelo no corpo.</strong> O guia usa
           <code>model="..."</code> e <code>provider/model</code>; IDs perecíveis ficam na folha de fatos SOTA do
           super-guia, conforme política do mapa.</li>

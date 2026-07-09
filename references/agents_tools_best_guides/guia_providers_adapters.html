@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Providers &amp; adapters — camada de portabilidade entre OpenAI, Anthropic e Google</title>
 <meta name="description" content="Guia agnóstico de adapters e portabilidade entre providers de agentes: papel de cada SDK, provider switching contract, equivalência de roles, structured outputs cross-provider e receitas de adapter. Para IA e humanos, PT-BR." />
-<meta name="last-checked" content="2026-06-29" />
+<meta name="last-checked" content="2026-07-09" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -285,7 +285,7 @@
   <div class="header-row">
     <div class="brand">Providers &amp; adapters <small>Núcleo · portabilidade entre providers</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-06-29</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-09</strong></span>
       <span class="badge da">Super-guia de Agentes</span>
       <span class="badge info">PT-BR</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
@@ -794,9 +794,10 @@ resp = client.models.generate_content(
         <li><span class="pill ok">Resolvido</span> Structured output nativo da Anthropic é <code>output_config.format</code> (não <code>response_format</code>).</li>
         <li><span class="pill ok">Resolvido</span> Gemini série 3 usa <code>thinking_level</code> (não <code>thinking_budget</code>); misturar os dois retorna 400.</li>
         <li><span class="pill ok">Resolvido</span> Thinking por modelo Anthropic: Opus 4.8 só adaptive; Fable 5 adaptive sempre ativo (desativar retorna 400); Haiku 4.5 só enabled; Sonnet 4.6 ambos.</li>
-        <li><span class="pill ok">Novo</span> Claude Fable 5 (<code>claude-fable-5</code>, GA 2026-06-09): 1M de contexto, 128k max output, adaptive thinking sempre ativo — porém <strong>temporariamente indisponível para usuários regulares</strong> no momento. Opus 4.8 é o flagship ativo e recomendado — os exemplos deste guia permanecem com <code>claude-opus-4-8</code>.</li>
+        <li><span class="pill ok">Novo</span> Claude Fable 5 (<code>claude-fable-5</code>, GA 2026-06-09): 1M de contexto, 128k max output, adaptive thinking sempre ativo. <strong>Atualização 2026-07-09:</strong> reimplantado globalmente em 01/07 (controles de exportação levantados em 30/06); via API pay-as-you-go a $10/$50 por MTok. Em planos de assinatura, o acesso incluído foi estendido até <strong>12/07</strong> e, a partir de <strong>13/07</strong>, passa a exigir saldo pré-pago de <em>usage credits</em>. Opus 4.8 segue como flagship recomendado — os exemplos deste guia permanecem com <code>claude-opus-4-8</code>.</li>
         <li><span class="pill warn">Atenção</span> <strong>Sampling deprecado:</strong> <code>temperature</code>, <code>top_p</code> e <code>top_k</code> retornam <strong>erro 400</strong> com valor não-default em Claude Opus 4.7, 4.8 e Fable 5 (ainda válidos em Opus 4.6, Sonnet 4.6 e anteriores). Omita e guie por <em>prompting</em>. Opus 4.7+/Fable 5 também usam novo tokenizer (~30% mais tokens) — recalibre <code>max_tokens</code>.</li>
-        <li><span class="pill ok">Resolvido</span> IDs SOTA usados nos exemplos: <code>gpt-5.5</code>, <code>claude-opus-4-8</code>, <code>gemini-3.1-pro-preview</code>.</li>
+        <li><span class="pill ok">Resolvido</span> IDs SOTA usados nos exemplos: <code>gpt-5.5</code>, <code>claude-opus-4-8</code>, <code>gemini-3.1-pro-preview</code>. Os exemplos permanecem com <code>gpt-5.5</code> (estável/maduro); trocar o <code>model=</code> por outro ID é transparente para o adapter.</li>
+        <li><span class="pill ok">Novo</span> OpenAI lançou a família <code>gpt-5.6</code> (Sol/Terra/Luna) em 2026-07-09 — <code>gpt-5.6-sol</code> (flagship), <code>gpt-5.6-terra</code> (custo/desempenho), <code>gpt-5.6-luna</code> (econômico), alias <code>gpt-5.6</code>→<code>-sol</code>. Via API em preview limitado (Responses/Chat Completions/Codex), GA "nas próximas semanas"; <code>gpt-5.5</code> segue não-depreciado. Nos adapters, basta passar o novo <code>model=</code>; note que <code>gpt-5.6</code>+ aceita <em>caching explícito</em> (<code>prompt_cache_options</code>/<code>prompt_cache_breakpoint</code>) que os modelos anteriores rejeitam.</li>
         <li><span class="pill ok">Resolvido</span> Campo de reasoning cifrado <code>include=["reasoning.encrypted_content"]</code> confirmado na Responses API (guia Reasoning &gt; <em>Encrypted reasoning items</em> e API Reference de <code>responses.create</code>): habilita reusar reasoning items em modo stateless (<code>store=false</code> ou ZDR). Verificado 2026-05-25 em <a href="https://developers.openai.com/api/docs/guides/reasoning#encrypted-reasoning-items" target="_blank" rel="noopener">developers.openai.com · reasoning</a>.</li>
         <li><span class="pill ok">Resolvido</span> Superfície do Pydantic AI confirmada em <code>pydantic.dev/docs/ai</code>: <code>Agent(model, deps_type=, output_type=, instructions=)</code>, <code>@agent.tool</code>/<code>@agent.tool_plain</code>, <code>RunContext</code>, <code>run_sync</code>/<code>run</code>, <code>ToolOutput</code>. Verificado 2026-05-25.</li>
         <li><span class="pill ok">Resolvido</span> <code>Agent.as_tool(...)</code> exige <code>tool_name</code> <strong>e</strong> <code>tool_description</code> no <code>openai-agents</code> 0.17.x — exemplo corrigido após revisão adversarial (codex/gpt-5.5, 2026-05-25). <code>Runner.run_sync(agent, "texto")</code> confirmado válido.</li>

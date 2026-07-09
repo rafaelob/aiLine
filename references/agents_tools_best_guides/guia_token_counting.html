@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Guia de Contagem de Tokens — OpenAI, Gemini e Anthropic (texto, imagens, PDFs, arquivos, reasoning/thinking, cache)</title>
 <meta name="description" content="Guia técnico exaustivo e comparativo de como OpenAI (Responses API), Google Gemini (generateContent) e Anthropic Claude (Messages API) contam tokens para texto, imagens (lidas e geradas), PDFs, arquivos, vídeo, áudio, tools, cache e reasoning/thinking. Endpoints, fórmulas, exemplos rodáveis em Python/TS e armadilhas práticas. Verificado em 2026-06-11." />
-<meta name="last-checked" content="2026-07-05" />
+<meta name="last-checked" content="2026-07-09" />
 <meta name="robots" content="index,follow" />
 <style>
   /* ------- design tokens ------- */
@@ -328,7 +328,7 @@
   <div class="header-row">
     <div class="brand">Guia de Contagem de Tokens <small>OpenAI · Gemini · Anthropic</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-05</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-09</strong></span>
       <span class="badge openai">OpenAI</span>
       <span class="badge gemini">Gemini</span>
       <span class="badge anthropic">Claude</span>
@@ -5293,7 +5293,7 @@ console.log("routing →", model);</code></pre>
     <li><strong>Pin de shard / cache resource.</strong> OpenAI: <code>prompt_cache_key=hash(tenant+session)</code> (cap ~15 RPM/key). Gemini/Vertex (implícito-only neste projeto): <strong>não há pin user-facing</strong> — o backend faz prefix-match oportunístico e cobra com desconto se bater. Anthropic: cache é determinístico por (workspace × prefix bytes × model). Detalhe em §<a href="#caching-zdr-shard-pin">10.8</a>.</li>
     <li><strong>Serialização determinística.</strong> JSON com <code>sort_keys=True</code> para tools/schemas. Go <code>map</code> default e Swift Dictionary reorderam — quebra o hash silenciosamente.</li>
     <li><strong>Bytes idênticos em mídia.</strong> Imagens, áudio, vídeo, PDFs precisam ser byte-a-byte iguais. Re-encode, EXIF strip, recompressão JPEG = miss. OpenAI exige também <code>input_image.detail</code> constante entre requests. Detalhe em §<a href="#caching-zdr-multimodal">10.9</a>.</li>
-    <li><strong>Model promotion = cache reset.</strong> Cache é por-modelo. <code>gpt-5.5</code> → <code>gpt-5.6</code> futuro = miss total. Pinar snapshot exato (<code>gpt-5.5-2026-04-23</code>, <code>claude-opus-4-8</code>) em produção sensível.</li>
+    <li><strong>Model promotion = cache reset.</strong> Cache é por-modelo. <code>gpt-5.5</code> → <code>gpt-5.6</code> (família Sol/Terra/Luna, lançada 2026-07-09) = miss total. Pinar snapshot exato (ex.: <code>gpt-5.5-2026-04-23</code>, <code>claude-opus-4-8</code>) em produção sensível. Obs.: <code>gpt-5.6</code>+ traz <strong>caching explícito</strong> (<code>prompt_cache_breakpoint</code>, <code>prompt_cache_options.mode</code>, <code>ttl</code> mínimo <code>30m</code>) e cobra escrita de cache a <strong>1,25×</strong> o input — ver o guia de modelos OpenAI, §15.1.</li>
   </ol>
 
   <div class="callout tip">
@@ -6768,7 +6768,7 @@ OPTIONS(
     <li><strong>Imagens re-codificadas</strong> — bytes diferentes = miss em todos. Hash + reuse buffer; nunca re-encode a cada turno.</li>
     <li><strong>OpenAI: <code>detail</code> param mudança</strong> (<code>auto</code>↔<code>high</code>↔<code>low</code>) invalida porque a tokenização da imagem muda.</li>
     <li><strong>Anthropic: presença/ausência de imagens anywhere</strong> no prompt invalida Messages cache (não Tools/System).</li>
-    <li><strong>Model promotion</strong> — cache reset total. <code>gpt-5.5</code>→<code>gpt-5.6</code>, Gemini 2.5→3.x, Opus 4.6→4.7 são fronteiras de cache.</li>
+    <li><strong>Model promotion</strong> — cache reset total. <code>gpt-5.5</code>→<code>gpt-5.6</code> (já disponível), Gemini 2.5→3.x, Opus 4.6→4.7 são fronteiras de cache.</li>
     <li><strong>OpenAI: <code>reasoning.effort</code> mudança</strong> invalida (muda prefill).</li>
     <li><strong>Anthropic: <code>tool_choice</code>, <code>thinking</code>, web_search toggle, citations toggle</strong> — invalidam parcialmente conforme matriz §10.6.</li>
     <li><strong>Anthropic: thinking blocks em Haiku 4.5</strong> — não preservados; Opus/Sonnet 4.6+ preservam.</li>
