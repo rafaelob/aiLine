@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Guia de Agent Skills — Autoria, Ativação &amp; Harness</title>
 <meta name="description" content="Guia agnóstico do padrão Agent Skills: SKILL.md, progressive disclosure (L1/L2/L3), autoria portável, ativação por description, recursos/scripts/assets, implementação em harness próprio, contexto/budget/eviction, segurança e avaliação." />
-<meta name="last-checked" content="2026-07-05" />
+<meta name="last-checked" content="2026-07-12" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -285,7 +285,7 @@
   <div class="header-row">
     <div class="brand">Guia de Agent Skills <small>Autoria, ativação &amp; harness — agnóstico</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-05</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-12</strong></span>
       <span class="badge da">Spec Agent Skills</span>
       <span class="badge info">PT-BR</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
@@ -314,6 +314,8 @@
       <li><a href="#autoria">4. Autoria de skills portáveis</a></li>
       <li><a href="#ativacao-descriptions">5. Ativação &amp; descriptions</a></li>
       <li><a href="#recursos-scripts-assets">6. Recursos, scripts &amp; assets</a></li>
+      <li><a href="#skills-claude-api">6A. Skills na Claude API</a></li>
+      <li><a href="#s-claude-code-plugins">6B. Skills no Claude Code &amp; plugins</a></li>
     </ol>
 
     <div class="toc-section">Parte 3 — Implementação</div>
@@ -942,6 +944,260 @@ MCP   = protocolo para expor tools, resources e prompts externos.</code></pre>
         <strong>2025-11-25</strong> <span class="pill ok">Verificado</span> (versão canônica do super-guia).
       </div>
       <div class="source-link">Fonte oficial: <a href="https://agentskills.io/skill-creation/using-scripts" target="_blank" rel="noopener">agentskills.io/skill-creation/using-scripts</a> · <a href="https://modelcontextprotocol.io/specification/2025-11-25" target="_blank" rel="noopener">modelcontextprotocol.io/specification/2025-11-25</a></div>
+    </section>
+
+    <section id="skills-claude-api">
+      <h2>6A. Skills na Claude API (execução via <code>code_execution</code>)</h2>
+      <p>Tudo que as seções 1–6 descrevem é a <em>spec</em> agnóstica AgentSkills.io. Na Claude API, uma Skill não é
+      um mecanismo próprio de carregamento de arquivo: ela é <strong>declarada no parâmetro <code>container</code></strong>
+      de uma chamada <code>POST /v1/messages</code> e roda dentro do <strong>code execution tool</strong> — o mesmo
+      sandbox Python/Bash usado para análise de dados. Skills pré-construídas pela Anthropic (<code>pptx</code>,
+      <code>xlsx</code>, <code>docx</code>, <code>pdf</code>) e Skills customizadas (criadas via <a
+      href="https://platform.claude.com/docs/en/api/skills/create-skill" target="_blank" rel="noopener"><code>POST
+      /v1/skills</code></a>) usam exatamente a mesma forma de integração. <span class="pill beta">Beta</span></p>
+
+      <h3>O contrato <code>container.skills[]</code></h3>
+      <p>Cada Skill referenciada em uma request é um objeto com os campos obrigatórios <code>type</code> e
+      <code>skill_id</code> e o campo opcional <code>version</code>, dentro do array <code>container.skills</code>.
+      A estrutura é idêntica para Skills Anthropic e customizadas. É possível declarar até
+      <strong>8 Skills por request</strong>.</p>
+      <pre><code>"container": {
+  "skills": [
+    { "type": "anthropic", "skill_id": "pptx", "version": "latest" },
+    { "type": "anthropic", "skill_id": "xlsx", "version": "latest" },
+    { "type": "custom",    "skill_id": "skill_01AbCdEfGhIjKlMnOpQrStUv", "version": "latest" }
+  ]
+}</code></pre>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Aspecto</th><th>Skill Anthropic (<code>type: "anthropic"</code>)</th><th>Skill custom (<code>type: "custom"</code>)</th></tr></thead>
+        <tbody>
+          <tr><td><code>skill_id</code></td><td>Nome curto: <code>pptx</code>, <code>xlsx</code>, <code>docx</code>, <code>pdf</code></td><td>Gerado pela API: <code>skill_01AbCdEfGhIjKlMnOpQrStUv</code></td></tr>
+          <tr><td>Formato de <code>version</code></td><td>Baseado em data: <code>"20251013"</code> ou <code>"latest"</code></td><td>Epoch timestamp: <code>"1759178010641129"</code> ou <code>"latest"</code></td></tr>
+          <tr><td>Gestão</td><td>Mantida pela Anthropic, disponível a todos os usuários</td><td>Upload/gestão via <code>/v1/skills</code>, privada ao workspace da chave de API</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Header beta e o tool <code>code_execution</code></h3>
+      <p>Toda request com Skills exige o header <code>anthropic-beta: skills-2025-10-02</code> e o code execution
+      tool declarado em <code>tools</code> (o code execution é obrigatório para Skills). Qualquer versão do tool
+      satisfaz o requisito — as três versões GA (<code>code_execution_20250825</code>,
+      <code>code_execution_20260120</code> e <code>code_execution_20260521</code>) não exigem beta header próprio;
+      os headers beta legados de code execution (ex.: <code>code-execution-2025-08-25</code>) continuam válidos como
+      opt-in. Mantenha o <code>type</code> do tool e qualquer header consistentes, e inclua sempre
+      <code>skills-2025-10-02</code>.</p>
+      <pre><code>curl https://api.anthropic.com/v1/messages \
+  -H "x-api-key: $ANTHROPIC_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "anthropic-beta: skills-2025-10-02" \
+  -H "content-type: application/json" \
+  -d '{
+    "model": "claude-opus-4-8",
+    "max_tokens": 16000,
+    "container": {
+      "skills": [{"type": "anthropic", "skill_id": "pptx", "version": "latest"}]
+    },
+    "messages": [
+      {"role": "user", "content": "Create a presentation about renewable energy with 5 slides"}
+    ],
+    "tools": [{"type": "code_execution_20260521", "name": "code_execution"}]
+  }'</code></pre>
+
+      <h3>O objeto <code>container</code> e seu ciclo de vida</h3>
+      <p>Quando Claude executa código (com ou sem Skill), a resposta traz um objeto de nível superior
+      <code>container</code> com <code>id</code> e <code>expires_at</code>. Reenviar esse <code>id</code> no
+      próximo request (no parâmetro <code>container</code>) reaproveita o mesmo sandbox — arquivos criados persistem
+      entre chamadas, e com <code>code_execution_20260120</code> ou posterior (mais programmatic tool calling) o
+      estado do interpretador Python (REPL) também persiste. Containers expiram <strong>30 dias após a
+      criação</strong>; após cerca de cinco minutos de inatividade o container é <em>checkpointed</em>, e um request
+      com o mesmo <code>id</code> dentro da janela de 30 dias o restaura. O <code>expires_at</code> retornado é um
+      valor rolante mais curto que <strong>não</strong> reflete esse limite de 30 dias. Um container expirado não
+      pode ser reaproveitado: o request retorna erro, e é preciso reenviar sem o parâmetro <code>container</code>
+      para obter um novo.</p>
+      <pre><code>"container": {
+  "id": "container_011...",
+  "skills": [
+    {"type": "anthropic", "skill_id": "xlsx", "version": "latest"}
+  ]
+}</code></pre>
+
+      <h3>Arquivos gerados: <code>file_id</code> e a Files API</h3>
+      <p>Quando uma Skill cria um arquivo (ex.: <code>.pptx</code>, <code>.xlsx</code>, <code>.docx</code>, <code>.pdf</code>),
+      o bloco de resultado do tool traz um <code>file_id</code>. Como a Skill pode rodar seu trabalho pela sub-tool
+      Python ou pela Bash, verifique os dois tipos de bloco: <code>code_execution_tool_result</code> ou
+      <code>bash_code_execution_tool_result</code>. Esse ID é baixado com a
+      <a href="https://platform.claude.com/docs/en/api/files-content" target="_blank" rel="noopener">Files API</a>
+      (<code>GET /v1/files/{file_id}/content</code>), que exige o header adicional <code>anthropic-beta:
+      files-api-2025-04-14</code>.</p>
+
+      <h3>Operações longas: <code>pause_turn</code></h3>
+      <p>Skills que rodam operações demoradas podem devolver <code>stop_reason: "pause_turn"</code> em vez de
+      terminar o turno. O comportamento correto é reenviar a resposta como veio (anexando o <code>content</code>
+      ao histórico como mensagem <code>assistant</code> e reusando <code>container.id</code>) para que Claude
+      continue de onde parou, ou modificar o conteúdo para interromper com instrução adicional. Nos exemplos
+      oficiais isso é orquestrado por um laço de retry limitado (<code>max_retries</code>) que repete enquanto
+      <code>response.stop_reason == "pause_turn"</code>.</p>
+
+      <div class="callout danger">
+        <strong>Sem cobertura de ZDR.</strong> Este recurso não é elegível para acordos de Zero Data Retention —
+        as definições de Skill e os dados de execução seguem a política padrão de retenção da Anthropic.
+      </div>
+      <div class="callout tip">
+        <strong>CRUD de Skills fica em outro guia.</strong> Esta seção cobre apenas a <em>mecânica de execução</em>
+        (como uma Skill já criada roda dentro de uma request de Messages API). Criação, versionamento e exclusão de
+        Skills customizadas via <code>POST/GET/DELETE /v1/skills</code> — <code>POST /v1/skills</code> usa
+        <code>multipart/form-data</code>, exige <code>anthropic-beta: skills-2025-10-02</code> e retorna
+        <code>id</code>, <code>created_at</code>, <code>display_title</code>, <code>latest_version</code>,
+        <code>source</code> (<code>"custom"</code> ou <code>"anthropic"</code>), <code>type</code>
+        (<code>"skill"</code>) e <code>updated_at</code> — são cobertos na seção de Claude API deste material.
+      </div>
+
+      <div class="source-link">Fonte oficial: <a href="https://platform.claude.com/docs/en/agents-and-tools/agent-skills/quickstart" target="_blank" rel="noopener">platform.claude.com · agent-skills/quickstart</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/skills-guide" target="_blank" rel="noopener">build-with-claude/skills-guide</a> · <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool" target="_blank" rel="noopener">tool-use/code-execution-tool</a> · <a href="https://platform.claude.com/docs/en/api/skills/create-skill" target="_blank" rel="noopener">api/skills/create-skill</a></div>
+    </section>
+
+    <section id="s-claude-code-plugins">
+      <h2>6B. Onde Skills rodam: Claude Code &amp; plugin bundles</h2>
+      <p>
+        O Claude Code é um cliente concreto do padrão Agent Skills, com uma superfície própria de
+        descoberta, escopo, invocação e empacotamento que vai além do que a spec agnóstica define. Esta seção
+        documenta essa superfície — não duplica a <a href="#skills-claude-api">integração via
+        Messages API / code execution tool (§6A)</a>, que é outro mecanismo (skills carregadas na VM do container,
+        não no filesystem local do CLI).
+      </p>
+
+      <h3>Escopos de descoberta: personal, project, plugin, enterprise</h3>
+      <p>O Claude Code descobre <code>SKILL.md</code> em quatro localizações, cada uma com um escopo de
+      aplicação diferente:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Escopo</th><th>Path</th><th>Aplica-se a</th></tr></thead>
+        <tbody>
+          <tr><td>Enterprise</td><td>Managed settings (política da organização)</td><td>Todos os usuários da organização</td></tr>
+          <tr><td>Personal</td><td><code>~/.claude/skills/&lt;skill-name&gt;/SKILL.md</code></td><td>Todos os projetos do usuário</td></tr>
+          <tr><td>Project</td><td><code>.claude/skills/&lt;skill-name&gt;/SKILL.md</code></td><td>Apenas este projeto (carrega de diretórios pai até a raiz do repo, e de diretórios aninhados sob demanda — útil em monorepos)</td></tr>
+          <tr><td>Plugin</td><td><code>&lt;plugin&gt;/skills/&lt;skill-name&gt;/SKILL.md</code></td><td>Onde o plugin está habilitado</td></tr>
+        </tbody>
+      </table></div>
+      <p>Quando skills de escopos diferentes têm o mesmo nome, <strong>enterprise sobrepõe personal, e
+      personal sobrepõe project</strong>; uma skill em qualquer um desses níveis também sobrepõe uma bundled
+      skill homônima (ex.: uma skill <code>code-review</code> em <code>.claude/skills/</code> substitui a
+      bundled <code>/code-review</code>). Skills de plugin usam namespace <code>plugin-name:skill-name</code>
+      e por isso nunca colidem com os outros níveis. Arquivos legados em <code>.claude/commands/</code>
+      continuam funcionando (mesmo frontmatter), mas se uma skill e um command tiverem o mesmo nome, a skill
+      tem precedência. O nome que você digita vem de <em>onde</em> a skill mora (o nome do diretório), não do
+      campo <code>name</code> do frontmatter — a única exceção é o <code>SKILL.md</code> na raiz de um plugin,
+      onde <code>name</code> define o comando.
+      </p>
+      <div class="callout tip">
+        <strong>Skills aninhadas em monorepo:</strong> se existir <code>apps/web/.claude/skills/deploy/</code>
+        além de uma <code>deploy</code> na raiz, ambas ficam disponíveis; a versão aninhada aparece sob o nome
+        qualificado por diretório <code>/apps/web:deploy</code>. Digitar apenas <code>/deploy</code> roda a
+        versão da raiz, mas o Claude Code anexa ao conteúdo dela uma lista das variantes qualificadas com
+        instrução para também invocar aquela cujo diretório contém os arquivos em edição — então a variante
+        aninhada ainda se aplica ao trabalho no seu diretório mesmo pelo nome curto. Requer Claude Code
+        v2.1.203+.
+      </div>
+
+      <h3>Invocação: Skill tool (automática) vs <code>/nome</code> (explícita)</h3>
+      <p>
+        No Claude Code, uma skill é acionada de duas formas não excludentes, controladas por dois campos de
+        frontmatter próprios do produto (além dos campos genéricos da spec). Note que os dois campos também
+        governam <em>quando</em> o conteúdo entra no contexto:
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr>
+          <th>Frontmatter</th>
+          <th>Você invoca (<code>/nome</code>)</th>
+          <th>Claude invoca (Skill tool)</th>
+          <th>Quando entra no contexto</th>
+        </tr></thead>
+        <tbody>
+          <tr><td>(padrão)</td><td>Sim</td><td>Sim</td><td>Description sempre no contexto; corpo completo carrega ao invocar</td></tr>
+          <tr><td><code>disable-model-invocation: true</code></td><td>Sim</td><td>Não</td><td>Description <strong>fora</strong> do contexto; corpo completo carrega quando <em>você</em> invoca</td></tr>
+          <tr><td><code>user-invocable: false</code></td><td>Não</td><td>Sim</td><td>Description sempre no contexto; corpo completo carrega ao invocar</td></tr>
+        </tbody>
+      </table></div>
+      <p>
+        A invocação automática passa pela ferramenta interna <strong>Skill</strong>: as descrições das skills
+        elegíveis (as que não têm <code>disable-model-invocation: true</code>) ficam carregadas no contexto para
+        o modelo decidir quando disparar, mas o corpo completo do <code>SKILL.md</code> só entra quando a skill
+        é de fato invocada — e permanece no contexto pelo resto da sessão. O acesso do modelo à Skill tool é
+        controlado pelas mesmas <em>permission rules</em> de qualquer outra tool: <code>Skill(nome)</code> para
+        match exato, <code>Skill(nome *)</code> para prefixo com quaisquer argumentos, e uma regra
+        <code>deny</code> na entrada <code>Skill</code> (sem argumento) desabilita todas as skills.
+      </p>
+      <p>
+        Campos de frontmatter específicos do Claude Code (além de <code>name</code>/<code>description</code>
+        da spec agnóstica) incluem: <code>allowed-tools</code> (tools que o Claude pode usar sem pedir
+        aprovação enquanto a skill está ativa — não restringe o pool: toda tool continua invocável e as
+        permission settings ainda valem para as não listadas); <code>disallowed-tools</code> (tools removidas
+        do pool disponível enquanto a skill está ativa; a restrição some na sua próxima mensagem);
+        <code>context: fork</code> + <code>agent</code> (roda a skill em um subagente isolado, sem histórico da
+        conversa — o corpo da skill vira o prompt; <code>agent</code> escolhe entre os built-in
+        <code>Explore</code>, <code>Plan</code>, <code>general-purpose</code> ou qualquer subagente de
+        <code>.claude/agents/</code>, e usa <code>general-purpose</code> se omitido); <code>model</code> e
+        <code>effort</code> (override só pelo resto do turno atual, não salvo em settings;
+        <code>effort</code> aceita <code>low</code>, <code>medium</code>, <code>high</code>,
+        <code>xhigh</code>, <code>max</code> conforme o modelo); <code>paths</code> (globs que restringem quando
+        a skill é ativada automaticamente); e <code>arguments</code>/<code>argument-hint</code> (para
+        <code>$ARGUMENTS</code>, <code>$ARGUMENTS[N]</code>, <code>$N</code>, <code>$name</code> e as demais
+        substituições). O corpo pode ainda injetar contexto dinâmico via <code>!`comando`</code> (ou um bloco
+        cercado aberto com <code>```!</code> para múltiplas linhas), executado <em>antes</em> de o modelo ver o
+        conteúdo — pré-processamento, não uma tool que o Claude chama.
+      </p>
+
+      <h3>Plugin bundles: skills + hooks + commands + agents num único artefato</h3>
+      <p>
+        Um <strong>plugin</strong> do Claude Code é um diretório autocontido que empacota múltiplos tipos de
+        extensão — skills, subagentes, hooks, servidores MCP, servidores LSP e monitores de background — e é
+        descrito por um manifesto <code>.claude-plugin/plugin.json</code>:
+      </p>
+      <pre><code class="language-text">my-plugin/
+├── .claude-plugin/
+│   └── plugin.json       # name, description, version, author (único arquivo permitido aqui)
+├── skills/
+│   └── code-review/
+│       └── SKILL.md      # vira /my-plugin:code-review
+├── commands/             # skills como arquivos .md avulsos (legado; use skills/ em plugins novos)
+├── agents/               # subagentes customizados
+├── hooks/
+│   └── hooks.json        # event handlers
+├── .mcp.json             # servidores MCP
+├── .lsp.json             # servidores LSP
+├── monitors/
+│   └── monitors.json     # monitores de background
+├── bin/                  # executáveis adicionados ao PATH da tool Bash quando habilitado
+└── settings.json         # settings padrão aplicados quando o plugin está habilitado</code></pre>
+      <p>
+        Regra de posicionamento: <strong>apenas <code>plugin.json</code> vai dentro de
+        <code>.claude-plugin/</code></strong>; todos os outros diretórios (<code>skills/</code>,
+        <code>agents/</code>, <code>hooks/</code>, etc.) ficam na raiz do plugin. Skills de plugin são
+        <strong>model-invoked por padrão</strong> e namespaced pelo campo <code>name</code> do manifesto —
+        <code>my-plugin/skills/review/SKILL.md</code> vira o comando <code>/my-plugin:review</code>. Um plugin
+        com exatamente uma skill pode dispensar o diretório <code>skills/</code> e colocar
+        <code>SKILL.md</code> na raiz do plugin, usando o <code>name</code> do frontmatter como nome do comando
+        (com o nome do diretório do plugin como fallback).
+      </p>
+      <p>
+        Plugins são instalados via marketplace (<code>/plugin install nome@marketplace</code>) ou testados
+        localmente com <code>claude --plugin-dir ./caminho</code> — que também aceita um <code>.zip</code>
+        (requer Claude Code v2.1.128+) — e <code>claude --plugin-url</code> para um zip hospedado remotamente,
+        carregado só naquela sessão. Após alterar um plugin já carregado, <code>/reload-plugins</code>
+        recarrega skills, agentes, hooks e servidores MCP/LSP do plugin sem reiniciar a sessão.
+        Alternativamente, <code>claude plugin init nome</code> cria um plugin em
+        <code>~/.claude/skills/nome/</code> (com seu próprio <code>.claude-plugin/plugin.json</code> e um
+        <code>SKILL.md</code> inicial) que carrega automaticamente na sessão seguinte como
+        <code>nome@skills-dir</code>, sem passo de marketplace — em um <code>.claude/skills/</code> de projeto
+        isso exige aceitar o diálogo de confiança do workspace primeiro. A Anthropic mantém dois marketplaces
+        públicos: <code>claude-plugins-official</code> (curado pela Anthropic, registrado automaticamente na
+        primeira sessão interativa) e <code>claude-community</code> (submissões de terceiros, publicadas após
+        revisão).
+      </p>
+      <div class="callout warn">
+        <strong>Versionamento de plugin:</strong> o campo <code>version</code> do manifesto é opcional. Se
+        definido, o usuário só recebe atualizações quando esse campo é incrementado; se omitido e o plugin é
+        distribuído via git, o SHA do commit é usado como versão e <em>todo commit</em> conta como uma nova
+        versão.
+      </div>
+      <div class="source-link">Fonte oficial: <a href="https://code.claude.com/docs/en/skills" target="_blank" rel="noopener">code.claude.com/docs/en/skills</a> · <a href="https://code.claude.com/docs/en/plugins" target="_blank" rel="noopener">code.claude.com/docs/en/plugins</a></div>
     </section>
 
     <section class="chapter" id="parte-implementacao">

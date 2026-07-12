@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Arquitetura &amp; Orquestração de Agentes — Núcleo agnóstico</title>
 <meta name="description" content="Arquitetura de runtime agnóstica de provider para sistemas agentic: primitivos canônicos, matriz de escolha agent/workflow/agent-as-tool/handoff, capability registry, microcontextos e active plan, skeleton de orquestrador, antipadrões, runtime por maturidade, model router, modos de injeção de skills, long-running jobs e blueprint SOTA." />
-<meta name="last-checked" content="2026-07-05" />
+<meta name="last-checked" content="2026-07-12" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -285,7 +285,7 @@
   <div class="header-row">
     <div class="brand">Arquitetura &amp; Orquestração <small>Núcleo agnóstico de agentes</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-05</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-12</strong></span>
       <span class="badge da">Núcleo · agnóstico de provider</span>
       <span class="badge info">Conceitual + referência</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
@@ -308,6 +308,8 @@
       <li><a href="#primitivos-canonicos">2. Primitivos canônicos</a></li>
       <li><a href="#arquitetura-referencia">3. Arquitetura de referência</a></li>
       <li><a href="#matriz-de-escolha">4. Matriz de escolha de topologia</a></li>
+      <li><a href="#padroes-workflow-catalogo">4A. Catálogo de padrões de workflow</a></li>
+      <li style="margin-left:14px"><a href="#parallelization-sectioning-voting">4A.3.1 Parallelization: sectioning vs voting</a></li>
     </ol>
 
     <div class="toc-section">Parte 2 — Contratos do runtime</div>
@@ -576,6 +578,161 @@
         própria (<a href="#handoff-vs-agent-as-tool">§8</a>). Em resumo: agent-as-tool é delegação
         subordinada; handoff é transferência de ownership.
       </div>
+    </section>
+
+    <section id="padroes-workflow-catalogo">
+      <h2>4A. Catálogo de padrões de workflow (Anthropic)</h2>
+      <p>
+        A matriz acima escolhe entre <em>famílias</em> de topologia. Quando a escolha recai sobre um
+        <strong>workflow</strong> (caminho orquestrado por código, não pelo próprio LLM), o ensaio
+        <em>"Building Effective Agents"</em> da Anthropic cataloga um conjunto de padrões de composição,
+        do bloco básico (<strong>augmented LLM</strong>) até a fronteira com agentes autônomos. Vale
+        conhecê-los explicitamente para não transformar todo problema em "um agente".
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>#</th><th>Padrão</th><th>O que faz</th></tr></thead>
+        <tbody>
+          <tr><td>4A.1</td><td><strong>Prompt chaining</strong></td><td>Decompõe a tarefa em passos sequenciais fixos; cada chamada de LLM processa a saída da anterior, com <em>gates</em> opcionais entre elas.</td></tr>
+          <tr><td>4A.2</td><td><strong>Routing</strong></td><td>Classifica a entrada e a direciona para o fluxo ou prompt especializado adequado.</td></tr>
+          <tr><td>4A.3</td><td><strong>Parallelization</strong></td><td>Executa subtarefas <em>pré-definidas</em> em paralelo — por <em>sectioning</em> (partes independentes) ou <em>voting</em> (várias tentativas agregadas). Detalhado em <a href="#parallelization-sectioning-voting">§4A.3.1</a>.</td></tr>
+          <tr><td>4A.4</td><td><strong>Orchestrator-workers</strong></td><td>Um orquestrador decompõe dinamicamente a tarefa, delega a workers e sintetiza os resultados. A diferença-chave para parallelization é a flexibilidade — as subtarefas não são pré-definidas, mas determinadas pelo orquestrador com base na entrada específica.</td></tr>
+          <tr><td>4A.5</td><td><strong>Evaluator-optimizer</strong></td><td>Loop de refinamento entre um LLM gerador e um LLM avaliador (detalhado abaixo).</td></tr>
+        </tbody>
+      </table></div>
+      <p>
+        Além desses workflows compostos está o padrão <strong>agente</strong>: sistemas em que os LLMs
+        <em>"dynamically direct their own processes and tool usage, maintaining control over how they
+        accomplish tasks"</em> — em vez de seguir um caminho de workflow pré-definido.
+      </p>
+
+      <h3 id="evaluator-optimizer">4A.5 Evaluator-optimizer</h3>
+      <p>
+        No evaluator-optimizer, nas palavras da Anthropic, <em>"one LLM call generates a response while
+        another provides evaluation and feedback in a loop"</em>: uma chamada de LLM gera a resposta,
+        uma <strong>segunda</strong> chamada avalia essa resposta e devolve feedback, e o ciclo se repete
+        até a saída ser aceita. A Anthropic descreve o padrão como <em>análogo ao processo iterativo de
+        escrita pelo qual um autor humano passa ao produzir um documento polido</em>: um papel gera, outro
+        critica, e o gerador refina a partir da crítica.
+      </p>
+
+      <div class="figure">
+        <svg viewBox="0 0 760 220" role="img" aria-labelledby="evopt-title evopt-desc" xmlns="http://www.w3.org/2000/svg">
+          <title id="evopt-title">Loop evaluator-optimizer</title>
+          <desc id="evopt-desc">O LLM gerador produz uma solução; o LLM avaliador examina e retorna aceite ou feedback; enquanto rejeitado, o gerador refina com o feedback recebido; quando aceito, a solução final é emitida.</desc>
+          <style>
+            .evopt-box{fill:var(--c-bg-elev);stroke:var(--c-border-strong);stroke-width:1.5;}
+            .evopt-lbl{fill:var(--c-fg);font-family:var(--font-sans);font-size:14px;font-weight:600;}
+            .evopt-sub{fill:var(--c-fg-muted);font-family:var(--font-sans);font-size:11.5px;}
+            .evopt-arrow{stroke:var(--c-da);stroke-width:2;fill:none;marker-end:url(#evopt-ah);}
+            .evopt-arrowok{stroke:var(--c-ok);stroke-width:2;fill:none;marker-end:url(#evopt-ahok);}
+          </style>
+          <defs>
+            <marker id="evopt-ah" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="var(--c-da)"/></marker>
+            <marker id="evopt-ahok" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="var(--c-ok)"/></marker>
+          </defs>
+          <rect class="evopt-box" x="40" y="76" width="180" height="64" rx="10"/>
+          <text class="evopt-lbl" x="130" y="102" text-anchor="middle">LLM gerador</text>
+          <text class="evopt-sub" x="130" y="120" text-anchor="middle">produz / refina a solução</text>
+
+          <rect class="evopt-box" x="300" y="76" width="180" height="64" rx="10" style="stroke:var(--c-da);stroke-width:2"/>
+          <text class="evopt-lbl" x="390" y="102" text-anchor="middle">LLM avaliador</text>
+          <text class="evopt-sub" x="390" y="120" text-anchor="middle">avalia contra critério de aceite</text>
+
+          <rect class="evopt-box" x="560" y="76" width="160" height="64" rx="10"/>
+          <text class="evopt-lbl" x="640" y="102" text-anchor="middle">Saída final</text>
+          <text class="evopt-sub" x="640" y="120" text-anchor="middle">aceita pelo avaliador</text>
+
+          <path class="evopt-arrow" d="M220,108 L298,108"/>
+          <path class="evopt-arrowok" d="M480,100 L558,100"/>
+          <path class="evopt-arrow" d="M480,120 C 420,180 200,180 130,142"/>
+          <text class="evopt-sub" x="640" y="60" text-anchor="middle">aceito</text>
+          <text class="evopt-sub" x="300" y="176" text-anchor="middle">rejeitado + feedback → nova rodada</text>
+        </svg>
+        <figcaption>
+          O gerador produz; o avaliador decide aceitar ou pedir nova rodada com feedback específico; o
+          loop repete até o aceite ou até um teto de iterações imposto pelo runtime.
+        </figcaption>
+      </div>
+
+      <div class="table-wrap"><table>
+        <thead><tr><th>Elemento</th><th>Papel no loop</th></tr></thead>
+        <tbody>
+          <tr><td>LLM gerador</td><td>Produz a resposta inicial e cada refinamento subsequente, incorporando o feedback recebido na rodada anterior.</td></tr>
+          <tr><td>LLM avaliador</td><td>Examina a resposta contra critérios de aceite explícitos e retorna aceite ou crítica específica e acionável.</td></tr>
+          <tr><td>Critério de parada</td><td>Aceite do avaliador — o runtime deve impor também um teto de iterações para evitar loop sem convergência.</td></tr>
+        </tbody>
+      </table></div>
+
+      <div class="callout tip">
+        <strong>Quando usar.</strong> A Anthropic aponta que o padrão é particularmente eficaz quando há
+        <em>critérios de avaliação claros</em> e quando o <em>refinamento iterativo agrega valor
+        mensurável</em>. O bom encaixe aparece quando as respostas do LLM melhoram de forma demonstrável
+        com feedback articulado e o próprio LLM consegue gerar esse feedback. Exemplos citados:
+        <em>tradução literária</em>, em que "there are nuances that the translator LLM might not capture
+        initially, but where an evaluator LLM can provide useful critiques"; e <em>tarefas de busca
+        complexa</em> que exigem múltiplas rodadas de pesquisa e análise, em que o avaliador decide se
+        novas buscas são necessárias.
+      </div>
+      <div class="callout warn">
+        <strong>Onde não vale a pena.</strong> Sem critério de aceite objetivo, o avaliador apenas
+        introduz latência e custo (duas chamadas por rodada) sem convergência garantida. Trate o
+        evaluator-optimizer como caso especial de separação <strong>generator-verifier</strong>: mantenha
+        os dois papéis com prompts/instruções distintos (idealmente modelos ou temperaturas diferentes)
+        para reduzir o viés de um único LLM validar o próprio output, e imponha o mesmo teto de iterações
+        e budget que qualquer outro loop do runtime (ver <a href="#skeleton-orquestrador">§7</a> e
+        <a href="#antipadroes">§10</a>).
+      </div>
+
+      <h3 id="parallelization-sectioning-voting">4A.3.1 Parallelization: sectioning versus voting/consensus</h3>
+      <p>
+        <strong>Parallelization</strong> é o padrão de workflow em que múltiplas chamadas de LLM trabalham
+        simultaneamente sobre uma tarefa e têm suas saídas <strong>agregadas de forma programática</strong>
+        (não por "mais uma chamada de LLM" solta). Ele tem <strong>duas variações</strong> com propósitos
+        distintos — confundi-las é o erro mais comum ao desenhar o padrão: <strong>sectioning</strong> quebra
+        a tarefa em <em>subtarefas independentes</em> executadas em paralelo; <strong>voting</strong> (consenso)
+        roda a <em>mesma tarefa</em> várias vezes para obter saídas diversas e agregá-las.
+      </p>
+      <div class="callout warn">
+        <strong>Não confundir com paralelismo de tool-calls.</strong> Esta seção trata do <em>padrão
+        arquitetural de workflow</em> (fan-out de chamadas de LLM + fan-in programático). O paralelismo de
+        <em>ferramentas dentro de um único turno</em> — protocolo por provider, scheduler, quais tools são
+        paralelas ou seriais — é assunto do
+        <a href="guia_paralelismo_tools_openai_gemini_anthropic.html">guia Paralelismo &amp; tools</a>.
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Variante</th><th>Definição (Anthropic)</th><th>Quando usar</th><th>Exemplos oficiais</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Sectioning</strong></td>
+            <td>Quebrar uma tarefa em subtarefas independentes, cada uma rodando em paralelo numa chamada de LLM separada (<em>"Breaking a task into independent subtasks run in parallel"</em>).</td>
+            <td>A tarefa tem considerações distintas que ganham foco quando isoladas — LLMs geralmente performam melhor quando cada consideração é tratada por uma chamada de LLM separada — ou quando velocidade é o objetivo e as subtarefas podem rodar simultaneamente.</td>
+            <td><strong>Guardrails:</strong> uma instância de modelo processa a consulta do usuário enquanto outra, em paralelo, faz a triagem de conteúdo inadequado — separar as duas funções tende a performar melhor do que uma única chamada acumulando guardrail e resposta principal. <strong>Automatizar evals:</strong> cada chamada de LLM avalia um aspecto diferente do desempenho do modelo para um dado prompt.</td>
+          </tr>
+          <tr>
+            <td><strong>Voting / consensus</strong></td>
+            <td>Rodar a mesma tarefa múltiplas vezes para obter saídas diversas (<em>"Running the same task multiple times to get diverse outputs"</em>), depois agregar por maioria, threshold ou síntese.</td>
+            <td>A tarefa se beneficia de múltiplas perspectivas independentes para aumentar a confiança no resultado, ou quando é preciso equilibrar falsos positivos e negativos ajustando o threshold de votos.</td>
+            <td><strong>Revisão de código em busca de vulnerabilidades:</strong> vários prompts diferentes revisam e sinalizam o código quando encontram um problema. <strong>Moderação de conteúdo:</strong> avaliar se um conteúdo é inadequado usando múltiplos prompts que checam aspectos distintos ou exigem thresholds de votação diferentes, equilibrando falsos positivos e negativos.</td>
+          </tr>
+        </tbody>
+      </table></div>
+      <p>
+        A escolha entre as duas não é estética: sectioning otimiza <strong>cobertura e latência</strong>
+        (subtarefas diferentes, sem redundância de trabalho); voting otimiza <strong>confiança e
+        robustez</strong> (mesma tarefa repetida, com redundância deliberada para reduzir variância e
+        capturar divergências entre execuções). Ambas exigem um passo de agregação <strong>determinístico e
+        auditável</strong> no orquestrador — nunca delegado a "mais uma chamada de LLM" sem critério explícito
+        de combinação (maioria simples, threshold configurável, união de achados, ou síntese com política
+        definida).
+      </p>
+      <div class="callout warn">
+        <strong>Antipadrão relacionado — "Paralelismo sem fase" (<a href="#antipadroes">§10</a>):</strong>
+        misturar sectioning e voting no mesmo boundary, ou paralelizar sem separar claramente a fase de
+        <em>fan-out</em> (disparo das chamadas) da fase de <em>fan-in</em> (agregação), gera resultados
+        inconsistentes e dificulta a auditoria — especialmente em voting, onde o critério de combinação dos
+        votos precisa ser registrado no ledger para permitir replay.
+      </div>
+      <div class="source-link">Fontes oficiais: <a href="https://www.anthropic.com/engineering/building-effective-agents" target="_blank" rel="noopener">anthropic.com/engineering/building-effective-agents</a> (seções "Parallelization" &amp; "Evaluator-optimizer") · <a href="https://docs.langchain.com/oss/python/langgraph/workflows-agents" target="_blank" rel="noopener">docs.langchain.com/oss/python/langgraph/workflows-agents</a>.</div>
     </section>
 
     <!-- ===================== PARTE 2 ===================== -->

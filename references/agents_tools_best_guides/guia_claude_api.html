@@ -4,8 +4,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Guia Claude API (Anthropic) — Referência completa · Opus 4.8 · Sonnet 5 · Haiku 4.5</title>
-<meta name="description" content="Guia técnico exaustivo e SOTA da API da Anthropic (Claude) em PT-BR: Messages API, modelos Opus 4.8 / Sonnet 5 / Haiku 4.5 (Sonnet 4.6 legado), streaming, thinking (adaptive + extended), tool use, multimodal (vision/PDF/files), prompt caching, batch, structured outputs, citations, embeddings, Agent Skills, MCP, Managed Agents, referência REST/SDK, governança e plataformas de nuvem. Verificado em 2026-07-05." />
-<meta name="last-checked" content="2026-07-05" />
+<meta name="description" content="Guia técnico exaustivo e SOTA da API da Anthropic (Claude) em PT-BR: Messages API, modelos Opus 4.8 / Sonnet 5 / Haiku 4.5 (Sonnet 4.6 legado), streaming, thinking (adaptive + extended), tool use, multimodal (vision/PDF/files), prompt caching, batch, structured outputs, citations, embeddings, Agent Skills, MCP, Managed Agents, referência REST/SDK, governança e plataformas de nuvem. Verificado em 2026-07-12." />
+<meta name="last-checked" content="2026-07-12" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -294,7 +294,7 @@
   <div class="header-row">
     <div class="brand">Guia Claude API <small>Anthropic · PT-BR · Referência completa</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-05</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-12</strong></span>
       <span class="badge claude">anthropic · @anthropic-ai/sdk</span>
       <span class="badge ok">Opus 4.8 · Sonnet 5 · Haiku 4.5</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
@@ -359,6 +359,7 @@
 <li><a href="#d-rest-batches">D5. Message Batches API</a></li>
 <li><a href="#d-rest-models">D6. Models API</a></li>
 <li><a href="#d-rest-files">D7. Files API (lado REST)</a></li>
+<li><a href="#d-rest-skills">D7A. Skills API (REST) — CRUD &amp; versões</a></li>
 <li><a href="#d-erros">D8. Erros &amp; rate limits</a></li>
 <li><a href="#d-plataformas">D9. Plataformas: Bedrock, Vertex AI, Foundry &amp; Claude Platform on AWS</a></li>
 <li><a href="#d-managed-agents">D10. Claude Managed Agents</a></li>
@@ -427,7 +428,7 @@
         <span class="badge claude">@anthropic-ai/sdk · Node ≥ 20</span>
         <span class="badge ok">Opus 4.8 · Sonnet 5 · Haiku 4.5</span>
         <span class="badge info">anthropic-version: 2023-06-01</span>
-        <span class="badge">Verificado em 2026-07-05</span>
+        <span class="badge">Verificado em 2026-07-12</span>
       </div>
     </div>
 
@@ -926,6 +927,89 @@ console.log(message.content);</code></pre>
     <span class="source-link"><a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener">models/overview</a> · <a href="https://www.anthropic.com/news/redeploying-fable-5" target="_blank" rel="noopener">redeploying-fable-5</a> · <a href="https://platform.claude.com/docs/en/about-claude/model-deprecations" target="_blank" rel="noopener">model-deprecations</a></span>
   </div>
 
+  <h3 id="a-modelos-fable-mythos">Fable 5 e Mythos 5 no comparativo</h3>
+  <p>O <strong>Claude Fable 5</strong> (<code>claude-fable-5</code>) é, segundo a doc oficial, <em>"Anthropic's most capable widely released model"</em> — a célula de descrição da tabela o classifica como <em>"Next-generation intelligence for long-running agents"</em>. Entrou em <span class="pill ok">GA</span> em <strong>09/06/2026</strong>. O <strong>Claude Mythos 5</strong> (<code>claude-mythos-5</code>) <em>"shares Claude Fable 5's specs and pricing"</em>, mas <strong>não</strong> traz os classificadores de segurança do Fable 5; é o sucessor do <code>claude-mythos-preview</code> e só é acessível por convite dentro do <strong>Project Glasswing</strong> (fluxos defensivos de cibersegurança). A tabela abaixo estende a <a href="#a-modelos-comparacao">tabela-mestra da seção 3</a> com essas duas colunas — o <span class="pill info">Sonnet 4.6 Legacy</span> segue na tabela principal e na lista de modelos legados.</p>
+
+  <div class="table-wrap"><table>
+    <thead><tr>
+      <th>Característica</th><th>Claude Fable 5</th><th>Claude Mythos 5 <span class="pill beta">Convite (Glasswing)</span></th><th>Claude Opus 4.8</th><th>Claude Sonnet 5</th><th>Claude Haiku 4.5</th>
+    </tr></thead>
+    <tbody>
+      <tr><td><strong>Descrição</strong></td><td>Inteligência de nova geração para agentes de longa duração</td><td>Mesmas specs/preço do Fable 5, sem os classificadores de segurança; dedicado a fluxos defensivos de cibersegurança</td><td>Para raciocínio complexo e coding agêntico de nível enterprise</td><td>Melhor combinação de velocidade e inteligência (Sonnet recomendado)</td><td>O modelo mais rápido, com inteligência quase de fronteira</td></tr>
+      <tr><td><strong>ID / alias de API</strong></td><td><code>claude-fable-5</code></td><td><code>claude-mythos-5</code> <span class="pill info">sucessor do <code>claude-mythos-preview</code></span></td><td><code>claude-opus-4-8</code></td><td><code>claude-sonnet-5</code></td><td>ID <code>claude-haiku-4-5-20251001</code> · alias <code>claude-haiku-4-5</code></td></tr>
+      <tr><td><strong>AWS Bedrock ID</strong></td><td><code>anthropic.claude-fable-5</code></td><td><span class="pill info">Glasswing</span></td><td><code>anthropic.claude-opus-4-8</code></td><td><code>anthropic.claude-sonnet-5</code></td><td><code>anthropic.claude-haiku-4-5-20251001-v1:0</code></td></tr>
+      <tr><td><strong>Google Cloud ID</strong></td><td><code>claude-fable-5</code></td><td><span class="pill info">Glasswing</span></td><td><code>claude-opus-4-8</code></td><td><code>claude-sonnet-5</code></td><td><code>claude-haiku-4-5@20251001</code></td></tr>
+      <tr><td><strong>Disponibilidade</strong></td><td><span class="pill ok">GA</span> 09/06/2026 — Claude API, Claude Platform on AWS, Amazon Bedrock, Google Cloud, Microsoft Foundry</td><td><span class="pill beta">Limitada</span> — Project Glasswing, apenas clientes aprovados; contato via time de conta Anthropic/AWS/Google Cloud, sem self-serve</td><td>GA</td><td>GA</td><td>GA</td></tr>
+      <tr><td><strong>Janela de contexto</strong></td><td>1M tokens</td><td>1M tokens</td><td>1M tokens</td><td>1M tokens</td><td>200k tokens</td></tr>
+      <tr><td><strong>Máx. de saída (Messages API)</strong></td><td>128k tokens</td><td>128k tokens</td><td>128k tokens</td><td>128k tokens</td><td>64k tokens</td></tr>
+      <tr><td><strong>Preço (entrada / saída, MTok)</strong></td><td>$10 / $50</td><td>$10 / $50 <span class="pill info">= Fable 5</span></td><td>$5 / $25</td><td>$3 / $15 <span class="pill ok">intro $2/$10</span></td><td>$1 / $5</td></tr>
+      <tr><td><strong>Extended thinking (manual)</strong></td><td><span class="pill na">Não</span></td><td><span class="pill na">Não</span></td><td><span class="pill na">Não</span></td><td><span class="pill na">Não</span></td><td><span class="pill ok">Sim</span></td></tr>
+      <tr><td><strong>Adaptive thinking</strong></td><td><span class="pill ok">Sim (sempre ativo)</span></td><td><span class="pill ok">Sim (sempre ativo)</span></td><td><span class="pill ok">Sim</span></td><td><span class="pill ok">Sim</span> (default ligado)</td><td><span class="pill na">Não</span></td></tr>
+      <tr><td><strong>Latência comparativa</strong></td><td>Mais lenta (<em>Slower</em>)</td><td>Mais lenta (<em>Slower</em>)</td><td>Moderada</td><td>Rápida</td><td>A mais rápida</td></tr>
+      <tr><td><strong>Knowledge cutoff (confiável)</strong></td><td>Jan 2026</td><td>Jan 2026</td><td>Jan 2026</td><td>Jan 2026</td><td>Fev 2025</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout warn"><strong>Adaptive thinking sempre ativo — não dá para desligar nem passar budget manual.</strong> No Fable 5 e no Mythos 5 o adaptive thinking é o <em>único</em> modo (aplica-se sempre que o parâmetro <code>thinking</code> fica <em>unset</em>). A doc é explícita: <code>thinking:{"type":"disabled"}</code> <strong>não é suportado</strong>, e o modo manual <code>thinking:{"type":"enabled", budget_tokens:N}</code> é <strong>rejeitado com <code>400</code></strong> (o mesmo vale para Sonnet 5, Opus 4.8 e Opus 4.7). Para regular a profundidade do raciocínio, use o parâmetro <code>effort</code> (<code>low·medium·high·xhigh·max</code>; default <code>high</code>). Ainda: nesses modelos, valores <strong>não-default</strong> de <code>temperature</code>, <code>top_p</code> e <code>top_k</code> também retornam <code>400</code> em <em>toda</em> requisição — controle variedade por prompting. E <code>thinking.display</code> assume <code>"omitted"</code> por padrão: defina <code>"summarized"</code> se sua UI mostra o raciocínio.</div>
+
+  <div class="callout info"><strong>Exemplo — confirmar limites via Models API antes de rotear para o Fable 5:</strong></div>
+  <div class="code-group">
+    <div class="code-tabs" role="tablist">
+      <button class="code-tab" role="tab" data-lang="python" aria-selected="true">Python</button>
+      <button class="code-tab" role="tab" data-lang="typescript" aria-selected="false">TypeScript</button>
+    </div>
+    <div class="code-pane" data-lang="python" data-active="true">
+<pre><code class="language-python">import anthropic
+
+client = anthropic.Anthropic()
+
+# Confirma em runtime que o ID existe e lê os limites atuais
+# (max_input_tokens, max_tokens) em vez de hard-codar 1_000_000 / 128_000.
+model = client.models.retrieve("claude-fable-5")
+print(model.id, model.max_input_tokens, model.max_tokens)
+
+resp = client.messages.create(
+    model="claude-fable-5",
+    max_tokens=8192,
+    # Fable 5 usa adaptive thinking SEMPRE ativo:
+    #   - omita 'thinking' (adaptive é o default), ou
+    #   - passe thinking={"type": "adaptive"};
+    # thinking={"type": "disabled"} não é suportado e
+    # thinking={"type": "enabled", ...} retorna 400.
+    # Regule a profundidade pelo effort (default 'high').
+    output_config={"effort": "high"},
+    messages=[{"role": "user", "content": "Resuma os riscos do plano X."}],
+)
+print(resp.content)
+</code></pre>
+    </div>
+    <div class="code-pane" data-lang="typescript" data-active="false">
+<pre><code class="language-typescript">import Anthropic from "@anthropic-ai/sdk";
+
+const client = new Anthropic();
+
+// Confirma o ID e lê os limites atuais em runtime.
+const model = await client.models.retrieve("claude-fable-5");
+console.log(model.id, model.max_input_tokens, model.max_tokens);
+
+const resp = await client.messages.create({
+  model: "claude-fable-5",
+  max_tokens: 8192,
+  // Adaptive thinking é sempre ativo no Fable 5: omita 'thinking'
+  // ou use { type: "adaptive" }. 'disabled' não é suportado e
+  // { type: "enabled", ... } retorna 400. Regule pelo effort.
+  output_config: { effort: "high" },
+  messages: [{ role: "user", content: "Resuma os riscos do plano X." }],
+});
+console.log(resp.content);
+</code></pre>
+    </div>
+  </div>
+
+  <div class="callout tip"><strong>Quando considerar Fable 5 / Mythos 5 em vez de Opus 4.8.</strong> A doc oficial recomenda começar com <strong>Opus 4.8</strong> para coding agêntico complexo e trabalho enterprise; use <strong>Fable 5</strong> apenas quando a carga exigir a <em>maior capacidade disponível</em> em agentes de longa duração — lembrando que o custo por MTok é <strong>2×</strong> o do Opus 4.8 (entrada e saída) e a latência é a mais alta do catálogo ativo (<em>Slower</em>). O <strong>Mythos 5</strong> não é auto-atendimento: restrito ao <strong>Project Glasswing</strong> (fluxos defensivos de cibersegurança), exige aprovação prévia e é solicitado pelo time de conta Anthropic, AWS ou Google Cloud — não tente usar <code>claude-mythos-5</code> em produção sem essa aprovação. Fable 5 e Mythos 5 carregam <strong>retenção de 30 dias</strong> e <strong>não</strong> são elegíveis a ZDR (ambos são <em>Covered Models</em>); o comportamento de refusals/<code>fallbacks</code>/billing do Fable 5 está detalhado no callout de <a href="#a-modelos">atualização acima</a>.</div>
+
+  <p class="source-link">Fonte: <a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener">models/overview</a> · <a href="https://platform.claude.com/docs/en/about-claude/models/introducing-claude-fable-5-and-claude-mythos-5" target="_blank" rel="noopener">introducing-claude-fable-5-and-claude-mythos-5</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/adaptive-thinking" target="_blank" rel="noopener">adaptive-thinking</a></p>
+
   <h3 id="a-modelos-escolha">Quando usar cada modelo</h3>
   <ul>
     <li><strong>Opus 4.8</strong> — tarefas complexas, raciocínio profundo e coding agêntico de longo horizonte. Comece com <code>effort: "xhigh"</code> para coding/agentes; é o padrão recomendado para os casos mais difíceis.</li>
@@ -1253,6 +1337,184 @@ data: {"type":"message_stop"}</code></pre>
   <p class="source-link">Fonte: <a href="https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons" target="_blank" rel="noopener">platform.claude.com/docs/en/build-with-claude/handling-stop-reasons</a></p>
 </section>
 
+<!-- ================= 6.1 SERVER-SIDE FALLBACK & FALLBACK CREDIT ================= -->
+<section class="chapter" id="a-server-side-fallback">
+  <h2>6.1. Fallback em recusas: parâmetro <code>fallbacks</code> e <span class="pill beta">Beta</span> Fallback credit</h2>
+  <p>Os classificadores de segurança do <strong>Claude Fable 5</strong> podem recusar um pedido — você recebe uma resposta HTTP 200 normal com <code>stop_reason: "refusal"</code> (ver <a href="#a-stop-reason">seção 6</a>), não um erro. O mesmo pedido costuma ser aceito por outro modelo. O <strong>server-side fallback</strong> automatiza esse retry <em>dentro de uma única chamada de API</em>: você lista até <strong>3 modelos de fallback</strong> no parâmetro <code>fallbacks</code> e, quando o modelo pedido recusa, a API roda o próximo da cadeia no mesmo request. Uma única resposta é devolvida, e o campo <code>model</code> de topo indica qual modelo efetivamente respondeu — o usuário recebe a resposta em um único round trip.</p>
+
+  <div class="callout warn"><strong><span class="pill beta">Beta</span> Header:</strong> requer <code>anthropic-beta: server-side-fallback-2026-06-01</code> (verificado em 2026-07-12). A data precisa ser <strong>exatamente</strong> essa; sob qualquer outro valor <code>server-side-fallback-*</code> a API rejeita <code>fallbacks</code> com erro <strong>400</strong>. Disponível na <strong>Claude API</strong> e na <strong>Claude Platform on AWS</strong>. <strong>Não disponível</strong> em Amazon Bedrock, Google Cloud nem Microsoft Foundry — nessas plataformas use o SDK middleware (client-side, ver abaixo). O parâmetro <code>fallbacks</code> também é <strong>rejeitado na Message Batches API</strong>: um item de batch que inclua <code>fallbacks</code> retorna resultado com erro por item.</div>
+
+  <h3>6.1.1. Regras da lista <code>fallbacks</code></h3>
+  <ul>
+    <li>Só é acionado quando o modelo pedido <strong>recusa por classificador de segurança</strong>. Rate limit, overload ou erro de servidor no modelo pedido são devolvidos como estão, <strong>sem</strong> disparar fallback.</li>
+    <li>As entradas são tentadas <strong>na ordem</strong>. Cada uma deve ser <strong>distinta</strong> das demais e do modelo pedido.</li>
+    <li>Cada entrada precisa ser um alvo permitido do modelo pedido — com o beta header ativo, essa lista é publicada em <code>allowed_fallback_models</code> na entrada do modelo no <a href="#a-models-api">Models API</a>.</li>
+    <li>Cada entrada nomeia um <code>model</code> e pode sobrescrever <code>max_tokens</code> e <code>thinking</code> só para aquela tentativa.</li>
+    <li>O request precisa ser válido como request direto para <strong>todos</strong> os modelos citados. Se um fallback não suportar um recurso usado no request, a API rejeita o request <em>de saída</em> (antes de tentar).</li>
+  </ul>
+
+  <h3>6.1.2. Exemplo de uso</h3>
+  <div class="code-group">
+    <div class="code-tabs" role="tablist">
+      <button class="code-tab" role="tab" data-lang="python" aria-selected="true">Python</button>
+      <button class="code-tab" role="tab" data-lang="typescript" aria-selected="false">TypeScript</button>
+      <button class="code-tab" role="tab" data-lang="bash" aria-selected="false">REST</button>
+    </div>
+    <div class="code-pane" data-lang="python" data-active="true">
+<pre><code class="language-python">response = client.beta.messages.create(
+    model="claude-fable-5",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Hello, Claude"}],
+    fallbacks=[{"model": "claude-opus-4-8"}],   # até 3 modelos, tentados em ordem
+    betas=["server-side-fallback-2026-06-01"],
+)
+
+# Uma entrada "fallback_message" em usage.iterations indica que um modelo de
+# fallback rodou; combine com stop_reason para confirmar que ele serviu a resposta.
+fallback_ran = any(
+    it.type == "fallback_message" for it in response.usage.iterations or []
+)
+served_by_fallback = fallback_ran and response.stop_reason != "refusal"
+
+print(response.model)              # modelo que efetivamente respondeu
+print(served_by_fallback)</code></pre>
+    </div>
+    <div class="code-pane" data-lang="typescript" data-active="false">
+<pre><code class="language-typescript">const response = await client.beta.messages.create({
+  model: "claude-fable-5",
+  max_tokens: 1024,
+  messages: [{ role: "user", content: "Hello, Claude" }],
+  fallbacks: [{ model: "claude-opus-4-8" }],   // até 3 modelos, tentados em ordem
+  betas: ["server-side-fallback-2026-06-01"]
+});
+
+const { stop_reason, model, usage } = response;
+const servedByFallback =
+  (usage.iterations ?? []).some((it) => it.type === "fallback_message") &&
+  stop_reason !== "refusal";
+
+console.log(model, servedByFallback);</code></pre>
+    </div>
+    <div class="code-pane" data-lang="bash" data-active="false">
+<pre><code class="language-bash">curl --fail-with-body -sS https://api.anthropic.com/v1/messages \
+  --header "x-api-key: $ANTHROPIC_API_KEY" \
+  --header "anthropic-version: 2023-06-01" \
+  --header "anthropic-beta: server-side-fallback-2026-06-01" \
+  --header "content-type: application/json" \
+  --data '{
+    "model": "claude-fable-5",
+    "max_tokens": 1024,
+    "fallbacks": [{"model": "claude-opus-4-8"}],
+    "messages": [{"role": "user", "content": "Hello, Claude"}]
+  }' | jq -r '.model'</code></pre>
+    </div>
+  </div>
+
+  <p>A resposta traz um bloco de conteúdo <code>fallback</code> marcando a fronteira entre modelos, e <code>usage.iterations</code> registra cada tentativa (tipo <code>message</code> para quem recusou, <code>fallback_message</code> para quem serviu). Numa recusa antes de qualquer output, o bloco <code>fallback</code> é o primeiro bloco de conteúdo:</p>
+<pre><code class="language-json">{
+  "id": "msg_01XFUDYJgAACzvnptvVoYEL",
+  "model": "claude-opus-4-8",
+  "content": [
+    { "type": "fallback", "from": { "model": "claude-fable-5" }, "to": { "model": "claude-opus-4-8" } },
+    { "type": "text", "text": "Hi! How can I help you today?" }
+  ],
+  "stop_reason": "end_turn",
+  "stop_details": null,
+  "usage": {
+    "input_tokens": 412,
+    "output_tokens": 264,
+    "iterations": [
+      { "type": "message",          "model": "claude-fable-5",  "input_tokens": 535, "output_tokens": 0 },
+      { "type": "fallback_message", "model": "claude-opus-4-8", "input_tokens": 412, "output_tokens": 264 }
+    ]
+  }
+}</code></pre>
+
+  <div class="table-wrap"><table>
+    <thead><tr><th>Campo</th><th>Descrição</th></tr></thead>
+    <tbody>
+      <tr><td><code>model</code> (topo)</td><td>Modelo que produziu a mensagem retornada — o pedido original ou um dos fallbacks.</td></tr>
+      <tr><td><code>content[].type: "fallback"</code></td><td>Marca cada ponto de transição entre modelos. <code>from.model</code> ecoa o modelo que você pediu quando o hop que recusa é o próprio modelo pedido; <code>to.model</code> é sempre o ID resolvido do modelo que continua.</td></tr>
+      <tr><td><code>usage.iterations[]</code></td><td>Registro por tentativa: <code>type: "message"</code> para tentativas que recusaram, <code>type: "fallback_message"</code> para a que serviu. Se toda a cadeia recusar, a resposta é a recusa do último modelo (com uma entrada <code>message</code> por hop anterior e um <code>fallback_message</code> para o último). Os tokens de cada tentativa <strong>não</strong> são somados no <code>usage</code> de topo — o topo descreve só a tentativa que gerou a resposta.</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout info"><strong>Billing:</strong> você paga apenas pelo modelo que efetivamente serve a resposta. Uma tentativa que recusou <strong>antes</strong> de gerar output custa nada e não consome rate limit. Cada tentativa que roda é cobrada às taxas do modelo que a rodou e conta no rate limit <em>daquele</em> modelo — <code>usage.iterations</code> é o registro por tentativa do que você paga. Se o fallback estiver sob rate limit/overload, a tentativa de fallback <strong>não</strong> é feita e a recusa anterior é devolvida; nesse caso <code>stop_details.recommended_model</code> pode sugerir um modelo para tentar diretamente (é uma dica, e é <code>null</code> quando não há recomendação). <strong>Dimensione o rate limit do modelo de fallback</strong> para o volume de recusas esperado, ou os fallbacks degradam para recusas sob carga.</div>
+
+  <div class="callout tip"><strong>Sticky routing:</strong> depois que uma conversa cai em fallback, a API registra por ~1h (escopo: sua organização) qual modelo serviu — via hash de conteúdo do prefixo da conversa + modelo (o conteúdo em si não é armazenado). Requests seguintes da mesma conversa que incluam <code>fallbacks</code> vão direto a esse modelo, sem tentar de novo o pedido original. Um turno servido por sticky routing <strong>não</strong> carrega bloco <code>fallback</code> (nenhum modelo recusou naquele turno): identifique-o pela entrada <code>fallback_message</code> em <code>usage.iterations</code>, pela ausência de entrada <code>message</code> do modelo pedido e pelo campo <code>model</code>. É best-effort (seu código deve tolerar o modelo original ser tentado de novo a qualquer momento) e, na release atual, só se aplica a requests <strong>não-streaming</strong>.</div>
+
+  <h3>6.1.3. Fallback credit — evitar pagar o prompt cache duas vezes</h3>
+  <p>Prompt caches são <strong>por modelo</strong>. Quando o Fable 5 recusa e você tenta em outro modelo, o prefixo já cacheado para o Fable 5 tem de ser <em>escrito do zero</em> no cache do novo modelo — e cache write custa mais que cache read. O <strong>fallback credit</strong> remove esse custo extra: a recusa carrega um token de crédito, você ecoa o token no retry, e o retry é cobrado como se a conversa já estivesse no novo modelo desde o início.</p>
+  <p>O server-side <code>fallbacks</code> e o SDK middleware já aplicam o fallback credit <strong>automaticamente</strong> — você só precisa disto quando implementa o retry você mesmo, sobre HTTP cru ou lógica de retry customizada.</p>
+
+  <div class="callout warn"><strong><span class="pill beta">Beta</span> Header:</strong> ative com <code>anthropic-beta: fallback-credit-2026-06-01</code> (verificado em 2026-07-12); o header <code>server-side-fallback-2026-06-01</code> também concede os mesmos campos. Diferente do server-side fallback, o fallback credit está disponível <strong>também</strong> em Amazon Bedrock, Google Cloud e Microsoft Foundry (além da Claude API e Claude Platform on AWS). Tokens retornados em resultados de <strong>Message Batches não podem ser redimidos</strong> — a redenção só vale para requests diretos à Messages API.</div>
+
+  <p><strong>Fluxo de redenção (retry manual):</strong></p>
+  <ol>
+    <li>Envie o request que pode ser recusado com o header <code>fallback-credit-2026-06-01</code>.</li>
+    <li>Na recusa, leia dois campos de <code>stop_details</code>: <code>fallback_credit_token</code> (string opaca que representa o crédito) e <code>fallback_has_prefill_claim</code> (boolean que indica a forma do corpo de retry). Ambos são <code>null</code> quando não há crédito.</li>
+    <li>Monte o retry a partir do <strong>corpo do request recusado</strong>, troque <code>model</code> para o modelo de fallback e adicione o token no parâmetro de topo <code>fallback_credit_token</code>. Envie com o mesmo header beta.</li>
+  </ol>
+
+  <div class="code-group">
+    <div class="code-tabs" role="tablist">
+      <button class="code-tab" role="tab" data-lang="python" aria-selected="true">Python</button>
+      <button class="code-tab" role="tab" data-lang="bash" aria-selected="false">REST</button>
+    </div>
+    <div class="code-pane" data-lang="python" data-active="true">
+<pre><code class="language-python">request = {"max_tokens": 1024, "messages": [{"role": "user", "content": "Hello, Claude"}]}
+
+resp = client.beta.messages.create(
+    model="claude-fable-5", betas=["fallback-credit-2026-06-01"], **request
+)
+
+details = resp.stop_details
+if resp.stop_reason == "refusal" and details and details.fallback_credit_token:
+    # Corpo do retry = corpo recusado, inalterado, + o token no topo.
+    body = request | {"fallback_credit_token": details.fallback_credit_token}
+    # Prefira a forma de continuação, a menos que a claim seja explicitamente False.
+    if details.fallback_has_prefill_claim is not False:
+        # Continua a resposta parcial: anexa 1 mensagem assistant ecoando o content.
+        body["messages"] = [*request["messages"],
+                            {"role": "assistant", "content": [b.model_dump() for b in resp.content]}]
+    resp = client.beta.messages.create(
+        model="claude-opus-4-8", betas=["fallback-credit-2026-06-01"], **body
+    )
+
+print(resp.model)</code></pre>
+    </div>
+    <div class="code-pane" data-lang="bash" data-active="false">
+<pre><code class="language-bash"># 1) Request inicial (pode ser recusado)
+response=$(curl --fail-with-body -sS https://api.anthropic.com/v1/messages \
+  -H "x-api-key: $ANTHROPIC_API_KEY" -H "anthropic-version: 2023-06-01" \
+  -H "anthropic-beta: fallback-credit-2026-06-01" -H "content-type: application/json" \
+  -d '{"model":"claude-fable-5","max_tokens":1024,
+       "messages":[{"role":"user","content":"Hello, Claude"}]}')
+
+# 2) A recusa carrega um token de uso único em stop_details
+token=$(jq -r '.stop_details.fallback_credit_token // empty' <<<"${response}")
+
+# 3) Retry no modelo de fallback com o token (mesmo corpo)
+if [[ -n "${token}" ]]; then
+  response=$(curl --fail-with-body -sS https://api.anthropic.com/v1/messages \
+    -H "x-api-key: $ANTHROPIC_API_KEY" -H "anthropic-version: 2023-06-01" \
+    -H "anthropic-beta: fallback-credit-2026-06-01" -H "content-type: application/json" \
+    -d "$(jq -n --arg t "${token}" '{model:"claude-opus-4-8",max_tokens:1024,
+         messages:[{"role":"user","content":"Hello, Claude"}],fallback_credit_token:$t}')")
+fi
+jq -c '{stop_reason, model}' <<<"${response}"</code></pre>
+    </div>
+  </div>
+
+  <div class="callout warn"><strong>Pegadinha — match exato:</strong> a redenção compara o retry com o request recusado. Os campos que <strong>moldam o prompt</strong> precisam bater <em>exatamente</em>: <code>system</code>, <code>messages</code>, <code>tools</code>, <code>tool_choice</code>, <code>thinking</code>, <code>cache_control</code> (e <code>output_config</code>, <code>mcp_servers</code>, <code>context_management</code>, <code>container</code> quando usados) — além dos mesmos <code>anthropic-beta</code> headers. O que <strong>não</strong> molda o prompt pode mudar: <code>model</code>, <code>max_tokens</code>, <code>stop_sequences</code>, <code>temperature</code>, <code>top_p</code>, <code>top_k</code>, <code>stream</code>, <code>metadata</code>, <code>service_tier</code>. A forma de continuação (<code>fallback_has_prefill_claim: true</code>) é a única exceção ao match de <code>messages</code>: acrescenta exatamente uma mensagem <code>assistant</code> no fim. <strong>Ao redimir, não remova os blocos <code>thinking</code>/<code>redacted_thinking</code></strong> dos turnos anteriores — o servidor os trata sozinho. (Só quando você <em>não</em> vai redimir crédito é que pode removê-los do histórico antes do retry; outros modelos os ignoram.) O token expira <strong>5 minutos</strong> após a recusa.</div>
+
+  <p><strong>Caso especial — recusa após server tools:</strong> se a recusa ocorre depois que <em>server tools</em> (web search, code execution etc.) já rodaram dentro do mesmo request, a API retorna a recusa em vez de avançar para um fallback. Com o header <code>fallback-credit-2026-06-01</code> ativo, essa recusa carrega um token de crédito redimível <strong>continuando a resposta parcial</strong> — preservando o trabalho de tool já executado (as tool calls concluídas não rodam nem são cobradas de novo). Aplica-se só a server tools iterando dentro de um único request; conversas com ferramentas <strong>client-side</strong> fazem fallback normalmente.</p>
+
+  <div class="callout tip"><strong>Dica:</strong> prefira o <code>fallbacks</code> server-side (Claude API / Claude Platform on AWS) ou o SDK middleware sempre que possível — ambos aplicam o fallback credit automaticamente, gerenciam os blocos <code>fallback</code>/<code>thinking</code> e fixam a conversa (via <code>BetaFallbackState</code>) no modelo que aceitou. Nunca configure os dois no mesmo request. Reserve o retry manual com <code>fallback-credit-2026-06-01</code> para HTTP cru ou lógica de retry customizada, inclusive em Bedrock, Google Cloud e Foundry, onde o server-side <code>fallbacks</code> não existe.</div>
+
+  <p class="source-link">Fonte: <a href="https://platform.claude.com/docs/en/build-with-claude/refusals-and-fallback" target="_blank" rel="noopener">platform.claude.com/docs/en/build-with-claude/refusals-and-fallback</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/fallback-credit" target="_blank" rel="noopener">/build-with-claude/fallback-credit</a></p>
+</section>
+
 <!-- ============================ 7. STRUCTURED OUTPUTS ============================ -->
 <section class="chapter" id="a-structured-outputs">
   <h2>7. Structured outputs <span class="pill ok">GA</span></h2>
@@ -1262,7 +1524,7 @@ data: {"type":"message_stop"}</code></pre>
     <li><strong>Strict tool use</strong> (<code>strict: true</code> em uma ferramenta): garante validação de schema nos nomes e inputs de ferramentas (como o Claude chama suas funções).</li>
   </ul>
 
-  <div class="callout info"><strong>Nota:</strong> GA na Claude API para Claude Opus 4.8, Sonnet 4.6 e Haiku 4.5 (entre outros). O antigo parâmetro beta <code>output_format</code> migrou para <code>output_config.format</code> e o header beta não é mais necessário — o caminho antigo segue funcionando por um período de transição.</div>
+  <div class="callout info"><strong>Nota:</strong> GA na Claude API para Claude Opus 4.8, Sonnet 5, Sonnet 4.6 e Haiku 4.5 (entre outros). O antigo parâmetro beta <code>output_format</code> migrou para <code>output_config.format</code> e o header beta não é mais necessário — o caminho antigo segue funcionando por um período de transição.</div>
 
   <h3 id="a-so-json">JSON outputs</h3>
   <p>Defina um JSON Schema e inclua-o em <code>output_config.format</code> com <code>type: "json_schema"</code>. A resposta vem como JSON válido em <code>response.content[0].text</code>.</p>
@@ -1375,13 +1637,13 @@ print(response.content[0].text)  # JSON válido garantido</code></pre>
 <section class="chapter" id="a-effort">
   <h2>8. Effort &amp; Fast mode</h2>
   <h3 id="a-effort-param">O parâmetro <code>effort</code></h3>
-  <p>O parâmetro <code>effort</code> (em <code>output_config.effort</code>) controla quão "disposto" o Claude está a gastar tokens, equilibrando completude e eficiência. Não exige header beta e afeta <strong>todos</strong> os tokens da resposta — texto, chamadas de ferramenta e o thinking (quando ativo). É suportado em Claude Opus 4.8 e Sonnet 4.6 (Haiku 4.5 não suporta).</p>
+  <p>O parâmetro <code>effort</code> (em <code>output_config.effort</code>) controla quão "disposto" o Claude está a gastar tokens, equilibrando completude e eficiência. Não exige header beta e afeta <strong>todos</strong> os tokens da resposta — texto, chamadas de ferramenta e o thinking (quando ativo). É suportado em <strong>Claude Fable 5, Opus 4.8, Opus 4.7, Sonnet 5</strong> e Sonnet 4.6 (entre outros), com <strong>padrão <code>high</code></strong> — o <strong>Haiku 4.5 não suporta</strong>. No <strong>Sonnet 5</strong> (modelo recomendado), <code>effort</code> é o controle primário da profundidade de raciocínio, com thinking adaptativo ligado por padrão.</p>
 
   <div class="table-wrap"><table>
     <thead><tr><th>Nível</th><th>Descrição</th><th>Disponível em</th></tr></thead>
     <tbody>
-      <tr><td><code>max</code></td><td>Capacidade máxima absoluta, sem restrição de tokens.</td><td>Opus 4.8, Sonnet 4.6</td></tr>
-      <tr><td><code>xhigh</code></td><td>Capacidade estendida para trabalho de longo horizonte (agentes/coding &gt; 30 min, budgets na casa dos milhões).</td><td>Apenas Opus 4.8</td></tr>
+      <tr><td><code>max</code></td><td>Capacidade máxima absoluta, sem restrição de tokens.</td><td>Fable 5, Opus 4.8/4.7/4.6, <strong>Sonnet 5</strong>, Sonnet 4.6</td></tr>
+      <tr><td><code>xhigh</code></td><td>Capacidade estendida para trabalho de longo horizonte (agentes/coding &gt; 30 min, budgets na casa dos milhões).</td><td>Fable 5, Opus 4.8/4.7, <strong>Sonnet 5</strong> (não em Sonnet 4.6)</td></tr>
       <tr><td><code>high</code></td><td>Alta capacidade. <strong>Equivale a não setar o parâmetro</strong> (é o padrão da API).</td><td>Todos os suportados</td></tr>
       <tr><td><code>medium</code></td><td>Equilíbrio com economia moderada de tokens.</td><td>Todos os suportados</td></tr>
       <tr><td><code>low</code></td><td>Mais eficiente; economia significativa com alguma redução de capacidade.</td><td>Todos os suportados</td></tr>
@@ -1427,7 +1689,7 @@ print(response.content[0].text)</code></pre>
 
   <div class="callout tip"><strong>Dica:</strong> para <strong>Opus 4.8</strong>, comece em <code>xhigh</code> para coding/agentes e use <code>high</code> como mínimo para cargas sensíveis a inteligência; reserve <code>max</code> para problemas de fronteira. Para <strong>Sonnet 4.6</strong>, defina <code>effort</code> explicitamente (recomendado <code>medium</code>) — caso contrário pode haver latência inesperada. Em <code>xhigh</code>/<code>max</code> no Opus 4.8, dê um <code>max_tokens</code> generoso (comece em 64k).</div>
 
-  <p><strong><code>effort</code> e thinking:</strong> em Opus 4.8 e Sonnet 4.6 o thinking é adaptativo (<code>thinking: {type: "adaptive"}</code>) e o <code>effort</code> é o controle recomendado da profundidade — no Opus 4.8, o thinking manual (<code>type: "enabled", budget_tokens</code>) <strong>não é mais suportado</strong>. <code>effort</code> também funciona sem thinking, controlando o gasto geral. (Detalhes de thinking na Parte B.)</p>
+  <p><strong><code>effort</code> e thinking:</strong> em Opus 4.8 e <strong>Sonnet 5</strong> o thinking é adaptativo e ligado por padrão, e o <code>effort</code> é o controle recomendado da profundidade — nesses dois modelos o thinking manual (<code>type: "enabled", budget_tokens</code>) <strong>retorna <code>400</code></strong> (use <code>thinking: {type: "adaptive"}</code> ou <code>{type: "disabled"}</code> para desligar). Em Sonnet 4.6 e Opus 4.6, <code>budget_tokens</code> ainda é aceito porém <strong>deprecado</strong>. <code>effort</code> também funciona sem thinking, controlando o gasto geral. (Detalhes de thinking na Parte B.)</p>
 
   <h3 id="a-fast-mode">Fast mode <span class="pill beta">Beta (research preview)</span></h3>
   <p>O fast mode entrega <strong>geração de tokens de saída até 2,5× mais rápida</strong> rodando o mesmo modelo com uma configuração de inferência mais veloz (mesmos pesos, mesma inteligência). Ativa-se com <code>speed: "fast"</code> e o header beta <code>fast-mode-2026-02-01</code>, via namespace <code>beta</code>. Suportado em Claude Opus 4.8.</p>
@@ -3175,7 +3437,7 @@ console.log(response.content);</code></pre>
     <tbody>
       <tr><td>Web search</td><td><code>web_search_20260209</code><br><code>web_search_20250305</code></td><td>Servidor</td><td><span class="pill ok">GA</span></td></tr>
       <tr><td>Web fetch</td><td><code>web_fetch_20260209</code><br><code>web_fetch_20250910</code></td><td>Servidor</td><td><span class="pill ok">GA</span></td></tr>
-      <tr><td>Code execution</td><td><code>code_execution_20260120</code><br><code>code_execution_20250825</code></td><td>Servidor</td><td><span class="pill ok">GA</span></td></tr>
+      <tr><td>Code execution</td><td><code>code_execution_20260521</code><br><code>code_execution_20260120</code><br><code>code_execution_20250825</code></td><td>Servidor</td><td><span class="pill ok">GA</span></td></tr>
       <tr><td>Advisor</td><td><code>advisor_20260301</code></td><td>Servidor</td><td><span class="pill beta">Beta</span> <code>advisor-tool-2026-03-01</code></td></tr>
       <tr><td>Tool search</td><td><code>tool_search_tool_regex_20251119</code><br><code>tool_search_tool_bm25_20251119</code></td><td>Servidor</td><td><span class="pill ok">GA</span></td></tr>
       <tr><td>MCP connector</td><td><code>mcp_toolset</code></td><td>Servidor</td><td><span class="pill beta">Beta</span> <code>mcp-client-2025-11-20</code></td></tr>
@@ -3371,12 +3633,12 @@ print(response)</code></pre>
 </section>
 
 <section id="c-code-execution-tool">
-  <h3>4.5. Code execution tool — <code>code_execution_20250825</code> / <code>code_execution_20260120</code></h3>
+  <h3>4.5. Code execution tool — <code>code_execution_20250825</code> / <code>code_execution_20260120</code> / <code>code_execution_20260521</code></h3>
   <p class="source-link">Fonte: <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool" target="_blank" rel="noopener">platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool</a></p>
   <p>Roda código Python e Bash em um contêiner isolado para analisar dados, gerar arquivos e iterar sobre soluções. É um primitivo central para agentes de alto desempenho — habilita a filtragem dinâmica de web search/web fetch. <span class="pill ok">GA</span> (server-side) desde <strong>2026-02-17</strong>, <strong>sem header beta</strong> (confirmado na doc oficial em 2026-06-10; o header legado <code>code-execution-2025-08-25</code> segue aceito por compatibilidade — alguns exemplos de SDK ainda o usam via namespace <code>beta</code>). <strong>Não</strong> é elegível para ZDR.</p>
   <div class="callout tip"><strong>Dica:</strong> code execution é <strong>gratuito quando usado com web search ou web fetch</strong> — incluindo <code>web_search_20260209</code> ou <code>web_fetch_20260209</code>, não há cobrança extra por chamadas de code execution além dos custos normais de token. As cobranças padrão de code execution aplicam-se quando essas ferramentas não estão presentes.</div>
-  <p>Versões: <code>code_execution_20250825</code> suporta comandos Bash e operações de arquivo e roda em todos os modelos atuais; <code>code_execution_20260120</code> adiciona persistência de estado do REPL e <a href="#c-programmatic">chamada programática de ferramentas</a> a partir do sandbox, disponível em <strong>Opus 4.5+ e Sonnet 4.5+</strong> (inclui Opus 4.8/4.7/4.6 e Sonnet 4.6; <em>não</em> Haiku 4.5). A legada <code>code_execution_20250522</code> é só Python.</p>
-  <div class="callout warn"><strong>Atenção:</strong> versões antigas não têm compatibilidade retroativa garantida com modelos novos. Use a versão que corresponde ao seu modelo. <strong>Haiku 4.5</strong> suporta apenas <code>code_execution_20250825</code>. Code execution está disponível na Claude API, Claude Platform on AWS e Microsoft Foundry; <em>não</em> está em Amazon Bedrock nem Vertex AI.</div>
+  <p>São <strong>três versões GA</strong> (nenhuma exige header beta — <q>All three tool versions are generally available and don't require an <code>anthropic-beta</code> header</q>), cada uma construída sobre a anterior: <code>code_execution_20250825</code> suporta comandos Bash e operações de arquivo e roda em todos os modelos da tabela; <code>code_execution_20260120</code> adiciona persistência de estado do REPL e <a href="#c-programmatic">chamada programática de ferramentas</a> a partir do sandbox; <code>code_execution_20260521</code> usa o <em>mesmo runtime</em> do <code>20260120</code>, diferindo só na <em>tool description</em>, que informa ao modelo o limite de 90 s de <em>wall-clock</em> por célula Python na chamada programática (célula que excede retorna <code>return_code</code> não-zero e status <code>detection_timeout</code>). A legada <code>code_execution_20250522</code> é só Python.</p>
+  <div class="callout warn"><strong>Atenção ao Haiku 4.5:</strong> a tabela oficial de compatibilidade lista as <strong>três versões</strong> (<code>20250825</code>, <code>20260120</code>, <code>20260521</code>) como <em>aceitas</em> pelo <code>claude-haiku-4-5</code> — o texto literal: <q>Claude Haiku 4.5 accepts the <code>code_execution_20260120</code> and <code>code_execution_20260521</code> tool types, but programmatic tool calling and the REPL state persistence that depends on it aren't available on it</q>. Ou seja, no Haiku 4.5 os tipos novos <strong>são aceitos</strong>, mas <strong>degradam</strong> para o comportamento do <code>20250825</code> (sem REPL persistence e sem chamada programática). Code execution está disponível na Claude API, Claude Platform on AWS e Microsoft Foundry; <em>não</em> está em Amazon Bedrock nem Vertex AI.</div>
   <p><strong>Contêiner (runtime):</strong> Python 3.11.12, Linux x86_64, <strong>5 GiB de RAM</strong>, <strong>5 GiB de disco</strong>, <strong>1 CPU</strong>. <strong>Sem acesso à internet</strong> e isolamento total do host. Contêineres expiram <strong>30 dias</strong> após a criação e são escopados ao workspace da API key. Bibliotecas pré-instaladas incluem pandas, numpy, scipy, scikit-learn, matplotlib, seaborn, pyarrow, openpyxl, pillow, python-pptx, python-docx, pypdf, pdfplumber, reportlab, sympy, sqlite, ripgrep, entre outras.</p>
   <p>Você pode <strong>reutilizar um contêiner</strong> entre requisições passando o <code>container</code> ID de uma resposta anterior, mantendo arquivos criados. Para enviar seus próprios arquivos, use a Files API (header <code>files-api-2025-04-14</code>) e referencie-os com um bloco <code>container_upload</code> (<code>{"type": "container_upload", "file_id": "file_abc123"}</code>).</p>
   <div class="code-group">
@@ -3562,7 +3824,7 @@ print(response)</code></pre>
   <h3>6.2. Chamada programática de ferramentas (programmatic tool calling)</h3>
   <p class="source-link">Fonte: <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/programmatic-tool-calling" target="_blank" rel="noopener">platform.claude.com/docs/en/agents-and-tools/tool-use/programmatic-tool-calling</a></p>
   <p>Permite ao Claude escrever código que chama suas ferramentas <strong>programaticamente dentro do sandbox de code execution</strong>, em vez de exigir round trips pelo modelo a cada invocação. Reduz latência em fluxos multi-ferramenta e diminui o consumo de tokens (o Claude filtra/processa dados antes de chegarem ao contexto). Ex.: checar conformidade de orçamento de 20 funcionários — em vez de 20 round trips com milhares de linhas no contexto, um único script roda as 20 consultas, filtra e retorna só quem excedeu o limite.</p>
-  <p>Requer <code>code_execution_20260120</code>, suportado em <strong>Opus 4.5+ e Sonnet 4.5+</strong> (inclui Opus 4.8/4.7/4.6 e Sonnet 4.6; não Haiku 4.5). <strong>Não</strong> é ZDR-elegível. Disponível na Claude API, Claude Platform on AWS e Microsoft Foundry (não em Bedrock/Vertex AI).</p>
+  <p>Requer <code>code_execution_20260120</code> (ou <code>20260521</code>), suportado em <strong>Opus 4.5+, Sonnet 4.5+, Sonnet 5 e Fable 5</strong>. O <strong>Haiku 4.5 aceita os tipos</strong>, mas a chamada programática de ferramentas <strong>não funciona</strong> nele (degrada para o comportamento do <code>20250825</code>). <strong>Não</strong> é ZDR-elegível. Disponível na Claude API, Claude Platform on AWS e Microsoft Foundry (não em Bedrock/Vertex AI).</p>
   <p>Marque a ferramenta com <code>"allowed_callers": ["code_execution_20260120"]</code> para torná-la chamável de dentro do sandbox. O bloco <code>tool_use</code> da resposta inclui um campo <code>caller</code> identificando quem chamou. Monitore <code>expires_at</code> do contêiner: se ele expira enquanto aguarda seu <code>tool_result</code>, o Claude pode tratar como timeout e refazer.</p>
 <pre><code class="language-json">{
   "type": "code_execution_20260120",
@@ -4162,6 +4424,7 @@ console.log(finalMessage.usage);</code></pre>
       <tr><td>Models — listar</td><td><code>GET /v1/models</code></td><td>Modelos disponíveis</td></tr>
       <tr><td>Models — recuperar</td><td><code>GET /v1/models/{model_id}</code></td><td>Metadados de um modelo</td></tr>
       <tr><td>Files (beta)</td><td><code>POST/GET/DELETE /v1/files</code></td><td>Upload/listagem/exclusão de arquivos</td></tr>
+      <tr><td>Skills (beta)</td><td><code>POST/GET/DELETE /v1/skills</code> e <code>/v1/skills/{id}/versions</code></td><td>CRUD de Skills custom e versionamento (header <code>skills-2025-10-02</code>)</td></tr>
       <tr><td>OAuth (WIF)</td><td><code>POST /v1/oauth/token</code></td><td>Troca de JWT por token de acesso</td></tr>
       <tr><td>Admin / Organização</td><td><code>/v1/organizations/*</code></td><td>Admin API (requer chave <code>sk-ant-admin...</code>)</td></tr>
       <tr><td>Compliance</td><td><code>/v1/compliance/*</code></td><td>Atividade, chats, arquivos (Claude Enterprise)</td></tr>
@@ -4525,6 +4788,228 @@ resp = client.beta.messages.create(
 )</code></pre>
     </div>
   </div>
+</section>
+
+<!-- ====================================================================== -->
+<!-- 7A. SKILLS API (REST CRUD) -->
+<!-- ====================================================================== -->
+<section class="ref chapter" id="d-rest-skills">
+  <h2>7A. Skills API (REST) — CRUD de Skills e versões <span class="pill beta">Beta</span></h2>
+  <p>A <strong>Skills API</strong> (<code>/v1/skills</code>) é a superfície REST para <strong>criar, listar, recuperar e deletar</strong> Skills custom programaticamente e gerenciar suas <strong>versões</strong>. É o mecanismo de upload por trás da gestão de Skills custom citada na <a href="#c-skills-guide">seção 7.2 (Parte C)</a> — lá o foco é <em>usar</em> Skills via o bloco <code>container.skills</code> na Messages API; aqui é o CRUD do recurso <code>Skill</code> em si. Todas as chamadas a <code>/v1/skills*</code> exigem o header beta <code>anthropic-beta: skills-2025-10-02</code>.</p>
+  <p class="source-link">Fonte: <a href="https://platform.claude.com/docs/en/api/skills/create-skill" target="_blank" rel="noopener">platform.claude.com/docs/en/api/skills/create-skill</a></p>
+
+  <div class="callout info"><strong>Header beta obrigatório:</strong> toda requisição a <code>/v1/skills*</code> precisa de <code>anthropic-beta: skills-2025-10-02</code> (além do padrão <code>anthropic-version: 2023-06-01</code> e <code>x-api-key</code>). Os endpoints de <strong>criação</strong> (Skill e Skill Version) usam <code>Content-Type: multipart/form-data</code> e enviam os arquivos da Skill (SKILL.md + recursos) no campo <code>files</code>.</div>
+
+  <h3 id="d-rest-skills-crud">7A.1. CRUD de Skills</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Operação</th><th>Método &amp; caminho</th><th>Corpo / query</th><th>Descrição</th></tr></thead>
+    <tbody>
+      <tr><td>Criar Skill</td><td><code>POST /v1/skills</code></td><td><code>multipart/form-data</code>, campo <code>files</code></td><td>Cria uma Skill custom a partir dos arquivos enviados (SKILL.md + recursos)</td></tr>
+      <tr><td>Listar Skills</td><td><code>GET /v1/skills</code></td><td>query: <code>limit</code>, <code>page</code>, <code>source</code></td><td>Lista Skills, paginado</td></tr>
+      <tr><td>Recuperar Skill</td><td><code>GET /v1/skills/{skill_id}</code></td><td>path: <code>skill_id</code></td><td>Metadados de uma Skill específica</td></tr>
+      <tr><td>Deletar Skill</td><td><code>DELETE /v1/skills/{skill_id}</code></td><td>path: <code>skill_id</code></td><td>Remove a Skill</td></tr>
+    </tbody>
+  </table></div>
+
+  <p><strong>Objeto <code>Skill</code></strong> (retornado por criar, recuperar e em cada item de listar):</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Descrição</th></tr></thead>
+    <tbody>
+      <tr><td><code>id</code></td><td>string</td><td>Identificador único, ex. <code>skill_01JAbc…</code> (o formato/tamanho de IDs pode mudar)</td></tr>
+      <tr><td><code>type</code></td><td><code>"skill"</code></td><td>Tipo do objeto (sempre <code>"skill"</code>)</td></tr>
+      <tr><td><code>display_title</code></td><td>string</td><td>Rótulo legível para humanos — <strong>não</strong> é incluído no prompt enviado ao modelo</td></tr>
+      <tr><td><code>latest_version</code></td><td>string</td><td>Identificador (timestamp epoch, ex. <code>"1759178010641129"</code>) da versão mais recente</td></tr>
+      <tr><td><code>source</code></td><td><code>"custom"</code> · <code>"anthropic"</code></td><td><code>custom</code>: criada pelo usuário; <code>anthropic</code>: mantida pela Anthropic (ex. <code>pptx</code>, <code>xlsx</code>, <code>docx</code>, <code>pdf</code>)</td></tr>
+      <tr><td><code>created_at</code> · <code>updated_at</code></td><td>string (ISO 8601)</td><td>Timestamps de criação / última atualização</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="code-group">
+    <div class="code-tabs" role="tablist">
+      <button class="code-tab" role="tab" data-lang="bash" aria-selected="true">REST — CRUD</button>
+      <button class="code-tab" role="tab" data-lang="python" aria-selected="false">Python (SDK beta)</button>
+    </div>
+    <div class="code-pane" data-lang="bash" data-active="true">
+<pre><code class="language-bash"># Criar Skill custom (multipart, campo "files" repetido por arquivo)
+curl https://api.anthropic.com/v1/skills \
+  -H "x-api-key: $ANTHROPIC_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "anthropic-beta: skills-2025-10-02" \
+  -F "files=@./minha-skill/SKILL.md" \
+  -F "files=@./minha-skill/scripts/gerar.py"
+
+# Listar Skills (paginado; filtrando por source)
+curl "https://api.anthropic.com/v1/skills?limit=20&source=custom" \
+  -H "x-api-key: $ANTHROPIC_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "anthropic-beta: skills-2025-10-02"
+
+# Recuperar uma Skill
+curl "https://api.anthropic.com/v1/skills/$SKILL_ID" \
+  -H "x-api-key: $ANTHROPIC_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "anthropic-beta: skills-2025-10-02"
+
+# Deletar uma Skill
+curl -X DELETE "https://api.anthropic.com/v1/skills/$SKILL_ID" \
+  -H "x-api-key: $ANTHROPIC_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "anthropic-beta: skills-2025-10-02"</code></pre>
+    </div>
+    <div class="code-pane" data-lang="python" data-active="false">
+<pre><code class="language-python"># O exemplo canônico e verificável é o curl (multipart). Os nomes exatos
+# dos métodos do SDK Python para Skills devem ser conferidos na referência
+# do SDK anthropic; o padrão segue o namespace client.beta.* usado por Files.
+import requests, os
+
+BASE = "https://api.anthropic.com/v1/skills"
+HEADERS = {
+    "x-api-key": os.environ["ANTHROPIC_API_KEY"],
+    "anthropic-version": "2023-06-01",
+    "anthropic-beta": "skills-2025-10-02",
+}
+
+# Criar (multipart: um campo "files" por arquivo)
+files = [
+    ("files", ("SKILL.md", open("minha-skill/SKILL.md", "rb"))),
+    ("files", ("gerar.py", open("minha-skill/scripts/gerar.py", "rb"))),
+]
+skill = requests.post(BASE, headers=HEADERS, files=files).json()
+print(skill["id"], skill["display_title"], skill["latest_version"], skill["source"])
+
+# Listar (paginação por token next_page)
+page = requests.get(BASE, headers=HEADERS,
+                    params={"limit": 20, "source": "custom"}).json()
+for s in page["data"]:
+    print(s["id"], s["display_title"], s["latest_version"])
+# page["has_more"] / page["next_page"] controlam a paginação (page=&lt;next_page&gt;)
+
+# Recuperar / Deletar
+requests.get(f"{BASE}/{skill['id']}", headers=HEADERS)
+requests.delete(f"{BASE}/{skill['id']}", headers=HEADERS)</code></pre>
+    </div>
+  </div>
+  <div class="callout info"><strong>Sobre o exemplo da doc:</strong> a referência oficial mostra a forma simplificada <code>-F files='["Example data"]'</code> apenas para ilustrar o campo — no uso real, envie os bytes de cada arquivo com <code>-F "files=@caminho/arquivo"</code> (um <code>files</code> por arquivo), incluindo o <code>SKILL.md</code>.</div>
+
+  <details><summary>Resposta JSON — <code>POST /v1/skills</code></summary>
+<pre><code class="language-json">{
+  "id": "skill_01JAbcdefghijklmnopqrstuvw",
+  "created_at": "2024-10-30T23:58:27.427722Z",
+  "display_title": "My Custom Skill",
+  "latest_version": "1759178010641129",
+  "source": "custom",
+  "type": "skill",
+  "updated_at": "2024-10-30T23:58:27.427722Z"
+}</code></pre>
+  </details>
+  <details><summary>Resposta JSON — <code>GET /v1/skills</code> (paginada)</summary>
+<pre><code class="language-json">{
+  "data": [
+    {
+      "id": "skill_01JAbcdefghijklmnopqrstuvw",
+      "created_at": "2024-10-30T23:58:27.427722Z",
+      "display_title": "My Custom Skill",
+      "latest_version": "1759178010641129",
+      "source": "custom",
+      "type": "skill",
+      "updated_at": "2024-10-30T23:58:27.427722Z"
+    }
+  ],
+  "has_more": true,
+  "next_page": "page_MjAyNS0wNS0xNFQwMDowMDowMFo="
+}</code></pre>
+  </details>
+  <details><summary>Resposta JSON — <code>DELETE /v1/skills/{skill_id}</code></summary>
+<pre><code class="language-json">{
+  "id": "skill_01JAbcdefghijklmnopqrstuvw",
+  "type": "skill_deleted"
+}</code></pre>
+  </details>
+
+  <h3 id="d-rest-skills-versions">7A.2. Skill Versions</h3>
+  <p>Cada Skill tem uma ou mais <strong>versões</strong>, identificadas por um <strong>timestamp Unix epoch</strong> (ex. <code>"1759178010641129"</code>) — não por SemVer. Ao criar uma versão, <code>name</code> e <code>description</code> são <strong>extraídos do <code>SKILL.md</code></strong> enviado, e <code>directory</code> é o <strong>nome do diretório de topo</strong> extraído dos arquivos do upload.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Operação</th><th>Método &amp; caminho</th><th>Corpo / query</th><th>Descrição</th></tr></thead>
+    <tbody>
+      <tr><td>Criar versão</td><td><code>POST /v1/skills/{skill_id}/versions</code></td><td><code>multipart/form-data</code>, campo <code>files</code></td><td>Publica uma nova versão dos arquivos da Skill</td></tr>
+      <tr><td>Listar versões</td><td><code>GET /v1/skills/{skill_id}/versions</code></td><td>query: <code>limit</code> (1–1000, default 20), <code>page</code></td><td>Lista versões da Skill, paginado</td></tr>
+      <tr><td>Recuperar versão</td><td><code>GET /v1/skills/{skill_id}/versions/{version}</code></td><td>path: <code>skill_id</code>, <code>version</code></td><td>Metadados de uma versão específica</td></tr>
+      <tr><td>Deletar versão</td><td><code>DELETE /v1/skills/{skill_id}/versions/{version}</code></td><td>path: <code>skill_id</code>, <code>version</code></td><td>Remove uma versão específica</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout warn"><strong>Pegadinha — o <code>limit</code> difere entre os dois "listar":</strong> em <code>GET /v1/skills</code> o <code>limit</code> vai até <strong>100</strong>; em <code>GET /v1/skills/{skill_id}/versions</code> vai de <strong>1 a 1000</strong>. Ambos têm <strong>default 20</strong> e paginam pelo token <code>next_page</code> (passado como <code>page</code> na próxima chamada). Não presuma o mesmo teto nos dois endpoints.</div>
+
+  <p><strong>Objeto <code>SkillVersion</code></strong>:</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Descrição</th></tr></thead>
+    <tbody>
+      <tr><td><code>id</code></td><td>string</td><td>Identificador único da versão, ex. <code>skillver_01JAbc…</code></td></tr>
+      <tr><td><code>type</code></td><td><code>"skill_version"</code></td><td>Tipo do objeto (sempre <code>"skill_version"</code>)</td></tr>
+      <tr><td><code>skill_id</code></td><td>string</td><td>Skill a que esta versão pertence</td></tr>
+      <tr><td><code>version</code></td><td>string</td><td>Timestamp epoch da versão, ex. <code>"1759178010641129"</code></td></tr>
+      <tr><td><code>name</code></td><td>string</td><td>Nome legível, extraído do <code>SKILL.md</code></td></tr>
+      <tr><td><code>description</code></td><td>string</td><td>Descrição extraída do <code>SKILL.md</code></td></tr>
+      <tr><td><code>directory</code></td><td>string</td><td>Nome do diretório de topo extraído dos arquivos enviados</td></tr>
+      <tr><td><code>created_at</code></td><td>string (ISO 8601)</td><td>Timestamp de criação da versão</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="code-group">
+    <div class="code-tabs" role="tablist">
+      <button class="code-tab" role="tab" data-lang="bash" aria-selected="true">REST</button>
+    </div>
+    <div class="code-pane" data-lang="bash" data-active="true">
+<pre><code class="language-bash"># Criar nova versão de uma Skill existente
+curl "https://api.anthropic.com/v1/skills/$SKILL_ID/versions" \
+  -H "x-api-key: $ANTHROPIC_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "anthropic-beta: skills-2025-10-02" \
+  -F "files=@./minha-skill/SKILL.md" \
+  -F "files=@./minha-skill/scripts/gerar.py"
+
+# Listar versões (limit até 1000 aqui)
+curl "https://api.anthropic.com/v1/skills/$SKILL_ID/versions?limit=50" \
+  -H "x-api-key: $ANTHROPIC_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "anthropic-beta: skills-2025-10-02"
+
+# Recuperar versão específica
+curl "https://api.anthropic.com/v1/skills/$SKILL_ID/versions/$VERSION" \
+  -H "x-api-key: $ANTHROPIC_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "anthropic-beta: skills-2025-10-02"
+
+# Deletar versão específica
+curl -X DELETE "https://api.anthropic.com/v1/skills/$SKILL_ID/versions/$VERSION" \
+  -H "x-api-key: $ANTHROPIC_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "anthropic-beta: skills-2025-10-02"</code></pre>
+    </div>
+  </div>
+
+  <details><summary>Resposta JSON — <code>POST /v1/skills/{skill_id}/versions</code></summary>
+<pre><code class="language-json">{
+  "id": "skillver_01JAbcdefghijklmnopqrstuvw",
+  "created_at": "2024-10-30T23:58:27.427722Z",
+  "description": "A custom skill for doing something useful",
+  "directory": "my-skill",
+  "name": "my-skill",
+  "skill_id": "skill_01JAbcdefghijklmnopqrstuvw",
+  "type": "skill_version",
+  "version": "1759178010641129"
+}</code></pre>
+  </details>
+  <details><summary>Resposta JSON — <code>DELETE /v1/skills/{skill_id}/versions/{version}</code></summary>
+<pre><code class="language-json">{
+  "id": "1759178010641129",
+  "type": "skill_version_deleted"
+}</code></pre>
+  </details>
+
+  <div class="callout info"><strong>Detalhe da doc oficial:</strong> nos <em>exemplos de resposta</em> das páginas de referência o campo <code>type</code> aparece renderizado como <code>"type"</code> (placeholder da doc). O <strong>valor real</strong> é o documentado na especificação do campo — <code>"skill"</code>, <code>"skill_deleted"</code>, <code>"skill_version"</code> e <code>"skill_version_deleted"</code>, respectivamente. Trate como enum fechado por operação.</div>
+
+  <div class="callout tip"><strong>Fluxo típico de gestão programática:</strong> (1) <code>POST /v1/skills</code> com o upload inicial cria o recurso <code>Skill</code> <em>e</em> sua primeira versão (o <code>latest_version</code> retornado é o epoch dessa versão); (2) a cada atualização dos arquivos, <code>POST /v1/skills/{skill_id}/versions</code> publica um novo epoch, e o <code>latest_version</code> da Skill avança; (3) na Messages API você referencia a Skill por <code>skill_id</code> + <code>version</code> (epoch específico ou <code>latest</code>) no bloco <code>container.skills</code> — ver <a href="#c-skills-guide">seção 7.2 (Parte C)</a>. Fixe um epoch em produção para builds reproduzíveis; use <code>latest</code> só em dev.</div>
 </section>
 
 <!-- ====================================================================== -->
@@ -6411,6 +6896,16 @@ const msg = await bedrock.messages.create({
       em <strong>24/07/2026</strong>. Confirmado: Fable 5 = GA porém <strong>temporariamente indisponível para
       usuários regulares</strong>; Sonnet 4.6 = 128k e Haiku 4.5 = 64k de saída máxima. Fonte:
       <code>platform.claude.com/docs/.../model-deprecations</code>.</li>
+    <li><strong>2026-07-12 (varredura de freshness)</strong> — <code>effort</code>: tabela e intro
+      corrigidas para refletir o suporte real (<strong>Fable 5 / Opus 4.8 / 4.7 / Sonnet 5 (+ 4.6)</strong>,
+      default <code>high</code>; <strong>Haiku 4.5 não suporta</strong>; <code>max</code> em
+      Fable 5/Opus 4.8-4.6/Sonnet 5-4.6; <code>xhigh</code> em Fable 5/Opus 4.8-4.7/Sonnet 5, não em Sonnet 4.6).
+      Combinação <code>effort</code>+<code>thinking</code> agora inclui <strong>Sonnet 5</strong> (erro 400).
+      Adicionado <code>code_execution_20260521</code> às tabelas de tipos e à §4.5, com nota literal de que o
+      <strong>Haiku 4.5 aceita</strong> os tipos <code>20260120</code>/<code>20260521</code> mas
+      <strong>não</strong> executa <em>programmatic tool calling</em> nem persistência de estado do REPL.
+      <em>Structured output</em> GA passa a listar <strong>Sonnet 5</strong>. Versões: <code>anthropic</code>
+      0.116.0 (Python). Fonte: <code>platform.claude.com/docs</code> (effort, code-execution, structured-outputs).</li>
     <li><strong>2026-07-05 (varredura de freshness)</strong> — <strong>Claude Sonnet 5</strong>
       (<code>claude-sonnet-5</code>) lançado em <strong>GA em 2026-06-30</strong>: passa a ser o Sonnet
       recomendado e default de Free/Pro no claude.ai; 1M ctx, 128k saída, adaptive thinking ligado por
@@ -6428,7 +6923,7 @@ const msg = await bedrock.messages.create({
   </ul>
   <p style="color:var(--c-fg-muted);font-size:13px">Fontes primárias: <code>platform.claude.com/docs</code>
   (export <code>llms-full.txt</code>) e <code>github.com/anthropics/anthropic-cookbook</code>.
-  Verificado em 2026-07-05 — para fatos perecíveis (modelos, datas, preços, limites, headers beta),
+  Verificado em 2026-07-12 — para fatos perecíveis (modelos, datas, preços, limites, headers beta),
   consulte sempre a fonte oficial.</p>
 </section>
   </main>

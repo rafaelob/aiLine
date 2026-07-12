@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Estado, Contexto &amp; Memória — Núcleo agnóstico de agentes</title>
 <meta name="description" content="Estado de orquestração agnóstico de provider: estado durável vs payload de provider, ledger canônico, modos provider-managed/app-managed/híbrido, reasoning e thinking state por provider, asset registry, contrato de compaction (perdas aceitáveis vs proibidas) e testes de memória. Complementa os guias de compactação e token counting sem duplicá-los." />
-<meta name="last-checked" content="2026-06-11" />
+<meta name="last-checked" content="2026-07-12" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -287,7 +287,7 @@
   <div class="header-row">
     <div class="brand">Estado, Contexto &amp; Memória <small>Núcleo agnóstico de agentes</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-06-11</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-12</strong></span>
       <span class="badge da">Núcleo · agnóstico de provider</span>
       <span class="badge info">Conceitual + referência</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
@@ -1041,6 +1041,115 @@ ledger.ingest(response.output, usage=response.usage)</code></pre>
       </div>
     </section>
 
+    <section id="memory-tool-anthropic">
+      <h2>8b.1 Memory tool (Anthropic) — mecânica concreta</h2>
+      <p>
+        O <strong>memory tool</strong> é um Anthropic-provided tool <strong>client-side</strong>: Claude
+        solicita operações de arquivo, e a aplicação as executa contra o storage escolhido (disco, banco,
+        cloud storage, arquivos cifrados). Não é gestão de estado server-side do provider — é a
+        <strong>camada (i)</strong> do callout <a href="#zonas-canonicas">"Três camadas distintas" (§8b)</a>:
+        persistência <strong>cross-sessão</strong> app-managed com protocolo de arquivo padronizado,
+        desenhado para "just-in-time context retrieval". Em vez de carregar tudo antecipadamente, Claude
+        grava o que aprende em arquivos fora da janela de contexto e os lê de volta sob demanda —
+        mantendo o contexto ativo focado na tarefa atual.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Campo</th><th>Valor exato</th><th>Nota</th></tr></thead>
+        <tbody>
+          <tr><td>Tool <code>type</code></td><td><code>memory_20250818</code></td><td>Entrada completa em <code>tools</code>: <code>{"type": "memory_20250818", "name": "memory"}</code> — "the entire configuration". Sem input schema (é Anthropic-provided tool).</td></tr>
+          <tr><td>Tool <code>name</code></td><td><code>memory</code></td><td>O <code>name</code> <em>deve</em> ser exatamente <code>memory</code>.</td></tr>
+          <tr><td>Beta header</td><td><span class="pill ok">Nenhum</span> para o memory tool isolado</td><td>O memory tool é <strong>GA</strong> ("generally available") na Messages API. O header <code>anthropic-beta: context-management-2025-06-27</code> só é exigido pelo <strong>context editing</strong> (<code>clear_tool_uses_20250919</code> / <code>clear_thinking_20251015</code>), não pelo memory tool.</td></tr>
+          <tr><td>Diretório raiz</td><td><code>/memories</code></td><td>Prefixo lógico que o handler mapeia para storage real (ex.: diretório por usuário, chave em DB). Todas as operações devem ser restritas a essa raiz.</td></tr>
+          <tr><td>Modelos suportados</td><td>Todos os modelos <strong>Claude 4 e posteriores</strong></td><td>Não disponível em modelos pré-Claude-4.</td></tr>
+          <tr><td>ZDR</td><td><span class="pill ok">Elegível</span></td><td>Em organizações com Zero Data Retention, dados enviados por esta feature não são retidos após a resposta da API.</td></tr>
+        </tbody>
+      </table></div>
+      <p><strong>Comandos de arquivo (seis, todos client-side):</strong> as strings de retorno abaixo são as
+      <em>recomendadas</em> pela doc — Claude lê qualquer texto que o <code>tool_result</code> contiver, então
+      o handler pode retornar strings diferentes se a aplicação exigir.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Comando</th><th>Parâmetros</th><th>Retorno de sucesso / comportamento</th></tr></thead>
+        <tbody>
+          <tr><td><code>view</code></td><td><code>path</code>; opcional <code>view_range: [start, end]</code> (<code>[start, -1]</code> = até o fim do arquivo)</td><td>Diretório: listagem até <strong>2 níveis</strong>, exclui itens ocultos (iniciados com <code>.</code>) e <code>node_modules</code>, tamanhos legíveis (ex.: <code>5.5K</code>, <code>1.2M</code>), separador <em>tab</em>. Arquivo: conteúdo com números de linha — <strong>largura 6, alinhado à direita com espaços, separador tab, 1-indexed</strong>. A tool description também diz que <code>view</code> exibe imagens (<code>.jpg</code>/<code>.jpeg</code>/<code>.png</code>) e trunca a visão de texto de arquivos com mais de <strong>16.000 caracteres</strong>. Arquivos com mais de <strong>999.999 linhas</strong> retornam <code>"File {path} exceeds maximum line limit of 999,999 lines."</code>. O primeiro <code>view</code> de <code>/memories</code> num store vazio <strong>não</strong> é erro.</td></tr>
+          <tr><td><code>create</code></td><td><code>path</code>, <code>file_text</code></td><td><code>"File created successfully at: {path}"</code>. A tool description diz que <code>create</code> <em>"creates or overwrites"</em> — o comportamento de referência retorna <code>"Error: File {path} already exists"</code> em path existente, mas sobrescrever (upsert) é escolha de implementação válida.</td></tr>
+          <tr><td><code>str_replace</code></td><td><code>path</code>, <code>old_str</code>, <code>new_str</code> (opcional — omitido = deleta o trecho sem substituição)</td><td><code>"The memory file has been edited."</code> seguido de um snippet com números de linha. Erro se <code>old_str</code> não aparecer <em>verbatim</em> (<code>"No replacement was performed, old_str ... did not appear verbatim in {path}."</code>) ou aparecer em <strong>múltiplas ocorrências</strong> (retorna as linhas e pede unicidade).</td></tr>
+          <tr><td><code>insert</code></td><td><code>path</code>, <code>insert_line</code>, <code>insert_text</code></td><td><code>"The file {path} has been edited."</code> <code>insert_text</code> é inserido <strong>após</strong> a linha <code>insert_line</code>; <code>0</code> insere no início do arquivo. <code>insert_line</code> fora de <code>[0, n_lines]</code> é erro.</td></tr>
+          <tr><td><code>delete</code></td><td><code>path</code></td><td><code>"Successfully deleted {path}"</code>. Remove arquivo ou diretório (recursivo). A tool description informa a Claude que ele <strong>não pode deletar a raiz <code>/memories</code></strong> — o handler deve rejeitar essa chamada.</td></tr>
+          <tr><td><code>rename</code></td><td><code>old_path</code>, <code>new_path</code></td><td><code>"Successfully renamed {old_path} to {new_path}"</code>. Move/renomeia; erro se o destino já existir (<strong>não sobrescreve</strong>: <code>"Error: The destination {new_path} already exists"</code>). A raiz <code>/memories</code> também não pode ser renomeada.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout danger">
+        <strong>Path traversal é responsabilidade 100% da aplicação.</strong> Um path malicioso como
+        <code>/memories/../../secrets.env</code> pode escapar do diretório de memória. O handler deve
+        validar <em>todo</em> path em <em>todo</em> comando: exigir que comece com <code>/memories</code>,
+        resolver para forma canônica e verificar que permanece dentro da raiz, rejeitar sequências
+        <code>../</code>/<code>..\</code> e variantes URL-encoded (<code>%2e%2e%2f</code>). Use utilitários
+        nativos de path da linguagem (ex.: <code>pathlib.Path.resolve()</code> + <code>relative_to()</code>
+        em Python). Erros voltam via <code>tool_result</code> com <code>is_error: true</code> e a mensagem
+        em <code>content</code>.
+      </div>
+      <p>
+        <strong>Protocolo de memória injetado automaticamente.</strong> Quando o memory tool está presente em
+        <code>tools</code>, a API adiciona sozinha ao system prompt o protocolo abaixo — você <em>não</em>
+        precisa enviá-lo:
+      </p>
+      <pre><code>IMPORTANT: ALWAYS VIEW YOUR MEMORY DIRECTORY BEFORE DOING ANYTHING ELSE.
+MEMORY PROTOCOL:
+1. Use the `view` command of your `memory` tool to check for earlier progress.
+2. ... (work on the task) ...
+   - As you make progress, record status / progress / thoughts etc in your memory.
+ASSUME INTERRUPTION: Your context window might be reset at any moment, so you risk
+losing any progress that is not recorded in your memory directory.</code></pre>
+      <p>
+        <strong>Combinação com context editing (aí sim o beta header).</strong> O valor real para agentes de
+        longa duração aparece ao parear o memory tool com <strong>context editing</strong>
+        (<code>anthropic-beta: context-management-2025-06-27</code>). A estratégia
+        <code>clear_tool_uses_20250919</code> limpa <code>tool_result</code>s antigos server-side quando o
+        contexto ultrapassa o <code>trigger</code> configurado (mantendo os <code>keep</code> pares mais
+        recentes — FIFO). Ao <em>aproximar-se</em> desse threshold, Claude recebe um
+        <strong>aviso automático</strong> ("an automatic warning to preserve important information") e pode
+        gravar em <code>/memories</code> os resultados/decisões importantes <em>antes</em> de serem apagados
+        do prompt. Assim, workflows ultrapassam o limite de contexto sem perder estado. O contrato completo
+        de <code>context_management</code> (parâmetros, defaults, resposta) está em
+        <a href="#context-editing-anthropic">§10.1</a>.
+      </p>
+      <pre><code>// tools[] mínimo para o memory tool isolado (sem beta header)
+{"type": "memory_20250818", "name": "memory"}
+
+// combinado com context editing (requer anthropic-beta: context-management-2025-06-27)
+{
+  "tools": [{"type": "memory_20250818", "name": "memory"}],
+  "context_management": {
+    "edits": [{"type": "clear_tool_uses_20250919"}]
+  }
+}</code></pre>
+      <p>
+        O memory tool também combina com <strong>compaction</strong> server-side pelo mesmo motivo:
+        compaction resume a conversa inteira no servidor quando ela se aproxima do limite da janela;
+        o memory preserva a informação que precisa <em>sobreviver</em> ao resumo. Para agentes de longa
+        duração, a doc recomenda usar os dois juntos.
+      </p>
+      <div class="callout tip">
+        <strong>Caso de uso canônico: sessões multi-turno de desenvolvimento de software.</strong>
+        A <em>sessão inicializadora</em> monta os arquivos de memória <strong>antes</strong> do trabalho
+        substantivo: um log de progresso, um checklist de features e a referência a um script de setup.
+        Cada sessão seguinte abre lendo esses arquivos — restaura o estado do projeto sem re-explorar a base
+        de código nem refazer decisões. Antes de encerrar, cada sessão atualiza o log. <strong>Regra-chave:
+        marcar uma feature como concluída somente após verificação end-to-end, não quando o código é
+        escrito</strong> — mantém o log confiável entre sessões (padrão documentado em "Effective harnesses
+        for long-running agents", Anthropic engineering).
+      </div>
+      <p>
+        Esta é a <strong>camada (i)</strong> do callout <a href="#zonas-canonicas">"Três camadas distintas"
+        (§8b)</a>: memory tool = persistência cross-sessão client-side em <code>/memories</code>. Não
+        confundir com <strong>context-editing</strong> (camada ii: FIFO server-side sobre
+        <code>tool_result</code>/<code>thinking</code>, que <em>não</em> atinge blocos <code>role=user</code>
+        transitórios) nem com o <strong>TTL de projeção</strong> do <code>hot_followup</code> ledger
+        (camada iii).
+      </p>
+      <div class="source-link">Fontes oficiais: <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool" target="_blank" rel="noopener">Anthropic — Memory tool</a> · <a href="https://platform.claude.com/docs/en/docs/build-with-claude/context-editing" target="_blank" rel="noopener">Anthropic — Context editing</a> (verificado 2026-07-12).</div>
+    </section>
+
     <!-- ===================== 8c ===================== -->
     <section id="agent-as-tool-multiturno">
       <h2>8c. Agent-as-tool multi-turno &amp; continuidade conversacional</h2>
@@ -1467,6 +1576,139 @@ closure_marker {
         Os dois são complementares: a estratégia deve sempre produzir um <code>compaction_item</code> que
         satisfaça este contrato.
       </div>
+
+      <h3 id="context-editing-anthropic">10.1 — Context editing (Anthropic): limpeza server-side de tool results e thinking <span class="pill beta">Beta</span></h3>
+      <p>
+        A Anthropic oferece uma implementação <strong>server-side</strong> deste mesmo contrato de
+        compaction: o parâmetro <code>context_management</code> na Messages API aplica edições automáticas
+        ao prompt <em>antes</em> de ele chegar ao modelo, sem que o estado do lado do cliente (o ledger)
+        precise ser alterado. O histórico completo continua existindo na aplicação — só a projeção enviada
+        ao modelo é reduzida. É o exemplo concreto de uma "estratégia que produz um
+        <code>compaction_item</code>-equivalente" administrada pelo próprio provider, satisfazendo o
+        contrato de §10 e o gate de §11.
+      </p>
+      <div class="callout warn">
+        <strong>Beta — header obrigatório.</strong> Requer o header
+        <code>anthropic-beta: context-management-2025-06-27</code> em toda requisição que usar
+        <code>context_management</code> (nos SDKs, <code>betas=["context-management-2025-06-27"]</code>).
+        Disponível em <strong>todos os modelos Claude suportados</strong>. Elegível a Zero Data Retention
+        (ZDR): em orgs com acordo ZDR, os dados enviados por este recurso não são retidos após a resposta.
+      </div>
+
+      <h4>Forma do request</h4>
+      <pre><code>{
+  "context_management": {
+    "edits": [
+      { "type": "clear_thinking_20251015", "...": "..." },
+      { "type": "clear_tool_uses_20250919", "...": "..." }
+    ]
+  }
+}</code></pre>
+      <div class="callout danger">
+        <strong>Ordem importa.</strong> Ao combinar as duas estratégias no mesmo array <code>edits</code>,
+        <code>clear_thinking_20251015</code> <strong>deve vir listada primeiro</strong> (antes de
+        <code>clear_tool_uses_20250919</code>). É regra explícita da documentação, não apenas preferência
+        de estilo.
+      </div>
+
+      <h4><code>clear_tool_uses_20250919</code> — parâmetros</h4>
+      <p>
+        Limpa os resultados de tool use mais antigos primeiro (cronologicamente), substituindo-os por
+        placeholder, quando o prompt cresce além do limiar configurado. Por padrão, apenas os
+        <em>resultados</em> são limpos; as chamadas de tool originais do Claude permanecem visíveis.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Parâmetro</th><th>Tipo / forma</th><th>Default</th><th>Efeito</th></tr></thead>
+        <tbody>
+          <tr><td><code>trigger</code></td><td><code>{type:"input_tokens",value:N}</code> ou <code>{type:"tool_uses",value:N}</code></td><td><code>{type:"input_tokens",value:100000}</code></td><td>Limiar que ativa a limpeza; quando o prompt excede este valor, o clearing começa.</td></tr>
+          <tr><td><code>keep</code></td><td><code>{type:"tool_uses",value:N}</code></td><td><code>{type:"tool_uses",value:3}</code></td><td>Quantos pares tool_use/tool_result recentes preservar; os mais antigos são removidos primeiro.</td></tr>
+          <tr><td><code>clear_at_least</code></td><td><code>{type:"input_tokens",value:N}</code></td><td>Nenhum</td><td>Garante um mínimo de tokens limpos por ativação; se a API não conseguir atingir esse mínimo, a estratégia não é aplicada.</td></tr>
+          <tr><td><code>exclude_tools</code></td><td>array de strings (nomes de tool)</td><td>Nenhum</td><td>Tools cujos usos/resultados nunca são limpos.</td></tr>
+          <tr><td><code>clear_tool_inputs</code></td><td>boolean</td><td><code>false</code></td><td>Se <code>true</code>, também limpa os parâmetros da chamada de tool — não só o resultado.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h4><code>clear_thinking_20251015</code> — parâmetros</h4>
+      <p>Gerencia blocos <code>thinking</code> quando adaptive/extended thinking está habilitado.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Parâmetro</th><th>Tipo / forma</th><th>Default</th><th>Efeito</th></tr></thead>
+        <tbody>
+          <tr><td><code>keep</code></td><td><code>{type:"thinking_turns",value:N}</code> (N&gt;0) ou <code>"all"</code></td><td>Depende da classe do modelo — ver abaixo</td><td>Quantos turnos recentes de assistant com thinking blocks preservar, ou <code>"all"</code> para manter todos.</td></tr>
+        </tbody>
+      </table></div>
+      <p>O default de <code>keep</code> varia por classe de modelo:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Classe</th><th>Mantém todo thinking anterior</th><th>Mantém só o thinking do último turno</th></tr></thead>
+        <tbody>
+          <tr><td>Opus</td><td>Claude Opus 4.5 e posteriores</td><td>Claude Opus 4.1 (deprecated) e anteriores</td></tr>
+          <tr><td>Sonnet</td><td>Claude Sonnet 4.6 e posteriores</td><td>Claude Sonnet 4.5 e anteriores</td></tr>
+          <tr><td>Haiku</td><td>—</td><td>Todos os modelos até Claude Haiku 4.5</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout tip">
+        <strong>Fixe <code>keep</code> explicitamente</strong> se o mesmo código roda contra mais de uma
+        classe/tier de modelo. A recomendação oficial é literal: <em>"If your code runs across multiple
+        model tiers, set <code>keep</code> explicitly rather than relying on the per-model default."</em>
+        Depender do default silenciosamente quebra portabilidade entre Opus/Sonnet/Haiku.
+      </div>
+
+      <h4>Efeito no prompt cache</h4>
+      <ul>
+        <li>Limpar tool results <strong>invalida</strong> o prefixo cacheado no ponto do corte; você paga
+          cache write a cada limpeza, mas os requests seguintes reusam o novo prefixo. Use
+          <code>clear_at_least</code> para que a invalidação "valha a pena" (evita limpezas pequenas e
+          frequentes).</li>
+        <li>Thinking blocks <strong>mantidos</strong> preservam o cache (cache hits, menos tokens de
+          input); thinking blocks <strong>limpos</strong> invalidam o cache a partir do ponto de corte.</li>
+      </ul>
+
+      <h4>Resposta: <code>context_management.applied_edits</code></h4>
+      <p>
+        A resposta não-streaming inclui <code>context_management</code> como campo de topo, irmão de
+        <code>usage</code>, relatando o que foi de fato aplicado:
+      </p>
+      <pre><code>{
+  "context_management": {
+    "applied_edits": [
+      { "type": "clear_thinking_20251015", "cleared_thinking_turns": 3, "cleared_input_tokens": 15000 },
+      { "type": "clear_tool_uses_20250919", "cleared_tool_uses": 8, "cleared_input_tokens": 50000 }
+    ]
+  }
+}</code></pre>
+      <p>
+        Em streaming, o mesmo bloco chega no evento <code>message_delta</code> final. O estado do lado do
+        cliente (ledger) não muda — só a projeção enviada naquela chamada foi reduzida.
+      </p>
+
+      <h4><code>count_tokens</code> com <code>context_management</code></h4>
+      <p>
+        O endpoint <code>/v1/messages/count_tokens</code> aceita o mesmo bloco <code>context_management</code>
+        (e o mesmo beta header) para prever o efeito da limpeza <em>antes</em> de gastar uma chamada real:
+      </p>
+      <pre><code>{
+  "input_tokens": 25000,
+  "context_management": {
+    "original_input_tokens": 70000
+  }
+}</code></pre>
+      <p>
+        <code>input_tokens</code> é a contagem <strong>após</strong> o context management aplicado;
+        <code>context_management.original_input_tokens</code> é a contagem <strong>antes</strong> de
+        qualquer limpeza — a diferença é a economia projetada.
+      </p>
+
+      <div class="callout beta">
+        <strong>Relação com este capítulo.</strong> Use <code>context_management</code> como a
+        implementação Anthropic do gate de §11 (perdas aceitáveis vs proibidas): <code>exclude_tools</code>
+        e <code>clear_at_least</code> são os controles que evitam que uma limpeza automática remova um
+        <code>tool_result</code> auditável sem declaração. A escada de compactação genérica
+        (multi-provider) e quando escaloná-la estão em
+        <a href="guia_contexto_compactacao_estrategias.html">Contexto &amp; compactação — estratégias</a>.
+        Pode ser combinado com a tool <code>memory_20250818</code>: ao se aproximar do limiar de limpeza, o
+        Claude recebe um aviso automático para salvar informação importante em arquivos de memória antes do
+        corte — casando com o modo <strong>Memory tool</strong> descrito em §8b.
+      </div>
+      <div class="source-link">Fonte oficial: <a href="https://platform.claude.com/docs/en/docs/build-with-claude/context-editing" target="_blank" rel="noopener">Anthropic — Context editing</a>.</div>
     </section>
 
     <section id="perdas-aceitaveis-proibidas">

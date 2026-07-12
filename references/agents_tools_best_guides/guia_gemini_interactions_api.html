@@ -4,8 +4,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Guia Gemini Interactions API — Referência completa + Migração de generateContent</title>
-<meta name="description" content="Guia técnico exaustivo e SOTA da Google Gemini Interactions API em PT-BR: visão geral, texto, streaming, multimodal (imagem, áudio, vídeo, documentos), function calling, structured output, thinking, caching, Deep Research, ferramentas server-side, referência REST completa, e seção dedicada de migração de generateContent. Interactions API em GA desde junho/2026. Verificado em 2026-06-29." />
-<meta name="last-checked" content="2026-06-29" />
+<meta name="description" content="Guia técnico exaustivo e SOTA da Google Gemini Interactions API em PT-BR: visão geral, texto, streaming, multimodal (imagem, áudio, vídeo, documentos), function calling, structured output, thinking, caching, Deep Research, ferramentas server-side, referência REST completa, e seção dedicada de migração de generateContent. Interactions API em GA desde junho/2026. Verificado em 2026-07-12." />
+<meta name="last-checked" content="2026-07-12" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -321,7 +321,7 @@
   <div class="header-row">
     <div class="brand">Guia Gemini Interactions API <small>PT-BR · Referência completa + Migração</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-06-29</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-12</strong></span>
       <span class="badge gemini">google-genai</span>
       <span class="badge ok">GA</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
@@ -448,11 +448,11 @@
         ⭐ <strong>Destaque:</strong> a Interactions API é agora <strong>GA (junho/2026)</strong> e o caminho
         <strong>SOTA recomendado</strong> pela Google para todo projeto novo. Modelos recomendados:
         <code>gemini-3.5-flash</code> (Flash estável, padrão) e <code>gemini-3.1-pro-preview</code>
-        (reasoning/multimodal avançado). SDK <code>google-genai</code> ≥ 2.0.0 (último <strong>2.10.0</strong>).
+        (reasoning/multimodal avançado). SDK <code>google-genai</code> ≥ 2.0.0 (último <strong>2.11.0</strong>).
       </p>
       <div class="hero-meta">
-        <span class="badge gemini">google-genai · Python ≥ 2.0.0 (último 2.10.0)</span>
-        <span class="badge gemini">@google/genai · JS ≥ 2.0.0 (último 2.10.0)</span>
+        <span class="badge gemini">google-genai · Python ≥ 2.0.0 (último 2.11.0)</span>
+        <span class="badge gemini">@google/genai · JS ≥ 2.0.0 (último 2.11.0)</span>
         <span class="badge ok">GA · jun/2026</span>
         <span class="badge ok">SOTA · 2026-06-29</span>
         <span class="badge info">Schema steps · Api-Revision ignorado</span>
@@ -665,15 +665,15 @@
     <table>
       <thead><tr><th>Linguagem</th><th>Pacote</th><th>Versão mínima</th><th>Instalação</th></tr></thead>
       <tbody>
-        <tr><td>Python (≥ 3.9)</td><td><code>google-genai</code></td><td><strong>2.0.0</strong> (SDKs 1.x falham desde 08/06/2026; último PyPI: 2.10.0)</td><td><code>pip install -U google-genai</code></td></tr>
-        <tr><td>JavaScript / TypeScript (Node ≥ 18)</td><td><code>@google/genai</code></td><td><strong>2.0.0</strong> (SDKs 1.x falham desde 08/06/2026; último npm: 2.10.0)</td><td><code>npm install @google/genai</code></td></tr>
+        <tr><td>Python (≥ 3.9)</td><td><code>google-genai</code></td><td><strong>2.0.0</strong> (SDKs 1.x falham desde 08/06/2026; último PyPI: 2.11.0)</td><td><code>pip install -U google-genai</code></td></tr>
+        <tr><td>JavaScript / TypeScript (Node ≥ 18)</td><td><code>@google/genai</code></td><td><strong>2.0.0</strong> (SDKs 1.x falham desde 08/06/2026; último npm: 2.11.0)</td><td><code>npm install @google/genai</code></td></tr>
         <tr><td>Go</td><td><code>google.golang.org/genai</code></td><td>—</td><td><code>go get google.golang.org/genai</code></td></tr>
         <tr><td>Java</td><td><code>com.google.genai:google-genai</code></td><td>1.0.0</td><td>Maven artifact</td></tr>
         <tr><td>C#</td><td><code>Google.GenAI</code></td><td>—</td><td><code>dotnet add package Google.GenAI</code></td></tr>
       </tbody>
     </table>
   </div>
-  <p style="margin:8px 0 0;font-size:13.5px;color:var(--c-fg-muted)"><strong>Nota (2026-06-29):</strong> o último <code>google-genai</code> / <code>@google/genai</code> é <code>2.10.0</code> (ambos; 2026-06-24). A 2.9.0 <strong>reimplementou a Interactions internamente mantendo a API pública compatível</strong> e a 2.10.0 segue compatível, então os exemplos deste guia seguem válidos; mantenha o piso prático <strong>&ge; 2.0.0</strong> (1.x falha desde 08/06/2026).</p>
+  <p style="margin:8px 0 0;font-size:13.5px;color:var(--c-fg-muted)"><strong>Nota (2026-07-12):</strong> o último <code>google-genai</code> / <code>@google/genai</code> é <code>2.11.0</code> (ambos; 2026-07-09). A 2.9.0 <strong>reimplementou a Interactions internamente mantendo a API pública compatível</strong> e a 2.10.0/2.11.0 seguem compatíveis, então os exemplos deste guia seguem válidos; mantenha o piso prático <strong>&ge; 2.0.0</strong> (1.x falha desde 08/06/2026).</p>
   <div class="callout warn">
     <strong>Bibliotecas legadas descontinuadas em 30/11/2025:</strong>
     <code>google-generativeai</code> (Python), <code>@google/generativeai</code> (JS), <code>google.golang.org/generative-ai</code> (Go),
@@ -711,8 +711,8 @@ set "GEMINI_API_KEY=sk-..."</code></pre>
 
   <h3 id="s-quickstart-instalar">2.2 Instalação</h3>
 <pre><code class="language-bash"># Mínimo para usar a Interactions API hoje (schema steps, único desde 08/06/2026):
-pip install -U "google-genai&gt;=2.0.0"             # Python (último PyPI: 2.10.0)
-npm install "@google/genai@&gt;=2.0.0"              # Node / TypeScript (último npm: 2.10.0)
+pip install -U "google-genai&gt;=2.0.0"             # Python (último PyPI: 2.11.0)
+npm install "@google/genai@&gt;=2.0.0"              # Node / TypeScript (último npm: 2.11.0)
 
 # SDKs 1.x (google-genai &lt; 2.0.0 / @google/genai &lt; 2.0.0) falham nas
 # chamadas de Interactions desde 08/06/2026 — schema legado removido.</code></pre>
@@ -2297,12 +2297,14 @@ for event in stream:
     <table>
       <thead><tr><th>Modelo</th><th>Tokens mínimos para cache</th></tr></thead>
       <tbody>
-        <tr><td>Gemini 3.5 Flash</td><td>1024</td></tr>
-        <tr><td>Gemini 3.1 Flash-Lite</td><td>1024</td></tr>
+        <tr><td>Gemini 3.5 Flash</td><td>4096</td></tr>
         <tr><td>Gemini 3.1 Pro Preview</td><td>4096</td></tr>
+        <tr><td>Gemini 2.5 Flash</td><td>2048</td></tr>
+        <tr><td>Gemini 2.5 Pro</td><td>2048</td></tr>
+        <tr><td>Gemini 3.1 Flash-Lite</td><td><em>não publicado</em></td></tr>
       </tbody>
     </table>
-    <p class="small"><strong>Fonte oficial (caching, 2026-06-03):</strong> a tabela publicada lista os mínimos por nome de <em>preview</em> — <code>Gemini 3 Flash Preview</code> = 1024, <code>Gemini 3 Pro Preview</code> = 4096, <code>Gemini 2.5 Flash</code> = 1024, <code>Gemini 2.5 Pro</code> = 4096. O mínimo por <em>ID GA</em> não é publicado (o <code>gemini-3.1-flash-lite</code> não tem linha própria); os valores acima seguem o padrão por tier (Flash = 1024, Pro = 4096). [UNVERIFIED: mapeamento exato por ID GA]</p>
+    <p class="small"><strong>Fonte oficial (caching, verificado 2026-07-12):</strong> a tabela publicada agora lista <code>Gemini 3.5 Flash</code> = <strong>4096</strong>, <code>Gemini 3.1 Pro Preview</code> = <strong>4096</strong>, <code>Gemini 2.5 Flash</code> = <strong>2048</strong> e <code>Gemini 2.5 Pro</code> = <strong>2048</strong> (os valores mudaram desde o snapshot antigo de 2026-06-03, que trazia Flash=1024). O <code>gemini-3.1-flash-lite</code> <strong>não tem linha própria</strong> na tabela oficial — seu mínimo permanece [UNVERIFIED], por isso não atribuímos um valor.</p>
   </div>
 
   <h3>16.3 Maximizar cache hits</h3>
@@ -3808,7 +3810,7 @@ console.log(interaction.status); // cancelled</code></pre>
   <div class="callout warn">
     <p><strong>✅ Status em 2026-06-10 — transição concluída.</strong> Desde <strong>08/06/2026</strong> o schema novo (<code>steps</code> + <code>response_format</code> polimórfico) é o <strong>único</strong> aceito: o schema legado (<code>outputs</code>) foi <strong>removido permanentemente</strong>, o header <code>Api-Revision</code> passou a ser <strong>ignorado</strong> e a janela de rollback com <code>Api-Revision: 2026-05-07</code> <strong>fechou em 08/06/2026</strong> — não há mais como voltar. SDKs <code>google-genai</code>/<code>@google/genai</code> <strong>1.x estão quebrados</strong> para Interactions; se algo ainda lê <code>outputs</code> ou envia <code>response_mime_type</code>, está falhando em produção — atualize para v2.0.0+ e o schema <code>steps</code> imediatamente. <a class="ref" href="https://ai.google.dev/gemini-api/docs/interactions-breaking-changes-may-2026" target="_blank" rel="noopener">[guia oficial de migração]</a></p>
   </div>
-  <p>A versão de Maio/2026 do schema da Interactions API (SDK <code>google-genai</code> v2.0.0+; último PyPI <code>2.10.0</code>, verificado em 2026-06-29) introduziu mudanças incompatíveis. Durante a transição o header <code>Api-Revision</code> controlava o opt-in e depois o rollback; desde <strong>08/06/2026</strong> ele é <strong>ignorado</strong> e não há rollback (ver status acima).</p>
+  <p>A versão de Maio/2026 do schema da Interactions API (SDK <code>google-genai</code> v2.0.0+; último PyPI <code>2.11.0</code>, verificado em 2026-07-12) introduziu mudanças incompatíveis. Durante a transição o header <code>Api-Revision</code> controlava o opt-in e depois o rollback; desde <strong>08/06/2026</strong> ele é <strong>ignorado</strong> e não há rollback (ver status acima).</p>
 
   <h3>Mudanças de formato</h3>
   <div class="migration-pair">

@@ -4,8 +4,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Guia OpenAI — Modelos mais recentes & API (Responses, Realtime, Imagem, Áudio)</title>
-<meta name="description" content="Guia técnico exaustivo e SOTA dos modelos OpenAI mais recentes em PT-BR: gpt-5.6 (Sol/Terra/Luna), gpt-5.5, gpt-5.4-mini/nano (texto/reasoning via Responses API), gpt-image-2 (imagem/visão), áudio e realtime (gpt-realtime-2.1, gpt-4o-transcribe, gpt-4o-mini-tts), embeddings, moderation, preços, caching explícito, limites e operação. Verificado em 2026-07-09." />
-<meta name="last-checked" content="2026-07-09" />
+<meta name="description" content="Guia técnico exaustivo e SOTA dos modelos OpenAI mais recentes em PT-BR: gpt-5.6 (Sol/Terra/Luna), gpt-5.5, gpt-5.4-mini/nano (texto/reasoning via Responses API), gpt-image-2 (imagem/visão), áudio e realtime (gpt-realtime-2.1, gpt-4o-transcribe, gpt-4o-mini-tts), embeddings, moderation, preços, caching explícito, limites e operação. Verificado em 2026-07-12." />
+<meta name="last-checked" content="2026-07-12" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -294,7 +294,7 @@
   <div class="header-row">
     <div class="brand">Guia OpenAI <small>PT-BR · Modelos mais recentes &amp; API</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-09</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-12</strong></span>
       <span class="badge openai">SDK openai</span>
       <span class="badge ok">SOTA</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
@@ -353,13 +353,14 @@
     <div class="toc-section">Parte D — Embeddings, Moderation &amp; Operação</div>
     <ol>
       <li><a href="#s-embeddings">29. Embeddings</a></li>
-      <li><a href="#s-moderation">30. Moderation</a></li>
-      <li><a href="#s-pricing">31. Preços</a></li>
-      <li><a href="#s-rate-limits">32. Rate limits &amp; tiers</a></li>
-      <li><a href="#s-processing">33. Batch, Flex &amp; Priority</a></li>
-      <li><a href="#s-admin">34. Admin APIs</a></li>
-      <li><a href="#s-errors">35. Códigos de erro</a></li>
-      <li><a href="#s-deployment">36. Checklist de produção</a></li>
+      <li><a href="#s-uploads">30. Uploads API</a></li>
+      <li><a href="#s-moderation">31. Moderation</a></li>
+      <li><a href="#s-pricing">32. Preços</a></li>
+      <li><a href="#s-rate-limits">33. Rate limits &amp; tiers</a></li>
+      <li><a href="#s-processing">34. Batch, Flex &amp; Priority</a></li>
+      <li><a href="#s-admin">35. Admin APIs</a></li>
+      <li><a href="#s-errors">36. Códigos de erro</a></li>
+      <li><a href="#s-deployment">37. Checklist de produção</a></li>
     </ol>
 
     <div class="toc-section">Apêndice</div>
@@ -451,7 +452,7 @@
   <div class="callout beta"><strong>Multi-agente beta ≠ effort.</strong> A orquestração multi-agente (beta) roda <strong>subagentes no lado do provider</strong> e cobra <strong>a soma de todos os agentes</strong> — o custo não é o de "uma chamada". Vale para trabalho <em>paralelizável</em> (exploração, verificação independente); não vale para tarefa curta/sequencial. Não confunda com <code>reasoning.effort</code>: o teto da API é <code>max</code> (mais tempo de raciocínio em <em>um</em> agente); em superfícies de produto (ex.: Codex CLI) o modo multi-agente aparece rotulado como effort <code>ultra</code>, <strong>que não é um valor aceito pela API</strong>. Evite estado mutável compartilhado entre subagentes. <span class="pill beta">beta</span> Fonte: <a href="https://developers.openai.com/api/docs/changelog" target="_blank" rel="noopener">changelog oficial</a>; detalhes finos ainda em rollout.</div>
 
   <table>
-    <caption>Preços da família GPT-5.6 (USD por 1M tokens, <em>short context</em> ≤272K). <em>Long context</em> &gt;272K de input: <strong>2× no input e 1,5× no output</strong>, aplicados à <em>sessão inteira</em> (texto oficial: <q>2x input and 1.5x output for the full session for standard, batch, and flex</q>). Verificado 2026-07-09.</caption>
+    <caption>Preços da família GPT-5.6 (USD por 1M tokens, <em>short context</em> ≤272K). <em>Long context</em> &gt;272K de input: <strong>2× no input e 1,5× no output</strong>, aplicados à <em>requisição inteira</em> (texto oficial da página do <code>gpt-5.6-sol</code>: <q>2x input and 1.5x output for the full request</q>). Verificado 2026-07-12.</caption>
     <thead><tr><th>Modelo</th><th>Input</th><th>Cached input (−90%)</th><th>Cache write (1,25×)</th><th>Output</th></tr></thead>
     <tbody>
       <tr><td><code>gpt-5.6-sol</code></td><td>$5,00</td><td>$0,50</td><td>$6,25</td><td>$30,00</td></tr>
@@ -461,7 +462,7 @@
     </tbody>
   </table>
 
-  <div class="callout info"><strong>Long context e tiers de processamento (5.6):</strong> acima de 272K de input, a <em>sessão inteira</em> é cobrada a <strong>2× no input e 1,5× no output</strong> — este é o texto literal da nota oficial (<q>2x input and 1.5x output for the full session</q>). Aplicando esse 2× a todo o lado do input, o Sol long fica: input $10 / cached $1 / write $12,50 / output <strong>$45</strong>; Terra: $5 / $0,50 / $6,25 / $22,50; Luna: $2 / $0,20 / $2,50 / $9. <em>Ressalva:</em> a nota oficial só especifica <q>input</q> e <q>output</q>; o rateio das colunas <strong>cached-input</strong> e <strong>cache-write</strong> pelo mesmo 2× é <strong>interpretação</strong> nossa (não está escrito por coluna) — confirme na fatura para cargas long-context intensivas em cache. <strong>Batch e Flex</strong> = 50% do Standard (Sol $2,50/$15); <strong>Priority</strong> = 2× (Sol $10/$60). <strong>Regional/data residency</strong>: +10% para modelos lançados a partir de <strong>05/03/2026</strong> elegíveis a residência de dados (critério oficial — inclui a família 5.6 e os 5.4-mini/nano). Fonte: <a href="https://developers.openai.com/api/docs/pricing" target="_blank" rel="noopener">/pricing</a> · <a href="https://developers.openai.com/api/docs/models/gpt-5.6-sol" target="_blank" rel="noopener">página do modelo</a>.</div>
+  <div class="callout info"><strong>Long context e tiers de processamento (5.6):</strong> acima de 272K de input, a <em>requisição inteira</em> é cobrada a <strong>2× no input e 1,5× no output</strong> — este é o texto literal da nota oficial da página do <code>gpt-5.6-sol</code> (<q>2x input and 1.5x output for the full request</q>). <em>Atenção ao escopo:</em> a página do 5.6 diz <q>full request</q> (não <q>session</q>); a redação antiga <q>for the full session for standard, batch, and flex</q> pertence à página legada do <code>gpt-5.4</code> e foi corrigida aqui. Aplicando esse 2× a todo o lado do input, o Sol long fica: input $10 / cached $1 / write $12,50 / output <strong>$45</strong>; Terra: $5 / $0,50 / $6,25 / $22,50; Luna: $2 / $0,20 / $2,50 / $9. <em>Ressalva:</em> a nota oficial só especifica <q>input</q> e <q>output</q>; o rateio das colunas <strong>cached-input</strong> e <strong>cache-write</strong> pelo mesmo 2× é <strong>interpretação</strong> nossa (não está escrito por coluna) — confirme na fatura para cargas long-context intensivas em cache. <strong>Batch e Flex</strong> = 50% do Standard (Sol $2,50/$15); <strong>Priority</strong> = 2× (Sol $10/$60). <strong>Regional/data residency</strong>: +10% para modelos lançados a partir de <strong>05/03/2026</strong> elegíveis a residência de dados (critério oficial — inclui a família 5.6 e os 5.4-mini/nano). Fonte: <a href="https://developers.openai.com/api/docs/pricing" target="_blank" rel="noopener">/pricing</a> · <a href="https://developers.openai.com/api/docs/models/gpt-5.6-sol" target="_blank" rel="noopener">página do modelo</a>.</div>
 
   <div class="callout info"><strong>Nota:</strong> raciocínio mais alto não é automaticamente melhor. Com critérios de parada fracos ou acesso aberto a ferramentas, esforço alto pode levar a <em>overthinking</em>, buscas desnecessárias ou regressão de qualidade. Aumente o esforço só quando seus <em>evals</em> mostrarem ganho mensurável.</div>
 
@@ -785,7 +786,7 @@ console.log(response.output_text);</code></pre>
   <p>Modelos de raciocínio usam <strong>reasoning tokens</strong> para planejar antes de responder. Esses tokens não são visíveis pela API, mas ocupam espaço na janela de contexto e são cobrados como tokens de saída. O <code>gpt-5.5</code> suporta <em>interleaved thinking</em>: pode gerar saída visível antes, entre e depois de pensar, inclusive entre chamadas de ferramenta.</p>
 
   <h3 id="s-reasoning-effort">6.1 Níveis de esforço</h3>
-  <p>O <code>gpt-5.5</code> aceita <code>none</code>, <code>low</code>, <code>medium</code>, <code>high</code> e <code>xhigh</code>, com <strong>padrão <code>medium</code></strong>. Subconjuntos variam por modelo — confira a página de cada modelo.</p>
+  <p>O <code>gpt-5.5</code> aceita <code>none</code>, <code>low</code>, <code>medium</code>, <code>high</code> e <code>xhigh</code>, com <strong>padrão <code>medium</code></strong>. O <strong>enum completo do parâmetro <code>reasoning.effort</code></strong> na Responses API tem sete valores — <code>none</code> · <code>minimal</code> · <code>low</code> · <code>medium</code> · <code>high</code> · <code>xhigh</code> · <code>max</code> — mas, nas palavras da doc oficial, <q>not all reasoning models support every value</q>: <code>minimal</code> e <code>max</code> são <em>model-dependent</em> (o <code>max</code> aparece na família <code>gpt-5.6</code>). Confira a página de cada modelo.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Esforço</th><th>Melhor para…</th></tr></thead>
@@ -795,6 +796,7 @@ console.log(response.output_text);</code></pre>
         <tr><td><code>medium</code></td><td><strong>Padrão.</strong> Quando qualidade e confiabilidade importam e há planejamento/julgamento: coding agêntico, pesquisa, planilhas e slides, trabalho de horizonte longo. Ponto bem equilibrado de latência × performance × custo.</td></tr>
         <tr><td><code>high</code></td><td>Raciocínio difícil, debugging complexo, planejamento profundo e tarefas de alto valor onde qualidade importa mais que latência. Avalie <code>medium</code> e <code>high</code>.</td></tr>
         <tr><td><code>xhigh</code></td><td>Pesquisa profunda, fluxos assíncronos e tarefas agênticas de <em>rollout</em> muito longo: revisão de segurança/código, produtividade corporativa, coding desafiador. Use só quando os evals justificarem a latência/custo extra.</td></tr>
+        <tr><td><code>max</code> <span class="pill new">5.6</span></td><td>Teto de raciocínio da família <code>gpt-5.6</code> — mais tempo de raciocínio em <em>um</em> agente. Reserve para o trabalho mais difícil já validado em evals; o custo de reasoning tokens sobe proporcionalmente. Não confunda com orquestração multi-agente (que é outra coisa, ver callout acima). Nem todo modelo aceita este nível.</td></tr>
       </tbody>
     </table>
   </div>
@@ -1400,6 +1402,132 @@ console.log(response.output_text);</code></pre>
   }'</code></pre>
     </div>
   </div>
+
+  <h3 id="s-tools-file-search-api">11.2.1 Retrieval API — busca direta em vector stores (<code>vector_stores.search</code>)</h3>
+  <p>Além do tool <code>file_search</code> (que o modelo aciona sozinho dentro da Responses API), a OpenAI expõe a <strong>Retrieval API</strong>: o endpoint <code>POST /v1/vector_stores/{vector_store_id}/search</code> faz <strong>busca semântica direta</strong> no vector store, <em>sem passar por um modelo de linguagem</em>. É a peça certa para pipelines de RAG onde você quer montar o prompt final por conta própria, reaproveitar os chunks recuperados em outro serviço, ou apenas inspecionar o que a base retorna. Por padrão traz até <strong>10</strong> resultados; ajuste com <code>max_num_results</code> (máximo <strong>50</strong>). Cada resultado vem com os chunks relevantes, um <code>score</code> de similaridade e o arquivo de origem.</p>
+
+  <div class="code-group">
+    <div class="code-tabs" role="tablist">
+      <button class="code-tab" role="tab" data-lang="python" aria-selected="true">Python</button>
+      <button class="code-tab" role="tab" data-lang="javascript" aria-selected="false">JavaScript</button>
+      <button class="code-tab" role="tab" data-lang="bash" aria-selected="false">REST</button>
+    </div>
+    <div class="code-pane" data-lang="python" data-active="true">
+<pre><code class="language-python">results = client.vector_stores.search(
+    vector_store_id="vs_abc123",
+    query="Quantas marmotas são permitidas por passageiro?",
+    max_num_results=20,
+    rewrite_query=True,
+    ranking_options={
+        "ranker": "auto",
+        "score_threshold": 0.5,
+    },
+)
+# O que a API de fato buscou (quando rewrite_query=True):
+print(results.search_query)
+for r in results.data:
+    print(r.score, r.filename)
+    for part in r.content:          # cada chunk recuperado
+        print(part.text[:200])</code></pre>
+    </div>
+    <div class="code-pane" data-lang="javascript" data-active="false">
+<pre><code class="language-javascript">const results = await client.vectorStores.search("vs_abc123", {
+  query: "Quantas marmotas são permitidas por passageiro?",
+  max_num_results: 20,
+  rewrite_query: true,
+  ranking_options: { ranker: "auto", score_threshold: 0.5 },
+});
+console.log(results.search_query); // query reescrita
+for (const r of results.data) {
+  console.log(r.score, r.filename);
+}</code></pre>
+    </div>
+    <div class="code-pane" data-lang="bash" data-active="false">
+<pre><code class="language-bash">curl https://api.openai.com/v1/vector_stores/vs_abc123/search \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $OPENAI_API_KEY" \
+  -d '{
+    "query": "Quantas marmotas são permitidas por passageiro?",
+    "max_num_results": 20,
+    "rewrite_query": true,
+    "ranking_options": { "ranker": "auto", "score_threshold": 0.5 }
+  }'</code></pre>
+    </div>
+  </div>
+
+  <div class="callout tip"><strong>Dica — <code>rewrite_query</code>:</strong> com <code>rewrite_query: true</code>, a API reescreve a consulta do usuário para uma forma mais eficaz de busca (ex.: transforma <q>Gostaria de saber a altura do prédio principal</q> em <q>altura do prédio principal</q>). A versão efetivamente buscada fica no campo <code>search_query</code> do resultado — logue esse campo para auditar por que uma busca trouxe (ou não) certo chunk.</div>
+
+  <h4 id="s-tools-file-search-hybrid">Ranking &amp; hybrid search (<code>ranking_options</code>)</h4>
+  <p>Se os resultados vierem pouco relevantes, ajuste <code>ranking_options</code>. O <code>ranker</code> aceita <code>auto</code> ou <code>default-2024-08-21</code>; <code>score_threshold</code> vai de <strong>0.0 a 1.0</strong> — quanto mais alto, mais a busca se restringe aos chunks realmente relevantes (descartando os de baixa relevância, ao custo de eventualmente cortar algum útil). Ao fornecer <code>ranking_options.hybrid_search</code>, você combina a correspondência semântica (embeddings) com a correspondência textual esparsa (palavra-chave) via <em>reciprocal rank fusion</em> (RRF), balanceando os dois lados com <code>embedding_weight</code> (o <code>rrf_embedding_weight</code>) e <code>text_weight</code> (o <code>rrf_text_weight</code>): suba o primeiro para privilegiar similaridade semântica, o segundo para privilegiar sobreposição literal de termos. <strong>Ao menos um dos pesos precisa ser maior que zero.</strong></p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Parâmetro</th><th>Faixa / valores</th><th>Efeito</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>ranking_options.ranker</code></td><td><code>auto</code> · <code>default-2024-08-21</code></td><td>Estratégia de reranking dos resultados.</td></tr>
+        <tr><td><code>ranking_options.score_threshold</code></td><td>0.0 – 1.0</td><td>Descarta chunks abaixo do score de relevância (maior = mais restritivo).</td></tr>
+        <tr><td><code>hybrid_search.embedding_weight</code></td><td>≥ 0 (peso RRF)</td><td>Peso da busca semântica (embeddings) na fusão RRF.</td></tr>
+        <tr><td><code>hybrid_search.text_weight</code></td><td>≥ 0 (peso RRF)</td><td>Peso da busca por palavra-chave (texto esparso) na fusão RRF.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4 id="s-tools-file-search-attrfilter">Filtro por atributos (<code>attribute_filter</code>)</h4>
+  <p>Cada arquivo do vector store carrega até <strong>16</strong> pares de metadados customizados (<code>attributes</code>). Na busca, use <code>attribute_filter</code> para restringir o corpus <em>antes</em> da fase semântica. Há <strong>filtros de comparação</strong> — <code>eq</code>, <code>ne</code>, <code>gt</code>, <code>gte</code>, <code>lt</code>, <code>lte</code>, <code>in</code>, <code>nin</code> — sobre uma <code>key</code>/<code>value</code>, e <strong>filtros compostos</strong> que combinam vários com <code>and</code>/<code>or</code>, inclusive intervalos de data via timestamp Unix e exclusão por nome de arquivo.</p>
+<pre><code class="language-json">{
+  "type": "and",
+  "filters": [
+    { "type": "eq", "key": "region", "value": "us" },
+    { "type": "gte", "key": "published_at", "value": 1704067200 }
+  ]
+}</code></pre>
+
+  <h4 id="s-tools-file-search-chunking">Chunking (<code>chunking_strategy</code>)</h4>
+  <p>Controla como cada arquivo é dividido em pedaços (<em>chunks</em>) antes de ser embeddado e indexado. Sem configuração, usa a estratégia <code>auto</code>: <code>max_chunk_size_tokens = 800</code> e <code>chunk_overlap_tokens = 400</code>. Ao passar a estratégia <code>static</code>, respeite os limites documentados: <code>max_chunk_size_tokens</code> entre <strong>100 e 4096</strong> (inclusive) e <code>chunk_overlap_tokens</code> não-negativo que <strong>não exceda <code>max_chunk_size_tokens / 2</code></strong>.</p>
+<pre><code class="language-python">client.vector_stores.file_batches.create_and_poll(
+    vector_store_id="vs_abc123",
+    files=[
+        {"file_id": "file_123", "attributes": {"department": "finance"}},
+        {
+            "file_id": "file_456",
+            "chunking_strategy": {
+                "type": "static",
+                "static": {
+                    "max_chunk_size_tokens": 1200,
+                    "chunk_overlap_tokens": 200,
+                },
+            },
+        },
+    ],
+)</code></pre>
+
+  <h4 id="s-tools-file-search-batch">Ingestão: batches e <code>create_and_poll</code></h4>
+  <p>Para subir muitos arquivos de uma vez, prefira <code>file_batches</code>: cada requisição de batch aceita <strong>até 500 arquivos</strong> e reduz a contenção contra o limite de escrita. O helper <code>create_and_poll</code> — disponível tanto para arquivo único (<code>files.create_and_poll</code>) quanto para lote (<code>file_batches.create_and_poll</code>) — cria o recurso e faz <em>polling</em> até a indexação terminar, poupando você de escrever o loop de espera na mão.</p>
+<pre><code class="language-python"># Arquivo único, bloqueando até a indexação terminar
+client.vector_stores.files.create_and_poll(
+    vector_store_id="vs_abc123",
+    file_id="file_123",
+)
+
+# Lote de até 500 arquivos, bloqueando até terminar
+client.vector_stores.file_batches.create_and_poll(
+    vector_store_id="vs_abc123",
+    files=[{"file_id": "file_123"}, {"file_id": "file_456"}],
+)</code></pre>
+
+  <div class="callout warn"><strong>Pegadinhas de ingestão:</strong> a criação de arquivo/batch é <em>assíncrona</em> — sem <code>create_and_poll</code>, um <code>search</code> logo em seguida pode não achar o conteúdo ainda não indexado. A adição de arquivos é <strong>rate-limited em 300 requisições/min compartilhadas por <code>vector_store_id</code></strong> (o batch conta como 1), então lotes vencem N chamadas unitárias. Cada arquivo pode ter no máximo <strong>512 MB e 5.000.000 de tokens</strong>. E a remoção é <em>eventualmente consistente</em>: resultados podem citar um arquivo recém-removido por um curto período.</div>
+
+  <div class="callout info"><strong>Armazenamento e custo (<code>expires_after</code>):</strong> os primeiros <strong>1 GB</strong> de armazenamento (somando <em>todos</em> os vector stores da organização) são gratuitos; acima disso, <strong>$0,10/GB/dia</strong>, calculado sobre o tamanho dos chunks parseados e seus embeddings. Defina uma política de expiração com <code>expires_after</code> (único <code>anchor</code> suportado: <code>last_active_at</code>) para descartar stores ociosos e parar de pagar por eles.</div>
+<pre><code class="language-python">client.vector_stores.update(
+    vector_store_id="vs_abc123",
+    expires_after={"anchor": "last_active_at", "days": 7},
+)</code></pre>
+
+  <div class="callout warn"><strong>Search direto ≠ resposta gerada:</strong> <code>vector_stores.search</code> devolve os chunks (com <code>score</code> e arquivo de origem) para <em>você</em> montar o prompt — ela não redige resposta em linguagem natural nem cita fontes sozinha. Se quiser que o próprio modelo recupere, cite os arquivos e componha a resposta final dentro da Responses API, use o tool <code>file_search</code> descrito em <a href="#s-tools-file">§11.2</a>.</div>
+
+  <p class="source-link"><strong>Fonte:</strong> <a href="https://developers.openai.com/api/docs/guides/retrieval" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/retrieval</a> · <a href="https://developers.openai.com/api/docs/guides/tools-file-search" target="_blank" rel="noopener">/guides/tools-file-search</a></p>
 
   <h3 id="s-tools-mcp">11.3 MCP &amp; Connectors</h3>
   <p>Dê ao modelo novas capacidades via <strong>servidores MCP remotos</strong> (qualquer servidor que implemente o Model Context Protocol) e <strong>connectors</strong> (wrappers MCP mantidos pela OpenAI para serviços como Google Workspace ou Dropbox). Ambos usam o tipo de ferramenta <code>mcp</code>. MCP remoto exige <code>server_url</code> (e às vezes um token OAuth em <code>authorization</code>); connectors exigem <code>connector_id</code> e o token OAuth. As chamadas podem ser automáticas ou exigir aprovação (<code>require_approval</code>).</p>
@@ -2110,7 +2238,7 @@ app.post("/webhook", async (req, res) => {
   <p>Cache hits exigem <strong>prefixo idêntico</strong>. Coloque conteúdo estático (instruções, exemplos, schema, tools, imagens) no <strong>início</strong> do prompt e o conteúdo variável (dados do usuário) no <strong>fim</strong>. Pode ser cacheado: o array de mensagens completo, imagens (com <code>detail</code> idêntico), o array <code>tools</code>, e o schema de Structured Outputs.</p>
 
   <h3 id="s-caching-key">15.2 <code>prompt_cache_key</code> e retenção</h3>
-  <p>Para tráfego repetido com prefixos comuns, use <code>prompt_cache_key</code> de forma consistente: ele é combinado ao hash do prefixo para melhorar o roteamento e a taxa de acerto. Mantenha cada par prefixo+chave abaixo de ~15 requisições por minuto para evitar <em>overflow</em>. Monitore <code>usage.input_tokens_details.cached_tokens</code> na Responses API (em Chat Completions, <code>usage.prompt_tokens_details.cached_tokens</code>).</p>
+  <p>Para tráfego repetido com prefixos comuns, use <code>prompt_cache_key</code> de forma consistente: ele é combinado ao hash do prefixo para melhorar o roteamento e a taxa de acerto. Mantenha cada par prefixo+chave abaixo de ~15 requisições por minuto para evitar <em>overflow</em>. Monitore <code>usage.input_tokens_details.cached_tokens</code> na Responses API (em Chat Completions, <code>usage.prompt_tokens_details.cached_tokens</code>). Em <strong>GPT-5.6+</strong>, o mesmo objeto de detalhes traz <code>cache_write_tokens</code> — a doc oficial recomenda logar os dois (<q>Monitor cache reads and writes by logging cached_tokens and cache_write_tokens</q>); modelos ≤5.5 não reportam esse campo.</p>
   <pre><code class="language-json">{
   "model": "gpt-5.5",
   "input": "...",
@@ -3248,7 +3376,7 @@ console.log(response2.output_text);
   <p class="source-link"><strong>Fonte:</strong> <a href="https://developers.openai.com/api/docs/guides/image-generation#calculating-costs" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/image-generation#calculating-costs</a> · <a href="https://developers.openai.com/api/docs/pricing#image-generation" target="_blank" rel="noopener">pricing#image-generation</a> · <a href="https://developers.openai.com/api/docs/guides/images-vision" target="_blank" rel="noopener">images-vision</a> · <a href="https://cookbook.openai.com/" target="_blank" rel="noopener">cookbook.openai.com</a></p>
 </section>
 
-<section class="chapter" id="part-c-divider"><h2 style="border-bottom:3px solid var(--c-openai);padding:14px 0 10px;font-size:28px">Parte C — Áudio & Realtime</h2><p style="color:var(--c-fg-muted)">Fala em tempo real (gpt-realtime-2), tradução e transcrição ao vivo, transcrição de arquivos (gpt-4o-transcribe), síntese de voz (gpt-4o-mini-tts) e áudio no chat (gpt-audio-1.5).</p></section>
+<section class="chapter" id="part-c-divider"><h2 style="border-bottom:3px solid var(--c-openai);padding:14px 0 10px;font-size:28px">Parte C — Áudio & Realtime</h2><p style="color:var(--c-fg-muted)">Fala em tempo real (gpt-realtime-2.1), tradução e transcrição ao vivo, transcrição de arquivos (gpt-4o-transcribe), síntese de voz (gpt-4o-mini-tts) e áudio no chat (gpt-audio-1.5).</p></section>
 
 <section id="s-audio-overview">
   <h2>21. Visão geral de áudio</h2>
@@ -3298,7 +3426,7 @@ console.log(response2.output_text);
     <table>
       <thead><tr><th>Objetivo</th><th>Modelo</th><th>Onde detalhar</th></tr></thead>
       <tbody>
-        <tr><td>Agente de voz de baixa latência (fala↔fala)</td><td><code>gpt-realtime-2</code> <span class="pill new">realtime</span></td><td>Seções 22 e 28</td></tr>
+        <tr><td>Agente de voz de baixa latência (fala↔fala)</td><td><code>gpt-realtime-2.1</code> <span class="pill new">realtime</span></td><td>Seções 22 e 28</td></tr>
         <tr><td>Traduzir fala ao vivo para outro idioma</td><td><code>gpt-realtime-translate</code></td><td>Seção 23</td></tr>
         <tr><td>Transcrever áudio ao vivo em texto contínuo</td><td><code>gpt-realtime-whisper</code></td><td>Seção 24</td></tr>
         <tr><td>Transcrever arquivos / requisições delimitadas</td><td><code>gpt-4o-transcribe</code>, <code>gpt-4o-mini-transcribe</code>, <code>gpt-4o-transcribe-diarize</code></td><td>Seção 25</td></tr>
@@ -3308,15 +3436,15 @@ console.log(response2.output_text);
       </tbody>
     </table>
   </div>
-  <div class="callout info"><strong>Nota:</strong> <code>gpt-realtime-2</code> e <code>gpt-audio-1.5</code> são nativamente multimodais — entendem e geram áudio e texto como entrada e saída. A diferença prática é o transporte: <code>gpt-realtime-2</code> vive em uma sessão de streaming bidirecional; <code>gpt-audio-1.5</code> responde a uma requisição de chat delimitada.</div>
+  <div class="callout info"><strong>Nota:</strong> <code>gpt-realtime-2.1</code> e <code>gpt-audio-1.5</code> são nativamente multimodais — entendem e geram áudio e texto como entrada e saída. A diferença prática é o transporte: <code>gpt-realtime-2.1</code> vive em uma sessão de streaming bidirecional; <code>gpt-audio-1.5</code> responde a uma requisição de chat delimitada.</div>
 
   <p class="source-link"><strong>Fonte:</strong> <a href="https://developers.openai.com/api/docs/guides/audio" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/audio</a> · <a href="https://developers.openai.com/api/docs/guides/realtime" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/realtime</a></p>
 </section>
 
 <section id="s-realtime">
-  <h2>22. Realtime API (gpt-realtime-2)</h2>
-  <p>A <strong>Realtime API</strong> mantém uma conexão aberta enquanto sua aplicação envia áudio, recebe eventos e atualiza o estado da sessão. O modelo principal <strong>atual é o <code>gpt-realtime-2.1</code></strong> (lançado 2026-07-06), que atualiza o <code>gpt-realtime-2</code> com melhor reconhecimento alfanumérico, tratamento de silêncio/ruído e comportamento de interrupção, mantendo fala↔fala com <strong>reasoning effort configurável</strong>, obediência a instruções e uso de tools para fluxos de agente complexos. Há também o <code>gpt-realtime-2.1-mini</code>, versão destilada mais rápida e barata. Para um modelo fala↔fala rápido e sem reasoning, há o <code>gpt-realtime-1.5</code> (speech-to-speech rápido e confiável, sem reasoning; tem guia de prompting dedicado na doc oficial). O SDK Agents (Python e TS) já usa <code>gpt-realtime-2.1</code> como default do <code>RealtimeAgent</code>.</p>
-  <p class="source-link"><strong>Fonte:</strong> <a href="https://developers.openai.com/api/docs/models/gpt-realtime-2" target="_blank" rel="noopener">developers.openai.com/api/docs/models/gpt-realtime-2</a> (família realtime; <code>gpt-realtime-2</code> com reasoning effort configurável) · <a href="https://developers.openai.com/api/docs/guides/realtime-models-prompting" target="_blank" rel="noopener">guides/realtime-models-prompting</a> (inclui o guia de prompting do <code>gpt-realtime-1.5</code>).</p>
+  <h2>22. Realtime API (gpt-realtime-2.1)</h2>
+  <p>A <strong>Realtime API</strong> mantém uma conexão aberta enquanto sua aplicação envia áudio, recebe eventos e atualiza o estado da sessão. O modelo principal <strong>atual é o <code>gpt-realtime-2.1</code></strong> (jul/2026), que atualiza o <code>gpt-realtime-2</code> — modelo anterior distinto — com melhor reconhecimento alfanumérico, tratamento de silêncio/ruído e comportamento de interrupção, mantendo fala↔fala com <strong>reasoning effort configurável</strong>, obediência a instruções e uso de tools para fluxos de agente complexos. Há também o <code>gpt-realtime-2.1-mini</code>, versão destilada mais rápida e barata. Para um modelo fala↔fala rápido e sem reasoning, há o <code>gpt-realtime-1.5</code> (speech-to-speech rápido e confiável, sem reasoning; tem guia de prompting dedicado na doc oficial). O SDK Agents (Python e TS) já usa <code>gpt-realtime-2.1</code> como default do <code>RealtimeAgent</code>.</p>
+  <p class="source-link"><strong>Fonte:</strong> <a href="https://developers.openai.com/api/docs/models/gpt-realtime-2.1" target="_blank" rel="noopener">developers.openai.com/api/docs/models/gpt-realtime-2.1</a> (família realtime; <code>gpt-realtime-2.1</code> com reasoning effort configurável) · <a href="https://developers.openai.com/api/docs/guides/realtime-models-prompting" target="_blank" rel="noopener">guides/realtime-models-prompting</a> (inclui o guia de prompting do <code>gpt-realtime-1.5</code>).</p>
   <div class="callout tip"><strong>Dica:</strong> em produção, comece com <code>reasoning.effort: "low"</code> na maioria dos agentes de voz e suba só se a tarefa exigir — reasoning maior aumenta latência e tokens de saída.</div>
 
   <h3 id="s-realtime-sessoes">22.1 Tipos de sessão realtime</h3>
@@ -3365,7 +3493,7 @@ client = OpenAI()
 secret = client.realtime.client_secrets.create(
     session={
         "type": "realtime",
-        "model": "gpt-realtime-2",
+        "model": "gpt-realtime-2.1",
         "audio": {"output": {"voice": "marin"}},
     },
 )
@@ -3416,7 +3544,7 @@ curl https://api.openai.com/v1/realtime/client_secrets \
   -d '{
     "session": {
       "type": "realtime",
-      "model": "gpt-realtime-2",
+      "model": "gpt-realtime-2.1",
       "audio": { "output": { "voice": "marin" } }
     }
   }'
@@ -3436,7 +3564,7 @@ curl https://api.openai.com/v1/realtime/client_secrets \
 <pre><code class="language-python"># pip install websocket-client
 import os, json, websocket
 
-url = "wss://api.openai.com/v1/realtime?model=gpt-realtime-2"
+url = "wss://api.openai.com/v1/realtime?model=gpt-realtime-2.1"
 headers = [
     "Authorization: Bearer " + os.environ["OPENAI_API_KEY"],
     "OpenAI-Safety-Identifier: hashed-user-id",
@@ -3458,7 +3586,7 @@ ws.run_forever()
     <div class="code-pane" data-lang="javascript" data-active="false">
 <pre><code class="language-javascript">import WebSocket from "ws";
 
-const url = "wss://api.openai.com/v1/realtime?model=gpt-realtime-2";
+const url = "wss://api.openai.com/v1/realtime?model=gpt-realtime-2.1";
 const ws = new WebSocket(url, {
   headers: {
     Authorization: "Bearer " + process.env.OPENAI_API_KEY,
@@ -3479,7 +3607,7 @@ ws.on("message", (message) =&gt; console.log(JSON.parse(message.toString())));
     <div class="code-pane" data-lang="bash" data-active="false">
 <pre><code class="language-bash"># WebSocket não é um verbo HTTP simples; o handshake é um GET com upgrade.
 # A URL e os cabeçalhos de autenticação são:
-#   wss://api.openai.com/v1/realtime?model=gpt-realtime-2
+#   wss://api.openai.com/v1/realtime?model=gpt-realtime-2.1
 #   Authorization: Bearer $OPENAI_API_KEY
 #   OpenAI-Safety-Identifier: hashed-user-id
 # Use um cliente WebSocket (ws / websocket-client) — ver abas Python e JavaScript.
@@ -3524,7 +3652,7 @@ def webhook():
                 headers={**AUTH, "Content-Type": "application/json"},
                 json={
                     "type": "realtime",
-                    "model": "gpt-realtime-2",
+                    "model": "gpt-realtime-2.1",
                     "instructions": "Você é o Alex, concierge da Example Corp.",
                 },
             )
@@ -3541,7 +3669,7 @@ def webhook():
 curl -X POST "https://api.openai.com/v1/realtime/calls/$CALL_ID/accept" \
   -H "Authorization: Bearer $OPENAI_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{ "type": "realtime", "model": "gpt-realtime-2",
+  -d '{ "type": "realtime", "model": "gpt-realtime-2.1",
         "instructions": "Você é o Alex, concierge da Example Corp." }'
 
 # Rejeitar (ex.: 486 = ocupado), transferir (refer) ou encerrar (hangup):
@@ -3578,7 +3706,7 @@ curl -X POST "https://api.openai.com/v1/realtime/calls/$CALL_ID/hangup" \
   <h3 id="s-realtime-audio-io">22.4 Áudio de entrada e saída</h3>
   <p>Em <strong>WebRTC</strong>, a mídia é praticamente automática: adicione o track local do microfone e o usuário já pode falar; o áudio do modelo chega como track remoto. Você ainda recebe eventos de ciclo de vida (<code>input_audio_buffer.speech_started</code>/<code>speech_stopped</code>, deltas de transcrição, <code>response.done</code>).</p>
   <p>Em <strong>WebSocket</strong>, você controla o <strong>input audio buffer</strong> manualmente: envie chunks Base64 com <code>input_audio_buffer.append</code> (cada chunk ≤ 15 MB). Formatos configuráveis por sessão (<code>session.audio.input.format</code> / <code>output.format</code>) — PCM 24 kHz mono (<code>audio/pcm</code>) é a base; há também <code>audio/pcmu</code> para telefonia.</p>
-  <p><strong>Vozes disponíveis na sessão Realtime:</strong> <code>alloy</code>, <code>ash</code>, <code>ballad</code>, <code>coral</code>, <code>echo</code>, <code>sage</code>, <code>shimmer</code>, <code>verse</code>, <code>marin</code> e <code>cedar</code>. Para melhor qualidade, prefira <code>marin</code> ou <code>cedar</code>. <code>gpt-realtime-2</code> também aceita <strong>entrada de imagem</strong> como content part de uma mensagem do usuário.</p>
+  <p><strong>Vozes disponíveis na sessão Realtime:</strong> <code>alloy</code>, <code>ash</code>, <code>ballad</code>, <code>coral</code>, <code>echo</code>, <code>sage</code>, <code>shimmer</code>, <code>verse</code>, <code>marin</code> e <code>cedar</code>. Para melhor qualidade, prefira <code>marin</code> ou <code>cedar</code>. <code>gpt-realtime-2.1</code> também aceita <strong>entrada de imagem</strong> como content part de uma mensagem do usuário.</p>
   <div class="code-group">
     <div class="code-tabs" role="tablist">
       <button class="code-tab" role="tab" data-lang="javascript" aria-selected="true">JavaScript (WebSocket)</button>
@@ -3590,7 +3718,7 @@ const update = {
   type: "session.update",
   session: {
     type: "realtime",
-    model: "gpt-realtime-2",
+    model: "gpt-realtime-2.1",
     output_modalities: ["audio"], // use ["text"] para texto sem áudio
     audio: {
       input: {
@@ -3624,7 +3752,7 @@ update = {
     "type": "session.update",
     "session": {
         "type": "realtime",
-        "model": "gpt-realtime-2",
+        "model": "gpt-realtime-2.1",
         "output_modalities": ["audio"],
         "audio": {
             "input": {
@@ -3676,7 +3804,7 @@ ws.send(json.dumps({
     "type": "session.update",
     "session": {
         "type": "realtime",
-        "model": "gpt-realtime-2",
+        "model": "gpt-realtime-2.1",
         "tools": [{
             "type": "function",
             "name": "lookup_order",
@@ -3709,7 +3837,7 @@ ws.send(JSON.stringify({
   type: "session.update",
   session: {
     type: "realtime",
-    model: "gpt-realtime-2",
+    model: "gpt-realtime-2.1",
     tools: [{
       type: "function",
       name: "lookup_order",
@@ -3777,7 +3905,7 @@ ws.send(JSON.stringify({ type: "response.create" }));
 
 <section id="s-realtime-translate">
   <h2>23. Tradução em tempo real (gpt-realtime-translate)</h2>
-  <p>A <strong>tradução em tempo real</strong> transmite áudio de origem para uma sessão dedicada e devolve <strong>áudio traduzido + deltas de transcrição</strong> enquanto a pessoa ainda fala. Casos de uso: interpretação ao vivo, chamadas multilíngues, transmissões, reuniões, aulas e salas de vídeo. Use <code>gpt-realtime-translate</code> quando o app deve <em>traduzir o que um humano diz</em>; se precisa de um assistente que responde, chama tools e gerencia conversa, use <code>gpt-realtime-2</code> (Seção 22).</p>
+  <p>A <strong>tradução em tempo real</strong> transmite áudio de origem para uma sessão dedicada e devolve <strong>áudio traduzido + deltas de transcrição</strong> enquanto a pessoa ainda fala. Casos de uso: interpretação ao vivo, chamadas multilíngues, transmissões, reuniões, aulas e salas de vídeo. Use <code>gpt-realtime-translate</code> quando o app deve <em>traduzir o que um humano diz</em>; se precisa de um assistente que responde, chama tools e gerencia conversa, use <code>gpt-realtime-2.1</code> (Seção 22).</p>
 
   <h3 id="s-translate-difere">23.1 Como a sessão de tradução difere</h3>
   <div class="table-wrap">
@@ -4494,7 +4622,7 @@ console.log(resp.choices[0].message);
     <table>
       <thead><tr><th>Cenário</th><th>Use</th><th>Por quê</th></tr></thead>
       <tbody>
-        <tr><td>Conversa ao vivo, baixa latência, barge-in, tools em tempo real</td><td><code>gpt-realtime-2</code> (Realtime, Seção 22)</td><td>Sessão de streaming bidirecional; o modelo escuta e fala continuamente.</td></tr>
+        <tr><td>Conversa ao vivo, baixa latência, barge-in, tools em tempo real</td><td><code>gpt-realtime-2.1</code> (Realtime, Seção 22)</td><td>Sessão de streaming bidirecional; o modelo escuta e fala continuamente.</td></tr>
         <tr><td>Estender um app de chat com perguntas/respostas faladas e turnos delimitados</td><td><code>gpt-audio-1.5</code> (Chat Completions)</td><td>Requisição única; sem gerenciar sessão, buffers ou eventos.</td></tr>
         <tr><td>Só transcrever áudio (sem resposta falada)</td><td><code>gpt-4o-transcribe</code> / <code>gpt-realtime-whisper</code></td><td>STT puro de arquivo (Seção 25) ou ao vivo (Seção 24).</td></tr>
         <tr><td>Só converter texto em fala</td><td><code>gpt-4o-mini-tts</code> (Seção 26)</td><td>Geração de fala com controle de estilo via <code>instructions</code>.</td></tr>
@@ -4514,7 +4642,7 @@ console.log(resp.choices[0].message);
     <table>
       <thead><tr><th>Arquitetura</th><th>Melhor para</th><th>Por quê</th></tr></thead>
       <tbody>
-        <tr><td>Fala↔fala (sessão de áudio ao vivo)</td><td>Conversas naturais e de baixa latência.</td><td>O modelo lida com entrada e saída de áudio diretamente (<code>gpt-realtime-2</code>).</td></tr>
+        <tr><td>Fala↔fala (sessão de áudio ao vivo)</td><td>Conversas naturais e de baixa latência.</td><td>O modelo lida com entrada e saída de áudio diretamente (<code>gpt-realtime-2.1</code>).</td></tr>
         <tr><td>Pipeline de voz encadeado</td><td>Fluxos previsíveis ou extensão de um agente de texto existente.</td><td>Seu app mantém controle explícito sobre transcrição, raciocínio em texto e geração de fala.</td></tr>
       </tbody>
     </table>
@@ -4596,7 +4724,7 @@ dataChannel.send(JSON.stringify(event));
   <p class="source-link"><strong>Fonte:</strong> <a href="https://developers.openai.com/api/docs/guides/voice-agents" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/voice-agents</a> · <a href="https://developers.openai.com/api/docs/guides/realtime-vad" target="_blank" rel="noopener">realtime-vad</a> · <a href="https://developers.openai.com/api/docs/guides/realtime-models-prompting" target="_blank" rel="noopener">realtime-models-prompting</a></p>
 
   <h3 id="s-audio-cookbook">28.4 Receitas e exemplos oficiais (Cookbook)</h3>
-  <p>Exemplos oficiais de áudio e tempo real, lidos e classificados em <strong>2026-05-24</strong> quanto a aderência ao estado da arte. Em produção, prefira os modelos atuais (<code>gpt-realtime-2</code>, <code>gpt-realtime-translate</code>, <code>gpt-realtime-whisper</code>, <code>gpt-4o-mini-tts</code>, <code>gpt-audio-1.5</code>).</p>
+  <p>Exemplos oficiais de áudio e tempo real, lidos e classificados em <strong>2026-05-24</strong> quanto a aderência ao estado da arte. Em produção, prefira os modelos atuais (<code>gpt-realtime-2.1</code>, <code>gpt-realtime-translate</code>, <code>gpt-realtime-whisper</code>, <code>gpt-4o-mini-tts</code>, <code>gpt-audio-1.5</code>).</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Receita / repositório</th><th>O que ensina</th><th class="center">Status</th></tr></thead>
@@ -4610,7 +4738,7 @@ dataChannel.send(JSON.stringify(event));
       </tbody>
     </table>
   </div>
-  <div class="callout warn"><strong>Sinais de receita legada</strong> (substituir ao portar): IDs de áudio/realtime com sufixo <code>*-preview</code> de gerações anteriores, TTS apenas por um modelo legado dedicado, <em>steering</em> de voz por <em>system message</em> e arquitetura <em>turn-based</em> para tradução. Equivalentes modernos: tradução ao vivo → <code>gpt-realtime-translate</code> (endpoint dedicado); estilo de voz → <code>gpt-4o-mini-tts</code> + <code>instructions</code>; áudio in/out no chat → <code>gpt-audio-1.5</code>; voz em tempo real → <code>gpt-realtime-2</code> (com <code>reasoning.effort</code>).</div>
+  <div class="callout warn"><strong>Sinais de receita legada</strong> (substituir ao portar): IDs de áudio/realtime com sufixo <code>*-preview</code> de gerações anteriores, TTS apenas por um modelo legado dedicado, <em>steering</em> de voz por <em>system message</em> e arquitetura <em>turn-based</em> para tradução. Equivalentes modernos: tradução ao vivo → <code>gpt-realtime-translate</code> (endpoint dedicado); estilo de voz → <code>gpt-4o-mini-tts</code> + <code>instructions</code>; áudio in/out no chat → <code>gpt-audio-1.5</code>; voz em tempo real → <code>gpt-realtime-2.1</code> (com <code>reasoning.effort</code>).</div>
 
   <p>Os três exemplos abaixo são extraídos e adaptados da documentação oficial (verificados em <strong>2026-06-10</strong>), já com os modelos atuais. Use a aba para alternar entre <strong>Python</strong> e <strong>JavaScript</strong>.</p>
 
@@ -4706,7 +4834,7 @@ console.log(`Áudio salvo em ${speechFile}`);
     </div>
   </div>
 
-  <p><strong>3. Sessão Realtime com <code>gpt-realtime-2</code></strong> — no navegador via <strong>WebRTC</strong> (aba JavaScript: <code>RTCPeerConnection</code> + data channel <code>oai-events</code> + token efêmero) e no servidor via <strong>WebSocket</strong> (aba Python). Cada aba mostra <code>session.update</code> e o envio/recebimento de eventos no transporte natural de cada ambiente. · <a href="https://developers.openai.com/api/docs/guides/realtime-webrtc" target="_blank" rel="noopener">realtime-webrtc</a> · <a href="https://developers.openai.com/api/docs/guides/realtime-websocket" target="_blank" rel="noopener">realtime-websocket</a></p>
+  <p><strong>3. Sessão Realtime com <code>gpt-realtime-2.1</code></strong> — no navegador via <strong>WebRTC</strong> (aba JavaScript: <code>RTCPeerConnection</code> + data channel <code>oai-events</code> + token efêmero) e no servidor via <strong>WebSocket</strong> (aba Python). Cada aba mostra <code>session.update</code> e o envio/recebimento de eventos no transporte natural de cada ambiente. · <a href="https://developers.openai.com/api/docs/guides/realtime-webrtc" target="_blank" rel="noopener">realtime-webrtc</a> · <a href="https://developers.openai.com/api/docs/guides/realtime-websocket" target="_blank" rel="noopener">realtime-websocket</a></p>
   <div class="code-group">
     <div class="code-tabs" role="tablist">
       <button class="code-tab" role="tab" data-lang="python" aria-selected="true">Python (WebSocket)</button>
@@ -4719,7 +4847,7 @@ import json
 import websocket
 
 # A chave padrão fica só no backend seguro; nunca no navegador.
-url = "wss://api.openai.com/v1/realtime?model=gpt-realtime-2"
+url = "wss://api.openai.com/v1/realtime?model=gpt-realtime-2.1"
 headers = [
     "Authorization: Bearer " + os.environ["OPENAI_API_KEY"],
     "OpenAI-Safety-Identifier: hash-do-id-do-usuario",
@@ -4891,14 +5019,123 @@ console.log(vetor.length, resp.usage.total_tokens);
   <p class="source-link"><strong>Fonte:</strong> <a href="https://developers.openai.com/api/docs/guides/embeddings" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/embeddings</a></p>
 </section>
 
-<section id="s-moderation">
-  <h2>30. Moderation</h2>
-  <p>Há dois fluxos de moderação: o endpoint <strong>standalone</strong> <code>POST /v1/moderations</code>, que classifica um texto ou imagem isoladamente, e os <strong>scores inline</strong>, que voltam junto da geração na Responses API e no Chat Completions (ver <a href="#s-moderation-inline">§30.5</a>). O endpoint standalone verifica se um texto ou imagem é potencialmente nocivo, retornando categorias sinalizadas e pontuações de confiança. É <strong>gratuito</strong>. Com ele você pode filtrar conteúdo, intervir em contas abusivas ou bloquear entradas antes de chegar ao modelo. Arquivos de imagem são limitados a 20 MB.</p>
+<section id="s-uploads">
+  <h2>30. Uploads API — envio multipart de arquivos grandes</h2>
+  <p>A <strong>Uploads API</strong> envia arquivos grandes em <strong>múltiplas partes</strong> (multipart), contornando o limite do upload direto de arquivo único da <a href="#s-files">Files API</a> (<code>POST /v1/files</code>). Você cria um objeto intermediário <code>Upload</code>, adiciona uma ou mais <code>Parts</code> (pedaços de bytes), e então <strong>completa</strong> o Upload — o que gera um objeto <code>File</code> comum, utilizável no resto da plataforma — ou o <strong>cancela</strong>. Um Upload aceita no máximo <strong>8 GB</strong> no total e <strong>expira 1 hora após a criação</strong> se não for completado antes.</p>
 
-  <h3 id="s-moderation-modelo">30.1 Modelo atual</h3>
+  <div class="callout info"><strong>Quando usar Uploads vs. <code>files.create</code> single-shot:</strong> use o upload direto (<code>client.files.create(...)</code>) para arquivos que cabem confortavelmente em uma requisição HTTP. Use a <strong>Uploads API</strong> para arquivos grandes — datasets de fine-tuning, arquivos batch, documentos para Assistants/visão — especialmente em redes instáveis, onde reenviar só a Part que falhou é mais barato que reenviar o arquivo inteiro. O objeto <code>File</code> resultante é idêntico ao de um upload direto.</div>
+
+  <h3 id="s-uploads-limites">30.1 Limites de tamanho e expiração</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Limite</th><th class="num">Valor</th><th>Detalhe</th></tr></thead>
+      <tbody>
+        <tr><td>Tamanho máx. por Part</td><td class="num">64 MB</td><td>Cada chamada a <code>POST /uploads/{id}/parts</code> aceita no máximo 64 MB no campo <code>data</code>. Some quantas Parts forem necessárias até o teto do Upload.</td></tr>
+        <tr><td>Tamanho total do Upload</td><td class="num">8 GB</td><td>Teto absoluto do Upload. O total de bytes de todas as Parts deve bater com o valor de <code>bytes</code> declarado na criação.</td></tr>
+        <tr><td>Expiração do Upload</td><td class="num">1 hora</td><td>O próprio objeto <code>Upload</code> expira 1h após a criação se não for completado antes; então passa a <code>status: expired</code>.</td></tr>
+        <tr><td><code>expires_after.seconds</code></td><td class="num">3600–2 592 000</td><td>Política de expiração opcional do <em>arquivo resultante</em>: mínimo 3600 (1 hora), máximo 2 592 000 (30 dias). <code>anchor</code> só aceita <code>"created_at"</code>.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout tip"><strong>Ordem de montagem:</strong> as Parts podem ser enviadas <strong>em paralelo</strong>. A ordem final do arquivo <em>não</em> é a ordem de envio — ela é definida pelo array <code>part_ids</code> passado ao completar o Upload.</div>
+
+  <h3 id="s-uploads-fluxo">30.2 Fluxo completo (create → parts → complete)</h3>
+  <div class="code-group">
+    <div class="code-tabs" role="tablist">
+      <button class="code-tab" role="tab" data-lang="python" aria-selected="true">Python</button>
+      <button class="code-tab" role="tab" data-lang="bash" aria-selected="false">REST</button>
+    </div>
+    <div class="code-pane" data-lang="python" data-active="true">
+<pre><code class="language-python">from openai import OpenAI
+
+client = OpenAI()
+
+# 1) Criar o Upload (declara tamanho total, filename, mime_type e purpose)
+upload = client.uploads.create(
+    purpose="fine-tune",
+    filename="training_examples.jsonl",
+    bytes=2_147_483_648,        # 2 GB, deve bater com a soma das Parts
+    mime_type="text/jsonl",
+)
+
+# 2) Adicionar Parts (cada uma &lt;= 64 MB); podem ser enviadas em paralelo
+part1 = client.uploads.parts.create(
+    upload_id=upload.id,
+    data=open("chunk_1.bin", "rb"),
+)
+part2 = client.uploads.parts.create(
+    upload_id=upload.id,
+    data=open("chunk_2.bin", "rb"),
+)
+
+# 3) Completar — a ordem de montagem vem de part_ids, não do envio
+completed = client.uploads.complete(
+    upload_id=upload.id,
+    part_ids=[part1.id, part2.id],
+)
+
+file_id = completed.file.id   # objeto File pronto para uso (ex.: fine-tuning)
+</code></pre>
+    </div>
+    <div class="code-pane" data-lang="bash" data-active="false">
+<pre><code class="language-bash"># 1) Criar o Upload (expires_after é opcional — rege o File resultante)
+curl https://api.openai.com/v1/uploads \
+  -H "Authorization: Bearer $OPENAI_API_KEY" \
+  -d '{
+    "purpose": "fine-tune",
+    "filename": "training_examples.jsonl",
+    "bytes": 2147483648,
+    "mime_type": "text/jsonl",
+    "expires_after": { "anchor": "created_at", "seconds": 3600 }
+  }'
+
+# 2) Adicionar uma Part (multipart/form-data, campo data, &lt;= 64 MB)
+curl https://api.openai.com/v1/uploads/upload_abc123/parts \
+  -H "Authorization: Bearer $OPENAI_API_KEY" \
+  -F data=@chunk_1.bin
+
+# 3) Completar o Upload (ordem definida por part_ids)
+curl https://api.openai.com/v1/uploads/upload_abc123/complete \
+  -H "Authorization: Bearer $OPENAI_API_KEY" \
+  -d '{
+    "part_ids": ["part_def456", "part_ghi789"]
+  }'
+
+# Cancelar (se necessário) — sem body; nenhuma Part após o cancelamento
+curl https://api.openai.com/v1/uploads/upload_abc123/cancel \
+  -H "Authorization: Bearer $OPENAI_API_KEY"
+</code></pre>
+    </div>
+  </div>
+
+  <h3 id="s-uploads-endpoints">30.3 Referência dos 4 endpoints</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Endpoint</th><th>Descrição</th><th>Campos principais</th></tr></thead>
+      <tbody>
+        <tr><td><code>POST /v1/uploads</code></td><td>Cria o Upload (status inicial <code>pending</code>).</td><td>Request (todos obrigatórios): <code>filename</code>, <code>purpose</code> (<code>assistants</code>, <code>batch</code>, <code>fine-tune</code>, <code>vision</code>), <code>bytes</code>, <code>mime_type</code>. Opcional: <code>expires_after</code> (<code>anchor</code>=<code>created_at</code>, <code>seconds</code>).</td></tr>
+        <tr><td><code>POST /v1/uploads/{id}/parts</code></td><td>Adiciona um pedaço de bytes (<code>multipart/form-data</code>).</td><td>Request: <code>data</code> (arquivo/chunk, obrigatório, máx. 64 MB). Resposta: objeto <code>upload.part</code> com <code>id</code>, <code>object</code>, <code>created_at</code>, <code>upload_id</code>.</td></tr>
+        <tr><td><code>POST /v1/uploads/{id}/complete</code></td><td>Finaliza o Upload e gera o <code>File</code>.</td><td>Request: <code>part_ids</code> (array ordenado, obrigatório), <code>md5</code> (string, opcional — checksum para verificar o conteúdo). O total de bytes deve bater com <code>bytes</code> da criação.</td></tr>
+        <tr><td><code>POST /v1/uploads/{id}/cancel</code></td><td>Cancela o Upload (status <code>cancelled</code>).</td><td>Sem body. Nenhuma Part pode ser adicionada depois.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>O objeto <code>Upload</code> retornado contém <code>id</code>, <code>object</code> (sempre <code>"upload"</code>), <code>bytes</code>, <code>created_at</code>, <code>expires_at</code>, <code>filename</code>, <code>purpose</code>, <code>status</code> e — após completar — a propriedade <code>file</code> com o objeto <code>File</code> criado (<code>id</code>, <code>bytes</code>, <code>created_at</code>, <code>filename</code>, <code>purpose</code>, <code>object="file"</code>).</p>
+
+  <div class="callout warn"><strong>Pegadinha — bytes e conclusão são imutáveis:</strong> o <code>status</code> do Upload é um de quatro valores — <code>pending</code>, <code>completed</code>, <code>cancelled</code> ou <code>expired</code>. O total de bytes enviado <em>precisa</em> bater com o <code>bytes</code> declarado na criação, senão o <code>complete</code> falha. Depois de completar ou cancelar, nenhuma Part pode ser adicionada. Um Upload não completado dentro de 1h vira <code>expired</code> e precisa ser recriado do zero — Parts de um Upload não são reaproveitáveis em outro.</div>
+
+  <p class="source-link"><strong>Fonte:</strong> <a href="https://developers.openai.com/api/docs/api-reference/uploads" target="_blank" rel="noopener">developers.openai.com/api/docs/api-reference/uploads</a></p>
+</section>
+
+<section id="s-moderation">
+  <h2>31. Moderation</h2>
+  <p>Há dois fluxos de moderação: o endpoint <strong>standalone</strong> <code>POST /v1/moderations</code>, que classifica um texto ou imagem isoladamente, e os <strong>scores inline</strong>, que voltam junto da geração na Responses API e no Chat Completions (ver <a href="#s-moderation-inline">§31.5</a>). O endpoint standalone verifica se um texto ou imagem é potencialmente nocivo, retornando categorias sinalizadas e pontuações de confiança. É <strong>gratuito</strong>. Com ele você pode filtrar conteúdo, intervir em contas abusivas ou bloquear entradas antes de chegar ao modelo. Arquivos de imagem são limitados a 20 MB.</p>
+
+  <h3 id="s-moderation-modelo">31.1 Modelo atual</h3>
   <p>O modelo recomendado é <code>omni-moderation-latest</code>: suporta entradas multimodais (texto e imagem) e mais categorias de classificação. A entrada pode ser uma string simples ou um array de conteúdo com objetos <code>text</code> e <code>image_url</code>.</p>
 
-  <h3 id="s-moderation-saida">30.2 Estrutura da resposta</h3>
+  <h3 id="s-moderation-saida">31.2 Estrutura da resposta</h3>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Campo</th><th>Descrição</th></tr></thead>
@@ -4911,7 +5148,7 @@ console.log(vetor.length, resp.usage.total_tokens);
     </table>
   </div>
 
-  <h3 id="s-moderation-categorias">30.3 Categorias</h3>
+  <h3 id="s-moderation-categorias">31.3 Categorias</h3>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Categoria</th><th>Descrição</th><th>Entradas</th></tr></thead>
@@ -4934,7 +5171,7 @@ console.log(vetor.length, resp.usage.total_tokens);
   </div>
   <div class="callout info"><strong>Nota:</strong> categorias marcadas como apenas texto retornam score 0 quando só há imagem na entrada.</div>
 
-  <h3 id="s-moderation-exemplo">30.4 Moderar texto e imagem</h3>
+  <h3 id="s-moderation-exemplo">31.4 Moderar texto e imagem</h3>
   <div class="code-group">
     <div class="code-tabs" role="tablist">
       <button class="code-tab" role="tab" data-lang="python" aria-selected="true">Python</button>
@@ -4992,8 +5229,8 @@ if (r.flagged) console.log("Conteúdo sinalizado:", r.categories);
     </div>
   </div>
 
-  <h3 id="s-moderation-inline">30.5 Scores de moderação inline (Responses e Chat Completions)</h3>
-  <p>Desde <strong>jun/2026</strong> é possível pedir os scores de moderação <em>no mesmo fluxo da geração</em>, sem requisição separada: passe um objeto <code>moderation</code> no topo da requisição (Responses API ou Chat Completions) com o modelo de moderação em <code>moderation.model</code>. A resposta volta com <code>response.moderation.input</code> (moderação da entrada) e <code>response.moderation.output</code> (moderação da saída gerada) — cada um é um <code>moderation_result</code> com os mesmos campos de <a href="#s-moderation-saida">§30.2</a> (<code>flagged</code>, <code>categories</code>, <code>category_scores</code>). Suporte tipado no SDK Python a partir de <code>openai</code> 2.41.0.</p>
+  <h3 id="s-moderation-inline">31.5 Scores de moderação inline (Responses e Chat Completions)</h3>
+  <p>Desde <strong>jun/2026</strong> é possível pedir os scores de moderação <em>no mesmo fluxo da geração</em>, sem requisição separada: passe um objeto <code>moderation</code> no topo da requisição (Responses API ou Chat Completions) com o modelo de moderação em <code>moderation.model</code>. A resposta volta com <code>response.moderation.input</code> (moderação da entrada) e <code>response.moderation.output</code> (moderação da saída gerada) — cada um é um <code>moderation_result</code> com os mesmos campos de <a href="#s-moderation-saida">§31.2</a> (<code>flagged</code>, <code>categories</code>, <code>category_scores</code>). Suporte tipado no SDK Python a partir de <code>openai</code> 2.41.0.</p>
   <div class="code-group">
     <div class="code-tabs" role="tablist">
       <button class="code-tab" role="tab" data-lang="python" aria-selected="true">Python</button>
@@ -5048,7 +5285,7 @@ for (const [lado, resultado] of [["input", resp.moderation.input], ["output", re
 </section>
 
 <section id="s-pricing">
-  <h2>31. Preços</h2>
+  <h2>32. Preços</h2>
   <p>Os preços abaixo são por <strong>1 milhão de tokens</strong> (USD) no tier <strong>Standard</strong>, salvo quando indicado por minuto/unidade/chamada. Preços são <strong>perecíveis</strong>: confira sempre a página oficial. Conferência feita em <strong>2026-06-10</strong> direto na tabela oficial (fonte ao final).</p>
   <div class="callout warn"><strong>Modelos sem linha própria na tabela oficial.</strong> Alguns modelos de áudio — <code>gpt-audio-1.5</code>, <code>gpt-4o-mini-tts</code>, <code>gpt-4o-transcribe-diarize</code> e <code>whisper-1</code> — <strong>não aparecem como linha de preço</strong> na página oficial (verificado: a página tem só as seções <em>Realtime and audio generation models</em> e <em>Transcription models</em>, e não há seção de TTS). Eles são <strong>cobrados por token</strong> nas taxas do endpoint/modelo correspondente. Onde a tabela mostra <span class="pill na">por token</span>, é esse o regime — não um preço fixo por minuto/caractere publicado.</div>
 
@@ -5092,10 +5329,10 @@ for (const [lado, resultado] of [["input", resp.moderation.input], ["output", re
       <thead><tr><th>Modelo</th><th>Modalidade</th><th class="num">Entrada</th><th class="num">Cache</th><th class="num">Saída</th></tr></thead>
       <tbody>
         <tr><td><code>gpt-image-2</code></td><td>Imagem / texto</td><td colspan="3">Estimado por <code>quality</code>+<code>size</code> na <a href="https://developers.openai.com/api/docs/guides/image-generation#calculating-costs" target="_blank" rel="noopener">calculadora oficial</a> (tabela por imagem na <a href="#s-image-tokens">§20</a>). Ex. 1024×1024: low ~$0,006 · medium ~$0,053 · high ~$0,211. Tokens de imagem: $8 entrada / $2 cache / $30 saída.</td></tr>
-        <tr><td rowspan="3"><code>gpt-realtime-2</code></td><td>Áudio</td><td class="num">$32,00</td><td class="num">$0,40</td><td class="num">$64,00</td></tr>
+        <tr><td rowspan="3"><code>gpt-realtime-2.1</code></td><td>Áudio</td><td class="num">$32,00</td><td class="num">$0,40</td><td class="num">$64,00</td></tr>
         <tr><td>Texto</td><td class="num">$4,00</td><td class="num">$0,40</td><td class="num">$24,00</td></tr>
         <tr><td>Imagem</td><td class="num">$5,00</td><td class="num">$0,50</td><td class="num">—</td></tr>
-        <tr><td rowspan="3"><code>gpt-realtime-mini</code></td><td>Áudio</td><td class="num">$10,00</td><td class="num">$0,30</td><td class="num">$20,00</td></tr>
+        <tr><td rowspan="3"><code>gpt-realtime-2.1-mini</code></td><td>Áudio</td><td class="num">$10,00</td><td class="num">$0,30</td><td class="num">$20,00</td></tr>
         <tr><td>Texto</td><td class="num">$0,60</td><td class="num">$0,06</td><td class="num">$2,40</td></tr>
         <tr><td>Imagem</td><td class="num">$0,80</td><td class="num">$0,08</td><td class="num">—</td></tr>
         <tr><td><code>gpt-realtime-translate</code></td><td>Áudio</td><td class="num">—</td><td class="num">—</td><td class="num">$0,034 / min</td></tr>
@@ -5150,7 +5387,7 @@ for (const [lado, resultado] of [["input", resp.moderation.input], ["output", re
 </section>
 
 <section id="s-rate-limits">
-  <h2>32. Rate limits &amp; tiers</h2>
+  <h2>33. Rate limits &amp; tiers</h2>
   <p>Rate limits restringem quantas requisições e tokens você pode usar por janela de tempo. São aplicados no nível de <strong>organização e de projeto</strong> (não por usuário), variam por modelo e podem ser atingidos por qualquer métrica — o que vier primeiro.</p>
 
   <h3 id="s-rate-limits-metricas">32.1 Métricas</h3>
@@ -5249,7 +5486,7 @@ curl -i https://api.openai.com/v1/responses \
 </section>
 
 <section id="s-processing">
-  <h2>33. Batch, Flex &amp; Priority</h2>
+  <h2>34. Batch, Flex &amp; Priority</h2>
   <p>O parâmetro <code>service_tier</code> controla o regime de processamento, trocando latência por custo. Além dele, a Batch API oferece um caminho assíncrono de maior throughput.</p>
 
   <h3 id="s-processing-batch">33.1 Batch API</h3>
@@ -5394,7 +5631,7 @@ console.log(resp.output_text);
 </section>
 
 <section id="s-admin">
-  <h2>34. Admin APIs</h2>
+  <h2>35. Admin APIs</h2>
   <p>As Admin APIs automatizam a gestão da organização — convites de usuários, revisão de audit logs, administração de projetos, gestão de chaves, alertas de gasto, retenção de dados, <strong>permissões de hosted tools</strong> por projeto (<code>/v1/organization/projects/&#123;project_id&#125;/hosted_tool_permissions</code>), itens granulares de cobrança e operações de rate limit — para ferramentas de back-office, fluxos de segurança e tooling operacional fora do dashboard (capacidades expandidas em 26/05/2026).</p>
   <div class="callout info"><strong>Workload Identity Federation (26/05/2026):</strong> cargas de trabalho confiáveis podem trocar tokens de identidade externa por <strong>tokens de acesso de curta duração</strong> da OpenAI API — elimina a necessidade de armazenar API keys de longa duração em CI/CD e infraestrutura.</div>
 
@@ -5476,7 +5713,7 @@ curl https://api.openai.com/v1/organization/projects/proj_123/model_permissions 
 </section>
 
 <section id="s-errors">
-  <h2>35. Códigos de erro</h2>
+  <h2>36. Códigos de erro</h2>
   <p>A API retorna erros HTTP padrão; os SDKs oficiais os mapeiam em exceções tipadas. Trate-os programaticamente e aplique backoff onde indicado.</p>
 
   <h3 id="s-errors-http">35.1 Erros HTTP</h3>
@@ -5521,7 +5758,7 @@ curl https://api.openai.com/v1/organization/projects/proj_123/model_permissions 
 </section>
 
 <section id="s-deployment">
-  <h2>36. Checklist de produção</h2>
+  <h2>37. Checklist de produção</h2>
   <p>Ao levar uma aplicação para produção, estas alavancas melhoram qualidade, custo, latência e confiabilidade. Cada item é cumulativo e configurável na Responses API.</p>
 
   <div class="table-wrap">
@@ -5654,7 +5891,7 @@ console.log(resp.id, resp.status);
         <tr><td><code>gpt-5.4-mini</code></td><td>Texto rápido/barato</td><td><code>/v1/responses</code></td><td>A</td></tr>
         <tr><td><code>gpt-5.4-nano</code></td><td>Texto de menor latência/custo</td><td><code>/v1/responses</code></td><td>A</td></tr>
         <tr><td><code>gpt-image-2</code></td><td>Geração e edição de imagem</td><td><code>/v1/images/*</code></td><td>B</td></tr>
-        <tr><td><code>gpt-realtime-2</code></td><td>Realtime speech-to-speech</td><td><code>/v1/realtime</code></td><td>C</td></tr>
+        <tr><td><code>gpt-realtime-2.1</code></td><td>Realtime speech-to-speech</td><td><code>/v1/realtime</code></td><td>C</td></tr>
         <tr><td><code>gpt-realtime-translate</code></td><td>Tradução em realtime</td><td><code>/v1/realtime/translations</code></td><td>C</td></tr>
         <tr><td><code>gpt-realtime-whisper</code></td><td>Transcrição em streaming (realtime)</td><td><code>/v1/realtime/transcription_sessions</code></td><td>C</td></tr>
         <tr><td><code>gpt-4o-transcribe</code></td><td>STT de arquivo</td><td><code>/v1/audio/transcriptions</code></td><td>C</td></tr>
@@ -5679,7 +5916,7 @@ console.log(resp.id, resp.status);
       <thead><tr><th>Termo</th><th>Definição</th></tr></thead>
       <tbody>
         <tr><td>Responses API</td><td>API principal da OpenAI para texto/multimodal/tools, com estado e ferramentas nativas (<code>/v1/responses</code>).</td></tr>
-        <tr><td>reasoning effort</td><td>Quanto o modelo raciocina antes de responder (<code>none</code>–<code>xhigh</code>); mais esforço = mais latência e tokens de reasoning.</td></tr>
+        <tr><td>reasoning effort</td><td>Quanto o modelo raciocina antes de responder. Enum da API: <code>none</code>·<code>minimal</code>·<code>low</code>·<code>medium</code>·<code>high</code>·<code>xhigh</code>·<code>max</code> (model-dependent; <code>max</code> na família 5.6). Mais esforço = mais latência e tokens de reasoning.</td></tr>
         <tr><td>verbosity</td><td>Alavanca de concisão vs. completude da saída (<code>low</code>/<code>medium</code>/<code>high</code>).</td></tr>
         <tr><td>prompt caching</td><td>Reuso automático de prefixos longos para reduzir latência e custo; direcionado por <code>prompt_cache_key</code>.</td></tr>
         <tr><td>compaction</td><td>Redução controlada do contexto preservando o estado necessário entre turnos.</td></tr>

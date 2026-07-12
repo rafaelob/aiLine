@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Guia Multimodal — OpenAI, Gemini e Anthropic (imagens, PDFs, Office, vídeo, áudio, code interpreter)</title>
 <meta name="description" content="Guia técnico exaustivo e comparativo de como OpenAI (Responses API), Google Gemini (generateContent) e Anthropic Claude (Messages API) tratam imagens, PDFs, Office, planilhas, vídeo, áudio e code interpreter, com parâmetros, limites, exemplos e equivalências. Verificado em 2026-06-11." />
-<meta name="last-checked" content="2026-07-05" />
+<meta name="last-checked" content="2026-07-12" />
 <meta name="robots" content="index,follow" />
 <style>
   /* ------- design tokens ------- */
@@ -321,7 +321,7 @@
   <div class="header-row">
     <div class="brand">Guia Multimodal <small>OpenAI · Gemini · Anthropic</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-05</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-12</strong></span>
       <span class="badge openai">OpenAI</span>
       <span class="badge gemini">Gemini</span>
       <span class="badge anthropic">Claude</span>
@@ -380,6 +380,7 @@
           <li><a href="#gemini-cache">Context caching</a></li>
           <li><a href="#gemini-params">Parâmetros</a></li>
           <li><a href="#gemini-limits">Limitações</a></li>
+          <li><a href="#gemini-embeddings">Embeddings</a></li>
         </ol>
       </li>
       <li class="toc-gemini"><a href="#gemini-interactions">Gemini Interactions deep-dive</a>
@@ -1389,8 +1390,10 @@ senão:
             <td>
               Implicit cache mín. tokens:
               <ul style="margin:0;padding-left:18px">
-                <li>Gemini 3 Pro Preview: <strong>4.096 tk</strong></li>
-                <li>Gemini 3 Flash Preview: <strong>1.024 tk</strong></li>
+                <li>Gemini 3.5 Flash: <strong>4.096 tk</strong></li>
+                <li>Gemini 3.1 Pro Preview: <strong>4.096 tk</strong></li>
+                <li>Gemini 2.5 Flash: <strong>2.048 tk</strong></li>
+                <li>Gemini 2.5 Pro: <strong>2.048 tk</strong></li>
               </ul>
               Explicit: sem mínimo, sem máximo.
             </td>
@@ -4448,10 +4451,91 @@ response = client.models.generate_content(
 <pre><code>client.models.count_tokens(model=<span class="tok-s">"gemini-3.5-flash"</span>, contents=[myfile])</code></pre>
 
   <h4>Áudio realtime (Live API)</h4>
-  <p>Para conversa voz+vídeo sub-segundo, use a <strong>Live API</strong> (<code>gemini-3.1-flash-live-preview</code>). É bidirecional (áudio in → áudio out), suporta tool calls, e <em>não</em> é parte do <code>generateContent</code>. Veja a doc da Live API para o transport WebSocket, session resumption, e configuração de voz.</p>
+  <p>Para conversa voz+vídeo sub-segundo, use a <strong>Live API</strong> (<code>gemini-3.1-flash-live-preview</code>). É bidirecional (áudio in → áudio out), suporta tool calls, e <em>não</em> é parte do <code>generateContent</code>. Mecânica completa (setup, VAD, session resumption, limites, ephemeral tokens) em <a href="#gemini-live">§5.7.1</a>.</p>
   <div class="callout">
     <strong>Nota.</strong> O endpoint <code>generateContent</code> em si <strong>não</strong> streama áudio de saída — o modelo pode ser pedido para descrever áudio, mas retorna texto ou JSON estruturado, não áudio. Output de áudio requer ou um modelo TTS (<code>gemini-3.1-flash-tts-preview</code>) ou a Live API.
   </div>
+
+  <!-- =================================================================== -->
+  <!-- 5.7.1 Live API                                                         -->
+  <!-- =================================================================== -->
+  <h4 id="gemini-live">5.7.1 Live API — sessão bidirecional em tempo real <a class="anchor" href="#gemini-live">¶</a></h4>
+  <p>A <strong>Live API</strong> é uma conexão <strong>WebSocket stateful</strong> (WSS) separada do <code>generateContent</code> — o serviço/protocolo é <code>BidiGenerateContent</code> (mensagens <code>BidiGenerateContentClientMessage</code> / <code>BidiGenerateContentServerMessage</code>). Entrada suportada: áudio (PCM 16-bit raw, <strong>16 kHz</strong>, little-endian, <code>audio/pcm;rate=16000</code>), imagens (JPEG/PNG, até <strong>1 frame/segundo</strong> para vídeo) e texto. Saída: áudio (PCM 16-bit raw, <strong>24 kHz</strong>) e/ou texto. Está em <span class="pill partial">Preview</span>.</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Modelo</th><th>Tipo</th><th>Notas</th></tr></thead>
+      <tbody>
+        <tr><td><code>gemini-3.1-flash-live-preview</code></td><td>Half-cascade</td><td>Usado nos exemplos oficiais de conexão (SDK e WebSocket). Function calling apenas sequencial; sem diálogo afetivo nem áudio proativo.</td></tr>
+        <tr><td><code>gemini-2.5-flash-native-audio-preview-12-2025</code></td><td>Native audio</td><td>Modelo dos exemplos de microfone/áudio nativo. Suporta diálogo afetivo (<code>enable_affective_dialog</code>) e áudio proativo (<code>proactivity.proactive_audio</code>) — exige <code>api_version="v1alpha"</code>. Suporta function calling assíncrono (<code>behavior: NON_BLOCKING</code> com <code>scheduling</code>: <code>INTERRUPT</code> / <code>WHEN_IDLE</code> / <code>SILENT</code>).</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout warn">
+    <strong>Native audio vs. half-cascade.</strong> No <code>gemini-3.1-flash-live-preview</code>, function calling é <strong>apenas sequencial</strong> (assíncrono não suportado) e <code>send_client_content</code> só é aceito para <em>seed</em>ar o histórico inicial (requer <code>initial_history_in_client_content</code> em <code>history_config</code>); depois disso, use <code>send_realtime_input</code>. Diálogo afetivo e áudio proativo <strong>não</strong> são suportados no 3.1 — apenas no <code>gemini-2.5-flash-native-audio-preview-12-2025</code>.
+  </div>
+
+  <h5>Conectar e configurar (setup)</h5>
+<pre><code><span class="tok-k">from</span> google <span class="tok-k">import</span> genai
+<span class="tok-k">from</span> google.genai <span class="tok-k">import</span> types
+
+client = genai.Client()
+model = <span class="tok-s">"gemini-3.1-flash-live-preview"</span>
+config = {<span class="tok-s">"response_modalities"</span>: [<span class="tok-s">"AUDIO"</span>]}
+
+<span class="tok-k">async</span> <span class="tok-k">with</span> client.aio.live.connect(model=model, config=config) <span class="tok-k">as</span> session:
+    <span class="tok-k">await</span> session.send_realtime_input(
+        audio=types.Blob(data=chunk, mime_type=<span class="tok-s">"audio/pcm;rate=16000"</span>)
+    )</code></pre>
+  <p>Modalidade de resposta é <code>response_modalities</code>: <code>["AUDIO"]</code> ou <code>["TEXT"]</code> (os modelos native audio só suportam <code>AUDIO</code> — para texto, use transcrição). Voz: <code>speech_config.voice_config.prebuilt_voice_config.voice_name</code> (ex.: <code>"Kore"</code>). Transcrição do áudio in/out: campos <code>output_audio_transcription</code> e <code>input_audio_transcription</code> na config, lidos em <code>response.server_content.output_transcription.text</code> / <code>input_transcription.text</code>.</p>
+
+  <h5>VAD (voice activity detection) e interrupção</h5>
+  <p>Por padrão o VAD é <strong>automático</strong> (<code>realtime_input_config.automatic_activity_detection</code>, com <code>disabled: false</code>), com sensibilidade configurável via <code>start_of_speech_sensitivity</code> (<code>START_SENSITIVITY_LOW</code>/<code>HIGH</code>), <code>end_of_speech_sensitivity</code>, <code>prefix_padding_ms</code> e <code>silence_duration_ms</code>. O default interno do servidor para silêncio é ≈ <strong>800 ms</strong>; a doc recomenda a faixa de <strong>500–800 ms</strong>.</p>
+  <p>Para controle manual, desabilite o VAD automático (<code>automatic_activity_detection.disabled: true</code>) e sinalize início/fim de turno explicitamente com <code>activity_start</code> / <code>activity_end</code> via <code>send_realtime_input</code> — nesse modo não há buffer de pré-fala nem tolerância a silêncio.</p>
+  <p>O usuário pode <strong>interromper o modelo a qualquer momento</strong> (barge-in): a interrupção aparece como <code>response.server_content.interrupted = true</code> (Python) / <code>turn.serverContent.interrupted</code> (JS); a geração em curso é <strong>cancelada e descartada</strong> (esvazie o buffer de áudio do cliente).</p>
+
+  <h5>Session resumption e context window compression</h5>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Recurso</th><th>Campo</th><th>Detalhe</th></tr></thead>
+      <tbody>
+        <tr><td>Retomar sessão</td><td><code>session_resumption</code> (na config de setup)</td><td>Servidor envia <code>SessionResumptionUpdate</code> com <code>resumable</code> e <code>new_handle</code>; reconecte passando o último <code>handle</code> recebido. Tokens de resumption válidos por <strong>2 h</strong> após o término da última sessão.</td></tr>
+        <tr><td>Compressão de contexto</td><td><code>context_window_compression.sliding_window</code></td><td>Janela deslizante ativada por <code>trigger_tokens</code>; permite estender a duração da sessão (sem ela, os limites de tempo abaixo se aplicam).</td></tr>
+        <tr><td>Aviso de encerramento</td><td><code>GoAway.timeLeft</code></td><td>Mensagem do servidor com o tempo restante antes de a conexão ser encerrada como <code>ABORTED</code>.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h5>Limites de sessão</h5>
+  <ul>
+    <li>Sessões <strong>somente-áudio</strong> (sem compressão): limite de <strong>15 minutos</strong>.</li>
+    <li>Sessões <strong>áudio + vídeo</strong> (sem compressão): limite de <strong>2 minutos</strong>.</li>
+    <li>Duração da conexão WebSocket em si: limitada a cerca de <strong>10 minutos</strong> (o encerramento da conexão encerra a sessão, salvo session resumption).</li>
+    <li>Janela de contexto: <strong>128k tokens</strong> para modelos native audio output; <strong>32k tokens</strong> para os demais modelos Live API.</li>
+  </ul>
+
+  <h5>Ephemeral tokens (produção client-to-server)</h5>
+  <p>Para conexões diretas do cliente (browser/mobile), a doc recomenda <strong>tokens efêmeros</strong> em vez da API key padrão — recurso em <span class="pill partial">Preview</span>, compatível apenas com <code>api_version="v1alpha"</code> e exclusivo da Live API (endpoint <code>BidiGenerateContentConstrained</code>).</p>
+<pre><code><span class="tok-k">import</span> datetime
+<span class="tok-k">from</span> google <span class="tok-k">import</span> genai
+
+now = datetime.datetime.now(tz=datetime.timezone.utc)
+client = genai.Client(http_options={<span class="tok-s">'api_version'</span>: <span class="tok-s">'v1alpha'</span>})
+
+token = client.auth_tokens.create(config={
+    <span class="tok-s">'uses'</span>: <span class="tok-n">1</span>,
+    <span class="tok-s">'expire_time'</span>: now + datetime.timedelta(minutes=<span class="tok-n">30</span>),
+    <span class="tok-s">'new_session_expire_time'</span>: now + datetime.timedelta(minutes=<span class="tok-n">1</span>),
+    <span class="tok-s">'live_connect_constraints'</span>: {
+        <span class="tok-s">'model'</span>: <span class="tok-s">'gemini-3.1-flash-live-preview'</span>,
+        <span class="tok-s">'config'</span>: {<span class="tok-s">'session_resumption'</span>: {}, <span class="tok-s">'response_modalities'</span>: [<span class="tok-s">'AUDIO'</span>]},
+    },
+})</code></pre>
+  <p><code>uses</code> limita quantas sessões o token pode iniciar (ex.: <code>1</code> = uso único). <code>expire_time</code> (default <strong>30 min</strong> no futuro) é o prazo para trocar mensagens na conexão; <code>new_session_expire_time</code> (default <strong>1 min</strong> no futuro) é o prazo para <em>iniciar</em> uma nova sessão com o token. <code>live_connect_constraints</code> trava modelo/config no próprio token — o backend nunca expõe a API key real ao cliente. Dentro do prazo de <code>expire_time</code>, combine com <code>session_resumption</code> para reconectar a cada ~10 minutos (funciona mesmo com <code>uses: 1</code>).</p>
+
+  <p>Tools (function calling, Google Search) e transcrição de áudio in/out usam a mesma config de setup; para o transporte completo, formatos de payload binário e exemplos JS/Python lado a lado, ver a doc oficial.</p>
+  <p>Fonte: <code>ai.google.dev/gemini-api/docs/live</code> · <code>live-guide</code> · <code>live-session</code> · <code>ephemeral-tokens</code> (verificado em 2026-07-12).</p>
 
   <!-- =================================================================== -->
   <!-- 5.8 Files API                                                          -->
@@ -4659,10 +4743,13 @@ response = client.models.generate_content(
     <table>
       <thead><tr><th>Modelo</th><th>Mín tokens para cache hit</th></tr></thead>
       <tbody>
-        <tr><td>Gemini 3 Pro Preview</td><td class="num">4 096</td></tr>
-        <tr><td>Gemini 3 Flash Preview</td><td class="num">1 024</td></tr>
+        <tr><td>Gemini 3.5 Flash</td><td class="num">4 096</td></tr>
+        <tr><td>Gemini 3.1 Pro Preview</td><td class="num">4 096</td></tr>
+        <tr><td>Gemini 2.5 Flash</td><td class="num">2 048</td></tr>
+        <tr><td>Gemini 2.5 Pro</td><td class="num">2 048</td></tr>
       </tbody>
     </table>
+    <p class="small">Fonte oficial (caching, verificado 2026-07-12). Valores atualizados: o snapshot antigo trazia Flash=1024; a tabela atual publica 4096 para o Flash 3.x e 2048 para os modelos 2.5.</p>
   </div>
 
   <p>Tips para maximizar cache hits implícitos:</p>
@@ -4942,7 +5029,7 @@ FAILED</code></pre>
   <h4>Caching</h4>
   <ul>
     <li>Conteúdo de cache explícito não pode ser inspecionado/lido de volta, apenas metadados.</li>
-    <li>Cache implícito só atua acima de 1 024 / 4 096 tokens dependendo do modelo.</li>
+    <li>Cache implícito só atua acima de <strong>4 096</strong> (Gemini 3.5 Flash e 3.1 Pro) / <strong>2 048</strong> (modelos 2.5) tokens dependendo do modelo.</li>
     <li>Prefixo de cache precisa ser <strong>idêntico</strong> entre as chamadas reusantes.</li>
   </ul>
 
@@ -4967,6 +5054,107 @@ FAILED</code></pre>
   <div class="callout tip">
     <strong>Resumo prático.</strong> Para a maioria das aplicações multimodais Gemini 3: (1) suba arquivos grandes via Files API e cheque <code>state == ACTIVE</code>; (2) coloque mídia <em>antes</em> do texto na lista de parts; (3) ajuste <code>media_resolution</code> com base na densidade de detalhe (LOW para vídeo longo, HIGH para OCR fino); (4) use cache explícito quando o prefixo se repete identicamente; (5) inspecione <code>usage_metadata</code> a cada request para validar token accounting per-modalidade.
   </div>
+
+  <!-- =================================================================== -->
+  <!-- 5.12 Embeddings                                                      -->
+  <!-- =================================================================== -->
+  <h3 id="gemini-embeddings">5.12 Embeddings <a class="anchor" href="#gemini-embeddings">&para;</a></h3>
+  <p>Fora do escopo de "multimodal understanding" via <code>generateContent</code>, a Gemini API expõe um endpoint dedicado de <strong>embeddings</strong> &mdash; vetores densos usados para busca semântica, RAG, clustering e classificação. A chamada é <code>client.models.embed_content</code>, no mesmo SDK <code>google-genai</code> já usado no resto desta seção (em JS/TS: <code>ai.models.embedContent</code>).</p>
+
+  <div class="callout">
+    <strong>Dois modelos, comportamento diferente.</strong> <code>gemini-embedding-2</code> é o modelo mais novo e o <strong>primeiro embedding multimodal</strong> da Gemini API &mdash; mapeia texto, imagem, áudio, vídeo e documentos (PDF) num <em>mesmo</em> espaço vetorial, sob um limite de entrada de <strong>8&nbsp;192 tokens</strong> compartilhado entre modalidades. <code>gemini-embedding-001</code> permanece disponível para casos somente-texto (limite de <strong>2&nbsp;048 tokens</strong>) e é o único que aceita o parâmetro <code>task_type</code> &mdash; <code>gemini-embedding-2</code> não suporta <code>task_type</code>; em seu lugar, você descreve a tarefa como <strong>instrução no próprio prompt</strong>.
+  </div>
+
+  <div class="callout warn">
+    <strong>Espaços vetoriais incompatíveis.</strong> Embeddings de <code>gemini-embedding-2</code> e <code>gemini-embedding-001</code> <strong>não podem ser comparados entre si</strong> &mdash; ao migrar de modelo, você precisa <em>re-embedar todo o corpus</em> com o novo modelo antes de rodar qualquer similaridade.
+  </div>
+
+  <h4>Chamada básica</h4>
+<pre><code class="language-python">from google import genai
+
+client = genai.Client()
+
+result = client.models.embed_content(
+    model="gemini-embedding-2",
+    contents="What is the meaning of life?",
+)
+print(len(result.embeddings[0].values))  # 3072 (dimensão default)</code></pre>
+
+  <h4><code>output_dimensionality</code> &mdash; Matryoshka Representation Learning (MRL)</h4>
+  <p>Ambos os modelos são treinados com <strong>MRL</strong> (Matryoshka Representation Learning), técnica que produz embeddings de alta dimensão cujos <em>prefixos</em> iniciais já são representações úteis por si só. Isso permite truncar o vetor para reduzir custo de storage/índice sem re-treinar nada &mdash; basta pedir a dimensionalidade desejada via <code>output_dimensionality</code>.</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Propriedade</th><th>Valor</th></tr></thead>
+      <tbody>
+        <tr><td>Dimensão default / máxima nativa</td><td><strong>3072</strong> (ambos os modelos)</td></tr>
+        <tr><td>Range suportado (MRL)</td><td><strong>128 &ndash; 3072</strong></td></tr>
+        <tr><td>Dimensões recomendadas</td><td><strong>768, 1536 ou 3072</strong></td></tr>
+        <tr><td>Renormalização em dimensão não-default</td><td><code>gemini-embedding-2</code>: <span class="pill ok">automática</span>. <code>gemini-embedding-001</code>: <span class="pill bad">manual</span> (o chamador precisa dividir pelo <code>np.linalg.norm()</code>).</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+<pre><code class="language-python">from google import genai
+from google.genai import types
+
+client = genai.Client()
+
+result = client.models.embed_content(
+    model="gemini-embedding-2",
+    contents="What is the meaning of life?",
+    config=types.EmbedContentConfig(output_dimensionality=768),
+)
+print(len(result.embeddings[0].values))  # 768 (já renormalizado — gemini-embedding-2)</code></pre>
+
+  <h4><code>task_type</code> &mdash; otimizando o embedding para o uso final (<code>gemini-embedding-001</code>)</h4>
+  <p><code>task_type</code> ajusta o embedding para o papel que ele vai desempenhar (query vs. documento, similaridade vs. classificação). Só é suportado em <code>gemini-embedding-001</code>.</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th><code>task_type</code></th><th>Uso</th></tr></thead>
+      <tbody>
+        <tr><td><code>RETRIEVAL_DOCUMENT</code></td><td>Embedar os documentos/chunks que vão para o índice de busca.</td></tr>
+        <tr><td><code>RETRIEVAL_QUERY</code></td><td>Embedar a query de busca do usuário no momento da consulta.</td></tr>
+        <tr><td><code>SEMANTIC_SIMILARITY</code></td><td>Comparar similaridade semântica entre dois textos (STS).</td></tr>
+        <tr><td><code>CLASSIFICATION</code></td><td>Embeddings otimizados para alimentar um classificador downstream.</td></tr>
+        <tr><td><code>CLUSTERING</code></td><td>Agrupar textos por similaridade sem categorias pré-definidas.</td></tr>
+        <tr><td><code>CODE_RETRIEVAL_QUERY</code></td><td>Query de busca em linguagem natural sobre um corpus de código.</td></tr>
+        <tr><td><code>QUESTION_ANSWERING</code></td><td>Otimizado para pipelines de QA.</td></tr>
+        <tr><td><code>FACT_VERIFICATION</code></td><td>Otimizado para verificação de fatos contra evidências.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+<pre><code class="language-python">docs = ["Contrato de locação comercial...", "Termo de rescisão..."]
+
+result = client.models.embed_content(
+    model="gemini-embedding-001",
+    contents=docs,
+    config=types.EmbedContentConfig(task_type="RETRIEVAL_DOCUMENT"),
+)
+# gemini-embedding-001: um embedding por item da lista
+print(len(result.embeddings))  # 2
+
+query_result = client.models.embed_content(
+    model="gemini-embedding-001",
+    contents="Como funciona a cláusula de rescisão?",
+    config=types.EmbedContentConfig(task_type="RETRIEVAL_QUERY"),
+)</code></pre>
+
+  <h4>Múltiplos textos: a semântica de <code>contents</code> mudou</h4>
+  <p>O comportamento ao passar uma <strong>lista</strong> em <code>contents</code> difere entre os dois modelos &mdash; atenção especial em migração:</p>
+  <ul>
+    <li><code>gemini-embedding-001</code>: devolve <strong>um embedding por item</strong> da lista.</li>
+    <li><code>gemini-embedding-2</code>: <strong>agrega</strong> múltiplas entradas passadas diretamente em <code>contents</code> num <strong>único</strong> embedding combinado. Para obter embeddings <em>separados</em> por texto, envolva cada entrada num objeto <code>Content</code> individual.</li>
+  </ul>
+  <p>Para embedar grandes volumes de texto de forma independente com maior throughput, use a <strong>Batch API</strong> (método REST <code>batchEmbedContents</code>), cobrada a <strong>50% do preço padrão</strong> de embedding.</p>
+
+  <div class="callout tip">
+    <strong>Uso típico em retrieval / semantic search:</strong> (1) na indexação, embede cada chunk do corpus com <code>task_type=RETRIEVAL_DOCUMENT</code> (<code>gemini-embedding-001</code>) e guarde o vetor num vector store (pgvector etc.); (2) na consulta, embede a pergunta com <code>task_type=RETRIEVAL_QUERY</code>; (3) faça similaridade de cosseno entre a query e os documentos para recuperar os top-k chunks. Em <code>gemini-embedding-2</code>, descreva a tarefa como instrução no prompt (não há <code>task_type</code>) e considere <code>output_dimensionality=768</code> para cortar custo de armazenamento do índice quando 3072 dimensões forem desnecessárias &mdash; ele renormaliza automaticamente.
+  </div>
+
+  <p style="margin-top:14px;font-size:12.5px;color:var(--c-fg-soft)">Fonte oficial: <a href="https://ai.google.dev/gemini-api/docs/embeddings" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/embeddings</a>.</p>
 
 </section>
 <section class="provider provider-gemini" id="gemini-interactions" aria-labelledby="h-gemini-interactions">
@@ -5578,7 +5766,7 @@ interaction = client.interactions.create(
     <table>
       <thead><tr><th>Aspecto</th><th><code>generateContent</code></th><th>Interactions API</th></tr></thead>
       <tbody>
-        <tr><td>Cache implícito</td><td>≥ 1.024 (Flash) / 4.096 (Pro) tokens de prefixo idêntico</td><td>Auto via <code>previous_interaction_id</code></td></tr>
+        <tr><td>Cache implícito</td><td>≥ 4.096 (Gemini 3.5 Flash e 3.1 Pro) / 2.048 (modelos 2.5) tokens de prefixo idêntico</td><td>Auto via <code>previous_interaction_id</code></td></tr>
         <tr><td>Cache explícito (<code>cachedContent</code>)</td><td>Sim — TTL customizável; prefixo nomeado reutilizável entre sessões</td><td><span class="pill bad">Não suportado</span></td></tr>
         <tr><td>Cache observable</td><td><code>usage_metadata.cached_content_token_count</code></td><td><code>usage.total_cached_tokens</code> + <code>cached_tokens_by_modality</code></td></tr>
         <tr><td>Inspeção do conteúdo cacheado</td><td>Apenas metadados</td><td>Estado da interação inteira via <code>GET /interactions/{id}?include_input=true</code></td></tr>
@@ -6409,7 +6597,7 @@ response_format = {
         <tr><td>Cancelamento</td><td>n/a</td><td><code>POST /interactions/{id}/cancel</code></td></tr>
         <tr><td>Retomada de stream</td><td>n/a (refazer request inteira)</td><td><code>GET /interactions/{id}?stream=true&amp;last_event_id=...</code></td></tr>
         <tr><td>Cache explícito (<code>cachedContent</code>)</td><td>suportado</td><td><span class="pill bad">não</span></td></tr>
-        <tr><td>Cache implícito</td><td>≥ 1024 / 4096 tokens de prefixo idêntico</td><td>auto via <code>previous_interaction_id</code></td></tr>
+        <tr><td>Cache implícito</td><td>≥ 4096 (Flash 3.x / Pro 3.1) · 2048 (modelos 2.5) tokens de prefixo idêntico</td><td>auto via <code>previous_interaction_id</code></td></tr>
         <tr><td>Batch</td><td>suportado</td><td><span class="pill bad">não</span></td></tr>
         <tr><td>Auto function calling (Py)</td><td>suportado</td><td><span class="pill bad">não</span></td></tr>
         <tr><td><code>safety_settings</code></td><td>suportado</td><td><span class="pill bad">ausente</span> (apenas <code>safety_decision</code> runtime)</td></tr>

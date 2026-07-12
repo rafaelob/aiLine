@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Orquestração com LangGraph — Guia complementar</title>
 <meta name="description" content="Como aplicar os padrões de orquestração do núcleo (ledger canônico, estado durável, HITL, multi-agente) usando LangGraph: StateGraph com reducers tipados, checkpointers, interrupt/Command, subgraphs, streaming v2, supervisor/swarm e Store." />
-<meta name="last-checked" content="2026-07-09" />
+<meta name="last-checked" content="2026-07-12" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -285,8 +285,8 @@
   <div class="header-row">
     <div class="brand">Orquestração com LangGraph <small>guia complementar de orquestração</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-09</strong></span>
-      <span class="badge da">langgraph 1.2.8</span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-12</strong></span>
+      <span class="badge da">langgraph 1.2.9</span>
       <span class="badge info">Python</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
     </div>
@@ -346,7 +346,7 @@
         arquitetural. Prosa em PT-BR; código e identificadores em inglês.
       </p>
       <div class="hero-meta">
-        <span class="badge da">langgraph 1.2.8</span>
+        <span class="badge da">langgraph 1.2.9</span>
         <span class="badge info">Python</span>
         <span class="badge ok">SOTA · verificado 2026-06-29</span>
       </div>
@@ -380,7 +380,7 @@
       <h2>Fontes &amp; verificação</h2>
       <p>
         APIs conferidas contra a referência oficial (reference.langchain.com / docs.langchain.com) e a
-        folha de fatos do projeto, re-conferida em 2026-07-05. Versões: <code>langgraph 1.2.7</code> (PyPI, 2026-06-30),
+        folha de fatos do projeto, re-conferida em 2026-07-12. Versões: <code>langgraph 1.2.9</code> (PyPI, 2026-07-10),
         <code>langgraph-checkpoint-postgres 3.1.0</code> (PyPI).
       </p>
       <div class="table-wrap"><table>
@@ -495,7 +495,7 @@ graph.invoke({"messages": [("user", "continua")]}, config)  # retoma o mesmo est
         <div class="code-pane" data-lang="bash" data-active="false">
 <pre><code class="language-bash"># Persistência durável em Postgres (verificado: langgraph-checkpoint-postgres 3.1.0)
 # PostgresSaver exige um driver psycopg utilizável — sem ele, o import levanta ImportError.
-pip install "langgraph==1.2.7" "langgraph-checkpoint-postgres==3.1.0" "psycopg[binary,pool]"</code></pre>
+pip install "langgraph==1.2.9" "langgraph-checkpoint-postgres==3.1.0" "psycopg[binary,pool]"</code></pre>
         </div>
       </div>
 <pre><code class="language-python"># Produção: PostgresSaver (estado sobrevive a reinícios e falhas)
@@ -791,9 +791,9 @@ from langgraph.prebuilt import create_react_agent</code></pre>
 
     <section class="ref" id="verificacao">
       <h2>Notas de verificação</h2>
-      <p>APIs conferidas contra a referência oficial LangChain/LangGraph e a folha de fatos do projeto em 2026-06-10.</p>
+      <p>APIs conferidas contra a referência oficial LangChain/LangGraph e a folha de fatos do projeto em 2026-06-10; versões de libs re-conferidas em 2026-07-12.</p>
       <ul style="overflow-wrap:anywhere">
-        <li><span class="pill ok">Resolvido</span> <code>langgraph 1.2.7</code> e <code>langgraph-checkpoint-postgres 3.1.0</code> (PyPI, re-conferidos em 2026-07-05). LangGraph é <strong>1.x GA</strong> (não 0.x).</li>
+        <li><span class="pill ok">Resolvido</span> <code>langgraph 1.2.9</code> e <code>langgraph-checkpoint-postgres 3.1.0</code> (PyPI, re-conferidos em 2026-07-12). LangGraph é <strong>1.x GA</strong> (não 0.x).</li>
         <li><span class="pill ok">Resolvido</span> <code>StateGraph</code>, <code>START</code>/<code>END</code>, reducers via <code>Annotated</code>, <code>add_messages</code>.</li>
         <li><span class="pill ok">Resolvido</span> <code>interrupt()</code> + <code>Command(resume=)</code> (de <code>langgraph.types</code>); detecção por <code>__interrupt__</code> no stream de <code>updates</code>.</li>
         <li><span class="pill ok">Resolvido</span> <code>InMemoryStore</code> (de <code>langgraph.store.memory</code>), <code>store.put((ns,), key, value)</code>, <code>store.get((ns,), key).value</code>, <code>get_store()</code> (de <code>langgraph.config</code>), <code>compile(store=)</code> — confirmados na ref oficial em 2026-05-25 (resolve o item UNVERIFIED da folha §11).</li>
@@ -831,7 +831,7 @@ from langgraph.prebuilt import create_react_agent</code></pre>
       <div>Gerado por <strong>subagentes Claude Opus 4.7 (xhigh)</strong></div>
       <div>revisão e montagem pelo orquestrador · 2026-05-25</div>
       <div style="margin-top:6px">
-        <span class="badge da">langgraph 1.2.8</span>
+        <span class="badge da">langgraph 1.2.9</span>
         <span class="badge info">Python</span>
       </div>
     </div>

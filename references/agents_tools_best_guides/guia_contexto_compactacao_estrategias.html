@@ -637,6 +637,8 @@
         <li><a href="#subdividir-x">Subdividir X</a></li>
         <li><a href="#topologia">Topologia de sessão</a></li>
         <li><a href="#escada">Escada de compactação</a></li>
+        <li><a href="#compactacao-servidor">Compactação server-side (OpenAI)</a></li>
+        <li><a href="#compactacao-servidor-anthropic">Compactação server-side (Anthropic)</a></li>
         <li><a href="#snapshots">Snapshots cumulativos</a></li>
         <li><a href="#skills">Skills antigas</a></li>
         <li><a href="#tools-rag">Tool results e RAG</a></li>
@@ -1058,6 +1060,200 @@ emergency = hard_input_budget * 0.95</code></pre>
             <strong>parametrizável por topologia</strong>: perfis <em>tool_heavy</em> podem reduzir evidência
             antes dos pares; sessões de continuidade longa preservam mais tools e compactam conversa
             primeiro. O ciclo de vida de L2/L3 está em <a href="guia_skills.html">Agent Skills</a>.
+          </div>
+        </section>
+
+        <section id="compactacao-servidor" data-section="server-side-compaction">
+          <h2>5A. Compactação server-side (OpenAI)</h2>
+          <p class="tldr" data-fact="openai oferece compactacao automatica no servidor via context_management com compact_threshold e compactacao manual via responses compact">A escada da <a href="#escada">seção 5</a> é a estratégia que você implementa no seu orquestrador. A OpenAI também expõe compactação <strong>nativa do provedor</strong> na Responses API, em dois modos: automática no servidor (<code>context_management</code> + <code>compact_threshold</code>) e manual sob demanda (<code>client.responses.compact()</code>). É o par funcional do <a href="#compactacao-servidor-anthropic">compaction da Anthropic (§5B)</a> — mesma ideia de "resumir em vez de cortar" no servidor, com mecânica e payload diferentes.</p>
+
+          <h3>Modo 1 — automático, no <code>responses.create()</code></h3>
+          <p>Habilite <code>context_management</code> com um <code>compact_threshold</code> (contagem de tokens renderizados) direto na chamada <code>responses.create()</code>. Quando a contagem de tokens renderizados cruza o limiar, o servidor executa a compactação sozinho, emite um item de compactação criptografado e opaco <strong>no mesmo stream</strong> (não é resumo legível por humano) e poda o contexto antes de continuar a inferência. Encadeando com <code>previous_response_id</code>, você continua enviando <strong>apenas a mensagem nova do usuário</strong> a cada turno — não precisa reenviar o histórico nem chamar nenhum endpoint separado.</p>
+
+          <pre><code>conversation = [
+    {"type": "message", "role": "user", "content": "Let's begin a long coding task."}
+]
+
+while keep_going:
+    response = client.responses.create(
+        model="gpt-5.3-codex",
+        input=conversation,
+        store=False,
+        context_management=[{"type": "compaction", "compact_threshold": 200000}],
+    )
+
+    conversation.extend(response.output)
+    conversation.append({
+        "type": "message",
+        "role": "user",
+        "content": get_next_user_input(),
+    })</code></pre>
+
+          <div class="callout" data-fact="context_management e uma lista com objeto type compaction e compact_threshold inteiro em tokens renderizados">
+            <strong>Forma exata do parâmetro</strong>
+            <code>context_management</code> é uma <em>lista</em> contendo um objeto <code>{"type": "compaction", "compact_threshold": N}</code>, onde <code>N</code> é um inteiro de tokens renderizados (no exemplo oficial, <code>200000</code>). É passado direto em <code>client.responses.create()</code> / <code>POST /responses</code>, junto com <code>store=False</code> para manter o fluxo compatível com ZDR.
+          </div>
+
+          <table>
+            <caption>Encadeamento após compactação automática no servidor</caption>
+            <thead>
+              <tr><th>Estratégia de encadeamento</th><th>O que enviar no próximo turno</th><th>Cuidado</th></tr>
+            </thead>
+            <tbody>
+              <tr data-fact="encadeamento por previous_response_id so envia a mensagem nova do usuario e nao faz pruning manual apos compactacao automatica">
+                <td data-label="Estratégia"><code>previous_response_id</code></td>
+                <td data-label="Enviar">Só a mensagem nova do usuário; o ID carrega o resto.</td>
+                <td data-label="Cuidado">Não faça pruning manual do histórico — o servidor já é a fonte de verdade do que foi retido.</td>
+              </tr>
+              <tr data-fact="encadeamento por array de input anexa output normalmente e pode descartar itens antes do ultimo item de compactacao para reduzir latencia">
+                <td data-label="Estratégia">Array de <code>input</code> (stateless)</td>
+                <td data-label="Enviar">Anexe os itens de saída (incluindo os de compactação) ao próximo array, como de costume.</td>
+                <td data-label="Cuidado">Itens anteriores ao último item de compactação podem ser descartados do array para reduzir latência de cauda longa — o item de compactação já carrega o estado necessário para continuar.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3>Modo 2 — manual, <code>client.responses.compact()</code></h3>
+          <p>Quando você mesmo gerencia o array completo de <code>input</code> (mensagens, tools e outros itens), chame <code>client.responses.compact(model=..., input=...)</code> diretamente. O endpoint é <code>POST /responses/compact</code>, é <strong>totalmente stateless e ZDR-friendly</strong>: recebe a janela completa e devolve uma nova janela compactada em <code>compacted.output</code>, que já inclui um item de compactação criptografado carregando o estado e o raciocínio prévio relevante em menos tokens (além de outros itens retidos da janela original — não é só o item de compactação sozinho).</p>
+
+          <pre><code>long_input_items_array = [...]  # janela completa de turnos anteriores
+
+compacted = client.responses.compact(
+    model="gpt-5.6",
+    input=long_input_items_array,
+)
+
+next_input = [
+    *compacted.output,  # usar a saída compactada como está
+    {
+        "type": "message",
+        "role": "user",
+        "content": user_input_message(),
+    },
+]
+
+next_response = client.responses.create(
+    model="gpt-5.6",
+    input=next_input,
+    store=False,  # mantém o fluxo compatível com ZDR
+)</code></pre>
+
+          <div class="callout risk" data-fact="output compactado do responses compact e estado de maquina opaco e nao deve ser editado ou podado manualmente apenas repassado como esta">
+            <strong>Não edite o output compactado</strong>
+            <code>compacted.output</code> não é um resumo legível para revisão humana — é <strong>estado de máquina opaco e criptografado</strong> (item de compactação + itens retidos). Não pode ser podado nem reescrito: a única operação válida é repassá-lo <em>como está</em> para o próximo <code>responses.create()</code>, anexando apenas a nova mensagem do usuário. A janela que você envia ao <code>/responses/compact</code> ainda precisa caber na janela de contexto do modelo.
+          </div>
+
+          <table>
+            <caption>Modo automático vs. modo manual (OpenAI)</caption>
+            <thead>
+              <tr><th>Aspecto</th><th>Automático (<code>context_management</code>)</th><th>Manual (<code>responses.compact()</code>)</th></tr>
+            </thead>
+            <tbody>
+              <tr data-fact="modo automatico dispara compactacao no mesmo stream quando cruza compact_threshold sem chamada separada">
+                <td data-label="Aspecto">Gatilho</td>
+                <td data-label="Automático">Servidor dispara sozinho ao cruzar <code>compact_threshold</code>, embutido no próprio <code>responses.create()</code> e emitido no mesmo stream.</td>
+                <td data-label="Manual">Você decide o momento e chama <code>responses.compact()</code> explicitamente — ex.: após fechar uma fase/milestone.</td>
+              </tr>
+              <tr data-fact="modo automatico encadeia por previous_response_id ou array stateless enquanto modo manual exige voce gerenciar o array completo">
+                <td data-label="Aspecto">Gerenciamento do histórico</td>
+                <td data-label="Automático"><code>previous_response_id</code> (sem pruning manual) ou array stateless (com descarte opcional de itens pré-compactação).</td>
+                <td data-label="Manual">Você já gerencia o array de <code>input</code> completo por conta própria.</td>
+              </tr>
+              <tr data-fact="ambos os modos sao zdr friendly com store false e devolvem item de compactacao opaco criptografado">
+                <td data-label="Aspecto">ZDR</td>
+                <td data-label="Automático">ZDR-friendly com <code>store=False</code>.</td>
+                <td data-label="Manual">Endpoint totalmente stateless e ZDR-friendly por natureza.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="callout tip" data-fact="compactacao server side openai e a versao de provedor da escada e nao substitui fatias proprias nem o ledger canonico do orquestrador">
+            <strong>Onde isso encaixa na estratégia deste guia</strong>
+            A compactação server-side da OpenAI resolve a fatia <em>conversa/tools</em> do jeito do provedor — análoga ao degrau <code>summarize_old</code>/<code>snapshot</code> da <a href="#escada">escada</a> (seção 5), mas decidida e executada pelo servidor, não pelo seu orquestrador. Ela não substitui o <a href="#snapshots">ledger canônico e os snapshots cumulativos</a> (seção 6): o item de compactação é opaco e não serve como registro auditável do que foi preservado ou removido — para isso, continue mantendo seu próprio snapshot com <code>preserved_ids</code>/<code>removed_ids</code>/<code>reclaimed_tokens</code> em paralelo.
+          </div>
+
+          <div class="callout" data-fact="fontes oficiais openai server side compaction guia dedicado deployment checklist e api reference responses compact">
+            <strong>Fontes oficiais</strong>
+            OpenAI — guia dedicado <code>developers.openai.com/api/docs/guides/compaction</code>; <code>developers.openai.com/api/docs/guides/deployment-checklist</code> (seção "Leverage compaction"); referência <code>developers.openai.com/api/docs/api-reference/responses/compact</code>.
+          </div>
+        </section>
+
+        <section id="compactacao-servidor-anthropic" data-section="server-side-compaction-anthropic">
+          <h2>5B. Compactação server-side (Anthropic)</h2>
+          <p class="tldr" data-fact="anthropic oferece compactacao server side beta compact-2026-01-12 via edit compact_20260112 em context_management que resume a conversa num bloco compaction e descarta blocos anteriores">A Anthropic expõe a mesma ideia na Messages API, como um <em>edit</em> de <code>context_management</code>: quando o input cruza um gatilho, o servidor gera um resumo, embute-o num bloco <code>compaction</code> e, nas requisições seguintes, <strong>descarta automaticamente todos os blocos de conteúdo anteriores</strong> a esse bloco, continuando a conversa a partir do resumo. É o par funcional da <a href="#compactacao-servidor">compactação da OpenAI (§5A)</a> — mesma intenção, payload e billing diferentes.</p>
+
+          <div class="callout" data-fact="compactacao anthropic e beta com header compact-2026-01-12 e strategy compact_20260112 note os formatos diferentes hifen no header sem hifen no type">
+            <strong>Header e strategy (atenção ao formato)</strong>
+            Beta header <code>anthropic-beta: compact-2026-01-12</code> (com hífens); a <em>strategy</em> em <code>context_management.edits[]</code> é <code>{"type": "compact_20260112"}</code> (<strong>sem</strong> hífens, como nos demais edits — <code>clear_tool_uses_20250919</code>, <code>clear_thinking_20251015</code>). Verificado na fonte oficial em 2026-07-12.
+          </div>
+
+          <pre><code>import anthropic
+
+client = anthropic.Anthropic()
+
+response = client.beta.messages.create(
+    model="claude-opus-4-8",
+    max_tokens=4096,
+    betas=["compact-2026-01-12"],
+    messages=conversation,               # histórico acumulado
+    context_management={
+        "edits": [
+            {
+                "type": "compact_20260112",
+                "trigger": {"type": "input_tokens", "value": 150000},  # default; mín. 50 000
+                # "instructions": "Preserve nomes de variáveis, decisões técnicas e próximos passos.",
+                # "pause_after_compaction": False,
+            }
+        ]
+    },
+)
+
+# Nas próximas requisições, anexe response ao messages: a API ignora todos os
+# blocos anteriores ao bloco `compaction` e continua a partir do resumo.
+conversation.extend(response.content)</code></pre>
+
+          <table>
+            <caption>Parâmetros de <code>compact_20260112</code></caption>
+            <thead>
+              <tr><th>Parâmetro</th><th>Default</th><th>Descrição</th></tr>
+            </thead>
+            <tbody>
+              <tr data-fact="trigger default input_tokens 150000 e o unico tipo suportado e o value precisa ser no minimo 50000">
+                <td data-label="Parâmetro"><code>trigger</code></td>
+                <td data-label="Default"><code>{"type":"input_tokens","value":150000}</code></td>
+                <td data-label="Descrição"><code>input_tokens</code> é o único tipo suportado; <code>value</code> precisa ser <strong>≥ 50 000</strong> — abaixo disso a API retorna erro.</td>
+              </tr>
+              <tr data-fact="pause_after_compaction default false pausa apos gerar o resumo com stop_reason compaction para voce injetar blocos antes de continuar">
+                <td data-label="Parâmetro"><code>pause_after_compaction</code></td>
+                <td data-label="Default"><code>false</code></td>
+                <td data-label="Descrição">Se <code>true</code>, a API para após gerar o resumo (<code>stop_reason: "compaction"</code>), permitindo injetar blocos (ex.: mensagens recentes a preservar) antes de continuar.</td>
+              </tr>
+              <tr data-fact="instructions substitui completamente o prompt padrao de sumarizacao quando fornecido">
+                <td data-label="Parâmetro"><code>instructions</code></td>
+                <td data-label="Default"><code>null</code></td>
+                <td data-label="Descrição">Prompt de sumarização custom. <strong>Substitui por completo</strong> o prompt padrão (que instrui o modelo a envolver o resumo em <code>&lt;summary&gt;…&lt;/summary&gt;</code>).</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="callout" data-fact="modelos que suportam compactacao anthropic fable5 mythos5 mythos preview opus 4.8 4.7 4.6 sonnet 5 e 4.6">
+            <strong>Modelos suportados</strong>
+            Fable 5, Mythos 5, Mythos Preview, Opus 4.8 / 4.7 / 4.6, Sonnet 5 e Sonnet 4.6 (lista verbatim da doc). ZDR-elegível — os dados enviados por essa feature não são retidos após a resposta.
+          </div>
+
+          <div class="callout risk" data-fact="compactacao anthropic contribui para rate limits e billing e o usage top level nao inclui a iteracao de compactacao some usage.iterations para o total cobrado">
+            <strong>Billing: some <code>usage.iterations</code></strong>
+            A compactação exige um passo extra de sampling que <strong>conta para rate limits e billing</strong> (não é grátis). O <code>input_tokens</code>/<code>output_tokens</code> de topo <em>não</em> incluem a iteração de compactação — cada entrada de <code>usage.iterations[]</code> tem <code>type: "compaction"</code> ou <code>"message"</code>; para o total cobrado, <strong>some todas as entradas</strong>. Reaplicar um bloco <code>compaction</code> já gerado (repassá-lo em turnos seguintes) <em>não</em> re-dispara custo de compactação.
+          </div>
+
+          <div class="callout tip" data-fact="compactacao anthropic e a versao de provedor da escada assim como a openai e nao substitui o ledger canonico">
+            <strong>Onde isso encaixa</strong>
+            Como a §5A da OpenAI, a compactação da Anthropic resolve a fatia <em>conversa</em> no servidor — análoga ao degrau <code>summarize_old</code>/<code>snapshot</code> da <a href="#escada">escada</a> (seção 5). Diferença material vs. OpenAI: aqui o bloco <code>compaction</code> traz um resumo em <code>&lt;summary&gt;</code> (não é opaco como o item criptografado da OpenAI), mas ainda <strong>não</strong> substitui o <a href="#snapshots">ledger canônico</a> (seção 6) — mantenha seu snapshot auditável em paralelo. O gatilho é checado no início de cada iteração de sampling, então pode disparar mais de uma vez por request (ex.: com server tools iterando).
+          </div>
+
+          <div class="callout" data-fact="fontes oficiais anthropic compaction guia dedicado platform claude com build with claude compaction">
+            <strong>Fontes oficiais</strong>
+            Anthropic — guia dedicado <code>platform.claude.com/docs/en/build-with-claude/compaction</code>; disponível também em Amazon Bedrock, Google Cloud (Vertex AI) e Microsoft Foundry.
           </div>
         </section>
 

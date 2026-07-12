@@ -4,8 +4,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Guia Deep Agents — Referência completa (Python)</title>
-<meta name="description" content="Guia técnico SOTA do Deep Agents (LangChain OSS) em Python: os quatro pilares (system prompt, planning, sub-agents, virtual filesystem), create_deep_agent, middleware, backends pluggable, sandboxes, skills, memória, profiles, HITL, dcode CLI e ACP. Verificado em 2026-06-29." />
-<meta name="last-checked" content="2026-07-05" />
+<meta name="description" content="Guia técnico SOTA do Deep Agents (LangChain OSS) em Python: os quatro pilares (system prompt, planning, sub-agents, virtual filesystem), create_deep_agent, middleware, backends pluggable, sandboxes, skills, memória, profiles, HITL, dcode CLI e ACP. Verificado em 2026-07-12." />
+<meta name="last-checked" content="2026-07-12" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -259,7 +259,7 @@
   <div class="header-row">
     <div class="brand">Guia Deep Agents <small>Python — Referência completa</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-05</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-12</strong></span>
       <span class="badge da">deepagents</span>
       <span class="badge info">Python 3.11+</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
@@ -719,6 +719,7 @@ agent = create_deep_agent(model=openai_llm, tools=[...])   # passe a instância 
         <tr><td><code>read_file</code></td><td><code>FilesystemMiddleware</code></td><td><code>(file_path: str, offset: int = 0, limit: int = 2000)</code></td><td>Lê conteúdo com numeração de linhas; suporta offset/limit. Para arquivos não-texto, retorna <em>content blocks</em> multimodais (ver 5.1).</td></tr>
         <tr><td><code>write_file</code></td><td><code>FilesystemMiddleware</code></td><td><code>(file_path: str, content: str)</code></td><td>Apenas criação — erro se arquivo já existe.</td></tr>
         <tr><td><code>edit_file</code></td><td><code>FilesystemMiddleware</code></td><td><code>(file_path: str, old_string: str, new_string: str, replace_all: bool = False)</code></td><td>Substituição exata; unicidade obrigatória, salvo <code>replace_all=True</code>.</td></tr>
+        <tr><td><code>delete</code></td><td><code>FilesystemMiddleware</code></td><td><code>(path: str)</code></td><td>Apaga um arquivo, ou um diretório e todo o seu conteúdo recursivamente. Backends que não suportam deleção escondem a tool do modelo automaticamente.</td></tr>
         <tr><td><code>glob</code></td><td><code>FilesystemMiddleware</code></td><td><code>(pattern: str, path: str = "/")</code></td><td>Pattern match.</td></tr>
         <tr><td><code>grep</code></td><td><code>FilesystemMiddleware</code></td><td><code>(pattern: str, path=None, glob=None)</code></td><td>Busca de conteúdo; múltiplos modos de output.</td></tr>
         <tr><td><code>execute</code></td><td><code>FilesystemMiddleware</code> (apenas backends sandbox)</td><td><code>(command: str)</code></td><td>Retorna <code>output</code> (stdout+stderr), exit code e nota de truncamento.</td></tr>
@@ -752,10 +753,58 @@ agent = create_deep_agent(model=openai_llm, tools=[...])   # passe a instância 
     (<a href="https://docs.langchain.com/oss/python/langchain/messages" target="_blank" rel="noopener">langchain/messages</a>,
     seção <code>#multimodal</code>). As tools de FS built-in são <code>ls</code>,
     <code>read_file</code>, <code>write_file</code>, <code>edit_file</code>,
-    <code>glob</code>, <code>grep</code> e <code>execute</code> (este só em
-    backends sandbox).
+    <code>delete</code>, <code>glob</code>, <code>grep</code> e <code>execute</code>
+    (este só em backends sandbox).
   </div>
-  <div class="source-link">Fontes: <a href="https://docs.langchain.com/oss/python/deepagents/harness" target="_blank" rel="noopener">deepagents/harness</a></div>
+
+  <h3>5.2 Caveat multimodal na summarization</h3>
+  <p>
+    A tool <code>read_file</code> pode retornar <em>content blocks</em>
+    multimodais (imagem, áudio, vídeo — ver 5.1). Isso importa para a
+    compactação de histórico: quando essas mensagens acabam sendo alvo de
+    <code>SummarizationMiddleware</code>, a mídia <strong>não sobrevive</strong>
+    ao resumo.
+  </p>
+  <div class="callout warn">
+    <strong>Summarization é text-only — mídia é descartada, não resumida.</strong>
+    A doc de multimodal é explícita: <em>"Summarization compacts older messages
+    into a text-only summary"</em> e <em>"Image, audio, video, and file blocks in
+    that range are not carried forward"</em> — o modelo só enxerga o que o
+    summarizer escreveu sobre elas. A conversa original completa continua gravada
+    no filesystem virtual como texto (<em>"The original conversation is still
+    written to the filesystem as text"</em>), mas os blocos de mídia em si somem
+    do contexto do modelo após a compactação. Mensagens recentes abaixo do
+    <em>keep threshold</em> permanecem inalteradas.
+    <br><br>
+    <strong>Offloading é diferente:</strong> ele mede só tokens de texto
+    (<em>"Offloading measures text tokens only"</em>) e preserva blocos
+    não-texto nas mensagens de substituição em vez de comprimi-los
+    (<em>"Non-text blocks (including images) are preserved in replacement
+    messages rather than compressed"</em>) — uma mensagem que só contém uma
+    imagem não é descartada por offloading com base no tamanho da imagem.
+    <br><br>
+    <strong>Boas práticas recomendadas pela doc oficial</strong> (a compressão
+    embutida é <em>"primarily text-oriented"</em>):
+    <ul>
+      <li>Guardar mídia grande em um backend/object store externo e passar apenas
+        referências (<em>"store large media in a backend and pass references when
+        possible"</em>), em vez de blocos base64 inline
+        (<em>"Prefer references over base64-encoded image blocks in long-running
+        conversations"</em>).</li>
+      <li>Tools que produzem imagens/binários devem salvar o artefato no backend e
+        retornar uma descrição textual curta + path/URL
+        (<em>"save the artifact to a backend and return a concise text description
+        plus a path or URL"</em>), não o conteúdo bruto.</li>
+      <li>Usar subagents para inspeção pesada de imagem
+        (<em>"Use subagents for image-heavy inspection so the main agent receives
+        a compact text result"</em>) — context quarantine, ver seção 7.</li>
+      <li>Ajustar os thresholds de summarization ou fornecer um token counter
+        customizado quando o provedor cobra muitos tokens por imagem
+        (<em>"Tune summarization thresholds or provide a custom token counter when
+        your provider charges many tokens for images"</em>).</li>
+    </ul>
+  </div>
+  <div class="source-link">Fontes: <a href="https://docs.langchain.com/oss/python/deepagents/harness" target="_blank" rel="noopener">deepagents/harness</a> · <a href="https://docs.langchain.com/oss/python/deepagents/tools" target="_blank" rel="noopener">deepagents/tools</a> · <a href="https://docs.langchain.com/oss/python/deepagents/multimodal" target="_blank" rel="noopener">deepagents/multimodal</a></div>
 </section>
 
 <section id="s-prompt">
@@ -1450,6 +1499,184 @@ stream.submit(input, {
   <p>Em Python, use os modos do LangGraph (<code>updates</code>, <code>messages</code>, <code>custom</code>, etc.) e habilite <code>subgraphs=True</code> + <code>version="v2"</code> para receber eventos com namespace.</p>
 </section>
 
+<section id="s-stream-subagents">
+  <h2>19.1 Event streaming: <code>stream.subagents</code></h2>
+  <p>
+    A doc oficial de <em>event streaming</em> do Deep Agents descreve uma
+    <strong>projeção de subagents</strong> construída sobre o event streaming
+    <code>version="v3"</code>: <code>stream.subagents</code> entrega <strong>um handle
+    de stream por chamada da tool <code>task</code></strong> — ou seja, um handle por
+    delegação a um subagent. Citando a doc: <em>&ldquo;Use <code>stream.subagents</code>
+    when you want one stream handle per delegated <code>task</code> call.&rdquo;</em>
+    O <code>name</code> de cada handle é o nome configurado do subagent — o
+    <code>subagent_type</code> que o coordenador passa naquela chamada de
+    <code>task</code>. A projeção é <em>lightweight</em> (verbatim):
+    <em>&ldquo;it discovers subagent tasks first, and message, tool-call, and value
+    streams are opened only when you access them on a subagent handle.&rdquo;</em>
+    Ou seja, os streams individuais de cada subagent (mensagens, tool calls, valores,
+    subagents aninhados) só são <em>abertos quando você os acessa</em> no handle,
+    evitando decodificar eventos que a UI não vai exibir.
+  </p>
+  <p>
+    O stream é aberto com <code>agent.stream_events(input, version="v3")</code>
+    (síncrono) ou <code>await agent.astream_events(input, version="v3")</code>
+    (assíncrono). Todos os exemplos abaixo assumem esse handle <code>stream</code>.
+  </p>
+
+  <h3>Campos do handle de subagent</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Campo</th><th>Descrição</th></tr></thead>
+      <tbody>
+        <tr><td><code>name</code></td><td>Nome do subagent — o <code>subagent_type</code> escolhido pelo coordenador na chamada de <code>task</code>.</td></tr>
+        <tr><td><code>messages</code></td><td>Mensagens emitidas pelo subagent.</td></tr>
+        <tr><td><code>subagents</code></td><td>Invocações de subagents aninhados (recursivo).</td></tr>
+        <tr><td><code>output</code></td><td>Estado final do subagent, ou sinal de conclusão da tarefa delegada.</td></tr>
+        <tr><td><code>path</code></td><td>Caminho de namespace do stream do subagent.</td></tr>
+        <tr><td><code>status</code></td><td>Status de ciclo de vida (a doc lista como exemplos, não como enum fechado): <code>started</code>, <code>completed</code>, <code>failed</code>, <code>interrupted</code>.</td></tr>
+        <tr><td><code>tool_calls</code></td><td>Tool calls escopadas ao subagent.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    Em Python os nomes de projeção usam <code>snake_case</code> (verbatim:
+    <em>&ldquo;Python uses snake_case projection names such as
+    <code>tool_calls</code>&rdquo;</em>). Além dos campos da tabela, a doc menciona
+    que cada stream de subagent também pode expor <code>.values</code> (estado
+    incremental do subagent), junto de <code>.messages</code>, <code>.tool_calls</code>,
+    <code>.subagents</code> e <code>.output</code>.
+  </p>
+
+  <h3>Ciclo de vida e leitura de status</h3>
+  <p>
+    O padrão da doc para acompanhar o ciclo de vida itera
+    <code>stream.subagents</code> e trata o acesso a <code>subagent.output</code>
+    como o sinal de conclusão: ler <code>output</code> dentro de um
+    <code>try/except</code> diferencia <em>completed</em> (leitura bem-sucedida) de
+    <em>failed</em> (exceção).
+  </p>
+  <pre><code class="language-python">running = 0
+completed = 0
+failed = 0
+
+for subagent in stream.subagents:
+    running += 1
+    print(f"{subagent.name}: started")
+
+    try:
+        _ = subagent.output
+        running -= 1
+        completed += 1
+        print(f"{subagent.name}: completed")
+    except Exception:
+        running -= 1
+        failed += 1
+        print(f"{subagent.name}: failed")</code></pre>
+
+  <h3>Tool calls e <code>output_deltas</code></h3>
+  <p>
+    Tool calls são expostas tanto no nível do coordenador
+    (<code>stream.tool_calls</code>) quanto no nível de cada subagent
+    (<code>subagent.tool_calls</code>). Cada objeto de tool call expõe
+    <code>tool_name</code>, <code>input</code>, <code>completed</code>,
+    <code>error</code>, <code>output_deltas</code> e <code>output</code>. O
+    <code>output_deltas</code> transmite a saída da tool de forma incremental
+    (iterado com <code>for delta in call.output_deltas</code>), permitindo renderizar
+    o resultado da tool conforme ele chega; o <code>output</code> traz o resultado
+    final quando <code>completed</code> é verdadeiro e <code>error</code> é
+    <code>None</code>.
+  </p>
+  <pre><code class="language-python">for call in stream.tool_calls:
+    print("[coordinator tool]", call.tool_name, call.input)
+    print(call.completed, call.error)
+
+for subagent in stream.subagents:
+    for call in subagent.tool_calls:
+        print(f"[{subagent.name} tool]", call.tool_name, call.input)
+        for delta in call.output_deltas:
+            print(delta, end="", flush=True)
+
+        if call.completed and call.error is None:
+            print(call.output)
+        elif call.error is not None:
+            print(call.error)</code></pre>
+
+  <h3>Subagents aninhados (recursão)</h3>
+  <p>
+    Como um subagent pode por sua vez delegar trabalho a outros subagents, o campo
+    <code>subagents</code> de cada handle é recursivo: iterar
+    <code>subagent.subagents</code> alcança as invocações aninhadas, cada uma com
+    seus próprios <code>name</code>, <code>status</code> e <code>tool_calls</code> —
+    o mesmo formato do handle de nível superior, aplicado em profundidade.
+  </p>
+  <pre><code class="language-python">for subagent in stream.subagents:
+    print(f"subagent {subagent.name}: {subagent.status}")
+
+    for tool_call in subagent.tool_calls:
+        print(f"{tool_call.tool_name}({tool_call.input})")
+        for delta in tool_call.output_deltas:
+            print(delta, end="", flush=True)
+
+    for nested in subagent.subagents:
+        print(f"nested subagent {nested.name}: {nested.status}")</code></pre>
+
+  <h3>Consumo concorrente</h3>
+  <p>Três estratégias da doc para consumir coordenador e subagents ao mesmo tempo:</p>
+  <ul>
+    <li>
+      <strong>Async com <code>asyncio.gather</code>:</strong> abra o stream com
+      <code>await agent.astream_events(input, version="v3")</code> e rode duas
+      corrotinas em paralelo (<code>async for</code> sobre <code>stream.messages</code>
+      e sobre <code>stream.subagents</code>), unidas por
+      <code>await asyncio.gather(consume_coordinator(), consume_subagents())</code>.
+    </li>
+    <li>
+      <strong>Interleaving síncrono:</strong>
+      <code>stream.interleave("messages", "subagents")</code> itera as duas projeções
+      juntas, entregando tuplas <code>(name, item)</code> na ordem em que os eventos
+      chegam — aqui <code>name</code> é o <em>nome da projeção</em>
+      (<code>"messages"</code> ou <code>"subagents"</code>), não o nome do subagent.
+      Útil para uma UI que renderiza um único feed combinado em vez de duas listas.
+    </li>
+    <li>
+      <strong>Ordenação exata por namespace:</strong> para controle fino sobre a
+      ordem, itere os eventos brutos do protocolo (<code>for event in stream</code>),
+      filtre por <code>event.get("method") == "messages"</code>, extraia o payload de
+      <code>event["params"]["data"][0]</code> e teste
+      <code>payload.get("event") == "content-block-delta"</code> com delta do tipo
+      <code>text-delta</code>. A origem vem de
+      <code>event["params"]["namespace"]</code>: se truthy, o evento é de um
+      <code>"subagent"</code>; caso contrário, do <code>"coordinator"</code>.
+    </li>
+  </ul>
+  <pre><code class="language-python">import asyncio
+
+stream = await agent.astream_events(input, version="v3")
+
+async def consume_coordinator():
+    async for message in stream.messages:
+        print("[coordinator]", await message.text)
+
+async def consume_subagents():
+    async for subagent in stream.subagents:
+        async for message in subagent.messages:
+            print(f"[{subagent.name}]", await message.text)
+
+await asyncio.gather(consume_coordinator(), consume_subagents())</code></pre>
+
+  <div class="callout tip">
+    <strong><code>stream.subagents</code> vs. <code>stream.subgraphs</code>:</strong>
+    a doc oficial é direta — <em>&ldquo;<code>stream.subgraphs</code> shows graph
+    execution structure. <code>stream.subagents</code> shows product-level Deep
+    Agents task delegations.&rdquo;</em> Para UI voltada ao usuário final, prefira
+    <code>stream.subagents</code>: ele esconde nós internos do grafo e expõe apenas
+    as delegações de tarefa que fazem sentido em nível de produto (qual subagent está
+    rodando, o que ele disse, quais tools chamou).
+  </div>
+
+  <div class="source-link">Fonte: <a href="https://docs.langchain.com/oss/python/deepagents/event-streaming" target="_blank" rel="noopener">deepagents/event-streaming</a></div>
+</section>
+
 <section id="s-async">
   <h2>20. Async</h2>
   <ul>
@@ -1475,6 +1702,125 @@ stream.submit(input, {
     <li><strong>Secrets:</strong> use auth proxy (<code>proxy_config.rules[].inject_headers</code>) — chaves nunca entram no sandbox.</li>
     <li><strong>Guardrails:</strong> <code>ModelCallLimitMiddleware</code>, <code>ToolCallLimitMiddleware</code>, <code>ModelRetryMiddleware</code>, <code>ModelFallbackMiddleware</code>, <code>ToolRetryMiddleware</code>, <code>PIIMiddleware</code>.</li>
   </ul>
+</section>
+
+<section id="s-managed-deep-agents">
+  <h2>21.1 Managed Deep Agents — runtime hospedado (CLI <code>mda</code>)</h2>
+  <p>
+    <span class="pill beta">private beta</span>
+    <strong>Managed Deep Agents</strong> é descrito na doc oficial como
+    <em>&ldquo;a hosted runtime for deploying and operating code-first Deep Agents
+    in LangSmith&rdquo;</em>: você escreve o agente (Python ou TypeScript) e usa a
+    CLI <code>mda</code> para testar e implantar em infraestrutura gerenciada, sem
+    subir seu próprio servidor de agente (contraste com o <code>langgraph build</code>
+    self-hosted citado na seção 21). O produto está em <strong>private beta,
+    disponível apenas em LangSmith Cloud, região US</strong> &mdash; acesso via
+    waitlist.
+  </p>
+
+  <h3>O que o runtime gerenciado fornece</h3>
+  <ul>
+    <li><strong>Durable runs</strong> sobre um <em>hosted LangGraph deployment</em>.</li>
+    <li><strong>LangSmith sandboxes</strong> gerenciados.</li>
+    <li>Instruções, skills e memória apoiadas pelo <strong>Context Hub</strong>.</li>
+    <li><strong>Traces</strong> integrados ao LangSmith.</li>
+  </ul>
+  <div class="callout warn">
+    Durante a private beta o produto é <em>&ldquo;CLI-first while LangChain
+    finalizes the supported API&rdquo;</em>: a doc oficial não traz exemplos de
+    criação/atualização/invocação via API pública, então uso programático nesta
+    fase passa pela CLI. Também <strong>não há rate limits publicados</strong> por
+    chave, workspace ou agente, e <strong>self-hosted e Hybrid deployments não são
+    suportados</strong> durante a beta.
+  </div>
+
+  <h3>Fluxo com a CLI <code>mda</code></h3>
+  <p>
+    O pacote é <code>managed-deepagents</code> (Python ou TypeScript). Um Managed
+    Deep Agent é, literalmente, <strong>&ldquo;a local project directory&rdquo;</strong>:
+    a CLI lê a localização de cada arquivo do projeto (entrypoint, instruções,
+    skills, conectores, config de schedules/sandbox) para empacotar o deployment
+    hospedado.
+  </p>
+  <pre><code># 1. instalar o pacote (Python ou TypeScript)
+pip install managed-deepagents          # ou: npm i managed-deepagents
+
+# 2. criar o projeto local code-first do agente
+mda init
+
+# 3. no diretório do projeto:
+#    - colocar o system prompt em instructions.md
+#    - adicionar tools, middleware, schedules, skills,
+#      MCP connectors e um sandbox (opcional)
+
+# 4. testar localmente no LangSmith Studio
+mda dev
+
+# 5. implantar no runtime gerenciado do LangSmith
+mda deploy</code></pre>
+
+  <h3>Context Hub: instruções, skills e memória</h3>
+  <p>
+    Instruções e skills implantadas vivem no repositório do <strong>Context
+    Hub</strong>. A memória gerenciada do agente fica <strong>no mesmo repositório</strong>,
+    no caminho <code>/memories/AGENTS.md</code> &mdash; espelhando o padrão
+    <code>AGENTS.md</code> do harness OSS (seção 13 deste guia), agora persistido
+    pelo runtime.
+  </p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Em <code>mda deploy</code></th><th>Comportamento</th></tr></thead>
+      <tbody>
+        <tr><td><code>instructions.md</code> e <code>skills/**</code></td><td>Sincronizados a cada deploy</td></tr>
+        <tr><td><code>memories/**</code></td><td>Arquivos existentes são <strong>preservados</strong>; memória criada em runtime <strong>não é sobrescrita</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    Para desabilitar <em>apenas</em> a memória embutida (agent-scoped) do agente,
+    use <code>disableMemory: true</code> (TypeScript) ou <code>disable_memory=True</code>
+    (Python). Modelos usam o formato <code>{provider}:{model_id}</code> (ex.:
+    <code>openai:gpt-5.5</code>); o runtime resolve via <code>init_chat_model</code>,
+    com credenciais em <code>.env</code>, variáveis de shell ou <strong>workspace
+    secrets</strong> do LangSmith (configuradas antes do deploy).
+  </p>
+
+  <h3>Managed Deep Agents vs. LangSmith Deployment vs. OSS Deep Agents</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Caminho</th><th>Quando usar</th><th>Você gerencia</th><th>LangSmith gerencia</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Managed Deep Agents</strong></td>
+          <td>Um Deep Agent code-first implantado rapidamente em infra gerenciada</td>
+          <td>Agent code, tools, middleware, instructions, schedules</td>
+          <td>Backend, store, checkpointer, memory, skills, sandbox, hosted deployment</td>
+        </tr>
+        <tr>
+          <td><strong>LangSmith Deployment</strong></td>
+          <td>Código de aplicação e rotas customizados, auth avançada, isolamento mais forte ou escala máxima</td>
+          <td>Application code, server, deployment configuration</td>
+          <td>Hosted infrastructure and scaling</td>
+        </tr>
+        <tr>
+          <td><strong>OSS Deep Agents</strong></td>
+          <td>Rodar o harness Deep Agents no seu próprio ambiente (o foco deste guia)</td>
+          <td>Everything, including hosting and persistence</td>
+          <td>Nada (self-managed)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout tip">
+    <strong>Distinção-chave:</strong> no <code>deepagents</code> OSS (o foco deste
+    guia) você é dono de hosting, persistência e backends &mdash; veja a seção 21
+    (<code>langgraph build</code>, <code>CompositeBackend</code>, auth proxy). No
+    <strong>Managed Deep Agents</strong> você só escreve o agente e suas
+    customizações (tools/middleware/instructions/schedules); o LangSmith cuida do
+    resto &mdash; backend, store, checkpointer, memória, skills, sandbox e o
+    deployment hospedado.
+  </div>
+  <div class="source-link">Fonte: <a href="https://docs.langchain.com/langsmith/managed-deep-agents-overview" target="_blank" rel="noopener">langsmith/managed-deep-agents-overview</a></div>
 </section>
 
 <section id="s-models">
