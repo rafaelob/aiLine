@@ -1,6 +1,6 @@
 # Sprint 25 — Skills DB Persistence, TTS Integration, Braille Export
 
-**Status:** in_progress
+**Status:** completed
 **Start:** 2026-02-18
 **End:** TBD
 **Goal:** Complete the Skills vertical slice (DB persistence + API + workflow integration) and deliver two critical accessibility features (TTS + Braille export)
@@ -145,3 +145,31 @@
 - Braille i18n: Portuguese + Spanish Braille tables
 - Skills marketplace: public skill sharing between teachers
 - Auth: migrate from in-memory store to PostgreSQL-backed user persistence
+
+## Closure Note (2026-07-26, SYS — frota higiene de estado)
+
+Este SPRINT.md nunca foi atualizado para refletir o fechamento real: os
+checkboxes de Track B/C/E e todos os Acceptance Criteria seguem `[ ]`, mas o
+trabalho restante do Sprint 25 foi de fato concluído sob o Sprint 26 (ver
+`tracking_agent_progress_temp/sprints/completed/2026-02-19_sprint-0026_make-invisible-visible/SPRINT.md`,
+cujo próprio Goal declara "Complete Sprint 25 backend wiring..." e cujo
+Acceptance Criteria marca `[x]` F-176, F-165 e F-177).
+
+Evidência cruzada (FEATURES.md + código, verificada nesta sessão):
+- F-175 (Skills DB Persistence) — `runtime/ailine_runtime` migração 0004,
+  `SkillRepository`/`PostgresSkillRepository`, testes. Confirmado.
+- F-165 (TTS) — `runtime/ailine_runtime/api/routers/media.py` endpoint
+  `POST /media/tts/synthesize`, `runtime/tests/test_tts.py`. Confirmado.
+- F-176 (Skills API) — `app.py` inclui `skills_v1.router` em `/v1/skills`,
+  `runtime/tests/test_skills_v1_api.py`. Confirmado.
+- F-166 (Braille Fase 1) — `accessibility/braille_translator.py`,
+  `runtime/tests/test_braille_translator.py`. Confirmado.
+- F-177 (Skills Workflow Integration) — `agents/ailine_agents/workflows/_skills_node.py`
+  (260 linhas, docstring cita F-177 explicitamente) +
+  `agents/tests/test_skills_workflow_node.py` (379 linhas). Confirmado.
+
+Veredito: sprint COMPROVADAMENTE ENTREGUE (evidência real, não apenas
+FEATURES.md). FEATURES.md já lista as 5 features (Sprint 25 + Sprint 26);
+TODO.md não tem rows abertas ligadas a este sprint. Fechado via
+`mural.py sprint-finalize`.
+Last-Activity: 2026-07-26T18:44:02
