@@ -1,24 +1,14 @@
 # AiLine
 
-## Propósito e mapa
+Plataforma educacional inclusiva com API FastAPI/SSE, agentes e frontend Next.js.
 
-- Plataforma educacional inclusiva: transforma materiais de aula em planos
-  adaptativos e expõe uma API FastAPI com streaming SSE.
-- `runtime/` contém o núcleo, adaptadores e API; `agents/` contém os agentes e
-  fluxos; `frontend/` é a aplicação Next.js; `docs/` contém o material de
-  produto e `control_docs/` registra arquitetura, testes, segurança e operação.
-- `docker-compose.yml` executa API, frontend, PostgreSQL e Redis. Use
-  `README.md` como guia de execução e `control_docs/SYSTEM_DESIGN.md` para os
-  limites arquiteturais.
+## Mapa e fontes locais
 
-## Coordenação
+- `runtime/` contém núcleo, adaptadores e API; `agents/` contém fluxos; `frontend/` é a aplicação; `docs/` e `control_docs/` registram produto e operação.
+- `docker-compose.yml` sobe API, frontend, PostgreSQL e Redis. `README.md` orienta a execução e `control_docs/SYSTEM_DESIGN.md` define os limites arquiteturais.
+- `fleet.toml` é a autoridade da CI local. Use o fluxo Fleet para certificar o SHA exato numa árvore/índice isolado sob a trava de suíte da máquina; não trate um teste no worktree compartilhado como certificação de entrega.
 
-- O protocolo para superfícies compartilhadas está em
-  `control_docs/AGENT_PROTOCOL.md`. O registro versionado de entregas é
-  `sprints/` (layout 2); `fleet_runtime/` é estado operacional e não é limpeza
-  rotineira.
-
-## Comandos verificados
+## Comandos locais
 
 ```powershell
 docker compose up -d --build
@@ -28,13 +18,11 @@ cd frontend; pnpm test
 cd frontend; pnpm exec playwright test
 ```
 
-## Limites locais
+Execute a verificação determinística mais próxima antes de ampliar. Testes `live_llm` requerem chaves reais e só entram quando a integração de provedor fizer parte do escopo.
 
-- O domínio em `runtime/ailine_runtime/domain/` não deve importar frameworks;
-  integrações entram por portas e adaptadores.
-- Preserve isolamento por locatário e as garantias de eventos terminais ao
-  alterar API, SSE, armazenamento vetorial ou agentes.
-- Testes `live_llm` exigem chaves reais e são separados dos testes locais;
-  execute-os apenas quando o escopo exigir a integração de provedor.
-- Configure chaves em `.env` a partir de `.env.example`, sem expor valores em
-  código, artefatos ou documentação.
+## Invariantes e coordenação
+
+- `runtime/ailine_runtime/domain/` não importa frameworks; integrações entram por portas e adaptadores.
+- Preserve isolamento por locatário e eventos terminais em API, SSE, armazenamento vetorial e agentes. Configure segredos por `.env` a partir de `.env.example`, nunca em código, artefatos ou documentação.
+- Antes de superfícies Fleet compartilhadas, leia `control_docs/AGENT_PROTOCOL.md`. `sprints/` é o registro versionado (layout 2); `fleet_runtime/` é estado operacional e não é limpeza rotineira.
+- `sprints/` é o registro versionado de entrega; `fleet_runtime/` é estado operacional persistente, nunca limpo por rotina; `fleet_tmp/` é a única raiz transitória de limpeza.
