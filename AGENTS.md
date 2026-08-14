@@ -6,7 +6,7 @@ Plataforma educacional inclusiva com API FastAPI/SSE, agentes e frontend Next.js
 
 - `runtime/` contém núcleo, adaptadores e API; `agents/` contém fluxos; `frontend/` é a aplicação; `docs/` e `control_docs/` registram produto e operação.
 - `docker-compose.yml` sobe API, frontend, PostgreSQL e Redis. `README.md` orienta a execução e `control_docs/SYSTEM_DESIGN.md` define os limites arquiteturais.
-- `fleet.toml` é a autoridade da CI local. Use o fluxo Fleet para certificar o SHA exato numa árvore/índice isolado sob a trava de suíte da máquina; não trate um teste no worktree compartilhado como certificação de entrega.
+- `fleet.toml` é a autoridade da CI local. A certificação de entrega executa a suíte declarada nele no SHA completo e exato, em worktree isolada sob a trava global de suíte da máquina; GitHub é espelho opcional, não juiz. Teste no worktree compartilhado não a substitui.
 
 ## Comandos locais
 
