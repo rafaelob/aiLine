@@ -26,3 +26,5 @@ Execute a verificação determinística mais próxima antes de ampliar. Testes `
 - Preserve isolamento por locatário e eventos terminais em API, SSE, armazenamento vetorial e agentes. Configure segredos por `.env` a partir de `.env.example`, nunca em código, artefatos ou documentação.
 - Antes de superfícies Fleet compartilhadas, leia `control_docs/AGENT_PROTOCOL.md`. `sprints/` é o registro versionado (layout 2); `fleet_runtime/` é estado operacional e não é limpeza rotineira.
 - `sprints/` é o registro versionado de entrega; `fleet_runtime/` é estado operacional persistente, nunca limpo por rotina; `fleet_tmp/` é a única raiz transitória de limpeza.
+
+Tracker: github — rafaelob/aiLine; Issue = autoridade editável (DEC-113); commits citam #N; TODO/sprints são histórico.
