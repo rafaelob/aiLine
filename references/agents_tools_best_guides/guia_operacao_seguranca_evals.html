@@ -1,0 +1,1173 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Operação, Segurança &amp; Evals de Agentes — Núcleo</title>
+<meta name="description" content="Operação como parte da arquitetura: privacidade/retenção/ZDR, guardrails em 3 pontos (L0/L1/L2), tracing/replay/cost ledger, evals e acceptance gates, runbooks, policy-as-code, RACI, threat model alinhado a OWASP LLM Top 10 e Agentic (ASI), SLIs/SLOs, release controlado e kit de evidência de incidente — agnóstico de provider." />
+<meta name="last-checked" content="2026-07-09" />
+<meta name="robots" content="index,follow" />
+<style>
+  :root {
+    --c-bg: #ffffff;
+    --c-bg-elev: #f7f8fa;
+    --c-bg-code: #0e1116;
+    --c-fg: #1a1d23;
+    --c-fg-muted: #5b6472;
+    --c-fg-soft: #6b7480;
+    --c-border: #e4e7ec;
+    --c-border-strong: #cdd3dc;
+    --c-accent: #1a73e8;
+    --c-da: #1257b8;
+    --c-da-bg: #e6efff;
+    --c-warn: #b6541d;
+    --c-warn-bg: #fff4e6;
+    --c-ok: #157a33;
+    --c-ok-bg: #e8f5ea;
+    --c-bad: #c5221f;
+    --c-bad-bg: #fde8e6;
+    --c-na: #5f666f;
+    --c-na-bg: #eef0f3;
+    --c-info: #1257b8;
+    --c-info-bg: #e6efff;
+    --shadow-sm: 0 1px 2px rgba(15,23,42,.06), 0 1px 1px rgba(15,23,42,.04);
+    --shadow-md: 0 6px 24px rgba(15,23,42,.08), 0 2px 6px rgba(15,23,42,.06);
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --gutter: 24px;
+    --sidebar-w: 312px;
+  }
+  [data-theme="dark"] {
+    --c-bg: #0d1117;
+    --c-bg-elev: #161b22;
+    --c-bg-code: #010409;
+    --c-fg: #e6edf3;
+    --c-fg-muted: #9aa4b2;
+    --c-fg-soft: #828c9e;
+    --c-border: #20262d;
+    --c-border-strong: #2f3640;
+    --c-da: #4d9fff;
+    --c-accent: #4d9fff;
+    --c-ok: #3fb950;
+    --c-warn: #e3b341;
+    --c-bad: #ff7b72;
+    --c-na: #9aa4b2;
+    --c-info: #79b8ff;
+    --c-da-bg: #11233f;
+    --c-warn-bg: #2a1e0a;
+    --c-ok-bg: #0d2517;
+    --c-bad-bg: #2a1213;
+    --c-na-bg: #1a1f26;
+    --c-info-bg: #0c1e3a;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+    --shadow-md: 0 8px 28px rgba(0,0,0,.45);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-sans);
+    font-size: 15.5px;
+    line-height: 1.55;
+    color: var(--c-fg);
+    background: var(--c-bg);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  a { color: var(--c-accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, kbd, pre, samp { font-family: var(--font-mono); font-size: 0.92em; }
+  :focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; border-radius: 4px; }
+  .skip { position: absolute; left: -9999px; }
+  .skip:focus { left: 12px; top: 12px; background: var(--c-bg); padding: 8px 12px; border: 1px solid var(--c-border); border-radius: 6px; z-index: 100; }
+
+  header.site {
+    position: sticky; top: 0; z-index: 30;
+    background: rgba(255,255,255,.85);
+    backdrop-filter: saturate(180%) blur(10px);
+    border-bottom: 1px solid var(--c-border);
+  }
+  [data-theme="dark"] header.site { background: rgba(13,17,23,.82); }
+  .header-row {
+    max-width: 1440px; margin: 0 auto; padding: 12px 24px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .brand { font-weight: 700; letter-spacing: -.01em; font-size: 16px; }
+  .brand small { color: var(--c-fg-muted); font-weight: 500; margin-left: 8px; font-size: 12.5px; }
+  .header-right { margin-left: auto; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 999px;
+    background: var(--c-bg-elev); border: 1px solid var(--c-border);
+    color: var(--c-fg-muted); font-size: 12.5px; font-weight: 500;
+  }
+  .badge.ok { background: var(--c-ok-bg); color: var(--c-ok); border-color: transparent; }
+  .badge.da { background: var(--c-da-bg); color: var(--c-da); border-color: transparent; }
+  .badge.info { background: var(--c-info-bg); color: var(--c-info); border-color: transparent; }
+  .badge.warn { background: var(--c-warn-bg); color: var(--c-warn); border-color: transparent; }
+  .badge.bad { background: var(--c-bad-bg); color: var(--c-bad); border-color: transparent; }
+  .theme-btn {
+    border: 1px solid var(--c-border); background: var(--c-bg-elev); color: var(--c-fg);
+    padding: 5px 10px; border-radius: 8px; cursor: pointer; font: inherit; font-size: 12.5px;
+  }
+  .theme-btn:hover { border-color: var(--c-border-strong); }
+
+  .layout {
+    max-width: 1440px; margin: 0 auto;
+    display: grid; grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+    gap: 32px; padding: 24px;
+  }
+  nav.toc {
+    position: sticky; top: 64px;
+    align-self: start; max-height: calc(100vh - 80px); overflow: auto;
+    padding-right: 8px;
+    border-right: 1px solid var(--c-border);
+  }
+  nav.toc ol { list-style: none; padding: 0; margin: 0 0 16px; }
+  nav.toc li { line-height: 1.4; margin: 2px 0; }
+  nav.toc a {
+    display: block; padding: 4px 8px; border-radius: 5px;
+    color: var(--c-fg-muted); font-size: 13px;
+  }
+  nav.toc a:hover { background: var(--c-bg-elev); color: var(--c-fg); text-decoration: none; }
+  nav.toc a.active { color: var(--c-da); background: var(--c-da-bg); font-weight: 600; }
+  nav.toc .toc-section {
+    margin-top: 14px; padding: 2px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--c-fg-soft);
+    border-top: 1px solid var(--c-border); padding-top: 10px;
+  }
+  nav.toc .toc-section:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+
+  main { min-width: 0; max-width: 1040px; }
+
+  .hero {
+    border: 1px solid var(--c-border);
+    border-radius: 14px;
+    padding: 28px 28px 24px;
+    background: linear-gradient(135deg, var(--c-da-bg) 0%, var(--c-bg) 100%);
+    margin-bottom: 32px;
+  }
+  .hero h1 { font-size: 32px; line-height: 1.15; margin: 0 0 8px; letter-spacing: -.02em; }
+  .hero p.lead { margin: 0 0 16px; color: var(--c-fg-muted); font-size: 16px; max-width: 74ch; }
+  .hero-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+
+  section { margin: 48px 0; scroll-margin-top: 84px; }
+  section.chapter { padding-top: 16px; margin-top: 56px; border-top: 3px solid var(--c-da); }
+  section.ref { padding-top: 12px; margin-top: 48px; border-top: 2px dashed var(--c-border-strong); }
+  h2 {
+    font-size: 24px; line-height: 1.2; letter-spacing: -.015em;
+    margin: 0 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--c-border);
+    scroll-margin-top: 84px;
+  }
+  h3 { font-size: 18px; line-height: 1.3; margin: 28px 0 10px; scroll-margin-top: 84px; }
+  h4 { font-size: 15px; margin: 20px 0 8px; color: var(--c-fg); scroll-margin-top: 84px; }
+  p { margin: 0 0 12px; }
+  ul, ol { margin: 0 0 12px; padding-left: 22px; }
+  li { margin: 4px 0; }
+  hr { border: 0; border-top: 1px solid var(--c-border); margin: 24px 0; }
+
+  .table-wrap { overflow-x: auto; margin: 0 0 18px; border: 1px solid var(--c-border); border-radius: var(--radius); }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 580px; }
+  th, td { padding: 9px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--c-border); }
+  th { background: var(--c-bg-elev); font-weight: 600; color: var(--c-fg); position: sticky; top: 0; font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--c-bg-elev); }
+  td code, th code { background: var(--c-bg-elev); padding: 1px 5px; border-radius: 4px; font-size: 12.5px; color: var(--c-fg); }
+  [data-theme="dark"] td code, [data-theme="dark"] th code { background: #0b0e13; }
+
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; letter-spacing: .02em; }
+  .pill.ok { background: var(--c-ok-bg); color: var(--c-ok); }
+  .pill.partial { background: var(--c-warn-bg); color: var(--c-warn); }
+  .pill.bad { background: var(--c-bad-bg); color: var(--c-bad); }
+  .pill.na { background: var(--c-na-bg); color: var(--c-na); }
+  .pill.beta { background: var(--c-info-bg); color: var(--c-info); }
+
+  .callout {
+    border-left: 4px solid var(--c-accent);
+    background: var(--c-bg-elev);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  .callout.warn { border-left-color: var(--c-warn); background: var(--c-warn-bg); color: #5a3009; }
+  .callout.tip { border-left-color: var(--c-ok); background: var(--c-ok-bg); color: #1d4a25; }
+  .callout.danger { border-left-color: var(--c-bad); background: var(--c-bad-bg); color: #7a1a16; }
+  .callout.beta { border-left-color: var(--c-info); background: var(--c-info-bg); color: #123d75; }
+  .callout.info { border-left-color: var(--c-info); background: var(--c-info-bg); color: #123d75; }
+  .callout.partial { border-left-color: var(--c-warn); background: var(--c-warn-bg); color: #5a3009; }
+  [data-theme="dark"] .callout.warn { color: #f1c896; }
+  [data-theme="dark"] .callout.tip { color: #a7d8b1; }
+  [data-theme="dark"] .callout.danger { color: #f0a8a4; }
+  [data-theme="dark"] .callout.beta { color: #a8cdff; }
+  [data-theme="dark"] .callout.info { color: #a8cdff; }
+  [data-theme="dark"] .callout.partial { color: #f1c896; }
+  .callout strong { font-weight: 700; }
+  .callout a { color: var(--c-da); text-decoration: underline; }
+  [data-theme="dark"] .callout a { color: var(--c-da); }
+  footer.site a, .source-link a { text-decoration: underline; }
+
+  pre {
+    background: var(--c-bg-code);
+    color: #d1d5db;
+    padding: 14px 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 0 0 14px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    border: 1px solid #1f242c;
+  }
+  pre code { color: inherit; background: transparent; padding: 0; }
+
+  /* Blocos de código com abas por linguagem (Python / TypeScript / REST) */
+  .code-tabs { display: flex; gap: 4px; margin-bottom: 0; }
+  .code-tab {
+    border: 1px solid var(--c-border); border-bottom: none; background: var(--c-bg-elev);
+    color: var(--c-fg-muted); padding: 6px 14px; border-radius: 8px 8px 0 0;
+    cursor: pointer; font: inherit; font-size: 12.5px; font-weight: 600;
+  }
+  .code-tab[aria-selected="true"] { background: var(--c-bg-code); color: #f0e9e1; border-color: #2a241e; }
+  .code-pane { display: none; }
+  .code-pane[data-active="true"] { display: block; }
+  .code-group pre { border-radius: 0 8px 8px 8px; margin-top: -1px; }
+
+  details {
+    border: 1px solid var(--c-border); border-radius: var(--radius);
+    padding: 8px 14px; margin: 6px 0 10px; background: var(--c-bg-elev);
+  }
+  details > summary {
+    cursor: pointer; font-weight: 600; padding: 4px 0; list-style: none;
+    font-size: 13.5px;
+  }
+  details > summary::-webkit-details-marker { display: none; }
+  details > summary::before { content: "▸ "; color: var(--c-fg-soft); display: inline-block; }
+  details[open] > summary::before { content: "▾ "; }
+  details > .ref-body { padding: 8px 0 4px; }
+
+  .source-link {
+    font-size: 12.5px; color: var(--c-fg-muted);
+    margin: 6px 0 24px; padding: 6px 10px;
+    background: var(--c-bg-elev); border-left: 3px solid var(--c-da);
+    border-radius: 0 6px 6px 0;
+  }
+  .source-link a { color: var(--c-da); font-weight: 600; }
+
+  .figure { margin: 20px 0 26px; }
+  .figure svg { width: 100%; height: auto; display: block; border: 1px solid var(--c-border); border-radius: 10px; }
+  .figure figcaption { font-size: 12.5px; color: var(--c-fg-muted); margin-top: 10px; line-height: 1.5; padding: 0 4px; }
+
+  footer.site {
+    margin: 64px 0 24px; padding: 24px 0; border-top: 1px solid var(--c-border);
+    color: var(--c-fg-muted); font-size: 13px;
+  }
+
+  @media (max-width: 1080px) {
+    .layout { grid-template-columns: 1fr; }
+    nav.toc { position: static; max-height: none; border-right: none; border-bottom: 1px solid var(--c-border); padding-bottom: 16px; margin-bottom: 16px; }
+    main { max-width: 100%; }
+    .hero h1 { font-size: 24px; }
+  }
+  @media print {
+    nav.toc, header.site, .theme-btn { display: none; }
+    .layout { grid-template-columns: 1fr; }
+    a { color: inherit; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+    details[open] { padding: 8px 0; }
+    details > summary { display: none; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Pular para o conteúdo</a>
+
+<header class="site">
+  <div class="header-row">
+    <div class="brand">Operação, Segurança &amp; Evals <small>Núcleo agnóstico · super-guia de agentes</small></div>
+    <div class="header-right">
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-09</strong></span>
+      <span class="badge da">Núcleo · v1</span>
+      <span class="badge info">PT-BR · agnóstico</span>
+      <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="Sumário">
+    <div class="toc-section">Início</div>
+    <ol>
+      <li><a href="#sobre-guia">Sobre este guia</a></li>
+      <li><a href="#fontes-oficiais">Fontes &amp; verificação</a></li>
+    </ol>
+
+    <div class="toc-section">Parte 1 — Fundamentos</div>
+    <ol>
+      <li><a href="#operacao-e-arquitetura">1. Operação é arquitetura</a></li>
+      <li><a href="#privacidade-retencao-zdr">2. Privacidade, retenção e ZDR</a></li>
+      <li><a href="#guardrails">3. Guardrails (3 pontos · L0/L1/L2)</a></li>
+      <li><a href="#tracing-replay-cost">4. Tracing, replay e cost ledger</a></li>
+      <li><a href="#evals-acceptance-gates">5. Evals e acceptance gates</a></li>
+    </ol>
+
+    <div class="toc-section">Parte 2 — Resposta &amp; risco</div>
+    <ol>
+      <li><a href="#runbooks">6. Runbooks operacionais</a></li>
+      <li><a href="#policy-as-code">7. Policy-as-code</a></li>
+      <li><a href="#threat-model">8. Threat model (OWASP)</a></li>
+      <li><a href="#slis-slos">9. SLIs, SLOs e métricas</a></li>
+      <li><a href="#release-controlado">10. Release e mudança controlada</a></li>
+      <li><a href="#kit-evidencia-incidente">11. Kit de evidência de incidente</a></li>
+    </ol>
+
+    <div class="toc-section">Parte 3 — Times &amp; produção</div>
+    <ol>
+      <li><a href="#raci">12. RACI mínimo</a></li>
+      <li><a href="#checklist-producao">13. Checklist de produção</a></li>
+      <li><a href="#hardening-sota">14. Production hardening SOTA</a></li>
+    </ol>
+
+    <div class="toc-section">Referência</div>
+    <ol>
+      <li><a href="#cheatsheet">Cheat sheet operacional</a></li>
+      <li><a href="#verificacao">Notas de verificação</a></li>
+    </ol>
+  </nav>
+
+  <main id="main">
+
+    <div class="hero">
+      <h1>Operação, Segurança &amp; Evals de Agentes</h1>
+      <p class="lead">
+        Operação não é uma camada que vem <em>depois</em> do agente — é parte da arquitetura. Este capítulo do
+        núcleo é <strong>agnóstico de provider e framework</strong>: define privacidade/retenção/ZDR, guardrails
+        em três pontos (e o modelo L0/L1/L2), tracing/replay/cost ledger, evals e acceptance gates, runbooks,
+        policy-as-code, RACI, threat model alinhado à OWASP, SLIs/SLOs, release controlado e o kit de evidência
+        de incidente. Conceitos e contratos ficam aqui; a implementação concreta por framework e os detalhes de
+        retenção por provider estão nos guias dedicados, sempre cross-linkados.
+      </p>
+      <div class="hero-meta">
+        <span class="badge da">Núcleo · v1</span>
+        <span class="badge info">PT-BR · agnóstico</span>
+        <span class="badge ok">SOTA · verificado 2026-06-10</span>
+      </div>
+    </div>
+
+    <section id="sobre-guia">
+      <h2>Sobre este guia</h2>
+      <p>
+        Este é um guia <strong>para IA e humanos</strong>: combina o "quando usar" com referência rápida
+        (tabelas de gates, schemas de span/ledger, runbooks e checklists copy-paste). É o capítulo
+        <strong>05</strong> do núcleo do super-guia de agentes e <strong>nenhum guia dedicado existente cobre
+        operação agnóstica de agentes</strong> — por isso a maior parte do conteúdo aqui é primário (MANTER),
+        com cross-links pontuais para profundidade específica de provider/framework.
+      </p>
+      <div class="callout">
+        <strong>Tese operacional:</strong> um agente sem operação explícita é uma automação probabilística sem
+        controle. Cada decisão relevante deve ser rastreável a <em>input → policy → source → tool call →
+        model response → schema → approval → eval</em>. O <strong>ledger canônico próprio</strong> (definido no
+        capítulo de estado) é a fonte da verdade para replay e auditoria — o payload do provider é só uma
+        projeção.
+      </div>
+      <div class="callout tip">
+        <strong>Como ler:</strong> a Parte 1 estabelece os fundamentos operacionais; a Parte 2 cobre resposta a
+        incidentes e gestão de risco; a Parte 3 fecha com times, checklist e o blueprint de hardening. O
+        <a href="#cheatsheet">cheat sheet</a> resume gates, métricas e o esqueleto de policy-as-code.
+      </div>
+      <div class="callout beta">
+        <strong>Vizinhança no super-guia:</strong> este capítulo depende do vocabulário definido em
+        <a href="guia_arquitetura_orquestracao.html">Arquitetura &amp; orquestração</a> (capability registry,
+        microcontexto, fases) e em <a href="guia_estado_contexto_memoria.html">Estado, contexto &amp; memória</a>
+        (ledger, compaction, loss declaration). Segurança de <em>tools</em> e MCP é aprofundada em
+        <a href="guia_ferramentas_mcp_rag.html">Ferramentas, MCP &amp; RAG</a>; a camada de adapter e o
+        provider-switching contract estão em <a href="guia_providers_adapters.html">Providers &amp; adapters</a>.
+      </div>
+    </section>
+
+    <section id="fontes-oficiais">
+      <h2>Fontes &amp; verificação</h2>
+      <p>
+        Todo fato perecível deste guia foi conferido contra a documentação oficial em <strong>2026-06-10</strong>
+        ou anotado como <span class="pill partial">UNVERIFIED</span> nas
+        <a href="#verificacao">notas de verificação</a>. Os IDs de modelo <strong>não são fixados no corpo</strong>
+        (use sempre <code>model="..."</code>); a folha de fatos SOTA do super-guia concentra os IDs perecíveis.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Tema</th><th>Recurso oficial</th></tr></thead>
+        <tbody>
+          <tr><td>Agents SDK (guardrails, tracing)</td><td><a href="https://openai.github.io/openai-agents-python/" target="_blank" rel="noopener">openai.github.io/openai-agents-python</a></td></tr>
+          <tr><td>OpenAI Responses (estado, retenção)</td><td><a href="https://developers.openai.com/api/docs/guides/conversation-state" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/conversation-state</a></td></tr>
+          <tr><td>OpenAI reasoning</td><td><a href="https://developers.openai.com/api/docs/guides/reasoning" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/reasoning</a></td></tr>
+          <tr><td>Pydantic AI — evals</td><td><a href="https://pydantic.dev/docs/ai/evals/evals/" target="_blank" rel="noopener">pydantic.dev/docs/ai/evals/evals</a></td></tr>
+          <tr><td>Pydantic AI — Logfire / observabilidade</td><td><a href="https://pydantic.dev/docs/ai/integrations/logfire/" target="_blank" rel="noopener">pydantic.dev/docs/ai/integrations/logfire</a></td></tr>
+          <tr><td>MCP — spec (segurança/consentimento)</td><td><a href="https://modelcontextprotocol.io/specification/2025-11-25" target="_blank" rel="noopener">modelcontextprotocol.io/specification/2025-11-25</a></td></tr>
+          <tr><td>OWASP — LLM Top 10 (2025)</td><td><a href="https://genai.owasp.org/llm-top-10/" target="_blank" rel="noopener">genai.owasp.org/llm-top-10</a></td></tr>
+          <tr><td>OWASP — Top 10 for Agentic Apps (2026)</td><td><a href="https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/" target="_blank" rel="noopener">genai.owasp.org/.../agentic-applications-for-2026</a></td></tr>
+          <tr><td>EU AI Act — texto e cronograma</td><td><a href="https://artificialintelligenceact.eu/implementation-timeline/" target="_blank" rel="noopener">artificialintelligenceact.eu/implementation-timeline</a></td></tr>
+        </tbody>
+      </table></div>
+      <p style="font-size:13px;color:var(--c-fg-muted)">
+        Legenda dos selos: <span class="pill ok">Verificado</span> confirmado na doc oficial em 2026-06-10 ·
+        <span class="pill beta">Novo</span> recurso/spec recente ·
+        <span class="pill partial">UNVERIFIED</span> não confirmado dentro do orçamento (fonte/lacuna anotada) ·
+        <span class="pill bad">Evitar</span> descontinuado/antipadrão ·
+        <span class="pill na">N/D</span> não documentado.
+      </p>
+      <div class="callout warn">
+        <strong>Mudança de domínio do Pydantic AI (verificada ao vivo):</strong> em 2026-05-25,
+        <code>ai.pydantic.dev/…</code> retorna <strong>301 Moved Permanently</strong> para
+        <code>pydantic.dev/docs/ai/…</code> (confirmado para <code>/overview/</code>, <code>/evals/evals/</code> e
+        <code>/integrations/logfire/</code>). Este guia usa o destino canônico vivo
+        <code>pydantic.dev/docs/ai/…</code>. Ver <a href="#verificacao">notas de verificação</a>.
+      </div>
+    </section>
+
+    <!-- ===================== PARTE 1 ===================== -->
+    <section class="chapter" id="parte-fundamentos">
+      <h2 style="border-bottom:3px solid var(--c-da);padding:14px 0 10px;font-size:28px">Parte 1 — Fundamentos operacionais</h2>
+      <p>
+        Os cinco pilares que tornam um agente operável: tratar operação como arquitetura, decidir privacidade e
+        retenção por rota, instalar guardrails nos três pontos críticos, instrumentar tudo num cost/replay ledger
+        e travar releases atrás de acceptance gates.
+      </p>
+    </section>
+
+    <section id="operacao-e-arquitetura">
+      <h2>1. Operação é arquitetura</h2>
+      <p>
+        Operação, segurança e avaliação não são um "apêndice de produção": são decisões de <em>design</em> que
+        precisam existir desde o primeiro protótipo. Gates, timeouts, budgets, evals, cost ledger, tracing,
+        replay, ZDR, evidência estática e runbooks fazem parte do mesmo contrato do orquestrador. Se eles não
+        existem, o agente não é controlável — só observável depois do dano.
+      </p>
+      <div class="callout">
+        <strong>Princípio:</strong> cada decisão relevante deve ser rastreável a <code>input</code>,
+        <code>policy</code>, <code>source</code>, <code>tool_call</code>, <code>model_response</code>,
+        <code>schema</code>, <code>approval</code> ou <code>eval</code>. Se você não consegue apontar a origem de
+        uma ação, você não consegue auditá-la nem revertê-la.
+      </div>
+
+      <h3>Os quatro contratos operacionais</h3>
+      <p>Toda rota de agente em produção fixa quatro contratos, independentemente do provider/framework:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Contrato</th><th>O que fixa</th><th>Onde vive</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Privacidade</strong></td><td>Classes de dado permitidas, retenção, ZDR, redaction.</td><td>Policy-as-code por rota (§7).</td></tr>
+          <tr><td><strong>Guardrails</strong></td><td>Validação de entrada, tool call e saída; HITL.</td><td>L0/L1/L2 + acceptance gates (§3, §5).</td></tr>
+          <tr><td><strong>Observabilidade</strong></td><td>Span por chamada, custo, replay reconstruível.</td><td>Trace/cost ledger (§4).</td></tr>
+          <tr><td><strong>Resiliência</strong></td><td>Budgets, timeouts, circuit breakers, fallback, wind-down.</td><td>Runbooks + policy (§6, §7).</td></tr>
+        </tbody>
+      </table></div>
+
+      <div class="figure">
+        <svg viewBox="0 0 760 248" role="img" aria-label="Diagrama dos planos operacionais ao redor do orquestrador">
+          <rect x="0" y="0" width="760" height="248" fill="none"/>
+          <rect x="270" y="98" width="220" height="52" rx="10" fill="var(--c-da-bg)" stroke="var(--c-da)" stroke-width="1.5"/>
+          <text x="380" y="122" text-anchor="middle" font-family="ui-sans-serif,system-ui" font-size="14" font-weight="700" fill="var(--c-da)">Orquestrador</text>
+          <text x="380" y="140" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="var(--c-fg-muted)">registrar → reduzir → projetar</text>
+
+          <rect x="40" y="24" width="200" height="46" rx="9" fill="var(--c-ok-bg)" stroke="var(--c-ok)" stroke-width="1.3"/>
+          <text x="140" y="44" text-anchor="middle" font-family="ui-sans-serif,system-ui" font-size="12.5" font-weight="700" fill="var(--c-ok)">Privacidade / retenção / ZDR</text>
+          <text x="140" y="60" text-anchor="middle" font-family="ui-sans-serif,system-ui" font-size="11" fill="var(--c-fg-muted)">classes de dado · redaction</text>
+
+          <rect x="520" y="24" width="200" height="46" rx="9" fill="var(--c-warn-bg)" stroke="var(--c-warn)" stroke-width="1.3"/>
+          <text x="620" y="44" text-anchor="middle" font-family="ui-sans-serif,system-ui" font-size="12.5" font-weight="700" fill="var(--c-warn)">Guardrails (L0/L1/L2)</text>
+          <text x="620" y="60" text-anchor="middle" font-family="ui-sans-serif,system-ui" font-size="11" fill="var(--c-fg-muted)">entrada · tool · saída · HITL</text>
+
+          <rect x="40" y="178" width="200" height="46" rx="9" fill="var(--c-da-bg)" stroke="var(--c-da)" stroke-width="1.3"/>
+          <text x="140" y="198" text-anchor="middle" font-family="ui-sans-serif,system-ui" font-size="12.5" font-weight="700" fill="var(--c-da)">Trace / cost ledger</text>
+          <text x="140" y="214" text-anchor="middle" font-family="ui-sans-serif,system-ui" font-size="11" fill="var(--c-fg-muted)">span · usage · replay</text>
+
+          <rect x="520" y="178" width="200" height="46" rx="9" fill="var(--c-bad-bg)" stroke="var(--c-bad)" stroke-width="1.3"/>
+          <text x="620" y="198" text-anchor="middle" font-family="ui-sans-serif,system-ui" font-size="12.5" font-weight="700" fill="var(--c-bad)">Evals / gates / runbooks</text>
+          <text x="620" y="214" text-anchor="middle" font-family="ui-sans-serif,system-ui" font-size="11" fill="var(--c-fg-muted)">aceite · regressão · incidente</text>
+
+          <line x1="240" y1="47" x2="300" y2="100" stroke="var(--c-border-strong)" stroke-width="1.4"/>
+          <line x1="520" y1="47" x2="460" y2="100" stroke="var(--c-border-strong)" stroke-width="1.4"/>
+          <line x1="240" y1="201" x2="300" y2="148" stroke="var(--c-border-strong)" stroke-width="1.4"/>
+          <line x1="520" y1="201" x2="460" y2="148" stroke="var(--c-border-strong)" stroke-width="1.4"/>
+        </svg>
+        <figcaption>Os quatro planos operacionais circundam o loop do orquestrador. Nenhum é opcional em produção: privacidade decide o que pode sair, guardrails decidem o que pode entrar/agir, o ledger torna tudo reconstruível e os evals/gates decidem o que pode ser liberado.</figcaption>
+      </div>
+    </section>
+
+    <section id="privacidade-retencao-zdr">
+      <h2>2. Privacidade, retenção e ZDR</h2>
+      <p>
+        Privacidade é uma decisão de rota, não um detalhe de runtime. Cada rota declara, de forma auditável, qual
+        classe de dado pode chegar ao provider/tool, por quanto tempo o estado é retido e quando se exige
+        <abbr title="Zero Data Retention">ZDR</abbr>. O modelo nunca resolve <em>tenant</em>/auth sozinho — isso é
+        resolvido fora dele, no orquestrador.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Camada</th><th>Decisão obrigatória</th><th>Evidência esperada</th></tr></thead>
+        <tbody>
+          <tr><td>Classificação de dados</td><td>Público, interno, sensível, regulado, segredo, credencial.</td><td>Item de ledger com <code>classification</code> e <code>redaction_policy</code>.</td></tr>
+          <tr><td>Retenção do provider</td><td><code>store</code> true/false, conversation/session, cache, logs.</td><td>Config por rota e justificativa.</td></tr>
+          <tr><td>Retenção interna</td><td>Quanto tempo ledger, traces e assets ficam guardados.</td><td>Política de retenção e deleção.</td></tr>
+          <tr><td>Redaction</td><td>O que remover antes de provider/tool/subagente.</td><td>Lista de campos e hash do conteúdo original quando necessário.</td></tr>
+          <tr><td>Tenant boundary</td><td>Como tenant/auth é resolvido fora do modelo.</td><td>Runtime claims, scopes e logs.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>ZDR e estado stateless</h3>
+      <p>
+        Cada provider expõe mecanismos próprios de estado e retenção. No padrão agnóstico, o orquestrador
+        <strong>sempre</strong> preserva o ledger próprio para replay e auditoria, mesmo quando opta por não
+        persistir nada no provider. Na OpenAI Responses API, fluxos sem retenção devolvem os <em>output items</em>
+        relevantes a cada turno (em vez de <code>previous_response_id</code>) e usam <code>store=false</code>;
+        reasoning stateless preserva o conteúdo de raciocínio do lado do cliente quando o provider o suporta.
+      </p>
+      <div class="callout">
+        <strong>Regra de ouro:</strong> ZDR no provider <em>não</em> é o mesmo que ZDR no seu sistema. Se você
+        guarda o ledger e os traces sem redaction, você ainda retém o dado — só mudou de lugar. A política de
+        retenção interna (§7) precisa ser tão explícita quanto a do provider.
+      </div>
+      <div class="source-link">Fonte oficial: <a href="https://developers.openai.com/api/docs/guides/conversation-state" target="_blank" rel="noopener">OpenAI · conversation state</a> · <a href="https://developers.openai.com/api/docs/guides/reasoning" target="_blank" rel="noopener">OpenAI · reasoning</a></div>
+      <div class="callout beta">
+        <strong>Retenção/ZDR por provider (cross-link):</strong> os mecanismos concretos e as superfícies de
+        retenção ficam nos guias dedicados —
+        <a href="guia_openai_modelos.html#s-conversation">OpenAI · estado de conversa</a>,
+        <a href="guia_gemini_interactions_api.html#s-store">Gemini · <code>store</code> e retenção</a> e
+        <a href="guia_claude_api.html#a-context-windows">Claude · janelas de contexto / plataformas</a>. A camada
+        de adapter que normaliza isso entre providers está em
+        <a href="guia_providers_adapters.html">Providers &amp; adapters</a>.
+      </div>
+    </section>
+
+    <section id="guardrails">
+      <h2>3. Guardrails (3 pontos · modelo L0/L1/L2)</h2>
+      <p>
+        Guardrails precisam existir em <strong>três pontos do fluxo</strong> — entrada, ferramenta e saída —
+        e ser organizados por <strong>defesa em profundidade</strong>. O Agents SDK oferece guardrails como
+        primitivo (com o padrão <em>tripwire</em>); no runtime universal, complemente com validação de schema,
+        políticas de negócio e evals.
+      </p>
+
+      <h3>3.1. Os cinco pontos de enforcement</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Ponto</th><th>Guardrail</th><th>Exemplos</th></tr></thead>
+        <tbody>
+          <tr><td>Entrada</td><td>Classificação, prompt injection, tamanho, consentimento, dados sensíveis.</td><td>Bloquear segredo, reduzir anexo, pedir autorização.</td></tr>
+          <tr><td>Tool call</td><td>Schema, side effect, auth, rate limit, idempotência.</td><td>Rejeitar tool financeira sem aprovação.</td></tr>
+          <tr><td>Tool result</td><td>Redaction, caps, provenance, erro estruturado.</td><td>Retornar top 8 evidências em vez de 200 chunks.</td></tr>
+          <tr><td>Saída</td><td>Schema, factualidade, citações, policy, tom, risco.</td><td>Exigir fontes, detectar alucinação, marcar incerteza.</td></tr>
+          <tr><td>Handoff</td><td>Motivo, contexto transferido, consentimento.</td><td>Não transferir PII desnecessária.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>3.2. Modelo de camadas L0 / L1 / L2</h3>
+      <p>
+        Uma forma operacional de organizar a defesa em profundidade é separar três camadas com responsabilidades
+        distintas. <strong>O bloqueio de conteúdo conversacional em linguagem natural é responsabilidade da
+        inteligência (L1 + composição do agente)</strong>; determinismo (regex/keyword/classificador estático) é
+        sinal/máscara/auditoria, e só vira <em>tripwire</em> em portões de capability não conversacionais.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Camada</th><th>O que é</th><th>Onde vive</th><th>Bloqueia?</th></tr></thead>
+        <tbody>
+          <tr><td><strong>L0</strong></td><td>Pré-filtro rápido: máscara de PII, scan de segredo, allowlist de URL, classificadores hospedados em <em>shadow</em>.</td><td>SDK do vendor ou pré-filtro local atrás de um adapter (<code>observe | mask | fail_closed_capability</code>).</td><td>Por padrão <strong>não</strong> (<code>observe</code>). <em>Tripwire</em> só em 3 classes não conversacionais: vazamento de segredo, desalinhamento de tool-call e violação de allowlist de URL.</td></tr>
+          <tr><td><strong>L1</strong></td><td>Specs deliberativas com LLM-juiz (input/output guardrails).</td><td>Camada de guardrail do framework (ex.: <code>InputGuardrail</code>/<code>OutputGuardrail</code>).</td><td><strong>Sim</strong> — palavra final sobre conteúdo conversacional; <em>tripwire</em> em risco validado.</td></tr>
+          <tr><td><strong>L2</strong></td><td>Kernel no prompt: cadeia de comando (Sistema &gt; Protocolo &gt; Usuário), regra dado-como-dado, recusa/escopo/confidencialidade.</td><td>System prompt do agente.</td><td><strong>Implícito</strong> — o agente recusa via composição inteligente.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout warn">
+        <strong>Antipadrão a evitar:</strong> encadear 3–5 checks de LLM-juiz em série na L0 antes da L1 faz o
+        P50 explodir. LLM-juiz serial em L0 é proibido pelo cânone — L0 LLM-based roda em <em>shadow</em>/paralelo
+        e só vira <em>enforce</em> após o playbook shadow→enforce (≥7 dias ou dataset representativo, com matriz
+        FP/FN/concordância verde e fallback declarado).
+      </div>
+
+      <h3>3.3. Fluxo de aprovação humana (HITL)</h3>
+      <p>
+        Ações com efeito colateral irreversível, financeiro ou sobre PII exigem aprovação humana. O HITL separa
+        explicitamente <em>plan</em> de <em>execute</em>, registra o racional e os parâmetros aprovados, e
+        <strong>nunca infere aprovação de respostas ambíguas</strong>. Três padrões de interação:
+      </p>
+      <ul>
+        <li><strong>Interrupt &amp; Resume</strong> — o agente pausa no meio da execução, coleta a decisão humana e retoma.</li>
+        <li><strong>Human-as-a-Tool</strong> — o agente chama uma "tool humana" quando incerto e usa a resposta no contexto.</li>
+        <li><strong>Role-Based Approval</strong> — só papéis específicos aprovam tipos específicos de ação; tier <em>Critical</em> exige aprovação multi-pessoa.</li>
+      </ul>
+      <div class="callout beta">
+        <strong>Guardrails/HITL por framework (cross-link):</strong> o primitivo de guardrail e o <em>tripwire</em>
+        do OpenAI Agents SDK estão em <a href="guia_agents_sdk.html#s-guardrails">guia do Agents SDK · Guardrails</a>;
+        HITL em LangGraph em <a href="guia_langgraph.html#s-hitl">LangGraph · <code>interrupt</code>/<code>Command</code></a>;
+        Tool Confirmation no ADK em <a href="guia_google_adk.html#tool-confirm">Google ADK · Tool Confirmation</a>.
+        O contrato de aprovação de tool agnóstico (níveis de side-effect) está em
+        <a href="guia_ferramentas_mcp_rag.html">Ferramentas, MCP &amp; RAG</a>.
+      </div>
+      <div class="source-link">Fonte oficial: <a href="https://openai.github.io/openai-agents-python/" target="_blank" rel="noopener">OpenAI Agents SDK</a> · OWASP — <a href="https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/" target="_blank" rel="noopener">Top 10 for Agentic Applications (2026)</a></div>
+    </section>
+
+    <section id="tracing-replay-cost">
+      <h2>4. Tracing, replay e cost ledger</h2>
+      <p>
+        Observabilidade precisa ser granular o suficiente para <strong>reconstruir</strong> qualquer turno: qual
+        modelo foi chamado, com quais parâmetros, quais tools foram expostas, quais <em>calls</em> foram emitidas,
+        quais foram executadas, quais resultados entraram no contexto, quanto custou e qual foi a resposta final.
+        Cada span amarra a um item do ledger canônico, de modo que o replay seja determinístico até onde o
+        provider permitir.
+      </p>
+      <pre><code class="language-json">{
+  "trace_span": {
+    "span_id": "span_123",
+    "kind": "model_call | tool_call | guardrail | compaction | handoff",
+    "model": "provider/model",
+    "parameters": { "max_output_tokens": 4096, "tool_choice": "auto" },
+    "input_hash": "sha256:...",
+    "output_hash": "sha256:...",
+    "usage": { "input_tokens": 1000, "output_tokens": 300, "reasoning_tokens": 120 },
+    "cost_estimate": { "amount": 0.012, "currency": "USD", "known": false },
+    "status": "success"
+  }
+}</code></pre>
+      <div class="source-link">Fonte oficial: <a href="https://openai.github.io/openai-agents-python/" target="_blank" rel="noopener">OpenAI Agents SDK · tracing</a> · <a href="https://pydantic.dev/docs/ai/integrations/logfire/" target="_blank" rel="noopener">Pydantic AI · Logfire</a></div>
+      <div class="callout warn">
+        <strong>Custo desconhecido nunca é zero.</strong> Quando <code>usage</code> ou custo não estiverem
+        disponíveis (ex.: tool externa sem preço, provider sem campo de usage), registre como
+        <code>known:false</code> / estimado — jamais como <code>0</code>. Custo "zero" silencioso é a causa
+        número um de <em>cost spike</em> não detectado.
+      </div>
+      <div class="callout tip">
+        <strong>KPI que decide upgrade/downgrade de modelo: custo por sucesso.</strong>
+        <code>custo_por_sucesso = custo_total_da_carga / tarefas_APROVADAS_no_eval</code> — não compare modelos por
+        preço de tabela nem por custo médio por chamada. Um modelo 2× mais caro por token que resolve em 1 tentativa
+        e menos tool calls costuma vencer um "barato" que exige retries e reparo. Meça junto: pass rate no golden
+        set, taxa de retry/reparo, tool calls por tarefa e refusals. Isso vale também para decidir <em>reasoning
+        effort</em> e paralelismo multi-agente (onde o custo é a soma de todos os subagentes).
+      </div>
+      <h3>O que um span precisa permitir</h3>
+      <ul>
+        <li><strong>Replay sem dados sensíveis:</strong> hashes e ponteiros em vez do conteúdo bruto quando a classe de dado exigir.</li>
+        <li><strong>Atribuição de custo:</strong> <code>cost_per_success</code> por rota/tenant/provider (ver §9).</li>
+        <li><strong>Reconstrução de decisão:</strong> ligar span → policy aplicada → aprovação humana → gate que passou/falhou.</li>
+      </ul>
+      <div class="callout beta">
+        <strong>Tracing/persistência por framework (cross-link):</strong> módulo de tracing do
+        <a href="guia_agents_sdk.html#s-tracing">OpenAI Agents SDK</a>; checkpointers como persistência durável em
+        <a href="guia_langgraph.html#s-persistence">LangGraph · persistence</a>; observabilidade do
+        <a href="guia_google_adk.html#observability">Google ADK</a>. A teoria de budget de tokens e contagem
+        real está em <a href="guia_estado_contexto_memoria.html">Estado, contexto &amp; memória</a>.
+      </div>
+    </section>
+
+    <section id="evals-acceptance-gates">
+      <h2>5. Evals e acceptance gates</h2>
+      <p>
+        Evals cobrem comportamento, schemas, segurança, custo/latência e regressões de contexto. Acceptance gates
+        são evals com <strong>poder de bloquear release</strong>: cada gate tem um teste mínimo e um critério
+        objetivo de aprovação. Esses gates são a tradução operacional dos contratos das seções anteriores.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Gate</th><th>Teste mínimo</th><th>Critério de aprovação</th></tr></thead>
+        <tbody>
+          <tr><td><code>SCHEMA-001</code></td><td>Output final sempre valida no schema esperado.</td><td>0 violações em casos críticos; erro recuperável em casos não críticos.</td></tr>
+          <tr><td><code>TOOL-001</code></td><td>Tool calls respeitam <em>allowed tools</em> e side-effect policy.</td><td>Nenhuma chamada proibida executada.</td></tr>
+          <tr><td><code>RAG-001</code></td><td>Toda alegação factual de RAG tem citation/provenance.</td><td>Citações presentes e hash/posição rastreável.</td></tr>
+          <tr><td><code>CTX-001</code></td><td>Compaction preserva fatos, decisões e pendências.</td><td>Nenhum item crítico perdido em replay.</td></tr>
+          <tr><td><code>ZDR-001</code></td><td>Fluxos sensíveis não usam retenção indevida do provider.</td><td>Config auditável por rota.</td></tr>
+          <tr><td><code>BUDGET-001</code></td><td><em>Final reserve</em> impede esgotamento da resposta final.</td><td>Sistema finaliza sem abrir tools quando a reserva é atingida.</td></tr>
+          <tr><td><code>PROVIDER-001</code></td><td>Provider switch declara perdas.</td><td><em>Loss declaration</em> presente em todo switch.</td></tr>
+          <tr><td><code>SEC-001</code></td><td>Prompt injection em tool/RAG não ganha autoridade.</td><td>Modelo ignora instruções em documentos como comandos.</td></tr>
+        </tbody>
+      </table></div>
+      <p>
+        Evals code-first (ex.: Pydantic AI com <code>Dataset</code>/<code>Case</code> e evaluators como
+        <code>LLMJudge</code>) permitem versionar casos, rodar em CI e comparar contra um <em>golden set</em>.
+        Combine três tipos: <strong>determinísticos</strong> (schema, exact-match, contrato), <strong>LLM-juiz</strong>
+        (factualidade, tom, aderência a política) e <strong>adversariais</strong> (injection, exfiltração,
+        escalonamento) — estes últimos antes de cada release.
+      </p>
+      <div class="source-link">Fonte oficial: <a href="https://pydantic.dev/docs/ai/evals/evals/" target="_blank" rel="noopener">Pydantic AI · evals</a></div>
+      <div class="callout beta">
+        <strong>Evals por framework (cross-link):</strong> Pydantic AI como camada de evals/observabilidade
+        complementar está em <a href="guia_providers_adapters.html">Providers &amp; adapters</a>; a avaliação por
+        critérios do ADK (tool trajectory, response match, rubric, safety, simulação de usuário) em
+        <a href="guia_google_adk.html#evaluate">Google ADK · avaliação</a>.
+      </div>
+    </section>
+
+    <!-- ===================== PARTE 2 ===================== -->
+    <section class="chapter" id="parte-resposta-risco">
+      <h2 style="border-bottom:3px solid var(--c-da);padding:14px 0 10px;font-size:28px">Parte 2 — Resposta a incidentes &amp; gestão de risco</h2>
+      <p>
+        Operação madura é medida pela velocidade de detecção e recuperação. Esta parte traz os runbooks de
+        incidente, a enforcement em código, o threat model alinhado à OWASP, as métricas (SLIs/SLOs), o processo
+        de release controlado e o kit que torna qualquer incidente reconstruível.
+      </p>
+    </section>
+
+    <section id="runbooks">
+      <h2>6. Runbooks operacionais</h2>
+      <p>
+        Cada incidente típico de agente tem um sinal, uma ação imediata e uma prevenção estrutural. O runbook é
+        a ponte entre a observabilidade (§4) e a policy (§7): o sinal vem dos spans/métricas, a prevenção vira
+        configuração.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Incidente</th><th>Sinal</th><th>Ação imediata</th><th>Prevenção</th></tr></thead>
+        <tbody>
+          <tr><td>Context overflow</td><td>Provider rejeita input ou trunca contexto crítico.</td><td>Compaction forçada, reduzir assets, desabilitar novas tools.</td><td>Budget por fase e medidor de tokens antes da chamada.</td></tr>
+          <tr><td>Tool timeout</td><td>Tool passa do SLA ou retorna parcial.</td><td>Registrar status <code>timeout</code>, usar fallback ou perguntar ao usuário.</td><td>Timeouts por capability e circuit breaker.</td></tr>
+          <tr><td>Schema drift</td><td>Resposta/tool result falha validação.</td><td>Retry com schema clarificado ou fallback determinístico.</td><td>Evals de contrato e versionamento de schemas.</td></tr>
+          <tr><td>Provider outage</td><td>Erros repetidos ou latência alta.</td><td>Rotear para provider alternativo com <em>loss declaration</em>.</td><td>Adapter contract e testes multi-provider.</td></tr>
+          <tr><td>Prompt injection</td><td>Documento/tool output tenta alterar instruções.</td><td>Tratar como dado não confiável; remover comandos.</td><td>Classificador de injection e delimitação de evidence.</td></tr>
+          <tr><td>Cost spike</td><td>Usage acima do limite por usuário/tenant.</td><td>Cortar fan-out e forçar síntese.</td><td>Cost ledger, quotas e alertas.</td></tr>
+          <tr><td>Privacy breach risk</td><td>Dado sensível prestes a ir a provider/tool não autorizado.</td><td>Bloquear chamada e redigir output.</td><td>Classificação e policy-as-code.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout">
+        <strong>Escalonamento (quando parar de ser autônomo):</strong> incerteza de política, evidência
+        insuficiente, falhas repetidas (limiar padrão N=3), ação de alto risco solicitada, budget &gt;80% consumido
+        com &lt;50% concluído, fontes contraditórias, ação fora do escopo aprovado, ou pedido explícito de revisão
+        humana. Toda escalada carrega um payload estruturado: gatilho, objetivo atual, passos tentados, saídas de
+        tool, próximo passo proposto, racional e metadados de sessão.
+      </div>
+    </section>
+
+    <section id="policy-as-code">
+      <h2>7. Policy-as-code</h2>
+      <p>
+        Políticas em linguagem natural ajudam o modelo, mas <strong>enforcement deve estar em código/configuração</strong>.
+        O esqueleto abaixo declara, por rota, os limites do orquestrador, a retenção, as classes de dado permitidas,
+        os níveis de side-effect das tools e os guardrails em cada ponto:
+      </p>
+      <pre><code class="language-yaml">routes:
+  default_agent:
+    max_turns: 6
+    max_tool_calls: 12
+    final_reserve_tokens: 3500
+    providers_allowed: [openai, anthropic, google]
+    retention:
+      provider_store: false
+      internal_days: 30
+    data_classes_allowed_to_provider: [public, internal]
+    tools:
+      retrieve_evidence.v1: { side_effect: read,        approval: auto,           timeout_ms: 12000 }
+      update_record.v1:     { side_effect: write_high,  approval: human_required, timeout_ms: 8000 }
+    guardrails:
+      input:       [classify_data, detect_prompt_injection, cap_size]
+      output:      [schema_validate, citation_check, safety_policy]
+      tool_result: [redact, cap_tokens, require_provenance]</code></pre>
+      <div class="callout tip">
+        <strong>Por que código e não prompt:</strong> o prompt influencia o modelo, mas não o impede. O
+        <code>approval: human_required</code> e o <code>side_effect: write_high</code> são avaliados pelo
+        orquestrador <em>antes</em> de a tool executar — fora do alcance de uma prompt injection. Risco
+        (tier) → política → gate é a cadeia que sobrevive a um modelo "convencido" pelo atacante.
+      </div>
+    </section>
+
+    <section id="threat-model">
+      <h2>8. Threat model resumido (OWASP)</h2>
+      <p>
+        O threat model de um agente combina as ameaças clássicas de LLM com as ameaças <em>agênticas</em>
+        (multi-agente, tools, memória). Use os dois catálogos da OWASP como baseline: <strong>LLM Top 10 (2025)</strong>
+        e o <strong>Top 10 for Agentic Applications (2026)</strong>, este último com as dez categorias ASI01–ASI10 —
+        ambos seguem vigentes (re-verificados em 2026-06-29: o LLM Top 10 <strong>2025</strong> inclui os itens novos
+        <strong>LLM07 System Prompt Leakage</strong> e <strong>LLM08 Vector &amp; Embedding Weaknesses</strong>; o
+        Agentic <strong>ASI01–ASI10</strong> foi publicado em 09/12/2025). Para observabilidade, as convenções
+        <em>OpenTelemetry GenAI</em> (<code>gen_ai.*</code>) migraram para repositório dedicado na v1.42.0 (2026-06-12)
+        e seguem em status <em>Experimental</em>. A OWASP incuba ainda o <em>Agentic Skills Top 10</em>
+        (AST10), sem lista publicada.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Ameaça</th><th>Vetor</th><th>Mitigação</th><th>OWASP</th></tr></thead>
+        <tbody>
+          <tr><td>Prompt injection externo</td><td>Documentos, páginas web, tool outputs.</td><td>Delimitar como dados, classificar comandos maliciosos, não elevar autoridade.</td><td>LLM01 · ASI01</td></tr>
+          <tr><td>Tool misuse</td><td>Modelo chama ação indevida.</td><td>Policy-as-code, approval e side-effect levels.</td><td>ASI02 · ASI03</td></tr>
+          <tr><td>Data exfiltration</td><td>Contexto inclui segredo ou dado sensível.</td><td>Redaction, tenant boundary e retenção controlada.</td><td>LLM02 · ASI01</td></tr>
+          <tr><td>Context / memory poisoning</td><td>Memória salva instrução maliciosa.</td><td>Memory write guardrails e provenance.</td><td>ASI06</td></tr>
+          <tr><td>Schema bypass</td><td>Modelo produz JSON inválido ou campos inesperados.</td><td>Structured outputs, <code>additionalProperties:false</code> e validação local.</td><td>LLM05 · ASI05</td></tr>
+          <tr><td>Cost denial</td><td>Loops/fan-out consomem budget.</td><td>Max turns/tools, cost ledger e wind-down.</td><td>ASI08</td></tr>
+          <tr><td>Inter-agent / supply chain</td><td>Mensagens forjadas entre agentes; descritor de tool/MCP envenenado.</td><td>Cards assinados, verificação de domínio, fonte confiável de tool.</td><td>ASI07 · ASI04</td></tr>
+          <tr><td>System prompt leakage</td><td>Extração do prompt de sistema/segredos embutidos.</td><td>Não embutir segredo no prompt; bloco de confidencialidade no fim do kernel.</td><td>LLM07</td></tr>
+          <tr><td>Rogue agent / cascata</td><td>Sub-agente com autoridade indevida; falha em cascata.</td><td>Least-privilege, circuit breakers, step limits, anomaly detection.</td><td>ASI08 · ASI10</td></tr>
+        </tbody>
+      </table></div>
+      <h3>Mapeamento camadas de guardrail → ASI</h3>
+      <p>As cinco camadas de defesa em profundidade cobrem as dez categorias agênticas:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Camada</th><th>Mitiga (ASI)</th></tr></thead>
+        <tbody>
+          <tr><td>Input guardrails (injection, dados sensíveis, hierarquia de instrução)</td><td>ASI01 (Agent Goal Hijack), ASI06 (Memory &amp; Context Poisoning)</td></tr>
+          <tr><td>Tool selection (allow/denylist, gating por risco/contexto)</td><td>ASI02 (Tool Misuse), ASI03 (Identity &amp; Privilege Abuse)</td></tr>
+          <tr><td>Action validation (schema, idempotência, regra de negócio, dry-run)</td><td>ASI05 (Unexpected Code Execution)</td></tr>
+          <tr><td>Output guardrails (redaction de PII, citação, anti-leak de prompt)</td><td>ASI09 (Human-Agent Trust Exploitation)</td></tr>
+          <tr><td>Runtime controls (rate limit, budget, timeout, circuit breaker, step limit)</td><td>ASI08 (Cascading Failures), ASI10 (Rogue Agents)</td></tr>
+          <tr><td>Inter-agent security (cross-layer)</td><td>ASI07 (Insecure Inter-Agent Comms), ASI04 (Agentic Supply Chain)</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout">
+        <strong>Consentimento na fronteira de tool (MCP):</strong> a própria spec MCP <code>2025-11-25</code>
+        determina que descrições/anotações de tool de servidores não confiáveis sejam tratadas como
+        <em>não confiáveis</em>, que o host obtenha consentimento explícito antes de invocar uma tool, e que o
+        usuário controle exposição de dados e <em>sampling</em>. Isso reforça as camadas de input e tool selection
+        acima. A revisão <code>2026-07-28</code> é uma <strong>Release Candidate travada (2026-05-21), publicação em 28/07/2026</strong>: torna o protocolo
+        stateless e deprecia <em>Roots/Sampling/Logging</em> (SEP-2577, substituídos por MRTR) — reavalie os fluxos de consentimento e sampling
+        ao migrar e fixe <code>mcp&lt;2</code> antes de 28/07 para não sofrer auto-upgrade do SDK para v2.
+      </div>
+      <div class="callout warn">
+        <strong>EU AI Act (cronograma, perecível):</strong> em vigor desde 01/08/2024; práticas proibidas desde
+        02/02/2025; obrigações de GPAI desde 02/08/2025; obrigações de alto risco do Anexo III a partir de
+        <strong>02/08/2026</strong> (sistemas embarcados de alto risco até 02/08/2027). <strong>Marco imediato: em 02/08/2026 entram em vigor os poderes de <em>enforcement</em> e multas da Comissão para GPAI</strong> (as obrigações em si já valem desde 02/08/2025) — é a data a monitorar agora. Um pacote "Digital Omnibus"
+        (acordo político de 07/05/2026) adiou obrigações de alto risco (Anexo III → 02/12/2027; Anexo I → 02/08/2028), mas <strong>não afeta GPAI nem práticas proibidas</strong>. Planeje
+        para agosto/2026 (cronograma re-verificado em 2026-07-09).
+        Classifique cada tool por tier (Low/Medium/High/Critical) alinhado a esse risco.
+      </div>
+      <div class="source-link">Fonte oficial: OWASP — <a href="https://genai.owasp.org/llm-top-10/" target="_blank" rel="noopener">LLM Top 10 (2025)</a> · <a href="https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/" target="_blank" rel="noopener">Top 10 for Agentic Applications (2026)</a> · MCP — <a href="https://modelcontextprotocol.io/specification/2026-07-28" target="_blank" rel="noopener">spec RC 2026-07-28</a> (Release Candidate; final prevista para 28/07) · <a href="https://artificialintelligenceact.eu/implementation-timeline/" target="_blank" rel="noopener">EU AI Act timeline</a></div>
+      <div class="callout beta">
+        <strong>Segurança de tools/MCP (cross-link):</strong> o hardening de MCP server, os trust tiers e o
+        contrato de tool result envelope estão em <a href="guia_ferramentas_mcp_rag.html">Ferramentas, MCP &amp;
+        RAG</a>; a integração concreta de MCP por framework, em
+        <a href="guia_claude_api.html#c-mcp">Claude · MCP</a> e <a href="guia_google_adk.html#mcp">ADK · MCP</a>.
+      </div>
+    </section>
+
+    <section id="slis-slos">
+      <h2>9. SLIs, SLOs e métricas</h2>
+      <p>
+        Métricas tornam a operação mensurável e comparável entre releases. Defina SLIs (indicadores) e amarre
+        SLOs (objetivos) por rota/tenant/provider. As sete métricas abaixo são o conjunto mínimo de um agente
+        em produção:
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Métrica (SLI)</th><th>Definição</th><th>Uso</th></tr></thead>
+        <tbody>
+          <tr><td><code>task_success_rate</code></td><td>% de tarefas concluídas com gate aprovado.</td><td>Qualidade global.</td></tr>
+          <tr><td><code>tool_error_rate</code></td><td>Falhas/timeout/denied por capability.</td><td>Confiabilidade de integrações.</td></tr>
+          <tr><td><code>schema_valid_rate</code></td><td>Saídas que passam validação na primeira tentativa.</td><td>Robustez de prompts/modelos/schemas.</td></tr>
+          <tr><td><code>citation_support_rate</code></td><td>Alegações suportadas por evidência.</td><td>RAG/factualidade.</td></tr>
+          <tr><td><code>p95_latency</code></td><td>Latência por rota e por provider.</td><td>SLO de UX.</td></tr>
+          <tr><td><code>cost_per_success</code></td><td>Custo por tarefa bem-sucedida.</td><td>Otimização econômica.</td></tr>
+          <tr><td><code>privacy_block_rate</code></td><td>Chamadas bloqueadas por política de dados.</td><td>Sinal de risco e ajuste de UX.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout tip">
+        <strong>SLO útil:</strong> não basta um número agregado. Quebre cada SLI por <em>rota</em>, <em>tenant</em>
+        e <em>provider</em> — é a única forma de detectar regressão localizada (um provider degradou; um tenant
+        está sob ataque de custo) antes que ela contamine o agregado.
+      </div>
+    </section>
+
+    <section id="release-controlado">
+      <h2>10. Release e mudança controlada</h2>
+      <p>
+        Mudanças em agentes são arriscadas porque o comportamento é probabilístico. Todo release passa por um
+        processo explícito — especialmente quando <strong>docs oficiais de SDK/API mudam comportamento de
+        modelos ou parâmetros</strong>, o que deve disparar revisão de adapters e da matriz de compatibilidade.
+      </p>
+      <ul>
+        <li>☐ Registrar a mudança: prompt, schema, tool, provider, modelo, policy ou adapter.</li>
+        <li>☐ Rodar evals de contrato, segurança, RAG, contexto e custo.</li>
+        <li>☐ Comparar traces/custos contra a baseline.</li>
+        <li>☐ Atualizar manifest, source refs e checksums quando a documentação mudar.</li>
+        <li>☐ Fazer rollout gradual por rota/tenant/use case.</li>
+        <li>☐ Monitorar SLOs e incidentes; <strong>reverter se gates críticos falharem</strong>.</li>
+      </ul>
+      <div class="callout beta">
+        <strong>Checklists de produção por framework (cross-link):</strong> complementam este processo a
+        <a href="guia_openai_modelos.html#s-deployment">checklist de deployment da OpenAI</a> e o
+        <a href="guia_openai_modelos.html#s-ops-cookbook">cookbook operacional</a>; a freshness sweep contínua
+        (changelogs de provider) é tratada como cadência (§14).
+      </div>
+    </section>
+
+    <section id="kit-evidencia-incidente">
+      <h2>11. Kit de evidência de incidente</h2>
+      <p>
+        Quando algo der errado, o time deve conseguir coletar rapidamente — e <strong>sem expor dados
+        desnecessários</strong> — o conjunto mínimo que reconstrói o incidente:
+      </p>
+      <ul>
+        <li><code>trace_id</code> e spans relacionados;</li>
+        <li>itens de ledger envolvidos e hashes de assets;</li>
+        <li>modelo/provider/versão/parâmetros;</li>
+        <li>tools expostas, tool calls emitidas e resultados reduzidos;</li>
+        <li>políticas aplicadas e aprovações humanas;</li>
+        <li>compactions e <em>losses</em> declaradas;</li>
+        <li>usage/cost e limites atingidos;</li>
+        <li>resposta final e o gate que falhou.</li>
+      </ul>
+      <div class="callout danger">
+        <strong>Imutabilidade:</strong> logs de decisão de guardrail (allow/mask/block/approve/deny) e o kit de
+        incidente devem ser imutáveis e, para ações de tier <em>Critical</em>, ter integridade criptográfica.
+        Sem trilha imutável de negações, é impossível provar a eficácia do guardrail em auditoria.
+      </div>
+    </section>
+
+    <!-- ===================== PARTE 3 ===================== -->
+    <section class="chapter" id="parte-times-producao">
+      <h2 style="border-bottom:3px solid var(--c-da);padding:14px 0 10px;font-size:28px">Parte 3 — Times &amp; prontidão de produção</h2>
+      <p>
+        Quem é dono de quê, o checklist que precede o release e o blueprint que define quando um agente está, de
+        fato, pronto para produção.
+      </p>
+    </section>
+
+    <section id="raci">
+      <h2>12. RACI mínimo para times</h2>
+      <p>
+        Operação é responsabilidade compartilhada. Uma matriz RACI mínima evita que privacidade, evals ou
+        runbooks fiquem "sem dono". <strong>A=accountable, R=responsible, C=consulted</strong> — ajuste conforme
+        a organização.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Responsabilidade</th><th>Produto</th><th>Engenharia</th><th>Segurança/Legal</th><th>Dados/ML</th></tr></thead>
+        <tbody>
+          <tr><td>Definir use cases e riscos de usuário</td><td>A</td><td>C</td><td>C</td><td>C</td></tr>
+          <tr><td>Capability registry e schemas</td><td>C</td><td>A</td><td>C</td><td>C</td></tr>
+          <tr><td>Retenção, ZDR e privacidade</td><td>C</td><td>R</td><td>A</td><td>C</td></tr>
+          <tr><td>Provider adapters e SDKs</td><td>C</td><td>A</td><td>C</td><td>R</td></tr>
+          <tr><td>Evals e métricas de qualidade</td><td>R</td><td>R</td><td>C</td><td>A</td></tr>
+          <tr><td>Runbooks e incident response</td><td>C</td><td>A</td><td>A</td><td>R</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="checklist-producao">
+      <h2>13. Checklist de produção</h2>
+      <p>O agregado das seções anteriores em uma lista verificável de release:</p>
+      <ul>
+        <li>☑ Manifests de fonte, referência e checksum fazem parte do release.</li>
+        <li>☑ Cada página/rota tem política de provider, retenção, tools e budgets.</li>
+        <li>☑ Há evals antes do release e evals de regressão após mudar prompts/schemas/models.</li>
+        <li>☑ Traces permitem replay sem expor dados sensíveis desnecessários.</li>
+        <li>☑ Side effects têm aprovação, idempotência e logs.</li>
+        <li>☑ Provider switch é testado com perda declarada.</li>
+        <li>☑ Compaction é avaliada e versionada.</li>
+        <li>☑ Incidentes têm runbook, owner e métrica de recuperação.</li>
+      </ul>
+      <div class="callout beta">
+        <strong>Complemento por framework (cross-link):</strong> a
+        <a href="guia_openai_modelos.html#s-deployment">checklist de deployment OpenAI</a> e o roteiro de
+        <em>going to production</em> dos guias de framework estendem esta lista com itens específicos de cada
+        runtime.
+      </div>
+    </section>
+
+    <section id="hardening-sota">
+      <h2>14. Production hardening SOTA</h2>
+      <p>
+        Um agente só está pronto para produção quando suas falhas são <strong>detectáveis, reproduzíveis e
+        mitigáveis</strong>. Isso exige guardrails, tracing, evals, SLOs, cost ledger, threat model e runbooks
+        — tudo o que este capítulo definiu. A tabela abaixo é o portão final: gates que, em fluxos críticos,
+        <strong>bloqueiam release</strong>.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Gate</th><th>Teste obrigatório</th><th>Bloqueia release?</th><th>Evidência mínima</th></tr></thead>
+        <tbody>
+          <tr><td><code>SEC-01</code></td><td>Prompt injection em documento/tool output não altera instruções.</td><td><span class="pill bad">Sim</span></td><td>Trace + teste adversarial.</td></tr>
+          <tr><td><code>DATA-01</code></td><td>Dado sensível não vai a provider/tool não autorizada.</td><td><span class="pill bad">Sim</span></td><td>Policy decision + redaction log.</td></tr>
+          <tr><td><code>TOOL-01</code></td><td>Tool de escrita exige aprovação, idempotência e replay.</td><td><span class="pill bad">Sim</span></td><td>Span de aprovação + idempotency key.</td></tr>
+          <tr><td><code>SCHEMA-01</code></td><td>Outputs finais e tool results validam schema.</td><td><span class="pill partial">Sim p/ críticos</span></td><td>Validador local + taxa de erro.</td></tr>
+          <tr><td><code>CTX-01</code></td><td>Compaction preserva decisões, fatos e pendências críticas.</td><td><span class="pill partial">Sim p/ tarefas longas</span></td><td>Eval de replay + loss declaration.</td></tr>
+          <tr><td><code>COST-01</code></td><td>Budget e wind-down impedem runaway loops.</td><td><span class="pill bad">Sim</span></td><td>Cost ledger + max turns/tools.</td></tr>
+          <tr><td><code>OBS-01</code></td><td>Incidente é reconstruível sem expor dados indevidos.</td><td><span class="pill bad">Sim</span></td><td>Trace redigido + hashes.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout">
+        <strong>Cadência recomendada:</strong> rode evals de contrato a cada mudança de schema/tool/prompt/modelo;
+        evals adversariais antes de cada release; monitoração online por amostragem; e revisão de custo/latência
+        por rota. <strong>Mudanças em docs oficiais de SDK/API disparam revisão de adapters e da matriz de
+        compatibilidade.</strong>
+      </div>
+      <div class="callout tip">
+        <strong>Definição de pronto para produção:</strong> os sete gates acima verdes em fluxos críticos, SLOs
+        com baseline, runbooks com owner, kit de incidente imutável e policy-as-code por rota. Ausência de
+        qualquer um destes = não está pronto, independentemente da qualidade do modelo.
+      </div>
+    </section>
+
+    <!-- ===================== REFERÊNCIA ===================== -->
+    <section class="ref" id="cheatsheet">
+      <h2>Cheat sheet operacional</h2>
+      <p>Referência rápida orientada a consulta (IA e humanos).</p>
+
+      <h3>Acceptance gates (resumo)</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Gate</th><th>Foco</th><th>Contrato relacionado</th></tr></thead>
+        <tbody>
+          <tr><td><code>SEC-01</code> / <code>SEC-001</code></td><td>Injection não ganha autoridade.</td><td>Guardrails (§3), Threat model (§8).</td></tr>
+          <tr><td><code>DATA-01</code> / <code>ZDR-001</code></td><td>Dado sensível / retenção por rota.</td><td>Privacidade (§2), Policy (§7).</td></tr>
+          <tr><td><code>TOOL-01</code> / <code>TOOL-001</code></td><td>Side-effect + aprovação + idempotência.</td><td>Guardrails (§3), Policy (§7).</td></tr>
+          <tr><td><code>SCHEMA-01</code></td><td>Saídas/tool results válidos.</td><td>Evals (§5).</td></tr>
+          <tr><td><code>CTX-01</code></td><td>Compaction sem perda crítica.</td><td>Evals (§5), Estado (cross-link).</td></tr>
+          <tr><td><code>COST-01</code> / <code>BUDGET-001</code></td><td>Budget + wind-down.</td><td>Cost ledger (§4), Runbooks (§6).</td></tr>
+          <tr><td><code>OBS-01</code></td><td>Replay redigido reconstruível.</td><td>Tracing (§4), Kit de incidente (§11).</td></tr>
+          <tr><td><code>PROVIDER-001</code></td><td>Switch declara perdas.</td><td>Providers &amp; adapters (cross-link).</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Camadas de guardrail (L0/L1/L2) — decisão rápida</h3>
+      <ul>
+        <li><strong>L0</strong> — determinístico, rápido (&lt;50ms), <code>observe</code>/<code>mask</code> por padrão. Tripwire só em segredo / allowlist de URL / desalinhamento de tool-call.</li>
+        <li><strong>L1</strong> — LLM-juiz deliberativo, palavra final sobre conteúdo conversacional.</li>
+        <li><strong>L2</strong> — kernel no prompt (cadeia de comando, dado-como-dado, recusa, escopo, confidencialidade no fim).</li>
+        <li><strong>HITL</strong> — gate humano em ações High/Critical; multi-pessoa em Critical; nunca inferir aprovação.</li>
+      </ul>
+
+      <h3>Esqueleto de policy-as-code (copy-paste)</h3>
+      <pre><code class="language-yaml">route:
+  limits:    { max_turns, max_tool_calls, final_reserve_tokens }
+  retention: { provider_store, internal_days }
+  data:      { data_classes_allowed_to_provider }
+  tools:     { &lt;name&gt;: { side_effect, approval, timeout_ms } }
+  guardrails:{ input: [...], output: [...], tool_result: [...] }</code></pre>
+
+      <h3>Mapa de cross-links</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Preciso de…</th><th>Onde ler</th></tr></thead>
+        <tbody>
+          <tr><td>Retenção/ZDR por provider</td><td><a href="guia_openai_modelos.html#s-conversation">OpenAI</a> · <a href="guia_gemini_interactions_api.html#s-store">Gemini</a> · <a href="guia_claude_api.html#a-context-windows">Claude</a></td></tr>
+          <tr><td>Guardrail primitivo / tripwire</td><td><a href="guia_agents_sdk.html#s-guardrails">Agents SDK · Guardrails</a></td></tr>
+          <tr><td>HITL por framework</td><td><a href="guia_langgraph.html#s-hitl">LangGraph</a> · <a href="guia_google_adk.html#tool-confirm">ADK · Tool Confirmation</a></td></tr>
+          <tr><td>Tracing / persistência</td><td><a href="guia_agents_sdk.html#s-tracing">Agents SDK</a> · <a href="guia_langgraph.html#s-persistence">LangGraph</a> · <a href="guia_google_adk.html#observability">ADK</a></td></tr>
+          <tr><td>Evals code-first</td><td><a href="https://pydantic.dev/docs/ai/evals/evals/" target="_blank" rel="noopener">Pydantic AI</a> · <a href="guia_google_adk.html#evaluate">ADK · avaliação</a></td></tr>
+          <tr><td>Hardening de MCP / tools</td><td><a href="guia_ferramentas_mcp_rag.html">Ferramentas, MCP &amp; RAG</a></td></tr>
+          <tr><td>Provider-switching + loss declaration</td><td><a href="guia_providers_adapters.html">Providers &amp; adapters</a></td></tr>
+          <tr><td>Ledger / compaction / budget</td><td><a href="guia_estado_contexto_memoria.html">Estado, contexto &amp; memória</a></td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section class="ref" id="verificacao">
+      <h2>Notas de verificação</h2>
+      <p>Pontos perecíveis conferidos contra a documentação oficial em 2026-06-10, e os que permanecem em aberto.</p>
+      <ul>
+        <li><span class="pill ok">Resolvido</span> <strong>URLs do Pydantic AI.</strong> A regra do mapa/time pedia
+          <code>ai.pydantic.dev</code> e proibia <code>pydantic.dev/docs/ai</code>. Verificação ao vivo (2026-05-25):
+          <code>ai.pydantic.dev/</code>, <code>/evals/</code> e <code>/logfire/</code> retornam <strong>301</strong>
+          para <code>pydantic.dev/docs/ai/overview/</code>, <code>/evals/evals/</code> e
+          <code>/integrations/logfire/</code> — que servem a doc oficial real. Este guia usa o destino canônico vivo
+          <code>pydantic.dev/docs/ai/…</code>. Confirmado na validação #13 (2026-05-25): a regra antiga do mapa estava
+          desatualizada; <code>guia_providers_adapters.html</code> foi alinhado a este mesmo destino.</li>
+        <li><span class="pill ok">Resolvido</span> <strong>Spec MCP <code>2025-11-25</code>.</strong> Confirmada como a
+          revisão autoritativa (host/client/server; princípios de consentimento, tool safety e sampling controls).
+          Usada uniformemente aqui. Re-verificado em 2026-07-05: segue a revisão atual; a próxima revisão
+          (<code>2026-07-28</code>) é uma <strong>Release Candidate travada em 2026-05-21</strong> (publicação em 28/07): traz protocolo stateless (sem handshake
+          <code>initialize</code>/<code>Mcp-Session-Id</code>) e deprecia Roots/Sampling/Logging. Fixe <code>mcp&lt;2</code> antes de 28/07 (o SDK v2.0.0 sai junto).
+          Observação para o validador: <code>guia_agents_sdk.html</code> existente cita
+          <code>2024-11-05</code>/<code>2025-03-26</code> — não modificar o guia existente; o portal/validação deve
+          marcar a versão canônica.</li>
+        <li><span class="pill ok">Resolvido</span> <strong>OWASP.</strong> LLM Top 10 (2025) e Top 10 for Agentic
+          Applications (2026, dez/2025) com ASI01–ASI10; mapeamento camadas→ASI conferido contra a referência da
+          skill <code>agent-guardrails</code> (last verified 2026-04-21) e as URLs oficiais
+          <code>genai.owasp.org</code>. Re-verificado em 2026-06-10: ambos seguem vigentes (novo projeto
+          incubado: Agentic Skills Top 10 — AST10, sem lista publicada).</li>
+        <li><span class="pill ok">Resolvido</span> <strong>EU AI Act (cronograma).</strong> <strong>Enforcement/multas de GPAI começam em 02/08/2026</strong> (obrigações GPAI já vigentes desde 02/08/2025). O "Digital Omnibus" (acordo político de 07/05/2026) adiou o Anexo III de alto risco para 02/12/2027, mas <strong>não</strong> afeta GPAI. Re-verificado em 2026-07-09.</li>
+        <li><span class="pill ok">Resolvido</span> <strong>Sem IDs de modelo no corpo.</strong> O guia usa
+          <code>model="..."</code> e <code>provider/model</code>; IDs perecíveis ficam na folha de fatos SOTA do
+          super-guia, conforme política do mapa.</li>
+        <li><span class="pill ok">Verificado</span> <strong>Anchors de cross-link.</strong> Todos os
+          <code>id</code> de destino em guias existentes foram revalidados na validação #13 (2026-05-25) e
+          resolvem corretamente: <code>#s-guardrails</code>, <code>#s-tracing</code>, <code>#s-conversation</code>,
+          <code>#s-store</code>, <code>#a-context-windows</code>, <code>#tool-confirm</code>,
+          <code>#observability</code>, <code>#evaluate</code>, <code>#c-mcp</code>, <code>#mcp</code>,
+          <code>#s-hitl</code>, <code>#s-persistence</code>, <code>#s-deployment</code>,
+          <code>#s-ops-cookbook</code>. Os guias de núcleo (<code>guia_arquitetura_orquestracao</code>,
+          <code>guia_estado_contexto_memoria</code>, <code>guia_ferramentas_mcp_rag</code>,
+          <code>guia_providers_adapters</code>) já existem; este guia não depende de âncoras internas deles.</li>
+      </ul>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site">
+  <div style="max-width:1440px;margin:0 auto;padding:0 24px;display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;justify-content:space-between;">
+    <div style="max-width:540px">
+      <div class="brand" style="font-size:15px">Operação, Segurança &amp; Evals <small>Núcleo agnóstico · super-guia de agentes</small></div>
+      <p style="margin:8px 0 0;color:var(--c-fg-muted);font-size:13.5px;line-height:1.55">
+        Referência técnica construída a partir da documentação oficial pública em <strong>2026-06-10</strong>.
+        Operação como arquitetura: privacidade/ZDR, guardrails, tracing, evals, runbooks e threat model alinhado
+        à OWASP. Para informação sempre atualizada, consulte as
+        <a href="#fontes-oficiais">fontes oficiais</a>.
+      </p>
+    </div>
+    <div style="font-size:13.5px;color:var(--c-fg-muted);line-height:1.7">
+      <div><strong>Crédito de produção</strong></div>
+      <div>Gerado por <strong>subagentes Claude Opus 4.7 (xhigh)</strong></div>
+      <div>autor <code>autor_ops</code> · revisão e montagem pelo orquestrador · 2026-06-10</div>
+      <div style="margin-top:6px">
+        <span class="badge da">Núcleo · v1</span>
+        <span class="badge info">PT-BR · agnóstico</span>
+      </div>
+    </div>
+    <div style="font-size:12.5px;color:var(--c-fg-soft)">
+      <div><strong>Navegação rápida</strong></div>
+      <div><a href="#operacao-e-arquitetura">Operação</a> · <a href="#guardrails">Guardrails</a> · <a href="#threat-model">Threat model</a></div>
+      <div><a href="#cheatsheet">Cheat sheet</a> · <a href="#verificacao">Verificação</a></div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  /* Toggle de tema com persistência em localStorage.
+     IMPORTANTE: troque a chave 'super-guia-theme' por uma única por arquivo se quiser
+     temas independentes por guia (ex.: 'guia-skills-theme'); ou mantenha a chave
+     compartilhada para um tema global do super-guia. */
+  (function(){
+    var KEY = 'super-guia-theme';
+    var btn = document.getElementById('theme-toggle');
+    var pref = localStorage.getItem(KEY);
+    if (pref) document.documentElement.setAttribute('data-theme', pref);
+    if (btn) btn.addEventListener('click', function(){
+      var cur = document.documentElement.getAttribute('data-theme') || 'light';
+      var nxt = cur === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', nxt);
+      localStorage.setItem(KEY, nxt);
+    });
+  })();
+  /* Scroll-spy: destaca no TOC a seção visível. */
+  (function(){
+    var links = document.querySelectorAll('nav.toc a[href^="#"]');
+    var map = {};
+    links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        var id = e.target.id; if (!map[id]) return;
+        if (e.isIntersecting) {
+          links.forEach(function(l){ l.classList.remove('active'); });
+          map[id].classList.add('active');
+        }
+      });
+    }, { rootMargin: '-40% 0% -55% 0%', threshold: 0 });
+    Object.keys(map).forEach(function(id){ var el = document.getElementById(id); if (el) io.observe(el); });
+  })();
+  /* Abas de código (code-group): clique + navegação por setas. */
+  function activateTab(group, tab){
+    group.querySelectorAll('.code-tab').forEach(function(b){
+      var on = b === tab;
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+      b.setAttribute('tabindex', on ? '0' : '-1');
+    });
+    var lang = tab.dataset.lang;
+    group.querySelectorAll('.code-pane').forEach(function(p){ p.setAttribute('data-active', p.dataset.lang===lang ? 'true' : 'false'); });
+  }
+  document.querySelectorAll('.code-group').forEach(function(group){
+    group.querySelectorAll('.code-pane').forEach(function(p){ p.setAttribute('role', 'tabpanel'); });
+    var tabs = group.querySelectorAll('.code-tab');
+    tabs.forEach(function(b){ b.setAttribute('tabindex', b.getAttribute('aria-selected') === 'true' ? '0' : '-1'); });
+  });
+  document.addEventListener('click', function(e){
+    var t = e.target;
+    if (!t.classList || !t.classList.contains('code-tab')) return;
+    var group = t.closest('.code-group'); if (!group) return;
+    activateTab(group, t);
+  });
+  document.addEventListener('keydown', function(e){
+    var t = e.target;
+    if (!t.classList || !t.classList.contains('code-tab')) return;
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    var group = t.closest('.code-group'); if (!group) return;
+    var tabs = Array.prototype.slice.call(group.querySelectorAll('.code-tab'));
+    var idx = tabs.indexOf(t);
+    var next = e.key === 'ArrowRight' ? (idx + 1) % tabs.length : (idx - 1 + tabs.length) % tabs.length;
+    activateTab(group, tabs[next]);
+    tabs[next].focus();
+    e.preventDefault();
+  });
+</script>
+</body>
+</html>

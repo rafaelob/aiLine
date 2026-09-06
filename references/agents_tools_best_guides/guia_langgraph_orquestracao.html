@@ -1,0 +1,911 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Orquestração com LangGraph — Guia complementar</title>
+<meta name="description" content="Como aplicar os padrões de orquestração do núcleo (ledger canônico, estado durável, HITL, multi-agente) usando LangGraph: StateGraph com reducers tipados, checkpointers, interrupt/Command, subgraphs, streaming v2, supervisor/swarm e Store." />
+<meta name="last-checked" content="2026-07-12" />
+<meta name="robots" content="index,follow" />
+<style>
+  :root {
+    --c-bg: #ffffff;
+    --c-bg-elev: #f7f8fa;
+    --c-bg-code: #0e1116;
+    --c-fg: #1a1d23;
+    --c-fg-muted: #5b6472;
+    --c-fg-soft: #6b7480;
+    --c-border: #e4e7ec;
+    --c-border-strong: #cdd3dc;
+    --c-accent: #1a73e8;
+    --c-da: #1257b8;
+    --c-da-bg: #e6efff;
+    --c-warn: #b6541d;
+    --c-warn-bg: #fff4e6;
+    --c-ok: #157a33;
+    --c-ok-bg: #e8f5ea;
+    --c-bad: #c5221f;
+    --c-bad-bg: #fde8e6;
+    --c-na: #5f666f;
+    --c-na-bg: #eef0f3;
+    --c-info: #1257b8;
+    --c-info-bg: #e6efff;
+    --shadow-sm: 0 1px 2px rgba(15,23,42,.06), 0 1px 1px rgba(15,23,42,.04);
+    --shadow-md: 0 6px 24px rgba(15,23,42,.08), 0 2px 6px rgba(15,23,42,.06);
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --gutter: 24px;
+    --sidebar-w: 312px;
+  }
+  [data-theme="dark"] {
+    --c-bg: #0d1117;
+    --c-bg-elev: #161b22;
+    --c-bg-code: #010409;
+    --c-fg: #e6edf3;
+    --c-fg-muted: #9aa4b2;
+    --c-fg-soft: #828c9e;
+    --c-border: #20262d;
+    --c-border-strong: #2f3640;
+    --c-da: #4d9fff;
+    --c-accent: #4d9fff;
+    --c-ok: #3fb950;
+    --c-warn: #e3b341;
+    --c-bad: #ff7b72;
+    --c-na: #9aa4b2;
+    --c-info: #79b8ff;
+    --c-da-bg: #11233f;
+    --c-warn-bg: #2a1e0a;
+    --c-ok-bg: #0d2517;
+    --c-bad-bg: #2a1213;
+    --c-na-bg: #1a1f26;
+    --c-info-bg: #0c1e3a;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+    --shadow-md: 0 8px 28px rgba(0,0,0,.45);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-sans);
+    font-size: 15.5px;
+    line-height: 1.55;
+    color: var(--c-fg);
+    background: var(--c-bg);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  a { color: var(--c-accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, kbd, pre, samp { font-family: var(--font-mono); font-size: 0.92em; }
+  :focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; border-radius: 4px; }
+  .skip { position: absolute; left: -9999px; }
+  .skip:focus { left: 12px; top: 12px; background: var(--c-bg); padding: 8px 12px; border: 1px solid var(--c-border); border-radius: 6px; z-index: 100; }
+
+  header.site {
+    position: sticky; top: 0; z-index: 30;
+    background: rgba(255,255,255,.85);
+    backdrop-filter: saturate(180%) blur(10px);
+    border-bottom: 1px solid var(--c-border);
+  }
+  [data-theme="dark"] header.site { background: rgba(13,17,23,.82); }
+  .header-row {
+    max-width: 1440px; margin: 0 auto; padding: 12px 24px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .brand { font-weight: 700; letter-spacing: -.01em; font-size: 16px; }
+  .brand small { color: var(--c-fg-muted); font-weight: 500; margin-left: 8px; font-size: 12.5px; }
+  .header-right { margin-left: auto; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 999px;
+    background: var(--c-bg-elev); border: 1px solid var(--c-border);
+    color: var(--c-fg-muted); font-size: 12.5px; font-weight: 500;
+  }
+  .badge.ok { background: var(--c-ok-bg); color: var(--c-ok); border-color: transparent; }
+  .badge.da { background: var(--c-da-bg); color: var(--c-da); border-color: transparent; }
+  .badge.info { background: var(--c-info-bg); color: var(--c-info); border-color: transparent; }
+  .badge.warn { background: var(--c-warn-bg); color: var(--c-warn); border-color: transparent; }
+  .badge.bad { background: var(--c-bad-bg); color: var(--c-bad); border-color: transparent; }
+  .theme-btn {
+    border: 1px solid var(--c-border); background: var(--c-bg-elev); color: var(--c-fg);
+    padding: 5px 10px; border-radius: 8px; cursor: pointer; font: inherit; font-size: 12.5px;
+  }
+  .theme-btn:hover { border-color: var(--c-border-strong); }
+
+  .layout {
+    max-width: 1440px; margin: 0 auto;
+    display: grid; grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+    gap: 32px; padding: 24px;
+  }
+  nav.toc {
+    position: sticky; top: 64px;
+    align-self: start; max-height: calc(100vh - 80px); overflow: auto;
+    padding-right: 8px;
+    border-right: 1px solid var(--c-border);
+  }
+  nav.toc ol { list-style: none; padding: 0; margin: 0 0 16px; }
+  nav.toc li { line-height: 1.4; margin: 2px 0; }
+  nav.toc a {
+    display: block; padding: 4px 8px; border-radius: 5px;
+    color: var(--c-fg-muted); font-size: 13px;
+  }
+  nav.toc a:hover { background: var(--c-bg-elev); color: var(--c-fg); text-decoration: none; }
+  nav.toc a.active { color: var(--c-da); background: var(--c-da-bg); font-weight: 600; }
+  nav.toc .toc-section {
+    margin-top: 14px; padding: 2px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--c-fg-soft);
+    border-top: 1px solid var(--c-border); padding-top: 10px;
+  }
+  nav.toc .toc-section:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+
+  main { min-width: 0; max-width: 1040px; }
+
+  .hero {
+    border: 1px solid var(--c-border);
+    border-radius: 14px;
+    padding: 28px 28px 24px;
+    background: linear-gradient(135deg, var(--c-da-bg) 0%, var(--c-bg) 100%);
+    margin-bottom: 32px;
+  }
+  .hero h1 { font-size: 32px; line-height: 1.15; margin: 0 0 8px; letter-spacing: -.02em; }
+  .hero p.lead { margin: 0 0 16px; color: var(--c-fg-muted); font-size: 16px; max-width: 74ch; }
+  .hero-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+
+  section { margin: 48px 0; scroll-margin-top: 84px; }
+  section.chapter { padding-top: 16px; margin-top: 56px; border-top: 3px solid var(--c-da); }
+  section.ref { padding-top: 12px; margin-top: 48px; border-top: 2px dashed var(--c-border-strong); }
+  h2 {
+    font-size: 24px; line-height: 1.2; letter-spacing: -.015em;
+    margin: 0 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--c-border);
+    scroll-margin-top: 84px;
+  }
+  h3 { font-size: 18px; line-height: 1.3; margin: 28px 0 10px; scroll-margin-top: 84px; }
+  h4 { font-size: 15px; margin: 20px 0 8px; color: var(--c-fg); scroll-margin-top: 84px; }
+  p { margin: 0 0 12px; }
+  ul, ol { margin: 0 0 12px; padding-left: 22px; }
+  li { margin: 4px 0; }
+  hr { border: 0; border-top: 1px solid var(--c-border); margin: 24px 0; }
+
+  .table-wrap { overflow-x: auto; margin: 0 0 18px; border: 1px solid var(--c-border); border-radius: var(--radius); }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 580px; }
+  th, td { padding: 9px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--c-border); }
+  th { background: var(--c-bg-elev); font-weight: 600; color: var(--c-fg); position: sticky; top: 0; font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--c-bg-elev); }
+  td code, th code { background: var(--c-bg-elev); padding: 1px 5px; border-radius: 4px; font-size: 12.5px; color: var(--c-fg); }
+  [data-theme="dark"] td code, [data-theme="dark"] th code { background: #0b0e13; }
+
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; letter-spacing: .02em; }
+  .pill.ok { background: var(--c-ok-bg); color: var(--c-ok); }
+  .pill.partial { background: var(--c-warn-bg); color: var(--c-warn); }
+  .pill.bad { background: var(--c-bad-bg); color: var(--c-bad); }
+  .pill.na { background: var(--c-na-bg); color: var(--c-na); }
+  .pill.beta { background: var(--c-info-bg); color: var(--c-info); }
+
+  .callout {
+    border-left: 4px solid var(--c-accent);
+    background: var(--c-bg-elev);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  .callout.warn { border-left-color: var(--c-warn); background: var(--c-warn-bg); color: #5a3009; }
+  .callout.tip { border-left-color: var(--c-ok); background: var(--c-ok-bg); color: #1d4a25; }
+  .callout.danger { border-left-color: var(--c-bad); background: var(--c-bad-bg); color: #7a1a16; }
+  .callout.beta { border-left-color: var(--c-info); background: var(--c-info-bg); color: #123d75; }
+  .callout.info { border-left-color: var(--c-info); background: var(--c-info-bg); color: #123d75; }
+  .callout.partial { border-left-color: var(--c-warn); background: var(--c-warn-bg); color: #5a3009; }
+  [data-theme="dark"] .callout.warn { color: #f1c896; }
+  [data-theme="dark"] .callout.tip { color: #a7d8b1; }
+  [data-theme="dark"] .callout.danger { color: #f0a8a4; }
+  [data-theme="dark"] .callout.beta { color: #a8cdff; }
+  [data-theme="dark"] .callout.info { color: #a8cdff; }
+  [data-theme="dark"] .callout.partial { color: #f1c896; }
+  .callout strong { font-weight: 700; }
+  .callout a { color: var(--c-da); text-decoration: underline; }
+  [data-theme="dark"] .callout a { color: var(--c-da); }
+  footer.site a, .source-link a { text-decoration: underline; }
+
+  pre {
+    background: var(--c-bg-code);
+    color: #d1d5db;
+    padding: 14px 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 0 0 14px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    border: 1px solid #1f242c;
+  }
+  pre code { color: inherit; background: transparent; padding: 0; }
+
+  /* Blocos de código com abas por linguagem (Python / TypeScript / REST) */
+  .code-tabs { display: flex; gap: 4px; margin-bottom: 0; }
+  .code-tab {
+    border: 1px solid var(--c-border); border-bottom: none; background: var(--c-bg-elev);
+    color: var(--c-fg-muted); padding: 6px 14px; border-radius: 8px 8px 0 0;
+    cursor: pointer; font: inherit; font-size: 12.5px; font-weight: 600;
+  }
+  .code-tab[aria-selected="true"] { background: var(--c-bg-code); color: #f0e9e1; border-color: #2a241e; }
+  .code-pane { display: none; }
+  .code-pane[data-active="true"] { display: block; }
+  .code-group pre { border-radius: 0 8px 8px 8px; margin-top: -1px; }
+
+  details {
+    border: 1px solid var(--c-border); border-radius: var(--radius);
+    padding: 8px 14px; margin: 6px 0 10px; background: var(--c-bg-elev);
+  }
+  details > summary {
+    cursor: pointer; font-weight: 600; padding: 4px 0; list-style: none;
+    font-size: 13.5px;
+  }
+  details > summary::-webkit-details-marker { display: none; }
+  details > summary::before { content: "▸ "; color: var(--c-fg-soft); display: inline-block; }
+  details[open] > summary::before { content: "▾ "; }
+  details > .ref-body { padding: 8px 0 4px; }
+
+  .source-link {
+    font-size: 12.5px; color: var(--c-fg-muted);
+    margin: 6px 0 24px; padding: 6px 10px;
+    background: var(--c-bg-elev); border-left: 3px solid var(--c-da);
+    border-radius: 0 6px 6px 0;
+  }
+  .source-link a { color: var(--c-da); font-weight: 600; }
+
+  .figure { margin: 20px 0 26px; }
+  .figure svg { width: 100%; height: auto; display: block; border: 1px solid var(--c-border); border-radius: 10px; }
+  .figure figcaption { font-size: 12.5px; color: var(--c-fg-muted); margin-top: 10px; line-height: 1.5; padding: 0 4px; }
+
+  footer.site {
+    margin: 64px 0 24px; padding: 24px 0; border-top: 1px solid var(--c-border);
+    color: var(--c-fg-muted); font-size: 13px;
+  }
+
+  @media (max-width: 1080px) {
+    .layout { grid-template-columns: 1fr; }
+    nav.toc { position: static; max-height: none; border-right: none; border-bottom: 1px solid var(--c-border); padding-bottom: 16px; margin-bottom: 16px; }
+    main { max-width: 100%; }
+    .hero h1 { font-size: 24px; }
+  }
+  @media print {
+    nav.toc, header.site, .theme-btn { display: none; }
+    .layout { grid-template-columns: 1fr; }
+    a { color: inherit; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+    details[open] { padding: 8px 0; }
+    details > summary { display: none; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Pular para o conteúdo</a>
+
+<header class="site">
+  <div class="header-row">
+    <div class="brand">Orquestração com LangGraph <small>guia complementar de orquestração</small></div>
+    <div class="header-right">
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-12</strong></span>
+      <span class="badge da">langgraph 1.2.9</span>
+      <span class="badge info">Python</span>
+      <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="Sumário">
+    <div class="toc-section">Início</div>
+    <ol>
+      <li><a href="#sobre-guia">Sobre este guia</a></li>
+      <li><a href="#fontes-oficiais">Fontes &amp; verificação</a></li>
+    </ol>
+
+    <div class="toc-section">Decisão</div>
+    <ol>
+      <li><a href="#quando-base">1. Quando LangGraph é a base</a></li>
+    </ol>
+
+    <div class="toc-section">Estado &amp; durabilidade</div>
+    <ol>
+      <li><a href="#state-graph">2. StateGraph + reducers como ledger</a></li>
+      <li><a href="#checkpointers">3. Checkpointers como estado durável</a></li>
+    </ol>
+
+    <div class="toc-section">Padrões</div>
+    <ol>
+      <li><a href="#hitl">4. HITL: interrupt &amp; Command</a></li>
+      <li><a href="#subgraphs">5. Subgraphs como composição</a></li>
+      <li><a href="#multi-agente">6. Multi-agente: supervisor &amp; swarm</a></li>
+      <li><a href="#streaming">7. Streaming v2</a></li>
+      <li><a href="#store">8. Store: memória cross-thread</a></li>
+    </ol>
+
+    <div class="toc-section">Mapeamento</div>
+    <ol>
+      <li><a href="#blueprint">9. Mapeando o blueprint ao grafo</a></li>
+    </ol>
+
+    <div class="toc-section">Referência</div>
+    <ol>
+      <li><a href="#cheat-sheet">Cheat sheet</a></li>
+      <li><a href="#verificacao">Notas de verificação</a></li>
+    </ol>
+  </nav>
+
+  <main id="main">
+
+    <div class="hero">
+      <h1>Orquestração com LangGraph</h1>
+      <p class="lead">
+        Este guia mostra como aplicar os <strong>padrões de orquestração do núcleo</strong> — ledger
+        canônico, estado durável, HITL, fan-out e multi-agente — usando <strong>LangGraph</strong>
+        (<code>langgraph</code> 1.x GA). O <code>StateGraph</code> tipado <em>é</em> o ledger; os
+        checkpointers <em>são</em> a persistência durável; <code>interrupt()</code>/<code>Command</code>
+        <em>são</em> o HITL. Complementa o guia de referência da API; aqui o foco é o mapeamento
+        arquitetural. Prosa em PT-BR; código e identificadores em inglês.
+      </p>
+      <div class="hero-meta">
+        <span class="badge da">langgraph 1.2.9</span>
+        <span class="badge info">Python</span>
+        <span class="badge ok">SOTA · verificado 2026-06-29</span>
+      </div>
+    </div>
+
+    <section id="sobre-guia">
+      <h2>Sobre este guia</h2>
+      <p>
+        LangGraph modela um agente como um <strong>grafo de estado</strong>: nós que leem e escrevem um
+        estado tipado, arestas que decidem o próximo nó, e um runtime que persiste tudo a cada passo. Se
+        o Agents SDK esconde o loop, o LangGraph o <em>expõe</em> — o que o torna a base certa quando
+        você precisa de controle explícito, durabilidade e replay.
+      </p>
+      <div class="callout tip">
+        <strong>Como ler:</strong> os fundamentos de cada primitiva (StateGraph, reducers, Send,
+        Command, checkpointers, interrupt, Store, supervisor/swarm, time-travel, durable execution e o
+        receituário R1–R14) estão em <a href="guia_langgraph.html">guia_langgraph.html</a>. Para o
+        harness Deep Agents sobre LangGraph, ver <a href="guia_deepagents.html">guia_deepagents.html</a>.
+        Aqui assumimos os fundamentos e mostramos <em>como mapear</em> os padrões agnósticos.
+      </div>
+      <div class="callout">
+        <strong>Onde os conceitos vivem:</strong> padrões agnósticos em
+        <a href="guia_arquitetura_orquestracao.html">guia_arquitetura_orquestracao.html</a>; contrato de
+        estado durável e compaction em
+        <a href="guia_estado_contexto_memoria.html">guia_estado_contexto_memoria.html</a>; HITL como
+        operação em <a href="guia_operacao_seguranca_evals.html">guia_operacao_seguranca_evals.html</a>.
+      </div>
+    </section>
+
+    <section id="fontes-oficiais">
+      <h2>Fontes &amp; verificação</h2>
+      <p>
+        APIs conferidas contra a referência oficial (reference.langchain.com / docs.langchain.com) e a
+        folha de fatos do projeto, re-conferida em 2026-07-12. Versões: <code>langgraph 1.2.9</code> (PyPI, 2026-07-10),
+        <code>langgraph-checkpoint-postgres 3.1.0</code> (PyPI).
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Recurso oficial</th><th>URL</th><th>Uso aqui</th></tr></thead>
+        <tbody>
+          <tr><td>LangGraph (docs)</td><td><a href="https://docs.langchain.com/oss/python/langgraph/overview" target="_blank" rel="noopener">docs.langchain.com/oss/python/langgraph</a></td><td>StateGraph, persistência, HITL, streaming</td></tr>
+          <tr><td>API reference (Python)</td><td><a href="https://reference.langchain.com/python/langgraph/" target="_blank" rel="noopener">reference.langchain.com/python/langgraph</a></td><td><code>get_store</code>, <code>InMemoryStore</code>, <code>interrupt</code></td></tr>
+          <tr><td>langgraph-supervisor</td><td><a href="https://reference.langchain.com/python/langgraph-supervisor/supervisor/" target="_blank" rel="noopener">.../langgraph-supervisor</a></td><td><code>create_supervisor</code></td></tr>
+          <tr><td>langgraph-swarm</td><td><a href="https://reference.langchain.com/python/langgraph-swarm/swarm/" target="_blank" rel="noopener">.../langgraph-swarm</a></td><td><code>create_swarm</code>, <code>create_handoff_tool</code></td></tr>
+        </tbody>
+      </table></div>
+      <p style="font-size:13px;color:var(--c-fg-muted)">
+        Legenda dos selos: <span class="pill ok">Verificado</span> confirmado na doc oficial ·
+        <span class="pill beta">Novo</span> recente ·
+        <span class="pill partial">Atenção</span> ressalva ·
+        <span class="pill na">N/D</span> não documentado.
+      </p>
+    </section>
+
+    <section id="quando-base">
+      <h2>1. Quando LangGraph é a base</h2>
+      <p>
+        LangGraph é <strong>uma base recomendada — não a única</strong>. Escolha-o quando o problema pede
+        um grafo de estado explícito, persistência durável com checkpoints versionados, time-travel e
+        HITL nativo por interrupção. Para um loop leve no ecossistema OpenAI, o Agents SDK é mais direto;
+        para runtime poliglota com A2A nativo, o Google ADK. O blueprint do núcleo é o mesmo nas três.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Se você precisa de…</th><th>Base recomendada</th><th>Por quê</th></tr></thead>
+        <tbody>
+          <tr><td>Grafo de estado explícito, checkpoints duráveis, time-travel, HITL por interrupção, durable execution</td><td><strong>LangGraph</strong> <span class="pill ok">este guia</span></td><td>Estado tipado de primeira classe; persistência e replay nativos.</td></tr>
+          <tr><td>Loop leve no ecossistema OpenAI, handoffs + guardrails embutidos</td><td>OpenAI Agents SDK</td><td>Ver <a href="guia_agents_sdk_orquestracao.html">guia_agents_sdk_orquestracao.html</a>.</td></tr>
+          <tr><td>Runtime poliglota, workflow de grafo do provider, A2A nativo, deploy gerenciado no GCP</td><td>Google ADK</td><td>Ver <a href="guia_google_adk_orquestracao.html">guia_google_adk_orquestracao.html</a>.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout info">
+        <strong>Vantagem-chave do LangGraph:</strong> como o estado é explícito e persistido, você ganha
+        de graça três coisas que o núcleo pede — ledger reidratável, replay/time-travel e durabilidade
+        contra falhas. Ver <a href="guia_arquitetura_orquestracao.html#runtime-por-maturidade">padrões
+        por maturidade</a>.
+      </div>
+    </section>
+
+    <section id="state-graph">
+      <h2>2. StateGraph + reducers como ledger canônico</h2>
+      <p>
+        No núcleo, o <strong>ledger canônico</strong> é a fonte da verdade: itens tipados que são
+        reduzidos e projetados. No LangGraph, o <strong>estado do grafo</strong> é esse ledger. Você
+        declara um schema tipado (<code>TypedDict</code>) e, para campos que <em>acumulam</em> em vez de
+        sobrescrever, anexa um <strong>reducer</strong> via <code>Annotated[tipo, reducer]</code>. Cada
+        nó retorna um <em>delta</em>; o reducer decide como ele se funde ao estado — exatamente o ciclo
+        "registrar → reduzir" do núcleo.
+      </p>
+
+<pre><code class="language-python">import operator
+from typing import Annotated, TypedDict
+from langgraph.graph import StateGraph, START, END
+from langgraph.graph.message import add_messages
+
+class AgentState(TypedDict):
+    # 'messages' acumula (reducer add_messages); 'step' sobrescreve (sem reducer).
+    messages: Annotated[list, add_messages]
+    findings: Annotated[list[str], operator.add]   # cada nó faz append, não overwrite
+    step: int
+
+def plan(state: AgentState) -> dict:
+    # Retorna apenas o DELTA — o reducer funde ao ledger.
+    return {"findings": ["planned 3 subtasks"], "step": state["step"] + 1}
+
+builder = StateGraph(AgentState)
+builder.add_node("plan", plan)
+builder.add_edge(START, "plan")
+builder.add_edge("plan", END)
+graph = builder.compile()
+
+result = graph.invoke({"messages": [], "findings": [], "step": 0})</code></pre>
+      <div class="source-link">Fonte oficial: <a href="https://reference.langchain.com/python/langgraph/graph/" target="_blank" rel="noopener">reference.langchain.com/python/langgraph/graph</a> · <code>StateGraph</code>, <code>Annotated[type, reducer]</code></div>
+
+      <div class="callout tip">
+        <strong>Reducer = regra de fusão do ledger.</strong> <code>add_messages</code> para histórico de
+        mensagens; <code>operator.add</code> para listas que acumulam; sem reducer = overwrite. Esta é a
+        materialização direta de "registrar e reduzir" — ver
+        <a href="guia_estado_contexto_memoria.html#ledger-canonico">ledger canônico</a>.
+      </div>
+    </section>
+
+    <section id="checkpointers">
+      <h2>3. Checkpointers como estado durável</h2>
+      <p>
+        O núcleo separa estado durável de payload volátil. No LangGraph, o <strong>checkpointer</strong>
+        é a persistência durável: a cada super-passo do grafo, o estado completo é salvo sob um
+        <code>thread_id</code>. Isso dá reidratação, retomada após falha e time-travel sem código extra.
+        Para produção, use <code>PostgresSaver</code>; para dev/teste, <code>InMemorySaver</code> ou
+        <code>SqliteSaver</code>.
+      </p>
+
+      <div class="code-group">
+        <div class="code-tabs" role="tablist">
+          <button class="code-tab" role="tab" data-lang="python" aria-selected="true">Dev (memória)</button>
+          <button class="code-tab" role="tab" data-lang="bash" aria-selected="false">Produção (Postgres)</button>
+        </div>
+        <div class="code-pane" data-lang="python" data-active="true">
+<pre><code class="language-python">from langgraph.checkpoint.memory import InMemorySaver
+
+graph = builder.compile(checkpointer=InMemorySaver())
+
+# thread_id define o "fio" persistente do estado (uma conversa/sessão).
+config = {"configurable": {"thread_id": "session-42"}}
+graph.invoke({"messages": [("user", "oi")], "findings": [], "step": 0}, config)
+graph.invoke({"messages": [("user", "continua")]}, config)  # retoma o mesmo estado</code></pre>
+        </div>
+        <div class="code-pane" data-lang="bash" data-active="false">
+<pre><code class="language-bash"># Persistência durável em Postgres (verificado: langgraph-checkpoint-postgres 3.1.0)
+# PostgresSaver exige um driver psycopg utilizável — sem ele, o import levanta ImportError.
+pip install "langgraph==1.2.9" "langgraph-checkpoint-postgres==3.1.0" "psycopg[binary,pool]"</code></pre>
+        </div>
+      </div>
+<pre><code class="language-python"># Produção: PostgresSaver (estado sobrevive a reinícios e falhas)
+from langgraph.checkpoint.postgres import PostgresSaver
+
+DB_URI = ...  # vem da config/secret manager — nunca hardcode credenciais
+with PostgresSaver.from_conn_string(DB_URI) as checkpointer:
+    checkpointer.setup()                       # cria as tabelas na primeira vez
+    graph = builder.compile(checkpointer=checkpointer)
+    graph.invoke(initial_state, {"configurable": {"thread_id": "session-42"}})</code></pre>
+      <div class="source-link">Fonte oficial: <a href="https://docs.langchain.com/oss/python/langgraph/persistence" target="_blank" rel="noopener">docs.langchain.com/oss/python/langgraph/persistence</a> · <code>InMemorySaver</code>, <code>SqliteSaver</code>, <code>PostgresSaver</code></div>
+
+      <div class="callout info">
+        <strong>Contrato de estado:</strong> o checkpointer é a <em>projeção persistida</em> do ledger;
+        a teoria de compaction/reidratação (o que pode e o que não pode ser perdido) está em
+        <a href="guia_estado_contexto_memoria.html#compaction-contrato">compaction e
+        reidratação</a>. Time-travel/replay: ver
+        <a href="guia_operacao_seguranca_evals.html#tracing-replay-cost">tracing, replay e cost
+        ledger</a>.
+      </div>
+    </section>
+
+    <section class="chapter" id="padroes">
+      <h2 style="border-bottom:3px solid var(--c-da);padding:14px 0 10px;font-size:28px">Padrões de orquestração no grafo</h2>
+      <p>
+        Com estado tipado + checkpointer no lugar, os padrões do núcleo viram construções de grafo:
+        HITL é uma interrupção; composição é um subgraph; multi-agente é supervisor ou swarm; observar o
+        loop é streaming; memória entre threads é o Store.
+      </p>
+    </section>
+
+    <section id="hitl">
+      <h2>4. HITL: interrupt() &amp; Command(resume=)</h2>
+      <p>
+        O fluxo de aprovação humana do núcleo (HITL) é nativo: dentro de um nó, chame
+        <code>interrupt(payload)</code> para <em>pausar</em> o grafo e devolver o controle. O estado é
+        persistido pelo checkpointer; quando o humano responde, você retoma com
+        <code>Command(resume=valor)</code> usando o mesmo <code>thread_id</code>. O valor de resume vira
+        o retorno do <code>interrupt()</code> — a execução continua exatamente de onde parou.
+      </p>
+
+<pre><code class="language-python">from langgraph.types import interrupt, Command
+
+def approve_refund(state: AgentState) -> dict:
+    decision = interrupt({                       # PAUSA aqui; estado é persistido
+        "question": "Approve refund?",
+        "amount": state.get("amount"),
+    })
+    if decision != "approve":
+        return {"findings": ["refund denied by human"]}
+    return {"findings": ["refund approved"]}
+
+graph = builder.compile(checkpointer=InMemorySaver())
+config = {"configurable": {"thread_id": "ticket-9"}}
+
+# 1) Roda até a interrupção:
+graph.invoke(initial_state, config)
+# 2) Detecta o interrupt no stream/estado e mostra ao humano (chave __interrupt__).
+# 3) Retoma com a decisão humana:
+graph.invoke(Command(resume="approve"), config)</code></pre>
+      <div class="source-link">Fonte oficial: <a href="https://docs.langchain.com/oss/python/langgraph/add-human-in-the-loop" target="_blank" rel="noopener">docs.langchain.com/oss/python/langgraph/add-human-in-the-loop</a> · <code>interrupt()</code>, <code>Command(resume=)</code> (de <code>langgraph.types</code>)</div>
+
+      <div class="callout tip">
+        <strong>Por que isso é robusto:</strong> como o estado fica no checkpointer, a pausa pode durar
+        segundos ou dias — o processo pode até reiniciar. É o contrato HITL do núcleo
+        (<a href="guia_ferramentas_mcp_rag.html#fluxo-de-aprovacao-hitl">fluxo de aprovação</a>) com
+        durabilidade real. Em stream, detecte a pausa pela chave <code>__interrupt__</code> no chunk de
+        <code>updates</code>.
+      </div>
+    </section>
+
+    <section id="subgraphs">
+      <h2>5. Subgraphs como composição</h2>
+      <p>
+        O núcleo recomenda compor capacidades em unidades isoláveis. No LangGraph, um <strong>subgraph</strong>
+        é um grafo compilado usado como nó de outro grafo. Se os schemas de estado compartilham as chaves
+        relevantes, basta adicionar o subgraph compilado como nó; senão, embrulhe-o em uma função que
+        traduz o estado (o equivalente ao <em>delegation packet</em> do núcleo).
+      </p>
+
+<pre><code class="language-python"># Subgraph: uma sub-rotina de pesquisa, compilada independentemente.
+research_graph = research_builder.compile()
+
+# Grafo pai: usa o subgraph como um nó (estados compartilham chaves).
+parent = StateGraph(AgentState)
+parent.add_node("research", research_graph)        # subgraph como nó
+parent.add_node("write", write_node)
+parent.add_edge(START, "research")
+parent.add_edge("research", "write")
+parent.add_edge("write", END)
+app = parent.compile(checkpointer=InMemorySaver())</code></pre>
+      <div class="source-link">Fonte oficial: <a href="https://docs.langchain.com/oss/python/langgraph/subgraphs" target="_blank" rel="noopener">docs.langchain.com/oss/python/langgraph/subgraphs</a> · subgraph compilado como nó</div>
+      <div class="callout info">
+        <strong>Fan-out:</strong> para disparar a mesma sub-rotina em paralelo sobre N itens
+        (map-reduce), use <code>Send</code> — ver o detalhe em
+        <a href="guia_langgraph.html">guia_langgraph.html</a> (seção <em>Send</em>) e o padrão agnóstico
+        em <a href="guia_ferramentas_mcp_rag.html#fan-out-e-wind-down">fan-out e wind-down</a>.
+      </div>
+    </section>
+
+    <section id="multi-agente">
+      <h2>6. Multi-agente: supervisor &amp; swarm</h2>
+      <p>
+        O núcleo distingue <strong>handoff</strong> (transferir o dono do turno) de
+        <strong>agent-as-tool</strong> (delegar e continuar no comando). O LangGraph oferece dois pacotes
+        prebuilt que materializam topologias multi-agente:
+      </p>
+      <ul>
+        <li><strong>Supervisor</strong> (<code>langgraph-supervisor</code>): um agente coordenador
+        roteia para especialistas via tools de handoff e <em>retoma o controle</em> depois — é o padrão
+        "manager" do núcleo.</li>
+        <li><strong>Swarm</strong> (<code>langgraph-swarm</code>): agentes transferem controle
+        diretamente entre si (handoff peer-to-peer); o último agente ativo é lembrado por thread.</li>
+      </ul>
+
+      <h3>Supervisor (coordenador retoma o controle)</h3>
+<pre><code class="language-python">from langgraph_supervisor import create_supervisor
+from langgraph.prebuilt import create_react_agent
+
+# Especialistas (model resolvido por config — não hardcode o slug).
+math_agent = create_react_agent(model=MODEL, tools=[add], name="math_expert")
+research_agent = create_react_agent(model=MODEL, tools=[web_search], name="research_expert")
+
+workflow = create_supervisor(
+    [research_agent, math_agent],
+    model=SUPERVISOR_MODEL,                 # o modelo do coordenador, vindo da config
+    output_mode="last_message",             # default; ou "full_history"
+)
+app = workflow.compile()                     # adicione checkpointer= para durabilidade
+result = app.invoke({"messages": [{"role": "user", "content": "combined headcount of FAANG 2024?"}]})</code></pre>
+      <div class="source-link">Fonte oficial: <a href="https://reference.langchain.com/python/langgraph-supervisor/supervisor/" target="_blank" rel="noopener">reference.langchain.com/python/langgraph-supervisor</a> · <code>create_supervisor(agents, *, model, prompt=, output_mode=, handoff_tool_prefix=, supervisor_name=)</code></div>
+
+      <h3>Swarm (handoff peer-to-peer)</h3>
+<pre><code class="language-python">from langgraph_swarm import create_swarm, create_handoff_tool
+from langgraph.prebuilt import create_react_agent
+
+alice = create_react_agent(
+    model=MODEL, name="Alice", tools=[add,
+        create_handoff_tool(agent_name="Bob", description="Transfer to Bob")],
+)
+bob = create_react_agent(
+    model=MODEL, name="Bob",
+    tools=[create_handoff_tool(agent_name="Alice", description="Transfer to Alice for math")],
+)
+
+workflow = create_swarm([alice, bob], default_active_agent="Alice")
+app = workflow.compile(checkpointer=InMemorySaver())
+# A tool de handoff é nomeada transfer_to_&lt;agent_name&gt; por padrão.</code></pre>
+      <div class="source-link">Fonte oficial: <a href="https://reference.langchain.com/python/langgraph-swarm/swarm/" target="_blank" rel="noopener">reference.langchain.com/python/langgraph-swarm</a> · <code>create_swarm(agents, *, default_active_agent)</code> · <code>create_handoff_tool(agent_name=, name=, description=)</code></div>
+
+      <div class="table-wrap"><table>
+        <thead><tr><th>Padrão do núcleo</th><th>No LangGraph</th><th>Quem retoma o turno</th></tr></thead>
+        <tbody>
+          <tr><td>Manager / delegação central</td><td><code>create_supervisor(...)</code></td><td>O supervisor (volta a ele)</td></tr>
+          <tr><td>Handoff peer-to-peer</td><td><code>create_swarm(...)</code> + <code>create_handoff_tool</code></td><td>O agente que recebeu o handoff</td></tr>
+          <tr><td>Agent-as-tool puro</td><td>Compilar o subgrafo e expô-lo como tool</td><td>O chamador</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout warn">
+        <strong>Deprecação (LangGraph v1):</strong> <code>langgraph.prebuilt.create_react_agent</code>
+        foi deprecado em favor de <code>from langchain.agents import create_agent</code>. Os exemplos
+        de <code>create_supervisor</code>/<code>create_swarm</code> acima ainda usam
+        <code>create_react_agent</code> (continua funcional com aviso <code>@deprecated</code>); código
+        novo deve usar <code>create_agent(model, tools, system_prompt=…)</code>. Ver
+        <a href="guia_langgraph.html">guia_langgraph.html</a> para a tabela completa de deprecações v1.
+      </div>
+    </section>
+
+    <section id="streaming">
+      <h2>7. Streaming v2</h2>
+      <p>
+        Observar o loop enquanto acontece (fan-out/wind-down visível, UX responsiva) é
+        <code>graph.stream(...)</code>. Os <strong>modos</strong> determinam o que você recebe — combine
+        vários numa lista:
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>stream_mode</th><th>O que emite</th></tr></thead>
+        <tbody>
+          <tr><td><code>values</code></td><td>Snapshot completo do estado a cada passo.</td></tr>
+          <tr><td><code>updates</code></td><td>Só as chaves alteradas por nó (e <code>__interrupt__</code> em HITL).</td></tr>
+          <tr><td><code>messages</code></td><td>Tuplas <code>(chunk, metadata)</code> de tokens do LLM.</td></tr>
+          <tr><td><code>custom</code></td><td>Dados emitidos por você via <code>get_stream_writer()</code>.</td></tr>
+          <tr><td><code>tasks</code></td><td>Eventos de início/fim de tarefas (nós).</td></tr>
+        </tbody>
+      </table></div>
+
+<pre><code class="language-python">for mode, chunk in graph.stream(
+    initial_state,
+    config={"configurable": {"thread_id": "s-1"}},
+    stream_mode=["updates", "messages"],     # múltiplos modos
+):
+    if mode == "messages":
+        token, meta = chunk
+        print(token.content, end="", flush=True)
+    elif mode == "updates":
+        if "__interrupt__" in chunk:          # HITL pausou o grafo
+            handle_human_review(chunk["__interrupt__"])</code></pre>
+      <div class="source-link">Fonte oficial: <a href="https://docs.langchain.com/oss/python/langgraph/streaming" target="_blank" rel="noopener">docs.langchain.com/oss/python/langgraph/streaming</a> · modos <code>values | updates | messages | custom | tasks</code></div>
+    </section>
+
+    <section id="store">
+      <h2>8. Store: memória cross-thread</h2>
+      <p>
+        O checkpointer guarda o estado de <em>um</em> thread. Para memória <strong>entre</strong> threads
+        (perfis de usuário, fatos persistentes que sobrevivem a sessões), use o <code>Store</code> — a
+        materialização da "memória de longo prazo" do núcleo. Você compila o grafo com
+        <code>store=</code> e, dentro de qualquer nó, acessa-o por <code>get_store()</code>. Itens são
+        organizados por <em>namespace</em> (tupla) + <em>key</em>.
+      </p>
+
+<pre><code class="language-python">from langgraph.store.memory import InMemoryStore
+from langgraph.config import get_store
+
+store = InMemoryStore()
+store.put(("users",), "user_123", {"name": "Alice", "tier": "pro"})
+
+def personalize(state: AgentState) -> dict:
+    my_store = get_store()                                   # acessa o Store de dentro do nó
+    item = my_store.get(("users",), "user_123")
+    name = item.value["name"] if item else "unknown"
+    return {"findings": [f"greeting for {name}"]}
+
+graph = (
+    StateGraph(AgentState)
+    .add_node("personalize", personalize)
+    .add_edge(START, "personalize")
+    .compile(store=store, checkpointer=InMemorySaver())      # store= habilita get_store()
+)</code></pre>
+      <div class="source-link" style="overflow-wrap:anywhere">Fonte oficial: <a href="https://reference.langchain.com/python/langgraph/config/get_store" target="_blank" rel="noopener">reference.langchain.com/python/langgraph/config/get_store</a> · <code>InMemoryStore</code> (de <code>langgraph.store.memory</code>), <code>store.put((ns,), key, value)</code> / <code>store.get((ns,), key).value</code></div>
+      <div class="callout info">
+        <strong>Para produção:</strong> use <code>PostgresStore</code> (busca semântica opcional). O
+        contrato de memória vs estado de sessão está em
+        <a href="guia_estado_contexto_memoria.html#modos-de-estado">modos de estado</a>.
+      </div>
+    </section>
+
+    <section id="blueprint">
+      <h2>9. Mapeando o blueprint do núcleo ao grafo</h2>
+      <p>Tabela-âncora: cada camada do blueprint SOTA e sua materialização no LangGraph.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Camada do núcleo</th><th>No LangGraph</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Estado durável (ledger canônico)</td><td><code>StateGraph</code> tipado + reducers; <code>checkpointer</code> persiste</td><td><span class="pill ok">nativo</span></td></tr>
+          <tr><td>Router / triagem</td><td>Conditional edges / <code>Command(goto=)</code></td><td><span class="pill ok">nativo</span></td></tr>
+          <tr><td>Manager / multi-agente</td><td><code>create_supervisor</code> (coordenador retoma)</td><td><span class="pill ok">nativo</span></td></tr>
+          <tr><td>Handoff peer-to-peer</td><td><code>create_swarm</code> + <code>create_handoff_tool</code></td><td><span class="pill ok">nativo</span></td></tr>
+          <tr><td>Capability registry</td><td>Tools nos nós/ReAct; MCP via adapter</td><td><span class="pill ok">nativo</span></td></tr>
+          <tr><td>HITL (aprovação)</td><td><code>interrupt()</code> + <code>Command(resume=)</code></td><td><span class="pill ok">nativo</span></td></tr>
+          <tr><td>Composição</td><td>Subgraphs (grafo compilado como nó)</td><td><span class="pill ok">nativo</span></td></tr>
+          <tr><td>Fan-out / wind-down</td><td><code>Send</code> (map-reduce) + streaming</td><td><span class="pill ok">nativo</span></td></tr>
+          <tr><td>Observer / replay</td><td>Streaming v2 + checkpoints (time-travel)</td><td><span class="pill ok">nativo</span></td></tr>
+          <tr><td>Memória de longo prazo</td><td><code>Store</code> (cross-thread)</td><td><span class="pill ok">nativo</span></td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout tip">
+        <strong>Resumo:</strong> o que no Agents SDK é configuração do <code>Runner</code>, no LangGraph
+        é topologia do grafo. A vantagem é durabilidade e controle explícitos; o custo é mais cerimônia
+        de montagem. Escolha pela necessidade de estado durável e replay.
+      </div>
+    </section>
+
+    <section class="ref" id="cheat-sheet">
+      <h2>Cheat sheet — imports, classes &amp; decisões</h2>
+      <h3>Imports essenciais</h3>
+<pre><code class="language-python"># Grafo e estado
+from langgraph.graph import StateGraph, START, END
+from langgraph.graph.message import add_messages
+from typing import Annotated, TypedDict
+# HITL e roteamento
+from langgraph.types import interrupt, Command
+# Persistência
+from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.checkpoint.postgres import PostgresSaver     # langgraph-checkpoint-postgres
+# Memória cross-thread
+from langgraph.store.memory import InMemoryStore
+from langgraph.config import get_store, get_stream_writer
+# Multi-agente (pacotes prebuilt)
+from langgraph_supervisor import create_supervisor
+from langgraph_swarm import create_swarm, create_handoff_tool
+from langgraph.prebuilt import create_react_agent</code></pre>
+
+      <h3>Decisão rápida</h3>
+      <ul style="overflow-wrap:anywhere">
+        <li>☐ Estado precisa <strong>acumular</strong> (não overwrite) → <code>Annotated[tipo, reducer]</code>.</li>
+        <li>☐ Precisa sobreviver a reinícios/falhas → <code>compile(checkpointer=PostgresSaver(...))</code>.</li>
+        <li>☐ Precisa de aprovação humana no meio → <code>interrupt()</code> + <code>Command(resume=)</code>.</li>
+        <li>☐ Coordenador que delega e retoma → <code>create_supervisor(...)</code>.</li>
+        <li>☐ Agentes que transferem entre si → <code>create_swarm(...)</code>.</li>
+        <li>☐ Memória entre sessões/usuários → <code>Store</code> + <code>get_store()</code>.</li>
+        <li>☐ UX em tempo real → <code>graph.stream(stream_mode=["updates","messages"])</code>.</li>
+      </ul>
+    </section>
+
+    <section class="ref" id="verificacao">
+      <h2>Notas de verificação</h2>
+      <p>APIs conferidas contra a referência oficial LangChain/LangGraph e a folha de fatos do projeto em 2026-06-10; versões de libs re-conferidas em 2026-07-12.</p>
+      <ul style="overflow-wrap:anywhere">
+        <li><span class="pill ok">Resolvido</span> <code>langgraph 1.2.9</code> e <code>langgraph-checkpoint-postgres 3.1.0</code> (PyPI, re-conferidos em 2026-07-12). LangGraph é <strong>1.x GA</strong> (não 0.x).</li>
+        <li><span class="pill ok">Resolvido</span> <code>StateGraph</code>, <code>START</code>/<code>END</code>, reducers via <code>Annotated</code>, <code>add_messages</code>.</li>
+        <li><span class="pill ok">Resolvido</span> <code>interrupt()</code> + <code>Command(resume=)</code> (de <code>langgraph.types</code>); detecção por <code>__interrupt__</code> no stream de <code>updates</code>.</li>
+        <li><span class="pill ok">Resolvido</span> <code>InMemoryStore</code> (de <code>langgraph.store.memory</code>), <code>store.put((ns,), key, value)</code>, <code>store.get((ns,), key).value</code>, <code>get_store()</code> (de <code>langgraph.config</code>), <code>compile(store=)</code> — confirmados na ref oficial em 2026-05-25 (resolve o item UNVERIFIED da folha §11).</li>
+        <li><span class="pill ok">Resolvido</span> <code>create_supervisor(agents, *, model, prompt=, output_mode='last_message', handoff_tool_prefix=, supervisor_name='supervisor')</code> (de <code>langgraph_supervisor</code>) — assinatura confirmada na ref oficial (resolve UNVERIFIED §11).</li>
+        <li><span class="pill ok">Resolvido</span> <code>create_swarm(agents, *, default_active_agent, state_schema=SwarmState)</code> + <code>create_handoff_tool(agent_name=, name=, description=)</code> → tool <code>transfer_to_&lt;agent_name&gt;</code> (de <code>langgraph_swarm</code>) — confirmados na ref oficial (resolve UNVERIFIED §11).</li>
+        <li><span class="pill ok">Resolvido</span> Streaming v2: modos <code>values | updates | messages | custom | tasks</code>; <code>get_stream_writer()</code> de <code>langgraph.config</code>.</li>
+        <li><span class="pill partial">Atenção</span> Prebuilt: a ref oficial expõe <code>langchain.agents.create_agent</code> como o mais novo; <code>create_react_agent</code> (de <code>langgraph.prebuilt</code>) segue válido e é o usado nos exemplos de supervisor. Use o que casa com a versão pinada do seu projeto (reconferido na ref oficial em 2026-06-10).</li>
+        <li><span class="pill partial">Atenção</span> Slugs de modelo NÃO são hardcoded (<code>MODEL</code>/<code>SUPERVISOR_MODEL</code> vêm da config). Para IDs vigentes, ver a folha SOTA do projeto e o portal.</li>
+      </ul>
+      <div class="callout">
+        <strong>APIs UNVERIFIED neste guia:</strong> nenhuma. Os 3 itens que a folha §11 listava como
+        UNVERIFIED (Store, supervisor, swarm) foram confirmados ao vivo na referência oficial
+        (reference.langchain.com) em 2026-06-10.
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site">
+  <div style="max-width:1440px;margin:0 auto;padding:0 24px;display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;justify-content:space-between;">
+    <div style="max-width:540px">
+      <div class="brand" style="font-size:15px">Orquestração com LangGraph <small>guia complementar de orquestração</small></div>
+      <p style="margin:8px 0 0;color:var(--c-fg-muted);font-size:13.5px;line-height:1.55">
+        Referência técnica construída a partir da documentação oficial pública em <strong>2026-06-10</strong> (versões de libs reconferidas em 2026-06-19).
+        Complementa <a href="guia_langgraph.html">guia_langgraph.html</a> (referência da API),
+        <a href="guia_deepagents.html">guia_deepagents.html</a> (harness Deep Agents) e o
+        <a href="guia_arquitetura_orquestracao.html">guia de arquitetura de orquestração</a>.
+        Para informação sempre atualizada, consulte as
+        <a href="https://docs.langchain.com/oss/python/langgraph/overview" target="_blank" rel="noopener">fontes oficiais</a>.
+      </p>
+    </div>
+    <div style="font-size:13.5px;color:var(--c-fg-muted);line-height:1.7">
+      <div><strong>Crédito de produção</strong></div>
+      <div>Gerado por <strong>subagentes Claude Opus 4.7 (xhigh)</strong></div>
+      <div>revisão e montagem pelo orquestrador · 2026-05-25</div>
+      <div style="margin-top:6px">
+        <span class="badge da">langgraph 1.2.9</span>
+        <span class="badge info">Python</span>
+      </div>
+    </div>
+    <div style="font-size:12.5px;color:var(--c-fg-soft)">
+      <div><strong>Navegação rápida</strong></div>
+      <div><a href="#quando-base">Quando usar</a> · <a href="#state-graph">StateGraph</a> · <a href="#checkpointers">Checkpointers</a></div>
+      <div><a href="#hitl">HITL</a> · <a href="#multi-agente">Multi-agente</a> · <a href="#blueprint">Blueprint</a> · <a href="#cheat-sheet">Cheat sheet</a> · <a href="#verificacao">Verificação</a></div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  /* Toggle de tema com persistência em localStorage (chave compartilhada do super-guia). */
+  (function(){
+    var KEY = 'super-guia-theme';
+    var btn = document.getElementById('theme-toggle');
+    var pref = localStorage.getItem(KEY);
+    if (pref) document.documentElement.setAttribute('data-theme', pref);
+    if (btn) btn.addEventListener('click', function(){
+      var cur = document.documentElement.getAttribute('data-theme') || 'light';
+      var nxt = cur === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', nxt);
+      localStorage.setItem(KEY, nxt);
+    });
+  })();
+  /* Scroll-spy: destaca no TOC a seção visível. */
+  (function(){
+    var links = document.querySelectorAll('nav.toc a[href^="#"]');
+    var map = {};
+    links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        var id = e.target.id; if (!map[id]) return;
+        if (e.isIntersecting) {
+          links.forEach(function(l){ l.classList.remove('active'); });
+          map[id].classList.add('active');
+        }
+      });
+    }, { rootMargin: '-40% 0% -55% 0%', threshold: 0 });
+    Object.keys(map).forEach(function(id){ var el = document.getElementById(id); if (el) io.observe(el); });
+  })();
+  /* Abas de código (code-group): clique + navegação por setas. */
+  function activateTab(group, tab){
+    group.querySelectorAll('.code-tab').forEach(function(b){
+      var on = b === tab;
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+      b.setAttribute('tabindex', on ? '0' : '-1');
+    });
+    var lang = tab.dataset.lang;
+    group.querySelectorAll('.code-pane').forEach(function(p){ p.setAttribute('data-active', p.dataset.lang===lang ? 'true' : 'false'); });
+  }
+  document.querySelectorAll('.code-group').forEach(function(group){
+    group.querySelectorAll('.code-pane').forEach(function(p){ p.setAttribute('role', 'tabpanel'); });
+    var tabs = group.querySelectorAll('.code-tab');
+    tabs.forEach(function(b){ b.setAttribute('tabindex', b.getAttribute('aria-selected') === 'true' ? '0' : '-1'); });
+  });
+  document.addEventListener('click', function(e){
+    var t = e.target;
+    if (!t.classList || !t.classList.contains('code-tab')) return;
+    var group = t.closest('.code-group'); if (!group) return;
+    activateTab(group, t);
+  });
+  document.addEventListener('keydown', function(e){
+    var t = e.target;
+    if (!t.classList || !t.classList.contains('code-tab')) return;
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    var group = t.closest('.code-group'); if (!group) return;
+    var tabs = Array.prototype.slice.call(group.querySelectorAll('.code-tab'));
+    var idx = tabs.indexOf(t);
+    var next = e.key === 'ArrowRight' ? (idx + 1) % tabs.length : (idx - 1 + tabs.length) % tabs.length;
+    activateTab(group, tabs[next]);
+    tabs[next].focus();
+    e.preventDefault();
+  });
+</script>
+</body>
+</html>

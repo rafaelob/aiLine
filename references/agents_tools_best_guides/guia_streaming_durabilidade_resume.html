@@ -1,0 +1,1040 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Streaming Durável &amp; Resumível — resposta agêntica que sobrevive a reconexão</title>
+<meta name="description" content="Arquitetura de resposta agêntica durável e resumível: as duas camadas de transporte (backend↔provider vs backend↔frontend), HTTP/SSE vs WebSocket mode da Responses API, event store com seq e replay Last-Event-ID, execução desacoplada, snapshots, timestamps, idempotência e tool ledger, failover cross-provider (OpenAI, Anthropic, Gemini) e padrões de maturidade M0–M3. Verificado em 2026-07-09." />
+<meta name="last-checked" content="2026-07-09" />
+<meta name="robots" content="index,follow" />
+<style>
+  :root {
+    --c-bg: #ffffff;
+    --c-bg-elev: #f7f8fa;
+    --c-bg-code: #0e1116;
+    --c-fg: #1a1d23;
+    --c-fg-muted: #5b6472;
+    --c-fg-soft: #6b7480;
+    --c-border: #e4e7ec;
+    --c-border-strong: #cdd3dc;
+    --c-accent: #1a73e8;
+    --c-da: #1257b8;
+    --c-da-bg: #e6efff;
+    --c-warn: #b6541d;
+    --c-warn-bg: #fff4e6;
+    --c-ok: #157a33;
+    --c-ok-bg: #e8f5ea;
+    --c-bad: #c5221f;
+    --c-bad-bg: #fde8e6;
+    --c-na: #5f666f;
+    --c-na-bg: #eef0f3;
+    --c-info: #1257b8;
+    --c-info-bg: #e6efff;
+    --shadow-sm: 0 1px 2px rgba(15,23,42,.06), 0 1px 1px rgba(15,23,42,.04);
+    --shadow-md: 0 6px 24px rgba(15,23,42,.08), 0 2px 6px rgba(15,23,42,.06);
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --gutter: 24px;
+    --sidebar-w: 312px;
+  }
+  [data-theme="dark"] {
+    --c-bg: #0d1117;
+    --c-bg-elev: #161b22;
+    --c-bg-code: #010409;
+    --c-fg: #e6edf3;
+    --c-fg-muted: #9aa4b2;
+    --c-fg-soft: #828c9e;
+    --c-border: #20262d;
+    --c-border-strong: #2f3640;
+    --c-da: #4d9fff;
+    --c-accent: #4d9fff;
+    --c-ok: #3fb950;
+    --c-warn: #e3b341;
+    --c-bad: #ff7b72;
+    --c-na: #9aa4b2;
+    --c-info: #79b8ff;
+    --c-da-bg: #11233f;
+    --c-warn-bg: #2a1e0a;
+    --c-ok-bg: #0d2517;
+    --c-bad-bg: #2a1213;
+    --c-na-bg: #1a1f26;
+    --c-info-bg: #0c1e3a;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+    --shadow-md: 0 8px 28px rgba(0,0,0,.45);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-sans);
+    font-size: 15.5px;
+    line-height: 1.55;
+    color: var(--c-fg);
+    background: var(--c-bg);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  a { color: var(--c-accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, kbd, pre, samp { font-family: var(--font-mono); font-size: 0.92em; }
+  code { overflow-wrap: anywhere; }
+  h1, h2, h3, h4, summary { overflow-wrap: anywhere; }
+  :focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; border-radius: 4px; }
+  .skip { position: absolute; left: -9999px; }
+  .skip:focus { left: 12px; top: 12px; background: var(--c-bg); padding: 8px 12px; border: 1px solid var(--c-border); border-radius: 6px; z-index: 100; }
+
+  header.site {
+    position: sticky; top: 0; z-index: 30;
+    background: rgba(255,255,255,.85);
+    backdrop-filter: saturate(180%) blur(10px);
+    border-bottom: 1px solid var(--c-border);
+  }
+  [data-theme="dark"] header.site { background: rgba(13,17,23,.82); }
+  .header-row {
+    max-width: 1440px; margin: 0 auto; padding: 12px 24px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .brand { font-weight: 700; letter-spacing: -.01em; font-size: 16px; }
+  .brand small { color: var(--c-fg-muted); font-weight: 500; margin-left: 8px; font-size: 12.5px; }
+  .header-right { margin-left: auto; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 999px;
+    background: var(--c-bg-elev); border: 1px solid var(--c-border);
+    color: var(--c-fg-muted); font-size: 12.5px; font-weight: 500;
+  }
+  .badge.ok { background: var(--c-ok-bg); color: var(--c-ok); border-color: transparent; }
+  .badge.da { background: var(--c-da-bg); color: var(--c-da); border-color: transparent; }
+  .badge.info { background: var(--c-info-bg); color: var(--c-info); border-color: transparent; }
+  .badge.warn { background: var(--c-warn-bg); color: var(--c-warn); border-color: transparent; }
+  .badge.bad { background: var(--c-bad-bg); color: var(--c-bad); border-color: transparent; }
+  .theme-btn {
+    border: 1px solid var(--c-border); background: var(--c-bg-elev); color: var(--c-fg);
+    padding: 5px 10px; border-radius: 8px; cursor: pointer; font: inherit; font-size: 12.5px;
+  }
+  .theme-btn:hover { border-color: var(--c-border-strong); }
+
+  .layout {
+    max-width: 1440px; margin: 0 auto;
+    display: grid; grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+    gap: 32px; padding: 24px;
+  }
+  nav.toc {
+    position: sticky; top: 64px;
+    align-self: start; max-height: calc(100vh - 80px); overflow: auto;
+    padding-right: 8px;
+    border-right: 1px solid var(--c-border);
+  }
+  nav.toc ol { list-style: none; padding: 0; margin: 0 0 16px; }
+  nav.toc li { line-height: 1.4; margin: 2px 0; }
+  nav.toc a {
+    display: block; padding: 4px 8px; border-radius: 5px;
+    color: var(--c-fg-muted); font-size: 13px;
+  }
+  nav.toc a:hover { background: var(--c-bg-elev); color: var(--c-fg); text-decoration: none; }
+  nav.toc a.active { color: var(--c-da); background: var(--c-da-bg); font-weight: 600; }
+  nav.toc .toc-section {
+    margin-top: 14px; padding: 2px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--c-fg-soft);
+    border-top: 1px solid var(--c-border); padding-top: 10px;
+  }
+  nav.toc .toc-section:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+
+  main { min-width: 0; max-width: 1040px; }
+
+  .hero {
+    border: 1px solid var(--c-border);
+    border-radius: 14px;
+    padding: 28px 28px 24px;
+    background: linear-gradient(135deg, var(--c-da-bg) 0%, var(--c-bg) 100%);
+    margin-bottom: 32px;
+  }
+  .hero h1 { font-size: 32px; line-height: 1.15; margin: 0 0 8px; letter-spacing: -.02em; }
+  .hero p.lead { margin: 0 0 16px; color: var(--c-fg-muted); font-size: 16px; max-width: 74ch; }
+  .hero-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+
+  section { margin: 48px 0; scroll-margin-top: 84px; }
+  section.chapter { padding-top: 16px; margin-top: 56px; border-top: 3px solid var(--c-da); }
+  section.ref { padding-top: 12px; margin-top: 48px; border-top: 2px dashed var(--c-border-strong); }
+  h2 {
+    font-size: 24px; line-height: 1.2; letter-spacing: -.015em;
+    margin: 0 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--c-border);
+    scroll-margin-top: 84px;
+  }
+  h3 { font-size: 18px; line-height: 1.3; margin: 28px 0 10px; scroll-margin-top: 84px; }
+  h4 { font-size: 15px; margin: 20px 0 8px; color: var(--c-fg); scroll-margin-top: 84px; }
+  p { margin: 0 0 12px; }
+  ul, ol { margin: 0 0 12px; padding-left: 22px; }
+  li { margin: 4px 0; }
+  hr { border: 0; border-top: 1px solid var(--c-border); margin: 24px 0; }
+
+  .table-wrap { overflow-x: auto; margin: 0 0 18px; border: 1px solid var(--c-border); border-radius: var(--radius); }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 580px; }
+  th, td { padding: 9px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--c-border); }
+  th { background: var(--c-bg-elev); font-weight: 600; color: var(--c-fg); position: sticky; top: 0; font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em; }
+  @media (max-width: 480px) { th { position: static; } } /* avoid sticky-th causing 21px horizontal overflow inside .table-wrap on narrow viewports */
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--c-bg-elev); }
+  td code, th code { background: var(--c-bg-elev); padding: 1px 5px; border-radius: 4px; font-size: 12.5px; color: var(--c-fg); }
+  [data-theme="dark"] td code, [data-theme="dark"] th code { background: #0b0e13; }
+
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; letter-spacing: .02em; }
+  .pill.ok { background: var(--c-ok-bg); color: var(--c-ok); }
+  .pill.partial { background: var(--c-warn-bg); color: var(--c-warn); }
+  .pill.bad { background: var(--c-bad-bg); color: var(--c-bad); }
+  .pill.na { background: var(--c-na-bg); color: var(--c-na); }
+  .pill.beta { background: var(--c-info-bg); color: var(--c-info); }
+
+  .callout {
+    border-left: 4px solid var(--c-accent);
+    background: var(--c-bg-elev);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  .callout.warn { border-left-color: var(--c-warn); background: var(--c-warn-bg); color: #5a3009; }
+  .callout.tip { border-left-color: var(--c-ok); background: var(--c-ok-bg); color: #1d4a25; }
+  .callout.danger { border-left-color: var(--c-bad); background: var(--c-bad-bg); color: #7a1a16; }
+  .callout.beta { border-left-color: var(--c-info); background: var(--c-info-bg); color: #123d75; }
+  .callout.info { border-left-color: var(--c-info); background: var(--c-info-bg); color: #123d75; }
+  .callout.partial { border-left-color: var(--c-warn); background: var(--c-warn-bg); color: #5a3009; }
+  [data-theme="dark"] .callout.warn { color: #f1c896; }
+  [data-theme="dark"] .callout.tip { color: #a7d8b1; }
+  [data-theme="dark"] .callout.danger { color: #f0a8a4; }
+  [data-theme="dark"] .callout.beta { color: #a8cdff; }
+  [data-theme="dark"] .callout.info { color: #a8cdff; }
+  [data-theme="dark"] .callout.partial { color: #f1c896; }
+  .callout strong { font-weight: 700; }
+  .callout a { color: var(--c-da); text-decoration: underline; }
+  [data-theme="dark"] .callout a { color: var(--c-da); }
+  footer.site a, .source-link a { text-decoration: underline; }
+
+  pre {
+    background: var(--c-bg-code);
+    color: #d1d5db;
+    padding: 14px 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 0 0 14px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    border: 1px solid #1f242c;
+  }
+  pre code { color: inherit; background: transparent; padding: 0; }
+
+  details {
+    border: 1px solid var(--c-border); border-radius: var(--radius);
+    padding: 8px 14px; margin: 6px 0 10px; background: var(--c-bg-elev);
+  }
+  details > summary {
+    cursor: pointer; font-weight: 600; padding: 4px 0; list-style: none;
+    font-size: 13.5px;
+  }
+  details > summary::-webkit-details-marker { display: none; }
+  details > summary::before { content: "▸ "; color: var(--c-fg-soft); display: inline-block; }
+  details[open] > summary::before { content: "▾ "; }
+  details > .ref-body { padding: 8px 0 4px; }
+
+  .source-link {
+    font-size: 12.5px; color: var(--c-fg-muted);
+    margin: 6px 0 24px; padding: 6px 10px;
+    background: var(--c-bg-elev); border-left: 3px solid var(--c-da);
+    border-radius: 0 6px 6px 0;
+  }
+  .source-link a { color: var(--c-da); font-weight: 600; }
+
+  .figure { margin: 20px 0 26px; }
+  .figure svg { width: 100%; height: auto; display: block; border: 1px solid var(--c-border); border-radius: 10px; }
+  .figure figcaption { font-size: 12.5px; color: var(--c-fg-muted); margin-top: 10px; line-height: 1.5; padding: 0 4px; }
+
+  footer.site {
+    margin: 64px 0 24px; padding: 24px 0; border-top: 1px solid var(--c-border);
+    color: var(--c-fg-muted); font-size: 13px;
+  }
+
+  @media (max-width: 1080px) {
+    .layout { grid-template-columns: 1fr; }
+    nav.toc { position: static; max-height: none; border-right: none; border-bottom: 1px solid var(--c-border); padding-bottom: 16px; margin-bottom: 16px; }
+    main { max-width: 100%; }
+    .hero h1 { font-size: 24px; }
+  }
+  @media print {
+    nav.toc, header.site, .theme-btn { display: none; }
+    .layout { grid-template-columns: 1fr; }
+    a { color: inherit; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+    details[open] { padding: 8px 0; }
+    details > summary { display: none; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Pular para o conteúdo</a>
+
+<header class="site">
+  <div class="header-row">
+    <div class="brand">Streaming Durável &amp; Resumível <small>arquitetura transversal · super-guia de agentes</small></div>
+    <div class="header-right">
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-09</strong></span>
+      <span class="badge da">Arquitetura · v1</span>
+      <span class="badge info">OpenAI · Anthropic · Gemini</span>
+      <span class="badge ok">Resume = camada 2</span>
+      <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="Sumário">
+    <div class="toc-section">Início</div>
+    <ol>
+      <li><a href="#sobre-guia">Sobre este guia</a></li>
+      <li><a href="#fontes-oficiais">Fontes &amp; verificação</a></li>
+    </ol>
+
+    <div class="toc-section">Parte 1 — O problema</div>
+    <ol>
+      <li><a href="#contrato-ux">1. O contrato de UX</a></li>
+      <li><a href="#duas-camadas">2. As duas camadas</a></li>
+      <li><a href="#transporte-providers">3. Transporte por provider</a></li>
+      <li><a href="#http-vs-ws">4. HTTP(S) vs WebSocket</a></li>
+    </ol>
+
+    <div class="toc-section">Parte 2 — Camada 2 (resume)</div>
+    <ol>
+      <li><a href="#quatro-pilares">5. Os 4 pilares</a></li>
+      <li><a href="#entidades-fsm">6. Entidades e FSM</a></li>
+      <li><a href="#event-log">7. Event log atômico</a></li>
+      <li><a href="#replay-cursor">8. Replay, tail e cursor</a></li>
+      <li><a href="#timestamps">9. Timestamps</a></li>
+      <li><a href="#idempotencia-ledger">10. Idempotência &amp; tool ledger</a></li>
+      <li><a href="#edge-cases">11. Edge cases de replay</a></li>
+    </ol>
+
+    <div class="toc-section">Parte 3 — Camada 1 (provider)</div>
+    <ol>
+      <li><a href="#openai-transporte">12. OpenAI Responses</a></li>
+      <li><a href="#anthropic-gemini">13. Anthropic &amp; Gemini</a></li>
+      <li><a href="#failover">14. Failover cross-provider</a></li>
+    </ol>
+
+    <div class="toc-section">Parte 4 — Frontend</div>
+    <ol>
+      <li><a href="#frontend">15. EventSource vs fetch-stream</a></li>
+    </ol>
+
+    <div class="toc-section">Parte 5 — Operação</div>
+    <ol>
+      <li><a href="#executor-duravel">16. Executor durável</a></li>
+      <li><a href="#seguranca">17. Segurança &amp; privacidade</a></li>
+      <li><a href="#observabilidade">18. Observabilidade &amp; SLOs</a></li>
+      <li><a href="#alternativas-sota">19. Alternativas SOTA</a></li>
+      <li><a href="#maturidade">20. Padrões de maturidade</a></li>
+      <li><a href="#checklist">21. Checklist final</a></li>
+    </ol>
+
+    <div class="toc-section">Referência</div>
+    <ol>
+      <li><a href="#cheatsheet">Cheat sheet</a></li>
+      <li><a href="#verificacao">Notas de verificação</a></li>
+    </ol>
+  </nav>
+
+  <main id="main">
+
+    <div class="hero">
+      <h1>Streaming Durável &amp; Resumível</h1>
+      <p class="lead">
+        Como construir a resposta agêntica que <strong>sobrevive a fechar a aba</strong> — o padrão
+        ChatGPT/Claude/Gemini: o usuário manda o prompt, vê eventos internos streamando; fecha e volta; e
+        reencontra o estado exato (<em>ainda processando</em> → status ao vivo; <em>500 chars já streamados</em> →
+        carrega os 500 e <strong>continua o streaming</strong>; <em>respondido</em> → tudo carregado + data/hora do
+        primeiro token real). A tese central: <strong>isso é um problema da camada backend↔frontend</strong>
+        (event store + replay por cursor + execução desacoplada) — <strong>não</strong> do WebSocket com o
+        provider. O guia cobre as duas camadas, HTTP vs WS, o modelo de entidades/FSM, idempotência com tool
+        ledger, failover cross-provider e os padrões de maturidade M0–M3. Não é taxativo: mostra os caminhos
+        SOTA e quando cada um vale.
+      </p>
+      <div class="hero-meta">
+        <span class="badge da">Arquitetura · v1</span>
+        <span class="badge info">OpenAI · Anthropic · Gemini</span>
+        <span class="badge ok">SOTA · verificado 2026-07-09</span>
+        <span class="badge warn">3 rodadas adversariais</span>
+      </div>
+    </div>
+
+    <section id="sobre-guia">
+      <h2>Sobre este guia</h2>
+      <p>
+        Este é um guia <strong>para IA e humanos</strong>, transversal aos três providers e às duas pontas
+        (backend e frontend). Ele responde à pergunta que os guias de capacidade não respondem: <em>como garantir
+        que uma geração agêntica em andamento não se perde quando o cliente desconecta — e como retomá-la
+        exatamente de onde parou</em>. A superfície de API de cada provider tem dono próprio na coleção e é
+        <em>cross-linkada</em>, não duplicada: o <strong>WebSocket Mode e a Responses API</strong> em detalhe são do
+        <a href="guia_openai_modelos.html#s-streaming-websocket">guia OpenAI · §12.2</a>; a <strong>matriz de
+        capacidades por provider</strong> é do <a href="guia_providers_adapters.html">guia Providers &amp;
+        Adapters</a>; <strong>compaction de contexto</strong> é do
+        <a href="guia_contexto_compactacao_estrategias.html">guia de Compactação</a>; <strong>ZDR e ingestão sem
+        provider storage</strong> são do <a href="guia_file_inputs_no_storage.html">guia File Inputs</a>;
+        <strong>envelope local como fonte de verdade</strong> é do
+        <a href="guia_estado_contexto_memoria.html">guia Estado, Contexto &amp; Memória</a>.
+      </p>
+      <div class="callout">
+        <strong>Tese:</strong> a durabilidade que o usuário percebe vive <em>inteiramente</em> na camada 2
+        (backend↔frontend): execução desacoplada do socket + event log durável com <code>seq</code> + replay por
+        cursor + snapshot. A escolha de transporte com o provider (camada 1: SSE ou WebSocket) muda
+        <em>latência</em>, não muda <em>se o usuário consegue voltar</em>. Nenhum transporte fornece durabilidade,
+        idempotência ou exactly-once — isso é sempre trabalho seu.
+      </div>
+      <div class="callout beta">
+        <strong>Como este guia foi validado:</strong> fatos perecíveis conferidos na documentação oficial em
+        <strong>2026-07-09</strong> e o desenho submetido a <strong>três rodadas adversariais</strong> (dois
+        modelos frontier externos + reconciliação na fonte primária). As correções que sobreviveram estão
+        incorporadas; o que não pôde ser confirmado está marcado <span class="pill partial">UNVERIFIED</span>.
+      </div>
+    </section>
+
+    <section id="fontes-oficiais">
+      <h2>Fontes &amp; verificação</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Tema</th><th>Recurso oficial</th></tr></thead>
+        <tbody>
+          <tr><td>OpenAI — WebSocket Mode (Responses)</td><td><a href="https://developers.openai.com/api/docs/guides/websocket-mode" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/websocket-mode</a></td></tr>
+          <tr><td>OpenAI — Streaming de Responses (SSE)</td><td><a href="https://developers.openai.com/api/docs/guides/streaming-responses" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/streaming-responses</a></td></tr>
+          <tr><td>OpenAI — Background mode</td><td><a href="https://developers.openai.com/api/docs/guides/background" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/background</a></td></tr>
+          <tr><td>OpenAI — Deployment checklist (HTTP vs WS)</td><td><a href="https://developers.openai.com/api/docs/guides/deployment-checklist" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/deployment-checklist</a></td></tr>
+          <tr><td>OpenAI — <code>phase</code> e reasoning</td><td><a href="https://developers.openai.com/api/docs/guides/reasoning" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/reasoning</a></td></tr>
+          <tr><td>OpenAI — Compaction</td><td><a href="https://developers.openai.com/api/docs/guides/compaction" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/compaction</a></td></tr>
+          <tr><td>OpenAI — Data controls / ZDR</td><td><a href="https://developers.openai.com/api/docs/guides/your-data" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/your-data</a></td></tr>
+          <tr><td>Anthropic — Streaming Messages (SSE)</td><td><a href="https://platform.claude.com/docs/en/build-with-claude/streaming" target="_blank" rel="noopener">platform.claude.com/docs/en/build-with-claude/streaming</a></td></tr>
+          <tr><td>Gemini — generateContent streaming</td><td><a href="https://ai.google.dev/gemini-api/docs/text-generation" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/text-generation</a></td></tr>
+          <tr><td>Gemini — Live API (WebSocket)</td><td><a href="https://ai.google.dev/api/live" target="_blank" rel="noopener">ai.google.dev/api/live</a></td></tr>
+          <tr><td>Web — Server-Sent Events / <code>Last-Event-ID</code></td><td><a href="https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events" target="_blank" rel="noopener">developer.mozilla.org · Server-sent events</a></td></tr>
+          <tr><td>Redis — Streams (<code>XADD</code>/<code>XREAD</code>)</td><td><a href="https://redis.io/docs/latest/develop/data-types/streams/" target="_blank" rel="noopener">redis.io/docs · Streams</a></td></tr>
+        </tbody>
+      </table></div>
+      <p style="font-size:13px;color:var(--c-fg-muted)">
+        Legenda: <span class="pill ok">Verificado</span> confirmado na doc oficial em 2026-07-09 ·
+        <span class="pill beta">Novo</span> recurso recente ·
+        <span class="pill partial">UNVERIFIED</span> não confirmado em URL oficial direta ·
+        <span class="pill bad">Evitar</span> antipadrão.
+      </p>
+    </section>
+
+    <!-- ===================== PARTE 1 ===================== -->
+    <section class="chapter" id="parte-problema">
+      <h2 style="border-bottom:3px solid var(--c-da);padding:14px 0 10px;font-size:28px">Parte 1 — O problema e as duas camadas</h2>
+    </section>
+
+    <section id="contrato-ux">
+      <h2>1. O contrato de UX — os três estados do retorno</h2>
+      <p>
+        O usuário envia um prompt e a plataforma mostra o trabalho interno (tool calls, status de raciocínio,
+        deltas de texto). Ele fecha a aba, perde a rede ou troca de dispositivo. Ao voltar, o produto precisa
+        honrar <strong>um contrato de três estados</strong>:
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Estado ao voltar</th><th>O que o usuário vê</th><th>Mecanismo</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Ainda processando</strong></td><td>O status de trabalho interno atual, como se nunca tivesse saído</td><td>Execução desacoplada do socket + state record (<code>running</code>) + reattach ao stream</td></tr>
+          <tr><td><strong>Parcialmente respondido</strong> (ex.: 500 chars streamados)</td><td>Os 500 chars <em>instantaneamente</em> + o streaming <strong>continua</strong> do ponto exato</td><td>Replay do event log a partir do cursor + tail ao vivo (sem janela de perda — §8)</td></tr>
+          <tr><td><strong>Respondido por completo</strong></td><td>A resposta inteira + <strong>data/hora do primeiro token real</strong> da resposta</td><td>Materialização durável + <code>first_answer_text_delta_at</code> (§9)</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout warn">
+        <strong>O que quebra o contrato:</strong> streaming preso ao request HTTP do cliente (a geração morre com a
+        conexão); histórico só persistido no fim (parcial se perde); "resume" que na verdade recomeça a geração
+        (custo dobrado + resposta diferente); e marcar <code>completed</code> um stream que foi <em>truncado</em>
+        quando o provider caiu — truncamento é <code>incomplete</code>, nunca <code>completed</code>.
+      </div>
+    </section>
+
+    <section id="duas-camadas">
+      <h2>2. As duas camadas de transporte — a distinção que organiza tudo</h2>
+      <p>
+        Misturar as duas camadas é a fonte número um de decisões erradas ("vou usar WebSocket para ter resume").
+        Elas são independentes e têm papéis diferentes:
+      </p>
+      <pre><code>┌─────────────┐   CAMADA 1: backend ↔ PROVIDER          ┌──────────────┐
+│  FRONTEND   │   OpenAI: HTTP/SSE ou WS mode (opt-in)   │   PROVIDER   │
+│  (browser)  │   Anthropic: SSE · Gemini: SSE           │ OpenAI/Anthr/│
+└──────┬──────┘   (Gemini Live WS = realtime, Preview)   │   Gemini     │
+       │                                                 └──────▲───────┘
+       │ CAMADA 2: backend ↔ FRONTEND                           │
+       │ NOSSO SSE, resumível: replay por cursor                │
+       ▼ (Last-Event-ID) + tail ao vivo                         │
+┌───────────────────────────────────────────────────────────────────┐
+│                            BACKEND                                │
+│  ┌────────────┐   ┌───────────────────┐   ┌────────────────────┐  │
+│  │ Envelope   │   │ EXECUÇÃO           │   │ EVENT STORE        │  │
+│  │ LOCAL de   │──▶│ desacoplada do     │──▶│ durável: seq       │  │
+│  │ contexto   │   │ socket do cliente  │   │ monotônico + state │  │
+│  │ (store=off)│   │ (worker/fila)      │   │ + snapshot         │  │
+│  └────────────┘   └───────────────────┘   └────────────────────┘  │
+└───────────────────────────────────────────────────────────────────┘</code></pre>
+      <ul>
+        <li><strong>Camada 1 (backend↔provider):</strong> decide <em>latência</em> e <em>custo de conexão</em>. SSE ou
+        WebSocket, tanto faz para o resume do usuário. A responsabilidade que ela carrega para a durabilidade é uma
+        só: <strong>integridade</strong> — detectar truncamento quando o provider cai e nunca promover stream cortado
+        a <code>completed</code>.</li>
+        <li><strong>Camada 2 (backend↔frontend):</strong> é onde vive TODO o contrato da §1. Event log com
+        <code>seq</code>, replay por cursor, execução desacoplada, snapshot, timestamps.</li>
+      </ul>
+      <div class="callout tip">
+        <strong>Regra de ouro:</strong> trocar WS↔SSE com o provider não muda se o usuário consegue retomar.
+        Se o seu plano de "resume" começa por "adotar o WebSocket mode", ele está atacando a camada errada.
+      </div>
+    </section>
+
+    <section id="transporte-providers">
+      <h2>3. Transporte por provider (camada 1)</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Provider / modo</th><th>Transporte</th><th>Input incremental</th><th>Estado server-side</th><th>Resume nativo</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td><strong>OpenAI Responses (SSE)</strong></td><td>HTTP + SSE (<code>stream:true</code>)</td><td>Não</td><td><code>previous_response_id</code> (só com <code>store=true</code>)</td><td>nova request</td><td><span class="pill ok">GA</span></td></tr>
+          <tr><td><strong>OpenAI Responses (WS mode)</strong></td><td>WebSocket <code>wss://api.openai.com/v1/responses</code></td><td><strong>Sim</strong> — novos <em>itens completos</em> + <code>previous_response_id</code> via <code>response.create</code> (não deltas em voo)</td><td>cache in-memory <strong>connection-local</strong> (compatível <code>store=false</code>/ZDR)</td><td><strong>não entre conexões</strong>: caiu/60&nbsp;min → novo socket; sob <code>store=false</code> a cadeia se perde (<code>prev_id=null</code> + contexto completo ou compactado)</td><td><span class="pill ok">público, sem rótulo beta</span></td></tr>
+          <tr><td><strong>OpenAI background</strong></td><td>HTTP (<code>background:true</code> + <code>stream:true</code>)</td><td>Não</td><td>sim — cursor <code>sequence_number</code></td><td>sim (<code>starting_after</code>), <strong>mas exige <code>store=true</code></strong> (não-ZDR, ~10&nbsp;min)</td><td><span class="pill ok">GA</span></td></tr>
+          <tr><td><strong>Anthropic Messages</strong></td><td>HTTP + SSE puro</td><td>Não</td><td>nenhum (cliente reenvia histórico)</td><td>—</td><td><span class="pill ok">GA</span></td></tr>
+          <tr><td><strong>Gemini generateContent</strong></td><td>HTTP + SSE (<code>?alt=sse</code>)</td><td>Não</td><td>nenhum</td><td>—</td><td><span class="pill ok">GA</span></td></tr>
+          <tr><td><strong>Gemini Live</strong></td><td>WebSocket bidirecional</td><td>Sim (texto, áudio e vídeo)</td><td>sessão + handle</td><td>SessionResumption (handle ~2h), <code>GoAway</code></td><td><span class="pill beta">Preview · realtime</span></td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout info">
+        <strong>Leituras que importam:</strong> (1) o fallback cross-provider de texto é obrigatoriamente
+        <strong>HTTP/SSE</strong> — Anthropic e Gemini não têm WebSocket de texto em produção; (2) o Gemini Live
+        <em>aceita texto</em>, mas é Preview e orientado a realtime/native-audio — não é substituto do
+        <code>generateContent</code> para chat textual; (3) o WS mode da OpenAI é ZDR-ok justamente porque o cache é
+        in-memory da conexão — <strong>e por isso mesmo a reconexão não retoma nada</strong>: novo socket = nova
+        cadeia sob <code>store=false</code>. Detalhes de frames, erros e limites: <a
+        href="guia_openai_modelos.html#s-streaming-websocket">guia OpenAI §12.2</a>.
+      </div>
+      <p class="source-link"><strong>Fontes:</strong>
+        <a href="https://developers.openai.com/api/docs/guides/websocket-mode" target="_blank" rel="noopener">websocket-mode</a> ·
+        <a href="https://developers.openai.com/api/docs/guides/background" target="_blank" rel="noopener">background</a> ·
+        <a href="https://platform.claude.com/docs/en/build-with-claude/streaming" target="_blank" rel="noopener">Anthropic streaming</a> ·
+        <a href="https://ai.google.dev/api/live" target="_blank" rel="noopener">Gemini Live</a>
+      </p>
+    </section>
+
+    <section id="http-vs-ws">
+      <h2>4. HTTP(S) vs WebSocket — quando cada um é melhor</h2>
+      <p>
+        O ponto que o hype esconde: o caminho "normal" da Responses API é <strong>request/response e SSE sobre
+        HTTPS</strong>; o WS mode é <code>wss://</code> (também TLS) e <strong>opt-in</strong>. A recomendação
+        oficial da OpenAI é condicional: <em>"uma request/uma resposta → mantenha HTTP; agente longo/tool-heavy →
+        experimente WebSocket"</em>. A escolha não é segurança nem "moderno vs antigo" — é modelo de conexão:
+        <em>request independente (+SSE)</em> vs <em>socket persistente</em>. Em muitos cenários, HTTP(S)/SSE é a
+        escolha melhor — não um fallback de consolação:
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Cenário</th><th>Vence</th><th>Por quê</th></tr></thead>
+        <tbody>
+          <tr><td>Conversa curta/média (poucos tool round trips) — a maioria do tráfego de chat</td><td><strong>HTTP(S)/SSE</strong></td><td>O ganho do socket persistente não amortiza; 1 request = 1 resposta</td></tr>
+          <tr><td>Serverless / autoscaling (Cloud Run, Lambda, scale-to-zero)</td><td><strong>HTTP(S)/SSE</strong></td><td>Socket persistente prende a instância e atrapalha scale-down/balanceamento</td></tr>
+          <tr><td>Atrás de proxies corporativos / LBs / API gateways</td><td><strong>HTTP(S)/SSE</strong></td><td>Tende a ser mais compatível com egress corporativo (upgrade WS às vezes bloqueado) — mas SSE também pode sofrer buffering/idle-timeout de proxy</td></tr>
+          <tr><td>Retry e observabilidade por request</td><td><strong>HTTP(S)/SSE</strong></td><td>Cada request é independente (status code, trace, retry com backoff). <strong>Idempotência continua sendo sua responsabilidade nos dois</strong></td></tr>
+          <tr><td>Simetria cross-provider (fallback Anthropic/Gemini)</td><td><strong>HTTP(S)/SSE</strong></td><td>Anthropic/Gemini texto são SSE-only — HTTP-first mantém um caminho de transporte (os adapters semânticos continuam distintos)</td></tr>
+          <tr><td>Execuções longas sem teto de conexão</td><td><strong>HTTP(S)/SSE</strong></td><td>WS mode tem limite de 60 min/conexão (exige rollover); HTTP não herda esse teto — mas segue sujeito a timeouts de cliente/runtime/proxy/provider</td></tr>
+          <tr><td>Loop agêntico tool-heavy (muitos round trips) em worker de vida longa</td><td><strong>WS mode</strong></td><td>HTTP/2 + keep-alive já amortizam TCP/TLS; o ganho real do WS é o <em>request state quente connection-local</em> + envio só dos itens novos</td></tr>
+          <tr><td>Latência agregada em rollouts longos</td><td><strong>WS mode</strong> (a medir)</td><td>"Até ~40%" citado pela OpenAI vale para <strong>20+ tool calls</strong> — dado observado, não limiar; medir p95/p99 no seu workload</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout tip">
+        <strong>Framing recomendado:</strong> HTTP streaming é o <strong>baseline portátil</strong> da camada
+        backend→provider. WebSocket é uma <strong>capability opt-in</strong> quando conexão aquecida, continuação
+        incremental ou bidirecionalidade produz <strong>ganho medido</strong>. Nenhum dos dois fornece durabilidade,
+        idempotência ou execução exactly-once. Os números da tabela são pontos de partida para benchmark local, não
+        regras.
+      </div>
+      <p class="source-link"><strong>Fonte:</strong>
+        <a href="https://developers.openai.com/api/docs/guides/deployment-checklist" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/deployment-checklist</a>
+      </p>
+    </section>
+
+    <!-- ===================== PARTE 2 ===================== -->
+    <section class="chapter" id="parte-camada2">
+      <h2 style="border-bottom:3px solid var(--c-da);padding:14px 0 10px;font-size:28px">Parte 2 — Camada 2: durabilidade e resume</h2>
+      <p>É aqui que o contrato da §1 é cumprido. Tudo desta parte independe do provider e do transporte da camada 1.</p>
+    </section>
+
+    <section id="quatro-pilares">
+      <h2>5. Os quatro pilares (todos necessários)</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>#</th><th>Pilar</th><th>O que garante</th><th>Sem ele</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><strong>Execução desacoplada do socket</strong> — a geração roda como trabalho de backend (worker/fila), nunca dentro do request HTTP do cliente</td><td>Cliente cai → geração continua e segue persistindo</td><td>Fechar a aba mata a geração</td></tr>
+          <tr><td>2</td><td><strong>Event log durável append-only</strong> — cada evento (delta, tool, status) gravado com <code>seq</code> monotônico e <strong>append atômico</strong></td><td>Fonte de verdade replayável</td><td>Gaps, índice órfão, replay impossível (§7)</td></tr>
+          <tr><td>3</td><td><strong>Replay por cursor + tail</strong> — reconexão envia <code>Last-Event-ID</code>; backend reenvia de lá e emenda o ao-vivo <em>sem janela de perda</em></td><td>Resume real no meio do stream</td><td>Poll-on-return (recarrega tudo, sem continuidade)</td></tr>
+          <tr><td>4</td><td><strong>Snapshot + materialização durável</strong> — texto acumulado com <code>snapshot_seq</code> + resultado final em storage durável (TTL do log ≠ retenção do resultado)</td><td>"Voltar no dia seguinte" e carga instantânea</td><td>TTL expira e o resume vira 404</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout danger">
+        <strong>Invariante que amarra os pilares — commit-before-emit:</strong> nenhum evento é enviado ao browser
+        antes de estar <em>commitado</em> no event log. Se o cliente recebeu algo que não foi persistido, a promessa
+        de resume já quebrou (ele viu um delta que o replay não vai reproduzir). Corolários: buffers limitados e
+        backpressure/cancelamento quando o store não progride.
+      </div>
+    </section>
+
+    <section id="entidades-fsm">
+      <h2>6. Modelo de entidades e máquina de estados</h2>
+      <p>
+        Sem um modelo explícito, "resume" vira gambiarra sobre a tabela de mensagens. O modelo mínimo que
+        sustenta o contrato:
+      </p>
+      <pre><code>conversation ── 1:N ── turn (comando do usuário; carrega idempotency_key)
+turn ────────── 1:N ── attempt (tentativa de geração; SÓ UMA ativa por vez)
+attempt ─────── 1:1 ── execution (o trabalho no worker; lease + fencing epoch)
+attempt ─────── 1:N ── subscription (conexões SSE de leitura; cursor É POR CONEXÃO)
+attempt ─────── 1:N ── event (append-only, seq monotônico, terminal_seq no fim)</code></pre>
+      <ul>
+        <li><strong>Estados do attempt:</strong> <code>pending → running → {completed | failed | cancelled | timed_out | incomplete}</code>. Estados terminais são <strong>imutáveis</strong>.</li>
+        <li><strong>Transição terminal com CAS</strong> (compare-and-set por <code>state_version</code>): <code>cancelled</code>, <code>timed_out</code> e <code>completed</code> podem disputar a última escrita — só um vence, os demais falham o CAS e desistem.</li>
+        <li><strong><code>cancel_requested</code> ≠ cancelado:</strong> o pedido de cancelamento é uma flag; o estado <code>cancelled</code> só é gravado quando o executor confirma que parou (tools inclusive). Cancelamento de produto é <strong>end-to-end seu</strong> (UI→backend→executor→provider) — não dependa de evento de cancel do provider.</li>
+        <li><strong>Completion barrier:</strong> o resultado materializado é gravado <em>antes</em> do evento terminal ser emitido. Quem vê <code>completed</code> no stream pode confiar que o GET da mensagem final já responde.</li>
+        <li><strong>Truncamento é <code>incomplete</code>:</strong> se a conexão com o provider caiu no meio e não há como continuar, o attempt fecha como <code>incomplete</code> com o parcial preservado — nunca <code>completed</code>.</li>
+      </ul>
+    </section>
+
+    <section id="event-log">
+      <h2>7. Event log: seq, atomicidade e Redis Streams</h2>
+      <p>
+        O evento normalizado é provider-neutro <em>desde o dia 1</em> (mesmo com um provider só) — senão o
+        frontend fossiliza em eventos idiossincráticos e o replayer vira um "tradutor histórico" impossível quando
+        entrar o segundo provider. Campos comuns + payload específico versionado:
+      </p>
+      <pre><code class="language-json">{
+  "event_id": "evt_01J...",          // id único (dedupe)
+  "attempt_id": "att_01J...",
+  "seq": 142,                         // monotônico POR ATTEMPT — o cursor do replay
+  "type": "answer.delta",             // status.* | reasoning.* | tool.* | answer.* | terminal.*
+  "item_id": "msg_abc",               // correlaciona deltas ao item/mensagem de origem
+  "channel": "answer",                // answer | reasoning | tool | status
+  "delta_index": 17,                  // ordem dentro do item
+  "schema_version": 3,
+  "provider_event_received_at": "2026-07-09T18:22:31.114Z",
+  "committed_at": "2026-07-09T18:22:31.118Z",
+  "payload": { "text": "…" }          // shape específico do provider/versão fica AQUI
+}</code></pre>
+      <h3 id="atomicidade">7.1 Atomicidade — onde o desenho ingênuo quebra</h3>
+      <ul>
+        <li>Append em <strong>múltiplos comandos soltos</strong> (ex.: grava índice, depois o evento) cria: índice apontando para evento inexistente; <code>seq</code> duplicado/fora de ordem com 2+ publishers; <code>completed</code> gravado antes do último delta.</li>
+        <li>Exigências: append <strong>atômico</strong> (Lua/Redis Function ou <code>MULTI/EXEC</code> — <strong>pipeline sozinho NÃO é atômico</strong>), <code>INCR</code> atômico do seq, e <strong>single-writer por attempt com lease + fencing epoch</strong> (§16) validado em cada append.</li>
+        <li><strong>Dedupe no ingresso</strong>, não só no cliente: provider/SDK pode reenviar um delta e cada cópia ganharia um <code>seq</code> novo. Chave de dedupe: id do provider quando existir, senão <code>(attempt, item, tipo, delta_index)</code> + hash do payload.</li>
+      </ul>
+      <h3 id="redis-streams">7.2 Redis Streams é o primitive certo — com limites declarados</h3>
+      <p>
+        <code>XADD</code> dá append atômico com ID monotônico; <code>XRANGE</code>/<code>XREAD</code> dão replay +
+        tail nativos; <code>MAXLEN</code>/<code>MINID</code> dão trimming controlado. É o upgrade natural sobre
+        estruturas HASH+ZSET artesanais. Mas ele <strong>não</strong>: deduplica produtor, atomiza
+        Redis+Postgres numa transação só (use <strong>outbox/projetor</strong> quando houver dois stores), nem
+        impede perda por trimming/failover (declare o RPO). E <strong>consumer groups distribuem trabalho entre
+        workers — não são broadcast para browsers</strong>; para leitores SSE use <code>XREAD</code> simples por
+        conexão, cada um com seu cursor.
+      </p>
+      <pre><code class="language-python"># Append atômico (produtor único por attempt, fencing via epoch)
+# XADD já retorna o ID monotônico — use-o como seq do evento
+event_id = await redis.xadd(
+    f"attempt:{attempt_id}:events",
+    {"json": event_json, "epoch": str(fencing_epoch)},
+    maxlen=50_000, approximate=True,
+)</code></pre>
+    </section>
+
+    <section id="replay-cursor">
+      <h2>8. Replay, tail e o protocolo do cursor</h2>
+      <h3>8.1 Fechando a janela replay→tail</h3>
+      <p>
+        O bug clássico do resume: o backend faz replay do histórico e <em>depois</em> assina o pub/sub — e o evento
+        <code>seq=106</code> gravado entre as duas operações se perde para sempre naquela conexão. Duas soluções
+        corretas:
+      </p>
+      <ul>
+        <li><strong><code>XREAD BLOCK</code> desde o cursor</strong> (Redis Streams): replay e tail são a MESMA
+        operação — leia de <code>last_id</code> em diante; quando o histórico acaba, a leitura bloqueia esperando o
+        próximo <code>XADD</code>. Não há janela.</li>
+        <li><strong>Subscribe-before-replay</strong> (se pub/sub separado): assine o live primeiro, bufferize,
+        faça o replay até o high-watermark e então drene o buffer com dedupe por <code>seq</code>.</li>
+      </ul>
+      <pre><code class="language-python"># FastAPI — endpoint SSE com replay + tail SEM janela (Redis Streams)
+@router.get("/attempts/{attempt_id}/stream")
+async def stream(attempt_id: str, request: Request):
+    cursor = request.headers.get("Last-Event-ID") or "0-0"
+    # autorização REAL aqui: o cursor não é credencial (§17)
+    async def gen():
+        cur = cursor
+        while True:
+            batch = await redis.xread({f"attempt:{attempt_id}:events": cur},
+                                      block=15_000, count=128)
+            if not batch:
+                yield ": keepalive\n\n"            # heartbeat p/ proxies
+                continue
+            for _, entries in batch:
+                for entry_id, fields in entries:
+                    cur = entry_id
+                    yield f"id: {entry_id}\nevent: message\ndata: {fields['json']}\n\n"
+                    if is_terminal(fields):        # terminal_seq encerra o stream
+                        return
+    return StreamingResponse(gen(), media_type="text/event-stream",
+        headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})</code></pre>
+      <h3>8.2 Protocolo do cursor (o que o backend responde)</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Cursor recebido</th><th>Resposta</th></tr></thead>
+        <tbody>
+          <tr><td>Válido e dentro do log</td><td>Replay de <code>&gt; cursor</code> + tail</td></tr>
+          <tr><td>Anterior ao trimming/TTL (expirado)</td><td><code>410 Gone</code> → cliente descarta estado, pega o <strong>snapshot</strong> (com <code>snapshot_seq</code>) e reconecta com <code>Last-Event-ID = snapshot_seq</code></td></tr>
+          <tr><td>Futuro/impossível (bug ou attempt trocado)</td><td><code>409 Conflict</code> → reset igual ao 410</td></tr>
+          <tr><td>Sem cursor (primeira conexão)</td><td>Snapshot + tail de <code>&gt; snapshot_seq</code></td></tr>
+        </tbody>
+      </table></div>
+      <ul>
+        <li><strong>Semântica de entrega é at-least-once:</strong> o cliente salva o cursor <em>só depois</em> de aplicar o evento, e o reducer é idempotente por <code>seq</code> (reaplicar o mesmo evento é no-op).</li>
+        <li><strong>Snapshot com watermark:</strong> todo snapshot carrega <code>snapshot_seq</code>, <code>attempt_id</code> e <code>reducer_version</code> — sem isso não há como saber onde o tail começa. Tail começa estritamente em <code>&gt; snapshot_seq</code>.</li>
+        <li><strong>Cursor é por conexão, não por conversa:</strong> duas abas abertas têm cursores independentes. Nunca guarde "último seq entregue" global server-side — isso fura um dos clientes.</li>
+        <li><strong>TTL:</strong> estenda o TTL do log ao completar e <strong>materialize</strong> o resultado final em storage durável — o contrato "voltar no dia seguinte" não pode depender do TTL do log de deltas.</li>
+      </ul>
+    </section>
+
+    <section id="timestamps">
+      <h2>9. Timestamps — "primeiro token real" são DOIS carimbos</h2>
+      <p>
+        Com modelos reasoning-first, o primeiro evento visível costuma ser um resumo de raciocínio ou o início de
+        um tool — <em>não</em> o texto da resposta. Um único timestamp mistura dois conceitos:
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Carimbo</th><th>O que marca</th><th>Uso</th></tr></thead>
+        <tbody>
+          <tr><td><code>first_presentable_event_committed_at</code></td><td>1º evento apresentável commitado (reasoning summary, tool start…)</td><td>"O agente começou a trabalhar às…" · TTFB percebido</td></tr>
+          <tr><td><code>first_answer_text_delta_at</code></td><td>1º delta do <strong>texto final</strong> (answer channel)</td><td><strong>"Respondido às…"</strong> — o carimbo do contrato da §1</td></tr>
+          <tr><td><code>provider_event_received_at</code> / <code>committed_at</code></td><td>Recebido do provider vs commitado no log (por evento)</td><td>Latência interna, debugging de replay</td></tr>
+          <tr><td><code>first_rendered_at</code> (telemetria do cliente)</td><td>1º render REAL na tela</td><td>Métricas de UX (um evento persistido sem cliente conectado não foi "visto")</td></tr>
+        </tbody>
+      </table></div>
+      <ul>
+        <li><strong>Autoridade do carimbo: o backend, no momento do commit</strong> (quando o evento recebe <code>seq</code>). Nunca o clock do frontend; nunca o <code>response.created</code> do provider (é ACK — mediria latência falsamente baixa). Derive os agregados como <code>min(committed_at)</code> filtrado por tipo. UTC para instantes; clock monotônico para durações.</li>
+        <li><strong>Classificar "answer" na OpenAI (semântica correta):</strong> <code>phase</code> (<code>commentary</code>/<code>final_answer</code>) rotula <strong>mensagens do assistente</strong> — não vem nos eventos de delta. <code>response.output_text.delta</code> traz <code>item_id</code> + índices; o normalizador <strong>correlaciona <code>item_id</code> → mensagem dona</strong> para saber a phase. Um delta de texto pode ser <code>commentary</code> (preâmbulo de tool). E no replay manual de histórico (envelope local), <strong>preserve o <code>phase</code> original de cada mensagem</strong> — a doc oficial avisa que perder o <code>phase</code> faz preâmbulo virar "resposta final" e induz early-stopping.</li>
+      </ul>
+      <p class="source-link"><strong>Fonte:</strong>
+        <a href="https://developers.openai.com/api/docs/guides/reasoning" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/reasoning</a> (seção <code>phase</code>)
+      </p>
+    </section>
+
+    <section id="idempotencia-ledger">
+      <h2>10. Idempotência, retry e tool ledger</h2>
+      <ul>
+        <li><strong>Idempotency key no comando que cria o turno:</strong> o POST inicial pode sofrer timeout com o turno já criado — sem a key, o retry do cliente cria um turno duplicado (e paga duas gerações).</li>
+        <li><strong>Fencing por attempt:</strong> um attempt ativo por conversa; criar o segundo exige finalizar o primeiro (CAS).</li>
+        <li><strong>Critério de retry silencioso — as TRÊS condições:</strong> (a) <strong>zero side-effects</strong> (nenhum tool com efeito externo executado ou em estado ambíguo), (b) <strong>zero conteúdo user-visible</strong> (inclui reasoning summary, se exibido), (c) <strong>zero tool call disparado</strong>. Um tool call pode ocorrer <em>antes</em> do primeiro delta de texto — o critério ingênuo "zero deltas visíveis" reexecutaria o tool e duplicaria o side-effect.</li>
+        <li><strong>Se qualquer condição falhou:</strong> finalize o attempt como <code>failed</code>/<code>incomplete</code> com o parcial preservado e crie <strong>nova tentativa explícita</strong> (nova bolha, <code>retry_of</code> apontando para a anterior) — não uma "continuação" invisível.</li>
+      </ul>
+      <h3>10.1 Tool ledger — o caso <code>outcome_unknown</code></h3>
+      <p>
+        Todo tool com side-effect externo passa por um ledger por invocação:
+        <code>prepared → running → {succeeded | failed | outcome_unknown}</code>. O estado que separa produção
+        de protótipo é o <strong><code>outcome_unknown</code></strong>: o efeito externo <em>pode</em> ter ocorrido
+        e o ACK se perdeu (timeout, crash entre o side-effect e a persistência). Nunca re-execute um
+        <code>outcome_unknown</code> automaticamente — reconcilie (consulte o sistema alvo) ou compense, e use
+        idempotency key <em>na própria chamada externa</em> sempre que o alvo suportar.
+      </p>
+    </section>
+
+    <section id="edge-cases">
+      <h2>11. Edge cases que quebram o replay ingênuo</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>#</th><th>Edge case</th><th>Correção</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><strong>UTF-8/grapheme:</strong> fatiar "500 chars" por byte offset corta surrogate pair/combining mark → <code>�</code></td><td>Resume é pelo <strong>event log</strong>, nunca por offset de bytes; preview fatiado por <em>grapheme</em> no cliente (<code>Intl.Segmenter</code>) ou snapshot já segmentado</td></tr>
+          <tr><td>2</td><td><strong>Tool-call em deltas de JSON:</strong> reconectar no meio exige TODOS os deltas do mesmo <code>tool_call_id</code> para o JSON fechar</td><td>Snapshot dos args acumulados por tool antes do tail, ou replay desde o início do item</td></tr>
+          <tr><td>3</td><td><strong>Interleaving reasoning↔answer:</strong> fases não são blocos rígidos</td><td>Cada delta carrega <code>(item_id, channel, delta_index)</code>; o reducer reaplica <strong>por item</strong></td></tr>
+          <tr><td>4</td><td><strong>Gaps/out-of-order no seq</strong> (100, 101, 103…)</td><td>Append atômico + single-writer com fencing (§7); cliente trata gap como reset (§8.2)</td></tr>
+          <tr><td>5</td><td><strong>Duplicatas na reconexão</strong></td><td>Reducer idempotente por <code>seq</code> no cliente + dedupe no ingresso no backend</td></tr>
+          <tr><td>6</td><td><strong>TTL expira no meio</strong></td><td><code>410 Gone</code> + snapshot/reset; materialização durável do final; TTL estendido ao completar</td></tr>
+          <tr><td>7</td><td><strong>Schema de ontem ≠ parser de hoje</strong></td><td><code>schema_version</code> por evento + <em>upcasters</em>; versione também o reducer/snapshot (<code>reducer_version</code>)</td></tr>
+          <tr><td>8</td><td><strong>Duas abas/dispositivos simultâneos</strong></td><td>Cursor por conexão (§8.2); ambos os leitores são independentes</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <!-- ===================== PARTE 3 ===================== -->
+    <section class="chapter" id="parte-camada1">
+      <h2 style="border-bottom:3px solid var(--c-da);padding:14px 0 10px;font-size:28px">Parte 3 — Camada 1: transporte com o provider</h2>
+    </section>
+
+    <section id="openai-transporte">
+      <h2>12. OpenAI Responses — SSE, WS mode, background e compaction</h2>
+      <p>
+        A superfície detalhada (frames, erros, exemplos) é do
+        <a href="guia_openai_modelos.html#s-streaming-websocket">guia OpenAI §12.2</a>. O que importa para a
+        arquitetura de durabilidade:
+      </p>
+      <ul>
+        <li><strong>SSE (<code>stream:true</code>)</strong> é o caminho default. Eventos tipados (<code>response.output_text.delta</code>, tool events, <code>response.completed</code>) — normalize e persista cada um com <code>seq</code> próprio.</li>
+        <li><strong>WS mode</strong> (<code>wss://api.openai.com/v1/responses</code>): público, sem rótulo beta. Compatível com <code>store=false</code>/ZDR — o cache do último response é in-memory da conexão. Sem multiplexação (1 response em voo por conexão; use pool para paralelismo). Limite de <strong>60 min/conexão</strong>. Continuação entre turnos: novo <code>response.create</code> com <strong>itens novos completos</strong> + <code>previous_response_id</code>. <strong>Reconexão = novo socket + nova cadeia</strong> sob <code>store=false</code> (<code>prev_id=null</code> + contexto completo, ou a janela compactada do <code>/responses/compact</code>). Erros a tratar: <code>previous_response_not_found</code>, <code>websocket_connection_limit_reached</code>. Não há evento de cancel — cancelar = fechar o socket (e o SEU cancelamento end-to-end cuida do resto). <span class="pill ok">Verificado</span></li>
+          <li><strong>Requisito de SDK:</strong> o WS mode <strong>não exige versão específica</strong> — o exemplo oficial usa <code>websocket-client</code> puro e o helper <code>responses.connect()</code> existe no SDK Python desde antes da série 2.45 (2.45.x é sobre os types do GPT-5.6, não sobre o transporte). <span class="pill ok">Verificado</span></li>
+        <li><strong>Background mode</strong> (<code>background:true</code> + <code>stream:true</code>): resumível por <code>starting_after=&lt;sequence_number&gt;</code>, mas <strong>exige <code>store=true</code></strong> (retém ~10 min; <strong>não-ZDR</strong>). Sob ZDR/<code>store=false</code>, a durabilidade vem do SEU event store — cuidado com o "compliance drift" de alguém ligar background "porque resolve resume". <span class="pill ok">Verificado</span></li>
+        <li><strong>Compaction — dois mecanismos</strong>, ambos ZDR-friendly: o endpoint standalone <code>/responses/compact</code> (stateless) e <code>context_management.compact_threshold</code> dentro do <code>/responses</code>. Use a janela compactada como base do input após reset de cadeia no WS. Deep dive: <a href="guia_contexto_compactacao_estrategias.html">guia de Compactação</a>.</li>
+      </ul>
+      <div class="callout warn">
+        <strong>WebSocket Mode não fornece resume de UX.</strong> Ele otimiza a conversa backend↔OpenAI dentro de
+        uma conexão. O usuário que fechou a aba é atendido pela camada 2 (§5–§11) — com WS ou sem WS.
+      </div>
+      <p class="source-link"><strong>Fontes:</strong>
+        <a href="https://developers.openai.com/api/docs/guides/websocket-mode" target="_blank" rel="noopener">websocket-mode</a> ·
+        <a href="https://developers.openai.com/api/docs/guides/background" target="_blank" rel="noopener">background</a> ·
+        <a href="https://developers.openai.com/api/docs/guides/compaction" target="_blank" rel="noopener">compaction</a> ·
+        <a href="https://developers.openai.com/api/docs/guides/your-data" target="_blank" rel="noopener">your-data (ZDR)</a>
+      </p>
+    </section>
+
+    <section id="anthropic-gemini">
+      <h2>13. Anthropic &amp; Gemini — SSE-only no texto</h2>
+      <ul>
+        <li><strong>Anthropic Messages:</strong> SSE puro, sem WebSocket, sem estado server-side — o cliente reenvia o histórico completo a cada turno (o que casa naturalmente com envelope local). Eventos: <code>message_start</code>, <code>content_block_start/delta/stop</code>, <code>message_delta</code>, <code>message_stop</code>, <code>ping</code>, <code>error</code>. Deltas de tool input chegam como <code>input_json_delta</code> (JSON parcial — edge case §11.2).</li>
+        <li><strong>Gemini <code>generateContent</code>:</strong> HTTP + SSE (<code>?alt=sse</code>), sem estado server-side. É o caminho de produção para chat de texto.</li>
+        <li><strong>Gemini Live:</strong> WebSocket bidirecional com session resumption (handle ~2h) e <code>GoAway</code> — aceita texto, áudio e vídeo, mas é <span class="pill beta">Preview</span>, orientado a realtime/native-audio. Não é o substituto do <code>generateContent</code> para chat textual, e não entra na cadeia de fallback de texto.</li>
+      </ul>
+      <div class="callout info">
+        <strong>Consequência arquitetural:</strong> como o fallback de texto é SSE/HTTP em todos os providers, o
+        seu <em>TransportSelector</em> (§14) tem exatamente um transporte especial (OpenAI WS) e um baseline
+        universal (HTTP/SSE). Isso é um argumento a favor de construir o baseline primeiro e plugar o WS depois.
+      </div>
+      <p class="source-link"><strong>Fontes:</strong>
+        <a href="https://platform.claude.com/docs/en/build-with-claude/streaming" target="_blank" rel="noopener">Anthropic streaming</a> ·
+        <a href="https://ai.google.dev/gemini-api/docs/text-generation" target="_blank" rel="noopener">Gemini text-generation</a> ·
+        <a href="https://ai.google.dev/api/live" target="_blank" rel="noopener">Gemini Live</a>
+      </p>
+    </section>
+
+    <section id="failover">
+      <h2>14. Failover cross-provider = nova tentativa</h2>
+      <ul>
+        <li><strong>Separe dois papéis que costumam ser misturados:</strong> o <code>TransportSelector</code> escolhe COMO falar com o MESMO provider (WS→SSE dentro da OpenAI: decisão de transporte, invisível ao produto). O <code>ProviderRouter</code> troca DE provider (OpenAI→Anthropic: mudança de semântica, compliance e <em>tentativa</em>). Interfaces distintas, políticas distintas.</li>
+        <li><strong>Reasoning não é portável:</strong> blobs de raciocínio (ex.: <code>reasoning.encrypted_content</code>) são do provider de origem. No failover, descarte-os; texto e resultados de tools <em>confirmados</em> atravessam.</li>
+        <li><strong>Failover mid-flight nunca é continuidade invisível:</strong> mesmo com o mesmo texto+tools, o novo modelo responde diferente. Feche o attempt como <code>incomplete</code>, preserve o parcial e abra <strong>nova tentativa marcada</strong> (<code>retry_of</code>/<code>supersedes</code>) — o usuário vê uma nova bolha, não um Frankenstein "texto A + continuação B".</li>
+        <li><strong>Input do failover:</strong> o input imutável da tentativa original (envelope local) + tool results <em>confirmados no ledger</em> — nunca tools em <code>outcome_unknown</code>.</li>
+        <li><strong>Capability/compliance matrix</strong> por provider (o que suporta <code>store=false</code>, quais tools built-in existem, limites) mora no <a href="guia_providers_adapters.html">guia Providers &amp; Adapters</a> — o router lê essa matriz para decidir se o failover é elegível.</li>
+      </ul>
+    </section>
+
+    <!-- ===================== PARTE 4 ===================== -->
+    <section class="chapter" id="parte-frontend">
+      <h2 style="border-bottom:3px solid var(--c-da);padding:14px 0 10px;font-size:28px">Parte 4 — Frontend</h2>
+    </section>
+
+    <section id="frontend">
+      <h2>15. EventSource vs fetch-stream, reconexão e render</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th></th><th><code>EventSource</code></th><th><code>fetch</code> + ReadableStream</th></tr></thead>
+        <tbody>
+          <tr><td>Método/corpo</td><td>Só GET, sem body</td><td>Qualquer método, com body (POST do prompt no mesmo request)</td></tr>
+          <tr><td>Headers/auth</td><td>Sem headers custom (cookie/URL apenas)</td><td>Headers livres (<code>Authorization</code>, etc.)</td></tr>
+          <tr><td><code>Last-Event-ID</code></td><td><strong>Automático</strong> na reconexão</td><td>Manual — você guarda o cursor e envia no header</td></tr>
+          <tr><td>Reconexão</td><td>Automática (com <code>retry:</code>)</td><td>Manual — backoff exponencial + jitter por sua conta</td></tr>
+          <tr><td>Cancelamento</td><td><code>close()</code></td><td><code>AbortController</code> (cancela o request de verdade)</td></tr>
+          <tr><td>Parser SSE</td><td>Nativo</td><td>Seu — e precisa estar correto (abaixo)</td></tr>
+        </tbody>
+      </table></div>
+      <ul>
+        <li><strong>Parser SSE correto</strong> (se for <code>fetch</code>): chunks chegam em fronteiras arbitrárias — bufferize até <code>\n\n</code>; decodifique com <code>TextDecoder(..., {stream:true})</code> (UTF-8 incremental — nunca decodifique chunk isolado); suporte múltiplas linhas <code>data:</code> por evento; trate <code>id:</code>, <code>event:</code> e os keepalives <code>:</code>.</li>
+        <li><strong>Ciclo do cursor:</strong> aplica evento → salva cursor (nessa ordem: at-least-once, §8.2). Reconexão em <code>visibilitychange</code>/<code>online</code>/erro com backoff + jitter.</li>
+        <li><strong>Preview por grapheme:</strong> qualquer corte de texto para exibição usa <code>Intl.Segmenter</code> — nunca <code>slice()</code> de bytes/UTF-16 no meio de emoji/acento.</li>
+      </ul>
+      <pre><code class="language-ts">// Reducer idempotente + cursor pós-aplicação (esqueleto)
+const state = { cursor: localStorage.getItem(k) ?? "0-0", items: new Map() };
+function apply(ev: NormalizedEvent) {
+  if (ev.seq <= state.lastSeqApplied?.get(ev.item_id + ev.channel)) return; // no-op em duplicata
+  reduce(state, ev);                       // por (item_id, channel, delta_index)
+  state.cursor = ev.seq_id;                // só DEPOIS de aplicar
+  localStorage.setItem(k, state.cursor);
+}</code></pre>
+    </section>
+
+    <!-- ===================== PARTE 5 ===================== -->
+    <section class="chapter" id="parte-operacao">
+      <h2 style="border-bottom:3px solid var(--c-da);padding:14px 0 10px;font-size:28px">Parte 5 — Operação</h2>
+    </section>
+
+    <section id="executor-duravel">
+      <h2>16. Executor durável — sobreviver a crash e deploy</h2>
+      <p>
+        Uma task assíncrona em memória (asyncio/goroutine) desacopla a geração do socket do cliente — resolve o
+        "fechei a aba". Mas ela <strong>morre com o processo</strong>: crash, OOM, deploy/rollout. Para o contrato
+        completo, a execução precisa ser <em>retomável por outro worker</em>:
+      </p>
+      <ul>
+        <li><strong>Enqueue transacional:</strong> criar o attempt e enfileirar o job na mesma transação (outbox se fila externa).</li>
+        <li><strong>Lease + heartbeat:</strong> o worker renova a lease do attempt; lease expirada = attempt órfão.</li>
+        <li><strong>Fencing epoch monotônico:</strong> a cada takeover, o epoch incrementa; TODO append/tool-claim/transição terminal valida o epoch — o worker-zumbi da lease anterior escreve e falha (attempt_id sozinho não o barra).</li>
+        <li><strong>Recovery scan / orphan reaper:</strong> processo que encontra attempts órfãos e decide: retomar (se o modelo de execução permitir re-drive), ou fechar como <code>incomplete</code> com o parcial (mais comum com LLM streaming, já que o stream do provider morreu com o worker).</li>
+        <li><strong>Quando usar um engine pronto:</strong> <em>Temporal/DBOS</em> valem quando há tools com side-effects reais, retries idempotentes e fluxos longos que DEVEM sobreviver a deploy. Para chat sem side-effects críticos, fila + leases + fencing caseiros bastam. Deep dive de engines: <a href="guia_arquitetura_orquestracao.html">guia Arquitetura &amp; Orquestração</a>.</li>
+      </ul>
+    </section>
+
+    <section id="seguranca">
+      <h2>17. Segurança &amp; privacidade</h2>
+      <ul>
+        <li><strong>Cursor não é autorização.</strong> Cada subscribe/replay/cancel revalida: o attempt pertence ao usuário/tenant? (BOLA/IDOR clássico em endpoints de stream, que costumam escapar do middleware padrão.)</li>
+        <li><strong>Isolamento de tenant</strong> nas chaves do event store (prefixo/tenant) e nos canais.</li>
+        <li><strong>O event store local NÃO é "ZDR".</strong> <code>store=false</code> no provider tira a retenção DE LÁ; o seu Redis/Postgres agora retém deltas, tool args e reasoning summaries — que podem conter PHI/segredos. Política própria: redaction no ingresso, criptografia, TTLs separados (log de deltas ≠ resultado materializado), erasure a pedido. Ver <a href="guia_file_inputs_no_storage.html">File Inputs sem Provider Storage</a> e <a href="guia_operacao_seguranca_evals.html">Operação, Segurança &amp; Evals</a>.</li>
+        <li><strong>Rate limit de reconexão</strong> (um cliente em loop de reconnect é um DoS barato) + limite de replay por request (paginação).</li>
+        <li><strong>Backpressure:</strong> coalescing de deltas (agregue deltas minúsculos antes de emitir), buffers limitados por conexão, quotas por attempt (eventos/bytes/tokens/custo).</li>
+      </ul>
+    </section>
+
+    <section id="observabilidade">
+      <h2>18. Observabilidade &amp; SLOs</h2>
+      <ul>
+        <li><strong>Latência por fase:</strong> TTFT dos dois carimbos (§9), persist latency (<code>provider_event_received_at</code> → <code>committed_at</code>), replay lag na reconexão.</li>
+        <li><strong>Saúde do log:</strong> gaps de seq detectados, taxa de dedupe no ingresso, attempts órfãos, tools em <code>outcome_unknown</code>, taxa de <code>410 Gone</code> (cursores expirados = TTL curto demais).</li>
+        <li><strong>Property tests que valem ouro:</strong> (1) <em>replay == live view</em> — reconstruir do log dá exatamente o que o cliente ao vivo viu; (2) terminal único e imutável; (3) writer com epoch obsoleto é rejeitado; (4) reconexão em ponto arbitrário nunca perde nem duplica evento.</li>
+        <li><strong>Benchmark HTTP vs WS honesto:</strong> conexão fria vs quente, RTT, concorrência, bytes reenviados por turno, custo de FDs/memória — antes de adotar o WS mode por causa do "até ~40%".</li>
+      </ul>
+    </section>
+
+    <section id="alternativas-sota">
+      <h2>19. Alternativas SOTA — quando cada uma é melhor</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Padrão</th><th>Quando é MELHOR</th><th>Trade-off / limite</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Redis Streams</strong> (XADD/XREAD)</td><td>O primitive certo para o event log da camada 2: append atômico, IDs monotônicos, replay+tail nativos (<code>XREAD BLOCK</code> fecha a janela §8.1), trimming controlado</td><td>Não deduplica produtor; não atomiza Redis+SQL (outbox); trimming/failover = declarar RPO; consumer groups ≠ broadcast</td></tr>
+          <tr><td><strong>Temporal / DBOS</strong> (durable execution)</td><td>Execução que DEVE sobreviver a crash/deploy; tools com side-effects e retry idempotente; cancel/pause robustos</td><td>Peso operacional; overkill para chat curto sem side-effects. Não substitui o SSE da camada 2</td></tr>
+          <tr><td><strong>LangGraph checkpointer</strong></td><td>Retomar o ESTADO do agente (grafo, memória, tool state) entre turnos/crashes</td><td>Checkpointa execução — não entrega stream resumível ao browser; complementa, não substitui</td></tr>
+          <tr><td><strong>Vercel AI SDK resumable streams</strong></td><td>Stack Next.js/Edge — resume de UX "80% pronto" no ecossistema</td><td>Fora de Next/Edge vira reimplementação; use como referência conceitual</td></tr>
+          <tr><td><strong>WebTransport / HTTP3</strong></td><td>Altíssima interatividade, multiplex real, cliente custom</td><td>Troca o cano, <strong>não cria durabilidade</strong>; suporte/infra ainda irregulares — SSE/HTTP2 segue o confiável para texto</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="maturidade">
+      <h2>20. Padrões de maturidade M0–M3 (avalie o seu sistema)</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Nível</th><th>Comportamento ao fechar/voltar</th><th>Componentes presentes</th><th>Gap para subir</th></tr></thead>
+        <tbody>
+          <tr><td><strong>M0 — stream preso ao request</strong></td><td>Fechar a aba mata a geração; parcial se perde</td><td>SSE direto do handler do request</td><td>Desacoplar a execução do socket; persistir parcial no erro</td></tr>
+          <tr><td><strong>M1 — poll-on-return</strong></td><td>Geração continua; ao voltar, o cliente faz poll do status ("gerando…") e recarrega o histórico no fim — sem deltas ao vivo na volta</td><td>Execução desacoplada + status/heartbeat no banco + parcial persistido</td><td>Event log com <code>seq</code> + replay por cursor (vira M2)</td></tr>
+          <tr><td><strong>M2 — resume real</strong></td><td>Ao voltar: replay instantâneo do que perdeu + tail ao vivo do restante — o contrato da §1 completo</td><td>M1 + event store atômico + <code>Last-Event-ID</code> + snapshot + dois timestamps</td><td>Executor durável + tool ledger + fencing (vira M3)</td></tr>
+          <tr><td><strong>M3 — durável completo</strong></td><td>M2 + a geração sobrevive a crash/deploy do backend; side-effects nunca duplicam</td><td>M2 + fila/lease/fencing epoch + tool ledger com <code>outcome_unknown</code> + outbox + property tests</td><td>—</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout tip">
+        <strong>Caminho recomendado:</strong> M0→M1 é um dia de trabalho e elimina a pior falha (perder a geração).
+        M1→M2 é o salto de UX (o que ChatGPT/Claude fazem). M2→M3 é disciplina de produção — priorize quando houver
+        tools com side-effects reais ou SLA. Não pule direto para engines pesados sem medir onde você está.
+      </div>
+    </section>
+
+    <section id="checklist">
+      <h2>21. Checklist final</h2>
+      <ul>
+        <li>[ ] Execução desacoplada do socket (fechar a aba não mata a geração)</li>
+        <li>[ ] Evento normalizado provider-neutro com <code>schema_version</code> (payload cru vai dentro, versionado)</li>
+        <li>[ ] Append atômico (Lua/<code>MULTI</code>/XADD) + seq monotônico + dedupe no ingresso</li>
+        <li>[ ] Commit-before-emit (nada chega ao browser sem estar no log)</li>
+        <li>[ ] Replay+tail sem janela (<code>XREAD BLOCK</code> ou subscribe-before-replay)</li>
+        <li>[ ] Protocolo de cursor: 410/409 + snapshot com <code>snapshot_seq</code>; cursor por conexão</li>
+        <li>[ ] Reducer idempotente; cursor salvo após aplicar (at-least-once)</li>
+        <li>[ ] Dois timestamps carimbados no commit (apresentável vs primeiro delta de answer)</li>
+        <li>[ ] <code>phase</code> correlacionado por <code>item_id</code>; <code>phase</code> preservado no replay manual de histórico</li>
+        <li>[ ] Idempotency key no turno; retry silencioso só com zero side-effect/visível/tool</li>
+        <li>[ ] Tool ledger com <code>outcome_unknown</code> (nunca re-executar automaticamente)</li>
+        <li>[ ] FSM com terminais imutáveis (CAS), <code>cancel_requested</code> ≠ <code>cancelled</code>, completion barrier, truncamento = <code>incomplete</code></li>
+        <li>[ ] Failover = nova tentativa marcada; reasoning descartado; só tools confirmados atravessam</li>
+        <li>[ ] TransportSelector ≠ ProviderRouter; WS mode como capability opt-in com ganho medido</li>
+        <li>[ ] Autorização em subscribe/replay/cancel (cursor não é credencial); tenant isolado; redaction/TTLs no event store local</li>
+        <li>[ ] Executor com lease+fencing epoch e orphan reaper (M3) quando houver side-effects/SLA</li>
+        <li>[ ] Property test: replay == live view</li>
+      </ul>
+    </section>
+
+    <!-- ===================== REFERÊNCIA ===================== -->
+    <section class="ref" id="cheatsheet">
+      <h2>Cheat sheet</h2>
+      <ul>
+        <li><strong>Resume do usuário = camada 2.</strong> WS com o provider não participa dessa conta.</li>
+        <li><strong>HTTP/SSE = baseline portátil; WS mode = capability opt-in com ganho medido</strong> ("até ~40%" oficial vale para 20+ tool calls).</li>
+        <li><strong>WS + <code>store=false</code>:</strong> reconectar = novo socket + reenviar contexto (o cache era da conexão).</li>
+        <li><strong>Background mode:</strong> resume nativo, mas <code>store=true</code> (não-ZDR, ~10 min) — sob ZDR a durabilidade é SUA.</li>
+        <li><strong>"Primeiro token real" = <code>first_answer_text_delta_at</code></strong>, carimbado no commit do backend; <code>phase</code> vem da mensagem (via <code>item_id</code>), não do delta.</li>
+        <li><strong>Replay seguro:</strong> XREAD BLOCK desde o cursor; 410 → snapshot(<code>snapshot_seq</code>)+tail; reducer idempotente; cursor por conexão.</li>
+        <li><strong>Retry silencioso só com:</strong> zero side-effect + zero user-visible + zero tool call. Senão: <code>incomplete</code> + nova tentativa explícita.</li>
+        <li><strong>Failover cross-provider:</strong> nova bolha (<code>retry_of</code>), descarta reasoning, leva texto + tools confirmados.</li>
+      </ul>
+    </section>
+
+    <section class="ref" id="verificacao">
+      <h2>Notas de verificação</h2>
+      <ul>
+        <li><span class="pill ok">Verificado</span> <strong>WS mode: reconexão e recuperação.</strong> A doc oficial (websocket-mode, seção <em>Reconnect and recover</em>) confirma: após queda ou limite de 60 min, abre-se novo socket; com <code>store=true</code> continua-se por <code>previous_response_id</code>; com <code>store=false</code>/ZDR inicia-se nova resposta com <code>previous_response_id=null</code> e contexto completo (ou janela do <code>/responses/compact</code>). Conferido em 2026-07-09.</li>
+        <li><span class="pill ok">Verificado</span> <strong>Semântica de <code>phase</code>.</strong> A doc oficial (reasoning, seção <em>phase parameter</em>) confirma: <code>phase</code> é campo de <strong>mensagens do assistente</strong> (<code>commentary</code>/<code>final_answer</code>), recomendado para evitar early-stopping; ao replay manual de histórico deve-se preservar o valor original. Não existe <code>phase</code> no evento de delta — a correlação é por <code>item_id</code>. Conferido em 2026-07-09.</li>
+        <li><span class="pill ok">Verificado</span> <strong>WS mode não exige SDK específico.</strong> O exemplo oficial usa <code>websocket-client</code> diretamente; <code>responses.connect()</code> existe no SDK Python antes da série 2.45 (verificado no código-fonte do SDK). Conferido em 2026-07-09.</li>
+        <li><span class="pill ok">Verificado</span> <strong>Background mode.</strong> Requer <code>background:true</code> (+ <code>stream:true</code> para streaming), retomada por <code>starting_after=&lt;sequence_number&gt;</code>, exige estado armazenado (~10 min de retenção; incompatível com ZDR). Helper de retomada no SDK anotado como "coming soon" na doc. Conferido em 2026-07-09.</li>
+        <li><span class="pill ok">Verificado</span> <strong>"Até ~40% em 20+ tool calls"</strong> é o enunciado oficial de desempenho do WS mode — é dado observado, não limiar de break-even; este guia não converte isso em regra.</li>
+        <li><span class="pill partial">UNVERIFIED (menor)</span> <strong>Gemini Live com texto em produção de chat:</strong> o protocolo aceita texto (referência oficial da Live API), mas o posicionamento continua realtime/native-audio em Preview; este guia o mantém fora da cadeia de fallback de texto por posicionamento, não por incapacidade técnica.</li>
+        <li><span class="pill beta">Método</span> <strong>Três rodadas adversariais (2026-07-09):</strong> o desenho da camada 2 foi desafiado por dois modelos frontier externos em rodadas independentes; as objeções que sobreviveram à reconciliação com a doc oficial estão incorporadas (janela replay→tail, fencing epoch, tool ledger/<code>outcome_unknown</code>, commit-before-emit, dedupe no ingresso, dois timestamps, cursor por conexão, snapshot com watermark, limites do Redis Streams, separação TransportSelector/ProviderRouter).</li>
+      </ul>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site">
+  <div style="max-width:1440px;margin:0 auto;padding:0 24px;display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;justify-content:space-between;">
+    <div style="max-width:540px">
+      <div class="brand" style="font-size:15px">Streaming Durável &amp; Resumível <small>arquitetura transversal · super-guia de agentes</small></div>
+      <p style="margin:8px 0 0;color:var(--c-fg-muted);font-size:13.5px;line-height:1.55">
+        Referência técnica construída a partir da documentação oficial pública em <strong>2026-07-09</strong>.
+        Resume do usuário na camada 2; transporte com o provider como decisão independente e medida. Para
+        informação sempre atualizada, consulte as <a href="#fontes-oficiais">fontes oficiais</a>.
+      </p>
+    </div>
+    <div style="font-size:13.5px;color:var(--c-fg-muted);line-height:1.7">
+      <div><strong>Crédito de produção</strong></div>
+      <div>Pesquisa multi-agente + <strong>3 rodadas adversariais</strong> (frontier externos, fontes oficiais)</div>
+      <div>montagem e reconciliação pelo orquestrador <strong>Fable 5 / Opus 4.8</strong> · 2026-07-09</div>
+      <div style="margin-top:6px">
+        <span class="badge da">Arquitetura · v1</span>
+        <span class="badge ok">Resume = camada 2</span>
+      </div>
+    </div>
+    <div style="font-size:12.5px;color:var(--c-fg-soft)">
+      <div><strong>Navegação rápida</strong></div>
+      <div><a href="#duas-camadas">Duas camadas</a> · <a href="#replay-cursor">Replay &amp; cursor</a> · <a href="#maturidade">Maturidade M0–M3</a></div>
+      <div><a href="#cheatsheet">Cheat sheet</a> · <a href="#verificacao">Verificação</a></div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  /* Toggle de tema com persistência em localStorage (chave compartilhada do super-guia). */
+  (function(){
+    var KEY = 'super-guia-theme';
+    var btn = document.getElementById('theme-toggle');
+    var pref = localStorage.getItem(KEY);
+    if (pref) document.documentElement.setAttribute('data-theme', pref);
+    if (btn) btn.addEventListener('click', function(){
+      var cur = document.documentElement.getAttribute('data-theme') || 'light';
+      var nxt = cur === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', nxt);
+      localStorage.setItem(KEY, nxt);
+    });
+  })();
+  /* Scroll-spy: destaca no TOC a seção visível. */
+  (function(){
+    var links = document.querySelectorAll('nav.toc a[href^="#"]');
+    var map = {};
+    links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        var id = e.target.id; if (!map[id]) return;
+        if (e.isIntersecting) {
+          links.forEach(function(l){ l.classList.remove('active'); });
+          map[id].classList.add('active');
+        }
+      });
+    }, { rootMargin: '-40% 0% -55% 0%', threshold: 0 });
+    Object.keys(map).forEach(function(id){ var el = document.getElementById(id); if (el) io.observe(el); });
+  })();
+</script>
+</body>
+</html>

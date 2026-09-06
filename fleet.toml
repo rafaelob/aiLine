@@ -1,0 +1,11 @@
+version = 1
+
+[suite]
+prepare = [
+  ["docker", "compose", "up", "-d", "--build"],
+]
+verify = [
+  ["docker", "compose", "exec", "-T", "api", "python", "-m", "pytest", "-q"],
+  ["docker", "compose", "exec", "-T", "frontend", "pnpm", "test"],
+]
+timeout_seconds = 3600

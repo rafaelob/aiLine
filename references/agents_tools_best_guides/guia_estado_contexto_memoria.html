@@ -1,0 +1,1882 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Estado, Contexto &amp; Memória — Núcleo agnóstico de agentes</title>
+<meta name="description" content="Estado de orquestração agnóstico de provider: estado durável vs payload de provider, ledger canônico, modos provider-managed/app-managed/híbrido, reasoning e thinking state por provider, asset registry, contrato de compaction (perdas aceitáveis vs proibidas) e testes de memória. Complementa os guias de compactação e token counting sem duplicá-los." />
+<meta name="last-checked" content="2026-07-12" />
+<meta name="robots" content="index,follow" />
+<style>
+  :root {
+    --c-bg: #ffffff;
+    --c-bg-elev: #f7f8fa;
+    --c-bg-code: #0e1116;
+    --c-fg: #1a1d23;
+    --c-fg-muted: #5b6472;
+    --c-fg-soft: #6b7480;
+    --c-border: #e4e7ec;
+    --c-border-strong: #cdd3dc;
+    --c-accent: #1a73e8;
+    --c-da: #1257b8;
+    --c-da-bg: #e6efff;
+    --c-warn: #b6541d;
+    --c-warn-bg: #fff4e6;
+    --c-ok: #157a33;
+    --c-ok-bg: #e8f5ea;
+    --c-bad: #c5221f;
+    --c-bad-bg: #fde8e6;
+    --c-na: #5f666f;
+    --c-na-bg: #eef0f3;
+    --c-info: #1257b8;
+    --c-info-bg: #e6efff;
+    --shadow-sm: 0 1px 2px rgba(15,23,42,.06), 0 1px 1px rgba(15,23,42,.04);
+    --shadow-md: 0 6px 24px rgba(15,23,42,.08), 0 2px 6px rgba(15,23,42,.06);
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --gutter: 24px;
+    --sidebar-w: 312px;
+  }
+  [data-theme="dark"] {
+    --c-bg: #0d1117;
+    --c-bg-elev: #161b22;
+    --c-bg-code: #010409;
+    --c-fg: #e6edf3;
+    --c-fg-muted: #9aa4b2;
+    --c-fg-soft: #828c9e;
+    --c-border: #20262d;
+    --c-border-strong: #2f3640;
+    --c-da: #4d9fff;
+    --c-accent: #4d9fff;
+    --c-ok: #3fb950;
+    --c-warn: #e3b341;
+    --c-bad: #ff7b72;
+    --c-na: #9aa4b2;
+    --c-info: #79b8ff;
+    --c-da-bg: #11233f;
+    --c-warn-bg: #2a1e0a;
+    --c-ok-bg: #0d2517;
+    --c-bad-bg: #2a1213;
+    --c-na-bg: #1a1f26;
+    --c-info-bg: #0c1e3a;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+    --shadow-md: 0 8px 28px rgba(0,0,0,.45);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-sans);
+    font-size: 15.5px;
+    line-height: 1.55;
+    color: var(--c-fg);
+    background: var(--c-bg);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  a { color: var(--c-accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, kbd, pre, samp { font-family: var(--font-mono); font-size: 0.92em; }
+  code { overflow-wrap: anywhere; }
+  h1, h2, h3, h4, summary { overflow-wrap: anywhere; }
+  :focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; border-radius: 4px; }
+  .skip { position: absolute; left: -9999px; }
+  .skip:focus { left: 12px; top: 12px; background: var(--c-bg); padding: 8px 12px; border: 1px solid var(--c-border); border-radius: 6px; z-index: 100; }
+
+  header.site {
+    position: sticky; top: 0; z-index: 30;
+    background: rgba(255,255,255,.85);
+    backdrop-filter: saturate(180%) blur(10px);
+    border-bottom: 1px solid var(--c-border);
+  }
+  [data-theme="dark"] header.site { background: rgba(13,17,23,.82); }
+  .header-row {
+    max-width: 1440px; margin: 0 auto; padding: 12px 24px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .brand { font-weight: 700; letter-spacing: -.01em; font-size: 16px; }
+  .brand small { color: var(--c-fg-muted); font-weight: 500; margin-left: 8px; font-size: 12.5px; }
+  .header-right { margin-left: auto; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 999px;
+    background: var(--c-bg-elev); border: 1px solid var(--c-border);
+    color: var(--c-fg-muted); font-size: 12.5px; font-weight: 500;
+  }
+  .badge.ok { background: var(--c-ok-bg); color: var(--c-ok); border-color: transparent; }
+  .badge.da { background: var(--c-da-bg); color: var(--c-da); border-color: transparent; }
+  .badge.info { background: var(--c-info-bg); color: var(--c-info); border-color: transparent; }
+  .badge.warn { background: var(--c-warn-bg); color: var(--c-warn); border-color: transparent; }
+  .badge.bad { background: var(--c-bad-bg); color: var(--c-bad); border-color: transparent; }
+  .theme-btn {
+    border: 1px solid var(--c-border); background: var(--c-bg-elev); color: var(--c-fg);
+    padding: 5px 10px; border-radius: 8px; cursor: pointer; font: inherit; font-size: 12.5px;
+  }
+  .theme-btn:hover { border-color: var(--c-border-strong); }
+
+  .layout {
+    max-width: 1440px; margin: 0 auto;
+    display: grid; grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+    gap: 32px; padding: 24px;
+  }
+  nav.toc {
+    position: sticky; top: 64px;
+    align-self: start; max-height: calc(100vh - 80px); overflow: auto;
+    padding-right: 8px;
+    border-right: 1px solid var(--c-border);
+  }
+  nav.toc ol { list-style: none; padding: 0; margin: 0 0 16px; }
+  nav.toc li { line-height: 1.4; margin: 2px 0; }
+  nav.toc a {
+    display: block; padding: 4px 8px; border-radius: 5px;
+    color: var(--c-fg-muted); font-size: 13px;
+  }
+  nav.toc a:hover { background: var(--c-bg-elev); color: var(--c-fg); text-decoration: none; }
+  nav.toc a.active { color: var(--c-da); background: var(--c-da-bg); font-weight: 600; }
+  nav.toc .toc-section {
+    margin-top: 14px; padding: 2px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--c-fg-soft);
+    border-top: 1px solid var(--c-border); padding-top: 10px;
+  }
+  nav.toc .toc-section:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+
+  main { min-width: 0; max-width: 1040px; }
+
+  .hero {
+    border: 1px solid var(--c-border);
+    border-radius: 14px;
+    padding: 28px 28px 24px;
+    background: linear-gradient(135deg, var(--c-da-bg) 0%, var(--c-bg) 100%);
+    margin-bottom: 32px;
+  }
+  .hero h1 { font-size: 32px; line-height: 1.15; margin: 0 0 8px; letter-spacing: -.02em; }
+  .hero p.lead { margin: 0 0 16px; color: var(--c-fg-muted); font-size: 16px; max-width: 74ch; }
+  .hero-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+
+  section { margin: 48px 0; scroll-margin-top: 84px; }
+  section.chapter { padding-top: 16px; margin-top: 56px; border-top: 3px solid var(--c-da); }
+  section.ref { padding-top: 12px; margin-top: 48px; border-top: 2px dashed var(--c-border-strong); }
+  h2 {
+    font-size: 24px; line-height: 1.2; letter-spacing: -.015em;
+    margin: 0 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--c-border);
+    scroll-margin-top: 84px;
+  }
+  h3 { font-size: 18px; line-height: 1.3; margin: 28px 0 10px; scroll-margin-top: 84px; }
+  h4 { font-size: 15px; margin: 20px 0 8px; color: var(--c-fg); scroll-margin-top: 84px; }
+  p { margin: 0 0 12px; }
+  ul, ol { margin: 0 0 12px; padding-left: 22px; }
+  li { margin: 4px 0; }
+  hr { border: 0; border-top: 1px solid var(--c-border); margin: 24px 0; }
+
+  .table-wrap { overflow-x: auto; margin: 0 0 18px; border: 1px solid var(--c-border); border-radius: var(--radius); }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 580px; }
+  th, td { padding: 9px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--c-border); }
+  th { background: var(--c-bg-elev); font-weight: 600; color: var(--c-fg); position: sticky; top: 0; font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--c-bg-elev); }
+  td code, th code { background: var(--c-bg-elev); padding: 1px 5px; border-radius: 4px; font-size: 12.5px; color: var(--c-fg); }
+  [data-theme="dark"] td code, [data-theme="dark"] th code { background: #0b0e13; }
+
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; letter-spacing: .02em; }
+  .pill.ok { background: var(--c-ok-bg); color: var(--c-ok); }
+  .pill.partial { background: var(--c-warn-bg); color: var(--c-warn); }
+  .pill.bad { background: var(--c-bad-bg); color: var(--c-bad); }
+  .pill.na { background: var(--c-na-bg); color: var(--c-na); }
+  .pill.beta { background: var(--c-info-bg); color: var(--c-info); }
+
+  .callout {
+    border-left: 4px solid var(--c-accent);
+    background: var(--c-bg-elev);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  .callout.warn { border-left-color: var(--c-warn); background: var(--c-warn-bg); color: #5a3009; }
+  .callout.tip { border-left-color: var(--c-ok); background: var(--c-ok-bg); color: #1d4a25; }
+  .callout.danger { border-left-color: var(--c-bad); background: var(--c-bad-bg); color: #7a1a16; }
+  .callout.beta { border-left-color: var(--c-info); background: var(--c-info-bg); color: #123d75; }
+  .callout.info { border-left-color: var(--c-info); background: var(--c-info-bg); color: #123d75; }
+  .callout.partial { border-left-color: var(--c-warn); background: var(--c-warn-bg); color: #5a3009; }
+  [data-theme="dark"] .callout.warn { color: #f1c896; }
+  [data-theme="dark"] .callout.tip { color: #a7d8b1; }
+  [data-theme="dark"] .callout.danger { color: #f0a8a4; }
+  [data-theme="dark"] .callout.beta { color: #a8cdff; }
+  [data-theme="dark"] .callout.info { color: #a8cdff; }
+  [data-theme="dark"] .callout.partial { color: #f1c896; }
+  .callout strong { font-weight: 700; }
+  .callout a { color: var(--c-da); text-decoration: underline; }
+  [data-theme="dark"] .callout a { color: var(--c-da); }
+  footer.site a, .source-link a { text-decoration: underline; }
+
+  pre {
+    background: var(--c-bg-code);
+    color: #d1d5db;
+    padding: 14px 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 0 0 14px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    border: 1px solid #1f242c;
+  }
+  pre code { color: inherit; background: transparent; padding: 0; }
+
+  /* Blocos de código com abas por linguagem (Python / TypeScript / REST) */
+  .code-tabs { display: flex; gap: 4px; margin-bottom: 0; }
+  .code-tab {
+    border: 1px solid var(--c-border); border-bottom: none; background: var(--c-bg-elev);
+    color: var(--c-fg-muted); padding: 6px 14px; border-radius: 8px 8px 0 0;
+    cursor: pointer; font: inherit; font-size: 12.5px; font-weight: 600;
+  }
+  .code-tab[aria-selected="true"] { background: var(--c-bg-code); color: #f0e9e1; border-color: #2a241e; }
+  .code-pane { display: none; }
+  .code-pane[data-active="true"] { display: block; }
+  .code-group pre { border-radius: 0 8px 8px 8px; margin-top: -1px; }
+
+  details {
+    border: 1px solid var(--c-border); border-radius: var(--radius);
+    padding: 8px 14px; margin: 6px 0 10px; background: var(--c-bg-elev);
+  }
+  details > summary {
+    cursor: pointer; font-weight: 600; padding: 4px 0; list-style: none;
+    font-size: 13.5px;
+  }
+  details > summary::-webkit-details-marker { display: none; }
+  details > summary::before { content: "▸ "; color: var(--c-fg-soft); display: inline-block; }
+  details[open] > summary::before { content: "▾ "; }
+  details > .ref-body { padding: 8px 0 4px; }
+
+  .source-link {
+    font-size: 12.5px; color: var(--c-fg-muted);
+    margin: 6px 0 24px; padding: 6px 10px;
+    background: var(--c-bg-elev); border-left: 3px solid var(--c-da);
+    border-radius: 0 6px 6px 0;
+  }
+  .source-link a { color: var(--c-da); font-weight: 600; }
+
+  .figure { margin: 20px 0 26px; }
+  .figure svg { width: 100%; height: auto; display: block; border: 1px solid var(--c-border); border-radius: 10px; }
+  .figure figcaption { font-size: 12.5px; color: var(--c-fg-muted); margin-top: 10px; line-height: 1.5; padding: 0 4px; }
+
+  footer.site {
+    margin: 64px 0 24px; padding: 24px 0; border-top: 1px solid var(--c-border);
+    color: var(--c-fg-muted); font-size: 13px;
+  }
+
+  @media (max-width: 1080px) {
+    .layout { grid-template-columns: 1fr; }
+    nav.toc { position: static; max-height: none; border-right: none; border-bottom: 1px solid var(--c-border); padding-bottom: 16px; margin-bottom: 16px; }
+    main { max-width: 100%; }
+    .hero h1 { font-size: 24px; }
+  }
+  @media print {
+    nav.toc, header.site, .theme-btn { display: none; }
+    .layout { grid-template-columns: 1fr; }
+    a { color: inherit; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+    details[open] { padding: 8px 0; }
+    details > summary { display: none; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Pular para o conteúdo</a>
+
+<header class="site">
+  <div class="header-row">
+    <div class="brand">Estado, Contexto &amp; Memória <small>Núcleo agnóstico de agentes</small></div>
+    <div class="header-right">
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-12</strong></span>
+      <span class="badge da">Núcleo · agnóstico de provider</span>
+      <span class="badge info">Conceitual + referência</span>
+      <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="Sumário">
+    <div class="toc-section">Início</div>
+    <ol>
+      <li><a href="#sobre-guia">Sobre este guia</a></li>
+      <li><a href="#fontes-oficiais">Fontes &amp; verificação</a></li>
+      <li><a href="#mapa-do-nucleo">Mapa do núcleo</a></li>
+    </ol>
+
+    <div class="toc-section">Parte 1 — Modelo de estado</div>
+    <ol>
+      <li><a href="#estado-vs-payload">1. Estado durável vs payload de provider</a></li>
+      <li><a href="#ledger-canonico">2. Ledger canônico</a></li>
+      <li><a href="#registrar-reduzir-projetar">3. Registrar, reduzir, projetar</a></li>
+      <li><a href="#modos-de-estado">4. Modos provider/app/híbrido</a></li>
+    </ol>
+
+    <div class="toc-section">Parte 2 — Reasoning, assets &amp; projeção</div>
+    <ol>
+      <li><a href="#reasoning-thinking-por-provider">5. Reasoning &amp; thinking por provider</a></li>
+      <li><a href="#estado-na-responses-api">6. Estado na Responses API</a></li>
+      <li><a href="#asset-registry">7. Asset registry</a></li>
+      <li><a href="#projecoes-por-provider">8. Projeções por provider</a></li>
+      <li><a href="#zonas-canonicas">8b. Zonas canônicas &amp; dados transitórios</a></li>
+      <li><a href="#agent-as-tool-multiturno">8c. Agent-as-tool multi-turno &amp; continuidade</a></li>
+    </ol>
+
+    <div class="toc-section">Parte 3 — Compaction &amp; budgets</div>
+    <ol>
+      <li><a href="#budgets-e-invariantes">9. Budgets e invariantes</a></li>
+      <li><a href="#compaction-contrato">10. Compaction — contrato</a></li>
+      <li><a href="#perdas-aceitaveis-proibidas">11. Perdas aceitáveis vs proibidas</a></li>
+      <li><a href="#testes-de-memoria">12. Testes de memória &amp; contexto</a></li>
+    </ol>
+
+    <div class="toc-section">Referência</div>
+    <ol>
+      <li><a href="#checklist-de-estado">Checklist de estado</a></li>
+      <li><a href="#verificacao">Notas de verificação</a></li>
+    </ol>
+  </nav>
+
+  <main id="main">
+
+    <div class="hero">
+      <h1>Estado, Contexto &amp; Memória</h1>
+      <p class="lead">
+        O capítulo que decide <strong>quem é dono do histórico</strong>. A regra que atravessa todo o
+        núcleo: o estado real pertence ao runtime da aplicação; os mecanismos de estado dos providers —
+        <code>previous_response_id</code>, <code>conversation</code>, sessions, cache, thinking blocks,
+        thought signatures — são <em>carriers</em> e <em>projeções</em>, não a base de auditoria. Aqui
+        você modela o ledger canônico, preserva reasoning/thinking sem expô-los, projeta para cada
+        provider e compacta sem perder o que importa.
+      </p>
+      <div class="hero-meta">
+        <span class="badge da">Núcleo · agnóstico de provider</span>
+        <span class="badge info">Conceitual + referência</span>
+        <span class="badge ok">SOTA · verificado 2026-06-10</span>
+      </div>
+    </div>
+
+    <section id="sobre-guia">
+      <h2>Sobre este guia</h2>
+      <p>
+        Este é um guia <strong>para IA e humanos</strong>: combina o modelo conceitual de estado com
+        contratos tipados prontos para copiar (ledger, asset registry, compaction item) e tabelas de
+        decisão por provider. A prosa é em PT-BR; nomes de campos, parâmetros e código permanecem em
+        inglês, como nas APIs oficiais.
+      </p>
+      <div class="callout">
+        <strong>Tese deste capítulo:</strong> separe <em>estado durável</em>, <em>projeção para
+        provider</em> e <em>execução de capabilities</em>. O runtime possui um ledger tipado; a payload
+        enviada ao modelo é sempre uma projeção reconstruída desse ledger — nunca a fonte única da
+        verdade. Esse princípio nasce no
+        <a href="guia_arquitetura_orquestracao.html#blueprint-sota">blueprint SOTA</a> do capítulo de
+        arquitetura e aqui ganha estrutura de dados.
+      </div>
+      <div class="callout warn">
+        <strong>Fronteira de escopo (cross-link, sem duplicar):</strong> a <em>estratégia</em> detalhada
+        de compactação (escada de compactação, teto X, snapshots cumulativos) vive em
+        <a href="guia_contexto_compactacao_estrategias.html">Contexto &amp; compactação — estratégias</a>;
+        a <em>contagem</em> de tokens por provider (tokenizadores, <code>count_tokens</code>, custos de
+        imagem) vive em <a href="guia_token_counting.html">Token counting</a>. Aqui tratamos do
+        <strong>contrato</strong> de estado e de compaction — o invariante que aquelas estratégias devem
+        respeitar.
+      </div>
+    </section>
+
+    <section id="fontes-oficiais">
+      <h2>Fontes &amp; verificação</h2>
+      <p>
+        Os fatos perecíveis (parâmetros de estado, modos de reasoning/thinking, campos de retenção) foram
+        conferidos contra a documentação oficial em <strong>2026-06-10</strong> e consolidados na folha de
+        fatos SOTA do projeto. Os contratos de dados (ledger, compaction item, asset registry) são
+        recomendações de engenharia derivadas dos padrões oficiais.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Tema</th><th>Fonte oficial</th></tr></thead>
+        <tbody>
+          <tr><td>OpenAI — estado de conversa (<code>previous_response_id</code>, <code>conversation</code>, <code>store</code>)</td><td><a href="https://developers.openai.com/api/docs/guides/conversation-state" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/conversation-state</a></td></tr>
+          <tr><td>OpenAI — reasoning (effort, encrypted reasoning, stateless/ZDR)</td><td><a href="https://developers.openai.com/api/docs/guides/reasoning" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/reasoning</a></td></tr>
+          <tr><td>Anthropic — extended/adaptive thinking (blocks &amp; signatures)</td><td><a href="https://platform.claude.com/docs/en/build-with-claude/extended-thinking" target="_blank" rel="noopener">platform.claude.com/docs/en/build-with-claude/extended-thinking</a></td></tr>
+          <tr><td>Anthropic — context windows</td><td><a href="https://platform.claude.com/docs/en/build-with-claude/context-windows" target="_blank" rel="noopener">platform.claude.com/docs/en/build-with-claude/context-windows</a></td></tr>
+          <tr><td>Google — thinking (<code>thinking_level</code>, thought summaries)</td><td><a href="https://ai.google.dev/gemini-api/docs/thinking" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/thinking</a></td></tr>
+          <tr><td>Google — thought signatures</td><td><a href="https://ai.google.dev/gemini-api/docs/thought-signatures" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/thought-signatures</a></td></tr>
+        </tbody>
+      </table></div>
+      <p style="font-size:13px;color:var(--c-fg-muted)">
+        Legenda dos selos: <span class="pill ok">Verificado</span> confirmado na doc oficial ·
+        <span class="pill beta">Novo</span> recurso recente ·
+        <span class="pill partial">UNVERIFIED</span> não confirmado dentro do orçamento de verificação ·
+        <span class="pill na">N/D</span> não documentado.
+      </p>
+    </section>
+
+    <section id="mapa-do-nucleo">
+      <h2>Mapa do núcleo — onde cada assunto mora</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Você procura…</th><th>Vá para</th></tr></thead>
+        <tbody>
+          <tr><td>Primitivos, capability registry, active plan, skeleton de loop</td><td><a href="guia_arquitetura_orquestracao.html">Núcleo · Arquitetura &amp; orquestração</a></td></tr>
+          <tr><td>Tool result envelopes, MCP, RAG, leitura de PDF/imagem/planilha</td><td><a href="guia_ferramentas_mcp_rag.html">Núcleo · Ferramentas, MCP &amp; RAG</a></td></tr>
+          <tr><td>Parâmetros de provider, adapters, provider-switching</td><td><a href="guia_providers_adapters.html">Núcleo · Providers &amp; adapters</a></td></tr>
+          <tr><td>Retenção/ZDR, tracing, evals, runbooks, threat model</td><td><a href="guia_operacao_seguranca_evals.html">Núcleo · Operação, segurança &amp; evals</a></td></tr>
+          <tr><td>Escada de compactação, teto X, snapshots cumulativos (estratégia)</td><td><a href="guia_contexto_compactacao_estrategias.html">Contexto &amp; compactação — estratégias</a></td></tr>
+          <tr><td>Contagem de tokens, tokenizadores, custos por provider</td><td><a href="guia_token_counting.html">Token counting</a></td></tr>
+          <tr><td>Reasoning/thinking em profundidade por provider</td><td><a href="guia_openai_modelos.html">OpenAI</a> · <a href="guia_claude_api.html">Claude API</a> · <a href="guia_gemini_interactions_api.html">Gemini Interactions API</a></td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <!-- ===================== PARTE 1 ===================== -->
+    <section class="chapter" id="parte-modelo-de-estado">
+      <h2 style="border-bottom:3px solid var(--c-da);padding:14px 0 10px;font-size:28px">Parte 1 — Modelo de estado</h2>
+      <p>Quem é dono do histórico, como ele é estruturado, o ciclo de ingestão e os três modos de gerir
+      estado entre a aplicação e o provider.</p>
+    </section>
+
+    <section id="estado-vs-payload">
+      <h2>1. Estado durável versus payload de provider</h2>
+      <p>
+        A regra mais importante: o histórico real pertence ao runtime da aplicação. APIs e SDKs oferecem
+        conveniências de estado — <code>previous_response_id</code>, <code>conversation</code>, sessions,
+        cache, thought signatures ou thinking blocks — mas esses mecanismos são <strong>carriers /
+        projeções</strong>, não a base de auditoria. Tratar o estado do provider como fonte única é o
+        antipadrão "provider como banco de estado" descrito no
+        <a href="guia_arquitetura_orquestracao.html#blueprint-sota">capítulo de arquitetura</a>.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Mecanismo do provider</th><th>O que é</th><th>Por que não é a fonte da verdade</th></tr></thead>
+        <tbody>
+          <tr><td>OpenAI <code>previous_response_id</code> / <code>conversation</code></td><td>Encadeamento de estado server-side entre respostas.</td><td>Sujeito a retenção/expiração; <code>instructions</code> antigas não são recarregadas automaticamente.</td></tr>
+          <tr><td>Anthropic message history</td><td>Você reenvia as mensagens; thinking blocks/signatures viajam junto.</td><td>É o seu payload — só é durável se você o persistir.</td></tr>
+          <tr><td>Google chat/history no SDK</td><td>O SDK pode manter o histórico da sessão de chat.</td><td>Conveniência de processo; precisa ser persistida pela aplicação.</td></tr>
+          <tr><td>Prompt cache (qualquer provider)</td><td>Acelera prefixos repetidos.</td><td>Otimização de custo/latência com TTL — não é armazenamento.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout warn">
+        <strong>Para fluxos protegidos:</strong> quando requisitos de retenção/privacidade exigem controle
+        estrito, prefira <code>store=false</code> quando aplicável e carregue você mesmo os itens
+        necessários de reasoning/tool/replay, usando encrypted reasoning ou carriers equivalentes quando
+        suportados. As decisões de retenção/ZDR têm tratamento próprio em
+        <a href="guia_operacao_seguranca_evals.html">Operação, segurança &amp; evals</a>.
+      </div>
+      <div class="source-link">Fontes oficiais: <a href="https://developers.openai.com/api/docs/guides/conversation-state" target="_blank" rel="noopener">OpenAI conversation state</a> · <a href="https://developers.openai.com/api/docs/guides/reasoning" target="_blank" rel="noopener">OpenAI reasoning</a>.</div>
+    </section>
+
+    <section id="ledger-canonico">
+      <h2>2. Ledger canônico</h2>
+      <p>
+        O ledger canônico deve <strong>preservar itens</strong> em vez de achatar tudo para texto. Ele
+        precisa distinguir usuário, sistema, developer/instructions, output do modelo, tool call, tool
+        result, asset, citação de RAG, carrier de reasoning, signature de thinking, summary de compaction,
+        approval e usage. Essa granularidade é o que permite reidratar para qualquer provider sem perder
+        informação essencial e sem transformar reasoning/thinking privado em texto comum.
+      </p>
+      <pre><code class="language-json">{
+  "conversation_id": "uuid",
+  "ledger_version": 3,
+  "items": [
+    {"type": "instruction", "scope": "system", "text_ref": "..."},
+    {"type": "message", "role": "user", "content": [{"type": "text", "text": "..."}]},
+    {"type": "provider_reasoning_carrier", "provider": "openai", "encrypted_content": "..."},
+    {"type": "tool_call", "tool_call_id": "call_1", "capability_id": "retrieve.v1", "args_hash": "..."},
+    {"type": "tool_result", "tool_call_id": "call_1", "reduced_output_ref": "artifact://..."},
+    {"type": "asset", "asset_id": "file_1", "sha256": "...", "classification": "sensitive"},
+    {"type": "usage", "input_tokens": 1234, "output_tokens": 567, "reasoning_tokens": 200}
+  ],
+  "indexes": {"by_asset": {}, "by_tool_call": {}, "by_provider_item": {}}
+}</code></pre>
+      <div class="callout tip">
+        <strong>Por que itens e não texto:</strong> um tool_call achatado para texto perde o
+        <code>tool_call_id</code> que o provider exige para parear o resultado; um thinking block achatado
+        perde a signature que o provider valida no próximo turno. O ledger guarda a estrutura; o adapter
+        decide o formato de cada provider na <a href="#projecoes-por-provider">projeção (§8)</a>.
+      </div>
+    </section>
+
+    <section id="registrar-reduzir-projetar">
+      <h2>3. Ciclo correto: registrar, reduzir, projetar</h2>
+      <p>
+        Não projete direto da interface do usuário para o provider. Primeiro normalize, classifique e
+        registre. Não injete tool result bruto: primeiro reduza, atribua provenance, aplique caps e
+        registre. Não faça compaction como resumo genérico: preserve decisões, fatos, links, hashes,
+        carriers e pendências.
+      </p>
+      <div class="figure">
+        <svg viewBox="0 0 760 300" role="img" aria-labelledby="cycle-title cycle-desc" xmlns="http://www.w3.org/2000/svg">
+          <title id="cycle-title">Ciclo registrar, reduzir, projetar</title>
+          <desc id="cycle-desc">Entrada bruta passa por validação de ingresso e vai ao ledger; depois redaction/classificação; seleção de itens; compaction/rehydration; projeção por provider; chamada de modelo; e ingestão de items, usage, tool calls e reasoning carriers de volta ao ledger.</desc>
+          <style>
+            .cb{fill:var(--c-bg-elev);stroke:var(--c-border-strong);stroke-width:1.5;}
+            .cbh{fill:var(--c-da-bg);stroke:var(--c-da);stroke-width:2;}
+            .cl{fill:var(--c-fg);font-family:var(--font-sans);font-size:12px;font-weight:600;}
+            .ca{stroke:var(--c-da);stroke-width:1.8;fill:none;marker-end:url(#cah);}
+          </style>
+          <defs><marker id="cah" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="var(--c-da)"/></marker></defs>
+          <rect class="cb" x="20"  y="20" width="150" height="40" rx="8"/><text class="cl" x="95"  y="44" text-anchor="middle">entrada bruta</text>
+          <rect class="cb" x="210" y="20" width="180" height="40" rx="8"/><text class="cl" x="300" y="44" text-anchor="middle">validação de ingresso</text>
+          <rect class="cbh" x="430" y="20" width="120" height="40" rx="8"/><text class="cl" x="490" y="44" text-anchor="middle">ledger</text>
+          <rect class="cb" x="210" y="100" width="180" height="40" rx="8"/><text class="cl" x="300" y="124" text-anchor="middle">redaction / classificação</text>
+          <rect class="cb" x="20"  y="180" width="180" height="40" rx="8"/><text class="cl" x="110" y="204" text-anchor="middle">seleção de itens</text>
+          <rect class="cb" x="240" y="180" width="220" height="40" rx="8"/><text class="cl" x="350" y="204" text-anchor="middle">compaction / rehydration</text>
+          <rect class="cb" x="500" y="180" width="200" height="40" rx="8"/><text class="cl" x="600" y="204" text-anchor="middle">projeção por provider</text>
+          <rect class="cbh" x="500" y="250" width="200" height="40" rx="8"/><text class="cl" x="600" y="274" text-anchor="middle">chamada de modelo</text>
+          <path class="ca" d="M170,40 L208,40"/>
+          <path class="ca" d="M390,40 L428,40"/>
+          <path class="ca" d="M490,60 L300,98"/>
+          <path class="ca" d="M300,140 L110,178"/>
+          <path class="ca" d="M200,200 L238,200"/>
+          <path class="ca" d="M460,200 L498,200"/>
+          <path class="ca" d="M600,220 L600,248"/>
+          <path class="ca" d="M500,270 L160,240" style="stroke-dasharray:5 4"/>
+          <text class="cl" x="330" y="262" text-anchor="middle" style="font-weight:500;fill:var(--c-fg-muted);font-size:11px">ingestão: items · usage · tool calls · reasoning carriers</text>
+        </svg>
+        <figcaption>O loop nunca vai da UI direto para o provider. Tudo passa pelo ledger, é reduzido e
+        classificado, e só então é projetado. A resposta volta como ingestão estruturada — fechando o
+        ciclo de auditoria.</figcaption>
+      </div>
+    </section>
+
+    <section id="modos-de-estado">
+      <h2>4. Modos de estado: provider-managed, app-managed e híbrido</h2>
+      <p>Três modos, com trade-offs explícitos. O baseline conceitual recomendado é app-managed; os
+      mecanismos provider-managed entram como otimização controlada.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Modo</th><th>Vantagem</th><th>Risco</th><th>Uso recomendado</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Provider-managed</strong></td><td>Menos payload manual e conveniência de continuidade.</td><td>Retenção, billing, perda de controle e menor portabilidade.</td><td>Fluxos de baixo risco ou protótipos, com política explícita.</td></tr>
+          <tr><td><strong>App-managed (stateless)</strong></td><td>Controle máximo de retenção, replay e provider switch.</td><td>Mais engenharia: carregar itens, carriers e budgets.</td><td>Fluxos sensíveis, auditáveis ou multi-provider.</td></tr>
+          <tr><td><strong>Híbrido</strong></td><td>Combina conveniência local com ledger próprio.</td><td>Divergência entre estados se não houver ingestão rigorosa.</td><td>Produção comum, desde que o provider state nunca seja a fonte única.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout">
+        <strong>Regra do híbrido:</strong> use o estado do provider como cache/conveniência, mas escreva
+        cada resposta de volta no ledger por ingestão estruturada. Se o estado do provider expirar ou
+        divergir, o ledger continua sendo a verdade — e a próxima projeção o reconstrói.
+      </div>
+    </section>
+
+    <!-- ===================== PARTE 2 ===================== -->
+    <section class="chapter" id="parte-reasoning-assets">
+      <h2 style="border-bottom:3px solid var(--c-da);padding:14px 0 10px;font-size:28px">Parte 2 — Reasoning, assets &amp; projeção</h2>
+      <p>O que cada provider expõe de reasoning/thinking e como preservá-lo; como tratar arquivos como
+      estado de primeira classe; e como projetar o ledger para cada API.</p>
+    </section>
+
+    <section id="reasoning-thinking-por-provider">
+      <h2>5. Regras por provider para reasoning/thinking</h2>
+      <p>
+        Cada provider expõe o raciocínio interno de forma diferente, e a regra universal é a mesma:
+        <strong>preserve o carrier oficial</strong> quando ele for exigido em turnos subsequentes, e
+        <strong>nunca</strong> converta reasoning/thinking privado em mensagem comum nem peça a cadeia de
+        pensamento bruta. A profundidade de cada modo (por modelo) está nos guias de provider; aqui está o
+        contrato de estado.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Provider</th><th>Carrier interno</th><th>O que preservar</th><th>O que não fazer</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>OpenAI Responses</td>
+            <td>Reasoning items, summaries opcionais e encrypted reasoning quando incluído.</td>
+            <td>Itens de output relevantes, tool calls/results, <code>encrypted_content</code> para fluxos stateless/<code>store=false</code>, usage e reasoning summaries quando solicitados.</td>
+            <td>Não pedir nem inventar chain-of-thought; não converter reasoning item em mensagem comum; não assumir que <code>instructions</code> anteriores são carregadas com <code>previous_response_id</code>.</td>
+          </tr>
+          <tr>
+            <td>Anthropic Messages</td>
+            <td>Thinking blocks e signatures em adaptive/extended thinking + tool use.</td>
+            <td>Thinking blocks exigidos junto dos <code>tool_result</code> correspondentes, signatures, <code>tool_use</code> IDs e a ordem dos blocos.</td>
+            <td>Não remover thinking/signature necessário em tool loop; não esquecer que o thinking budget compete com <code>max_tokens</code> em modelos/documentação aplicáveis.</td>
+          </tr>
+          <tr>
+            <td>Google Gemini</td>
+            <td>Thought signatures em <code>parts</code> e <code>thoughts_token_count</code>/summaries quando habilitados.</td>
+            <td><code>parts</code> com <code>thought_signature</code> exatamente como recebidas; histórico completo quando o SDK não o faz automaticamente; function responses pareadas.</td>
+            <td>Não concatenar signatures em texto; não reordenar <code>parts</code>; não omitir signatures em chamadas subsequentes de function calling quando exigido.</td>
+          </tr>
+        </tbody>
+      </table></div>
+      <h3>Controles de reasoning/thinking — parâmetros canônicos</h3>
+      <p>Os controles abaixo são os <strong>nomes de parâmetro</strong> atuais (não modelos). Para a
+      disponibilidade por modelo, siga os cross-links — IDs de modelo são perecíveis e ficam concentrados
+      nos guias de provider.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Provider</th><th>Parâmetro</th><th>Valores</th><th>Notas de estado</th></tr></thead>
+        <tbody>
+          <tr><td>OpenAI</td><td><code>reasoning.effort</code></td><td><code>none</code> · <code>low</code> · <code>medium</code> (default) · <code>high</code> · <code>xhigh</code> (dependente do modelo)</td><td>Reasoning tokens contam no orçamento; reasoning não é exposto como cadeia bruta. <span class="pill ok">Verificado</span></td></tr>
+          <tr><td>Anthropic</td><td><code>thinking</code></td><td><code>adaptive</code> · <code>enabled</code> + <code>budget_tokens</code> · <code>disabled</code> (disponibilidade do modo varia por modelo)</td><td>Thinking blocks/signatures devem voltar no tool loop; <code>display</code> pode ser <code>summarized</code> (default) ou <code>omitted</code>. <span class="pill ok">Verificado</span></td></tr>
+          <tr><td>Google</td><td><code>thinking_level</code></td><td><code>low</code> · <code>medium</code> · <code>high</code> (Flash/Flash-Lite também <code>minimal</code>)</td><td>Direto em <code>generation_config</code> na <strong>Interactions API</strong>; aninhado em <code>thinking_config</code> no <code>generateContent</code>/SDK. <code>thinking_budget</code> é legado (série 2.5); não misturar com <code>thinking_level</code> (erro 400). <span class="pill ok">Verificado</span></td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout beta">
+        <strong>Onde aprofundar:</strong> adaptive/extended thinking, budget e display no
+        <a href="guia_claude_api.html">guia do Claude</a>; <code>reasoning.effort</code> e verbosity no
+        <a href="guia_openai_modelos.html">guia da OpenAI</a>; <code>thinking_level</code>, thought
+        summaries e telemetria <code>usage.total_thought_tokens</code>/<code>total_output_tokens</code> no
+        <a href="guia_gemini_interactions_api.html">guia da Gemini Interactions API</a>
+        (no <code>generateContent</code>, os mesmos contadores aparecem como <code>usage_metadata.thoughts_token_count</code>/<code>candidates_token_count</code>).
+      </div>
+      <div class="source-link">Fontes oficiais: <a href="https://developers.openai.com/api/docs/guides/reasoning" target="_blank" rel="noopener">OpenAI reasoning</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/extended-thinking" target="_blank" rel="noopener">Anthropic extended thinking</a> · <a href="https://ai.google.dev/gemini-api/docs/thought-signatures" target="_blank" rel="noopener">Google thought signatures</a>.</div>
+    </section>
+
+    <section id="estado-na-responses-api">
+      <h2>6. Estado suportado pela OpenAI Responses API</h2>
+      <p>
+        Na Responses API, <code>previous_response_id</code> encadeia respostas anteriores e
+        <code>conversation</code> referencia um objeto de conversa; a documentação explicita que os dois
+        mecanismos não devem ser usados juntos em certas condições e que <code>instructions</code> de
+        chamadas anteriores <strong>não</strong> são automaticamente carregadas com
+        <code>previous_response_id</code>. A política correta é registrar a sua própria versão de
+        <code>instructions</code> e reprojetá-las quando necessário.
+      </p>
+      <pre><code class="language-python"># Padrão stateless com store=false e reasoning encrypted quando o caso exige
+# retenção controlada. Note model="..." — IDs de modelo ficam nos guias de provider.
+response = client.responses.create(
+    model="...",
+    input=projected_items,                       # projeção do ledger, não a UI crua
+    instructions=current_instructions,           # reprojetadas a cada turno
+    tools=allowed_tools,                          # só as tools permitidas da fase
+    store=False,                                  # nada retido no provider
+    include=["reasoning.encrypted_content"],      # carrier de reasoning p/ próximo turno
+    max_output_tokens=output_budget,             # reserve tokens p/ reasoning + final
+)
+ledger.ingest(response.output, usage=response.usage)</code></pre>
+      <div class="callout warn">
+        <strong>Cuidado com <code>truncation</code>:</strong> a truncation automática do provider pode
+        remover contexto crítico sem aviso. Prefira controlar a seleção de itens no seu lado (seleção +
+        compaction) a delegar o corte ao provider. Os parâmetros completos da Responses API estão no
+        <a href="guia_providers_adapters.html">capítulo de providers</a>.
+      </div>
+      <div class="source-link">Fontes oficiais: <a href="https://developers.openai.com/api/docs/guides/conversation-state" target="_blank" rel="noopener">OpenAI conversation state</a> · <a href="https://developers.openai.com/api/docs/guides/reasoning" target="_blank" rel="noopener">OpenAI reasoning</a>.</div>
+    </section>
+
+    <section id="asset-registry">
+      <h2>7. Asset registry detalhado</h2>
+      <p>
+        Assets são parte do estado, não anexos soltos. Cada arquivo, imagem, planilha, PDF, resultado de
+        parser ou artefato gerado deve ter identidade e política. Isso evita que arquivos virem "texto
+        mágico" sem origem e torna a citação verificável.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Campo</th><th>Motivo</th></tr></thead>
+        <tbody>
+          <tr><td><code>asset_id</code>, <code>sha256</code>, <code>size_bytes</code></td><td>Integridade, deduplicação e replay.</td></tr>
+          <tr><td><code>mime_type</code>, <code>parser_version</code>, <code>extraction_method</code></td><td>Reprodutibilidade da leitura.</td></tr>
+          <tr><td><code>classification</code>, <code>tenant_id</code>, <code>retention_policy</code></td><td>Privacidade e fronteira de autorização.</td></tr>
+          <tr><td><code>source_uri</code>/origin, <code>upload_actor</code></td><td>Auditoria e cadeia de custódia.</td></tr>
+          <tr><td>provenance spans: página, range, bbox, sheet</td><td>Citação verificável e reidratação precisa.</td></tr>
+          <tr><td><code>projection_policy</code></td><td>Define se o asset pode ir ao modelo, ao RAG, à tool ou só ficar interno.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout tip">
+        <strong>Cross-link:</strong> como extrair texto/estrutura de PDFs, imagens e planilhas (e como
+        reidratar imagens antigas via visual RAG) é tratado em
+        <a href="guia_multimodal.html">Multimodal</a>. Aqui o asset é apenas uma entrada tipada do
+        ledger com provenance e política de projeção; o consumo como evidência de RAG está em
+        <a href="guia_ferramentas_mcp_rag.html">Ferramentas, MCP &amp; RAG</a>.
+      </div>
+    </section>
+
+    <section id="projecoes-por-provider">
+      <h2>8. Projeções por provider</h2>
+      <p>
+        O adapter converte o ledger canônico para o formato de cada API. Cada linha é um elemento
+        canônico; cada coluna mostra como ele aparece em cada provider. O adapter deve ser
+        <strong>explícito sobre perdas</strong>: trocar de provider pode perder carriers, roles,
+        built-ins, semântica de token budget, suporte multimodal ou paralelismo.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Elemento canônico</th><th>OpenAI Responses</th><th>Anthropic Messages</th><th>Google Gemini</th></tr></thead>
+        <tbody>
+          <tr><td>Instructions / system / developer</td><td><code>instructions</code> e/ou items de role conforme adapter.</td><td><code>system</code> top-level + messages.</td><td><code>system_instruction</code> + contents.</td></tr>
+          <tr><td>User/assistant messages</td><td>Input items multimodais.</td><td>Messages com content blocks.</td><td>Contents com <code>parts</code>.</td></tr>
+          <tr><td>Function tools</td><td><code>tools</code> com function schema; o client executa.</td><td><code>tools</code> com <code>input_schema</code>; o client retorna <code>tool_result</code>.</td><td>Function declarations; o SDK Python pode executar automaticamente.</td></tr>
+          <tr><td>Reasoning / thinking</td><td>Reasoning items / summaries / <code>encrypted_content</code>.</td><td>Thinking blocks / signatures.</td><td>Thought signatures em <code>parts</code>.</td></tr>
+          <tr><td>Structured output</td><td>JSON Schema / output format conforme docs.</td><td><code>output_config.format</code> (json_schema) conforme API/modelo.</td><td>response schema / structured output conforme Gemini.</td></tr>
+          <tr><td>State convenience</td><td><code>previous_response_id</code> ou <code>conversation</code>.</td><td>Message history / context management.</td><td>Stateless <code>generate_content</code> com history/SDK chat.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout">
+        <strong>A perda é decisão operacional, não detalhe técnico.</strong> Registre uma
+        <em>loss declaration</em> a cada provider switch (qual carrier/semântica se perde) e rode um eval
+        de regressão. O contrato de provider-switching está em
+        <a href="guia_providers_adapters.html">Providers &amp; adapters</a>; o gate de eval
+        correspondente em <a href="guia_operacao_seguranca_evals.html">Operação, segurança &amp; evals</a>.
+        Para o invariante de wrapping do conteúdo de role=<code>user</code> quando o turno mistura runtime
+        context com prompt humano, veja <a href="#zonas-canonicas">§8b — Zonas canônicas</a>.
+      </div>
+    </section>
+
+    <section id="zonas-canonicas">
+      <h2>8b. Zonas canônicas da projeção e dados transitórios</h2>
+      <p>
+        A projeção do ledger (§8) pode ser organizada em <strong>zonas canônicas tipadas</strong>. Cada
+        zona tem uma função, um lugar no wire de cada provider e uma política de compactação própria. É
+        isso que torna o <em>budget por fatia</em> da
+        <a href="guia_contexto_compactacao_estrategias.html">estratégia de compactação</a> auditável: cada
+        token projetado pertence a uma zona, com autoridade, proveniência e TTL explícitos.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Zona canônica</th><th>Função</th><th>Onde mora no wire (OpenAI / Gemini / Anthropic)</th><th>Compactação</th></tr></thead>
+        <tbody>
+          <tr><td><code>authority_context</code></td><td>Autoridade normativa: fixed kernel, protocolos, catálogo L1, L2 ativo exato, ledger de skills, output contract.</td><td><code>instructions</code> / <code>system_instruction</code> / top-level <code>system</code></td><td>Fixed kernel nunca compacta; L2 é atômico; L1 filtra.</td></tr>
+          <tr><td><code>conversation_context</code></td><td>Pares user/assistant reais e resumos conversacionais.</td><td><code>input</code> / <code>input</code> timeline / <code>messages</code> — com roles reais</td><td>Compactação por pares + snapshots cumulativos.</td></tr>
+          <tr><td><code>turn_working_context</code></td><td>Prompt atual, arquivos inline do turno, tool calls abertas e seus results, carriers exigidos.</td><td>itens de <code>input</code> + <code>function_call(_output)</code> / steps + <code>function_result</code> / <code>tool_use</code>+<code>tool_result</code></td><td>TTL curtíssimo; expira ao fechar o loop.</td></tr>
+          <tr><td><code>hot_followup_context</code></td><td>Dado transitório que precisa sobreviver a 1 follow-up: return packet de agent-as-tool, L3 pequeno, evidência hot.</td><td>bloco tagueado no próximo turno <code>role=user</code> (ver invariante abaixo)</td><td>TTL default 1 turno; depois digest/ref/reload.</td></tr>
+          <tr><td><code>evidence_context</code></td><td>RAG, web, fontes e dados externos coletados.</td><td>tool result no loop aberto, ou bloco tagueado <code>role=user</code> fora do loop</td><td>Default digest/ref; hot opcional por domínio.</td></tr>
+          <tr><td><code>recall_context</code></td><td>Sínteses, EvidenceCards, refs para o bruto, itens reidratáveis.</td><td>conforme a autoridade do item</td><td>Digest/ref; reidratação sob demanda.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Invariante de colocação do hot follow-up</h3>
+      <p>
+        Quando o loop de tools já fechou e o modelo respondeu ao usuário, um dado transitório ainda pode
+        precisar influenciar o <em>próximo</em> turno (o clássico "e agora, transforme isso em mensagem?",
+        "aplique o template", "continue desse resultado"). A pergunta operacional é: em qual
+        <strong>role do wire</strong> ele entra? A resposta canônica é <strong><code>role=user</code></strong>
+        — nunca o bloco de autoridade, nunca <code>assistant</code>, e nunca um <code>tool_result</code>
+        fabricado.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Candidato a role</th><th>Veredito</th><th>Motivo</th></tr></thead>
+        <tbody>
+          <tr><td><code>system</code> / <code>instructions</code></td><td><span class="pill bad">Não</span></td><td>É a autoridade estável e o prefixo de cache. Mudá-la a cada turno invalida o prompt cache e mistura dado com instrução, colidindo com o invariante do fixed kernel (§1.2).</td></tr>
+          <tr><td><code>assistant</code> / <code>model</code></td><td><span class="pill bad">Não</span></td><td>Falsifica "o que o modelo disse"; o modelo pode tratar dado externo como sua própria conclusão anterior.</td></tr>
+          <tr><td><code>tool_result</code> / <code>function_call_output</code> / <code>function_result</code></td><td><span class="pill partial">Só com loop aberto</span></td><td>Exige <code>tool_use_id</code>/<code>call_id</code> pareado no turno imediatamente anterior — isso é <code>turn_working</code>, não follow-up. Fabricar um par só para carregar dado é frágil e pode confundir o modelo.</td></tr>
+          <tr><td><code>user</code> (bloco tagueado)</td><td><span class="pill ok">Sim</span></td><td>Mesma natureza de como a Anthropic já carrega <code>tool_result</code> dentro de <code>role=user</code>: wire role ≠ autoria canônica (§1.5). Mantém a autoridade byte-estável para cache.</td></tr>
+        </tbody>
+      </table></div>
+      <p>
+        O padrão portável é renderizar o pacote como <strong>bloco(s) de conteúdo no início do próximo
+        turno <code>user</code>, na mesma mensagem do prompt humano</strong> (bloco runtime primeiro, texto
+        do humano depois). Isso evita mensagens consecutivas de mesmo role (Anthropic e Gemini exigem
+        alternância) e mantém <code>system</code>/<code>instructions</code> intactos. No ledger, o item
+        permanece tipado como <code>RuntimeContext</code> / <code>SubagentReturn</code> /
+        <code>EvidencePacket</code> — <strong>jamais</strong> um <code>UserPromptItem</code>.
+        O padrão XML abaixo é <strong>organização auditável, não enforcement</strong>: veja o callout
+        <em>danger</em> logo após sobre por que tags não são fronteira de segurança.
+      </p>
+      <div class="callout">
+        <strong>Atributos do payload vs campos do ledger.</strong> No payload XML abaixo,
+        <code>ttl_turns</code> é <strong>metadado descritivo opcional</strong> (sinaliza intenção
+        ao leitor humano e ao auditor); a <em>elegibilidade real</em> de projeção vive no ledger
+        via <code>visible_from_turn</code>/<code>expires_after_turn</code>/<code>consumed_at_turn</code>
+        — ver callout "Mecânica do TTL" mais adiante para o predicado canônico.
+        <br><br>
+        <strong>Atributos de mesmo nome em zonas diferentes vivem em namespaces separados</strong> e
+        carregam value-spaces distintos por tipo de item — não tente unificar:
+        <ul style="margin:6px 0 0 18px">
+          <li><code>trust_tier</code> em <code>RuntimeContext</code> (esta zona): autoridade de
+          projeção — valores típicos <code>internal_reviewed</code>/<code>external_unverified</code>/<code>verified</code>;
+          em <code>SourceRecord</code>
+          (<a href="guia_file_inputs_no_storage.html">File inputs</a>): proveniência da fonte —
+          <code>user_supplied</code>/<code>official_guideline</code>/<code>peer_reviewed</code>/<code>educational_reference</code>/<code>unknown</code>.
+          São conceitos diferentes (autoridade ↔ proveniência) com o mesmo nome de wire; cada
+          consumidor lê o seu.</li>
+          <li><code>projection_policy</code> em <code>RuntimeContext</code>: enum binário de
+          elegibilidade — <code>allowed</code> ou <code>blocked</code>;
+          em <code>SourceRecord</code>: modo de projeção do anexo —
+          <code>inline_current_turn</code>/<code>summary</code>/<code>rag_only</code>/<code>blocked</code>;
+          em Asset registry (§7 deste guia): destino do asset —
+          <code>model</code>/<code>rag</code>/<code>tool</code>/<code>internal</code>
+          (semântica de roteamento, não de elegibilidade);
+          em skills L2: marcador de re-injeção exata —
+          <code>inject_l2_exact_while_active</code>. Apenas <code>blocked</code> é compartilhado
+          entre <code>RuntimeContext</code> e <code>SourceRecord</code>; Asset registry e skills L2
+          usam vocabulários disjuntos. Schema é <strong>per-item-type</strong>; serializer não deve
+          coerce valores entre zonas.</li>
+        </ul>
+      </div>
+      <pre><code class="language-text"># Projeção do próximo turno (portável OpenAI/Gemini/Anthropic), role=user:
+&lt;runtime_context not_user_authored="true" data_not_instructions="true"
+                 ttl_turns="1" source_item_ids="sub_42,ev_7" trust_tier="internal_reviewed"&gt;
+  &lt;![CDATA[ return packet / L3 pequeno / evidência hot — schema fechado, não texto bruto ]]&gt;
+&lt;/runtime_context&gt;
+&lt;human_prompt user_authored="true"&gt;
+  &lt;![CDATA[ texto real do usuário aqui ]]&gt;
+&lt;/human_prompt&gt;</code></pre>
+      <p>
+        <strong>Quando coexistem múltiplos itens transitórios</strong> (return packets paralelos de
+        sub-agentes, evidência hot + L3 pequeno, etc.), aninhe-os como hierarquia tipada — Anthropic
+        recomenda esse padrão para múltiplos documents ("nest tags when content has a natural
+        hierarchy") e ele se aplica diretamente ao <code>runtime_context</code>:
+        <span class="pill partial">derived</span>
+      </p>
+      <pre><code class="language-text"># Projeção multi-item (vários return packets + evidência + L3 num único turno):
+&lt;runtime_context not_user_authored="true" data_not_instructions="true"
+                 ttl_turns="1" task_id="task_77"&gt;
+  &lt;return_packet index="1" source_agent_id="sub_42" trust_tier="internal_reviewed"
+                 projection_policy="allowed" source_item_id="rp_42_a" spawn_order="1"
+                 task_id="task_77"&gt;
+    &lt;![CDATA[ packet condensado do agente A — schema fechado, não texto bruto ]]&gt;
+  &lt;/return_packet&gt;
+  &lt;return_packet index="2" source_agent_id="sub_43" trust_tier="internal_reviewed"
+                 projection_policy="allowed" source_item_id="rp_43_b" spawn_order="2"
+                 task_id="task_77"&gt;
+    &lt;![CDATA[ packet condensado do agente B ]]&gt;
+  &lt;/return_packet&gt;
+  &lt;evidence index="1" source_item_id="ev_7" trust_tier="external_unverified"
+            projection_policy="allowed"&gt;
+    &lt;![CDATA[ EvidenceCard digest — sanitize antes de renderizar ]]&gt;
+  &lt;/evidence&gt;
+  &lt;l3 index="1" skill_id="skk_foo" source_item_id="l3_foo" projection_policy="allowed"&gt;
+    &lt;![CDATA[ trecho L3 destacado para o follow-up ]]&gt;
+  &lt;/l3&gt;
+&lt;/runtime_context&gt;
+&lt;human_prompt user_authored="true"&gt;
+  &lt;![CDATA[ texto real do usuário aqui ]]&gt;
+&lt;/human_prompt&gt;</code></pre>
+      <p>
+        Envolva o prompt humano em seu próprio bloco (<code>&lt;human_prompt user_authored="true"&gt;</code>) em vez
+        de concatená-lo livre após o runtime: o <code>fixed_kernel</code> deve declarar que <strong>apenas
+        <code>&lt;human_prompt&gt;</code> carrega autoria humana</strong> e que todo o resto do turno
+        <code>user</code> é dado tagueado, sem autoridade de instrução. <strong>O wrapping é responsabilidade
+        do runtime/serializador</strong>: qualquer ocorrência de <code>&lt;human_prompt&gt;</code>/<code>&lt;/human_prompt&gt;</code>
+        — ou de <code>&lt;runtime_context&gt;</code> e atributos como <code>user_authored</code> — dentro de
+        evidência, return packet ou texto externo DEVE ser escapada/rejeitada antes de ir ao payload; sem isso,
+        um atacante forja autoria humana injetando a tag (confused deputy via XML hostil).
+      </p>
+      <p>
+        <strong>Ordem dentro de <code>&lt;runtime_context&gt;</code> (derivada):</strong>
+        (i) <strong>pré-filtro:</strong> só <code>projection_policy="allowed"</code> entra;
+        <code>blocked</code> não renderiza;
+        (ii) por <strong>causal dependency</strong> e <code>topic</code>/<code>task_id</code>
+        (manter pacotes do mesmo fio juntos);
+        (iii) por <strong>tipo</strong> — decisão condensada (<code>return_packet</code>)
+        → prova/proveniência (<code>evidence</code>) → recurso de apoio (<code>l3</code>);
+        se <code>l3</code> for externo/unverified, trate-o como <code>evidence</code> e reordene;
+        (iv) por <code>trust_tier</code> desc (verified/internal antes de unverified/external);
+        (v) por <code>spawn_order</code>/<code>created_at_turn</code> asc como tiebreaker estável.
+        Em contextos longos, tende a haver melhor recuperação nos bordos (literatura
+        <em>lost-in-the-middle</em>/position bias), então o item de maior autoridade abre o
+        <code>&lt;runtime_context&gt;</code> e o <code>&lt;human_prompt&gt;</code> fecha o turno
+        <code>user</code>. <strong>Nunca colocar evidência externa unverified imediatamente antes
+        de</strong> <code>&lt;human_prompt&gt;</code> — a recência amplifica seu peso na resposta.
+        <span class="pill partial">derived</span> sem doc oficial prescrevendo ordem entre múltiplos
+        return_packets paralelos.
+      </p>
+      <div class="callout tip">
+        <strong>Por que dado antes, prompt depois.</strong> Padrão recomendado por Anthropic e Gemini;
+        em OpenAI é compatível com cache-prefix guidance, não regra oficial de ordem. Anthropic
+        long-context: documentos e inputs longos no topo do prompt, query/instruções no fim — ganho
+        medido de <strong>até ~30%</strong> em respostas com inputs multi-documento
+        (<a href="https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/long-context-tips" target="_blank" rel="noopener">long-context-tips</a>, verificado 2026-05-26).
+        Gemini converge: contexto primeiro, query/instruções no fim
+        (<a href="https://ai.google.dev/gemini-api/docs/prompting-strategies" target="_blank" rel="noopener">prompting-strategies</a>, 2026-04-28).
+        OpenAI não prescreve ordem mas o padrão é compatível com cache-prefix
+        (<a href="https://developers.openai.com/api/docs/guides/prompt-caching" target="_blank" rel="noopener">prompt-caching</a>).
+        Vale também para follow-ups curtos ("sim, prossiga"): <strong>não inverta</strong> a ordem;
+        se o pacote já é redundante, reduza-o a digest ou ref via <code>source_item_id</code> em
+        vez de reordenar.
+      </div>
+      <div class="callout beta">
+        <strong>XML tagging vs blocos nativos de <code>content</code>: dois mecanismos, mesmo invariante.</strong>
+        O wrapping com <code>&lt;human_prompt&gt;</code>/<code>&lt;runtime_context&gt;</code> é a forma
+        canônica quando o turno role=<code>user</code> é colapsado em <strong>um único bloco de texto</strong>
+        (caso comum para portabilidade cross-provider). Quando o provider permite separar o conteúdo em
+        <strong>múltiplos blocos nativos de <code>content</code></strong> — caption como bloco texto, documento
+        como bloco file/document, planilha como bloco file, instruções como bloco texto, prompt humano como
+        bloco texto final — a fronteira de bloco já cumpre o papel de "dados não carregam autoridade de
+        instrução" sem precisar de wrapper XML. Os exemplos por provider em
+        <a href="guia_file_inputs_no_storage.html">File inputs sem provider storage</a> (§10, §14.1–§14.3)
+        usam essa segunda forma: cada item de <code>content</code> é por si só um bloco tipado, e o invariante
+        é honrado pela própria estrutura da mensagem. Use XML tagging quando estiver concatenando dentro de um
+        único <code>text</code>; use blocos nativos quando o adapter os preserva — não os dois ao mesmo tempo.
+        <br><br>
+        <strong>Exceção dura — Anthropic citations/search_result blocks:</strong> documentos cita-veis
+        e resultados de busca precisam vir como <strong>blocos nativos tipados</strong>
+        (<code>{"type":"document",...,"citations":{"enabled":true}}</code> ou
+        <code>{"type":"search_result",...}</code>); envolver o conteúdo em XML quebra citations nativas.
+        Nesse caso, <code>&lt;runtime_context&gt;</code> carrega apenas metadados/transitórios
+        não-documentais e o documento/<code>search_result</code> fica como bloco nativo separado no
+        mesmo <code>content[]</code>, posicionado antes do <code>&lt;human_prompt&gt;</code>. Para RAG
+        citável, prefira <code>search_result</code> nativo; quando cacheável,
+        <code>cache_control</code> fica no próprio bloco nativo; citations devem ser all-or-none no
+        mesmo request
+        (<a href="https://platform.claude.com/docs/en/build-with-claude/citations" target="_blank" rel="noopener">citations</a>,
+        <a href="https://platform.claude.com/docs/en/build-with-claude/search-results" target="_blank" rel="noopener">search-results</a>, 2026-05-26).
+      </div>
+      <div class="callout danger">
+        <strong>Tags não são fronteira de segurança.</strong> <code>data_not_instructions</code> é
+        organização, não defesa. Return packets e evidência podem conter injeção de prompt, XML hostil ou
+        fatos stale. Serialize com <strong>schema fechado</strong>, escaping/CDATA, <code>trust_tier</code>,
+        hashes e <code>source_item_ids</code>; sanitize antes de renderizar; e cubra com evals de
+        prompt-injection (<a href="guia_operacao_seguranca_evals.html">Operação, segurança &amp; evals</a>).
+        Nunca renderize texto bruto de fonte externa como XML livre dentro da projeção.
+      </div>
+      <div class="callout">
+        <strong>Mecânica do TTL: eviction acontece na projeção, não no ledger.</strong>
+        O item <code>RuntimeContext</code> permanece no ledger com campos
+        <code>created_at_turn</code>, <code>visible_from_turn</code>, <code>expires_after_turn</code>,
+        <code>projection_id</code>, <code>projected_at_turn</code> (receipt do último envio, NÃO
+        relógio de expiração) e <code>consumed_at_turn</code>. Predicado de projeção (avaliado a
+        cada turno do usuário):
+        <code>current_user_turn &gt;= visible_from_turn &amp;&amp; current_user_turn &lt;= expires_after_turn &amp;&amp; consumed_at_turn == null</code>.
+        <strong>Não decremente mutavelmente no item</strong> (race em tool loops paralelos); compute na
+        projeção. Quando "consumido", grave <code>consumed_at_turn=&lt;current_user_turn&gt;</code> —
+        ele some da projeção mas sobrevive no ledger para re-materialização via
+        <code>source_item_id</code> se o próximo turno do usuário pedir ("explique aquele item X").
+        <br><br>
+        <strong>Invariante de tool loop:</strong> dentro de um único turno do usuário, o
+        <code>runtime_context</code> é projetado UMA vez no primeiro request com <code>tools</code>;
+        iterações <code>tool_use→tool_result</code> <strong>NÃO re-projetam</strong> (cada iteração
+        re-envia o histórico crescente; mexer no transitório quebra cache N vezes e duplica
+        evidência). TTL conta <strong>turnos do usuário</strong>, não iterações de tool.
+        <br><br>
+        <strong>Posição na cauda do role=user</strong> é cache-preservation, não só
+        anti-confused-deputy. Anthropic prompt-caching trabalha com até 4 breakpoints e ~20 blocos
+        de lookback do <code>cache_control</code> mais recente; OpenAI faz match exato de prefixo
+        (volatile content no fim); Gemini <code>cachedContent</code> só vale para contexto estático
+        — hot_followup, por ser transitório, NÃO entra no <code>cachedContent</code>.
+        <br><br>
+        <strong>Três camadas distintas — não confundir:</strong>
+        (i) <strong>Memory tool</strong> (Anthropic) = persistência cross-sessão client-side em
+        <code>/memories</code>;
+        (ii) <strong>Context-editing</strong> (Anthropic <code>clear_tool_uses_20250919</code> /
+        <code>clear_thinking_20251015</code>) = server-side FIFO sobre <code>tool_result</code>/
+        <code>thinking</code>, <strong>NÃO</strong> atinge blocos <code>role=user</code> transitórios;
+        (iii) <strong>hot_followup ledger TTL</strong> = projection-time, role=user, qualquer
+        provider — esta seção.
+        <br><br>
+        <strong>Notas por provider:</strong>
+        OpenAI chaining/cache: veja o callout "Cache-hit em projeção manual" abaixo;
+        Gemini Interactions stateful preserva apenas <code>inputs+outputs</code> —
+        <code>tools</code>/<code>system_instruction</code>/<code>generation_config</code> são
+        interaction-scoped e re-enviados a cada turno;
+        Anthropic stateless: histórico completo client-side, com cache breakpoint no fim do system
+        ou primeiro user estável.
+      </div>
+      <div class="callout tip">
+        <strong>Cache-hit em projeção manual: maximize com disciplina de prefixo estável.</strong>
+        Toda a arquitetura desta zona (kernel byte-estável + tools/system idênticos + hot_followup
+        só na cauda do role=user com TTL) foi desenhada para tirar proveito do prompt caching
+        cross-provider. Resumo operacional por provider:
+        <br><br>
+        <strong>OpenAI Responses</strong> — cache automático de prefixos (geralmente ≥1024 tokens);
+        ative <code>prompt_cache_key</code> para rotear requests do mesmo "fio" para o mesmo worker
+        (aumenta hit rate em fan-out / concorrência); meça na Responses API via
+        <code>usage.input_tokens_details.cached_tokens</code>; em Chat Completions, via
+        <code>usage.prompt_tokens_details.cached_tokens</code>. Em
+        <code>previous_response_id</code> chaining, não fazer manual prune do histórico do chain
+        (<a href="https://developers.openai.com/api/docs/guides/prompt-caching" target="_blank" rel="noopener">prompt-caching</a>,
+        <a href="https://developers.openai.com/api/reference/resources/responses/methods/create#responses-create-prompt_cache_key" target="_blank" rel="noopener">prompt_cache_key</a>, 2026-05-26).
+        <br><br>
+        <strong>Anthropic Messages</strong> — caching explícito via <code>cache_control</code> em
+        até <strong>4 breakpoints</strong>; ~20 blocos de lookback; TTL 5min default, extensível
+        para 1h via <code>{"cache_control":{"type":"ephemeral","ttl":"1h"}}</code> no próprio
+        bloco. Coloque breakpoints no fim do system (kernel estável) e no último bloco estável de
+        messages; meça via <code>usage.cache_creation_input_tokens</code> e
+        <code>usage.cache_read_input_tokens</code>. Nunca empurre <code>runtime_context</code>
+        transitório para dentro do system — quebra o cache do kernel
+        (<a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching" target="_blank" rel="noopener">prompt-caching</a>, 2026-05-26).
+        <br><br>
+        <strong>Gemini Interactions</strong> — <strong>somente implicit caching</strong>
+        (habilitado por default em Gemini 2.5+ e modelos posteriores).
+        <code>previous_interaction_id</code> é o mecanismo de continuidade da conversa
+        (preserva history server-side); por preservar prefixo estável, conversas encadeadas
+        tipicamente se beneficiam do implicit caching que já roda
+        <span class="pill partial">derived</span> — causalidade direta
+        <code>previous_interaction_id</code>→cache não está literalmente documentada.
+        <strong>Explicit caching</strong> com
+        <code>cached_content</code>/<code>cachedContent</code> é do <code>generateContent</code>,
+        <strong>não da Interactions API</strong>; hot_followup fica fora de caches explícitos por
+        ser transitório. Naming wire vs SDK: REST <code>cachedContent</code> (camelCase); Python
+        SDK config <code>cached_content</code>; JS SDK config <code>cachedContent</code>
+        (<a href="https://ai.google.dev/gemini-api/docs/interactions/caching" target="_blank" rel="noopener">Interactions caching</a>,
+        <a href="https://ai.google.dev/gemini-api/docs/caching" target="_blank" rel="noopener">generateContent caching</a>, 2026-05-26).
+        <br><br>
+        <strong>Disciplina cross-provider que esta zona já enforce:</strong>
+        (1) kernel byte-estável (system/instructions imutável na sessão);
+        (2) <code>tools</code>/<code>system_instruction</code> declarados no início e re-enviados
+        idênticos, <strong>incluindo ordem, schemas, names/descriptions e structured-output
+        schemas</strong> (Gemini interaction-scoped exige re-envio idêntico a cada turno);
+        (3) histórico append-only (nunca modificar mensagens anteriores);
+        (4) volatile content (hot_followup, timestamps, IDs por request) SEMPRE na cauda do role=user
+        atual;
+        (5) compactação <em>antes</em> do breakpoint = invalida o prefixo cacheado — preferir drop
+        ao final do histórico estável ou compactação que mova o breakpoint atomically (ver
+        <a href="guia_contexto_compactacao_estrategias.html">guia de compactação</a> §5/§6 sobre
+        escada de degraus e snapshots).
+      </div>
+      <div class="callout danger">
+        <strong>Reasoning summary entre turnos: canal nativo dentro do provider, runtime_context
+        cross-provider, NUNCA <code>&lt;thinking&gt;</code> em role=assistant.</strong>
+        Reasoning persistido entre turnos vive sempre no carrier nativo —
+        <strong>thinking block + signature</strong> (Anthropic),
+        <strong>reasoning item</strong> (OpenAI Responses; <code>encrypted_content</code> só em
+        stateless/<code>store=false</code>/ZDR),
+        <strong>part com thought_signature</strong> (Gemini).
+        Em loops de tools esses carriers são <strong>obrigatórios</strong>: Anthropic exige o
+        thinking block intacto; Gemini exige <code>thought_signature</code> para function-calling
+        signatures (omissão pode gerar erro ou perda de continuidade); OpenAI cookbook:
+        <em>"you do need to include the reasoning items"</em>.
+        Em chat puro são opcionais — mas a alternativa é <strong>omissão</strong>, nunca duplicação
+        como <code>&lt;thinking&gt;</code> text em role=assistant (infla tokens cobrados, invalida
+        prefix-cache e cria role-confusion: o modelo infere autoridade por estilo — texto
+        pseudo-thinking em assistant vira "minha conclusão anterior", quebrando o invariante desta
+        zona).
+        <br><br>
+        <strong>Cross-provider migration:</strong> carriers nativos NÃO migram. O summary do
+        provider de origem entra como loss declaration tagueada em
+        <code>&lt;runtime_context source_provider="anthropic" trust_tier="internal_reviewed" projected_from_native="true" summary_only="true" no_signature="true" not_model_authored="true"&gt;&lt;reasoning_summary&gt;…&lt;/reasoning_summary&gt;&lt;/runtime_context&gt;</code>
+        no role=user do próximo turno. Use <code>&lt;reasoning_summary&gt;</code> em vez de
+        <code>&lt;thinking&gt;</code> para reduzir confusão de role/autoridade.
+        <br><br>
+        <strong>Sub-agent reasoning summary:</strong> com loop de agent-as-tool aberto, vai no
+        <code>tool_result</code> payload (role=user no wire); fechado o loop, sobrevive em
+        <code>&lt;runtime_context&gt;&lt;subagent_return&gt;&lt;reasoning_summary&gt;…&lt;/reasoning_summary&gt;&lt;/subagent_return&gt;&lt;/runtime_context&gt;</code>
+        no próximo role=user. Não assuma promoção automática de reasoning de subagent ao parent —
+        trate como <strong>contrato explícito do return_packet</strong> (decida o que sobe e
+        tagueie).
+        <br><br>
+        <strong>Única exceção em que <code>&lt;thinking&gt;</code> text é aceitável:</strong>
+        few-shot examples no kernel/system/L2 para ensinar estilo (Anthropic:
+        <em>"Use <code>&lt;thinking&gt;</code> tags inside your few-shot examples"</em>) —
+        <strong>few-shot fictício/exemplar, não replay de reasoning real</strong>.
+      </div>
+      <div class="callout beta">
+        <strong>Contrato aqui, números lá.</strong> As zonas acima são o contrato. Os <em>budgets por
+        fatia</em> (targets/hard caps por tier), a ordem de compactação e os watermarks que as governam
+        estão em <a href="guia_contexto_compactacao_estrategias.html">Contexto &amp; compactação —
+        estratégias</a>. O ciclo de vida de L2/L3 de skills (incluindo a reinjeção de L2 exato em
+        follow-up) está em <a href="guia_skills.html">Agent Skills</a>.
+      </div>
+    </section>
+
+    <section id="memory-tool-anthropic">
+      <h2>8b.1 Memory tool (Anthropic) — mecânica concreta</h2>
+      <p>
+        O <strong>memory tool</strong> é um Anthropic-provided tool <strong>client-side</strong>: Claude
+        solicita operações de arquivo, e a aplicação as executa contra o storage escolhido (disco, banco,
+        cloud storage, arquivos cifrados). Não é gestão de estado server-side do provider — é a
+        <strong>camada (i)</strong> do callout <a href="#zonas-canonicas">"Três camadas distintas" (§8b)</a>:
+        persistência <strong>cross-sessão</strong> app-managed com protocolo de arquivo padronizado,
+        desenhado para "just-in-time context retrieval". Em vez de carregar tudo antecipadamente, Claude
+        grava o que aprende em arquivos fora da janela de contexto e os lê de volta sob demanda —
+        mantendo o contexto ativo focado na tarefa atual.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Campo</th><th>Valor exato</th><th>Nota</th></tr></thead>
+        <tbody>
+          <tr><td>Tool <code>type</code></td><td><code>memory_20250818</code></td><td>Entrada completa em <code>tools</code>: <code>{"type": "memory_20250818", "name": "memory"}</code> — "the entire configuration". Sem input schema (é Anthropic-provided tool).</td></tr>
+          <tr><td>Tool <code>name</code></td><td><code>memory</code></td><td>O <code>name</code> <em>deve</em> ser exatamente <code>memory</code>.</td></tr>
+          <tr><td>Beta header</td><td><span class="pill ok">Nenhum</span> para o memory tool isolado</td><td>O memory tool é <strong>GA</strong> ("generally available") na Messages API. O header <code>anthropic-beta: context-management-2025-06-27</code> só é exigido pelo <strong>context editing</strong> (<code>clear_tool_uses_20250919</code> / <code>clear_thinking_20251015</code>), não pelo memory tool.</td></tr>
+          <tr><td>Diretório raiz</td><td><code>/memories</code></td><td>Prefixo lógico que o handler mapeia para storage real (ex.: diretório por usuário, chave em DB). Todas as operações devem ser restritas a essa raiz.</td></tr>
+          <tr><td>Modelos suportados</td><td>Todos os modelos <strong>Claude 4 e posteriores</strong></td><td>Não disponível em modelos pré-Claude-4.</td></tr>
+          <tr><td>ZDR</td><td><span class="pill ok">Elegível</span></td><td>Em organizações com Zero Data Retention, dados enviados por esta feature não são retidos após a resposta da API.</td></tr>
+        </tbody>
+      </table></div>
+      <p><strong>Comandos de arquivo (seis, todos client-side):</strong> as strings de retorno abaixo são as
+      <em>recomendadas</em> pela doc — Claude lê qualquer texto que o <code>tool_result</code> contiver, então
+      o handler pode retornar strings diferentes se a aplicação exigir.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Comando</th><th>Parâmetros</th><th>Retorno de sucesso / comportamento</th></tr></thead>
+        <tbody>
+          <tr><td><code>view</code></td><td><code>path</code>; opcional <code>view_range: [start, end]</code> (<code>[start, -1]</code> = até o fim do arquivo)</td><td>Diretório: listagem até <strong>2 níveis</strong>, exclui itens ocultos (iniciados com <code>.</code>) e <code>node_modules</code>, tamanhos legíveis (ex.: <code>5.5K</code>, <code>1.2M</code>), separador <em>tab</em>. Arquivo: conteúdo com números de linha — <strong>largura 6, alinhado à direita com espaços, separador tab, 1-indexed</strong>. A tool description também diz que <code>view</code> exibe imagens (<code>.jpg</code>/<code>.jpeg</code>/<code>.png</code>) e trunca a visão de texto de arquivos com mais de <strong>16.000 caracteres</strong>. Arquivos com mais de <strong>999.999 linhas</strong> retornam <code>"File {path} exceeds maximum line limit of 999,999 lines."</code>. O primeiro <code>view</code> de <code>/memories</code> num store vazio <strong>não</strong> é erro.</td></tr>
+          <tr><td><code>create</code></td><td><code>path</code>, <code>file_text</code></td><td><code>"File created successfully at: {path}"</code>. A tool description diz que <code>create</code> <em>"creates or overwrites"</em> — o comportamento de referência retorna <code>"Error: File {path} already exists"</code> em path existente, mas sobrescrever (upsert) é escolha de implementação válida.</td></tr>
+          <tr><td><code>str_replace</code></td><td><code>path</code>, <code>old_str</code>, <code>new_str</code> (opcional — omitido = deleta o trecho sem substituição)</td><td><code>"The memory file has been edited."</code> seguido de um snippet com números de linha. Erro se <code>old_str</code> não aparecer <em>verbatim</em> (<code>"No replacement was performed, old_str ... did not appear verbatim in {path}."</code>) ou aparecer em <strong>múltiplas ocorrências</strong> (retorna as linhas e pede unicidade).</td></tr>
+          <tr><td><code>insert</code></td><td><code>path</code>, <code>insert_line</code>, <code>insert_text</code></td><td><code>"The file {path} has been edited."</code> <code>insert_text</code> é inserido <strong>após</strong> a linha <code>insert_line</code>; <code>0</code> insere no início do arquivo. <code>insert_line</code> fora de <code>[0, n_lines]</code> é erro.</td></tr>
+          <tr><td><code>delete</code></td><td><code>path</code></td><td><code>"Successfully deleted {path}"</code>. Remove arquivo ou diretório (recursivo). A tool description informa a Claude que ele <strong>não pode deletar a raiz <code>/memories</code></strong> — o handler deve rejeitar essa chamada.</td></tr>
+          <tr><td><code>rename</code></td><td><code>old_path</code>, <code>new_path</code></td><td><code>"Successfully renamed {old_path} to {new_path}"</code>. Move/renomeia; erro se o destino já existir (<strong>não sobrescreve</strong>: <code>"Error: The destination {new_path} already exists"</code>). A raiz <code>/memories</code> também não pode ser renomeada.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout danger">
+        <strong>Path traversal é responsabilidade 100% da aplicação.</strong> Um path malicioso como
+        <code>/memories/../../secrets.env</code> pode escapar do diretório de memória. O handler deve
+        validar <em>todo</em> path em <em>todo</em> comando: exigir que comece com <code>/memories</code>,
+        resolver para forma canônica e verificar que permanece dentro da raiz, rejeitar sequências
+        <code>../</code>/<code>..\</code> e variantes URL-encoded (<code>%2e%2e%2f</code>). Use utilitários
+        nativos de path da linguagem (ex.: <code>pathlib.Path.resolve()</code> + <code>relative_to()</code>
+        em Python). Erros voltam via <code>tool_result</code> com <code>is_error: true</code> e a mensagem
+        em <code>content</code>.
+      </div>
+      <p>
+        <strong>Protocolo de memória injetado automaticamente.</strong> Quando o memory tool está presente em
+        <code>tools</code>, a API adiciona sozinha ao system prompt o protocolo abaixo — você <em>não</em>
+        precisa enviá-lo:
+      </p>
+      <pre><code>IMPORTANT: ALWAYS VIEW YOUR MEMORY DIRECTORY BEFORE DOING ANYTHING ELSE.
+MEMORY PROTOCOL:
+1. Use the `view` command of your `memory` tool to check for earlier progress.
+2. ... (work on the task) ...
+   - As you make progress, record status / progress / thoughts etc in your memory.
+ASSUME INTERRUPTION: Your context window might be reset at any moment, so you risk
+losing any progress that is not recorded in your memory directory.</code></pre>
+      <p>
+        <strong>Combinação com context editing (aí sim o beta header).</strong> O valor real para agentes de
+        longa duração aparece ao parear o memory tool com <strong>context editing</strong>
+        (<code>anthropic-beta: context-management-2025-06-27</code>). A estratégia
+        <code>clear_tool_uses_20250919</code> limpa <code>tool_result</code>s antigos server-side quando o
+        contexto ultrapassa o <code>trigger</code> configurado (mantendo os <code>keep</code> pares mais
+        recentes — FIFO). Ao <em>aproximar-se</em> desse threshold, Claude recebe um
+        <strong>aviso automático</strong> ("an automatic warning to preserve important information") e pode
+        gravar em <code>/memories</code> os resultados/decisões importantes <em>antes</em> de serem apagados
+        do prompt. Assim, workflows ultrapassam o limite de contexto sem perder estado. O contrato completo
+        de <code>context_management</code> (parâmetros, defaults, resposta) está em
+        <a href="#context-editing-anthropic">§10.1</a>.
+      </p>
+      <pre><code>// tools[] mínimo para o memory tool isolado (sem beta header)
+{"type": "memory_20250818", "name": "memory"}
+
+// combinado com context editing (requer anthropic-beta: context-management-2025-06-27)
+{
+  "tools": [{"type": "memory_20250818", "name": "memory"}],
+  "context_management": {
+    "edits": [{"type": "clear_tool_uses_20250919"}]
+  }
+}</code></pre>
+      <p>
+        O memory tool também combina com <strong>compaction</strong> server-side pelo mesmo motivo:
+        compaction resume a conversa inteira no servidor quando ela se aproxima do limite da janela;
+        o memory preserva a informação que precisa <em>sobreviver</em> ao resumo. Para agentes de longa
+        duração, a doc recomenda usar os dois juntos.
+      </p>
+      <div class="callout tip">
+        <strong>Caso de uso canônico: sessões multi-turno de desenvolvimento de software.</strong>
+        A <em>sessão inicializadora</em> monta os arquivos de memória <strong>antes</strong> do trabalho
+        substantivo: um log de progresso, um checklist de features e a referência a um script de setup.
+        Cada sessão seguinte abre lendo esses arquivos — restaura o estado do projeto sem re-explorar a base
+        de código nem refazer decisões. Antes de encerrar, cada sessão atualiza o log. <strong>Regra-chave:
+        marcar uma feature como concluída somente após verificação end-to-end, não quando o código é
+        escrito</strong> — mantém o log confiável entre sessões (padrão documentado em "Effective harnesses
+        for long-running agents", Anthropic engineering).
+      </div>
+      <p>
+        Esta é a <strong>camada (i)</strong> do callout <a href="#zonas-canonicas">"Três camadas distintas"
+        (§8b)</a>: memory tool = persistência cross-sessão client-side em <code>/memories</code>. Não
+        confundir com <strong>context-editing</strong> (camada ii: FIFO server-side sobre
+        <code>tool_result</code>/<code>thinking</code>, que <em>não</em> atinge blocos <code>role=user</code>
+        transitórios) nem com o <strong>TTL de projeção</strong> do <code>hot_followup</code> ledger
+        (camada iii).
+      </p>
+      <div class="source-link">Fontes oficiais: <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool" target="_blank" rel="noopener">Anthropic — Memory tool</a> · <a href="https://platform.claude.com/docs/en/docs/build-with-claude/context-editing" target="_blank" rel="noopener">Anthropic — Context editing</a> (verificado 2026-07-12).</div>
+    </section>
+
+    <!-- ===================== 8c ===================== -->
+    <section id="agent-as-tool-multiturno">
+      <h2>8c. Agent-as-tool multi-turno &amp; continuidade conversacional</h2>
+      <p>
+        O §8b resolve o follow-up de <em>um</em> turno. Esta seção resolve o caso mais difícil: um
+        <strong>agent-as-tool que tem vida interna multi-turno</strong> — delibera, chama tools, faz
+        vários passes de reasoning antes de uma resposta definitiva — e a
+        <strong>continuidade conversacional entre agentes</strong>, inclusive quando o sub-agente
+        precisa de mais informação e o orquestrador volta ao usuário para buscá-la, e quando o
+        sub-agente é, ele mesmo, orquestrador de um sub-agente (recursão). O modelo é o mesmo do
+        §8: <strong>ledger canônico app-managed</strong> como única fonte de verdade, e
+        <strong>projeção wire</strong> descartável por turno. A novidade é que cada conversa
+        agente↔agente vira um <strong>ledger isolado próprio</strong>.
+      </p>
+
+      <div class="callout danger">
+        <strong>Invariante mestre (abre toda esta seção).</strong>
+        Caching é uma <em>otimização da projeção</em>, não um mecanismo de continuidade. O request
+        enviado ao provider deve ser completo, válido e seguro <strong>mesmo se todo cache der
+        miss</strong>. Estado vive no nosso ledger; provider-state (Conversations API,
+        <code>session_thread_id</code>, <code>previous_interaction_id</code>) é, no máximo,
+        <em>cache hint</em> não-autoritativo e descartável — nunca fonte de verdade.
+      </div>
+
+      <h3>8c.1 — Persistência completa &amp; isolamento absoluto</h3>
+      <p>
+        Cada sub-conversação (orquestrador↔especialista, especialista↔sub-especialista) é um
+        <strong>ledger append-only isolado</strong>. Dentro dele guardamos <strong>tudo</strong>, turno
+        a turno, até a resposta definitiva: input completo, multimodais (por <code>asset_id</code> +
+        <a href="guia_file_inputs_no_storage.html">SourceRecord</a>, não bytes duplicados),
+        <strong>carriers nativos de reasoning</strong> serializados (§8b — thinking block+signature,
+        reasoning item+<code>encrypted_content</code>, part com <code>thought_signature</code>), e
+        <strong>todos</strong> os <code>tool_call</code>/<code>tool_result</code> íntegros. Compactação
+        é projeção derivada (§10) — nunca apaga o log bruto.
+      </p>
+      <p>
+        O orquestrador <strong>nunca</strong> vê o ledger interno do filho. Recebe apenas o
+        <strong>return packet</strong> final, projetado como
+        <code>&lt;runtime_context&gt;&lt;subagent_return&gt;…&lt;/subagent_return&gt;&lt;/runtime_context&gt;</code>
+        no <code>role=user</code> do seu próximo turno (mesma natureza do
+        <code>hot_followup_context</code> do §8b). Isolamento é o que mantém o cache do pai estável: o
+        ledger pai não cresce a cada passe interno do filho.
+      </p>
+
+      <div class="table-wrap"><table>
+        <thead><tr><th>Camada</th><th>Retém</th><th>NÃO retém</th></tr></thead>
+        <tbody>
+          <tr><td>Ledger isolado do filho</td><td>Reasoning carriers, tool pairs íntegros, SourceRecord do que recuperou, input multimodal por ref, todos os turnos internos.</td><td>—</td></tr>
+          <tr><td>Return packet (filho→pai)</td><td><code>final_answer</code> curto, <code>reasoning_summary</code> redacted, <code>asset_refs</code> (ponteiros), <code>exec_meta</code>.</td><td>Reasoning carrier bruto; bytes de assets; histórico interno de turnos.</td></tr>
+          <tr><td>Ledger do pai</td><td>Suas próprias decisões + o return packet do filho + ponteiro <code>isolated_ledger_ref</code>.</td><td>O ledger interno do filho — só o ref.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>8c.2 — Schema canônico da sub-conversação &amp; marcador de fechamento</h3>
+      <p>
+        A identidade da sub-conversação reusa os tipos do ledger (§8) e acrescenta o necessário para
+        recursão, retomada e governança. Campos em <strong>negrito</strong> são obrigatórios.
+      </p>
+      <pre><code class="language-text"># Tipo de item no ledger (PascalCase); wire tag = &lt;runtime_context&gt;&lt;subagent_return&gt;
+SubConversation {
+  # identidade / árvore
+  conversation_id, root_conversation_id, parent_conversation_id, parent_call_id,
+  depth, max_depth, path[],                 # path[] = ancestrais; loop-check O(1)
+  agent_id,
+
+  # governança / multi-tenancy
+  tenant_id, classification,                # public | internal | pii | phi | regulated
+  retention_policy, region_policy,
+  actor_role, actor_id, actor_tenant_id,
+  created_at_turn, last_resumed_at_turn, lease_expires_at,
+
+  # retomada / idempotência
+  pending_request_ids[],                    # LISTA: resolução parcial é caso real
+  request_nonce_hash, idempotency_key,
+
+  # execução (per-call, não per-conversation)
+  provider_route { provider, model, adapter_version, api_surface },
+  projection_version, event_schema_hash, return_packet_schema_hash,
+  capability_set_hash, available_capabilities_hashes[],   # tools mutáveis mid-conversa
+
+  # cache hints (NÃO-autoritativo — ver 8c.6)
+  cache_hints[] { provider, kind, opaque_ref, ttl, expires_at,
+                  non_authoritative=true, tenant_scope, allowed_under_zdr },
+
+  # carriers nativos (opacos, provider-scoped — NÃO normalizar; §8b)
+  native_carriers[] { provider, carrier_kind, wire_payload_ref, canonical_position,
+                      provider_schema_version, sha256, replay_requirements,
+                      native_reasoning_portability,        # provider_native_replay
+                                                           #  | gemini_validation_bridge
+                                                           #  | summary_only | unavailable
+                      required_for_open_tool_loop, safe_to_omit_after_closed_turn },
+  reasoning_continuity_mode,                # native_carrier_in_ledger | summary_only
+                                            #  | unavailable | not_applicable
+
+  # retorno / auditoria
+  return_packet_ref, redaction_policy_version,
+  phi_scan_status,                          # passed | scrubbed | blocked
+  provider_audit_refs[],
+  closure_marker
+}
+
+closure_marker {
+  closure_id, closed_at_turn, closed_at_wall_clock,
+  final_state,                              # closed_final | closed_failed | closed_cancelled
+                                            #  | closed_superseded | closed_retries_exhausted
+  return_packet_ref, return_packet_hash, return_packet_schema_version,
+  native_carrier_manifest_hash, tool_pair_integrity_status,
+  loss_declaration_refs[], redaction_status,   # passed | scrubbed | blocked
+  replay_authorization_roles[], recovery_policy, retention_until, purge_after,
+  non_projectable_raw_child_log = true      # INVARIANTE HARD (ver 8c.7)
+}</code></pre>
+
+      <div class="callout tip">
+        <strong>Reuso, não reinvenção.</strong> <code>SubConversation</code> é um item do mesmo ledger
+        do §8; <code>asset_refs</code> usam <a href="guia_file_inputs_no_storage.html">SourceRecord</a>;
+        <code>native_carriers</code> seguem o invariante de carrier nativo do §8b; <code>cache_hints</code>
+        seguem o §10 (caching+ZDR). Nada aqui é vocabulário novo — é o §8 aplicado à profundidade.
+      </div>
+
+      <h3>8c.3 — Round-trip ao usuário (pause/resume)</h3>
+      <p>
+        Quando o sub-agente precisa de informação que só o usuário tem, ele emite um
+        <code>request_info</code> de <strong>schema fechado</strong> (não texto livre) e a
+        sub-conversação entra em <code>state=awaiting_user_info</code> — o mesmo estado que a
+        <a href="guia_contexto_compactacao_estrategias.html">estratégia de compactação §6</a> chama de
+        <code>waiting_user_input</code> (alias formal). O <code>lease_expires_at</code> impede que ela
+        fique pendurada para sempre.
+      </p>
+      <ol>
+        <li>Sub-agente → <code>request_info { request_id, schema (JSON Schema), prompt_to_user, rationale, expires_at }</code>.</li>
+        <li>Orquestrador <strong>traduz</strong> para linguagem humana (i18n-aware) — <strong>não</strong> injeta o <code>request_info</code> bruto no seu próprio <code>role=user</code>.</li>
+        <li>Usuário responde; orquestrador <strong>valida contra o <code>schema</code></strong> antes de retornar à sub-conversação.</li>
+        <li>Orquestrador re-chama o sub-agente com o <strong>mesmo <code>conversation_id</code></strong> (resume, não spawn), ligando a resposta ao <code>request_nonce_hash</code>.</li>
+      </ol>
+      <p>
+        A forma de injetar a resposta segue o invariante do §8b — <strong>não fabricar
+        <code>tool_result</code></strong> se não houve <code>tool_call</code> real:
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>O sub-agente emitiu…</th><th>A resposta volta como…</th></tr></thead>
+        <tbody>
+          <tr><td><code>tool_use</code>/<code>function_call</code> real (ex.: tool <code>ask_user</code>)</td><td><code>tool_result</code> / <code>function_result</code> / <code>function_call_output</code> nativo, pareado pelo id.</td></tr>
+          <tr><td><code>request_info</code> como conteúdo estruturado do output (sem tool_call)</td><td><code>role=user</code> no input do próximo turno, carregando o JSON validado. <span class="pill bad">Nunca</span> <code>tool_use_id</code> fabricado (Anthropic rejeita id desconhecido; quebra cache).</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout warn">
+        <strong>Topic-switch guard.</strong> Se o usuário muda de assunto durante
+        <code>awaiting_user_info</code>, <strong>não</strong> consuma a fala fora-de-tópico como resposta
+        ao sub-agente. Mantenha a sub-conversação suspensa sob TTL ou marque
+        <code>closed_superseded</code> com <code>cancel_reason="user_topic_switch"</code>; retome depois
+        via Opção B (8c.7). Idempotência: <code>request_nonce_hash</code> + <code>idempotency_key</code> +
+        registro <code>delivered=true/false</code> no ledger bloqueiam entrega dupla em retry.
+      </div>
+
+      <h3>8c.4 — Caso recursivo &amp; bubble-up sem duplicação</h3>
+      <p>
+        O especialista primário pode ser, ele mesmo, orquestrador de um especialista secundário. Mesma
+        estrutura, profundidade limitada por <code>max_depth</code> (default 3 em fluxos end-user).
+        Invariantes de recursão:
+      </p>
+      <ul>
+        <li><strong>Path-uniqueness:</strong> nenhum <code>agent_id</code> em <code>path[]</code> aparece duas vezes (mata reentrância direta e indireta).</li>
+        <li><strong>Monotonicidade:</strong> filho nunca reduz <code>classification</code> nem amplia <code>region_policy</code>; <code>capability_acl</code> é <code>intersect_parent</code>.</li>
+        <li><strong>Budget finito:</strong> cada filho recebe <code>budget_grant</code> do residual do pai; nenhum descendente cria orçamento fora do root.</li>
+        <li><strong>Cancellation cascade:</strong> root cancela → descendants ativos cancelam com <code>cancel_reason="parent_cascade"</code>.</li>
+      </ul>
+      <p>
+        O <strong>return packet bubble-up</strong> carrega só o essencial. <code>asset_refs</code> sobem
+        <em>por valor</em> (mesmo URI), nunca por cópia de bytes: se o secundário cita uma guideline com
+        <code>ref://…</code>, o primário propaga o <strong>mesmo</strong> ref ao orquestrador, que renderiza
+        a citação ao usuário sem nunca carregar os bytes.
+      </p>
+      <div class="callout invariant">
+        <strong>Isolamento por nível: o conversacional nem enxerga o secundário.</strong>
+        Cada pai vê <strong>apenas o return packet do seu filho DIRETO</strong> — nunca de um neto. No exemplo
+        de 3 níveis (8c.5), o orquestrador conversacional recebe só o return packet consolidado do
+        especialista primário; ele <strong>não tem ledger, conversation_id nem qualquer visibilidade</strong>
+        sobre o especialista secundário (consulta-guidelines), que existe inteiramente dentro do escopo do
+        primário. A conversa primário↔secundário tem seu próprio <code>conversation_id</code> e ledger
+        isolado, com possíveis múltiplos turnos internos e até seu próprio <code>awaiting_user_info</code>
+        (que sobe ao primário, não pula direto ao usuário). Os três casos cobertos por esta seção:
+        <strong>(1)</strong> turnos internos do agent-as-tool sem volta ao usuário (8c.1, 8c.6);
+        <strong>(2)</strong> continuação conversacional usuário↔agent-as-tool com volta ao usuário para
+        coletar info (8c.3); <strong>(3)</strong> continuação agent-as-tool↔agent-as-tool que o
+        conversacional nem enxerga (este bloco + 8c.5). Todos com persistência completa no ledger isolado e
+        <code>closure_marker</code> ao terminar.
+      </div>
+
+      <h3>8c.5 — Exemplo canônico: triagem administrativa/educacional (não-clínica)</h3>
+      <div class="callout warn">
+        <strong>Boundary obrigatória.</strong> Este exemplo é <strong>orientação administrativa/educacional</strong>
+        sobre <em>quando procurar avaliação</em> — não é prática clínica nem aconselhamento médico. Só é
+        defensável sob rota <strong>enterprise/BAA</strong>: Gemini via <strong>Vertex AI HIPAA-flagged
+        project</strong> + <strong>Web Grounding for Enterprise</strong> (Google Search Grounding comum
+        retém 30d, mesmo sob ZDR — §10); Claude via <strong>Enterprise BAA</strong>. <strong>Não</strong>
+        usar a Gemini API geral para triagem symptom-specific (os Termos da Gemini API proíbem clinical
+        practice / medical advice em uso geral). PHI mínima por nível; <code>patient_context_id</code> opaco.
+      </div>
+      <pre><code class="language-text">NÍVEL 0  conv_main  (orquestrador conversacional · Claude Sonnet 4.6 · low_friction)
+  T0 user  "tosse há 6 dias, meio sufocada à noite, é grave?"
+  T1 assistant → call_education_triage(...)        cache_key=HMAC(tenant, orchestrator, ...)
+     │
+     ▼ spawn NÍVEL 1  conv_triage_001  (Opus 4.8 xhigh · deliberative · path=[main,triage])
+        T1.1 reasoning_native (thinking+signature, no ledger isolado)
+        T1.2 request_info{ idade, dias, febre, comorbidade, tabagismo }
+             state=awaiting_user_info · lease=+15min            ↑ return_packet(request_info)
+  T2 orquestrador TRADUZ ao usuário (não copia request_info bruto)
+  T3 user  "58 anos, 6 dias, febre 37.8, catarro amarelo, ex-fumante, HAS"
+  T4 valida contra schema → OK
+  T5 re-chama call_education_triage(resume_conversation_id=conv_triage_001, info=...)   ← RESUME
+     │
+     ▼ conv_triage_001 retoma (state=open)
+        T1.3 role=user  {info validada}            # NÃO tool_result fabricado
+        T1.4 reasoning_native → query_education_guidelines(...)
+             │
+             ▼ spawn NÍVEL 2  conv_guidelines_001a  (Gemini 3.1 Pro · Vertex+BAA · path=[main,triage,guidelines])
+                T2.1 retrieve_guideline (Web Grounding for Enterprise — HIPAA-safe)
+                T2.2 tool_result → SourceRecord NICE patient-info §3.2 (asset_id, sha256)  [bytes só aqui]
+                T2.3 cite_source(ref, span)
+                T2.4 final_answer educacional (não-diagnóstico)  · phi_scan_status=passed
+                     closure: non_projectable_raw_child_log=true   ↑ return_packet{asset_refs}
+        T1.5 recebe return_packet (sem raw child log)
+        T1.6 final_answer: "procurar avaliação presencial em &lt;24h" + red flags
+             closure: non_projectable_raw_child_log=true             ↑ return_packet
+  T6 orquestrador comunica empático + cita NICE/SBPT como referência educacional + red flags</code></pre>
+      <p>
+        Pontos canônicos: a pausa <code>awaiting_user_info</code> nasce no <strong>nível 1</strong> (o filho
+        não fala com o usuário; o orquestrador intermedia); <strong>bytes do guideline</strong> vivem só no
+        ledger do nível 2, e sobem como <code>asset_refs</code>; <strong>reasoning nativo</strong> de cada
+        nível fica no seu próprio ledger e jamais atravessa a fronteira — só o <code>reasoning_summary</code>
+        curto e redacted.
+      </p>
+
+      <h3>8c.6 — Cache, pause/resume &amp; por que o orquestrador não sofre token explosion</h3>
+      <p>
+        A história interna de um sub-agente cresce a cada passe — custo cumulativo
+        <strong>O(n²)</strong> <em>dentro da sub-conversação</em>. Mas isso <strong>não</strong> vira
+        explosão no orquestrador: cada turno do pai vê só o seu próprio diálogo + o
+        <code>return_packet</code> do filho (poucos KB). A explosão fica <strong>contida</strong> no escopo
+        isolado, e é mitigada por prompt-caching por <code>agent_id</code> — desde que o pai mantenha o
+        return packet <strong>bounded</strong>:
+      </p>
+      <div class="callout invariant">
+        <strong>Hard caps no pai (HOT-FU-001).</strong> <code>parent_hot_followup_budget</code> (token cap),
+        <code>max_return_packets_projected</code> (n), TTL no hot_followup; após N turnos do pai, packets
+        antigos viram <strong>digest/ref</strong> ou EvidenceCard bounded — nunca acumulam raw. Sem isso, a
+        explosão volta no pai.
+      </div>
+      <p>Disciplina de cache por provider (cache é hint, nunca estado):</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Provider</th><th>Mecanismo (hint)</th><th>Rota ZDR/store=false estrita</th></tr></thead>
+        <tbody>
+          <tr><td>OpenAI</td><td><code>prompt_cache_key</code> por <code>agent_id</code>; extended retention 24h obrigatório em gpt-5.5 (<code>in_memory</code> → erro); desde 2026-05-29 o default de <code>prompt_cache_retention</code> é <code>"24h"</code> para <strong>qualquer</strong> organização sem ZDR (não só gpt-5.5)</td><td>permitido (cached tokens contam para TPM/janela)</td></tr>
+          <tr><td>Anthropic</td><td><code>cache_control</code> em até 4 breakpoints (<code>ttl "5m"|"1h"</code> no bloco)</td><td>permitido; <strong>usar breakpoints explícitos</strong> em tools/system/L2 estável — não confiar em automatic caching (escolhe o último bloco cacheável → pode pegar o <code>hot_followup</code> volátil)</td></tr>
+          <tr><td>Gemini</td><td><strong>implicit in-memory caching</strong> (prefixo estável) <span class="pill ok">ZDR-compatible</span> — RAM-only, isolado por projeto, TTL 24h</td><td>permitido; <strong>NÃO</strong> criar <code>cachedContents</code>; <strong>NÃO</strong> usar <code>previous_interaction_id</code> (é state handle server-side; <code>store=false</code> o impede)</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout beta">
+        <strong>Gemini, duas rotas (CACHE-004).</strong> O <em>implicit cache</em> do Gemini é ZDR-friendly e
+        <strong>sempre permitido</strong> — não confunda com handles de estado. Em ZDR estrito ficam
+        bloqueados apenas os objetos/handles que implicam armazenamento server-side:
+        <code>cachedContents</code>, <code>previous_interaction_id</code>, File API persistente, Live
+        <code>SessionResumptionConfig</code>. <code>previous_interaction_id</code> só vale como cache hint
+        não-autoritativo em <strong>rota não-ZDR opt-in</strong>. Detalhe canônico em
+        <a href="guia_token_counting.html">Token counting — §10 caching+ZDR</a>.
+      </div>
+      <p>
+        <strong>Pause/resume é wall-clock, não em turnos do pai:</strong> 3 turnos do orquestrador podem ser
+        30 s ou 30 min. Para retomar com cache-hit: mesmo <code>model</code>/<code>tools</code> (ordem
+        estável)/<code>instructions</code>/<code>prompt_cache_key</code>; em Anthropic a sequência até o
+        breakpoint deve ser byte-idêntica. Pausa esperada &gt; 5 min: <code>ttl "1h"</code>. Pausa &gt; 1 h:
+        aceitar miss, mitigar com snapshot compactado antes da pausa.
+      </p>
+
+      <h3>8c.7 — Lifecycle, GC &amp; recuperação histórica</h3>
+      <p>
+        Ao fechar, o <code>closure_marker</code> torna o raw child log
+        <strong>não-projetável ao modelo do pai</strong> (<code>non_projectable_raw_child_log=true</code>).
+        Tooling/framework que tente auto-carregar o histórico do filho deve <strong>falhar fail-closed</strong>.
+        O pai lê o filho por apenas dois caminhos: o <code>return_packet_ref</code> (durante a conversa) ou o
+        <strong>gateway histórico</strong> (<code>mode=historical</code>), quando precisa relembrar uma decisão
+        anterior (ex.: o usuário volta no dia seguinte).
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Recuperação</th><th>Quando</th><th>Emite</th></tr></thead>
+        <tbody>
+          <tr><td><strong>A — flashback (default)</strong></td><td>Esclarecer decisão anterior; sem novo julgamento.</td><td>Re-projeta o return packet antigo (redacted) como <code>&lt;runtime_context kind="historical_subagent_decision"&gt;</code> em <code>role=user</code>. Não rehidrata raw log.</td></tr>
+          <tr><td><strong>B — nova sub-conversação</strong></td><td>Novo julgamento (situação mudou).</td><td>Spawn com <code>parent_call_id</code> apontando à anterior; return packet antigo entra como EvidenceCard, não raw log.</td></tr>
+          <tr><td><strong>C — child-recall gateway</strong></td><td>Return packet não basta; auditor precisa de detalhe.</td><td>EvidenceCard bounded redacted (<code>phi_scan_status=passed</code>). Nunca transcript bruto.</td></tr>
+          <tr><td><strong>D — forensic replay</strong></td><td>Auditoria forense.</td><td><strong>audit-only</strong>, fora do live path — nunca projetável ao modelo do pai.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout danger">
+        <strong>Vetores residuais de contaminação a fechar.</strong> O <code>closed</code> só impede
+        contaminação se você também bloquear: (1) cache leak por prefixo compartilhado →
+        <code>prompt_cache_key</code> por <code>agent_id</code> + <code>tenant_id</code>/security partition
+        no seed (em workloads regulados, domain-separation via HKDF com labels versionados
+        <code>security_fingerprint:v1</code>/<code>cache_affinity:v1</code>/<code>provider_prompt_cache_key:v1</code>);
+        (2) índice RAG/vector contaminado pelo raw child log → <code>retrieval_scope=child_only|audit_only</code>;
+        (3) trace/exporter vazando refs como texto → <code>trace_export_scope=redacted</code>;
+        (4) PHI bubbling via <code>reasoning_summary</code> → redactor obrigatório antes do bubble-up,
+        <code>phi_scan_status=passed</code> (se <code>blocked</code>, o packet não é projetável).
+      </div>
+      <div class="callout beta">
+        <strong>Observabilidade de cache.</strong> Registre no run ledger/telemetria — sem objeto novo —
+        <code>provider_usage.cached_tokens</code>, <code>cache_hit_tokens</code>, <code>cache_write_tokens</code>,
+        <code>cache_read_tokens</code>, <code>cache_miss_reason</code>, <code>cache_hint_kind</code> e o
+        <code>projection_hash</code> quando o provider expõe. Cache que não se mede vira ilusão de economia.
+      </div>
+      <div class="callout tip">
+        <strong>Cross-links.</strong> Carriers nativos e colocação do follow-up:
+        <a href="#zonas-canonicas">§8b</a>. Cache+ZDR por provider (IMPLICIT-ONLY Gemini):
+        <a href="guia_token_counting.html">Token counting §10</a>. Degraus de compactação e microconversas:
+        <a href="guia_contexto_compactacao_estrategias.html">Contexto &amp; compactação §5/§6</a>. Assets e
+        SourceRecord: <a href="guia_file_inputs_no_storage.html">File inputs</a>.
+      </div>
+
+      <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "name": "§8c — Agent-as-tool multi-turno & continuidade conversacional",
+  "inLanguage": "pt-BR",
+  "about": "App-managed isolated ledger for multi-turn agent-as-tool sub-conversations across OpenAI, Anthropic and Gemini",
+  "keywords": "agent-as-tool, sub-conversation, isolated ledger, event-sourcing, closure marker, pause resume, recursion, return packet, prompt caching, ZDR, reasoning carrier",
+  "additionalProperty": [
+    { "@type": "PropertyValue", "propertyID": "8c.master-invariant", "name": "Invariante mestre", "value": "Caching é otimização da projeção, não continuidade. O request ao provider deve ser completo, válido e seguro mesmo se todo cache der miss. Estado vive no ledger app-managed; provider-state é cache hint não-autoritativo." },
+    { "@type": "PropertyValue", "propertyID": "8c.cases", "name": "Casos cobertos", "value": "(1) turnos internos do agent-as-tool sem volta ao usuário; (2) continuação conversacional usuário↔agent-as-tool com volta ao usuário; (3) continuação agent-as-tool↔agent-as-tool que o orquestrador conversacional nem enxerga. Todos com persistência completa + closure_marker." },
+    { "@type": "PropertyValue", "propertyID": "8c.ledger", "name": "Modelo de ledger", "value": "Cada sub-conversação é um ledger append-only isolado app-managed. Persistência completa turn-a-turn: input, multimodais por asset_id/SourceRecord, native_carriers serializados, todos os tool_call/tool_result. Compactação é projeção derivada, nunca apaga o bruto." },
+    { "@type": "PropertyValue", "propertyID": "8c.isolation", "name": "Isolamento absoluto", "value": "O pai nunca vê o ledger interno do filho — só o return_packet via <runtime_context><subagent_return> em role=user. Cada pai vê só o filho DIRETO; o conversacional não enxerga o neto (secundário)." },
+    { "@type": "PropertyValue", "propertyID": "8c.schema", "name": "Schema SubConversation", "value": "conversation_id, root/parent_conversation_id, parent_call_id, depth, max_depth, path[], agent_id, tenant_id, classification, state, lease_expires_at, pending_request_ids[], request_nonce_hash, idempotency_key, provider_route, projection_version, capability_set_hash, cache_hints[], native_carriers[], reasoning_continuity_mode, return_packet_ref, phi_scan_status, closure_marker. Reusa tipos do ledger §8." },
+    { "@type": "PropertyValue", "propertyID": "8c.closure", "name": "Closure marker", "value": "closure_id, closed_at_turn/wall_clock, final_state (closed_final|failed|cancelled|superseded|retries_exhausted), return_packet_ref/hash, native_carrier_manifest_hash, tool_pair_integrity_status, redaction_status, retention_until, non_projectable_raw_child_log=true (invariante hard: raw child log nunca projetável ao modelo do pai após fechar)." },
+    { "@type": "PropertyValue", "propertyID": "8c.pause-resume", "name": "Round-trip ao usuário", "value": "Sub-agente emite request_info (schema fechado JSON Schema). state=awaiting_user_info (alias waiting_user_input da compactação §6). lease_expires_at evita pendura. Orquestrador traduz (não injeta bruto), valida resposta contra schema, re-chama com mesmo conversation_id (resume). Resposta volta como tool_result se houve tool_call real, senão role=user — nunca tool_result fabricado." },
+    { "@type": "PropertyValue", "propertyID": "8c.topic-switch", "name": "Topic-switch guard", "value": "Se o usuário muda de assunto durante awaiting_user_info, não consumir a fala como resposta ao sub-agente; suspender com TTL ou marcar closed_superseded (cancel_reason=user_topic_switch). request_nonce_hash + idempotency_key bloqueiam entrega dupla." },
+    { "@type": "PropertyValue", "propertyID": "8c.recursion", "name": "Recursão", "value": "max_depth default 3. Invariantes: path-uniqueness (agent_id não repete no path[]); monotonicidade (filho não reduz classification nem amplia region_policy; capability_acl intersect_parent); budget_grant finito do residual do pai; cancellation cascade (parent_cascade)." },
+    { "@type": "PropertyValue", "propertyID": "8c.bubble-up", "name": "Return packet bubble-up", "value": "Carrega só o essencial: final_answer curto, reasoning_summary redacted (nunca carrier bruto), asset_refs por valor (mesmo URI, não bytes), exec_meta. asset_refs propagam por valor nível-a-nível." },
+    { "@type": "PropertyValue", "propertyID": "8c.token-explosion", "name": "Token explosion contida", "value": "O custo O(n²) da história interna fica CONTIDO na sub-conversação, não no orquestrador (que só vê return_packet de poucos KB). Requer hard caps no pai: parent_hot_followup_budget, max_return_packets_projected, TTL, digest/ref após N turnos." },
+    { "@type": "PropertyValue", "propertyID": "8c.cache.openai", "name": "Cache OpenAI", "value": "prompt_cache_key por agent_id; extended retention 24h obrigatório em gpt-5.5 (in_memory→erro). Desde 2026-05-29 o default de prompt_cache_retention é 24h para qualquer organização sem ZDR (não só gpt-5.5). Cached tokens contam para TPM/janela (CACHE-001: request válido on cache miss)." },
+    { "@type": "PropertyValue", "propertyID": "8c.cache.anthropic", "name": "Cache Anthropic", "value": "cache_control até 4 breakpoints (ttl 5m|1h no bloco). Usar breakpoints EXPLÍCITOS em tools/system/L2 estável quando há hot_followup volátil — top-level automatic caching escolhe o último bloco cacheável e pode pegar o bloco errado." },
+    { "@type": "PropertyValue", "propertyID": "8c.cache.gemini", "name": "Cache Gemini (duas rotas)", "value": "Implicit in-memory caching É ZDR-compatible (RAM-only, project-isolated, TTL 24h) → SEMPRE permitido. Em ZDR/store=false estrito: NÃO criar cachedContents; NÃO usar previous_interaction_id (state handle server-side; store=false o impede); NÃO File API/Live SessionResumptionConfig. previous_interaction_id só como hint não-autoritativo em rota não-ZDR opt-in. Alinhado a Token counting §10 IMPLICIT-ONLY." },
+    { "@type": "PropertyValue", "propertyID": "8c.reasoning-carrier", "name": "Carrier nativo de reasoning", "value": "Opaco, provider-scoped, não normalizado (§8b). native_reasoning_portability: provider_native_replay | gemini_validation_bridge (dummy thought_signature adapter-only) | summary_only | unavailable. Cross-provider migration leva summary, não signature." },
+    { "@type": "PropertyValue", "propertyID": "8c.recovery", "name": "Recuperação histórica", "value": "Gateway com 4 modos: A flashback (default, re-projeta return packet redacted como historical_subagent_decision); B nova sub-conversação (novo julgamento, parent_call_id à anterior); C child-recall EvidenceCard bounded; D forensic replay audit-only fora do live path." },
+    { "@type": "PropertyValue", "propertyID": "8c.contamination", "name": "Vetores de contaminação a fechar", "value": "(1) cache leak por prefixo → prompt_cache_key por agent_id + tenant_id/security partition no seed (HKDF labels versionados em regulados); (2) índice RAG/vector → retrieval_scope=child_only|audit_only; (3) trace/exporter → trace_export_scope=redacted; (4) PHI bubbling via reasoning_summary → redactor obrigatório + phi_scan_status (se blocked, packet não projetável)." },
+    { "@type": "PropertyValue", "propertyID": "8c.observability", "name": "Observabilidade de cache", "value": "Registrar em telemetria/run ledger (sem objeto novo): provider_usage.cached_tokens, cache_hit_tokens, cache_write_tokens, cache_read_tokens, cache_miss_reason, cache_hint_kind, projection_hash quando o provider expõe." },
+    { "@type": "PropertyValue", "propertyID": "8c.healthcare-boundary", "name": "Exemplo healthcare — boundary", "value": "Triagem ADMINISTRATIVA/EDUCACIONAL (não-clínica). Só sob enterprise/BAA: Gemini via Vertex AI HIPAA-flagged project + Web Grounding for Enterprise (Google Search Grounding comum retém 30d); Claude via Enterprise BAA. Gemini API geral proíbe clinical practice/medical advice." }
+  ]
+}
+      </script>
+      <div class="callout beta">
+        <strong>Como usar este bloco (para IA).</strong> Um agente/scraper pode pular direto para
+        <code>script[type="application/ld+json"]</code> desta seção e tratar <code>additionalProperty</code>
+        como uma matriz de fatos. Os <code>propertyID</code> seguem o padrão <code>8c.&lt;tópico&gt;</code>
+        (e <code>8c.cache.&lt;provider&gt;</code> para caching por provider) — fácil de mapear a
+        YAML/JSONSchema downstream sem reparsear a prosa.
+      </div>
+    </section>
+
+    <!-- ===================== PARTE 3 ===================== -->
+    <section class="chapter" id="parte-compaction-budgets">
+      <h2 style="border-bottom:3px solid var(--c-da);padding:14px 0 10px;font-size:28px">Parte 3 — Compaction &amp; budgets</h2>
+      <p>Como medir o orçamento de contexto, qual é o contrato de compaction (e o que ele jamais pode
+      perder) e como provar, com testes, que a memória sobrevive ao replay.</p>
+    </section>
+
+    <section id="budgets-e-invariantes">
+      <h2>9. Budgets e invariantes</h2>
+      <p>
+        Um princípio simples atravessa o material: <strong>limite que não é medido não existe</strong>.
+        Defina budgets por turn, subagente, capability, provider, usuário e síntese final. O orçamento de
+        contexto de um turno é a soma do que será projetado mais a reserva da resposta:
+      </p>
+      <pre><code class="language-text">tokens(instructions + projected_dialogue + projected_assets + projected_tool_context)
+  + max_output_tokens (inclui reasoning/thinking conforme o provider)
+  + margem_de_seguranca
+  ≤ janela_do_modelo</code></pre>
+      <div class="callout warn">
+        <strong>Reasoning/thinking consome orçamento.</strong> Em todos os três providers, os tokens de
+        raciocínio interno contam contra o limite de saída ou a janela. Reserve explicitamente
+        (<code>final_reserve_tokens</code> no <a href="guia_arquitetura_orquestracao.html#skeleton-orquestrador">active plan</a>)
+        para não esgotar a resposta final abrindo tools.
+      </div>
+      <div class="callout tip">
+        <strong>Cross-link (não duplicar):</strong> como <em>contar</em> esses tokens — tokenizadores por
+        provider, <code>count_tokens</code>/<code>usage</code>, custo de imagem e receitas copy-paste —
+        está inteiramente em <a href="guia_token_counting.html">Token counting</a>. Aqui o budget é o
+        invariante que o loop respeita; lá está a aritmética.
+      </div>
+      <div class="callout warn">
+        <strong>Hard cap de fatia ≠ soma simultânea.</strong> Ao subdividir o orçamento em fatias por
+        <a href="#zonas-canonicas">zona</a> (<code>authority</code>, diálogo, <code>turn_working</code>,
+        hot follow-up, recall…), trate cada <em>hard</em> como um <strong>teto local não-simultâneo</strong>:
+        a soma dos hards costuma exceder a janela de propósito — isso é folga de design, não um budget
+        somável. O que <em>vincula</em> é sempre a fórmula acima
+        (<code>projeção + reserva de saída + margem ≤ janela efetiva</code>). E mantenha o
+        <code>reserved_unallocated</code> (folga de tokenização/overhead de provider) <strong>separado</strong>
+        da margem de segurança da resposta, para não contar a mesma folga duas vezes.
+      </div>
+    </section>
+
+    <section id="compaction-contrato">
+      <h2>10. Compaction e reidratação — o contrato</h2>
+      <p>
+        Compaction <strong>não</strong> é "resumir a conversa". É substituir partes do ledger por
+        artefatos menores <em>mantendo rastreabilidade</em>. Uma compaction aceitável preserva: fatos
+        confirmados, decisões, incertezas, pendências, tool calls/results relevantes, assets e hashes,
+        citações, preferências do usuário, carriers que precisam de replay e limites de confiança.
+      </p>
+      <pre><code class="language-json">{
+  "compaction_item": {
+    "replaces_item_ids": ["msg_10", "tool_11", "tool_12"],
+    "summary": "...",
+    "facts": [{"claim": "...", "source_item_id": "tool_11", "confidence": "high"}],
+    "open_issues": [],
+    "asset_refs": ["asset_pdf_1"],
+    "provider_carriers_preserved": ["openai_reasoning_enc_3"],
+    "losses_declared": ["verbatim wording removed"]
+  }
+}</code></pre>
+      <div class="callout beta">
+        <strong>Contrato aqui, estratégia lá.</strong> Este capítulo define <em>o que</em> uma compaction
+        deve preservar e declarar. <em>Como</em> escolher o teto X, montar a escada de compactação e
+        manter snapshots cumulativos está em
+        <a href="guia_contexto_compactacao_estrategias.html">Contexto &amp; compactação — estratégias</a>.
+        Os dois são complementares: a estratégia deve sempre produzir um <code>compaction_item</code> que
+        satisfaça este contrato.
+      </div>
+
+      <h3 id="context-editing-anthropic">10.1 — Context editing (Anthropic): limpeza server-side de tool results e thinking <span class="pill beta">Beta</span></h3>
+      <p>
+        A Anthropic oferece uma implementação <strong>server-side</strong> deste mesmo contrato de
+        compaction: o parâmetro <code>context_management</code> na Messages API aplica edições automáticas
+        ao prompt <em>antes</em> de ele chegar ao modelo, sem que o estado do lado do cliente (o ledger)
+        precise ser alterado. O histórico completo continua existindo na aplicação — só a projeção enviada
+        ao modelo é reduzida. É o exemplo concreto de uma "estratégia que produz um
+        <code>compaction_item</code>-equivalente" administrada pelo próprio provider, satisfazendo o
+        contrato de §10 e o gate de §11.
+      </p>
+      <div class="callout warn">
+        <strong>Beta — header obrigatório.</strong> Requer o header
+        <code>anthropic-beta: context-management-2025-06-27</code> em toda requisição que usar
+        <code>context_management</code> (nos SDKs, <code>betas=["context-management-2025-06-27"]</code>).
+        Disponível em <strong>todos os modelos Claude suportados</strong>. Elegível a Zero Data Retention
+        (ZDR): em orgs com acordo ZDR, os dados enviados por este recurso não são retidos após a resposta.
+      </div>
+
+      <h4>Forma do request</h4>
+      <pre><code>{
+  "context_management": {
+    "edits": [
+      { "type": "clear_thinking_20251015", "...": "..." },
+      { "type": "clear_tool_uses_20250919", "...": "..." }
+    ]
+  }
+}</code></pre>
+      <div class="callout danger">
+        <strong>Ordem importa.</strong> Ao combinar as duas estratégias no mesmo array <code>edits</code>,
+        <code>clear_thinking_20251015</code> <strong>deve vir listada primeiro</strong> (antes de
+        <code>clear_tool_uses_20250919</code>). É regra explícita da documentação, não apenas preferência
+        de estilo.
+      </div>
+
+      <h4><code>clear_tool_uses_20250919</code> — parâmetros</h4>
+      <p>
+        Limpa os resultados de tool use mais antigos primeiro (cronologicamente), substituindo-os por
+        placeholder, quando o prompt cresce além do limiar configurado. Por padrão, apenas os
+        <em>resultados</em> são limpos; as chamadas de tool originais do Claude permanecem visíveis.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Parâmetro</th><th>Tipo / forma</th><th>Default</th><th>Efeito</th></tr></thead>
+        <tbody>
+          <tr><td><code>trigger</code></td><td><code>{type:"input_tokens",value:N}</code> ou <code>{type:"tool_uses",value:N}</code></td><td><code>{type:"input_tokens",value:100000}</code></td><td>Limiar que ativa a limpeza; quando o prompt excede este valor, o clearing começa.</td></tr>
+          <tr><td><code>keep</code></td><td><code>{type:"tool_uses",value:N}</code></td><td><code>{type:"tool_uses",value:3}</code></td><td>Quantos pares tool_use/tool_result recentes preservar; os mais antigos são removidos primeiro.</td></tr>
+          <tr><td><code>clear_at_least</code></td><td><code>{type:"input_tokens",value:N}</code></td><td>Nenhum</td><td>Garante um mínimo de tokens limpos por ativação; se a API não conseguir atingir esse mínimo, a estratégia não é aplicada.</td></tr>
+          <tr><td><code>exclude_tools</code></td><td>array de strings (nomes de tool)</td><td>Nenhum</td><td>Tools cujos usos/resultados nunca são limpos.</td></tr>
+          <tr><td><code>clear_tool_inputs</code></td><td>boolean</td><td><code>false</code></td><td>Se <code>true</code>, também limpa os parâmetros da chamada de tool — não só o resultado.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h4><code>clear_thinking_20251015</code> — parâmetros</h4>
+      <p>Gerencia blocos <code>thinking</code> quando adaptive/extended thinking está habilitado.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Parâmetro</th><th>Tipo / forma</th><th>Default</th><th>Efeito</th></tr></thead>
+        <tbody>
+          <tr><td><code>keep</code></td><td><code>{type:"thinking_turns",value:N}</code> (N&gt;0) ou <code>"all"</code></td><td>Depende da classe do modelo — ver abaixo</td><td>Quantos turnos recentes de assistant com thinking blocks preservar, ou <code>"all"</code> para manter todos.</td></tr>
+        </tbody>
+      </table></div>
+      <p>O default de <code>keep</code> varia por classe de modelo:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Classe</th><th>Mantém todo thinking anterior</th><th>Mantém só o thinking do último turno</th></tr></thead>
+        <tbody>
+          <tr><td>Opus</td><td>Claude Opus 4.5 e posteriores</td><td>Claude Opus 4.1 (deprecated) e anteriores</td></tr>
+          <tr><td>Sonnet</td><td>Claude Sonnet 4.6 e posteriores</td><td>Claude Sonnet 4.5 e anteriores</td></tr>
+          <tr><td>Haiku</td><td>—</td><td>Todos os modelos até Claude Haiku 4.5</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout tip">
+        <strong>Fixe <code>keep</code> explicitamente</strong> se o mesmo código roda contra mais de uma
+        classe/tier de modelo. A recomendação oficial é literal: <em>"If your code runs across multiple
+        model tiers, set <code>keep</code> explicitly rather than relying on the per-model default."</em>
+        Depender do default silenciosamente quebra portabilidade entre Opus/Sonnet/Haiku.
+      </div>
+
+      <h4>Efeito no prompt cache</h4>
+      <ul>
+        <li>Limpar tool results <strong>invalida</strong> o prefixo cacheado no ponto do corte; você paga
+          cache write a cada limpeza, mas os requests seguintes reusam o novo prefixo. Use
+          <code>clear_at_least</code> para que a invalidação "valha a pena" (evita limpezas pequenas e
+          frequentes).</li>
+        <li>Thinking blocks <strong>mantidos</strong> preservam o cache (cache hits, menos tokens de
+          input); thinking blocks <strong>limpos</strong> invalidam o cache a partir do ponto de corte.</li>
+      </ul>
+
+      <h4>Resposta: <code>context_management.applied_edits</code></h4>
+      <p>
+        A resposta não-streaming inclui <code>context_management</code> como campo de topo, irmão de
+        <code>usage</code>, relatando o que foi de fato aplicado:
+      </p>
+      <pre><code>{
+  "context_management": {
+    "applied_edits": [
+      { "type": "clear_thinking_20251015", "cleared_thinking_turns": 3, "cleared_input_tokens": 15000 },
+      { "type": "clear_tool_uses_20250919", "cleared_tool_uses": 8, "cleared_input_tokens": 50000 }
+    ]
+  }
+}</code></pre>
+      <p>
+        Em streaming, o mesmo bloco chega no evento <code>message_delta</code> final. O estado do lado do
+        cliente (ledger) não muda — só a projeção enviada naquela chamada foi reduzida.
+      </p>
+
+      <h4><code>count_tokens</code> com <code>context_management</code></h4>
+      <p>
+        O endpoint <code>/v1/messages/count_tokens</code> aceita o mesmo bloco <code>context_management</code>
+        (e o mesmo beta header) para prever o efeito da limpeza <em>antes</em> de gastar uma chamada real:
+      </p>
+      <pre><code>{
+  "input_tokens": 25000,
+  "context_management": {
+    "original_input_tokens": 70000
+  }
+}</code></pre>
+      <p>
+        <code>input_tokens</code> é a contagem <strong>após</strong> o context management aplicado;
+        <code>context_management.original_input_tokens</code> é a contagem <strong>antes</strong> de
+        qualquer limpeza — a diferença é a economia projetada.
+      </p>
+
+      <div class="callout beta">
+        <strong>Relação com este capítulo.</strong> Use <code>context_management</code> como a
+        implementação Anthropic do gate de §11 (perdas aceitáveis vs proibidas): <code>exclude_tools</code>
+        e <code>clear_at_least</code> são os controles que evitam que uma limpeza automática remova um
+        <code>tool_result</code> auditável sem declaração. A escada de compactação genérica
+        (multi-provider) e quando escaloná-la estão em
+        <a href="guia_contexto_compactacao_estrategias.html">Contexto &amp; compactação — estratégias</a>.
+        Pode ser combinado com a tool <code>memory_20250818</code>: ao se aproximar do limiar de limpeza, o
+        Claude recebe um aviso automático para salvar informação importante em arquivos de memória antes do
+        corte — casando com o modo <strong>Memory tool</strong> descrito em §8b.
+      </div>
+      <div class="source-link">Fonte oficial: <a href="https://platform.claude.com/docs/en/docs/build-with-claude/context-editing" target="_blank" rel="noopener">Anthropic — Context editing</a>.</div>
+    </section>
+
+    <section id="perdas-aceitaveis-proibidas">
+      <h2>11. Perdas aceitáveis e perdas proibidas na compaction</h2>
+      <p>A tabela abaixo é o gate de revisão de qualquer compaction antes de ela substituir itens reais:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Tipo de informação</th><th>Pode ser compactada?</th><th>Como preservar</th></tr></thead>
+        <tbody>
+          <tr><td>Estilo/verbatim de conversa antiga</td><td><span class="pill ok">Sim</span>, geralmente.</td><td>Resumo curto ou remoção declarada.</td></tr>
+          <tr><td>Fato usado em decisão</td><td><span class="pill bad">Não</span> como perda silenciosa.</td><td>Fact item com <code>source_id</code> e confiança.</td></tr>
+          <tr><td>Tool call/result necessário para auditoria</td><td><span class="pill bad">Não</span>.</td><td>IDs, args hash, status, reduced output e provenance.</td></tr>
+          <tr><td>Reasoning/thinking carrier exigido pelo provider</td><td><span class="pill bad">Não converter em texto</span>.</td><td>Preservar o carrier oficial ou declarar indisponibilidade.</td></tr>
+          <tr><td>Preferência estável do usuário</td><td><span class="pill partial">Sim, com cuidado</span>.</td><td>Memory item versionado com origem.</td></tr>
+          <tr><td>Dado sensível irrelevante</td><td><span class="pill ok">Deve ser removido/redigido</span>.</td><td>Redaction item + hash quando necessário.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout danger">
+        <strong>Perda proibida silenciosa = incidente.</strong> Se uma compaction descartar um fato que
+        sustentava uma decisão, o replay reconstrói uma história falsa. Toda perda relevante deve ser
+        <em>declarada</em> em <code>losses_declared</code> e, se for um fato de decisão, preservada como
+        fact item — nunca apenas "resumida".
+      </div>
+    </section>
+
+    <section id="testes-de-memoria">
+      <h2>12. Testes de memória e contexto</h2>
+      <p>
+        Memória não é "funcionou uma vez". Estes testes pertencem ao pacote de regressão do sistema e
+        mapeiam diretamente aos gates de eval do <a href="guia_operacao_seguranca_evals.html">capítulo de
+        operação</a> (gate <code>CTX-001</code>):
+      </p>
+      <ul>
+        <li>☐ <strong>Replay determinístico:</strong> reidratar o ledger reproduz a mesma projeção (mod. timestamps/nonces).</li>
+        <li>☐ <strong>Sobrevivência à compaction:</strong> após compactar, nenhum fato de decisão, tool result auditável ou pendência some do replay.</li>
+        <li>☐ <strong>Integridade de carrier:</strong> thinking blocks/signatures e reasoning carriers exigidos voltam corretamente no tool loop (sem erro do provider).</li>
+        <li>☐ <strong>Provider switch com loss declaration:</strong> projetar para outro provider produz uma loss declaration e passa no eval de regressão.</li>
+        <li>☐ <strong>Budget e wind-down:</strong> ao atingir a reserva final, o sistema finaliza sem abrir novas tools.</li>
+        <li>☐ <strong>Isolamento de tenant:</strong> nenhum asset/fato de outro tenant entra na projeção.</li>
+      </ul>
+      <div class="callout tip">
+        <strong>Como falsificar barato:</strong> o teste de sobrevivência à compaction é o mais valioso e
+        o mais barato — monte um ledger com 3 fatos de decisão, compacte, reidrate e asserte que os 3
+        fact items continuam presentes com <code>source_item_id</code>. Falha aqui é perda silenciosa.
+      </div>
+    </section>
+
+    <!-- ===================== REFERÊNCIA ===================== -->
+    <section class="ref" id="checklist-de-estado">
+      <h2>Checklist de estado</h2>
+      <p>Gate antes de promover qualquer gestão de estado/memória para produção:</p>
+      <ul>
+        <li>☐ O ledger distingue mensagens, tools, assets, carriers, approvals, usage e compactions.</li>
+        <li>☐ Cada provider adapter é uma projeção pura a partir do ledger, não uma mutação escondida.</li>
+        <li>☐ Reasoning/thinking privado é preservado no carrier oficial quando necessário, sem expor a cadeia de pensamento.</li>
+        <li>☐ Compactions declaram itens substituídos, perdas e fontes preservadas.</li>
+        <li>☐ Budgets incluem reasoning/thinking/output final e margem de segurança.</li>
+        <li>☐ Fluxos sensíveis não dependem de estado retido por provider sem política explícita.</li>
+        <li>☐ Assets têm identidade, provenance, classificação e <code>projection_policy</code>.</li>
+      </ul>
+    </section>
+
+    <section class="ref" id="verificacao">
+      <h2>Notas de verificação</h2>
+      <ul>
+        <li><span class="pill beta">Atualizado 2026-06-10</span> <strong>Varredura de 2026-06-10.</strong> Fatos perecíveis re-conferidos contra docs oficiais + PyPI/npm. Mudança incorporada no §8c.6 (prosa + JSON-LD): desde 2026-05-29 o default de <code>prompt_cache_retention</code> na OpenAI é <code>"24h"</code> para <em>qualquer</em> organização sem ZDR — o fato gpt-5.5 (24h obrigatório; <code>in_memory</code> → erro) segue válido. Nota "Sem IDs de modelo fixos" clarificada (exceção do §8c). Demais contratos deste capítulo sem mudança upstream.</li>
+        <li><span class="pill beta">Atualizado 2026-06-10</span> <strong>Zonas canônicas &amp; colocação do hot follow-up (§8b).</strong> Integrada a proposta de gestão manual de contexto v0.6 (debate gpt-5.5-pro + revisão adversarial codex/gpt-5.5). Decisão validada: dado transitório de follow-up entra em <code>role=user</code> tagueado, não no <code>system</code>/autoridade — preservando o prefixo de cache e a separação autoria/dado. Re-confirmado contra docs oficiais que a Gemini Interactions API usa <code>generation_config.thinking_level</code> (não <code>thinking_config</code> aninhado) e <code>usage.total_thought_tokens</code>/<code>total_output_tokens</code> (renomeado de <code>total_reasoning_tokens</code> em 2025-12-19; <code>thoughtsTokenCount</code> é do <code>generateContent</code>).</li>
+        <li><span class="pill ok">Resolvido</span> <strong>Controles de reasoning/thinking.</strong> Conferidos na folha de fatos SOTA (2026-06-10): OpenAI <code>reasoning.effort</code> = <code>none|low|medium|high|xhigh</code>; Anthropic <code>thinking</code> = <code>adaptive</code>/<code>enabled</code>+<code>budget_tokens</code>/<code>disabled</code> com <code>display</code> <code>summarized</code>|<code>omitted</code>; Google <code>thinking_level</code> = <code>low|medium|high</code> (Flash/Flash-Lite também <code>minimal</code>), com <code>thinking_budget</code> legado não-combinável.</li>
+        <li><span class="pill ok">Resolvido</span> <strong>Estado na Responses API.</strong> <code>previous_response_id</code>/<code>conversation</code> são conveniência; <code>instructions</code> não são recarregadas automaticamente; <code>store=false</code> + <code>include=["reasoning.encrypted_content"]</code> para fluxos stateless/ZDR — confirmado na doc oficial.</li>
+        <li><span class="pill ok">Resolvido</span> <strong>Sem duplicação.</strong> Compaction <em>estratégica</em> e contagem de tokens permanecem nos guias dedicados; este capítulo trata apenas do contrato de estado e de compaction.</li>
+        <li><span class="pill ok">Resolvido</span> <strong>Sem IDs de modelo fixos.</strong> O capítulo cita parâmetros (perenes) e não modelos (perecíveis); disponibilidade por modelo fica nos guias de provider e na folha de fatos SOTA (exceção deliberada: o §8c cita IDs datados como exemplos verificados em 2026-06-10 — gpt-5.5, Claude Sonnet 4.6, Claude Opus 4.8, Gemini 3.1 Pro).</li>
+        <li><span class="pill partial">UNVERIFIED</span> <strong>Detalhes de domínio.</strong> O número exato de cache breakpoints e TTLs por provider, e limites de janela por modelo, mudam com frequência — consulte os guias de provider e a folha de fatos antes de afirmar valores específicos.</li>
+      </ul>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site">
+  <div style="max-width:1440px;margin:0 auto;padding:0 24px;display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;justify-content:space-between;">
+    <div style="max-width:540px">
+      <div class="brand" style="font-size:15px">Estado, Contexto &amp; Memória <small>Núcleo agnóstico de agentes</small></div>
+      <p style="margin:8px 0 0;color:var(--c-fg-muted);font-size:13.5px;line-height:1.55">
+        Capítulo de estado do núcleo agnóstico, construído a partir da documentação oficial pública em
+        <strong>2026-06-10</strong>. Para fatos perecíveis (controles de reasoning, janelas, retenção),
+        consulte os guias de provider e as
+        <a href="https://developers.openai.com/api/docs/guides/conversation-state" target="_blank" rel="noopener">fontes oficiais</a>.
+      </p>
+    </div>
+    <div style="font-size:13.5px;color:var(--c-fg-muted);line-height:1.7">
+      <div><strong>Crédito de produção</strong></div>
+      <div>Gerado por <strong>subagentes Claude Opus 4.7 (xhigh)</strong></div>
+      <div>revisão e montagem pelo orquestrador · 2026-06-10</div>
+      <div style="margin-top:6px">
+        <span class="badge da">Núcleo · agnóstico de provider</span>
+        <span class="badge info">Conceitual + referência</span>
+      </div>
+    </div>
+    <div style="font-size:12.5px;color:var(--c-fg-soft)">
+      <div><strong>Navegação rápida</strong></div>
+      <div><a href="#estado-vs-payload">Estado vs payload</a> · <a href="#ledger-canonico">Ledger</a> · <a href="#reasoning-thinking-por-provider">Reasoning</a></div>
+      <div><a href="#compaction-contrato">Compaction</a> · <a href="#checklist-de-estado">Checklist</a></div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  /* Toggle de tema com persistência em localStorage (chave compartilhada do super-guia). */
+  (function(){
+    var KEY = 'super-guia-theme';
+    var btn = document.getElementById('theme-toggle');
+    var pref = localStorage.getItem(KEY);
+    if (pref) document.documentElement.setAttribute('data-theme', pref);
+    if (btn) btn.addEventListener('click', function(){
+      var cur = document.documentElement.getAttribute('data-theme') || 'light';
+      var nxt = cur === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', nxt);
+      localStorage.setItem(KEY, nxt);
+    });
+  })();
+  /* Scroll-spy: destaca no TOC a seção visível. */
+  (function(){
+    var links = document.querySelectorAll('nav.toc a[href^="#"]');
+    var map = {};
+    links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        var id = e.target.id; if (!map[id]) return;
+        if (e.isIntersecting) {
+          links.forEach(function(l){ l.classList.remove('active'); });
+          map[id].classList.add('active');
+        }
+      });
+    }, { rootMargin: '-40% 0% -55% 0%', threshold: 0 });
+    Object.keys(map).forEach(function(id){ var el = document.getElementById(id); if (el) io.observe(el); });
+  })();
+  /* Abas de código (code-group): clique + navegação por setas. */
+  function activateTab(group, tab){
+    group.querySelectorAll('.code-tab').forEach(function(b){
+      var on = b === tab;
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+      b.setAttribute('tabindex', on ? '0' : '-1');
+    });
+    var lang = tab.dataset.lang;
+    group.querySelectorAll('.code-pane').forEach(function(p){ p.setAttribute('data-active', p.dataset.lang===lang ? 'true' : 'false'); });
+  }
+  document.querySelectorAll('.code-group').forEach(function(group){
+    group.querySelectorAll('.code-pane').forEach(function(p){ p.setAttribute('role', 'tabpanel'); });
+    var tabs = group.querySelectorAll('.code-tab');
+    tabs.forEach(function(b){ b.setAttribute('tabindex', b.getAttribute('aria-selected') === 'true' ? '0' : '-1'); });
+  });
+  document.addEventListener('click', function(e){
+    var t = e.target;
+    if (!t.classList || !t.classList.contains('code-tab')) return;
+    var group = t.closest('.code-group'); if (!group) return;
+    activateTab(group, t);
+  });
+  document.addEventListener('keydown', function(e){
+    var t = e.target;
+    if (!t.classList || !t.classList.contains('code-tab')) return;
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    var group = t.closest('.code-group'); if (!group) return;
+    var tabs = Array.prototype.slice.call(group.querySelectorAll('.code-tab'));
+    var idx = tabs.indexOf(t);
+    var next = e.key === 'ArrowRight' ? (idx + 1) % tabs.length : (idx - 1 + tabs.length) % tabs.length;
+    activateTab(group, tabs[next]);
+    tabs[next].focus();
+    e.preventDefault();
+  });
+</script>
+</body>
+</html>

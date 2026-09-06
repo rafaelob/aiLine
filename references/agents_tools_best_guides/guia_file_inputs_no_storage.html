@@ -1,0 +1,1317 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>File Inputs sem Provider Storage + Hosted Execution — Núcleo</title>
+<meta name="description" content="Padrão para ingestão de arquivos em agentes sob ZDR/PHI sem deixar estado retido no provider: Modo A estrito (base64 inline, signed URL efêmera, chunks/render app-side) vs Modo B hosted opcional (Code Interpreter, Hosted Shell, code execution). SourceRecord/EvidenceCard, regra de payload por turno, pipeline de imagem web e integração em OpenAI Responses, Gemini Interactions, Anthropic Messages, Agents SDK, LangGraph, Deep Agents e Google ADK. Verificado em 2026-06-11." />
+<meta name="last-checked" content="2026-07-05" />
+<meta name="robots" content="index,follow" />
+<style>
+  :root {
+    --c-bg: #ffffff;
+    --c-bg-elev: #f7f8fa;
+    --c-bg-code: #0e1116;
+    --c-fg: #1a1d23;
+    --c-fg-muted: #5b6472;
+    --c-fg-soft: #6b7480;
+    --c-border: #e4e7ec;
+    --c-border-strong: #cdd3dc;
+    --c-accent: #1a73e8;
+    --c-da: #1257b8;
+    --c-da-bg: #e6efff;
+    --c-warn: #b6541d;
+    --c-warn-bg: #fff4e6;
+    --c-ok: #157a33;
+    --c-ok-bg: #e8f5ea;
+    --c-bad: #c5221f;
+    --c-bad-bg: #fde8e6;
+    --c-na: #5f666f;
+    --c-na-bg: #eef0f3;
+    --c-info: #1257b8;
+    --c-info-bg: #e6efff;
+    --shadow-sm: 0 1px 2px rgba(15,23,42,.06), 0 1px 1px rgba(15,23,42,.04);
+    --shadow-md: 0 6px 24px rgba(15,23,42,.08), 0 2px 6px rgba(15,23,42,.06);
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --gutter: 24px;
+    --sidebar-w: 312px;
+  }
+  [data-theme="dark"] {
+    --c-bg: #0d1117;
+    --c-bg-elev: #161b22;
+    --c-bg-code: #010409;
+    --c-fg: #e6edf3;
+    --c-fg-muted: #9aa4b2;
+    --c-fg-soft: #828c9e;
+    --c-border: #20262d;
+    --c-border-strong: #2f3640;
+    --c-da: #4d9fff;
+    --c-accent: #4d9fff;
+    --c-ok: #3fb950;
+    --c-warn: #e3b341;
+    --c-bad: #ff7b72;
+    --c-na: #9aa4b2;
+    --c-info: #79b8ff;
+    --c-da-bg: #11233f;
+    --c-warn-bg: #2a1e0a;
+    --c-ok-bg: #0d2517;
+    --c-bad-bg: #2a1213;
+    --c-na-bg: #1a1f26;
+    --c-info-bg: #0c1e3a;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+    --shadow-md: 0 8px 28px rgba(0,0,0,.45);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-sans);
+    font-size: 15.5px;
+    line-height: 1.55;
+    color: var(--c-fg);
+    background: var(--c-bg);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  a { color: var(--c-accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, kbd, pre, samp { font-family: var(--font-mono); font-size: 0.92em; }
+  code { overflow-wrap: anywhere; }
+  h1, h2, h3, h4, summary { overflow-wrap: anywhere; }
+  :focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; border-radius: 4px; }
+  .skip { position: absolute; left: -9999px; }
+  .skip:focus { left: 12px; top: 12px; background: var(--c-bg); padding: 8px 12px; border: 1px solid var(--c-border); border-radius: 6px; z-index: 100; }
+
+  header.site {
+    position: sticky; top: 0; z-index: 30;
+    background: rgba(255,255,255,.85);
+    backdrop-filter: saturate(180%) blur(10px);
+    border-bottom: 1px solid var(--c-border);
+  }
+  [data-theme="dark"] header.site { background: rgba(13,17,23,.82); }
+  .header-row {
+    max-width: 1440px; margin: 0 auto; padding: 12px 24px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .brand { font-weight: 700; letter-spacing: -.01em; font-size: 16px; }
+  .brand small { color: var(--c-fg-muted); font-weight: 500; margin-left: 8px; font-size: 12.5px; }
+  .header-right { margin-left: auto; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 999px;
+    background: var(--c-bg-elev); border: 1px solid var(--c-border);
+    color: var(--c-fg-muted); font-size: 12.5px; font-weight: 500;
+  }
+  .badge.ok { background: var(--c-ok-bg); color: var(--c-ok); border-color: transparent; }
+  .badge.da { background: var(--c-da-bg); color: var(--c-da); border-color: transparent; }
+  .badge.info { background: var(--c-info-bg); color: var(--c-info); border-color: transparent; }
+  .badge.warn { background: var(--c-warn-bg); color: var(--c-warn); border-color: transparent; }
+  .badge.bad { background: var(--c-bad-bg); color: var(--c-bad); border-color: transparent; }
+  .theme-btn {
+    border: 1px solid var(--c-border); background: var(--c-bg-elev); color: var(--c-fg);
+    padding: 5px 10px; border-radius: 8px; cursor: pointer; font: inherit; font-size: 12.5px;
+  }
+  .theme-btn:hover { border-color: var(--c-border-strong); }
+
+  .layout {
+    max-width: 1440px; margin: 0 auto;
+    display: grid; grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+    gap: 32px; padding: 24px;
+  }
+  nav.toc {
+    position: sticky; top: 64px;
+    align-self: start; max-height: calc(100vh - 80px); overflow: auto;
+    padding-right: 8px;
+    border-right: 1px solid var(--c-border);
+  }
+  nav.toc ol { list-style: none; padding: 0; margin: 0 0 16px; }
+  nav.toc li { line-height: 1.4; margin: 2px 0; }
+  nav.toc a {
+    display: block; padding: 4px 8px; border-radius: 5px;
+    color: var(--c-fg-muted); font-size: 13px;
+  }
+  nav.toc a:hover { background: var(--c-bg-elev); color: var(--c-fg); text-decoration: none; }
+  nav.toc a.active { color: var(--c-da); background: var(--c-da-bg); font-weight: 600; }
+  nav.toc .toc-section {
+    margin-top: 14px; padding: 2px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--c-fg-soft);
+    border-top: 1px solid var(--c-border); padding-top: 10px;
+  }
+  nav.toc .toc-section:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+
+  main { min-width: 0; max-width: 1040px; }
+
+  .hero {
+    border: 1px solid var(--c-border);
+    border-radius: 14px;
+    padding: 28px 28px 24px;
+    background: linear-gradient(135deg, var(--c-da-bg) 0%, var(--c-bg) 100%);
+    margin-bottom: 32px;
+  }
+  .hero h1 { font-size: 32px; line-height: 1.15; margin: 0 0 8px; letter-spacing: -.02em; }
+  .hero p.lead { margin: 0 0 16px; color: var(--c-fg-muted); font-size: 16px; max-width: 74ch; }
+  .hero-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+
+  section { margin: 48px 0; scroll-margin-top: 84px; }
+  section.chapter { padding-top: 16px; margin-top: 56px; border-top: 3px solid var(--c-da); }
+  section.ref { padding-top: 12px; margin-top: 48px; border-top: 2px dashed var(--c-border-strong); }
+  h2 {
+    font-size: 24px; line-height: 1.2; letter-spacing: -.015em;
+    margin: 0 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--c-border);
+    scroll-margin-top: 84px;
+  }
+  h3 { font-size: 18px; line-height: 1.3; margin: 28px 0 10px; scroll-margin-top: 84px; }
+  h4 { font-size: 15px; margin: 20px 0 8px; color: var(--c-fg); scroll-margin-top: 84px; }
+  p { margin: 0 0 12px; }
+  ul, ol { margin: 0 0 12px; padding-left: 22px; }
+  li { margin: 4px 0; }
+  hr { border: 0; border-top: 1px solid var(--c-border); margin: 24px 0; }
+
+  .table-wrap { overflow-x: auto; margin: 0 0 18px; border: 1px solid var(--c-border); border-radius: var(--radius); }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 580px; }
+  th, td { padding: 9px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--c-border); }
+  th { background: var(--c-bg-elev); font-weight: 600; color: var(--c-fg); position: sticky; top: 0; font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em; }
+  @media (max-width: 480px) { th { position: static; } } /* avoid sticky-th causing 21px horizontal overflow inside .table-wrap on narrow viewports */
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--c-bg-elev); }
+  td code, th code { background: var(--c-bg-elev); padding: 1px 5px; border-radius: 4px; font-size: 12.5px; color: var(--c-fg); }
+  [data-theme="dark"] td code, [data-theme="dark"] th code { background: #0b0e13; }
+
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; letter-spacing: .02em; }
+  .pill.ok { background: var(--c-ok-bg); color: var(--c-ok); }
+  .pill.partial { background: var(--c-warn-bg); color: var(--c-warn); }
+  .pill.bad { background: var(--c-bad-bg); color: var(--c-bad); }
+  .pill.na { background: var(--c-na-bg); color: var(--c-na); }
+  .pill.beta { background: var(--c-info-bg); color: var(--c-info); }
+
+  .callout {
+    border-left: 4px solid var(--c-accent);
+    background: var(--c-bg-elev);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  .callout.warn { border-left-color: var(--c-warn); background: var(--c-warn-bg); color: #5a3009; }
+  .callout.tip { border-left-color: var(--c-ok); background: var(--c-ok-bg); color: #1d4a25; }
+  .callout.danger { border-left-color: var(--c-bad); background: var(--c-bad-bg); color: #7a1a16; }
+  .callout.beta { border-left-color: var(--c-info); background: var(--c-info-bg); color: #123d75; }
+  .callout.info { border-left-color: var(--c-info); background: var(--c-info-bg); color: #123d75; }
+  .callout.partial { border-left-color: var(--c-warn); background: var(--c-warn-bg); color: #5a3009; }
+  [data-theme="dark"] .callout.warn { color: #f1c896; }
+  [data-theme="dark"] .callout.tip { color: #a7d8b1; }
+  [data-theme="dark"] .callout.danger { color: #f0a8a4; }
+  [data-theme="dark"] .callout.beta { color: #a8cdff; }
+  [data-theme="dark"] .callout.info { color: #a8cdff; }
+  [data-theme="dark"] .callout.partial { color: #f1c896; }
+  .callout strong { font-weight: 700; }
+  .callout a { color: var(--c-da); text-decoration: underline; }
+  [data-theme="dark"] .callout a { color: var(--c-da); }
+  footer.site a, .source-link a { text-decoration: underline; }
+
+  pre {
+    background: var(--c-bg-code);
+    color: #d1d5db;
+    padding: 14px 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 0 0 14px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    border: 1px solid #1f242c;
+  }
+  pre code { color: inherit; background: transparent; padding: 0; }
+
+  details {
+    border: 1px solid var(--c-border); border-radius: var(--radius);
+    padding: 8px 14px; margin: 6px 0 10px; background: var(--c-bg-elev);
+  }
+  details > summary {
+    cursor: pointer; font-weight: 600; padding: 4px 0; list-style: none;
+    font-size: 13.5px;
+  }
+  details > summary::-webkit-details-marker { display: none; }
+  details > summary::before { content: "▸ "; color: var(--c-fg-soft); display: inline-block; }
+  details[open] > summary::before { content: "▾ "; }
+  details > .ref-body { padding: 8px 0 4px; }
+
+  .source-link {
+    font-size: 12.5px; color: var(--c-fg-muted);
+    margin: 6px 0 24px; padding: 6px 10px;
+    background: var(--c-bg-elev); border-left: 3px solid var(--c-da);
+    border-radius: 0 6px 6px 0;
+  }
+  .source-link a { color: var(--c-da); font-weight: 600; }
+
+  .figure { margin: 20px 0 26px; }
+  .figure svg { width: 100%; height: auto; display: block; border: 1px solid var(--c-border); border-radius: 10px; }
+  .figure figcaption { font-size: 12.5px; color: var(--c-fg-muted); margin-top: 10px; line-height: 1.5; padding: 0 4px; }
+
+  footer.site {
+    margin: 64px 0 24px; padding: 24px 0; border-top: 1px solid var(--c-border);
+    color: var(--c-fg-muted); font-size: 13px;
+  }
+
+  @media (max-width: 1080px) {
+    .layout { grid-template-columns: 1fr; }
+    nav.toc { position: static; max-height: none; border-right: none; border-bottom: 1px solid var(--c-border); padding-bottom: 16px; margin-bottom: 16px; }
+    main { max-width: 100%; }
+    .hero h1 { font-size: 24px; }
+  }
+  @media print {
+    nav.toc, header.site, .theme-btn { display: none; }
+    .layout { grid-template-columns: 1fr; }
+    a { color: inherit; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+    details[open] { padding: 8px 0; }
+    details > summary { display: none; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Pular para o conteúdo</a>
+
+<header class="site">
+  <div class="header-row">
+    <div class="brand">File Inputs sem Provider Storage <small>Núcleo agnóstico · super-guia de agentes</small></div>
+    <div class="header-right">
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-05</strong></span>
+      <span class="badge da">Núcleo · v1</span>
+      <span class="badge ok">Modo A estrito</span>
+      <span class="badge warn">Modo B hosted</span>
+      <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="Sumário">
+    <div class="toc-section">Início</div>
+    <ol>
+      <li><a href="#sobre-guia">Sobre este guia</a></li>
+      <li><a href="#fontes-oficiais">Fontes &amp; verificação</a></li>
+    </ol>
+
+    <div class="toc-section">Parte 1 — A política</div>
+    <ol>
+      <li><a href="#dois-modos">1. Dois modos operacionais</a></li>
+      <li><a href="#escopo-garantias">2. Escopo e garantias</a></li>
+      <li><a href="#politica-modo-a">3. Política sem provider storage</a></li>
+      <li><a href="#caminhos">4. Caminhos permitidos</a></li>
+    </ol>
+
+    <div class="toc-section">Parte 2 — Proveniência</div>
+    <ol>
+      <li><a href="#source-record">5. SourceRecord</a></li>
+      <li><a href="#caption">6. Caption / contexto</a></li>
+      <li><a href="#payload-turno">7. Payload por turno</a></li>
+    </ol>
+
+    <div class="toc-section">Parte 3 — Modo A por provider</div>
+    <ol>
+      <li><a href="#openai-modo-a">8. OpenAI Responses</a></li>
+      <li><a href="#gemini-modo-a">9. Gemini Interactions</a></li>
+      <li><a href="#anthropic-modo-a">10. Anthropic Messages</a></li>
+    </ol>
+
+    <div class="toc-section">Parte 4 — Frameworks</div>
+    <ol>
+      <li><a href="#frameworks-modo-a">11. Adapters Modo A (×4)</a></li>
+    </ol>
+
+    <div class="toc-section">Parte 5 — Web &amp; Hosted</div>
+    <ol>
+      <li><a href="#web-images">12. Imagem da web</a></li>
+      <li><a href="#hosted-modo-b">13. Modo B — Hosted</a></li>
+      <li><a href="#hosted-por-provider">14. Hosted por provider</a></li>
+      <li><a href="#hosted-frameworks">15. Hosted nos frameworks</a></li>
+    </ol>
+
+    <div class="toc-section">Parte 6 — Controle</div>
+    <ol>
+      <li><a href="#output-schema">16. Output schema</a></li>
+      <li><a href="#evals">17. Evals obrigatórios</a></li>
+      <li><a href="#riscos">18. Riscos</a></li>
+      <li><a href="#checklist">19. Checklist final</a></li>
+    </ol>
+
+    <div class="toc-section">Referência</div>
+    <ol>
+      <li><a href="#cheatsheet">Cheat sheet</a></li>
+      <li><a href="#verificacao">Notas de verificação</a></li>
+    </ol>
+  </nav>
+
+  <main id="main">
+
+    <div class="hero">
+      <h1>File Inputs sem Provider Storage + Hosted Execution</h1>
+      <p class="lead">
+        Como entregar arquivos (imagem, PDF, planilha, áudio, vídeo) a um agente <strong>sem deixar estado
+        retido do lado do provider</strong> — o caminho exigido por cargas ZDR/PHI — e como, quando a política
+        permitir, usar <strong>execução hospedada</strong> (Code Interpreter, Hosted Shell, code execution) de
+        forma explicitamente não-estrita. Define dois modos operacionais (A estrito · B hosted opcional), a
+        disciplina de proveniência <code>SourceRecord</code>/<code>EvidenceCard</code>, a regra de payload por
+        turno, o pipeline de imagem da web e os adapters em OpenAI, Gemini e Anthropic sobre Agents SDK,
+        LangGraph, Deep Agents e Google ADK. Formatos/limites e retenção por provider têm dono próprio na
+        coleção e são <em>cross-linkados</em>, não duplicados.
+      </p>
+      <div class="hero-meta">
+        <span class="badge da">Núcleo · v1</span>
+        <span class="badge info">OpenAI · Gemini · Anthropic</span>
+        <span class="badge ok">SOTA · verificado 2026-06-10</span>
+      </div>
+    </div>
+
+    <section id="sobre-guia">
+      <h2>Sobre este guia</h2>
+      <p>
+        Este é um guia <strong>para IA e humanos</strong>: combina o "quando usar" com referência rápida (tabelas,
+        schemas e código copy-paste). Ele responde a uma pergunta que os guias de capacidade não respondem:
+        <em>como ingerir arquivos sensíveis ponta-a-ponta sem que o provider retenha cópia, e quando é aceitável
+        abrir mão disso para ganhar execução hospedada</em>. O <strong>como envio uma imagem/PDF e quais os
+        limites</strong> é dono do guia <a href="guia_multimodal.html">Multimodal</a>; a <strong>retenção/ZDR e os
+        guardrails em geral</strong> são donos do guia <a href="guia_operacao_seguranca_evals.html">Operação,
+        Segurança &amp; Evals</a>. Aqui o conteúdo primário é a <em>política de ingestão sem provider storage</em> e
+        a disciplina de proveniência que a torna auditável.
+      </p>
+      <div class="callout">
+        <strong>Tese:</strong> o arquivo bruto é uma <em>projeção temporária</em> dentro do payload de um turno —
+        não um objeto que vive no provider. A fonte da verdade é o seu <code>SourceRegistry</code> (application-owned);
+        o modelo recebe só o que precisa inspecionar naquele passo, sempre com proveniência, e devolve
+        <code>EvidenceCards</code> com <code>source_id</code> — nunca um arquivo retido.
+      </div>
+      <div class="callout beta">
+        <strong>Vizinhança no super-guia:</strong> formatos, limites e deep dive por provider em
+        <a href="guia_multimodal.html#h-openai">Multimodal · OpenAI</a>,
+        <a href="guia_multimodal.html#h-gemini">Gemini</a> e
+        <a href="guia_multimodal.html#h-anthropic">Anthropic</a>; ZDR/retenção e o contrato de privacidade por rota
+        em <a href="guia_operacao_seguranca_evals.html#privacidade-retencao-zdr">Operação · Privacidade, retenção e
+        ZDR</a>; o ledger canônico e a regra "payload é projeção" em
+        <a href="guia_estado_contexto_memoria.html">Estado, contexto &amp; memória</a>; streaming durável sob
+        <code>store=false</code> (event store local, replay <code>Last-Event-ID</code>, por que background mode não é
+        ZDR e por que o event store local também não é "ZDR de graça") em
+        <a href="guia_streaming_durabilidade_resume.html">Streaming Durável &amp; Resumível</a>.
+      </div>
+    </section>
+
+    <section id="fontes-oficiais">
+      <h2>Fontes &amp; verificação</h2>
+      <p>
+        Todo fato perecível (limites, parâmetros, strings de versão, elegibilidade ZDR) foi conferido contra a
+        documentação oficial em <strong>2026-06-10</strong> por um time de validação com debate cruzado, ou anotado
+        como <span class="pill partial">UNVERIFIED</span> nas <a href="#verificacao">notas de verificação</a>. Os
+        exemplos usam apenas <strong>modelos atuais</strong> (<code>gpt-5.5</code>, <code>gemini-3.5-flash</code>,
+        <code>claude-opus-4-8</code>).
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Tema</th><th>Recurso oficial</th></tr></thead>
+        <tbody>
+          <tr><td>OpenAI — file inputs</td><td><a href="https://developers.openai.com/api/docs/guides/file-inputs" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/file-inputs</a></td></tr>
+          <tr><td>OpenAI — images &amp; vision</td><td><a href="https://developers.openai.com/api/docs/guides/images-vision" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/images-vision</a></td></tr>
+          <tr><td>OpenAI — data controls / ZDR</td><td><a href="https://developers.openai.com/api/docs/guides/your-data" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/your-data</a></td></tr>
+          <tr><td>OpenAI — Code Interpreter / Hosted Shell</td><td><a href="https://developers.openai.com/api/docs/guides/tools-code-interpreter" target="_blank" rel="noopener">tools-code-interpreter</a> · <a href="https://developers.openai.com/api/docs/guides/tools-shell" target="_blank" rel="noopener">tools-shell</a></td></tr>
+          <tr><td>Gemini — Interactions API</td><td><a href="https://ai.google.dev/gemini-api/docs/interactions" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/interactions</a></td></tr>
+          <tr><td>Gemini — Zero Data Retention</td><td><a href="https://ai.google.dev/gemini-api/docs/zdr" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/zdr</a></td></tr>
+          <tr><td>Anthropic — Vision / PDF</td><td><a href="https://platform.claude.com/docs/en/build-with-claude/vision" target="_blank" rel="noopener">vision</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/pdf-support" target="_blank" rel="noopener">pdf-support</a></td></tr>
+          <tr><td>Anthropic — data retention / Code execution</td><td><a href="https://platform.claude.com/docs/en/manage-claude/api-and-data-retention" target="_blank" rel="noopener">api-and-data-retention</a> · <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool" target="_blank" rel="noopener">code-execution-tool</a></td></tr>
+        </tbody>
+      </table></div>
+      <p style="font-size:13px;color:var(--c-fg-muted)">
+        Legenda dos selos: <span class="pill ok">Verificado</span> confirmado na doc oficial em 2026-06-10 ·
+        <span class="pill beta">Novo</span> recurso/versão recente ·
+        <span class="pill partial">UNVERIFIED</span> não confirmado em URL oficial direta (fonte/lacuna anotada) ·
+        <span class="pill bad">Evitar</span> proibido no Modo A / antipadrão.
+      </p>
+    </section>
+
+    <!-- ===================== PARTE 1 ===================== -->
+    <section class="chapter" id="parte-politica">
+      <h2 style="border-bottom:3px solid var(--c-da);padding:14px 0 10px;font-size:28px">Parte 1 — A política</h2>
+      <p>
+        Antes de qualquer código: decida em qual modo a rota opera, declare o que é proibido do lado do provider e
+        escolha o caminho de transporte do arquivo. Essas três decisões são a diferença entre um sistema auditável
+        e um vazamento silencioso de retenção.
+      </p>
+    </section>
+
+    <section id="dois-modos">
+      <h2>1. Dois modos operacionais</h2>
+      <p>
+        A maior fonte de confusão em ingestão de arquivos sensíveis é tratar "execução hospedada" como se fosse o
+        mesmo que "sem retenção". Não é. Separe explicitamente dois modos e registre o <code>run_mode</code> em cada
+        execução.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Modo</th><th>Definição</th><th>Status para PHI/ZDR estrito</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Modo A — direct payload / no provider storage</strong></td><td>Arquivos entram como base64 inline, signed URL efêmera controlada pela aplicação, ou chunks/evidências geradas pela aplicação. Sem Files API, <code>file_id</code>, vector store, background, provider containers.</td><td><span class="pill ok">Recomendado</span> para o caminho sensível. Ainda exige contrato ZDR/BAA quando aplicável.</td></tr>
+          <tr><td><strong>Modo B — hosted execution opcional</strong></td><td>Usa Code Interpreter, Hosted Shell, code execution ou containers gerenciados para executar código/processar arquivos do lado do provider.</td><td><span class="pill bad">Não é o modo estrito.</span> Útil para Excel/cálculo, mas exige análise de retenção. Em Anthropic Code Execution, não é ZDR elegível.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout danger">
+        <strong>Armadilha número um:</strong> <code>store=false</code> controla o estado da resposta/conversa — <em>não</em>
+        garante que um container hospedado não tenha filesystem temporário durante a execução. Um container do Modo B
+        pode escrever estado temporário enquanto ativo, mesmo com <code>store=false</code>.
+      </div>
+    </section>
+
+    <section id="escopo-garantias">
+      <h2>2. Escopo e garantias</h2>
+      <p>
+        Este guia é um <strong>blueprint auditável</strong>, não uma garantia legal. A garantia real vem de testes
+        automáticos (§17) que bloqueiam <code>file_id</code>, Files API, vector stores, background, previous IDs e
+        containers hospedados quando o run exige Modo A — e que marcam <code>run_mode=hosted_optional_non_strict</code>
+        sempre que alguma ferramenta hospedada é usada.
+      </p>
+      <div class="callout warn">
+        <strong>ZDR no provider ≠ ZDR no seu sistema.</strong> Se você guarda o <code>SourceRegistry</code>, os
+        traces e o ledger sem redaction, você ainda retém o dado — só mudou de lugar. A política de retenção interna
+        precisa ser tão explícita quanto a do provider. Ver
+        <a href="guia_operacao_seguranca_evals.html#privacidade-retencao-zdr">Operação · Privacidade, retenção e ZDR</a>.
+      </div>
+    </section>
+
+    <section id="politica-modo-a">
+      <h2>3. Modo A — política sem provider storage</h2>
+      <p>
+        Declare, por provider, o transporte permitido e o que é proibido do lado do provider. Esta política vira
+        configuração e é enforced pelos evals da §17.
+      </p>
+      <pre><code class="language-yaml">MODE_A_STRICT_NO_PROVIDER_STORAGE:
+  allowed_transport:
+    - inline_base64_in_request
+    - short_lived_signed_url_controlled_by_application
+    - application_generated_text_chunks
+    - application_generated_csv_json_markdown
+    - application_generated_pdf_page_render_or_image_crop
+    - application_owned_worker_for_code_shell_ocr_spreadsheet_parsing
+  forbidden_provider_side:
+    openai:
+      - Files API /v1/files
+      - file_id in input_file/input_image
+      - File Search / vector stores / retrieval API stores
+      - hosted Code Interpreter for user files
+      - Hosted Shell containers for user files
+      - background mode as context strategy
+      - previous_response_id as source of truth
+    gemini:
+      - Files API upload
+      - uploaded_file.uri
+      - File Search stores
+      - cached_content for user files
+      - background=true
+      - store=true
+      - previous_interaction_id as source of truth
+      - Google Search / Maps grounding (retains ~30 days)
+    anthropic:
+      - Files API / file_id
+      - code_execution tool for user files
+      - container uploads / generated files in provider containers
+      - Agent Skills if ZDR is required
+      - prompt caching if policy forbids provider-side retained cache</code></pre>
+      <div class="callout tip">
+        <strong>Por que cada item:</strong> a maioria dos recursos da lista <code>forbidden_provider_side</code> cria ou
+        depende de estado retido no provider — confirmado nas feature-eligibility tables de cada provider (ver §13 e as
+        <a href="#verificacao">notas de verificação</a>). Exceção a registrar: o <em>prompt caching</em> da Anthropic é,
+        por padrão, <strong>ZDR elegível</strong> (cache em memória deletado ao fim do TTL); incluí-lo aqui é uma decisão
+        de política mais estrita, não uma inelegibilidade ZDR.
+      </div>
+    </section>
+
+    <section id="caminhos">
+      <h2>4. Caminhos permitidos</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Caminho</th><th>Quando usar</th><th>Limite / risco</th></tr></thead>
+        <tbody>
+          <tr><td>Base64 inline</td><td>PHI/PII, PDFs pequenos/médios, imagens críticas.</td><td>Payload cresce; precisa de orçamento de tokens/tamanho.</td></tr>
+          <tr><td>Signed URL efêmera</td><td>Arquivos não sensíveis ou quando inline seria grande demais.</td><td>TTL curto, domínio controlado, logs; sem PHI quando a política proíbe.</td></tr>
+          <tr><td>Chunks / evidências app-side</td><td>PDF grande, Excel, RAG interno, OCR.</td><td>O claim fica limitado ao chunk/evidência fornecido.</td></tr>
+          <tr><td>Crop / page render app-side</td><td>Imagem médica dentro de PDF ou detalhe fino.</td><td><code>parent_source_id</code> obrigatório.</td></tr>
+          <tr><td>Worker próprio</td><td>Excel, código, OCR, Python, shell, geração de arquivos.</td><td>Mais engenharia, mas mantém o controle de retenção.</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <!-- ===================== PARTE 2 ===================== -->
+    <section class="chapter" id="parte-proveniencia">
+      <h2 style="border-bottom:3px solid var(--c-da);padding:14px 0 10px;font-size:28px">Parte 2 — Disciplina de proveniência</h2>
+      <p>
+        Sem provider storage, a aplicação é a única dona da fonte. Três artefatos tornam isso rastreável: o
+        <code>SourceRecord</code> (o que é cada fonte), o <code>caption</code> (como ela entra no payload) e a regra
+        de payload por turno (o que reinjetar em cada passo).
+      </p>
+    </section>
+
+    <section id="source-record">
+      <h2>5. SourceRecord</h2>
+      <p>Cada arquivo/asset é registrado uma vez no <code>SourceRegistry</code> da aplicação com proveniência completa.</p>
+      <pre><code class="language-typescript">type SourceRecord = {
+  source_id: string;
+  kind:
+    | "image_original"
+    | "image_crop"
+    | "image_web_reference"
+    | "pdf"
+    | "pdf_page_render"
+    | "xlsx"
+    | "csv"
+    | "docx"
+    | "pptx"
+    | "text_chunk"
+    | "web_page"
+    | "search_result_text"
+    | "audio"
+    | "video"
+    | "video_frame"
+    | "computed_artifact";
+  role:
+    | "primary_case_image"
+    | "derived_visual_detail"
+    | "textual_context"
+    | "medical_reference_image"
+    | "medical_reference_text"
+    | "tabular_evidence"
+    | "computed_evidence"
+    | "tool_result";
+  title: string;
+  description: string;
+  mime_type?: string;
+  internal_uri: string;              // application-owned storage
+  signed_url?: string;               // short-lived app URL, if used
+  base64?: string;                   // generated just-in-time for request payload
+  external_url?: string;             // source URL if from web
+  source_page_url?: string;          // page where image/doc was found
+  parent_source_id?: string;         // crop/render derived from original/PDF
+  bytes_sha256?: string;
+  perceptual_hash?: string;
+  page_range?: string;
+  sheet_name?: string;
+  pii_phi_class: "none" | "possible_phi" | "confirmed_phi";
+  trust_tier: "user_supplied" | "official_guideline" | "peer_reviewed" | "educational_reference" | "unknown";
+  allowed_use: ("visual_analysis" | "textual_grounding" | "comparison" | "citation" | "computation")[];
+  provider_storage_allowed: false;
+};</code></pre>
+      <h3>Política de projeção e campos de reidratação</h3>
+      <p>
+        Identidade e proveniência não bastam: todo <code>SourceRecord</code> deve carregar uma
+        <strong>política de projeção</strong> explícita, que decide se — e como — o conteúdo entra no payload.
+        Some também os campos que permitem reidratar e orçar tokens sem reanexar o arquivo inteiro.
+      </p>
+      <pre><code class="language-json">{
+  "projection_policy": "inline_current_turn",  // | summary | rag_only | blocked
+  "page_count": 42,
+  "token_estimate": 38000,
+  "parsed_ref": "artifact://parsed/src_pdf_123",
+  "parser_version": "pdfx-2.3.1"
+}</code></pre>
+      <div class="table-wrap"><table>
+        <thead><tr><th><code>projection_policy</code></th><th>Significado</th></tr></thead>
+        <tbody>
+          <tr><td><code>inline_current_turn</code></td><td>Páginas/blocos entram no payload do turno atual, dentro dos caps; depois saem.</td></tr>
+          <tr><td><code>summary</code></td><td>Só o digest/EvidenceCard entra; o bruto fica no store.</td></tr>
+          <tr><td><code>rag_only</code></td><td>Nunca inline; acesso só via retrieval/reidratação sob demanda.</td></tr>
+          <tr><td><code>blocked</code></td><td>Não pode ir ao modelo (classificação/retenção/escopo proíbem).</td></tr>
+        </tbody>
+      </table></div>
+      <p>
+        O bruto (<code>internal_uri</code>) e o parse (<code>parsed_ref</code> + <code>parser_version</code>) ficam
+        sempre armazenados; o que entra no payload é decisão por tier, turno e budget. <code>page_count</code> e
+        <code>token_estimate</code> alimentam o cálculo de caps antes de projetar.
+      </p>
+    </section>
+
+    <section id="caption">
+      <h2>6. Caption / contexto</h2>
+      <p>Toda fonte entra no payload precedida de um caption que fixa o <code>source_id</code> e as regras de uso.</p>
+      <pre><code class="language-typescript">function caption(source: SourceRecord): string {
+  return `[SOURCE ${source.source_id}]
+Kind: ${source.kind}
+Role: ${source.role}
+Title: ${source.title}
+Description: ${source.description}
+Trust tier: ${source.trust_tier}
+Parent source: ${source.parent_source_id ?? "none"}
+External URL: ${source.external_url ?? "n/a"}
+Source page: ${source.source_page_url ?? "n/a"}
+
+Rules:
+- Preserve source_id=${source.source_id}.
+- Do not merge this source with another source.
+- Cite source_id=${source.source_id} for any claim using this source.
+- If this is WEBIMG_REF_*, treat it as educational reference only, not patient evidence.
+- If the raw file/image/chunk is not present in this call, say you cannot inspect it.
+- Do not provide diagnosis; provide observations, evidence, uncertainty, limitations.`;
+}</code></pre>
+    </section>
+
+    <section id="payload-turno">
+      <h2>7. Regra de payload por turno</h2>
+      <div class="callout tip">
+        <strong>Regra:</strong> mantenha tudo no <code>SourceRegistry</code>/<code>TurnLedger</code>; reinjete no payload
+        apenas o que o agente/nó/subagente precisa inspecionar naquele passo. A síntese final usa
+        <code>EvidenceCards</code>, não pixels — salvo uma nova reavaliação explícita.
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Passo</th><th>Payload</th></tr></thead>
+        <tbody>
+          <tr><td>Visual review</td><td>Imagem/crop base64 ou signed URL + caption.</td></tr>
+          <tr><td>PDF QA</td><td>PDF base64/signed URL ou chunks/páginas geradas pela aplicação.</td></tr>
+          <tr><td>Excel</td><td>CSV/JSON/Markdown computado; XLSX inline só se suportado e necessário.</td></tr>
+          <tr><td>Subagente</td><td><code>SubagentInputPacket</code> + fontes explícitas ou tool app-owned.</td></tr>
+          <tr><td>Síntese final</td><td><code>EvidenceCards</code> + <code>source_ids</code>; sem arquivo bruto salvo reanálise.</td></tr>
+        </tbody>
+      </table></div>
+      <h3>Páginas inline e token cap por tier (política)</h3>
+      <p>
+        Os limites por provider documentados adiante (tamanho de arquivo, nº de páginas/imagens) são
+        <strong>tetos físicos da API</strong>. Acima deles existe uma camada de <strong>política de produto</strong>
+        por tier — quase sempre bem mais restritiva — que decide quantas páginas valem o custo/latência de ficar
+        inline no turno. Valores ilustrativos, <strong>parametrizáveis</strong> (recalibrar por densidade de
+        documento, idioma, modelo e SLO):
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Tier</th><th>Páginas inline/turno</th><th>Token cap adicional (sugerido)</th><th>Observação</th></tr></thead>
+        <tbody>
+          <tr><td>Free</td><td>~10</td><td>12k–18k</td><td>Documento denso: priorizar páginas relevantes.</td></tr>
+          <tr><td>Plus</td><td>~30</td><td>36k–48k</td><td>PDFs moderados e docs curtos.</td></tr>
+          <tr><td>Pro</td><td>~40</td><td>56k–72k</td><td>Manter no payload durante a interação atual.</td></tr>
+          <tr><td>Super</td><td>~60</td><td>96k–128k</td><td>Só se modelo/provider e latência permitirem.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout tip">
+        <strong>Página vs token.</strong> Páginas variam muito de densidade; o scheduler aplica o <em>menor</em>
+        entre o cap de páginas e o cap de tokens. Depois do turno, o arquivo não permanece bruto no payload por
+        default — vira <code>EvidenceCard</code>/refs e reidrata sob demanda. A camada de fatias/budget que governa
+        isso está em <a href="guia_contexto_compactacao_estrategias.html#admin-parametros">Compactação — estratégias</a>
+        e o contrato em <a href="guia_estado_contexto_memoria.html#zonas-canonicas">Estado &amp; contexto</a>.
+      </div>
+    </section>
+
+    <!-- ===================== PARTE 3 ===================== -->
+    <section class="chapter" id="parte-modo-a-providers">
+      <h2 style="border-bottom:3px solid var(--c-da);padding:14px 0 10px;font-size:28px">Parte 3 — Modo A por provider</h2>
+      <p>
+        Os três providers aceitam arquivos no payload sem armazenamento. O que muda é o formato do bloco. Os
+        <strong>formatos e limites completos</strong> são dono do guia <a href="guia_multimodal.html#h-limits-catalog">Multimodal
+        · catálogo de limitações</a>; aqui mostramos só o recorte do Modo A.
+      </p>
+    </section>
+
+    <section id="openai-modo-a">
+      <h2>8. OpenAI Responses — Modo A</h2>
+      <p>
+        Use <code>input_image</code> e <code>input_file</code> <strong>sem</strong> <code>file_id</code>: para arquivos,
+        <code>file_data</code> base64 (com prefixo data URI) ou <code>file_url</code>/signed URL. Use
+        <code>store=False</code>. O valor <code>detail:"original"</code> é válido (low/high/original/auto) e indicado
+        para imagem grande/densa/espacial; em <code>gpt-5.5</code>, <code>auto</code> equivale a <code>original</code>.
+      </p>
+      <pre><code class="language-python">content = [
+    {"type": "input_text", "text": caption(IMG_ORIG_001)},
+    {
+        "type": "input_image",
+        "image_url": f"data:image/png;base64,{IMG_ORIG_001.base64}",
+        "detail": "original"
+    },
+
+    {"type": "input_text", "text": caption(WEBIMG_REF_001)},
+    {
+        "type": "input_image",
+        "image_url": WEBIMG_REF_001.signed_url,
+        "detail": "high"
+    },
+
+    {"type": "input_text", "text": caption(PDF_001)},
+    {
+        "type": "input_file",
+        "filename": "PDF_001_laudo.pdf",
+        "file_data": f"data:application/pdf;base64,{PDF_001.base64}"
+    },
+
+    {"type": "input_text", "text": caption(CSV_001_SUMMARY)},
+    {"type": "input_text", "text": CSV_001_SUMMARY.markdown},
+
+    {"type": "input_text", "text": FINAL_SOURCE_BOUND_INSTRUCTIONS}
+]
+
+response = client.responses.create(
+    model="gpt-5.5",
+    store=False,                      # sob ZDR, store é sempre tratado como false
+    input=[{"role": "user", "content": content}],
+    text={"format": {"type": "json_schema", "name": "EvidenceCard", "schema": EVIDENCE_SCHEMA}}
+)</code></pre>
+      <div class="callout info">
+        <strong>Limites (verificados):</strong> até <strong>512 MB</strong> de payload e <strong>1500 imagens</strong> por
+        request; cada arquivo <code>input_file</code> &lt; <strong>50 MB</strong> e a soma dos arquivos na request ≤ 50 MB.
+        PDF vision extrai texto + imagem por página. Detalhe completo em
+        <a href="guia_multimodal.html#h-openai">Multimodal · OpenAI</a>.
+      </div>
+      <div class="source-link">Fonte oficial: <a href="https://developers.openai.com/api/docs/guides/file-inputs" target="_blank" rel="noopener">OpenAI · file inputs</a> · <a href="https://developers.openai.com/api/docs/guides/images-vision" target="_blank" rel="noopener">images &amp; vision</a> · <a href="https://developers.openai.com/api/docs/guides/your-data" target="_blank" rel="noopener">data controls / ZDR</a> — 2026-05-25</div>
+    </section>
+
+    <section id="gemini-modo-a">
+      <h2>9. Gemini Interactions — Modo A</h2>
+      <p>
+        Use <code>store=False</code>, <code>background=False</code> e blocos <code>image</code>/<code>document</code> com
+        <code>data</code> base64 ou <code>uri</code>/signed URL. Se houver combinação de tools em modo stateless,
+        preserve <code>id</code>/<code>signature</code> entre turnos conforme a documentação.
+      </p>
+      <pre><code class="language-python">interaction = client.interactions.create(
+    model="gemini-3.5-flash",
+    store=False,
+    background=False,
+    input=[{
+        "type": "user_input",
+        "content": [
+            {"type": "text", "text": caption(IMG_ORIG_001)},
+            {"type": "image", "data": IMG_ORIG_001.base64, "mime_type": "image/png"},
+
+            {"type": "text", "text": caption(WEBIMG_REF_001)},
+            {"type": "image", "uri": WEBIMG_REF_001.signed_url, "mime_type": "image/png"},
+
+            {"type": "text", "text": caption(PDF_001)},
+            {"type": "document", "data": PDF_001.base64, "mime_type": "application/pdf"},
+
+            {"type": "text", "text": caption(CSV_001_SUMMARY)},
+            {"type": "text", "text": CSV_001_SUMMARY.markdown},
+
+            {"type": "text", "text": FINAL_SOURCE_BOUND_INSTRUCTIONS}
+        ]
+    }],
+    # Teto de tokens por mídia de ENTRADA (custo/latência). media_resolution é
+    # interaction-scoped e vive em generation_config (comportamento do modelo),
+    # NÃO em response_format. Forma global suportada na Interactions API.
+    generation_config={"media_resolution": "MEDIA_RESOLUTION_HIGH"}
+)</code></pre>
+      <div class="callout info">
+        <strong>Limites inline (verificados):</strong> 100 MB por request/payload, sendo 50 MB para PDFs. O schema de
+        bloco inline <code>{type, data|uri, mime_type}</code> usado acima é exatamente o documentado para a Interactions
+        API (página <em>file input methods</em>).
+      </div>
+      <div class="callout info">
+        <strong>Resolução de mídia (<span class="pill ok">Verificado</span> na Interactions — forma global):</strong>
+        <code>media_resolution</code> controla o teto de tokens alocados por imagem/PDF de entrada (enum
+        <code>MEDIA_RESOLUTION_LOW/MEDIUM/HIGH</code>; <code>ULTRA_HIGH</code> só na forma <em>por-part</em>).
+        A forma <strong>global</strong> em <code>generation_config.media_resolution</code> <strong>é suportada
+        na Interactions API</strong>: <code>generation_config</code> é parâmetro <em>interaction-scoped</em> de
+        comportamento do modelo (junto de <code>thinking_level</code>, <code>temperature</code>) — é a forma
+        usada no exemplo acima. A forma <strong>por-part</strong> (no próprio bloco de mídia) segue documentada
+        apenas para <code>generateContent</code> (Gemini 3; ainda <code>v1alpha</code>/experimental) — não a
+        use nos blocos da Interactions. Detalhe em
+        <a href="guia_multimodal.html#h-gemini">Multimodal · Gemini</a>.
+      </div>
+      <div class="source-link">Fonte oficial: <a href="https://ai.google.dev/gemini-api/docs/interactions" target="_blank" rel="noopener">Gemini · Interactions</a> · <a href="https://ai.google.dev/gemini-api/docs/interactions/file-input-methods" target="_blank" rel="noopener">file input methods</a> · <a href="https://ai.google.dev/gemini-api/docs/media-resolution" target="_blank" rel="noopener">media resolution</a> · <a href="https://ai.google.dev/gemini-api/docs/zdr" target="_blank" rel="noopener">Zero Data Retention</a> — 2026-05-25</div>
+    </section>
+
+    <section id="anthropic-modo-a">
+      <h2>10. Anthropic Messages — Modo A</h2>
+      <p>
+        Use <code>image</code> com base64/URL e <code>document</code> (PDF) com base64/URL. Não use <code>file_id</code>
+        se o run exige Modo A. O <code>document</code> aceita <code>title</code>, <code>context</code> e
+        <code>citations</code>.
+      </p>
+      <pre><code class="language-python">message = client.messages.create(
+    model="claude-opus-4-8",
+    max_tokens=2500,
+    messages=[{
+        "role": "user",
+        "content": [
+            {"type": "text", "text": caption(IMG_ORIG_001)},
+            {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": IMG_ORIG_001.base64}},
+
+            {"type": "text", "text": caption(WEBIMG_REF_001)},
+            {"type": "image", "source": {"type": "url", "url": WEBIMG_REF_001.signed_url}},
+
+            {"type": "text", "text": caption(PDF_001)},
+            {
+                "type": "document",
+                "source": {"type": "base64", "media_type": "application/pdf", "data": PDF_001.base64},
+                "title": "PDF_001_LAUDO",
+                "context": "Laudo textual; use as context, not as primary visual source.",
+                "citations": {"enabled": True}
+            },
+
+            {"type": "text", "text": caption(CSV_001_SUMMARY)},
+            {"type": "text", "text": CSV_001_SUMMARY.markdown},
+
+            {"type": "text", "text": FINAL_SOURCE_BOUND_INSTRUCTIONS}
+        ]
+    }]
+)</code></pre>
+      <div class="callout info">
+        <strong>Limites (verificados):</strong> request máximo <strong>32 MB</strong>; até <strong>600 páginas</strong> de PDF
+        (100 para modelos com janela de 200k) e até <strong>600 imagens</strong> por request (100 para modelos 200k).
+        GIF animado usa só o primeiro frame. PDF vision = texto extraído + imagem por página. Detalhe em
+        <a href="guia_multimodal.html#h-anthropic">Multimodal · Anthropic</a> e
+        <a href="guia_claude_api.html#b-pdf">Claude API · PDF</a>.
+      </div>
+      <div class="callout tip">
+        <strong>ZDR vs HIPAA:</strong> PDF inline via Messages API é <strong>ZDR elegível</strong> (e a elegibilidade
+        HIPAA aplica a PDFs inline, não via Files API). Para PHI, além de ZDR, a Anthropic oferece HIPAA readiness via
+        BAA como alternativa. Ver <a href="guia_claude_api.html#b-files">Claude API · Files</a>.
+      </div>
+      <div class="source-link">Fonte oficial: <a href="https://platform.claude.com/docs/en/build-with-claude/vision" target="_blank" rel="noopener">Anthropic · Vision</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/pdf-support" target="_blank" rel="noopener">PDF support</a> · <a href="https://platform.claude.com/docs/en/manage-claude/api-and-data-retention" target="_blank" rel="noopener">data retention</a> — 2026-05-25</div>
+    </section>
+
+    <!-- ===================== PARTE 4 ===================== -->
+    <section class="chapter" id="frameworks-modo-a">
+      <h2 style="border-bottom:3px solid var(--c-da);padding:14px 0 10px;font-size:28px">Parte 4 — Adapters Modo A nos frameworks</h2>
+      <p>
+        Em qualquer framework, o padrão é o mesmo: a tool/nó chama um <em>strict payload builder</em> por provider, ou
+        um <strong>worker próprio</strong> (não uma ferramenta hospedada). Nenhum exemplo abaixo faz upload para o
+        provider; todos usam <code>responses.create</code>/<code>interactions.create</code>/<code>messages.create</code>
+        com payload direto.
+      </p>
+
+      <h3>11.1. OpenAI Agents SDK</h3>
+      <pre><code class="language-python">@function_tool
+async def review_sources_no_provider_storage(packet: ReviewSourcesInput) -&gt; str:
+    sources = app.registry.resolve(packet.source_ids)
+
+    if packet.provider == "openai":
+        raw = await openai_client.responses.create(**build_openai_strict_payload(sources, packet))
+    elif packet.provider == "gemini":
+        raw = await gemini_client.interactions.create(**build_gemini_strict_payload(sources, packet))
+    else:
+        raw = await anthropic_client.messages.create(**build_anthropic_strict_payload(sources, packet))
+
+    evidence = normalize_to_evidence_card(raw, packet.provider)
+    app.ledger.record(evidence)
+    return evidence.model_dump_json()
+
+@function_tool
+async def run_app_owned_python(packet: SpreadsheetComputeInput) -&gt; str:
+    # Application-owned worker, NOT a provider hosted tool.
+    result = app_python_worker.compute(packet.source_id, packet.operation)
+    evidence = computed_result_to_evidence_card(result)
+    app.ledger.record(evidence)
+    return evidence.model_dump_json()</code></pre>
+      <div class="source-link">Guardrails/HITL e tool registration do SDK em <a href="guia_agents_sdk.html#s-guardrails">guia Agents SDK · Guardrails</a>.</div>
+
+      <h3>11.2. LangGraph</h3>
+      <pre><code class="language-python">class State(TypedDict):
+    sources: dict[str, SourceRecord]
+    selected_source_ids: list[str]
+    provider: Literal["openai", "gemini", "anthropic"]
+    question: str
+    evidence_cards: Annotated[list[EvidenceCard], add]
+    turn_ledger: Annotated[list[TurnLedgerEntry], add]
+
+def provider_node(state: State):
+    sources = [state["sources"][sid] for sid in state["selected_source_ids"]]
+
+    if state["provider"] == "openai":
+        raw = openai_client.responses.create(**build_openai_strict_payload(sources, state["question"]))
+    elif state["provider"] == "gemini":
+        raw = gemini_client.interactions.create(**build_gemini_strict_payload(sources, state["question"]))
+    else:
+        raw = anthropic_client.messages.create(**build_anthropic_strict_payload(sources, state["question"]))
+
+    return normalize_to_state(raw, provider=state["provider"])</code></pre>
+      <div class="source-link">Persistência durável (checkpointers) e HITL em <a href="guia_langgraph.html#s-persistence">LangGraph · persistence</a> e <a href="guia_langgraph.html#s-hitl">interrupt/Command</a>.</div>
+
+      <h3>11.3. Deep Agents</h3>
+      <pre><code class="language-text">workspace/
+  registry/sources.json
+  sources/IMG_ORIG_001.png
+  sources/PDF_001.pdf
+  sources/XLS_001.csv
+  evidence/
+
+tools = [
+  call_openai_strict_payload,
+  call_gemini_strict_payload,
+  call_anthropic_strict_payload,
+  app_owned_python_worker,
+  app_owned_image_harvester
+]
+
+# Deep Agent instruction:
+# - never request provider file upload
+# - never use provider code execution for PHI
+# - use source_ids and EvidenceCards only
+# - files in workspace are application-controlled, not provider storage</code></pre>
+      <div class="callout partial">
+        <strong>Nota:</strong> a estrutura <code>workspace/</code> é convenção arquitetural deste guia, não prescrita
+        pelo framework; o backend de filesystem é o <code>FilesystemBackend</code> documentado em
+        <a href="guia_deepagents.html#s-backends">Deep Agents · backends</a>.
+      </div>
+
+      <h3>11.4. Google ADK (v1/v2)</h3>
+      <pre><code class="language-python"># ADK v1/v2: provider tools/nodes use strict adapters.
+session.state["app:source_registry"] = source_registry
+session.state["app:turn_ledger"] = []
+
+def review_openai(source_ids: list[str], question: str) -&gt; dict:
+    return call_openai(build_openai_strict_payload(resolve(source_ids), question))
+
+def review_gemini(source_ids: list[str], question: str) -&gt; dict:
+    return call_gemini(build_gemini_strict_payload(resolve(source_ids), question))
+
+def review_anthropic(source_ids: list[str], question: str) -&gt; dict:
+    return call_anthropic(build_anthropic_strict_payload(resolve(source_ids), question))
+
+def spreadsheet_worker(source_id: str, operation: str) -&gt; dict:
+    # Application-owned execution.
+    return run_internal_worker(source_id, operation)</code></pre>
+      <div class="source-link">Prefixos de estado (<code>app:</code>/<code>user:</code>), <code>FunctionTool</code> e Tool Confirmation (HITL) em <a href="guia_google_adk.html#tool-confirm">Google ADK</a>.</div>
+    </section>
+
+    <!-- ===================== PARTE 5 ===================== -->
+    <section class="chapter" id="parte-web-hosted">
+      <h2 style="border-bottom:3px solid var(--c-da);padding:14px 0 10px;font-size:28px">Parte 5 — Web &amp; execução hospedada</h2>
+      <p>
+        Dois cenários que saem do payload puro: imagens descobertas na web (que precisam de validação antes de virar
+        evidência) e a execução hospedada do Modo B (que precisa de gating explícito).
+      </p>
+    </section>
+
+    <section id="web-images">
+      <h2>12. URL de imagem na web</h2>
+      <p>
+        O modelo/tool pode <em>descobrir</em> URLs, mas a análise visual só começa depois que a aplicação valida e
+        reinjeta a imagem como <code>input_image</code>/<code>image</code>. A referência web nunca é evidência do
+        paciente/caso.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Etapa</th><th>Controle</th></tr></thead>
+        <tbody>
+          <tr><td>Busca</td><td>web_search / Google Search / Anthropic Web Search, ou buscador app-side.</td></tr>
+          <tr><td>Extração</td><td>HTML <code>img</code>/<code>srcset</code>, <code>figure</code>/caption, OpenGraph, PDFs/artigos.</td></tr>
+          <tr><td>Validação</td><td>MIME, resolução, hash, licença, domínio, safety, duplicidade.</td></tr>
+          <tr><td>Registro</td><td><code>SourceRecord</code> <code>WEBIMG_REF_*</code> com <code>external_url</code> e <code>source_page_url</code>.</td></tr>
+          <tr><td>Payload</td><td>Bloco visual separado da imagem do caso.</td></tr>
+          <tr><td>Resposta</td><td><code>source_id</code> por observação; referência web nunca é evidência do paciente.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout warn">
+        <strong>Sob ZDR/Modo A:</strong> Google Search e Maps grounding do Gemini retêm dados (~30 dias) e não são
+        desativáveis — para footprint absoluto, prefira um buscador app-side e reinjete só a imagem validada.
+      </div>
+    </section>
+
+    <section id="hosted-modo-b">
+      <h2>13. Modo B — Hosted Shell / Code / Container</h2>
+      <div class="callout danger">
+        <strong>Separação importante:</strong> Hosted Shell/Code/Container é opcional e <strong>não</strong> pertence ao
+        Modo A estrito. <code>store=false</code> não significa que um container hospedado não tenha filesystem
+        temporário durante a execução.
+      </div>
+      <pre><code class="language-yaml">MODE_B_OPTIONAL_HOSTED_EXECUTION:
+  purpose:
+    - deterministic spreadsheet calculations
+    - Python/bash data analysis
+    - generating charts or output artifacts
+    - complex extraction from messy files
+  critical_warning:
+    - This is NOT the same as strict no-provider-storage mode.
+    - store=false controls response/conversation state, not the tool/container ephemeral filesystem.
+    - Hosted containers may write temporary application state while active.
+    - For PHI/ZDR-critical workloads, prefer an application-owned worker/sandbox.
+  provider_notes:
+    openai:
+      code_interpreter:
+        container_required: true
+        memory_limit: "1g (default) | 4g | 16g | 64g; applies for the whole container lifetime"
+        container_lifecycle: "ephemeral; expires after idle; container data discarded"
+        zdr_notes: "Responses can be ZDR-eligible and ZDR forces store=false, but hosted containers may write temporary state while active; validate contract."
+      hosted_shell:
+        strict_mode: "not allowed for user files"
+    gemini:
+      code_execution:
+        language: "Python"
+        stateless_requirement: "with store=false, replay id/signature fields for tool combination"
+        zdr_notes: "store=false required for Interactions ZDR footprint; avoid Google Search/Maps/File API/cached_content for absolute zero footprint."
+      deep_research:
+        background_required: true
+        strict_mode: "not allowed when no provider state is permitted"
+    anthropic:
+      code_execution:
+        languages: ["Python", "Bash"]
+        preferred_version: "code_execution_20260120"
+        compat_version: "code_execution_20250825 (incl. Haiku 4.5)"
+        zdr: "NOT eligible for ZDR (container data retained up to 30 days)"
+        strict_mode: "not allowed for PHI/ZDR strict path"
+      files_api: { zdr: "not eligible for ZDR" }
+      messages_pdf_vision: { zdr: "eligible when org has ZDR and no disallowed features are used" }</code></pre>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Provider</th><th>Ferramenta</th><th>ZDR / <code>store=false</code> / compatibilidade</th></tr></thead>
+        <tbody>
+          <tr><td>OpenAI</td><td>Code Interpreter / Hosted Shell</td><td>Responses é ZDR elegível e ZDR força <code>store=false</code>, mas containers podem escrever estado temporário enquanto ativos. Use só se a política aceitar container efêmero do provider.</td></tr>
+          <tr><td>Gemini</td><td>Code execution</td><td><code>store=false</code> para Interactions; se stateless com tools, reenviar <code>id</code>/<code>signature</code>. ZDR absoluto exige evitar <code>store=true</code>, File API, <code>cached_content</code> e Google Search/Maps.</td></tr>
+          <tr><td>Gemini</td><td>Deep Research / background</td><td><span class="pill bad">Incompatível com Modo A:</span> <code>background=true</code> e estado fazem parte do fluxo.</td></tr>
+          <tr><td>Anthropic</td><td>Code Execution</td><td><span class="pill bad">Não é ZDR elegível;</span> container retém dados até 30 dias. Evitar para PHI/ZDR estrito.</td></tr>
+          <tr><td>Anthropic</td><td>Files API / Skills</td><td><span class="pill bad">Não ZDR elegíveis;</span> evitar em Modo A.</td></tr>
+          <tr><td>Todos</td><td>Worker próprio</td><td><span class="pill ok">Caminho recomendado</span> para Excel, OCR, PDF render/crop, cálculos e geração de artefatos em dados sensíveis.</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="hosted-por-provider">
+      <h2>14. Hosted execution por provider</h2>
+      <p>Exemplos do Modo B. Use somente se a computação hospedada for permitida pela política; para PHI/ZDR estrito, substitua por um worker próprio.</p>
+
+      <h3>14.1. OpenAI — Code Interpreter / Hosted Shell</h3>
+      <pre><code class="language-python"># Optional Mode B: OpenAI Code Interpreter / Hosted Shell.
+# Not part of the strict no-provider-storage path.
+
+response = client.responses.create(
+    model="gpt-5.5",
+    store=False,
+    tools=[{"type": "code_interpreter", "container": {"type": "auto", "memory_limit": "4g"}}],
+    input=[{
+        "role": "user",
+        "content": [
+            {"type": "input_text", "text": "Use the python tool to validate this CSV summary. Do not retain artifacts."},
+            {"type": "input_text", "text": CSV_001_SUMMARY.markdown}
+        ]
+    }]
+)
+# For strict PHI/no-provider-storage: replace with an application-owned Python worker.</code></pre>
+      <div class="callout info">
+        <strong><code>memory_limit</code> (verificado):</strong> escolha entre <code>1g</code> (default), <code>4g</code>,
+        <code>16g</code> ou <code>64g</code>; o valor escolhido vale por toda a vida do container (criado em modo
+        <code>auto</code> ou via <code>/v1/containers</code>) e é cobrado às taxas de built-in tools. O ciclo é efêmero:
+        o container expira por inatividade e os dados são descartados.
+      </div>
+
+      <h3>14.2. Gemini — Code execution</h3>
+      <pre><code class="language-python"># Optional Mode B: Gemini code_execution.
+# With store=false, keep and replay id/signature fields if tool combination needs continuity.
+
+interaction = client.interactions.create(
+    model="gemini-3.5-flash",
+    store=False,
+    input=[{"type": "user_input", "content": [
+        {"type": "text", "text": "Compute and verify the summary from this CSV excerpt."},
+        {"type": "text", "text": CSV_001_FILTERED_TEXT}
+    ]}],
+    tools=[{"type": "code_execution"}]
+)</code></pre>
+
+      <h3>14.3. Anthropic — Code execution</h3>
+      <p>
+        Roda Python/Bash em sandbox e <strong>não é ZDR elegível</strong>. Prefira a versão
+        <code>code_execution_20260120</code> (adiciona persistência de REPL e programmatic tool calling),
+        suportada em <strong>Opus 4.5+ e Sonnet 4.5+</strong> — inclui Opus 4.8/4.7/4.6 e Sonnet 4.6;
+        <strong>não</strong> inclui Haiku 4.5. <code>code_execution_20250825</code> permanece suportada em
+        <strong>todos os modelos</strong> (única opção para Haiku 4.5).
+      </p>
+      <pre><code class="language-python"># Optional Mode B: Anthropic code_execution. NOT ZDR eligible per Anthropic docs.
+
+message = client.messages.create(
+    model="claude-opus-4-8",
+    max_tokens=2000,
+    tools=[{"type": "code_execution_20260120", "name": "code_execution"}],
+    messages=[{
+        "role": "user",
+        "content": [
+            {"type": "text", "text": "Use code execution to validate this CSV excerpt, then return an EvidenceCard."},
+            {"type": "text", "text": CSV_001_FILTERED_TEXT}
+        ]
+    }]
+)
+# For strict mode: use application-owned code execution and pass only computed EvidenceCards to Claude.</code></pre>
+      <div class="source-link">Fonte oficial: <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool" target="_blank" rel="noopener">Anthropic · code execution tool</a> — 2026-05-25 (versão preferida <code>code_execution_20260120</code>; <code>20250825</code> = compatibilidade)</div>
+    </section>
+
+    <section id="hosted-frameworks">
+      <h2>15. Hosted execution dentro dos frameworks</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Framework</th><th>Modo A</th><th>Modo B opcional</th></tr></thead>
+        <tbody>
+          <tr><td>Agents SDK</td><td>Function tools chamam workers próprios e adapters strict.</td><td>Function tool pode chamar Code Interpreter/Hosted Shell, Gemini code_execution ou Anthropic code_execution — mas marque o run como non-strict.</td></tr>
+          <tr><td>LangGraph</td><td>Nós strict chamam provider payload ou app worker.</td><td>Nó <code>hosted_exec</code> separado; o checkpoint registra que houve provider container/tool.</td></tr>
+          <tr><td>Deep Agents</td><td>Filesystem/backend app-side + tools strict.</td><td>Subagent/tool hosted só com gating, aprovação e sem PHI/ZDR.</td></tr>
+          <tr><td>ADK v1/v2</td><td>FunctionTool/nó chama app worker.</td><td>FunctionTool/nó chama provider code tool; <code>session.state</code> marca non-strict.</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <!-- ===================== PARTE 6 ===================== -->
+    <section class="chapter" id="parte-controle">
+      <h2 style="border-bottom:3px solid var(--c-da);padding:14px 0 10px;font-size:28px">Parte 6 — Controle</h2>
+      <p>O que fecha o contrato: o schema de saída, os evals que bloqueiam, os riscos e o checklist.</p>
+    </section>
+
+    <section id="output-schema">
+      <h2>16. Output schema (EvidenceCard)</h2>
+      <pre><code class="language-json">{
+  "summary": "string",
+  "observations": [
+    {
+      "observation": "string",
+      "source_ids": ["IMG_ORIG_001"],
+      "comparison_source_ids": ["WEBIMG_REF_001"],
+      "modality": "visual|textual|tabular|computed",
+      "confidence": "low|medium|high",
+      "limitations": "string"
+    }
+  ],
+  "discarded_sources": [
+    {"source_id": "WEBIMG_REF_002", "reason": "irrelevant, unsafe, unsupported, expired URL, or low quality"}
+  ],
+  "cannot_answer": ["string"],
+  "human_review_required": true
+}</code></pre>
+    </section>
+
+    <section id="evals">
+      <h2>17. Evals obrigatórios</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Eval</th><th>Passa se…</th></tr></thead>
+        <tbody>
+          <tr><td>No provider storage strict</td><td>Modo A não contém <code>file_id</code>, <code>uploaded_file.uri</code>, vector store, File Search, background ou container hospedado.</td></tr>
+          <tr><td>Hosted mode flag</td><td>Qualquer Code/Shell/Container marca <code>run_mode=hosted_optional_non_strict</code>.</td></tr>
+          <tr><td>Source attribution</td><td>Todo claim tem <code>source_id</code>/<code>EvidenceCard</code>.</td></tr>
+          <tr><td>Visual visibility</td><td>Claim visual só se imagem/crop entrou no payload ou existe EvidenceCard visual.</td></tr>
+          <tr><td>Web URL pipeline</td><td>URL descoberta só vira observação visual após <code>SourceRecord</code> validado.</td></tr>
+          <tr><td>Excel exactness</td><td>Números batem com worker próprio (ou hosted mode explicitamente permitido).</td></tr>
+          <tr><td>ZDR gating</td><td>Runs PHI/ZDR bloqueiam Anthropic Code Execution/Files API, Gemini Google Search/background, OpenAI vector/File APIs.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="source-link">O contrato de acceptance gates e o eval <code>ZDR-001</code> agnóstico estão em <a href="guia_operacao_seguranca_evals.html#evals-acceptance-gates">Operação · Evals e acceptance gates</a>.</div>
+    </section>
+
+    <section id="riscos">
+      <h2>18. Riscos</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Risco</th><th>Mitigação</th></tr></thead>
+        <tbody>
+          <tr><td>Confundir <code>store=false</code> com zero container state</td><td>Separar Modo A e Modo B; registrar <code>run_mode</code>.</td></tr>
+          <tr><td>Provider hosted tool em PHI</td><td>Policy gate bloqueia hosted tools para PHI.</td></tr>
+          <tr><td>URL assinada com PHI</td><td>Preferir base64 inline; TTL curto e domínio controlado se necessário.</td></tr>
+          <tr><td>Imagem web sem licença</td><td><code>ImageHarvester</code> exige <code>license_note</code>/<code>trust_tier</code>.</td></tr>
+          <tr><td>PDF grande estoura contexto</td><td>Chunking/render/crop app-side.</td></tr>
+          <tr><td>Excel errado</td><td>Worker próprio; hosted só como Modo B.</td></tr>
+          <tr><td>Subagente sem fonte</td><td><code>SubagentInputPacket</code> e <code>EvidenceCard</code> obrigatórios.</td></tr>
+          <tr><td>String de versão de tool desatualizada</td><td>Tratar versões (ex.: <code>code_execution_*</code>) como perecíveis; preferir a mais recente suportada pelo modelo.</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="checklist">
+      <h2>19. Checklist final</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Modo A</th><th>Modo B</th><th>File inputs</th><th>Resposta</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>☐ Sem Files API/file_id<br>☐ Sem File Search/vector store<br>☐ Sem container hospedado<br>☐ <code>store=false</code>/<code>background=false</code><br>☐ Base64/signed URL/chunks app-side</td>
+            <td>☐ <code>run_mode=hosted_optional_non_strict</code><br>☐ ZDR/BAA validado<br>☐ PHI bloqueado se não permitido<br>☐ TTL/cleanup/egress registrado<br>☐ Política de download/deleção de artefato</td>
+            <td>☐ Caption antes de cada fonte<br>☐ <code>source_id</code> por claim<br>☐ <code>parent_source_id</code> em crops<br>☐ Excel calculado fora<br>☐ PDF visual crítico renderizado</td>
+            <td>☐ EvidenceCards<br>☐ limitações<br>☐ sem diagnóstico<br>☐ <code>human_review_required</code><br>☐ referências web separadas</td>
+          </tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <!-- ===================== REFERÊNCIA ===================== -->
+    <section class="ref" id="cheatsheet">
+      <h2>Cheat sheet — Modo A vs Modo B</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Pergunta</th><th>Modo A (estrito)</th><th>Modo B (hosted)</th></tr></thead>
+        <tbody>
+          <tr><td>PHI/ZDR estrito?</td><td>Sim — este é o caminho.</td><td>Não — exige análise de retenção/contrato.</td></tr>
+          <tr><td>Como o arquivo entra?</td><td>base64 inline / signed URL efêmera / chunk-render app-side.</td><td>container hospedado processa o arquivo.</td></tr>
+          <tr><td>Excel / cálculo determinístico?</td><td>worker próprio → CSV/JSON/EvidenceCard.</td><td>code execution hospedado (se permitido).</td></tr>
+          <tr><td>Estado retido no provider?</td><td>Nenhum (<code>store=false</code>, sem Files/vector/background).</td><td>Filesystem efêmero do container enquanto ativo.</td></tr>
+          <tr><td>Anthropic code execution?</td><td>Proibido (não ZDR elegível).</td><td><code>code_execution_20260120</code> (compat: <code>20250825</code>).</td></tr>
+          <tr><td><code>run_mode</code></td><td><code>strict_no_provider_storage</code></td><td><code>hosted_optional_non_strict</code></td></tr>
+        </tbody>
+      </table></div>
+      <h3>Mapa de cross-links</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Preciso de…</th><th>Onde ler</th></tr></thead>
+        <tbody>
+          <tr><td>Formatos/limites por provider</td><td><a href="guia_multimodal.html#h-openai">Multimodal · OpenAI</a> · <a href="guia_multimodal.html#h-gemini">Gemini</a> · <a href="guia_multimodal.html#h-anthropic">Anthropic</a> · <a href="guia_multimodal.html#h-limits-catalog">catálogo</a></td></tr>
+          <tr><td>ZDR/retenção (agnóstico + por provider)</td><td><a href="guia_operacao_seguranca_evals.html#privacidade-retencao-zdr">Operação · ZDR</a> · <a href="guia_openai_modelos.html#s-conversation">OpenAI</a> · <a href="guia_gemini_interactions_api.html#s-store">Gemini</a> · <a href="guia_claude_api.html#b-files">Claude</a></td></tr>
+          <tr><td>Ledger canônico / payload é projeção</td><td><a href="guia_estado_contexto_memoria.html">Estado, contexto &amp; memória</a></td></tr>
+          <tr><td>Evals / acceptance gates</td><td><a href="guia_operacao_seguranca_evals.html#evals-acceptance-gates">Operação · Evals</a></td></tr>
+          <tr><td>HITL por framework</td><td><a href="guia_langgraph.html#s-hitl">LangGraph</a> · <a href="guia_google_adk.html#tool-confirm">ADK</a> · <a href="guia_agents_sdk.html#s-guardrails">Agents SDK</a></td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section class="ref" id="verificacao">
+      <h2>Notas de verificação</h2>
+      <p>Pontos perecíveis conferidos contra a documentação oficial em 2026-06-10 por time de validação (debate cruzado), e os que permanecem em aberto.</p>
+      <ul>
+        <li><span class="pill ok">Verificado</span> <strong><code>detail:"original"</code> (OpenAI).</strong> Valor válido (low/high/original/auto), "available on gpt-5.4 and future models"; em <code>gpt-5.5</code>, <code>auto</code> equivale a <code>original</code>. Fonte: developers.openai.com/api/docs/guides/images-vision.</li>
+        <li><span class="pill ok">Verificado</span> <strong>Limites OpenAI.</strong> 512 MB de payload e 1500 imagens/request; <code>input_file</code> &lt; 50 MB por arquivo e soma ≤ 50 MB. ZDR força <code>store=false</code>. Fontes: /images-vision, /file-inputs, /your-data.</li>
+        <li><span class="pill ok">Verificado</span> <strong>Limites Anthropic.</strong> Request 32 MB; 600 páginas de PDF (100 p/ modelos 200k) e 600 imagens/request (100 p/ 200k); GIF animado usa só o 1º frame; PDF vision = texto + imagem por página. PDF inline = ZDR elegível; Files API e Code Execution = NÃO ZDR elegíveis (container retém até 30 dias). Fontes: /vision, /pdf-support, /api-and-data-retention, /code-execution-tool.</li>
+        <li><span class="pill ok">Verificado</span> <strong>Gemini ZDR.</strong> <code>store=false</code> = zero-data footprint; incompatível com <code>background=true</code> e <code>previous_interaction_id</code>; Google Search/Maps retêm ~30 dias (não desativável); File API e <code>cached_content</code> persistem. Fonte: /zdr.</li>
+        <li><span class="pill beta">Atualizado</span> <strong>Versão do code execution (Anthropic).</strong> <code>code_execution_20250825</code> é válido em todos os modelos, mas <code>code_execution_20260120</code> é mais recente e suportado em <strong>Opus 4.5+ e Sonnet 4.5+</strong> (inclui Opus 4.8/4.7/4.6 e Sonnet 4.6; <strong>não</strong> inclui Haiku 4.5) — adiciona persistência de REPL + programmatic tool calling. Este guia usa <code>20260120</code> como preferida e cita <code>20250825</code> como compatibilidade (única opção para Haiku 4.5). A versão legada anterior (Python-only) foi omitida. Fonte: /code-execution-tool — reconferido 2026-06-10.</li>
+        <li><span class="pill ok">Verificado</span> <strong>Gemini <code>media_resolution</code> — funciona na Interactions API.</strong> A forma <strong>global</strong> (<code>generation_config={"media_resolution": "MEDIA_RESOLUTION_HIGH"}</code>) é válida na Interactions: a doc lista <code>generation_config</code> como parâmetro <em>interaction-scoped</em> de comportamento do modelo (junto de <code>thinking_level</code>, <code>temperature</code>) e a migração de maio/2026 confirma que <code>generation_config</code> permanece focado em comportamento. Enum <code>MEDIA_RESOLUTION_UNSPECIFIED/LOW/MEDIUM/HIGH</code> (<code>ULTRA_HIGH</code> só por-part). O modo <strong>por-part</strong> é exclusivo do Gemini 3 / <code>v1alpha</code> e documentado para <code>generateContent</code> — não cravado nos blocos da Interactions; por isso §9 usa a forma global. <em>(Correção da rodada anterior, que marcara o parâmetro como não-suportado.)</em> Fonte: ai.google.dev/gemini-api/docs/media-resolution + /interactions + /interactions-breaking-changes-may-2026 — 2026-05-25.</li>
+        <li><span class="pill ok">Verificado</span> <strong>OpenAI <code>memory_limit</code> de container.</strong> Documentado: <code>1g</code> (default), <code>4g</code>, <code>16g</code>, <code>64g</code>; vale por toda a vida do container (modo <code>auto</code> ou via <code>/v1/containers</code>) e é cobrado às taxas de built-in tools. Ciclo efêmero (expira por inatividade, dados descartados). Fonte: developers.openai.com/api/docs/guides/tools-code-interpreter#containers — 2026-05-25.</li>
+        <li><span class="pill ok">Verificado</span> <strong>Schema de content-block do Gemini Interactions.</strong> O formato <code>{type, data|uri, mime_type}</code> (image/document/audio/video) e os limites inline <strong>100 MB/request (50 MB para PDF)</strong> constam na página oficial <em>file input methods</em> da Interactions API. Fonte: ai.google.dev/gemini-api/docs/interactions/file-input-methods — 2026-05-25.</li>
+        <li><span class="pill partial">UNVERIFIED (menor)</span> <strong><code>model_dump_json()</code> como retorno de tool (Agents SDK).</strong> Método Pydantic v2 válido; aceitável se <code>EvidenceCard</code> for um modelo Pydantic, mas não é um pattern explicitamente documentado no SDK.</li>
+        <li><span class="pill ok">Verificado</span> <strong>Âncoras de cross-link.</strong> Todos os destinos usados resolvem em 2026-05-25: <code>guia_multimodal#h-openai/#h-gemini/#h-anthropic/#h-limits-catalog</code>, <code>guia_operacao_seguranca_evals#privacidade-retencao-zdr/#evals-acceptance-gates</code>, <code>guia_openai_modelos#s-conversation</code>, <code>guia_gemini_interactions_api#s-store</code>, <code>guia_claude_api#b-pdf/#b-files</code>, <code>guia_agents_sdk#s-guardrails</code>, <code>guia_langgraph#s-persistence/#s-hitl</code>, <code>guia_deepagents#s-backends</code>, <code>guia_google_adk#tool-confirm</code>.</li>
+        <li><span class="pill beta">Atualizado</span> <strong>Integração da proposta v0.6 (2026-05-26).</strong> Adicionado ao <code>SourceRecord</code> o campo <code>projection_policy</code> (<code>inline_current_turn</code>/<code>summary</code>/<code>rag_only</code>/<code>blocked</code>) e os campos de reidratação/orçamento (<code>page_count</code>, <code>token_estimate</code>, <code>parsed_ref</code>, <code>parser_version</code>). Em §7, incluída a tabela de <strong>páginas inline e token cap por tier</strong> como camada de <em>política de produto</em> (valores ilustrativos, parametrizáveis), explicitamente distinta dos <strong>limites físicos da API</strong> por provider já documentados no guia.</li>
+        <li><span class="pill beta">Atualizado</span> <strong>Varredura de 2026-06-10.</strong> Reconferência dos pontos perecíveis contra a documentação oficial. (1) <code>media_resolution</code> no Gemini: o callout de §9 foi promovido de <span class="pill partial">UNVERIFIED</span> para <span class="pill ok">Verificado</span> na forma <strong>global</strong> da Interactions API, alinhando-o à nota de verificação acima (per-part segue <code>v1alpha</code>/experimental, só <code>generateContent</code> / Gemini 3). (2) <code>code_execution_20260120</code> (Anthropic): enunciado de suporte corrigido para <strong>Opus 4.5+ e Sonnet 4.5+</strong> (inclui Opus 4.8/4.7/4.6 e Sonnet 4.6; não inclui Haiku 4.5) em §14.3 e na nota correspondente; <code>code_execution_20250825</code> segue suportada em todos os modelos. (3) Marcadores de verificação (meta, header, hero, fontes, legenda, footer) re-datados para 2026-06-10.</li>
+      </ul>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site">
+  <div style="max-width:1440px;margin:0 auto;padding:0 24px;display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;justify-content:space-between;">
+    <div style="max-width:540px">
+      <div class="brand" style="font-size:15px">File Inputs sem Provider Storage <small>Núcleo agnóstico · super-guia de agentes</small></div>
+      <p style="margin:8px 0 0;color:var(--c-fg-muted);font-size:13.5px;line-height:1.55">
+        Referência técnica construída a partir da documentação oficial pública em <strong>2026-06-10</strong>.
+        Modo A estrito sem provider storage; Modo B hosted opcional com retenção/ZDR claramente separado. Para
+        informação sempre atualizada, consulte as <a href="#fontes-oficiais">fontes oficiais</a>.
+      </p>
+    </div>
+    <div style="font-size:13.5px;color:var(--c-fg-muted);line-height:1.7">
+      <div><strong>Crédito de produção</strong></div>
+      <div>Validação por <strong>time Sonnet 4.6</strong> (debate cruzado, fontes oficiais)</div>
+      <div>montagem e reconciliação pelo orquestrador <strong>Opus 4.7</strong> · 2026-05-26</div>
+      <div style="margin-top:6px">
+        <span class="badge da">Núcleo · v1</span>
+        <span class="badge ok">Modo A estrito</span>
+      </div>
+    </div>
+    <div style="font-size:12.5px;color:var(--c-fg-soft)">
+      <div><strong>Navegação rápida</strong></div>
+      <div><a href="#dois-modos">Dois modos</a> · <a href="#source-record">SourceRecord</a> · <a href="#hosted-modo-b">Hosted</a></div>
+      <div><a href="#cheatsheet">Cheat sheet</a> · <a href="#verificacao">Verificação</a></div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  /* Toggle de tema com persistência em localStorage (chave compartilhada do super-guia). */
+  (function(){
+    var KEY = 'super-guia-theme';
+    var btn = document.getElementById('theme-toggle');
+    var pref = localStorage.getItem(KEY);
+    if (pref) document.documentElement.setAttribute('data-theme', pref);
+    if (btn) btn.addEventListener('click', function(){
+      var cur = document.documentElement.getAttribute('data-theme') || 'light';
+      var nxt = cur === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', nxt);
+      localStorage.setItem(KEY, nxt);
+    });
+  })();
+  /* Scroll-spy: destaca no TOC a seção visível. */
+  (function(){
+    var links = document.querySelectorAll('nav.toc a[href^="#"]');
+    var map = {};
+    links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        var id = e.target.id; if (!map[id]) return;
+        if (e.isIntersecting) {
+          links.forEach(function(l){ l.classList.remove('active'); });
+          map[id].classList.add('active');
+        }
+      });
+    }, { rootMargin: '-40% 0% -55% 0%', threshold: 0 });
+    Object.keys(map).forEach(function(id){ var el = document.getElementById(id); if (el) io.observe(el); });
+  })();
+</script>
+</body>
+</html>

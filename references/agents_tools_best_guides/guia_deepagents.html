@@ -1,0 +1,2928 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Guia Deep Agents — Referência completa (Python)</title>
+<meta name="description" content="Guia técnico SOTA do Deep Agents (LangChain OSS) em Python: os quatro pilares (system prompt, planning, sub-agents, virtual filesystem), create_deep_agent, middleware, backends pluggable, sandboxes, skills, memória, profiles, HITL, dcode CLI e ACP. Verificado em 2026-07-12." />
+<meta name="last-checked" content="2026-07-12" />
+<meta name="robots" content="index,follow" />
+<style>
+  :root {
+    --c-bg: #ffffff;
+    --c-bg-elev: #f7f8fa;
+    --c-bg-code: #0e1116;
+    --c-fg: #1a1d23;
+    --c-fg-muted: #5b6472;
+    --c-fg-soft: #8a93a3;
+    --c-border: #e4e7ec;
+    --c-border-strong: #cdd3dc;
+    --c-accent: #5b2bd9;
+    --c-da: #6f3aff;
+    --c-da-bg: #efe9ff;
+    --c-warn: #b6541d;
+    --c-warn-bg: #fff4e6;
+    --c-ok: #2f7a3a;
+    --c-ok-bg: #e8f5ea;
+    --c-bad: #b3261e;
+    --c-bad-bg: #fde8e6;
+    --c-na: #6b7280;
+    --c-na-bg: #eef0f3;
+    --c-info: #1f6feb;
+    --c-info-bg: #e6efff;
+    --shadow-sm: 0 1px 2px rgba(15,23,42,.06), 0 1px 1px rgba(15,23,42,.04);
+    --shadow-md: 0 6px 24px rgba(15,23,42,.08), 0 2px 6px rgba(15,23,42,.06);
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --gutter: 24px;
+    --sidebar-w: 300px;
+  }
+  [data-theme="dark"] {
+    --c-bg: #0d1117;
+    --c-bg-elev: #161b22;
+    --c-bg-code: #010409;
+    --c-fg: #e6edf3;
+    --c-fg-muted: #9aa4b2;
+    --c-fg-soft: #6c7686;
+    --c-border: #20262d;
+    --c-border-strong: #2f3640;
+    --c-da-bg: #241a4a;
+    --c-warn-bg: #2a1e0a;
+    --c-ok-bg: #0d2517;
+    --c-bad-bg: #2a1213;
+    --c-na-bg: #1a1f26;
+    --c-info-bg: #0c1e3a;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+    --shadow-md: 0 8px 28px rgba(0,0,0,.45);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-sans);
+    font-size: 15.5px;
+    line-height: 1.55;
+    color: var(--c-fg);
+    background: var(--c-bg);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  a { color: var(--c-accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, kbd, pre, samp { font-family: var(--font-mono); font-size: 0.92em; }
+  :focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; border-radius: 4px; }
+  .skip { position: absolute; left: -9999px; }
+  .skip:focus { left: 12px; top: 12px; background: var(--c-bg); padding: 8px 12px; border: 1px solid var(--c-border); border-radius: 6px; z-index: 100; }
+
+  header.site {
+    position: sticky; top: 0; z-index: 30;
+    background: rgba(255,255,255,.85);
+    backdrop-filter: saturate(180%) blur(10px);
+    border-bottom: 1px solid var(--c-border);
+  }
+  [data-theme="dark"] header.site { background: rgba(13,17,23,.82); }
+  .header-row {
+    max-width: 1400px; margin: 0 auto; padding: 12px 24px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .brand { font-weight: 700; letter-spacing: -.01em; font-size: 16px; }
+  .brand small { color: var(--c-fg-muted); font-weight: 500; margin-left: 8px; font-size: 12.5px; }
+  .header-right { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 999px;
+    background: var(--c-bg-elev); border: 1px solid var(--c-border);
+    color: var(--c-fg-muted); font-size: 12.5px; font-weight: 500;
+  }
+  .badge.ok { background: var(--c-ok-bg); color: var(--c-ok); border-color: transparent; }
+  .badge.da { background: var(--c-da-bg); color: var(--c-da); border-color: transparent; }
+  .badge.info { background: var(--c-info-bg); color: var(--c-info); border-color: transparent; }
+  .theme-btn {
+    border: 1px solid var(--c-border); background: var(--c-bg-elev); color: var(--c-fg);
+    padding: 5px 10px; border-radius: 8px; cursor: pointer; font: inherit; font-size: 12.5px;
+  }
+  .theme-btn:hover { border-color: var(--c-border-strong); }
+
+  .layout {
+    max-width: 1400px; margin: 0 auto;
+    display: grid; grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+    gap: 32px; padding: 24px;
+  }
+  nav.toc {
+    position: sticky; top: 64px;
+    align-self: start; max-height: calc(100vh - 80px); overflow: auto;
+    padding-right: 8px;
+    border-right: 1px solid var(--c-border);
+  }
+  nav.toc h4 {
+    margin: 0 0 8px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--c-fg-soft);
+  }
+  nav.toc ol { list-style: none; padding: 0; margin: 0 0 16px; }
+  nav.toc ol ol { padding-left: 14px; border-left: 1px dashed var(--c-border); margin-left: 4px; }
+  nav.toc li { line-height: 1.4; margin: 2px 0; }
+  nav.toc a {
+    display: block; padding: 4px 8px; border-radius: 5px;
+    color: var(--c-fg-muted); font-size: 13px;
+  }
+  nav.toc a:hover { background: var(--c-bg-elev); color: var(--c-fg); text-decoration: none; }
+  nav.toc a.active { color: var(--c-da); background: var(--c-da-bg); font-weight: 600; }
+  nav.toc .toc-section {
+    margin-top: 12px; padding: 2px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--c-fg-soft);
+    border-top: 1px solid var(--c-border); padding-top: 10px;
+  }
+  nav.toc .toc-section:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+
+  main { min-width: 0; max-width: 1020px; }
+
+  .hero {
+    border: 1px solid var(--c-border);
+    border-radius: 14px;
+    padding: 28px 28px 24px;
+    background: linear-gradient(135deg, var(--c-da-bg) 0%, var(--c-bg) 100%);
+    margin-bottom: 32px;
+  }
+  .hero h1 { font-size: 32px; line-height: 1.15; margin: 0 0 8px; letter-spacing: -.02em; }
+  .hero p.lead { margin: 0 0 16px; color: var(--c-fg-muted); font-size: 16px; max-width: 72ch; }
+  .hero-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+
+  section { margin: 48px 0; scroll-margin-top: 84px; }
+  section.chapter { padding-top: 16px; margin-top: 56px; border-top: 3px solid var(--c-da); }
+  section.ref { padding-top: 12px; margin-top: 48px; border-top: 2px dashed var(--c-border-strong); }
+  h2 {
+    font-size: 24px; line-height: 1.2; letter-spacing: -.015em;
+    margin: 0 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--c-border);
+    scroll-margin-top: 84px;
+  }
+  h3 { font-size: 18px; line-height: 1.3; margin: 28px 0 10px; scroll-margin-top: 84px; }
+  h4 { font-size: 15px; margin: 20px 0 8px; color: var(--c-fg); scroll-margin-top: 84px; }
+  p { margin: 0 0 12px; }
+  ul, ol { margin: 0 0 12px; padding-left: 22px; }
+  li { margin: 4px 0; }
+  hr { border: 0; border-top: 1px solid var(--c-border); margin: 24px 0; }
+
+  .table-wrap { overflow-x: auto; margin: 0 0 18px; border: 1px solid var(--c-border); border-radius: var(--radius); }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 580px; }
+  th, td { padding: 9px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--c-border); }
+  th { background: var(--c-bg-elev); font-weight: 600; color: var(--c-fg); position: sticky; top: 0; font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--c-bg-elev); }
+  td code, th code { background: var(--c-bg-elev); padding: 1px 5px; border-radius: 4px; font-size: 12.5px; color: var(--c-fg); }
+  [data-theme="dark"] td code, [data-theme="dark"] th code { background: #0b0e13; }
+
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; letter-spacing: .02em; }
+  .pill.ok { background: var(--c-ok-bg); color: var(--c-ok); }
+  .pill.partial { background: var(--c-warn-bg); color: var(--c-warn); }
+  .pill.bad { background: var(--c-bad-bg); color: var(--c-bad); }
+  .pill.na { background: var(--c-na-bg); color: var(--c-na); }
+  .pill.beta { background: var(--c-info-bg); color: var(--c-info); }
+
+  .callout {
+    border-left: 4px solid var(--c-accent);
+    background: var(--c-bg-elev);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  .callout.warn { border-left-color: var(--c-warn); background: var(--c-warn-bg); color: #5a3009; }
+  .callout.tip { border-left-color: var(--c-ok); background: var(--c-ok-bg); color: #1d4a25; }
+  .callout.danger { border-left-color: var(--c-bad); background: var(--c-bad-bg); color: #7a1a16; }
+  [data-theme="dark"] .callout.warn { color: #f1c896; }
+  [data-theme="dark"] .callout.tip { color: #a7d8b1; }
+  [data-theme="dark"] .callout.danger { color: #f0a8a4; }
+  .callout strong { font-weight: 700; }
+
+  pre {
+    background: var(--c-bg-code);
+    color: #d1d5db;
+    padding: 14px 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 0 0 14px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    border: 1px solid #1f242c;
+  }
+  pre code { color: inherit; background: transparent; padding: 0; }
+
+  details {
+    border: 1px solid var(--c-border); border-radius: var(--radius);
+    padding: 8px 14px; margin: 6px 0 10px; background: var(--c-bg-elev);
+  }
+  details > summary {
+    cursor: pointer; font-weight: 600; padding: 4px 0; list-style: none;
+    font-size: 13.5px;
+  }
+  details > summary::-webkit-details-marker { display: none; }
+  details > summary::before { content: "▸ "; color: var(--c-fg-soft); display: inline-block; }
+  details[open] > summary::before { content: "▾ "; }
+  details > .ref-body { padding: 8px 0 4px; }
+
+  .source-link {
+    font-size: 12.5px; color: var(--c-fg-muted);
+    margin: 6px 0 24px; padding: 6px 10px;
+    background: var(--c-bg-elev); border-left: 3px solid var(--c-da);
+    border-radius: 0 6px 6px 0;
+  }
+  .source-link a { color: var(--c-da); font-weight: 600; }
+
+  footer.site {
+    margin: 64px 0 24px; padding: 24px 0; border-top: 1px solid var(--c-border);
+    color: var(--c-fg-muted); font-size: 13px; text-align: center;
+  }
+
+  @media (max-width: 1080px) {
+    .layout { grid-template-columns: 1fr; }
+    nav.toc { position: static; max-height: none; border-right: none; border-bottom: 1px solid var(--c-border); padding-bottom: 16px; margin-bottom: 16px; }
+    main { max-width: 100%; }
+    .hero h1 { font-size: 24px; }
+  }
+  @media print {
+    nav.toc, header.site, .theme-btn { display: none; }
+    .layout { grid-template-columns: 1fr; }
+    a { color: inherit; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+    details[open] { padding: 8px 0; }
+    details > summary { display: none; }
+  }
+  /* SOTA mobile-overflow guard (lead 2026-05-25): inline <code> + URLs longas + tokens slash-separados em <li>/<p> quebram em qualquer ponto; <pre><code> mantido (mobile pre-wrap já cobre). */
+  code:not(pre code) { overflow-wrap: anywhere; }
+  :where(li, p, blockquote, .source-link, td) a { overflow-wrap: anywhere; }
+  :where(li, p) { overflow-wrap: anywhere; }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Pular para o conteúdo</a>
+
+<header class="site">
+  <div class="header-row">
+    <div class="brand">Guia Deep Agents <small>Python — Referência completa</small></div>
+    <div class="header-right">
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-12</strong></span>
+      <span class="badge da">deepagents</span>
+      <span class="badge info">Python 3.11+</span>
+      <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="Sumário">
+    <div class="toc-section">Sobre</div>
+    <ol>
+      <li><a href="#sobre">Sobre este guia</a></li>
+      <li><a href="#fontes-oficiais">Fontes oficiais</a></li>
+    </ol>
+
+    <div class="toc-section">Parte A — Conceitos</div>
+    <ol>
+      <li><a href="#s-intro">Visão geral · 4 pilares</a></li>
+      <li><a href="#s-quickstart">Quickstart</a></li>
+      <li><a href="#s-install">Instalação</a></li>
+      <li><a href="#s-create">create_deep_agent</a></li>
+      <li><a href="#s-builtin-tools">Ferramentas embutidas</a></li>
+      <li><a href="#s-prompt">System prompt &amp; montagem</a></li>
+      <li><a href="#s-subagents">Sub-agents</a></li>
+      <li><a href="#s-fs">Sistema de arquivos virtual</a></li>
+      <li><a href="#s-backends">Backends</a></li>
+      <li><a href="#s-permissions">Permissões</a></li>
+      <li><a href="#s-middleware">Catálogo de middleware</a></li>
+      <li><a href="#s-skills">Skills</a></li>
+      <li><a href="#s-memory">Memória (AGENTS.md)</a></li>
+      <li><a href="#s-profiles">Profiles</a></li>
+      <li><a href="#s-hitl">Human-in-the-loop</a></li>
+      <li><a href="#s-sandboxes">Sandboxes</a></li>
+      <li><a href="#s-interpreter">Code interpreter (QuickJS)</a></li>
+      <li><a href="#s-context">Context engineering</a></li>
+      <li><a href="#s-streaming">Streaming</a></li>
+      <li><a href="#s-async">Async</a></li>
+      <li><a href="#s-production">Going to production</a></li>
+      <li><a href="#s-models">Modelos sugeridos</a></li>
+      <li><a href="#s-comparison">Comparação · Claude Agent SDK</a></li>
+      <li><a href="#s-dcode">dcode CLI</a></li>
+      <li><a href="#s-acp">ACP — Agent Client Protocol</a></li>
+    </ol>
+
+    <div class="toc-section">Parte B — Referência</div>
+    <ol>
+      <li><a href="#ref-create">create_deep_agent</a></li>
+      <li><a href="#ref-baseprompt">BASE_AGENT_PROMPT</a></li>
+      <li><a href="#ref-subagent-types">SubAgent · CompiledSubAgent · AsyncSubAgent</a></li>
+      <li><a href="#ref-state">DeepAgentState e extensões</a></li>
+      <li><a href="#ref-builtin-tools">Ferramentas built-in</a></li>
+      <li><a href="#ref-mw-filesystem">FilesystemMiddleware</a></li>
+      <li><a href="#ref-mw-subagent">SubAgentMiddleware · AsyncSubAgentMiddleware</a></li>
+      <li><a href="#ref-mw-skills">SkillsMiddleware</a></li>
+      <li><a href="#ref-mw-memory">MemoryMiddleware</a></li>
+      <li><a href="#ref-mw-summarization">Summarization · PatchToolCalls · TodoList</a></li>
+      <li><a href="#ref-mw-interpreter">CodeInterpreterMiddleware</a></li>
+      <li><a href="#ref-mw-limits">Model/Tool limits e retries</a></li>
+      <li><a href="#ref-backends-ref">Backends (referência)</a></li>
+      <li><a href="#ref-backend-protocol">BackendProtocol</a></li>
+      <li><a href="#ref-permission">FilesystemPermission</a></li>
+      <li><a href="#ref-profiles">HarnessProfile · ProviderProfile</a></li>
+      <li><a href="#ref-imports">Imports recap</a></li>
+    </ol>
+
+    <div class="toc-section">Parte C — Receituário oficial</div>
+    <ol>
+      <li><a href="#s-deploy-cli">CLI <code>deepagents</code> &amp; <code>deepagents.toml</code></a></li>
+      <li><a href="#s-async-arch">Arquitetura <em>async-deep-agents</em></a></li>
+      <li><a href="#s-mcp">Integração com MCP</a></li>
+      <li><a href="#s-a2a">A2A — Agent-to-Agent</a></li>
+      <li><a href="#s-eval-table">Tabela completa de eval</a></li>
+      <li><a href="#r-deep-research">Receita · Deep research</a></li>
+      <li><a href="#r-coding-sandbox">Receita · Coding agent (sandbox)</a></li>
+      <li><a href="#r-content-writer">Receita · Content writer (subagent por canal)</a></li>
+      <li><a href="#r-text-to-sql">Receita · Text-to-SQL (skills)</a></li>
+      <li><a href="#r-ralph">Receita · Ralph mode (loop)</a></li>
+      <li><a href="#r-repl-swarm">Receita · REPL swarm (TS skill)</a></li>
+      <li><a href="#s-examples-catalog">Catálogo dos 15 exemplos oficiais</a></li>
+    </ol>
+  </nav>
+
+  <main id="main">
+
+    <div class="hero">
+      <h1>Guia Deep Agents — Referência completa (Python)</h1>
+      <p class="lead">
+        Documentação técnica exaustiva do <strong>Deep Agents</strong>, o harness do
+        LangChain para construir agentes capazes de planejar, delegar para
+        sub-agents e manter contexto via sistema de arquivos virtual. Cobre
+        <code>create_deep_agent</code>, as ferramentas built-in, sub-agents
+        (síncronos e assíncronos), os backends pluggable (StateBackend, FilesystemBackend,
+        StoreBackend, ContextHubBackend, CompositeBackend e sandboxes), permissões,
+        skills, memória persistente, profiles, HITL, dcode CLI e o ACP.
+      </p>
+      <div class="hero-meta">
+        <span class="badge da">deepagents 0.6.12</span>
+        <span class="badge info">Python ≥ 3.11</span>
+        <span class="badge ok">SOTA · 2026-06-29</span>
+      </div>
+    </div>
+
+    <section id="sobre">
+      <h2>Sobre este guia</h2>
+      <div class="callout tip">
+        <strong>Atualização 2026-07-05 — deepagents 0.6.12 (2026-06-25) segue o último ESTÁVEL no PyPI.</strong> Já existe uma linha de <strong>pre-release alpha 0.7.0a3</strong> (2026-07-01) trazendo, entre outros, override de middleware por nome em <code>create_deep_agent</code>, otimização de sandbox (menos round-trips), suporte a prompt caching no Bedrock (<code>deepagents[aws]</code>), e — na linha 0.7.x — <code>CodeInterpreterMiddleware</code>, <code>DeltaChannel</code> para histórico, Harness profiles e <code>ContextHubBackend</code> (LangSmith Hub). <span class="pill beta">preview</span> Não usar em produção ainda; mantenha <code>deepagents==0.6.12</code>. Desde a 0.6.3: <code>RubricMiddleware</code> (auto-avaliação iterativa do agente, 0.6.5); <code>state_schema</code> aceitável em <code>create_deep_agent</code> (0.6.6); Commands retornados por tools propagam <code>goto</code>/<code>graph</code> e <code>DeepAgentState</code> passou a ser exportado (0.6.7); <code>CodeInterpreterMiddleware</code> experimental (runtime QuickJS) e adoção de <code>DeltaChannel</code> + event streaming v3 (0.6.0). <strong>Breaking (0.6.8):</strong> removidos os exports públicos <code>SubagentRunStream</code>/<code>AsyncSubagentRunStream</code>/<code>SubagentTransformer</code> (eram internos da API beta <code>stream_events(version="v3")</code>). <strong>0.6.9:</strong> formato de resposta de subagente configurável (nova opção pública), além de bugfixes/perf (token counting na summarization middleware, cache de prompts de filesystem e de matchers de glob). <strong>0.6.10:</strong> bugfix — passa a comparar o provider em <code>model_matches_spec</code>. <strong>0.6.11:</strong> bugfix — roteia os helpers async do <code>BaseSandbox</code> por <code>aexecute</code>. <strong>0.6.12:</strong> adicionou <code>BedrockPromptCachingMiddleware</code> (middleware de prompt-caching para Amazon Bedrock). <strong>Compatibilidade:</strong> exige <code>langchain-core &gt;=1.4,&lt;2</code>, <code>langchain &gt;=1.3.4,&lt;2</code>, <code>langchain-anthropic &gt;=1.4.3,&lt;2</code>, <code>langchain-google-genai &gt;=4.2.2,&lt;5</code> — compatível com o LangChain/LangGraph mais novos. <span class="small">O modelo default resolve via HarnessProfile/<code>init_chat_model</code>; passe o ID explicitamente (ex.: <code>"anthropic:claude-sonnet-5"</code>) em vez de depender do default.</span>
+        <div class="callout warn" style="margin-top:10px"><strong>Nota de compatibilidade (Sonnet 5 × langchain-anthropic):</strong> o <code>langchain-anthropic</code> aceita qualquer string em <code>model=</code> sem validação de enum, então <code>"anthropic:claude-sonnet-5"</code> <strong>funciona por passthrough</strong>. Porém a última versão publicada (1.4.8, 26/06/2026) saiu <em>antes</em> do lançamento do Sonnet 5 (30/06/2026) e nenhum changelog menciona suporte testado — features beta específicas do modelo (novo tokenizer, headers beta) podem não estar cobertas. Faça uma chamada real de validação antes de usar em produção e acompanhe releases &gt;1.4.8 do connector para suporte oficial.</div>
+      </div>
+      <p>
+        Este guia é uma <strong>conversão fiel</strong> da documentação oficial pública
+        do Deep Agents em
+        <a href="https://docs.langchain.com/oss/python/deepagents/overview" target="_blank" rel="noopener">docs.langchain.com/oss/python/deepagents</a>
+        e da referência de API em
+        <a href="https://reference.langchain.com/python/deepagents/" target="_blank" rel="noopener">reference.langchain.com/python/deepagents</a>.
+      </p>
+      <p>
+        A <strong>Parte A</strong> apresenta os conceitos em 24 capítulos. A
+        <strong>Parte B</strong> é referência técnica de cada símbolo público:
+        assinatura, parâmetros em tabela, métodos e exemplos. Tudo em Python — o
+        Deep Agents também tem porta JS em
+        <a href="https://github.com/langchain-ai/deepagentsjs" target="_blank" rel="noopener">deepagentsjs</a>,
+        não coberta aqui.
+      </p>
+      <div class="callout tip">
+        <strong>Como ler:</strong> a Parte A ensina a mecânica do harness; a Parte B
+        é consulta rápida com blocos <code>&lt;details&gt;</code> expansíveis.
+      </div>
+      <div class="callout warn">
+        <strong>Verbatim parcial:</strong> a documentação pública não publica o texto
+        completo das constantes de prompt (<code>BASE_AGENT_PROMPT</code>,
+        <code>TASK_SYSTEM_PROMPT</code>, <code>FILESYSTEM_SYSTEM_PROMPT</code>,
+        <code>SKILLS_SYSTEM_PROMPT</code>, <code>MEMORY_SYSTEM_PROMPT</code>,
+        <code>SUMMARIZATION_SYSTEM_PROMPT</code>). Este guia descreve o conteúdo e a
+        função de cada prompt; para o texto exato, importe da biblioteca:
+        <code>from deepagents.graph import BASE_AGENT_PROMPT</code> (não é reexportado no topo de <code>deepagents</code>).
+      </div>
+    </section>
+
+    <section id="fontes-oficiais">
+      <h2>Fontes oficiais</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Recurso</th><th>URL</th></tr></thead>
+          <tbody>
+            <tr><td>Overview</td><td><a href="https://docs.langchain.com/oss/python/deepagents/overview" target="_blank" rel="noopener">docs.langchain.com/.../deepagents/overview</a></td></tr>
+            <tr><td>Quickstart</td><td><a href="https://docs.langchain.com/oss/python/deepagents/quickstart" target="_blank" rel="noopener">.../deepagents/quickstart</a></td></tr>
+            <tr><td>Customization</td><td><a href="https://docs.langchain.com/oss/python/deepagents/customization" target="_blank" rel="noopener">.../deepagents/customization</a></td></tr>
+            <tr><td>Backends</td><td><a href="https://docs.langchain.com/oss/python/deepagents/backends" target="_blank" rel="noopener">.../deepagents/backends</a></td></tr>
+            <tr><td>Sandboxes</td><td><a href="https://docs.langchain.com/oss/python/deepagents/sandboxes" target="_blank" rel="noopener">.../deepagents/sandboxes</a></td></tr>
+            <tr><td>Permissions</td><td><a href="https://docs.langchain.com/oss/python/deepagents/permissions" target="_blank" rel="noopener">.../deepagents/permissions</a></td></tr>
+            <tr><td>Subagents</td><td><a href="https://docs.langchain.com/oss/python/deepagents/subagents" target="_blank" rel="noopener">.../deepagents/subagents</a></td></tr>
+            <tr><td>Async subagents</td><td><a href="https://docs.langchain.com/oss/python/deepagents/async-subagents" target="_blank" rel="noopener">.../deepagents/async-subagents</a></td></tr>
+            <tr><td>Context engineering</td><td><a href="https://docs.langchain.com/oss/python/deepagents/context-engineering" target="_blank" rel="noopener">.../deepagents/context-engineering</a></td></tr>
+            <tr><td>Skills</td><td><a href="https://docs.langchain.com/oss/python/deepagents/skills" target="_blank" rel="noopener">.../deepagents/skills</a></td></tr>
+            <tr><td>Memory</td><td><a href="https://docs.langchain.com/oss/python/deepagents/memory" target="_blank" rel="noopener">.../deepagents/memory</a></td></tr>
+            <tr><td>Profiles</td><td><a href="https://docs.langchain.com/oss/python/deepagents/profiles" target="_blank" rel="noopener">.../deepagents/profiles</a></td></tr>
+            <tr><td>HITL</td><td><a href="https://docs.langchain.com/oss/python/deepagents/human-in-the-loop" target="_blank" rel="noopener">.../deepagents/human-in-the-loop</a></td></tr>
+            <tr><td>Models</td><td><a href="https://docs.langchain.com/oss/python/deepagents/models" target="_blank" rel="noopener">.../deepagents/models</a></td></tr>
+            <tr><td>Interpreters</td><td><a href="https://docs.langchain.com/oss/python/deepagents/interpreters" target="_blank" rel="noopener">.../deepagents/interpreters</a></td></tr>
+            <tr><td>Going to production</td><td><a href="https://docs.langchain.com/oss/python/deepagents/going-to-production" target="_blank" rel="noopener">.../deepagents/going-to-production</a></td></tr>
+            <tr><td>Comparison · Claude Agent SDK</td><td><a href="https://docs.langchain.com/oss/python/deepagents/comparison" target="_blank" rel="noopener">.../deepagents/comparison</a></td></tr>
+            <tr><td>dcode (CLI)</td><td><a href="https://docs.langchain.com/oss/python/deepagents/code" target="_blank" rel="noopener">.../deepagents/code</a></td></tr>
+            <tr><td>ACP</td><td><a href="https://docs.langchain.com/oss/python/deepagents/acp" target="_blank" rel="noopener">.../deepagents/acp</a></td></tr>
+            <tr><td>API reference</td><td><a href="https://reference.langchain.com/python/deepagents/" target="_blank" rel="noopener">reference.langchain.com/python/deepagents/</a></td></tr>
+            <tr><td>GitHub</td><td><a href="https://github.com/langchain-ai/deepagents" target="_blank" rel="noopener">github.com/langchain-ai/deepagents</a></td></tr>
+            <tr><td>Anúncio (blog)</td><td><a href="https://www.langchain.com/blog/deep-agents" target="_blank" rel="noopener">langchain.com/blog/deep-agents</a></td></tr>
+            <tr><td>Context engineering · Anthropic</td><td><a href="https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents" target="_blank" rel="noopener">anthropic.com/engineering/effective-context-engineering-for-ai-agents</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+<section class="chapter" id="part-a-divider">
+  <h2 style="border-bottom:3px solid var(--c-da);padding:14px 0 10px;font-size:28px">Parte A — Conceitos</h2>
+  <p>Vinte e quatro capítulos cobrindo o Deep Agents na ordem de leitura recomendada da documentação oficial.</p>
+</section>
+
+<section id="s-intro">
+  <h2>1. Visão geral · os quatro pilares</h2>
+  <p>
+    O <strong>Deep Agents</strong> é um harness construído sobre
+    <code>langchain.agents.create_agent</code> e LangGraph. Sua proposta — segundo o
+    post de Harrison Chase (2025-07-30) — é elevar agentes "shallow" (chamar tool
+    em loop) para a categoria <em>deep</em>: capazes de planejar, delegar e manter
+    contexto em horizontes longos.
+  </p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Pilar</th><th>Mecânica</th><th>Implementação</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>1. System prompt detalhado</strong></td>
+          <td>Prompt longo com instruções de uso de tool e exemplos few-shot</td>
+          <td><code>BASE_AGENT_PROMPT</code> + prompts por feature (<code>TASK_*</code>, <code>FILESYSTEM_*</code>, <code>SKILLS_*</code>, <code>MEMORY_*</code>, <code>SUMMARIZATION_*</code>). Opcional: <code>HarnessProfile.system_prompt_suffix</code></td>
+        </tr>
+        <tr>
+          <td><strong>2. Planning tool</strong></td>
+          <td>To-do list como "context engineering strategy" para manter o agente no rumo</td>
+          <td>Tool <code>write_todos</code> injetada por <code>TodoListMiddleware</code>; status <code>pending</code> / <code>in_progress</code> / <code>completed</code></td>
+        </tr>
+        <tr>
+          <td><strong>3. Sub-agents</strong></td>
+          <td>Dividir tarefas e isolar contexto</td>
+          <td>Tool <code>task(...)</code> injetada por <code>SubAgentMiddleware</code>; subagent <code>general-purpose</code> default; tipos <code>SubAgent</code> / <code>CompiledSubAgent</code> / <code>AsyncSubAgent</code></td>
+        </tr>
+        <tr>
+          <td><strong>4. Sistema de arquivos virtual</strong></td>
+          <td>Workspace compartilhado funcionando como memória de longo prazo</td>
+          <td>Tools <code>ls</code> / <code>read_file</code> / <code>write_file</code> / <code>edit_file</code> / <code>glob</code> / <code>grep</code> injetadas por <code>FilesystemMiddleware</code>; <code>BackendProtocol</code> pluggable</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="source-link">Fontes: <a href="https://www.langchain.com/blog/deep-agents" target="_blank" rel="noopener">blog</a>, <a href="https://docs.langchain.com/oss/python/deepagents/overview" target="_blank" rel="noopener">overview</a>.</div>
+  <div class="callout tip" style="margin-top:12px">
+    <strong>Nota (docs oficiais, verificado 2026-06-29):</strong> a documentação oficial enquadra as quatro capacidades como: (1) <strong>Execution environment</strong> — tools, filesystem virtual, sandbox opcional e REPL; (2) <strong>Context management</strong> — skills, memória, sumarização e caching de prompt; (3) <strong>Delegation</strong> — subagents e planejamento de tarefas; (4) <strong>Steering</strong> — HITL e interrupts. Mapeamento com os pilares acima: <em>System prompt detalhado</em> ≈ Execution environment + Context management; <em>Planning tool</em> e <em>Sub-agents</em> ≈ Delegation; <em>Sistema de arquivos virtual</em> ≈ Execution environment.
+  </div>
+</section>
+
+<section id="s-quickstart">
+  <h2>2. Quickstart</h2>
+  <pre><code class="language-python"># pip install -qU deepagents langchain-anthropic
+from deepagents import create_deep_agent
+
+def get_weather(city: str) -&gt; str:
+    """Get weather for a given city."""
+    return f"It's always sunny in {city}!"
+
+agent = create_deep_agent(
+    model="anthropic:claude-sonnet-5",
+    tools=[get_weather],
+    system_prompt="You are a helpful assistant",
+)
+
+agent.invoke({"messages": [{"role": "user", "content": "what is the weather in sf"}]})</code></pre>
+  <h3>Quickstart canônico — pesquisador com Tavily</h3>
+  <pre><code class="language-python"># pip install deepagents tavily-python
+import os
+from typing import Literal
+from tavily import TavilyClient
+from deepagents import create_deep_agent
+
+tavily_client = TavilyClient(api_key=os.environ["TAVILY_API_KEY"])
+
+def internet_search(
+    query: str,
+    max_results: int = 5,
+    topic: Literal["general", "news", "finance"] = "general",
+    include_raw_content: bool = False,
+):
+    """Run a web search"""
+    return tavily_client.search(
+        query,
+        max_results=max_results,
+        include_raw_content=include_raw_content,
+        topic=topic,
+    )
+
+agent = create_deep_agent(
+    model="anthropic:claude-sonnet-5",
+    tools=[internet_search],
+    system_prompt="You are an expert researcher...",
+)
+
+agent.invoke({
+    "messages": [{"role": "user", "content": "Research LangGraph and write a summary"}]
+})</code></pre>
+</section>
+
+<section id="s-install">
+  <h2>3. Instalação</h2>
+  <pre><code class="language-bash">pip install deepagents                       # core
+pip install -U "deepagents[quickjs]"          # + Code Interpreter (QuickJS)
+pip install deepagents-acp                    # + integração IDE (ACP)
+pip install deepagents-code                   # + dcode CLI
+
+# Sandboxes (opcionais)
+pip install langchain-modal
+pip install langchain-daytona
+pip install langchain-runloop
+pip install "langsmith[sandbox]"
+
+# uv equivalente
+uv add deepagents tavily-python</code></pre>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Item</th><th>Valor</th></tr></thead>
+      <tbody>
+        <tr><td>Versão atual</td><td><code>deepagents == 0.6.12</code> (2026-06-29)</td></tr>
+        <tr><td>Python</td><td><code>&gt;= 3.11, &lt; 4.0</code> (3.11 – 3.14)</td></tr>
+        <tr><td>Licença</td><td>MIT</td></tr>
+        <tr><td>Dependências principais</td><td><code>langgraph</code>, <code>langchain</code> (<code>create_agent</code> + middleware framework)</td></tr>
+        <tr><td>Extras opcionais</td><td><code>quickjs</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="s-create">
+  <h2>4. <code>create_deep_agent</code></h2>
+  <pre><code class="language-python">from deepagents import create_deep_agent
+from langchain.messages import SystemMessage
+
+create_deep_agent(
+    model: str | BaseChatModel | None = None,
+    tools: Sequence[BaseTool | Callable | dict[str, Any]] | None = None,
+    *,
+    system_prompt: str | SystemMessage | None = None,
+    middleware: Sequence[AgentMiddleware] = (),
+    subagents: Sequence[SubAgent | CompiledSubAgent | AsyncSubAgent] | None = None,
+    skills: list[str] | None = None,
+    memory: list[str] | None = None,
+    permissions: list[FilesystemPermission] | None = None,
+    backend: BackendProtocol | BackendFactory | None = None,
+    interrupt_on: dict[str, bool | InterruptOnConfig] | None = None,
+    response_format: ResponseFormat | type | dict | None = None,
+    context_schema: type[ContextT] | None = None,
+    checkpointer: Checkpointer | None = None,
+    store: BaseStore | None = None,
+    debug: bool = False,
+    name: str | None = None,
+    cache: BaseCache | None = None,
+) -&gt; CompiledStateGraph</code></pre>
+  <h3>Parâmetros</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Param</th><th>Tipo</th><th>Default</th><th>Comportamento</th></tr></thead>
+      <tbody>
+        <tr><td><code>model</code></td><td><code>str \| BaseChatModel \| None</code></td><td><code>None</code></td><td><code>"provider:model"</code> (via <code>init_chat_model</code>) ou instância. <code>None</code> está depreciado desde 0.5.3.</td></tr>
+        <tr><td><code>tools</code></td><td><code>Sequence[BaseTool \| Callable \| dict]</code></td><td><code>None</code></td><td>Aditivo — concatena com built-ins. Funções usam docstring como description.</td></tr>
+        <tr><td><code>system_prompt</code></td><td><code>str \| SystemMessage \| None</code></td><td><code>None</code></td><td>Preenche o slot <code>USER</code>. Usando <code>SystemMessage</code>, preserva blocos com <code>cache_control</code>.</td></tr>
+        <tr><td><code>middleware</code></td><td><code>Sequence[AgentMiddleware]</code></td><td><code>()</code></td><td>Inserido entre base stack e tail stack.</td></tr>
+        <tr><td><code>subagents</code></td><td><code>Sequence[SubAgent \| CompiledSubAgent \| AsyncSubAgent]</code></td><td><code>None</code></td><td>Declarativos, grafo pré-compilado ou remoto/async.</td></tr>
+        <tr><td><code>skills</code></td><td><code>list[str]</code></td><td><code>None</code></td><td>Paths POSIX relativos à raiz do backend. Entradas posteriores sobrepõem skills de mesmo nome.</td></tr>
+        <tr><td><code>memory</code></td><td><code>list[str]</code></td><td><code>None</code></td><td>Paths de <code>AGENTS.md</code> carregados no system prompt em startup.</td></tr>
+        <tr><td><code>permissions</code></td><td><code>list[FilesystemPermission]</code></td><td><code>None</code></td><td>First-match-wins; allow por padrão. Herdadas por subagents, exceto se sobrescritas.</td></tr>
+        <tr><td><code>backend</code></td><td><code>BackendProtocol \| BackendFactory</code></td><td><code>None</code> → <code>StateBackend()</code></td><td>Armazenamento de arquivos; sandboxes adicionam <code>execute</code>.</td></tr>
+        <tr><td><code>interrupt_on</code></td><td><code>dict[str, bool \| InterruptOnConfig]</code></td><td><code>None</code></td><td>HITL; requer <code>checkpointer</code>.</td></tr>
+        <tr><td><code>response_format</code></td><td>structured-output spec</td><td><code>None</code></td><td>Mesma semântica de <code>create_agent</code>. A saída estruturada fica em <code>result["structured_response"]</code> (ver 7.1).</td></tr>
+        <tr><td><code>context_schema</code></td><td><code>type[ContextT]</code></td><td><code>None</code></td><td>Contexto imutável por run.</td></tr>
+        <tr><td><code>checkpointer</code></td><td><code>Checkpointer</code></td><td><code>None</code></td><td>Obrigatório para HITL, async, threads duráveis.</td></tr>
+        <tr><td><code>store</code></td><td><code>BaseStore</code></td><td><code>None</code></td><td>Obrigatório se algum backend usa <code>StoreBackend</code>.</td></tr>
+        <tr><td><code>debug</code></td><td><code>bool</code></td><td><code>False</code></td><td>Logs verbosos.</td></tr>
+        <tr><td><code>name</code></td><td><code>str</code></td><td><code>None</code></td><td>Nome do agente (aparece em traces).</td></tr>
+        <tr><td><code>cache</code></td><td><code>BaseCache</code></td><td><code>None</code></td><td>Cache por call.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    <strong>Retorna</strong> um <code>CompiledStateGraph</code> do LangGraph —
+    invoca com <code>.invoke({"messages": [...]})</code>, faz stream com
+    <code>.stream(...)</code>, retoma com <code>Command(resume=...)</code>.
+  </p>
+  <div class="callout tip">
+    <strong>Política de integração por provedor.</strong> O <code>model</code>
+    aceita uma string <code>"provider:model"</code> (resolvida por
+    <code>init_chat_model</code>) ou uma instância de chat model já configurada.
+    Cada provedor tem seu pacote e classe nativos:
+    <div class="table-wrap" style="margin-top:10px">
+      <table>
+        <thead><tr><th>Provedor</th><th>Pacote · classe</th><th>Como usar</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>OpenAI</td>
+            <td><code>langchain-openai</code> · <code>ChatOpenAI</code></td>
+            <td>Para <strong>garantir</strong> a Responses API, instancie
+              <code>ChatOpenAI(model="gpt-5.5", use_responses_api=True)</code> e passe como
+              <code>model=</code>. A flag real é <code>use_responses_api</code> (não existe
+              "output_version"). O roteamento também vai para Responses API automaticamente ao usar
+              built-in tools (web_search, file_search, etc.), o param
+              <code>reasoning={"effort": ..., "summary": ...}</code> ou
+              <code>previous_response_id</code>. Uma string
+              <code>"openai:gpt-5.5"</code> sozinha <em>não</em> força Responses API.</td>
+          </tr>
+          <tr>
+            <td>Anthropic</td>
+            <td><code>langchain-anthropic</code> · <code>ChatAnthropic</code></td>
+            <td>Fala direto com a Messages API nativa da Anthropic (SDK
+              <code>anthropic</code>). <code>ChatAnthropic(model="claude-sonnet-5")</code>.
+              Bedrock/Vertex são classes separadas
+              (<code>ChatBedrockConverse</code>, <code>ChatAnthropicVertex</code>).</td>
+          </tr>
+          <tr>
+            <td>Google</td>
+            <td><code>langchain-google-genai</code> · <code>ChatGoogleGenerativeAI</code></td>
+            <td>Desde a v4.0.0 usa o SDK consolidado <code>google-genai</code> (via
+              <code>generateContent</code>). Prefixo de string:
+              <code>google_genai:gemini-3.5-flash</code>. Gotcha: em Gemini 3.0+, se
+              <code>temperature</code> não for setado, vira <code>1.0</code> — prefira
+              fixá-lo.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <pre><code class="language-python">from langchain_openai import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
+from langchain_google_genai import ChatGoogleGenerativeAI
+from deepagents import create_deep_agent
+
+# OpenAI — Responses API garantida via objeto configurado (NÃO use a string solta):
+openai_llm = ChatOpenAI(model="gpt-5.5", use_responses_api=True)
+# Anthropic — Messages API nativa:
+anthropic_llm = ChatAnthropic(model="claude-sonnet-5")
+# Google — SDK google-genai (langchain-google-genai &gt;= 4.0):
+google_llm = ChatGoogleGenerativeAI(model="gemini-3.5-flash", temperature=0.7)
+
+agent = create_deep_agent(model=openai_llm, tools=[...])   # passe a instância em model=</code></pre>
+  </div>
+  <div class="callout warn">
+    A <strong>Gemini Interactions API</strong> (endpoint <code>/interactions</code>,
+    histórico server-side, agentes gerenciados) <strong>não</strong> tem integração nativa em
+    <code>langchain-google-genai</code>, LangGraph ou deepagents (maio/2026). O
+    <code>ChatGoogleGenerativeAI</code> usa <code>generateContent</code>; features exclusivas da
+    Interactions API (<code>previous_interaction_id</code>, agentes como
+    <em>Deep Research</em>) só são acessíveis pelo SDK <code>google-genai</code> direto. Não
+    existe flag <code>use_interactions_api=...</code> na classe LangChain.
+  </div>
+  <div class="source-link">Fontes: <a href="https://docs.langchain.com/oss/python/integrations/chat/openai" target="_blank" rel="noopener">integrations/chat/openai</a> · <a href="https://docs.langchain.com/oss/python/integrations/chat/anthropic" target="_blank" rel="noopener">anthropic</a> · <a href="https://docs.langchain.com/oss/python/integrations/chat/google_generative_ai" target="_blank" rel="noopener">google_generative_ai</a></div>
+  <h3>Ordem do stack de middleware</h3>
+  <p><strong>Base stack</strong> (sempre presente, exceto excluído):</p>
+  <ol>
+    <li><code>TodoListMiddleware</code></li>
+    <li><code>SkillsMiddleware</code> <em>(só se <code>skills=</code> for fornecido)</em></li>
+    <li><code>FilesystemMiddleware</code></li>
+    <li><code>SubAgentMiddleware</code> <em>(só se houver subagent síncrono — incluindo o general-purpose default)</em></li>
+    <li><code>AsyncSubAgentMiddleware</code> <em>(só se houver <code>AsyncSubAgent</code>)</em></li>
+    <li><code>SummarizationMiddleware</code></li>
+    <li><code>PatchToolCallsMiddleware</code></li>
+  </ol>
+  <p><strong>User middleware</strong> é inserido aqui.</p>
+  <p><strong>Tail stack</strong>:</p>
+  <ul>
+    <li><code>HarnessProfile.extra_middleware</code></li>
+    <li><code>_ToolExclusionMiddleware</code> <em>(só se profile tem <code>excluded_tools</code>)</em></li>
+    <li><code>AnthropicPromptCachingMiddleware</code> <em>(no-op em modelos não-Anthropic)</em></li>
+    <li><code>MemoryMiddleware</code> <em>(só se <code>memory=</code>)</em></li>
+    <li><code>HumanInTheLoopMiddleware</code> <em>(só se <code>interrupt_on=</code>)</em></li>
+  </ul>
+  <div class="callout warn">
+    Não existe um símbolo separado <code>async_create_deep_agent</code>. Use o mesmo
+    <code>create_deep_agent</code> e chame <code>await agent.ainvoke(...)</code>,
+    <code>agent.astream(...)</code> e middleware com hooks async
+    (<code>abefore_agent</code>, <code>awrap_model_call</code>,
+    <code>awrap_tool_call</code>, <code>astream</code>). Para sub-agents em
+    background, use <code>AsyncSubAgent</code>.
+  </div>
+</section>
+
+<section id="s-builtin-tools">
+  <h2>5. Ferramentas embutidas</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Tool</th><th>Middleware</th><th>Assinatura</th><th>Comportamento</th></tr></thead>
+      <tbody>
+        <tr><td><code>write_todos</code></td><td><code>TodoListMiddleware</code></td><td><code>(todos: list[Todo])</code></td><td>Persiste o plano no estado. Status: <code>pending</code> / <code>in_progress</code> / <code>completed</code>.</td></tr>
+        <tr><td><code>ls</code></td><td><code>FilesystemMiddleware</code></td><td><code>(path: str)</code></td><td>Lista arquivos com tamanho e <code>modified_at</code>.</td></tr>
+        <tr><td><code>read_file</code></td><td><code>FilesystemMiddleware</code></td><td><code>(file_path: str, offset: int = 0, limit: int = 2000)</code></td><td>Lê conteúdo com numeração de linhas; suporta offset/limit. Para arquivos não-texto, retorna <em>content blocks</em> multimodais (ver 5.1).</td></tr>
+        <tr><td><code>write_file</code></td><td><code>FilesystemMiddleware</code></td><td><code>(file_path: str, content: str)</code></td><td>Apenas criação — erro se arquivo já existe.</td></tr>
+        <tr><td><code>edit_file</code></td><td><code>FilesystemMiddleware</code></td><td><code>(file_path: str, old_string: str, new_string: str, replace_all: bool = False)</code></td><td>Substituição exata; unicidade obrigatória, salvo <code>replace_all=True</code>.</td></tr>
+        <tr><td><code>delete</code></td><td><code>FilesystemMiddleware</code></td><td><code>(path: str)</code></td><td>Apaga um arquivo, ou um diretório e todo o seu conteúdo recursivamente. Backends que não suportam deleção escondem a tool do modelo automaticamente.</td></tr>
+        <tr><td><code>glob</code></td><td><code>FilesystemMiddleware</code></td><td><code>(pattern: str, path: str = "/")</code></td><td>Pattern match.</td></tr>
+        <tr><td><code>grep</code></td><td><code>FilesystemMiddleware</code></td><td><code>(pattern: str, path=None, glob=None)</code></td><td>Busca de conteúdo; múltiplos modos de output.</td></tr>
+        <tr><td><code>execute</code></td><td><code>FilesystemMiddleware</code> (apenas backends sandbox)</td><td><code>(command: str)</code></td><td>Retorna <code>output</code> (stdout+stderr), exit code e nota de truncamento.</td></tr>
+        <tr><td><code>task</code></td><td><code>SubAgentMiddleware</code></td><td><code>(subagent_type: str, description: str)</code></td><td>Spawn de subagent síncrono; só o sumário volta ao contexto do pai.</td></tr>
+        <tr><td><code>compact_conversation</code></td><td><code>SummarizationToolMiddleware</code></td><td><code>()</code></td><td>Dispara summarization manual.</td></tr>
+        <tr><td><code>start_async_task</code> · <code>check_async_task</code> · <code>update_async_task</code> · <code>cancel_async_task</code> · <code>list_async_tasks</code></td><td><code>AsyncSubAgentMiddleware</code></td><td>variados</td><td>Subagents em background (fire-and-forget) via Agent Protocol.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>5.1 <code>read_file</code> multimodal</h3>
+  <p>
+    Quando <code>read_file</code> lê um arquivo não-texto (imagem, vídeo, áudio
+    ou documento), o conteúdo retorna como <em>content blocks</em> multimodais —
+    não como texto. Extensões oficialmente suportadas:
+  </p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Tipo</th><th>Extensões</th></tr></thead>
+      <tbody>
+        <tr><td>Imagem</td><td><code>.png .jpg .jpeg .gif .webp .heic .heif</code></td></tr>
+        <tr><td>Vídeo</td><td><code>.mp4 .mpeg .mov .avi .flv .mpg .webm .wmv .3gpp</code></td></tr>
+        <tr><td>Áudio</td><td><code>.wav .mp3 .aiff .aac .ogg .flac</code></td></tr>
+        <tr><td>Documento</td><td><code>.pdf .ppt .pptx</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout tip">
+    A estrutura exata do content block não é detalhada na página do harness — ela
+    aponta para a documentação de mensagens multimodais do LangChain
+    (<a href="https://docs.langchain.com/oss/python/langchain/messages" target="_blank" rel="noopener">langchain/messages</a>,
+    seção <code>#multimodal</code>). As tools de FS built-in são <code>ls</code>,
+    <code>read_file</code>, <code>write_file</code>, <code>edit_file</code>,
+    <code>delete</code>, <code>glob</code>, <code>grep</code> e <code>execute</code>
+    (este só em backends sandbox).
+  </div>
+
+  <h3>5.2 Caveat multimodal na summarization</h3>
+  <p>
+    A tool <code>read_file</code> pode retornar <em>content blocks</em>
+    multimodais (imagem, áudio, vídeo — ver 5.1). Isso importa para a
+    compactação de histórico: quando essas mensagens acabam sendo alvo de
+    <code>SummarizationMiddleware</code>, a mídia <strong>não sobrevive</strong>
+    ao resumo.
+  </p>
+  <div class="callout warn">
+    <strong>Summarization é text-only — mídia é descartada, não resumida.</strong>
+    A doc de multimodal é explícita: <em>"Summarization compacts older messages
+    into a text-only summary"</em> e <em>"Image, audio, video, and file blocks in
+    that range are not carried forward"</em> — o modelo só enxerga o que o
+    summarizer escreveu sobre elas. A conversa original completa continua gravada
+    no filesystem virtual como texto (<em>"The original conversation is still
+    written to the filesystem as text"</em>), mas os blocos de mídia em si somem
+    do contexto do modelo após a compactação. Mensagens recentes abaixo do
+    <em>keep threshold</em> permanecem inalteradas.
+    <br><br>
+    <strong>Offloading é diferente:</strong> ele mede só tokens de texto
+    (<em>"Offloading measures text tokens only"</em>) e preserva blocos
+    não-texto nas mensagens de substituição em vez de comprimi-los
+    (<em>"Non-text blocks (including images) are preserved in replacement
+    messages rather than compressed"</em>) — uma mensagem que só contém uma
+    imagem não é descartada por offloading com base no tamanho da imagem.
+    <br><br>
+    <strong>Boas práticas recomendadas pela doc oficial</strong> (a compressão
+    embutida é <em>"primarily text-oriented"</em>):
+    <ul>
+      <li>Guardar mídia grande em um backend/object store externo e passar apenas
+        referências (<em>"store large media in a backend and pass references when
+        possible"</em>), em vez de blocos base64 inline
+        (<em>"Prefer references over base64-encoded image blocks in long-running
+        conversations"</em>).</li>
+      <li>Tools que produzem imagens/binários devem salvar o artefato no backend e
+        retornar uma descrição textual curta + path/URL
+        (<em>"save the artifact to a backend and return a concise text description
+        plus a path or URL"</em>), não o conteúdo bruto.</li>
+      <li>Usar subagents para inspeção pesada de imagem
+        (<em>"Use subagents for image-heavy inspection so the main agent receives
+        a compact text result"</em>) — context quarantine, ver seção 7.</li>
+      <li>Ajustar os thresholds de summarization ou fornecer um token counter
+        customizado quando o provedor cobra muitos tokens por imagem
+        (<em>"Tune summarization thresholds or provide a custom token counter when
+        your provider charges many tokens for images"</em>).</li>
+    </ul>
+  </div>
+  <div class="source-link">Fontes: <a href="https://docs.langchain.com/oss/python/deepagents/harness" target="_blank" rel="noopener">deepagents/harness</a> · <a href="https://docs.langchain.com/oss/python/deepagents/tools" target="_blank" rel="noopener">deepagents/tools</a> · <a href="https://docs.langchain.com/oss/python/deepagents/multimodal" target="_blank" rel="noopener">deepagents/multimodal</a></div>
+</section>
+
+<section id="s-prompt">
+  <h2>6. System prompt e ordem de montagem</h2>
+  <h3>Slots</h3>
+  <p>O system prompt resultante é montado por <code>USER → (BASE ou CUSTOM) → SUFFIX</code>, juntando por <code>\n\n</code>.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Slot</th><th>Fonte</th></tr></thead>
+      <tbody>
+        <tr><td><code>USER</code></td><td>Argumento <code>system_prompt=</code> de <code>create_deep_agent</code></td></tr>
+        <tr><td><code>BASE</code></td><td>Default do SDK — constante <code>BASE_AGENT_PROMPT</code></td></tr>
+        <tr><td><code>CUSTOM</code></td><td><code>HarnessProfile.base_system_prompt</code> — substitui <code>BASE</code></td></tr>
+        <tr><td><code>SUFFIX</code></td><td><code>HarnessProfile.system_prompt_suffix</code> — anexado por último</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <h3>Camadas adicionadas por middleware (ordem)</h3>
+  <ol>
+    <li>Custom <code>system_prompt</code> (slot USER)</li>
+    <li>Base prompt do agent (BASE ou CUSTOM)</li>
+    <li>Prompt da to-do list</li>
+    <li>Prompt de memória (se <code>MemoryMiddleware</code>)</li>
+    <li>Prompt de skills (se <code>SkillsMiddleware</code>)</li>
+    <li>Prompt do filesystem virtual</li>
+    <li>Prompt de subagent (<code>TASK_SYSTEM_PROMPT</code>)</li>
+    <li>Prompts de middleware do usuário</li>
+    <li>Prompt de human-in-the-loop (se <code>interrupt_on</code>)</li>
+  </ol>
+  <h3>Conteúdo dos prompts (paráfrase oficial)</h3>
+  <p>
+    A documentação pública sumariza o conteúdo das constantes — o texto completo
+    fica na biblioteca. Importe e inspecione:
+    <code>from deepagents.graph import BASE_AGENT_PROMPT</code>.
+  </p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Constante</th><th>Função e seções (paráfrase)</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>BASE_AGENT_PROMPT</code></td>
+          <td>Abre identificando o agente como "deep agent" que ajuda usuários a cumprir tarefas com tools. Seções: <em>core behavior</em> (ser conciso e direto, sem filler), <em>professional objectivity</em> (priorizar precisão sobre validação emocional), <em>execução de tarefa</em> em três etapas (entender via leitura/inspeção → agir com precisão → verificar contra o pedido original), <em>persistência</em> (continuar até completar; iterar em vez de repetir tentativas falhas), <em>clarificação</em> (perguntar de domínio antes de implementação) e <em>progress updates</em> (curtos, em intervalos razoáveis).</td>
+        </tr>
+        <tr>
+          <td><code>TASK_SYSTEM_PROMPT</code></td>
+          <td>Orienta o agente orquestrador no uso da tool <code>task</code>: delegar quando a sub-tarefa é complexa/multistep, independente, ou se beneficia de sandboxing; NÃO delegar quando é trivial, exige raciocínio intermediário ou não traria ganho de latência. Recomenda disparar passos independentes em paralelo. Refere-se aos subagents como "highly competent and efficient."</td>
+        </tr>
+        <tr>
+          <td><code>FILESYSTEM_SYSTEM_PROMPT</code></td>
+          <td>Instruções sobre as tools de FS. Construído a partir de <code>_FILESYSTEM_SYSTEM_PROMPT_TEMPLATE.format(large_tool_results_prefix='/large_tool_results')</code>.</td>
+        </tr>
+        <tr>
+          <td><code>SKILLS_SYSTEM_PROMPT</code></td>
+          <td>Uso de skills. Duas fontes: <em>Deepagents</em> (agent-specific) e <em>Agents</em> (compartilhada). Progressive disclosure: nome+descrição aparecem upfront; <code>read_file</code> com <code>limit=1000</code> sobre o <code>SKILL.md</code> quando necessário. Slots de template: <code>{skills_locations}</code>, <code>{skills_load_warnings}</code>, <code>{skills_list}</code>.</td>
+        </tr>
+        <tr>
+          <td><code>MEMORY_SYSTEM_PROMPT</code></td>
+          <td>Tem bloco <code>&lt;agent_memory&gt;{agent_memory}&lt;/agent_memory&gt;</code> + regras em <code>&lt;memory_guidelines&gt;</code>. Inclui aviso de confiança: o texto dentro de <code>&lt;agent_memory&gt;</code> é dado em disco — pode estar desatualizado/incorreto. Atualizações via <code>edit_file</code>; nunca armazenar credenciais.</td>
+        </tr>
+        <tr>
+          <td><code>SUMMARIZATION_SYSTEM_PROMPT</code></td>
+          <td>Encoraja o modelo a chamar <code>compact_conversation</code> entre tarefas. A tool fica registrada mesmo sem o prompt, mas o modelo dificilmente descobriria sem menção explícita.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="s-subagents">
+  <h2>7. Sub-agents</h2>
+  <h3>Tipos disponíveis</h3>
+  <pre><code class="language-python">from typing import TypedDict, NotRequired, Sequence
+from langchain.tools import BaseTool
+from langchain.agents.middleware import AgentMiddleware
+
+class SubAgent(TypedDict):
+    name: str                                       # obrigatório
+    description: str                                # obrigatório
+    system_prompt: str                              # obrigatório; NÃO herda do pai
+    tools: NotRequired[Sequence[BaseTool | callable | dict]]  # se set, SUBSTITUI as herdadas
+    model: NotRequired[str | object]                # default = main model
+    middleware: NotRequired[list[AgentMiddleware]]  # NÃO herda
+    interrupt_on: NotRequired[dict[str, bool | dict]]
+    skills: NotRequired[list[str]]                  # isolado do pai
+    permissions: NotRequired[list[object]]          # SUBSTITUI o do pai
+    response_format: NotRequired[object]</code></pre>
+  <h3><code>CompiledSubAgent</code> — embrulhar grafo pronto</h3>
+  <pre><code class="language-python">from deepagents import CompiledSubAgent
+from langchain.agents import create_agent
+
+custom_graph = create_agent(model="openai:gpt-5.5", tools=[...], prompt="...")
+
+custom_subagent = CompiledSubAgent(
+    name="data-analyzer",
+    description="Specialized agent for complex data analysis tasks",
+    runnable=custom_graph,  # precisa ter um state key chamado "messages"
+)</code></pre>
+  <h3><code>AsyncSubAgent</code> — fire-and-forget em background</h3>
+  <pre><code class="language-python">class AsyncSubAgent(TypedDict):
+    name: str
+    description: str
+    graph_id: str                       # ID no Agent Protocol server
+    url: NotRequired[str]               # omitir = in-process ASGI; setar = HTTP remoto
+    headers: NotRequired[dict[str, str]]</code></pre>
+  <p>
+    Cinco tools supervisoras aparecem automaticamente: <code>start_async_task</code>,
+    <code>check_async_task</code>, <code>update_async_task</code>,
+    <code>cancel_async_task</code>, <code>list_async_tasks</code>. Metadados das
+    tasks vivem em um canal dedicado <code>async_tasks</code> do estado, que
+    sobrevive a compactação de histórico.
+  </p>
+  <h3>Subagent <code>general-purpose</code> default</h3>
+  <p>
+    Sempre adicionado, exceto quando desabilitado explicitamente. Compartilha
+    system prompt, tools, model e skills do agente principal. Para desligar:
+  </p>
+  <pre><code class="language-python">from deepagents import HarnessProfile, GeneralPurposeSubagentProfile, register_harness_profile
+
+register_harness_profile(
+    "&lt;profile-key&gt;",
+    HarnessProfile(
+        general_purpose_subagent=GeneralPurposeSubagentProfile(enabled=False),
+    ),
+)
+# E não passe nenhum subagent síncrono em create_deep_agent.
+# NÃO use excluded_middleware={"SubAgentMiddleware"} — isso levanta ValueError.</code></pre>
+  <h3>Context quarantine</h3>
+  <p>
+    Citando a doc: <em>"Subagents isolate this detailed work — the main agent
+    receives only the final result, not the dozens of tool calls that produced
+    it."</em>. Chamada:
+    <code>task(subagent_type="general-purpose", description="Research quantum computing trends")</code>.
+    Identificar o caller via
+    <code>runtime.config.get("metadata", {}).get("lc_agent_name")</code>.
+  </p>
+
+  <h3 id="da-structured">7.1 Structured output</h3>
+  <p>
+    <strong>Agente principal:</strong> passe <code>response_format=Schema</code>
+    ao <code>create_deep_agent</code>; o resultado tipado fica em
+    <code>result["structured_response"]</code>.
+  </p>
+  <pre><code class="language-python">result = agent.invoke({"messages": [...]})
+findings = result["structured_response"]   # instância do Schema</code></pre>
+  <p>
+    <strong>Subagent:</strong> declare <code>"response_format": Schema</code> no
+    dict do subagent. Ao terminar, a saída estruturada do subagent volta ao pai
+    como <strong>JSON serializado dentro do <code>ToolMessage</code></strong> da
+    tool <code>task</code> (não como objeto Python). Requer
+    <strong><code>deepagents &gt;= 0.5.3</code></strong>.
+  </p>
+  <pre><code class="language-python">research_subagent = {
+    "name": "researcher",
+    "description": "Researches topics and returns structured findings",
+    "system_prompt": "Research the given topic thoroughly. Return your findings.",
+    "tools": [web_search],
+    "response_format": ResearchFindings,   # Pydantic / ToolStrategy / ProviderStrategy / raw schema
+}
+agent = create_deep_agent(model="claude-sonnet-5", subagents=[research_subagent])</code></pre>
+  <div class="source-link">Fontes: <a href="https://docs.langchain.com/oss/python/deepagents/subagents" target="_blank" rel="noopener">deepagents/subagents</a></div>
+</section>
+
+<section id="s-fs">
+  <h2>8. Sistema de arquivos virtual</h2>
+  <p>
+    Por padrão, o Deep Agent usa o <code>StateBackend</code> — um filesystem em
+    memória, escopado por thread, persistido pelo checkpointer junto com o
+    estado. Subagents síncronos compartilham a mesma visão; sandboxes têm
+    isolamento físico.
+  </p>
+  <pre><code class="language-python">from deepagents.backends import StateBackend, FilesystemBackend, LocalShellBackend, StoreBackend, CompositeBackend
+
+# Default (state-backed, per-thread)
+agent = create_deep_agent(model="...", tools=[], backend=StateBackend())
+
+# Disco real (NÃO recomendado para produção)
+agent = create_deep_agent(
+    model="...", tools=[],
+    backend=FilesystemBackend(root_dir="/abs/path/to/workspace", virtual_mode=True),
+)
+
+# Composite (default state + memórias no Store)
+agent = create_deep_agent(
+    model="...", tools=[],
+    backend=CompositeBackend(
+        default=StateBackend(),
+        routes={"/memories/": StoreBackend(namespace=lambda rt: (rt.server_info.assistant_id,))},
+    ),
+    store=InMemoryStore(),
+)</code></pre>
+</section>
+
+<section id="s-backends">
+  <h2>9. Catálogo de backends</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Backend</th><th>Import</th><th>Persistência</th><th>Caso de uso</th></tr></thead>
+      <tbody>
+        <tr><td><code>StateBackend</code></td><td><code>deepagents.backends</code></td><td>Por thread (estado LangGraph)</td><td>Scratch pad default. Subagents síncronos compartilham writes.</td></tr>
+        <tr><td><code>FilesystemBackend</code></td><td><code>deepagents.backends</code></td><td>Disco local</td><td><code>root_dir</code> (abs) + <code>virtual_mode=True</code>. <strong>Não use em produção.</strong></td></tr>
+        <tr><td><code>LocalShellBackend</code></td><td><code>deepagents.backends</code></td><td>Disco local + shell</td><td>Adiciona <code>execute</code> via <code>subprocess.run(shell=True)</code>. <strong>Não para produção.</strong> Params: <code>timeout=120</code>, <code>max_output_bytes=100_000</code>, <code>env</code>, <code>inherit_env</code>.</td></tr>
+        <tr><td><code>StoreBackend</code></td><td><code>deepagents.backends</code></td><td><code>BaseStore</code> (cross-thread)</td><td>Requer <code>store=</code> no <code>create_deep_agent</code>. <code>namespace=lambda rt: (...,)</code>.</td></tr>
+        <tr><td><code>ContextHubBackend</code></td><td><code>deepagents.backends</code></td><td>LangSmith Hub repo</td><td>Writes commit-otimistas; <code>LANGSMITH_API_KEY</code>. Apenas texto UTF-8 via <code>upload_files()</code>.</td></tr>
+        <tr><td><code>CompositeBackend</code></td><td><code>deepagents.backends</code></td><td>Roteado por prefixo</td><td><code>default=</code> + <code>routes={prefix: backend}</code>. Prefixos mais longos vencem. <code>ls/glob/grep</code> agregam.</td></tr>
+        <tr><td><code>ModalSandbox</code></td><td><code>langchain-modal</code> → <code>from langchain_modal import ModalSandbox</code></td><td>Sandbox</td><td>+ <code>execute</code>. Teardown: <code>sandbox.terminate()</code>.</td></tr>
+        <tr><td><code>DaytonaSandbox</code></td><td><code>langchain-daytona</code> → <code>from langchain_daytona import DaytonaSandbox</code></td><td>Sandbox</td><td>Teardown: <code>sandbox.stop()</code>.</td></tr>
+        <tr><td><code>RunloopSandbox</code></td><td><code>langchain-runloop</code> → <code>from langchain_runloop import RunloopSandbox</code></td><td>Sandbox</td><td>Teardown: <code>devbox.shutdown()</code>.</td></tr>
+        <tr><td><code>LangSmithSandbox</code></td><td><code>langsmith[sandbox]</code> → <code>from deepagents.backends import LangSmithSandbox</code></td><td>Sandbox</td><td>Teardown: <code>client.delete_sandbox(...)</code>.</td></tr>
+        <tr><td><code>AgentCoreSandbox</code></td><td><code>langchain-agentcore-codeinterpreter</code> → <code>from langchain_agentcore_codeinterpreter import AgentCoreSandbox</code></td><td>Sandbox (AWS Bedrock AgentCore)</td><td>Recebe um <code>CodeInterpreter</code> de <code>bedrock_agentcore</code>. Teardown: <code>interpreter.stop()</code> em <code>finally</code> (ver 9.1).</td></tr>
+        <tr><td><code>E2B</code></td><td><em>Backend proposto, ainda não lançado.</em> Há proposta oficial (GitHub <a href="https://github.com/langchain-ai/deepagents/issues/1739" target="_blank" rel="noopener">issue #1739</a>) de um pacote <code>langchain-e2b</code> implementando o <code>SandboxBackendProtocol</code> + flag <code>--sandbox e2b</code>; até o lançamento <strong>não há pacote/import publicado</strong>. O E2B tem SDK próprio (<code>e2b-code-interpreter</code>), mas ainda não como backend Deep Agents.</td><td>Sandbox (proposto)</td><td>—</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="da-agentcore">9.1 <code>AgentCoreSandbox</code> (AWS Bedrock AgentCore)</h3>
+  <p>
+    Diferente dos outros sandboxes, o <code>AgentCoreSandbox</code> não fabrica o
+    interpretador internamente — você cria um <code>CodeInterpreter</code> do
+    pacote <code>bedrock_agentcore</code>, faz <code>start()</code>/
+    <code>stop()</code> do seu ciclo de vida e passa-o ao backend.
+  </p>
+  <pre><code class="language-python">from bedrock_agentcore.tools.code_interpreter_client import CodeInterpreter
+from langchain_agentcore_codeinterpreter import AgentCoreSandbox
+from deepagents import create_deep_agent
+from langchain_anthropic import ChatAnthropic
+
+interpreter = CodeInterpreter(region="us-west-2")
+interpreter.start()
+backend = AgentCoreSandbox(interpreter=interpreter)
+
+try:
+    agent = create_deep_agent(
+        model=ChatAnthropic(model="claude-sonnet-5"),
+        backend=backend,
+    )
+    # ... usar o agente ...
+finally:
+    interpreter.stop()   # teardown obrigatório</code></pre>
+  <div class="source-link">Fontes: <a href="https://docs.langchain.com/oss/python/deepagents/sandboxes" target="_blank" rel="noopener">deepagents/sandboxes</a></div>
+
+  <h3>Instanciação two-step para sandboxes</h3>
+  <p>Sandbox providers retornam um <strong>cliente</strong> (longo-vivo) e produzem <strong>backends</strong> (curto-vivos, 1 por agent/run). Não passe o cliente direto em <code>backend=</code>.</p>
+  <pre><code class="language-python">from langchain_modal import ModalSandbox
+from deepagents import create_deep_agent
+
+# 1) Cliente do provedor (acquire/release de VMs no pool)
+sandbox = ModalSandbox(workspace="my-org")
+
+# 2) Backend por agent: chame .backend() ou método equivalente do provider
+agent = create_deep_agent(
+    model="google_genai:gemini-3.5-flash",
+    backend=sandbox.backend(),                # ← instância, não factory
+    tools=[...],
+)
+
+try:
+    result = agent.invoke({"messages":[{"role":"user","content":"..."}]})
+finally:
+    sandbox.terminate()        # libera o pool</code></pre>
+  <h3><code>BackendProtocol</code> — backend customizado</h3>
+  <pre><code class="language-python">from deepagents.backends.protocol import (
+    BackendProtocol, LsResult, ReadResult, WriteResult, EditResult,
+    GlobResult, GrepResult, FileInfo, FileData, GrepMatch,
+)
+
+class MyBackend(BackendProtocol):
+    def ls(self, path: str) -&gt; LsResult: ...
+    def read(self, file_path: str, offset: int = 0, limit: int = 2000) -&gt; ReadResult: ...
+    def grep(self, pattern: str, path=None, glob=None) -&gt; GrepResult: ...
+    def glob(self, pattern: str, path: str = "/") -&gt; GlobResult: ...
+    def write(self, file_path: str, content: str) -&gt; WriteResult: ...
+    def edit(self, file_path: str, old_string: str, new_string: str,
+             replace_all: bool = False) -&gt; EditResult: ...
+    # Também: upload_files, download_files, ls_info, glob_info, grep_raw
+    # Todos os métodos possuem contraparte async com prefixo `a`.</code></pre>
+  <p>
+    Implementações <strong>retornam erros, nunca levantam</strong> — os
+    <code>*Result</code> têm campo <code>error</code>. Para suporte a
+    <code>execute</code>, implemente também <code>SandboxBackendProtocol</code>.
+  </p>
+  <div class="callout warn">
+    Passar callables-factory a <code>backend=</code> está depreciado desde v0.5.0.
+    Passe instâncias. <code>BackendContext</code> será removido em v0.7 — use
+    <code>Runtime</code> diretamente:
+    <code>lambda rt: (rt.server_info.user.identity,)</code>.
+  </div>
+</section>
+
+<section id="s-permissions">
+  <h2>10. Permissões</h2>
+  <pre><code class="language-python">from deepagents import create_deep_agent, FilesystemPermission
+
+agent = create_deep_agent(
+    model="google_genai:gemini-3.5-flash",
+    permissions=[
+        FilesystemPermission(operations=["write"], paths=["/policies/**"], mode="deny"),
+        FilesystemPermission(operations=["read", "write"], paths=["/workspace/**"], mode="allow"),
+        FilesystemPermission(operations=["read", "write"], paths=["/**"], mode="deny"),
+    ],
+)</code></pre>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Campo</th><th>Valores</th><th>Notas</th></tr></thead>
+      <tbody>
+        <tr><td><code>operations</code></td><td><code>list["read" \| "write"]</code></td><td>—</td></tr>
+        <tr><td><code>paths</code></td><td><code>list[str]</code></td><td>Glob: <code>**</code>, <code>{a,b}</code></td></tr>
+        <tr><td><code>mode</code></td><td><code>"allow" \| "deny"</code></td><td>Default <code>"allow"</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    First-match-wins. Sem regra que case ⇒ permitido. Cobre apenas as tools de
+    FS embutidas; tools customizadas, MCP e <code>execute</code> não são
+    inspecionados. Subagents herdam — definir <code>permissions</code> no
+    subagent <strong>substitui</strong> as regras do pai. Com
+    <code>CompositeBackend</code> + sandbox default, paths devem permanecer dentro
+    dos prefixos conhecidos (sob pena de <code>NotImplementedError</code>).
+    Requer <code>deepagents &gt;= 0.5.2</code>.
+  </p>
+  <div class="callout tip">
+    <strong>Validação customizada (alternativa às permissions):</strong> como as
+    <code>FilesystemPermission</code> só cobrem as FS tools built-in, para
+    políticas mais ricas (quotas, sanitização de conteúdo, auditoria, bloqueio
+    por padrão de path) crie uma subclasse de <code>FilesystemBackend</code> ou
+    um wrapper de <code>BackendProtocol</code> que intercepte
+    <code>write</code>/<code>edit</code>/<code>read</code> e retorne os
+    <code>*Result</code> com o campo <code>error</code> preenchido (os métodos
+    retornam erro, nunca levantam). Isso aplica a regra antes de qualquer write
+    chegar ao armazenamento.
+  </div>
+</section>
+
+<section id="s-middleware">
+  <h2>11. Catálogo de middleware</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Middleware</th><th>Hook(s)</th><th>Propósito</th><th>Params-chave</th></tr></thead>
+      <tbody>
+        <tr><td><code>TodoListMiddleware</code></td><td><code>before_model</code></td><td>Injeta <code>write_todos</code>; trackeia plano</td><td>—</td></tr>
+        <tr><td><code>FilesystemMiddleware</code></td><td><code>wrap_model_call</code>, <code>wrap_tool_call</code></td><td>Injeta FS tools (+ <code>execute</code> em sandbox)</td><td><code>backend</code>, <code>system_prompt</code>, <code>custom_tool_descriptions</code>, <code>tool_token_limit_before_evict=20000</code>, <code>human_message_token_limit_before_evict=50000</code>, <code>max_execute_timeout=3600</code></td></tr>
+        <tr><td><code>SubAgentMiddleware</code></td><td>injeta <code>task</code></td><td>Spawn de subagent síncrono</td><td><code>backend</code>, <code>subagents</code>, <code>system_prompt=TASK_SYSTEM_PROMPT</code>, <code>task_description=None</code></td></tr>
+        <tr><td><code>AsyncSubAgentMiddleware</code></td><td>injeta 5 tools async</td><td>Background subagents</td><td>(auto-adicionado se há <code>AsyncSubAgent</code>)</td></tr>
+        <tr><td><code>SkillsMiddleware</code></td><td>injeta prompt</td><td>Progressive disclosure de skills</td><td><code>backend</code>, <code>sources: Sequence[SkillSource]</code>, <code>system_prompt=SKILLS_SYSTEM_PROMPT</code></td></tr>
+        <tr><td><code>MemoryMiddleware</code></td><td>injeta prompt</td><td>Carregar AGENTS.md</td><td><code>backend</code>, <code>sources: list[str]</code>, <code>add_cache_control=False</code>, <code>system_prompt=MEMORY_SYSTEM_PROMPT</code></td></tr>
+        <tr><td><code>SummarizationMiddleware</code></td><td>auto-compaction</td><td>Trigger em 85% de <code>max_input_tokens</code>; mantém 10% recentes (fallback 170k / 6 msgs)</td><td><code>compute_summarization_defaults()</code>, <code>create_summarization_middleware()</code></td></tr>
+        <tr><td><code>SummarizationToolMiddleware</code></td><td>adiciona <code>compact_conversation</code></td><td>Summarization disparada pelo agente</td><td><code>summarization</code>, <code>system_prompt=SUMMARIZATION_SYSTEM_PROMPT</code></td></tr>
+        <tr><td><code>AnthropicPromptCachingMiddleware</code></td><td>model wrap</td><td>Cache de prompt no Anthropic; no-op fora</td><td>(auto no tail stack)</td></tr>
+        <tr><td><code>PatchToolCallsMiddleware</code></td><td><code>before_agent</code></td><td>Repara tool calls "pendurados" depois de interrupts</td><td>—</td></tr>
+        <tr><td><code>HumanInTheLoopMiddleware</code></td><td>tool wrap</td><td>Pausa em tools de <code>interrupt_on</code></td><td>(auto quando <code>interrupt_on=</code>)</td></tr>
+        <tr><td><code>CodeInterpreterMiddleware</code></td><td>adiciona <code>eval</code></td><td>Sandbox QuickJS para TS/JS</td><td><code>memory_limit=64MB</code>, <code>timeout=5.0</code>, <code>max_ptc_calls=256</code>, <code>tool_name="eval"</code>, <code>max_result_chars=4000</code>, <code>capture_console=True</code>, <code>ptc=None</code>, <code>skills_backend=None</code>, <code>snapshot_between_turns=True</code>, <code>max_snapshot_bytes=None</code> · instalar com <code>pip install -U "deepagents[quickjs]"</code></td></tr>
+        <tr><td><code>ModelCallLimitMiddleware</code></td><td>model wrap</td><td>Limita LLM calls por run/thread</td><td><code>run_limit</code>, <code>thread_limit</code></td></tr>
+        <tr><td><code>ToolCallLimitMiddleware</code></td><td>tool wrap</td><td>Limita tool calls</td><td><code>run_limit</code>, <code>thread_limit</code></td></tr>
+        <tr><td><code>ModelRetryMiddleware</code></td><td>model wrap</td><td>Backoff em erros transitórios</td><td><code>max_retries</code>, <code>backoff_factor</code></td></tr>
+        <tr><td><code>ModelFallbackMiddleware</code></td><td>model wrap</td><td>Troca modelo em falha</td><td>lista de model ids</td></tr>
+        <tr><td><code>ToolRetryMiddleware</code></td><td>tool wrap</td><td>Retry por tool</td><td><code>max_retries</code>, <code>tools</code></td></tr>
+        <tr><td><code>PIIMiddleware</code></td><td>input wrap</td><td>Redact/mask/hash/block PII</td><td><code>("email", strategy="redact", apply_to_input=True)</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="s-skills">
+  <h2>12. Skills</h2>
+  <p>
+    Skills são pacotes <code>SKILL.md</code> com frontmatter YAML, descobertos por
+    progressive disclosure (nome+descrição expostos upfront, conteúdo só
+    carregado quando o agente decide usar).
+  </p>
+  <h3>Frontmatter</h3>
+  <pre><code class="language-md">---
+name: my-skill
+description: When to use this skill (truncado em 1024 chars)
+license: MIT
+compatibility: requirements
+allowed-tools: fetch_url
+module: index.ts    # apenas para skills de interpreter
+---
+# Instruções a seguir...</code></pre>
+  <h3>Carregar</h3>
+  <pre><code class="language-python">from deepagents.backends import StateBackend
+from deepagents.backends.utils import create_file_data
+from langchain_quickjs import CodeInterpreterMiddleware
+from langgraph.checkpoint.memory import MemorySaver
+
+backend = StateBackend()
+
+agent = create_deep_agent(
+    model="openai:gpt-5.5",
+    backend=backend,
+    skills=["/skills/"],
+    checkpointer=MemorySaver(),
+    middleware=[CodeInterpreterMiddleware(skills_backend=backend)],
+)
+
+agent.invoke(
+    {
+        "messages": [{"role": "user", "content": "..."}],
+        "files": {"/skills/my-skill/SKILL.md": create_file_data(skill_content)},
+    },
+    config={"configurable": {"thread_id": "12345"}},
+)</code></pre>
+  <p>
+    <strong>Precedência de fontes:</strong> entradas posteriores em
+    <code>skills=</code> sobrepõem skills de mesmo nome.
+    <strong>Subagent <code>general-purpose</code> herda skills</strong>; subagents
+    customizados <strong>não</strong> (passe <code>skills=</code> explícito).
+    Tamanho máximo do <code>SKILL.md</code>: 10 MB. Skills com <code>module:</code>
+    são importáveis no interpreter:
+    <code>const { fn } = await import("@/skills/order-helpers");</code>.
+  </p>
+</section>
+
+<section id="s-memory">
+  <h2>13. Memória — <code>AGENTS.md</code></h2>
+  <pre><code class="language-python">from deepagents.backends.utils import create_file_data
+from deepagents.backends import CompositeBackend, StateBackend, StoreBackend
+from langgraph.checkpoint.memory import MemorySaver
+from langgraph.store.memory import InMemoryStore
+
+agent = create_deep_agent(
+    model="anthropic:claude-sonnet-5",
+    memory=["/memories/AGENTS.md"],
+    backend=CompositeBackend(
+        default=StateBackend(),
+        routes={
+            "/memories/": StoreBackend(namespace=lambda rt: (rt.server_info.assistant_id,)),
+        },
+    ),
+    store=InMemoryStore(),
+    checkpointer=MemorySaver(),
+)</code></pre>
+  <h3>Estratégias de escopo (namespaces)</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Escopo</th><th>Namespace</th></tr></thead>
+      <tbody>
+        <tr><td>Por usuário (recomendado)</td><td><code>(assistant_id, user_id)</code></td></tr>
+        <tr><td>Por assistente</td><td><code>(assistant_id,)</code></td></tr>
+        <tr><td>Por usuário (global)</td><td><code>(user_id,)</code></td></tr>
+        <tr><td>Por organização (read-only)</td><td><code>(org_id,)</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout warn">
+    Memória compartilhada e gravável é vetor de prompt injection. Default em
+    user-scoped; use <code>permissions</code> ou políticas explícitas para
+    memória read-only.
+  </div>
+</section>
+
+<section id="s-profiles">
+  <h2>14. Profiles</h2>
+  <pre><code class="language-python">from deepagents import (
+    HarnessProfile, GeneralPurposeSubagentProfile, register_harness_profile,
+    ProviderProfile, register_provider_profile,
+)</code></pre>
+  <h3><code>HarnessProfile</code></h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Campo</th><th>Propósito</th></tr></thead>
+      <tbody>
+        <tr><td><code>base_system_prompt</code></td><td>Substitui <code>BASE_AGENT_PROMPT</code> (slot CUSTOM)</td></tr>
+        <tr><td><code>system_prompt_suffix</code></td><td>Anexado depois do BASE/CUSTOM, no main agent E nos subagents</td></tr>
+        <tr><td><code>tool_description_overrides</code></td><td><code>dict[tool_name, str]</code></td></tr>
+        <tr><td><code>excluded_tools</code></td><td>Remove tools por nome após injeção. <strong>É a forma correta de esconder as FS tools</strong> (ex.: <code>{"ls","read_file","write_file","edit_file","glob","grep"}</code>).</td></tr>
+        <tr><td><code>excluded_middleware</code></td><td>Strip por classe ou string. Remover <code>FilesystemMiddleware</code> (ou <code>SubAgentMiddleware</code> / a permission middleware interna) por aqui <strong>levanta <code>ValueError</code></strong> — use <code>excluded_tools</code> para esconder as FS tools.</td></tr>
+        <tr><td><code>extra_middleware</code></td><td>Anexa a todo stack que casar</td></tr>
+        <tr><td><code>general_purpose_subagent</code></td><td><code>GeneralPurposeSubagentProfile(enabled=..., system_prompt=...)</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    Chaves de registro: <code>"openai"</code> (provider-level) ou
+    <code>"openai:gpt-5.5"</code> (model-level). Model-level faz merge sobre
+    provider-level. Re-registrar é aditivo.
+  </p>
+  <p>
+    Profiles built-in que vêm com o pacote: <code>_anthropic_opus_4_7</code>,
+    <code>_anthropic_sonnet_4_6</code>, <code>_anthropic_haiku_4_5</code>,
+    <code>_openai_codex</code>.
+  </p>
+  <p>
+    <strong>Entry-point de plugin:</strong> <code>"deepagents.harness_profiles"</code>
+    em <code>pyproject.toml</code>. Config em arquivo:
+    <code>HarnessProfileConfig.from_dict(yaml.safe_load(f))</code> e
+    <code>register_harness_profile</code> aceita ambos.
+  </p>
+  <h3><code>ProviderProfile</code></h3>
+  <p>Tem três campos. Só se aplica quando você passa o modelo como string
+  <code>provider:model</code> (não quando passa uma instância de
+  <code>init_chat_model</code> já construída).</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Campo</th><th>Tipo</th><th>Propósito</th></tr></thead>
+      <tbody>
+        <tr><td><code>init_kwargs</code></td><td><code>Mapping</code></td><td>Kwargs estáticos passados na construção do modelo.</td></tr>
+        <tr><td><code>pre_init</code></td><td><code>Callable[[str], None]</code></td><td>Side-effects antes de construir o modelo (ex.: validar credenciais).</td></tr>
+        <tr><td><code>init_kwargs_factory</code></td><td><code>Callable[[], dict[str, Any]]</code></td><td>Kwargs derivados em runtime (avaliados a cada construção).</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <pre><code class="language-python">def _check_creds(model: str) -&gt; None:
+    import os
+    if not os.environ.get("OPENAI_API_KEY"):
+        raise RuntimeError("OPENAI_API_KEY ausente")
+
+register_provider_profile(
+    "openai",
+    ProviderProfile(
+        init_kwargs={"temperature": 0},
+        pre_init=_check_creds,
+        init_kwargs_factory=lambda: {"timeout": int_from_runtime()},
+    ),
+)
+register_provider_profile("openai:gpt-5.5",
+                          ProviderProfile(init_kwargs={"reasoning_effort": "medium"}))</code></pre>
+</section>
+
+<section id="s-hitl">
+  <h2>15. Human-in-the-loop</h2>
+  <pre><code class="language-python">from langgraph.checkpoint.memory import MemorySaver
+from langgraph.types import Command
+
+agent = create_deep_agent(
+    model="google_genai:gemini-3.5-flash",
+    tools=[remove_file, fetch_file, notify_email],
+    interrupt_on={
+        "remove_file": True,                                # qualquer decisão
+        "fetch_file": False,                                # não interrompe
+        "notify_email": {"allowed_decisions": ["approve", "reject"]},
+    },
+    checkpointer=MemorySaver(),  # obrigatório
+)
+
+config = {"configurable": {"thread_id": "abc"}}
+result = agent.invoke({"messages": [...]}, config=config, version="v2")
+
+if result.interrupts:
+    interrupt_value = result.interrupts[0].value
+    decisions = [{"type": "approve"}]
+    # ou edit:
+    # decisions = [{"type": "edit", "edited_action": {"name": "...", "args": {...}}}]
+    result = agent.invoke(Command(resume={"decisions": decisions}),
+                          config=config, version="v2")</code></pre>
+  <p>
+    <strong>Decisions permitidas:</strong> <code>"approve"</code>,
+    <code>"edit"</code>, <code>"reject"</code>, <code>"respond"</code>.
+    <strong>Requisitos:</strong> checkpointer, mesmo <code>thread_id</code> no
+    resume, <code>version="v2"</code> em cada <code>.invoke()</code>, decisions
+    em ordem dos <code>action_requests</code>.
+  </p>
+</section>
+
+<section id="s-sandboxes">
+  <h2>16. Sandboxes</h2>
+  <p>
+    Sandboxes adicionam isolamento físico e habilitam a tool <code>execute</code>.
+    Cada provider é uma instalação opcional, e cada backend implementa
+    <code>SandboxBackendProtocol</code>.
+  </p>
+  <pre><code class="language-python">from langchain_modal import ModalSandbox  # ou DaytonaSandbox, RunloopSandbox
+
+sandbox = ModalSandbox(...)
+try:
+    agent = create_deep_agent(model="...", tools=[], backend=sandbox)
+    agent.invoke(...)
+finally:
+    sandbox.terminate()  # Daytona: .stop(); Runloop: .shutdown(); LangSmith: client.delete_sandbox(...)
+
+# Execute direto no backend (sem agent):
+result = sandbox.execute("python --version")
+print(result.output)  # "Python 3.11.x\n[Command succeeded with exit code 0]"</code></pre>
+  <h3>File transfer</h3>
+  <pre><code class="language-python">sandbox.upload_files([("/src/index.py", b"print('Hello')\n")])
+results = sandbox.download_files(["/output.txt"])</code></pre>
+</section>
+
+<section id="s-interpreter">
+  <h2>17. Code interpreter (QuickJS)</h2>
+  <p>
+    O <code>CodeInterpreterMiddleware</code> embute QuickJS para executar JS/TS
+    dentro do mesmo processo do agente, sem precisar de sandbox externo. Adiciona
+    a tool <code>eval</code>. Instalação: <code>pip install -U "deepagents[quickjs]"</code>.
+  </p>
+  <pre><code class="language-python">from langchain_quickjs import CodeInterpreterMiddleware
+
+middleware = CodeInterpreterMiddleware(
+    memory_limit=64 * 1024 * 1024,    # 64MB
+    timeout=5.0,
+    max_ptc_calls=256,
+    tool_name="eval",
+    max_result_chars=4000,
+    capture_console=True,
+    snapshot_between_turns=True,
+)</code></pre>
+  <p>Kwargs completos de <code>CodeInterpreterMiddleware</code>:
+  <code>memory_limit</code>, <code>timeout</code>, <code>max_ptc_calls</code>,
+  <code>tool_name</code>, <code>max_result_chars</code>,
+  <code>capture_console</code>, <code>ptc</code>, <code>skills_backend</code>,
+  <code>snapshot_between_turns</code> e <code>max_snapshot_bytes</code>.</p>
+
+  <h3>17.1 Programmatic Tool Calling (PTC)</h3>
+  <p>
+    Com PTC, o modelo invoca suas tools <em>de dentro do código JS</em>, em vez
+    de pelo caminho normal de tool calling. Declare a allowlist com
+    <code>ptc=[...]</code> (lista de nomes de tools liberadas). Dentro do
+    interpretador QuickJS, as tools ficam disponíveis sob o namespace
+    <code>tools.</code> em <strong>camelCase</strong> e devem ser aguardadas com
+    <code>await</code> (ex.: a tool <code>web_search</code> vira
+    <code>tools.webSearch(...)</code>).
+  </p>
+  <pre><code class="language-python">from deepagents import create_deep_agent
+from langchain_quickjs import CodeInterpreterMiddleware
+
+agent = create_deep_agent(
+    model="openai:gpt-5.5",
+    middleware=[CodeInterpreterMiddleware(ptc=["task"])],   # allowlist PTC
+)</code></pre>
+  <pre><code class="language-javascript">// Dentro do código executado no interpretador (camelCase + await)
+const result = await tools.webSearch({ query: "deepagents interpreters" });</code></pre>
+  <div class="callout warn">
+    <strong>Gotcha de segurança (citação oficial):</strong> <em>"PTC calls
+    currently execute through the interpreter bridge and do not go through the
+    normal tool calling path. As a result, <code>interrupt_on</code> approval
+    workflows are not enforced per PTC-invoked tool call."</em> Ou seja, tools
+    aprovadas via HITL (<code>interrupt_on</code>) <strong>não</strong> são
+    interrompidas quando chamadas por PTC — não inclua na allowlist tools que
+    exijam aprovação humana.
+  </div>
+  <div class="source-link">Fontes: <a href="https://docs.langchain.com/oss/python/deepagents/interpreters" target="_blank" rel="noopener">deepagents/interpreters</a></div>
+</section>
+
+<section id="s-context">
+  <h2>18. Context engineering</h2>
+  <p>
+    Citando a doc oficial: <em>context engineering = configuração de contexto que
+    maximiza a probabilidade do comportamento desejado.</em> O Deep Agents
+    implementa as três técnicas long-horizon do paper da Anthropic:
+  </p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Técnica</th><th>Quando aplicar</th><th>No Deep Agents</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Compaction</strong></td><td>Continuidade conversacional</td><td><code>SummarizationMiddleware</code> (auto em 85% / 170k) + <code>SummarizationToolMiddleware</code> (manual via <code>compact_conversation</code>)</td></tr>
+        <tr><td><strong>Note-taking estruturado</strong></td><td>Trabalho iterativo com milestones</td><td><code>write_file</code> / <code>edit_file</code> no FS virtual + <code>MemoryMiddleware</code> (<code>AGENTS.md</code>)</td></tr>
+        <tr><td><strong>Sub-agent architectures</strong></td><td>Exploração paralela / pesquisa complexa</td><td><code>SubAgent</code> / <code>AsyncSubAgent</code> + tool <code>task</code>; subagent devolve sumário de ~1–2k tokens ao lead</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <h3>Específicos da summarization</h3>
+  <ul>
+    <li><strong>Trigger:</strong> 85% de <code>max_input_tokens</code>. Mantém 10% como recent context.</li>
+    <li><strong>Fallback</strong> (profile do modelo não disponível): trigger em 170 000 tokens, 6 mensagens mantidas.</li>
+    <li><strong>Dois outputs:</strong> sumário estruturado in-context (intent / artifacts / next steps) substitui o histórico; mensagens originais são escritas em disco para recuperação.</li>
+    <li><strong>Thresholds de offload:</strong> inputs &gt; 20k tokens ⇒ tool calls de file-write truncados a pointers de disco em 85% de uso de janela. Resultados &gt; 20k ⇒ offload imediato com path + 10 primeiras linhas.</li>
+    <li><strong>Diretórios de offload no backend:</strong> resultados grandes vão para <code>/large_tool_results/</code> e o histórico compactado para <code>/conversation_history/</code>. Ambos são escritos no backend de arquivos.</li>
+    <li><strong>Filtro em stream:</strong> <code>if metadata.get("lc_source") == "summarization": continue</code>.</li>
+  </ul>
+  <div class="callout tip">
+    <strong>Isolamento dos arquivos do sistema:</strong> como o harness escreve em
+    <code>/large_tool_results/</code> e <code>/conversation_history/</code>, envolva
+    o <code>FilesystemBackend</code> (ou o backend de projeto) em um
+    <code>CompositeBackend</code> para que esses diretórios de offload não se
+    misturem com os arquivos do projeto:
+  </div>
+  <pre><code class="language-python">from deepagents.backends import CompositeBackend, StateBackend, FilesystemBackend
+
+backend = CompositeBackend(
+    default=StateBackend(),                          # offload do harness fica aqui
+    routes={"/project/": FilesystemBackend(root_dir="/abs/workspace", virtual_mode=True)},
+)</code></pre>
+  <div class="source-link">Fontes: <a href="https://docs.langchain.com/oss/python/deepagents/context-engineering" target="_blank" rel="noopener">deepagents/context-engineering</a> · <a href="https://docs.langchain.com/oss/python/deepagents/harness" target="_blank" rel="noopener">harness</a></div>
+</section>
+
+<section id="s-streaming">
+  <h2>19. Streaming</h2>
+  <p>
+    O Deep Agents delega ao LangGraph. Com o cliente <code>useStream</code>
+    (React/Vue/Svelte/Angular):
+  </p>
+  <pre><code class="language-tsx">const stream = useStream({
+  apiUrl: "https://your-deployment.langsmith.dev",
+  assistantId: "agent",
+  reconnectOnMount: true,
+  fetchStateHistory: true,
+});
+
+stream.submit(input, {
+  streamSubgraphs: true,
+  config: { recursionLimit: 10000 },  // alto para muitos subagents
+});</code></pre>
+  <p>Em Python, use os modos do LangGraph (<code>updates</code>, <code>messages</code>, <code>custom</code>, etc.) e habilite <code>subgraphs=True</code> + <code>version="v2"</code> para receber eventos com namespace.</p>
+</section>
+
+<section id="s-stream-subagents">
+  <h2>19.1 Event streaming: <code>stream.subagents</code></h2>
+  <p>
+    A doc oficial de <em>event streaming</em> do Deep Agents descreve uma
+    <strong>projeção de subagents</strong> construída sobre o event streaming
+    <code>version="v3"</code>: <code>stream.subagents</code> entrega <strong>um handle
+    de stream por chamada da tool <code>task</code></strong> — ou seja, um handle por
+    delegação a um subagent. Citando a doc: <em>&ldquo;Use <code>stream.subagents</code>
+    when you want one stream handle per delegated <code>task</code> call.&rdquo;</em>
+    O <code>name</code> de cada handle é o nome configurado do subagent — o
+    <code>subagent_type</code> que o coordenador passa naquela chamada de
+    <code>task</code>. A projeção é <em>lightweight</em> (verbatim):
+    <em>&ldquo;it discovers subagent tasks first, and message, tool-call, and value
+    streams are opened only when you access them on a subagent handle.&rdquo;</em>
+    Ou seja, os streams individuais de cada subagent (mensagens, tool calls, valores,
+    subagents aninhados) só são <em>abertos quando você os acessa</em> no handle,
+    evitando decodificar eventos que a UI não vai exibir.
+  </p>
+  <p>
+    O stream é aberto com <code>agent.stream_events(input, version="v3")</code>
+    (síncrono) ou <code>await agent.astream_events(input, version="v3")</code>
+    (assíncrono). Todos os exemplos abaixo assumem esse handle <code>stream</code>.
+  </p>
+
+  <h3>Campos do handle de subagent</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Campo</th><th>Descrição</th></tr></thead>
+      <tbody>
+        <tr><td><code>name</code></td><td>Nome do subagent — o <code>subagent_type</code> escolhido pelo coordenador na chamada de <code>task</code>.</td></tr>
+        <tr><td><code>messages</code></td><td>Mensagens emitidas pelo subagent.</td></tr>
+        <tr><td><code>subagents</code></td><td>Invocações de subagents aninhados (recursivo).</td></tr>
+        <tr><td><code>output</code></td><td>Estado final do subagent, ou sinal de conclusão da tarefa delegada.</td></tr>
+        <tr><td><code>path</code></td><td>Caminho de namespace do stream do subagent.</td></tr>
+        <tr><td><code>status</code></td><td>Status de ciclo de vida (a doc lista como exemplos, não como enum fechado): <code>started</code>, <code>completed</code>, <code>failed</code>, <code>interrupted</code>.</td></tr>
+        <tr><td><code>tool_calls</code></td><td>Tool calls escopadas ao subagent.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    Em Python os nomes de projeção usam <code>snake_case</code> (verbatim:
+    <em>&ldquo;Python uses snake_case projection names such as
+    <code>tool_calls</code>&rdquo;</em>). Além dos campos da tabela, a doc menciona
+    que cada stream de subagent também pode expor <code>.values</code> (estado
+    incremental do subagent), junto de <code>.messages</code>, <code>.tool_calls</code>,
+    <code>.subagents</code> e <code>.output</code>.
+  </p>
+
+  <h3>Ciclo de vida e leitura de status</h3>
+  <p>
+    O padrão da doc para acompanhar o ciclo de vida itera
+    <code>stream.subagents</code> e trata o acesso a <code>subagent.output</code>
+    como o sinal de conclusão: ler <code>output</code> dentro de um
+    <code>try/except</code> diferencia <em>completed</em> (leitura bem-sucedida) de
+    <em>failed</em> (exceção).
+  </p>
+  <pre><code class="language-python">running = 0
+completed = 0
+failed = 0
+
+for subagent in stream.subagents:
+    running += 1
+    print(f"{subagent.name}: started")
+
+    try:
+        _ = subagent.output
+        running -= 1
+        completed += 1
+        print(f"{subagent.name}: completed")
+    except Exception:
+        running -= 1
+        failed += 1
+        print(f"{subagent.name}: failed")</code></pre>
+
+  <h3>Tool calls e <code>output_deltas</code></h3>
+  <p>
+    Tool calls são expostas tanto no nível do coordenador
+    (<code>stream.tool_calls</code>) quanto no nível de cada subagent
+    (<code>subagent.tool_calls</code>). Cada objeto de tool call expõe
+    <code>tool_name</code>, <code>input</code>, <code>completed</code>,
+    <code>error</code>, <code>output_deltas</code> e <code>output</code>. O
+    <code>output_deltas</code> transmite a saída da tool de forma incremental
+    (iterado com <code>for delta in call.output_deltas</code>), permitindo renderizar
+    o resultado da tool conforme ele chega; o <code>output</code> traz o resultado
+    final quando <code>completed</code> é verdadeiro e <code>error</code> é
+    <code>None</code>.
+  </p>
+  <pre><code class="language-python">for call in stream.tool_calls:
+    print("[coordinator tool]", call.tool_name, call.input)
+    print(call.completed, call.error)
+
+for subagent in stream.subagents:
+    for call in subagent.tool_calls:
+        print(f"[{subagent.name} tool]", call.tool_name, call.input)
+        for delta in call.output_deltas:
+            print(delta, end="", flush=True)
+
+        if call.completed and call.error is None:
+            print(call.output)
+        elif call.error is not None:
+            print(call.error)</code></pre>
+
+  <h3>Subagents aninhados (recursão)</h3>
+  <p>
+    Como um subagent pode por sua vez delegar trabalho a outros subagents, o campo
+    <code>subagents</code> de cada handle é recursivo: iterar
+    <code>subagent.subagents</code> alcança as invocações aninhadas, cada uma com
+    seus próprios <code>name</code>, <code>status</code> e <code>tool_calls</code> —
+    o mesmo formato do handle de nível superior, aplicado em profundidade.
+  </p>
+  <pre><code class="language-python">for subagent in stream.subagents:
+    print(f"subagent {subagent.name}: {subagent.status}")
+
+    for tool_call in subagent.tool_calls:
+        print(f"{tool_call.tool_name}({tool_call.input})")
+        for delta in tool_call.output_deltas:
+            print(delta, end="", flush=True)
+
+    for nested in subagent.subagents:
+        print(f"nested subagent {nested.name}: {nested.status}")</code></pre>
+
+  <h3>Consumo concorrente</h3>
+  <p>Três estratégias da doc para consumir coordenador e subagents ao mesmo tempo:</p>
+  <ul>
+    <li>
+      <strong>Async com <code>asyncio.gather</code>:</strong> abra o stream com
+      <code>await agent.astream_events(input, version="v3")</code> e rode duas
+      corrotinas em paralelo (<code>async for</code> sobre <code>stream.messages</code>
+      e sobre <code>stream.subagents</code>), unidas por
+      <code>await asyncio.gather(consume_coordinator(), consume_subagents())</code>.
+    </li>
+    <li>
+      <strong>Interleaving síncrono:</strong>
+      <code>stream.interleave("messages", "subagents")</code> itera as duas projeções
+      juntas, entregando tuplas <code>(name, item)</code> na ordem em que os eventos
+      chegam — aqui <code>name</code> é o <em>nome da projeção</em>
+      (<code>"messages"</code> ou <code>"subagents"</code>), não o nome do subagent.
+      Útil para uma UI que renderiza um único feed combinado em vez de duas listas.
+    </li>
+    <li>
+      <strong>Ordenação exata por namespace:</strong> para controle fino sobre a
+      ordem, itere os eventos brutos do protocolo (<code>for event in stream</code>),
+      filtre por <code>event.get("method") == "messages"</code>, extraia o payload de
+      <code>event["params"]["data"][0]</code> e teste
+      <code>payload.get("event") == "content-block-delta"</code> com delta do tipo
+      <code>text-delta</code>. A origem vem de
+      <code>event["params"]["namespace"]</code>: se truthy, o evento é de um
+      <code>"subagent"</code>; caso contrário, do <code>"coordinator"</code>.
+    </li>
+  </ul>
+  <pre><code class="language-python">import asyncio
+
+stream = await agent.astream_events(input, version="v3")
+
+async def consume_coordinator():
+    async for message in stream.messages:
+        print("[coordinator]", await message.text)
+
+async def consume_subagents():
+    async for subagent in stream.subagents:
+        async for message in subagent.messages:
+            print(f"[{subagent.name}]", await message.text)
+
+await asyncio.gather(consume_coordinator(), consume_subagents())</code></pre>
+
+  <div class="callout tip">
+    <strong><code>stream.subagents</code> vs. <code>stream.subgraphs</code>:</strong>
+    a doc oficial é direta — <em>&ldquo;<code>stream.subgraphs</code> shows graph
+    execution structure. <code>stream.subagents</code> shows product-level Deep
+    Agents task delegations.&rdquo;</em> Para UI voltada ao usuário final, prefira
+    <code>stream.subagents</code>: ele esconde nós internos do grafo e expõe apenas
+    as delegações de tarefa que fazem sentido em nível de produto (qual subagent está
+    rodando, o que ele disse, quais tools chamou).
+  </div>
+
+  <div class="source-link">Fonte: <a href="https://docs.langchain.com/oss/python/deepagents/event-streaming" target="_blank" rel="noopener">deepagents/event-streaming</a></div>
+</section>
+
+<section id="s-async">
+  <h2>20. Async</h2>
+  <ul>
+    <li><strong>Não existe</strong> <code>async_create_deep_agent</code>. Use o mesmo construtor e <code>await agent.ainvoke(...)</code> / <code>agent.astream(...)</code>.</li>
+    <li><strong>Hooks async em middleware:</strong> <code>abefore_agent</code>, <code>awrap_model_call</code>, <code>awrap_tool_call</code>, <code>astream</code>.</li>
+    <li><strong>Subagents em background:</strong> use <code>AsyncSubAgent</code> em <code>subagents=</code>. Exige deployment LangGraph suportando Agent Protocol (<code>langgraph dev --n-jobs-per-worker 10</code> localmente — um slot para supervisor + concorrentes).</li>
+  </ul>
+  <div class="callout tip">
+    <strong>Dica para o system prompt:</strong> <em>"After launching an async
+    subagent, ALWAYS return control to the user. Never call check_async_task
+    immediately after launch."</em> — evita polling parasita.
+  </div>
+</section>
+
+<section id="s-production">
+  <h2>21. Going to production</h2>
+  <ul>
+    <li><strong>Primitivas:</strong> thread, user, assistant.</li>
+    <li><strong>Deployment:</strong> Managed Deep Agents (private preview LangSmith) ou self-hosted via <code>langgraph build</code>.</li>
+    <li><strong>Invocação:</strong> toda call requer <code>thread_id</code> e/ou <code>context</code>.</li>
+    <li><strong>Multi-tenancy:</strong> três camadas — auth de end-user, agent-acting-as-user (OAuth com interrupts), RBAC de team.</li>
+    <li><strong>Filesystem:</strong> nunca use <code>FilesystemBackend</code> / <code>LocalShellBackend</code> em agentes deployed. Use <code>CompositeBackend(default=StateBackend(), routes={"/memories/": StoreBackend(...)})</code>.</li>
+    <li><strong>Secrets:</strong> use auth proxy (<code>proxy_config.rules[].inject_headers</code>) — chaves nunca entram no sandbox.</li>
+    <li><strong>Guardrails:</strong> <code>ModelCallLimitMiddleware</code>, <code>ToolCallLimitMiddleware</code>, <code>ModelRetryMiddleware</code>, <code>ModelFallbackMiddleware</code>, <code>ToolRetryMiddleware</code>, <code>PIIMiddleware</code>.</li>
+  </ul>
+</section>
+
+<section id="s-managed-deep-agents">
+  <h2>21.1 Managed Deep Agents — runtime hospedado (CLI <code>mda</code>)</h2>
+  <p>
+    <span class="pill beta">private beta</span>
+    <strong>Managed Deep Agents</strong> é descrito na doc oficial como
+    <em>&ldquo;a hosted runtime for deploying and operating code-first Deep Agents
+    in LangSmith&rdquo;</em>: você escreve o agente (Python ou TypeScript) e usa a
+    CLI <code>mda</code> para testar e implantar em infraestrutura gerenciada, sem
+    subir seu próprio servidor de agente (contraste com o <code>langgraph build</code>
+    self-hosted citado na seção 21). O produto está em <strong>private beta,
+    disponível apenas em LangSmith Cloud, região US</strong> &mdash; acesso via
+    waitlist.
+  </p>
+
+  <h3>O que o runtime gerenciado fornece</h3>
+  <ul>
+    <li><strong>Durable runs</strong> sobre um <em>hosted LangGraph deployment</em>.</li>
+    <li><strong>LangSmith sandboxes</strong> gerenciados.</li>
+    <li>Instruções, skills e memória apoiadas pelo <strong>Context Hub</strong>.</li>
+    <li><strong>Traces</strong> integrados ao LangSmith.</li>
+  </ul>
+  <div class="callout warn">
+    Durante a private beta o produto é <em>&ldquo;CLI-first while LangChain
+    finalizes the supported API&rdquo;</em>: a doc oficial não traz exemplos de
+    criação/atualização/invocação via API pública, então uso programático nesta
+    fase passa pela CLI. Também <strong>não há rate limits publicados</strong> por
+    chave, workspace ou agente, e <strong>self-hosted e Hybrid deployments não são
+    suportados</strong> durante a beta.
+  </div>
+
+  <h3>Fluxo com a CLI <code>mda</code></h3>
+  <p>
+    O pacote é <code>managed-deepagents</code> (Python ou TypeScript). Um Managed
+    Deep Agent é, literalmente, <strong>&ldquo;a local project directory&rdquo;</strong>:
+    a CLI lê a localização de cada arquivo do projeto (entrypoint, instruções,
+    skills, conectores, config de schedules/sandbox) para empacotar o deployment
+    hospedado.
+  </p>
+  <pre><code># 1. instalar o pacote (Python ou TypeScript)
+pip install managed-deepagents          # ou: npm i managed-deepagents
+
+# 2. criar o projeto local code-first do agente
+mda init
+
+# 3. no diretório do projeto:
+#    - colocar o system prompt em instructions.md
+#    - adicionar tools, middleware, schedules, skills,
+#      MCP connectors e um sandbox (opcional)
+
+# 4. testar localmente no LangSmith Studio
+mda dev
+
+# 5. implantar no runtime gerenciado do LangSmith
+mda deploy</code></pre>
+
+  <h3>Context Hub: instruções, skills e memória</h3>
+  <p>
+    Instruções e skills implantadas vivem no repositório do <strong>Context
+    Hub</strong>. A memória gerenciada do agente fica <strong>no mesmo repositório</strong>,
+    no caminho <code>/memories/AGENTS.md</code> &mdash; espelhando o padrão
+    <code>AGENTS.md</code> do harness OSS (seção 13 deste guia), agora persistido
+    pelo runtime.
+  </p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Em <code>mda deploy</code></th><th>Comportamento</th></tr></thead>
+      <tbody>
+        <tr><td><code>instructions.md</code> e <code>skills/**</code></td><td>Sincronizados a cada deploy</td></tr>
+        <tr><td><code>memories/**</code></td><td>Arquivos existentes são <strong>preservados</strong>; memória criada em runtime <strong>não é sobrescrita</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    Para desabilitar <em>apenas</em> a memória embutida (agent-scoped) do agente,
+    use <code>disableMemory: true</code> (TypeScript) ou <code>disable_memory=True</code>
+    (Python). Modelos usam o formato <code>{provider}:{model_id}</code> (ex.:
+    <code>openai:gpt-5.5</code>); o runtime resolve via <code>init_chat_model</code>,
+    com credenciais em <code>.env</code>, variáveis de shell ou <strong>workspace
+    secrets</strong> do LangSmith (configuradas antes do deploy).
+  </p>
+
+  <h3>Managed Deep Agents vs. LangSmith Deployment vs. OSS Deep Agents</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Caminho</th><th>Quando usar</th><th>Você gerencia</th><th>LangSmith gerencia</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Managed Deep Agents</strong></td>
+          <td>Um Deep Agent code-first implantado rapidamente em infra gerenciada</td>
+          <td>Agent code, tools, middleware, instructions, schedules</td>
+          <td>Backend, store, checkpointer, memory, skills, sandbox, hosted deployment</td>
+        </tr>
+        <tr>
+          <td><strong>LangSmith Deployment</strong></td>
+          <td>Código de aplicação e rotas customizados, auth avançada, isolamento mais forte ou escala máxima</td>
+          <td>Application code, server, deployment configuration</td>
+          <td>Hosted infrastructure and scaling</td>
+        </tr>
+        <tr>
+          <td><strong>OSS Deep Agents</strong></td>
+          <td>Rodar o harness Deep Agents no seu próprio ambiente (o foco deste guia)</td>
+          <td>Everything, including hosting and persistence</td>
+          <td>Nada (self-managed)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout tip">
+    <strong>Distinção-chave:</strong> no <code>deepagents</code> OSS (o foco deste
+    guia) você é dono de hosting, persistência e backends &mdash; veja a seção 21
+    (<code>langgraph build</code>, <code>CompositeBackend</code>, auth proxy). No
+    <strong>Managed Deep Agents</strong> você só escreve o agente e suas
+    customizações (tools/middleware/instructions/schedules); o LangSmith cuida do
+    resto &mdash; backend, store, checkpointer, memória, skills, sandbox e o
+    deployment hospedado.
+  </div>
+  <div class="source-link">Fonte: <a href="https://docs.langchain.com/langsmith/managed-deep-agents-overview" target="_blank" rel="noopener">langsmith/managed-deep-agents-overview</a></div>
+</section>
+
+<section id="s-models">
+  <h2>22. Modelos sugeridos</h2>
+  <h3>22.1 Trio padrão do projeto</h3>
+  <p>
+    Modelos default recomendados para os exemplos de código deste guia — um trio
+    atual por provedor (frontier / equilíbrio / baixo custo). Use o formato de
+    string <code>provider:model</code> ou a classe nativa do provedor (ver
+    política de integração no <a href="#s-create">capítulo 4</a>).
+  </p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Provedor</th><th>Frontier</th><th>Equilíbrio</th><th>Baixo custo</th></tr></thead>
+      <tbody>
+        <tr><td>OpenAI</td><td><code>gpt-5.5</code></td><td><code>gpt-5.4-mini</code></td><td><code>gpt-5.4-nano</code></td></tr>
+        <tr><td>Google</td><td><code>gemini-3.1-pro-preview</code></td><td><code>gemini-3.5-flash</code></td><td><code>gemini-3.1-flash-lite</code></td></tr>
+        <tr><td>Anthropic</td><td><code>claude-opus-4-8</code></td><td><code>claude-sonnet-5</code></td><td><code>claude-haiku-4-5</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout tip">
+    A página oficial <a href="https://docs.langchain.com/oss/python/deepagents/models" target="_blank" rel="noopener">deepagents/models</a>
+    publica uma lista mais ampla de modelos "suggested" (incluindo IDs OpenAI como
+    <code>gpt-5.4</code>, <code>gpt-4o</code>, <code>o4-mini</code> e variantes
+    open-weight como <code>GLM-5</code>, <code>Kimi-K2.5</code>); o trio acima é o
+    <strong>default do projeto</strong> para os snippets deste guia, não a lista
+    oficial completa.
+  </div>
+
+  <h3>22.2 Eval suite oficial</h3>
+  <p>
+    <strong>Top eval (DeepAgents eval suite — reprodução oficial):</strong>
+    <code>openrouter:z-ai/glm-5.1</code> 89% ·
+    <code>google_genai:gemini-3.5-flash</code> 82% ·
+    <code>openai:gpt-5.5</code> 80% ·
+    <code>anthropic:claude-opus-4-8</code> 80% ·
+    <code>anthropic:claude-opus-4-6</code> 26% ·
+    <code>openai:gpt-5.4</code> 18%.
+  </p>
+  <p>
+    Citação direta do doc: <em>"Passing these evals is necessary but not
+    sufficient for strong performance on longer, more complex tasks."</em>
+  </p>
+  <p class="note" style="color:var(--c-fg-muted);font-size:.95em">
+    Benchmark oficial — IDs preservados; o projeto padroniza nos modelos atuais
+    do trio acima (22.1).
+  </p>
+</section>
+
+<section id="s-comparison">
+  <h2>23. Comparação · Deep Agents vs Claude Agent SDK</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Dimensão</th><th>Deep Agents</th><th>Claude Agent SDK</th></tr></thead>
+      <tbody>
+        <tr><td>Suporte a modelos</td><td>100+ providers</td><td>Apenas Claude (Anthropic/Bedrock/Vertex/Azure)</td></tr>
+        <tr><td>Execução</td><td>Backends pluggable (in ou out de sandbox)</td><td>Apenas dentro de sandbox</td></tr>
+        <tr><td>Deployment</td><td>Managed (LangSmith) ou self-hosted (<code>langgraph build</code>)</td><td>Self-hosted; build o servidor</td></tr>
+        <tr><td>Multi-tenancy</td><td>Built-in (threads escopados, sandboxes por usuário, RBAC, auth proxy)</td><td>DIY</td></tr>
+        <tr><td>Licença</td><td>MIT</td><td>MIT (Claude Code em si é proprietário)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="s-dcode">
+  <h2>24. dcode — CLI</h2>
+  <p>
+    O <code>dcode</code> é o "Deep Agents Code", um agente de coding em terminal
+    construído sobre o SDK. Open-source.
+  </p>
+  <h3>Instalação</h3>
+  <pre><code class="language-bash">curl -LsSf https://langch.in/dcode | bash
+# ou
+uv tool install 'deepagents-code[fireworks,nvidia]'</code></pre>
+  <h3>Tools built-in</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Tool</th><th>Requer aprovação?</th></tr></thead>
+      <tbody>
+        <tr><td><code>ls</code>, <code>read_file</code>, <code>glob</code>, <code>grep</code>, <code>ask_user</code>, <code>write_todos</code></td><td>Não</td></tr>
+        <tr><td><code>write_file</code>, <code>edit_file</code>, <code>execute</code>, <code>web_search</code>, <code>fetch_url</code>, <code>task</code></td><td>Sim</td></tr>
+        <tr><td><code>compact_conversation</code></td><td>Misto</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Pular aprovação: <code>dcode -y</code> ou <code>--auto-approve</code>. Toggle in-session: <code>Shift+Tab</code>.</p>
+  <h3>Flags principais</h3>
+  <p><code>-a/--agent</code>, <code>-M/--model</code>, <code>--model-params JSON</code>, <code>-r/--resume</code>, <code>-m TEXT</code>, <code>-n TEXT</code>, <code>--max-turns N</code>, <code>--timeout SECONDS</code>, <code>-S/--shell-allow-list</code>, <code>--no-stream</code>, <code>--sandbox {none,langsmith,modal,daytona,runloop,agentcore}</code>, <code>--sandbox-id</code>, <code>--sandbox-setup</code>, <code>--mcp-config</code>, <code>--no-mcp</code>, <code>--acp</code>, <code>--json</code>. Exit code <strong>124</strong> quando turn/time budget é excedido.</p>
+  <h3>Slash commands</h3>
+  <p><code>/model</code>, <code>/agents</code>, <code>/auth</code>, <code>/remember</code>, <code>/skill:&lt;name&gt;</code>, <code>/offload</code>, <code>/compact</code>, <code>/tokens</code>, <code>/clear</code>, <code>/threads</code>, <code>/mcp</code>, <code>/reload</code>, <code>/theme</code>, <code>/update</code>, <code>/trace</code>, <code>/editor</code>, <code>/quit</code>.</p>
+  <h3>Layout de config</h3>
+  <ul>
+    <li><code>~/.deepagents/config.toml</code> — defaults de modelo, profile overrides, themes, MCP trust</li>
+    <li><code>~/.deepagents/.env</code> — chaves API globais</li>
+    <li><code>~/.deepagents/hooks.json</code> — hooks de lifecycle</li>
+    <li><code>~/.deepagents/&lt;agent_name&gt;/</code> — memória/skills/threads por agente</li>
+    <li><code>.deepagents/</code> (raiz do projeto) — memória + skills específicos do projeto</li>
+    <li>Prefixo de env <code>DEEPAGENTS_CODE_</code> escopa credenciais ao <code>dcode</code></li>
+  </ul>
+  <h3>Subagents em <code>dcode</code></h3>
+  <pre><code class="language-bash">.deepagents/agents/{subagent-name}/AGENTS.md           # projeto
+~/.deepagents/{agent}/agents/{subagent-name}/AGENTS.md # usuário</code></pre>
+  <p>
+    Frontmatter obrigatório: <code>name</code>, <code>description</code>.
+    Opcional: <code>model</code>. Corpo = system prompt. Outros campos de
+    <code>SubAgent</code> não são configuráveis via frontmatter. Async subagents
+    não são suportados em <code>dcode</code>.
+  </p>
+</section>
+
+<section id="s-acp">
+  <h2>25. ACP — Agent Client Protocol</h2>
+  <p>
+    Padroniza a comunicação agente ↔ IDE (distinto do MCP). Transport via stdio.
+  </p>
+  <ul>
+    <li><strong>Instalação:</strong> <code>pip install deepagents-acp</code> (ou <code>uv add deepagents-acp</code>)</li>
+    <li><strong>Componentes:</strong> <code>AgentServerACP</code>, <code>create_deep_agent</code>, <code>run_agent</code></li>
+    <li><strong>Clients suportados:</strong> Zed (nativo via <code>agent_servers</code>), JetBrains (AI Assistant), VS Code (<code>vscode-acp</code>), Neovim</li>
+    <li><strong>Dev local:</strong> <code>toad acp "python path/to/your_server.py" .</code></li>
+  </ul>
+</section>
+
+<section class="chapter" id="part-b-divider">
+  <h2 style="border-bottom:3px solid var(--c-da);padding:14px 0 10px;font-size:28px">Parte B — Referência de API</h2>
+  <p>Referência técnica das classes públicas do <code>deepagents</code>. Cada entrada lista import, assinatura, parâmetros e exemplos. Para o texto completo das constantes de prompt, importe da biblioteca.</p>
+</section>
+
+<section class="ref" id="ref-create">
+  <h2><code>create_deep_agent</code></h2>
+  <pre><code class="language-python">from deepagents import create_deep_agent</code></pre>
+  <p>Veja o capítulo 4 para a assinatura completa, tabela de parâmetros e ordem do stack de middleware.</p>
+  <h3>Retorno</h3>
+  <p>
+    <code>CompiledStateGraph[AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]]</code>
+    do LangGraph — mesma interface de <code>create_agent</code>.
+  </p>
+</section>
+
+<section class="ref" id="ref-baseprompt">
+  <h2><code>BASE_AGENT_PROMPT</code></h2>
+  <pre><code class="language-python">from deepagents.graph import BASE_AGENT_PROMPT   # não reexportado no topo de `deepagents`
+# Outras constantes de prompt vivem em seus respectivos módulos de middleware:
+# from deepagents.middleware.subagents import TASK_SYSTEM_PROMPT
+# from deepagents.middleware.filesystem import FILESYSTEM_SYSTEM_PROMPT
+# from deepagents.middleware.skills import SKILLS_SYSTEM_PROMPT
+# from deepagents.middleware.memory import MEMORY_SYSTEM_PROMPT
+# from deepagents.middleware.summarization import SUMMARIZATION_SYSTEM_PROMPT</code></pre>
+  <p>Cada constante é uma string. O capítulo 6 descreve as seções de cada prompt.</p>
+</section>
+
+<section class="ref" id="ref-subagent-types">
+  <h2><code>SubAgent</code> · <code>CompiledSubAgent</code> · <code>AsyncSubAgent</code></h2>
+  <pre><code class="language-python">from deepagents import SubAgent, CompiledSubAgent, AsyncSubAgent</code></pre>
+  <details><summary><code>SubAgent</code> (TypedDict)</summary>
+  <div class="ref-body">
+    <p>Campos: <code>name</code> (str), <code>description</code> (str), <code>system_prompt</code> (str). Opcionais: <code>tools</code>, <code>model</code>, <code>middleware</code>, <code>interrupt_on</code>, <code>skills</code>, <code>permissions</code>, <code>response_format</code>. <strong>Não herda</strong> tools/middleware/permissões do pai — definir substitui.</p>
+  </div></details>
+  <details><summary><code>CompiledSubAgent</code></summary>
+  <div class="ref-body">
+    <pre><code class="language-python">CompiledSubAgent(name: str, description: str, runnable: CompiledStateGraph)</code></pre>
+    <p>O <code>runnable</code> precisa ter um state key <code>messages</code>. Útil para embrulhar grafos pré-compilados com semântica arbitrária.</p>
+  </div></details>
+  <details><summary><code>AsyncSubAgent</code> (TypedDict)</summary>
+  <div class="ref-body">
+    <p>Campos: <code>name</code>, <code>description</code>, <code>graph_id</code>. Opcionais: <code>url</code> (omitir = in-process; setar = HTTP remoto), <code>headers</code>.</p>
+  </div></details>
+</section>
+
+<section class="ref" id="ref-state">
+  <h2><code>DeepAgentState</code> e extensões</h2>
+  <pre><code class="language-python">from deepagents.middleware.filesystem import FilesystemState
+from deepagents.middleware.skills import SkillsState
+from deepagents.middleware.memory import MemoryState
+from deepagents.middleware.async_subagents import AsyncSubAgentState</code></pre>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Classe</th><th>Adiciona ao <code>AgentState</code></th></tr></thead>
+      <tbody>
+        <tr><td><code>FilesystemState</code></td><td><code>files</code></td></tr>
+        <tr><td><code>SkillsState</code></td><td><code>skills_metadata</code></td></tr>
+        <tr><td><code>MemoryState</code></td><td><code>memory_contents</code></td></tr>
+        <tr><td><code>SummarizationState</code></td><td>checkpoints de summarization</td></tr>
+        <tr><td><code>AsyncSubAgentState</code></td><td><code>async_tasks</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Composição via herança de <code>TypedDict</code>. O grafo compilado usa <code>AgentState[ResponseT]</code>.</p>
+</section>
+
+<section class="ref" id="ref-builtin-tools">
+  <h2>Ferramentas built-in</h2>
+  <p>Veja o capítulo 5 para a tabela completa de tools e seus schemas. Imports das schemas correspondentes (úteis para customização e validation):</p>
+  <pre><code class="language-python">from deepagents.middleware.filesystem import (
+    LsSchema, ReadFileSchema, WriteFileSchema, EditFileSchema,
+    GlobSchema, GrepSchema, ExecuteSchema,
+)
+from deepagents.middleware.subagents import TaskToolSchema
+from deepagents.middleware.async_subagents import (
+    StartAsyncTaskSchema, CheckAsyncTaskSchema, UpdateAsyncTaskSchema,
+    CancelAsyncTaskSchema, ListAsyncTasksSchema,
+)</code></pre>
+</section>
+
+<section class="ref" id="ref-mw-filesystem">
+  <h2><code>FilesystemMiddleware</code></h2>
+  <pre><code class="language-python">from deepagents.middleware.filesystem import FilesystemMiddleware
+
+FilesystemMiddleware(
+    backend: BackendProtocol = StateBackend(),
+    system_prompt: str | None = None,
+    custom_tool_descriptions: dict[str, str] | None = None,
+    tool_token_limit_before_evict: int = 20000,
+    human_message_token_limit_before_evict: int = 50000,
+    max_execute_timeout: int = 3600,
+)</code></pre>
+  <p>Injeta <code>ls</code>, <code>read_file</code>, <code>write_file</code>, <code>edit_file</code>, <code>glob</code>, <code>grep</code>; e <code>execute</code> se o backend é sandbox.</p>
+</section>
+
+<section class="ref" id="ref-mw-subagent">
+  <h2><code>SubAgentMiddleware</code> · <code>AsyncSubAgentMiddleware</code></h2>
+  <pre><code class="language-python">from deepagents.middleware.subagents import SubAgentMiddleware
+
+SubAgentMiddleware(
+    default_model: str | BaseChatModel,
+    default_tools: list = [],
+    subagents: list = [],
+    system_prompt: str | None = None,   # default = TASK_SYSTEM_PROMPT
+    task_description: str | None = None,
+)</code></pre>
+  <p>Exemplo:</p>
+  <pre><code class="language-python">SubAgentMiddleware(
+    default_model="claude-sonnet-5",
+    subagents=[{
+        "name": "weather",
+        "description": "Gets weather in cities.",
+        "system_prompt": "Use get_weather tool...",
+        "tools": [get_weather],
+        "model": "gpt-5.5",
+        "middleware": [],
+    }],
+)</code></pre>
+  <p>
+    <code>AsyncSubAgentMiddleware</code> é auto-adicionado quando há <code>AsyncSubAgent</code> em <code>subagents=</code>. Expõe automaticamente as 5 tools de orquestração background.
+  </p>
+</section>
+
+<section class="ref" id="ref-mw-skills">
+  <h2><code>SkillsMiddleware</code></h2>
+  <pre><code class="language-python">from deepagents.middleware.skills import SkillsMiddleware, SkillMetadata
+
+SkillsMiddleware(
+    backend: BackendProtocol,
+    sources: Sequence[SkillSource],
+    system_prompt: str = SKILLS_SYSTEM_PROMPT,
+)</code></pre>
+  <p>O <code>system_prompt</code> precisa conter os slots <code>{skills_locations}</code>, <code>{skills_load_warnings}</code>, <code>{skills_list}</code>.</p>
+</section>
+
+<section class="ref" id="ref-mw-memory">
+  <h2><code>MemoryMiddleware</code></h2>
+  <pre><code class="language-python">from deepagents.middleware.memory import MemoryMiddleware, MemoryState
+
+MemoryMiddleware(
+    backend: BackendProtocol,
+    sources: list[str],
+    add_cache_control: bool = False,
+    system_prompt: str = MEMORY_SYSTEM_PROMPT,
+)</code></pre>
+  <p>O <code>system_prompt</code> precisa conter o slot <code>{agent_memory}</code>.</p>
+</section>
+
+<section class="ref" id="ref-mw-summarization">
+  <h2><code>SummarizationToolMiddleware</code> · <code>PatchToolCallsMiddleware</code> · <code>TodoListMiddleware</code></h2>
+  <pre><code class="language-python">from deepagents.middleware.summarization import (
+    SummarizationToolMiddleware, create_summarization_middleware,
+    create_summarization_tool_middleware, SummarizationEvent, SummarizationDefaults,
+    compute_summarization_defaults,
+)
+from deepagents.middleware.patch_tool_calls import PatchToolCallsMiddleware
+# TodoListMiddleware vem do LangChain (o Deep Agents o reexporta no base stack), não de deepagents:
+from langchain.agents.middleware import TodoListMiddleware</code></pre>
+  <p>
+    <code>SummarizationToolMiddleware(summarization, system_prompt=SUMMARIZATION_SYSTEM_PROMPT)</code>
+    expõe a tool <code>compact_conversation</code>. A versão automática
+    (<code>create_summarization_middleware</code>) é incluída no base stack — aciona
+    em 85% do <code>max_input_tokens</code> e mantém 10% recentes.
+  </p>
+  <p>
+    <code>PatchToolCallsMiddleware</code> é colocado no base stack em
+    <code>before_agent</code> e repara tool calls "pendurados" quando há retoma
+    após um interrupt.
+  </p>
+</section>
+
+<section class="ref" id="ref-mw-interpreter">
+  <h2><code>CodeInterpreterMiddleware</code> (QuickJS)</h2>
+  <pre><code class="language-python">from langchain_quickjs import CodeInterpreterMiddleware
+
+CodeInterpreterMiddleware(
+    memory_limit: int = 64 * 1024 * 1024,
+    timeout: float = 5.0,
+    max_ptc_calls: int = 256,
+    tool_name: str = "eval",
+    max_result_chars: int = 4000,
+    capture_console: bool = True,
+    ptc=None,
+    skills_backend: BackendProtocol | None = None,
+    snapshot_between_turns: bool = True,
+    max_snapshot_bytes: int | None = None,
+)</code></pre>
+  <p>Requer <code>pip install -U "deepagents[quickjs]"</code>.</p>
+  <div class="callout warn">
+    <strong>Snapshots entre turnos:</strong> com
+    <code>snapshot_between_turns=True</code>, o estado do interpretador persiste
+    de um turno para o seguinte, mas <strong>apenas valores serializáveis</strong>
+    são retidos (objetos não serializáveis são descartados).
+    <code>max_snapshot_bytes</code> limita o tamanho do snapshot.
+  </div>
+</section>
+
+<section class="ref" id="ref-mw-limits">
+  <h2>Model/Tool limits e retries</h2>
+  <pre><code class="language-python">from langchain.agents.middleware import (
+    ModelCallLimitMiddleware, ToolCallLimitMiddleware,
+    ModelRetryMiddleware, ModelFallbackMiddleware, ToolRetryMiddleware,
+    PIIMiddleware,
+)</code></pre>
+  <p>
+    Estes são fornecidos pelo LangChain e são as primitivas de produção
+    recomendadas pelo Deep Agents: cap de calls, retry/backoff, fallback de
+    modelo e redação de PII. Veja o capítulo 11 para a tabela detalhada.
+  </p>
+</section>
+
+<section class="ref" id="ref-backends-ref">
+  <h2>Backends (referência)</h2>
+  <pre><code class="language-python">from deepagents.backends import (
+    StateBackend, FilesystemBackend, LocalShellBackend,
+    StoreBackend, ContextHubBackend, CompositeBackend,
+)
+# Sandbox providers:
+from langchain_modal import ModalSandbox
+from langchain_daytona import DaytonaSandbox
+from langchain_runloop import RunloopSandbox
+from langchain_agentcore_codeinterpreter import AgentCoreSandbox
+# from deepagents.backends import LangSmithSandbox  # langsmith[sandbox]</code></pre>
+  <details><summary><code>StateBackend()</code></summary>
+  <div class="ref-body"><p>Default. Per-thread. Sem persistência cross-thread sem checkpointer.</p></div></details>
+  <details><summary><code>FilesystemBackend(root_dir, virtual_mode=True)</code></summary>
+  <div class="ref-body"><p>Disco local sob <code>root_dir</code>. Em <code>virtual_mode</code>, paths internos ficam isolados.</p></div></details>
+  <details><summary><code>LocalShellBackend(root_dir, timeout=120, max_output_bytes=100_000, env=None, inherit_env=True)</code></summary>
+  <div class="ref-body"><p>FS local + <code>execute</code> via <code>subprocess.run(shell=True)</code>. Não para produção.</p></div></details>
+  <details><summary><code>StoreBackend(namespace=lambda rt: (...,))</code></summary>
+  <div class="ref-body"><p>Persistente cross-thread em <code>BaseStore</code>. Requer <code>store=</code> no <code>create_deep_agent</code>.</p></div></details>
+  <details><summary><code>ContextHubBackend</code></summary>
+  <div class="ref-body"><p>Repo do LangSmith Hub como FS. Writes commit-otimistas. Apenas UTF-8 texto via <code>upload_files()</code>. Requer <code>LANGSMITH_API_KEY</code>.</p></div></details>
+  <details><summary><code>CompositeBackend(default, routes)</code></summary>
+  <div class="ref-body">
+    <p><code>default</code> = backend fallback. <code>routes</code> = <code>{prefix: backend}</code>. Prefixos mais longos vencem; <code>ls</code>/<code>glob</code>/<code>grep</code> agregam entre backends.</p>
+  </div></details>
+</section>
+
+<section class="ref" id="ref-backend-protocol">
+  <h2><code>BackendProtocol</code></h2>
+  <pre><code class="language-python">from deepagents.backends.protocol import (
+    BackendProtocol, SandboxBackendProtocol, BACKEND_TYPES, BackendFactory,
+    FileInfo, FileData, GrepMatch,
+    LsResult, ReadResult, WriteResult, EditResult, GlobResult, GrepResult,
+    ExecuteResponse, FileUploadResponse, FileDownloadResponse,
+)</code></pre>
+  <h3>Métodos sync (com contraparte async <code>a</code>-prefixada)</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Método</th><th>Retorno</th><th>Notas</th></tr></thead>
+      <tbody>
+        <tr><td><code>ls(path)</code></td><td><code>LsResult</code></td><td>Lista; <code>ls_info</code> devolve <code>FileInfo</code> ricos</td></tr>
+        <tr><td><code>read(file_path, offset=0, limit=2000)</code></td><td><code>ReadResult</code></td><td>Conteúdo + linhas</td></tr>
+        <tr><td><code>write(file_path, content)</code></td><td><code>WriteResult</code></td><td>Apenas criação</td></tr>
+        <tr><td><code>edit(file_path, old_string, new_string, replace_all=False)</code></td><td><code>EditResult</code></td><td>Substituição exata</td></tr>
+        <tr><td><code>glob(pattern, path="/")</code></td><td><code>GlobResult</code></td><td><code>glob_info</code> devolve <code>FileInfo</code></td></tr>
+        <tr><td><code>grep(pattern, path=None, glob=None)</code></td><td><code>GrepResult</code></td><td><code>grep_raw</code> devolve matches</td></tr>
+        <tr><td><code>upload_files(items: list[tuple[str, bytes]])</code></td><td><code>FileUploadResponse</code></td><td>Bulk upload</td></tr>
+        <tr><td><code>download_files(paths)</code></td><td>list[<code>FileDownloadResponse</code>]</td><td>Bulk download</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    Para sandboxes, implemente também <code>SandboxBackendProtocol</code> com
+    <code>execute(command) -&gt; ExecuteResponse</code>. <code>BaseSandbox</code>
+    provê FS ops em cima.
+  </p>
+</section>
+
+<section class="ref" id="ref-permission">
+  <h2><code>FilesystemPermission</code></h2>
+  <pre><code class="language-python">from deepagents import FilesystemPermission
+
+FilesystemPermission(
+    operations: list[Literal["read", "write"]],
+    paths: list[str],         # globs: ** e {a,b}
+    mode: Literal["allow", "deny"] = "allow",
+)</code></pre>
+  <p>Veja o capítulo 10 para semântica completa.</p>
+</section>
+
+<section class="ref" id="ref-profiles">
+  <h2><code>HarnessProfile</code> · <code>ProviderProfile</code></h2>
+  <pre><code class="language-python">from deepagents import (
+    HarnessProfile, HarnessProfileConfig, GeneralPurposeSubagentProfile,
+    register_harness_profile,
+    ProviderProfile, register_provider_profile,
+    get_provider_profile, apply_provider_profile,
+)</code></pre>
+  <h3><code>HarnessProfile</code></h3>
+  <pre><code class="language-python">HarnessProfile(
+    base_system_prompt: str | None = None,
+    system_prompt_suffix: str | None = None,
+    tool_description_overrides: dict[str, str] | None = None,
+    excluded_tools: set[str] | None = None,
+    excluded_middleware: set[type | str] | None = None,
+    extra_middleware: list[AgentMiddleware] | None = None,
+    general_purpose_subagent: GeneralPurposeSubagentProfile | None = None,
+)</code></pre>
+  <h3><code>register_harness_profile</code></h3>
+  <pre><code class="language-python">register_harness_profile(key: str, profile: HarnessProfile | HarnessProfileConfig | dict)</code></pre>
+  <p>
+    <code>key</code> = <code>"openai"</code> (provider) ou
+    <code>"openai:gpt-5.5"</code> (model). Re-registro faz merge aditivo.
+    Profiles built-in: <code>_anthropic_opus_4_7</code>,
+    <code>_anthropic_sonnet_4_6</code>, <code>_anthropic_haiku_4_5</code>,
+    <code>_openai_codex</code>.
+  </p>
+  <h3><code>ProviderProfile</code></h3>
+  <pre><code class="language-python">ProviderProfile(
+    init_kwargs: Mapping[str, Any] | None = None,
+    pre_init: Callable[[str], None] | None = None,            # side-effects pré-construção
+    init_kwargs_factory: Callable[[], dict[str, Any]] | None = None,  # kwargs derivados em runtime
+)
+
+register_provider_profile("openai", ProviderProfile(init_kwargs={"temperature": 0}))
+register_provider_profile("openai:gpt-5.5",
+                          ProviderProfile(init_kwargs={"reasoning_effort": "medium"}))</code></pre>
+  <p>Aplica-se apenas quando o modelo é passado como string <code>provider:model</code>.</p>
+</section>
+
+<section class="ref" id="ref-imports">
+  <h2>Imports recap</h2>
+  <pre><code class="language-python"># Core
+from deepagents import (
+    create_deep_agent,
+    SubAgent, CompiledSubAgent, AsyncSubAgent,
+    FilesystemPermission,
+    HarnessProfile, HarnessProfileConfig, GeneralPurposeSubagentProfile,
+    register_harness_profile,
+    ProviderProfile, register_provider_profile,
+)
+# BASE_AGENT_PROMPT não é reexportado no topo de `deepagents`; vive em deepagents.graph:
+from deepagents.graph import BASE_AGENT_PROMPT
+
+# Backends
+from deepagents.backends import (
+    StateBackend, FilesystemBackend, LocalShellBackend,
+    StoreBackend, ContextHubBackend, CompositeBackend,
+)
+from deepagents.backends.protocol import (
+    BackendProtocol, SandboxBackendProtocol,
+    FileInfo, FileData, GrepMatch,
+    LsResult, ReadResult, WriteResult, EditResult, GlobResult, GrepResult,
+    ExecuteResponse, FileUploadResponse, FileDownloadResponse,
+)
+from deepagents.backends.utils import create_file_data
+
+# Middleware (custom)
+from deepagents.middleware.filesystem import (
+    FilesystemMiddleware, FilesystemState,
+    LsSchema, ReadFileSchema, WriteFileSchema, EditFileSchema,
+    GlobSchema, GrepSchema, ExecuteSchema,
+    FILESYSTEM_SYSTEM_PROMPT,
+)
+from deepagents.middleware.subagents import (
+    SubAgentMiddleware, TaskToolSchema, TASK_SYSTEM_PROMPT,
+)
+from deepagents.middleware.async_subagents import (
+    AsyncSubAgentMiddleware, AsyncSubAgentState,
+    StartAsyncTaskSchema, CheckAsyncTaskSchema, UpdateAsyncTaskSchema,
+    CancelAsyncTaskSchema, ListAsyncTasksSchema,
+)
+from deepagents.middleware.skills import (
+    SkillsMiddleware, SkillMetadata, SkillsState, SKILLS_SYSTEM_PROMPT,
+)
+from deepagents.middleware.memory import (
+    MemoryMiddleware, MemoryState, MEMORY_SYSTEM_PROMPT,
+)
+from deepagents.middleware.summarization import (
+    SummarizationToolMiddleware, create_summarization_middleware,
+    create_summarization_tool_middleware,
+    SummarizationEvent, SummarizationDefaults, compute_summarization_defaults,
+    SUMMARIZATION_SYSTEM_PROMPT,
+)
+from deepagents.middleware.patch_tool_calls import PatchToolCallsMiddleware
+# TodoListMiddleware é do LangChain (reexportado pelo base stack do Deep Agents):
+from langchain.agents.middleware import TodoListMiddleware
+
+# Code interpreter
+from langchain_quickjs import CodeInterpreterMiddleware
+
+# Sandbox providers
+from langchain_modal import ModalSandbox
+from langchain_daytona import DaytonaSandbox
+from langchain_runloop import RunloopSandbox
+
+# LangChain middleware reaproveitado em produção
+from langchain.agents.middleware import (
+    ModelCallLimitMiddleware, ToolCallLimitMiddleware,
+    ModelRetryMiddleware, ModelFallbackMiddleware, ToolRetryMiddleware,
+    PIIMiddleware,
+)</code></pre>
+</section>
+
+<section class="chapter" id="part-c-divider">
+  <h2 style="border-bottom:3px solid var(--c-da);padding:14px 0 10px;font-size:28px">Parte C — Receituário oficial</h2>
+  <p>Esta parte reúne o material das três pastas oficiais de exemplos do Deep Agents (<code>examples/</code>, <code>deploy/</code>, <code>cookbook/</code>) condensado em receitas reutilizáveis, fact-checks pontuais e a tabela de evaluation completa.</p>
+</section>
+
+<section id="s-deploy-cli">
+  <h2>26. CLI <code>deepagents</code> &amp; <code>deepagents.toml</code></h2>
+  <div class="callout warn">
+    <strong>Duas ferramentas distintas — não confundir:</strong>
+    (a) <code>dcode</code> (Deep Agents Code) é o <em>coding agent interativo</em>
+    instalado por script (detalhado no <a href="#s-dcode">capítulo 24</a> — aqui
+    só referenciado); (b) <code>deepagents</code> / <code>deepagents-cli</code> é
+    a <em>CLI de deploy</em> (<strong>Beta</strong>), um pacote PyPI separado que
+    mira a LangGraph Platform. O <code>deepagents.toml</code> é o config da CLI de
+    deploy.
+  </div>
+
+  <h3>26.1 CLI de deploy <code>deepagents</code> (Beta)</h3>
+  <pre><code class="language-bash"># Instalação (pacote separado do SDK core)
+pip install deepagents-cli          # extras: [anthropic], [openai], [ollama], [all-providers]
+# ou: uv tool install deepagents-cli --with deepagents-cli[openai]
+
+# Comandos de deploy (Beta)
+deepagents init &lt;NAME&gt;    # scaffold de um projeto de deploy
+deepagents dev           # dev server local lendo deepagents.toml
+deepagents deploy        # bundle + deploy para a LangGraph Platform (LangSmith Deployment)</code></pre>
+  <div class="callout tip">
+    Os subcomandos documentados são apenas <code>init</code> / <code>dev</code> /
+    <code>deploy</code>; <strong>não há flag <code>--config</code></strong> publicada na
+    referência da CLI. O <code>deepagents.toml</code> é descoberto <strong>por
+    convenção</strong> na raiz do projeto. Não confundir com
+    <code>~/.deepagents/config.toml</code>, que é a config global da CLI interativa
+    <code>dcode</code> (com flags próprias como <code>--model</code>, <code>--agent</code>,
+    <code>--profile-override</code>).
+  </div>
+
+  <h3>26.2 <code>deepagents.toml</code> — schema real (classe <code>DeployConfig</code>)</h3>
+  <p>Seções confirmadas: <code>[agent]</code>, <code>[sandbox]</code>, <code>[memories]</code>, <code>[auth]</code>, <code>[frontend]</code>. O formato do <code>model</code> é <code>provider:model</code> e o <code>provider:</code> determina o pacote <code>langchain-*</code> necessário.</p>
+  <pre><code class="language-toml">[agent]
+name = "my-agent"
+model = "anthropic:claude-sonnet-5"   # formato provider:model
+
+[sandbox]
+provider = "daytona"                     # mapeia para langchain-daytona
+template = "..."                         # snapshot LangSmith
+scope = "thread"                         # "thread" | "assistant"
+
+[memories]
+backend = "store"                        # "hub" | "store"
+
+[auth]
+provider = "supabase"                    # "supabase" | "clerk" | "anonymous"
+
+[frontend]
+# config opcional de frontend</code></pre>
+
+  <h3>26.3 Layout do projeto por convenção</h3>
+  <p>O bundle de deploy descobre arquivos por convenção a partir da raiz:</p>
+  <pre><code class="language-text">deepagents.toml              # config principal (DeployConfig)
+AGENTS.md                    # system prompt do agente
+.env                         # chaves: ANTHROPIC_API_KEY, LANGSMITH_API_KEY, ...
+mcp.json                     # opcional → adiciona langchain-mcp-adapters
+                             #   (apenas HTTP/SSE; stdio é rejeitado no bundle)
+skills/&lt;name&gt;/SKILL.md        # skills (progressive disclosure)
+subagents/&lt;name&gt;/
+    deepagents.toml          # config do subagent
+    AGENTS.md                # system prompt do subagent
+user/AGENTS.md               # memória de usuário</code></pre>
+  <div class="callout tip">
+    O deploy mira a <strong>LangGraph Platform</strong> (LangSmith Deployment).
+    <code>[sandbox].provider</code> mapeia para o pacote partner correspondente
+    (<code>daytona</code> → <code>langchain-daytona</code>); o
+    <code>provider:</code> do <code>model</code> mapeia para o pacote do provedor
+    (<code>google_genai</code> → <code>langchain-google-genai</code>).
+  </div>
+  <div class="source-link">Fontes: <a href="https://deepwiki.com/langchain-ai/deepagents/3.12-deploy-command-deepagents-deploy" target="_blank" rel="noopener">DeepWiki · deepagents deploy</a> · <a href="https://www.langchain.com/blog/introducing-deepagents-cli" target="_blank" rel="noopener">blog · introducing deepagents CLI</a></div>
+</section>
+
+<section id="s-async-arch">
+  <h2>27. Arquitetura <em>async-deep-agents</em></h2>
+  <p>O exemplo oficial <a href="https://github.com/langchain-ai/deepagents/tree/main/examples/async-subagent-server" target="_blank" rel="noopener"><code>async-subagent-server</code></a> demonstra a arquitetura recomendada para subagents que precisam rodar em <em>background</em> assíncrono, sobreviver à reconexão e reportar conclusão por canal lateral.</p>
+
+  <p>Conceitualmente, é um supervisor síncrono que declara um ou mais <code>AsyncSubAgent</code> e os dispara como runs de background em graphs separados (próprios ou remotos), com um notifier opcional para reportar conclusão por canal lateral:</p>
+
+  <pre><code class="language-text">┌──────────────────────────────────────────────────────────────┐
+│  Graph 1: Supervisor (síncrono, com create_deep_agent)       │
+│    • Pega input do usuário                                   │
+│    • Declara AsyncSubAgent(...) → 5 tools auto-injetadas     │
+│    • start_async_task → launch de run no graph_id alvo       │
+│      (transporte ASGI co-deployed ou HTTP via url)           │
+└──────────────────────────────────────────────────────────────┘
+        │ spawn researcher
+        ▼
+┌──────────────────────────────────────────────────────────────┐
+│  Graph 2: Researcher (próprio deep agent ou react agent)     │
+│    • Roda em thread/run independente                         │
+│    • Quando termina, escreve resultado em Store              │
+│      ou aciona Graph 3 via webhook/notifier                  │
+└──────────────────────────────────────────────────────────────┘
+        │ ou
+        ▼
+┌──────────────────────────────────────────────────────────────┐
+│  Graph 3: Coder (próprio deep agent com sandbox)             │
+│    • Mesma semântica do researcher                           │
+└──────────────────────────────────────────────────────────────┘
+        │ on completion
+        ▼
+┌──────────────────────────────────────────────────────────────┐
+│  Notifier (opcional)                                         │
+│    • Recebe webhook do run terminal                          │
+│    • Chama Slack/email/WS para acordar UI                    │
+└──────────────────────────────────────────────────────────────┘</code></pre>
+
+  <h3>27.1 Declaração tipada via <code>AsyncSubAgent</code></h3>
+  <div class="callout warn">
+    O subagent async é declarado com o objeto <strong>tipado</strong>
+    <code>AsyncSubAgent(...)</code>, <strong>não</strong> com um dict
+    <code>{"async": True}</code>. <strong>Não existem</strong> os parâmetros
+    <code>platform_client=</code> nem <code>on_complete_webhook=</code>: o
+    <code>AsyncSubAgentMiddleware</code> é uma camada interna adicionada
+    automaticamente quando há um <code>AsyncSubAgent</code> em
+    <code>subagents=</code>. Requer <strong><code>deepagents &gt;= 0.5.0</code></strong>.
+  </div>
+  <pre><code class="language-python">from deepagents import AsyncSubAgent, create_deep_agent
+
+async_subagents = [
+    AsyncSubAgent(
+        name="researcher",
+        description="Research agent for information gathering and synthesis",
+        graph_id="researcher",
+        # sem url → transporte ASGI (co-deployed no mesmo deployment)
+    ),
+    AsyncSubAgent(
+        name="coder",
+        description="Coding agent for code generation and review",
+        graph_id="coder",
+        url="https://coder-deployment.langsmith.dev",  # opcional → transporte HTTP (remoto)
+        headers={"Authorization": "Bearer ..."},         # opcional
+    ),
+]
+
+supervisor = create_deep_agent(
+    model="google_genai:gemini-3.5-flash",
+    subagents=async_subagents,
+    system_prompt="You orchestrate a research team. Use the researcher liberally.",
+)</code></pre>
+  <p>
+    Parâmetros reais de <code>AsyncSubAgent</code>: <code>name</code> (obrig.),
+    <code>description</code> (obrig.), <code>graph_id</code> (obrig.),
+    <code>url</code> (opc. — sem ele, transporte ASGI co-deployed; com ele,
+    HTTP remoto) e <code>headers</code> (opc.).
+  </p>
+
+  <h3>27.2 Tools auto-injetadas e canal de estado</h3>
+  <p>
+    Cinco tools supervisoras são injetadas automaticamente pelo
+    <code>AsyncSubAgentMiddleware</code>:
+    <code>start_async_task</code>, <code>check_async_task</code>,
+    <code>update_async_task</code>, <code>cancel_async_task</code> e
+    <code>list_async_tasks</code>. Os metadados das tasks vivem em um canal
+    dedicado do estado chamado <code>async_tasks</code>, que sobrevive à
+    compactação de histórico. Localmente, controle a concorrência com
+    <code>langgraph dev --n-jobs-per-worker 10</code> (um slot para o supervisor
+    + os concorrentes).
+  </p>
+  <div class="callout tip">
+    <strong>Dica de prompt:</strong> <em>"After launching an async subagent,
+    ALWAYS return control to the user. Never call check_async_task immediately
+    after launch."</em> — evita polling parasita. O notifier (webhook → Slack/
+    e-mail/WS) é construído como deployment separado consumindo os webhooks do
+    Agent Server; não é um parâmetro do <code>create_deep_agent</code>.
+  </div>
+  <div class="source-link">Fontes: <a href="https://docs.langchain.com/oss/python/deepagents/async-subagents" target="_blank" rel="noopener">deepagents/async-subagents</a></div>
+</section>
+
+<section id="s-mcp">
+  <h2>28. Integração com MCP (Model Context Protocol)</h2>
+  <p>Deep Agents consome servidores MCP através do adapter <code>langchain-mcp-adapters</code>. As ferramentas MCP entram em <code>tools=[...]</code> do <code>create_deep_agent</code> exatamente como qualquer outra <code>BaseTool</code>.</p>
+
+  <h3>28.1 Consumir servidores MCP — <code>MultiServerMCPClient</code></h3>
+  <p>
+    A classe é <code>MultiServerMCPClient</code> do módulo
+    <code>langchain_mcp_adapters.client</code>. As tools são carregadas com
+    <code>await client.get_tools()</code> e passadas a
+    <code>create_deep_agent(tools=...)</code> como qualquer outra
+    <code>BaseTool</code>. Cada servidor declara um <code>transport</code>
+    (<code>"stdio"</code> local ou <code>"http"</code> remoto).
+  </p>
+  <pre><code class="language-python">from langchain_mcp_adapters.client import MultiServerMCPClient
+from deepagents import create_deep_agent
+
+client = MultiServerMCPClient(
+    {
+        "math": {
+            "transport": "stdio",
+            "command": "python",
+            "args": ["/path/to/math_server.py"],
+        },
+        "weather": {
+            "transport": "http",
+            "url": "http://localhost:8000/mcp",
+        },
+    }
+)
+
+tools = await client.get_tools()          # carrega todas as tools dos servidores
+agent = create_deep_agent(
+    model="claude-sonnet-5",
+    tools=tools,                          # mistura com built-ins via FilesystemMiddleware
+    system_prompt="You help users automate tasks across our stack.",
+)
+await agent.ainvoke({"messages": [{"role": "user", "content": "What is 2 + 2?"}]})</code></pre>
+
+  <h4>Recursos, prompts e sessão explícita</h4>
+  <p>
+    Além das tools, o cliente expõe <em>resources</em> e <em>prompts</em> MCP.
+    Para controle fino, abra uma sessão por servidor e use as funções standalone
+    <code>load_mcp_tools</code>, <code>load_mcp_resources</code> e
+    <code>load_mcp_prompt</code>.
+  </p>
+  <pre><code class="language-python"># Atalhos no cliente (assinaturas reais)
+resources = await client.get_resources("server_name", uris=[...])
+prompt    = await client.get_prompt("server_name", "prompt_name", arguments={...})
+
+# Via sessão explícita + funções standalone
+from langchain_mcp_adapters.tools import load_mcp_tools
+from langchain_mcp_adapters.resources import load_mcp_resources
+from langchain_mcp_adapters.prompts import load_mcp_prompt
+
+async with client.session("server_name") as session:
+    tools     = await load_mcp_tools(session)
+    resources = await load_mcp_resources(session, uris=[...])
+    prompt    = await load_mcp_prompt(session, "name", arguments={...})</code></pre>
+  <div class="callout tip">
+    Símbolos confirmados no pacote: <code>MultiServerMCPClient</code>,
+    <code>load_mcp_tools</code>, <code>load_mcp_resources</code>,
+    <code>load_mcp_prompt</code>, <code>MCPToolCallRequest</code>. O exemplo
+    oficial usa <code>create_agent</code>, mas as tools entram em
+    <code>create_deep_agent(tools=...)</code> da mesma forma.
+  </div>
+
+  <h3>28.2 Servir um deep agent como servidor MCP</h3>
+  <div class="callout warn">
+    <strong>Não existe</strong> função <code>langchain_to_mcp_server(...)</code>
+    no <code>langchain_mcp_adapters</code> nem no SDK <code>deepagents</code> para
+    "transformar um agente em servidor MCP". Expor um deep agent por MCP é um
+    recurso de <strong>deployment</strong>, não de biblioteca.
+  </div>
+  <p>
+    Um <strong>LangSmith Deployment</strong> tradicional pode expor seu agente
+    via MCP ou A2A "out of the box". Citação oficial:
+    <em>"A traditional LangSmith Deployment ... can expose your agent via MCP or
+    A2A."</em> A configuração é feita nos endpoints do deployment
+    (<code>/langsmith/server-mcp</code> para MCP,
+    <code>/langsmith/server-a2a</code> para A2A — veja a seção de A2A abaixo).
+    Não há snippet de SDK porque o transporte é provido pelo Agent Server.
+  </p>
+  <div class="source-link">Fontes: <a href="https://docs.langchain.com/oss/python/deepagents/mcp" target="_blank" rel="noopener">deepagents/mcp</a> · <a href="https://docs.langchain.com/oss/python/deepagents/going-to-production" target="_blank" rel="noopener">going-to-production</a></div>
+
+  <h3 id="s-a2a">28.3 A2A — Agent-to-Agent Protocol</h3>
+  <p>
+    Enquanto o MCP conecta o agente a <em>tools</em>, o <strong>A2A</strong>
+    expõe o próprio deep agent para que <em>outros agentes</em> o consumam. Um
+    Agent Server publica o endpoint <code>/a2a/{assistant_id}</code> e um
+    <em>agent card</em> em
+    <code>/.well-known/agent-card.json?assistant_id={assistant_id}</code>.
+    Métodos JSON-RPC suportados: <code>message/send</code>,
+    <code>message/stream</code> e <code>tasks/get</code>.
+  </p>
+  <p>
+    O A2A vem habilitado por padrão; para desligá-lo, adicione
+    <code>disable_a2a</code> ao bloco <code>http</code> do
+    <code>langgraph.json</code>:
+  </p>
+  <pre><code class="language-json">{
+  "$schema": "https://langgra.ph/schema.json",
+  "http": {
+    "disable_a2a": true
+  }
+}</code></pre>
+  <div class="callout tip">
+    Dependência mínima: <strong><code>langgraph-api &gt;= 0.4.21</code></strong>.
+    O <code>contextId</code> do A2A mapeia para o <code>thread_id</code> do
+    LangGraph; esse <code>thread_id</code> viaja no <code>metadata</code> de
+    <strong>nível superior</strong> do JSON-RPC (não dentro de
+    <code>params</code>). Para compatibilidade de <em>text-part</em>, o estado do
+    agente DEVE conter a chave <code>messages</code>.
+  </div>
+  <div class="source-link">Fontes: <a href="https://docs.langchain.com/oss/python/deepagents/a2a" target="_blank" rel="noopener">deepagents/a2a</a></div>
+</section>
+
+<section id="s-eval-table">
+  <h2>29. Tabela completa de evaluation</h2>
+  <p>Catálogo de capacidades testadas oficialmente. Cada coluna marca o sinal medido em harness; um agent SOTA cobre todas.</p>
+  <div class="table-wrap"><table>
+    <thead>
+      <tr><th>Capacidade</th><th>Built-in</th><th>Subagent</th><th>Sandbox</th><th>Skills</th><th>Memory</th><th>Sinal</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Planejamento (write_todos)</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td><td>Plan-update ratio</td></tr>
+      <tr><td>Pesquisa profunda (multi-source)</td><td>✓</td><td>✓</td><td>—</td><td>—</td><td>✓</td><td>Recall@k, fontes citadas</td></tr>
+      <tr><td>Síntese / draft</td><td>✓</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>BLEU/Rouge ou rubrics</td></tr>
+      <tr><td>Code editing (apply diff)</td><td>✓</td><td>✓</td><td>✓</td><td>—</td><td>—</td><td>Patch pass-rate</td></tr>
+      <tr><td>Execução de código</td><td>—</td><td>✓</td><td>✓</td><td>—</td><td>—</td><td>Exit code 0, output diff</td></tr>
+      <tr><td>SQL / NL2SQL</td><td>—</td><td>✓</td><td>—</td><td>✓</td><td>✓</td><td>Execution-match</td></tr>
+      <tr><td>Multi-step tool use</td><td>✓</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>Trajectory-eval</td></tr>
+      <tr><td>HITL (interrupt/resume)</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td><td>Resume-correctness</td></tr>
+      <tr><td>Skills loading (lazy)</td><td>—</td><td>—</td><td>—</td><td>✓</td><td>—</td><td>Skill-hit-rate</td></tr>
+      <tr><td>Async subagent (background)</td><td>—</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>Completion under SLO</td></tr>
+      <tr><td>Long context (>100k tokens)</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>✓</td><td>Needle-in-haystack</td></tr>
+      <tr><td>Cross-thread memory</td><td>—</td><td>—</td><td>—</td><td>—</td><td>✓</td><td>Recall após restart</td></tr>
+      <tr><td>Permissões / FS guardrails</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td><td>Bloqueia escrita proibida</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="r-deep-research">
+  <h2>R1. Receita · Deep research</h2>
+  <p>Origem: <a href="https://github.com/langchain-ai/deepagents/tree/main/examples/deep_research" target="_blank" rel="noopener"><code>examples/deep_research</code></a>. Padrão clássico: 1 supervisor + 3 researchers paralelos + revisor crítico.</p>
+  <pre><code class="language-python">from deepagents import create_deep_agent
+from langchain_community.tools.tavily_search import TavilySearchResults
+
+search = TavilySearchResults(max_results=8, search_depth="advanced")
+
+research_subagent = {
+    "name": "research-agent",
+    "description": "Pesquisa um sub-tópico em profundidade e devolve relatório com fontes.",
+    "system_prompt": (
+        "Você é um pesquisador. Dado um sub-tópico, faça 5+ buscas, "
+        "leia as fontes, anote URLs e devolva um relatório de 3-5 parágrafos."
+    ),
+    "tools": [search],   # objetos de tool reais (Sequence[BaseTool | callable | dict])
+}
+
+critique_subagent = {
+    "name": "critique-agent",
+    "description": "Revisa o relatório final e aponta lacunas.",
+    "system_prompt": "Você é editor sênior. Aponte fatos não-citados, viés e lacunas.",
+}
+
+agent = create_deep_agent(
+    model="anthropic:claude-opus-4-8",
+    tools=[search],
+    subagents=[research_subagent, critique_subagent],
+    system_prompt=(
+        "Você produz relatórios extensos com citações.\n"
+        "1) Crie um plano com write_todos.\n"
+        "2) Para cada sub-tópico, dispare research-agent.\n"
+        "3) Sintetize um draft, peça critique-agent, revise, entregue."
+    ),
+)
+result = agent.invoke({"messages":[{"role":"user","content":"Mercado de robotaxis em 2026"}]})</code></pre>
+</section>
+
+<section id="r-coding-sandbox">
+  <h2>R2. Receita · Coding agent com sandbox</h2>
+  <p>Origem: <a href="https://github.com/langchain-ai/deepagents/tree/main/examples/deploy-coding-agent" target="_blank" rel="noopener"><code>deploy-coding-agent</code></a>. Filesystem real em sandbox Modal + execução de testes.</p>
+  <pre><code class="language-python">from deepagents import create_deep_agent
+from langchain_modal import ModalSandbox
+
+sandbox = ModalSandbox(workspace="my-org")
+
+try:
+    agent = create_deep_agent(
+        model="anthropic:claude-opus-4-8",
+        backend=sandbox.backend(),
+        system_prompt=(
+            "Você é um engenheiro de software. Use o sistema de arquivos para ler/editar "
+            "código e o comando execute para rodar testes. Sempre rode os testes "
+            "depois de qualquer mudança."
+        ),
+        tools=[],   # FS + execute vêm do backend
+    )
+    result = agent.invoke({"messages":[{"role":"user",
+        "content":"Corrija o bug em src/parser.py e adicione um teste em tests/test_parser.py"}]})
+finally:
+    sandbox.terminate()</code></pre>
+</section>
+
+<section id="r-content-writer">
+  <h2>R3. Receita · Content writer com subagent por canal</h2>
+  <p>Origem: <a href="https://github.com/langchain-ai/deepagents/tree/main/examples/deploy-content-writer" target="_blank" rel="noopener"><code>deploy-content-writer</code></a>. Um subagent por destino (LinkedIn, Twitter, blog) com prompt e tom específicos.</p>
+  <pre><code class="language-python">from deepagents import create_deep_agent
+
+linkedin = {
+    "name": "linkedin-writer",
+    "description": "Escreve posts longos para LinkedIn com formato 'hook → body → CTA'.",
+    "system_prompt": "Você é especialista em LinkedIn. Tom profissional, posts de 200-400 palavras.",
+}
+twitter = {
+    "name": "twitter-writer",
+    "description": "Escreve threads de 6-10 tweets, cada um &lt; 280 chars.",
+    "system_prompt": "Você escreve threads. Tweet 1 é o hook. Cada tweet conclui um ponto.",
+}
+blog = {
+    "name": "blog-writer",
+    "description": "Escreve posts de blog 1500-2500 palavras com H2/H3/lista.",
+    "system_prompt": "Você escreve blog posts longos e estruturados com SEO em mente.",
+}
+
+agent = create_deep_agent(
+    model="anthropic:claude-opus-4-8",
+    subagents=[linkedin, twitter, blog],
+    system_prompt=(
+        "Dado um tópico e canais alvo, dispare o subagent apropriado para CADA canal. "
+        "Rode em paralelo quando possível. Devolva todos os outputs."
+    ),
+)</code></pre>
+  <div class="callout tip">
+    <strong>Variante <code>content-builder-agent</code>:</strong> o exemplo
+    oficial de content-builder acrescenta uma tool de geração de imagem
+    (<code>generate_image</code> usando o modelo de imagem atual
+    <code>gemini-3.1-flash-image</code> — o tutorial oficial original usa
+    <code>gemini-2.5-flash-image</code>)
+    que salva a arte gerada no filesystem virtual (ex.:
+    <code>blogs/&lt;slug&gt;/hero.png</code>), de forma que cada post acompanha sua
+    imagem de capa produzida pelo próprio agente.
+  </div>
+</section>
+
+<section id="r-text-to-sql">
+  <h2>R4. Receita · Text-to-SQL com skills</h2>
+  <p>Origem: <a href="https://github.com/langchain-ai/deepagents/tree/main/examples/text-to-sql-agent" target="_blank" rel="noopener"><code>text-to-sql-agent</code></a>. Skill carrega contexto de schema/SQL sob demanda.</p>
+  <pre><code class="language-python">from deepagents import create_deep_agent
+from deepagents.backends import FilesystemBackend
+from deepagents.middleware.skills import SkillsMiddleware
+
+# skills/postgres-tpch/SKILL.md ; skills/dbt-conventions/SKILL.md ; skills/sql-style/SKILL.md
+backend = FilesystemBackend(root_dir="/abs/path/to/workspace", virtual_mode=True)
+
+agent = create_deep_agent(
+    model="anthropic:claude-opus-4-8",
+    middleware=[SkillsMiddleware(backend=backend, sources=["/skills/"])],
+    tools=[run_sql, describe_table],
+    system_prompt=(
+        "Você responde perguntas dos analistas em SQL.\n"
+        "Antes de escrever uma query, carregue a skill 'postgres-tpch' para o schema "
+        "e 'sql-style' para as convenções de naming."
+    ),
+)</code></pre>
+</section>
+
+<section id="r-ralph">
+  <h2>R5. Receita · Ralph mode (loop)</h2>
+  <p>Origem: <a href="https://github.com/langchain-ai/deepagents/tree/main/examples/ralph_mode" target="_blank" rel="noopener"><code>examples/ralph_mode</code></a>. O agent fica em loop persistente, lê fila de tarefas, executa cada uma e marca como done — pattern de "agente residente".</p>
+  <pre><code class="language-python">from deepagents import create_deep_agent
+from time import sleep
+
+agent = create_deep_agent(
+    model="anthropic:claude-opus-4-8",
+    tools=[fetch_next_task, mark_done, notify_slack],
+    system_prompt=(
+        "Você é Ralph. Faça um loop:\n"
+        "1) chame fetch_next_task; se vazio, espere.\n"
+        "2) execute a tarefa.\n"
+        "3) chame mark_done(task_id) e, em falha, notify_slack(reason).\n"
+        "4) Repita indefinidamente."
+    ),
+)
+
+state = {"messages": [{"role":"user","content":"start"}]}
+while True:
+    state = agent.invoke(state)
+    if state.get("done"): break
+    sleep(1)</code></pre>
+</section>
+
+<section id="r-repl-swarm">
+  <h2>R6. Receita · REPL swarm com skill TypeScript</h2>
+  <p>Origem: <a href="https://github.com/langchain-ai/deepagents/tree/main/examples/repl_swarm" target="_blank" rel="noopener"><code>examples/repl_swarm</code></a>. Vários sub-agents que compartilham um REPL via skill TS.</p>
+  <pre><code class="language-python">from deepagents import create_deep_agent
+from deepagents.backends import FilesystemBackend
+from langchain_quickjs import CodeInterpreterMiddleware
+from deepagents.middleware.skills import SkillsMiddleware
+
+backend = FilesystemBackend(root_dir="/abs/path/to/workspace", virtual_mode=True)
+
+agent = create_deep_agent(
+    model="anthropic:claude-opus-4-8",
+    middleware=[
+        CodeInterpreterMiddleware(skills_backend=backend),        # JS/TS sandbox embutido (QuickJS)
+        SkillsMiddleware(backend=backend, sources=["/skills/"]),  # skills/ts-utils/SKILL.md, skills/data-viz/SKILL.md
+    ],
+    subagents=[
+        {"name":"data","description":"Carrega/limpa dados.","system_prompt":"Use skill ts-utils."},
+        {"name":"viz","description":"Plota gráficos.","system_prompt":"Use skill data-viz."},
+        {"name":"writer","description":"Escreve insights.","system_prompt":"Sintetize achados."},
+    ],
+    system_prompt="Você é um swarm de analistas em REPL. Cada subagent reusa o mesmo CodeInterpreter.",
+)</code></pre>
+</section>
+
+<section id="s-examples-catalog">
+  <h2>30. Catálogo dos 15 exemplos oficiais</h2>
+  <p>Lista verificada em 2026-06-10 em <a href="https://github.com/langchain-ai/deepagents/tree/main/examples" target="_blank" rel="noopener"><code>github.com/langchain-ai/deepagents/examples</code></a>. Cada entrada inclui o que demonstra e qual receita acima cobre.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Exemplo</th><th>O que demonstra</th><th>Receita</th></tr></thead>
+    <tbody>
+      <tr><td><code>deep_research</code></td><td>Supervisor + N researchers + critic</td><td>R1</td></tr>
+      <tr><td><code>deploy-mcp-docs-agent</code></td><td>MCP filesystem + docs agent deployado</td><td>§28</td></tr>
+      <tr><td><code>deploy-coding-agent</code></td><td>Coding agent com sandbox Modal</td><td>R2</td></tr>
+      <tr><td><code>nvidia_deep_agent</code></td><td>Pipeline pesquisa-mercado sobre press releases</td><td>R1</td></tr>
+      <tr><td><code>content-builder-agent</code></td><td>Subagents por tipo de conteúdo</td><td>R3</td></tr>
+      <tr><td><code>text-to-sql-agent</code></td><td>Skills para schema + SQL style</td><td>R4</td></tr>
+      <tr><td><code>llm-wiki</code></td><td>Wiki automaticamente construído por researchers</td><td>R1</td></tr>
+      <tr><td><code>deploy-content-writer</code></td><td>Writer multi-canal deployado</td><td>R3</td></tr>
+      <tr><td><code>deploy-gtm-agent</code></td><td>Go-to-market analyst com web tools</td><td>R1</td></tr>
+      <tr><td><code>async-subagent-server</code></td><td>Arquitetura async-deep-agents</td><td>§27</td></tr>
+      <tr><td><code>ralph_mode</code></td><td>Agente residente em loop</td><td>R5</td></tr>
+      <tr><td><code>rlm_agent</code></td><td>Reasoning-as-LLM (long-horizon)</td><td>§27</td></tr>
+      <tr><td><code>repl_swarm</code></td><td>Swarm com QuickJS + TS skills</td><td>R6</td></tr>
+      <tr><td><code>downloading_agents</code></td><td>Agent que baixa/cataloga assets externos</td><td>R2</td></tr>
+      <tr><td><code>better-harness</code></td><td>Harness próprio que substitui o default</td><td>—</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout tip">
+    <strong>Como navegar.</strong> Cada pasta de exemplo tem <code>README.md</code>, <code>agent.py</code> e (quando é deployavel) <code>langgraph.json</code>. Clone o repo: <code>git clone https://github.com/langchain-ai/deepagents.git &amp;&amp; cd deepagents/examples</code>.
+  </div>
+</section>
+
+  </main>
+</div>
+
+<footer class="site" style="margin-top:48px;padding:32px 24px;border-top:1px solid var(--c-border);background:var(--c-bg-elev);">
+  <div style="max-width:1400px;margin:0 auto;display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;justify-content:space-between;">
+    <div style="max-width:520px">
+      <div class="brand" style="font-size:15px">Guia Deep Agents <small>Python</small></div>
+      <p style="margin:8px 0 0;color:var(--c-fg-muted);font-size:13.5px;line-height:1.55">
+        Referência técnica construída a partir da documentação oficial pública em
+        <strong>2026-06-10</strong>. Para informações sempre atualizadas, consulte
+        <a href="https://docs.langchain.com/oss/python/deepagents/overview" target="_blank" rel="noopener">docs.langchain.com/oss/python/deepagents</a>.
+      </p>
+    </div>
+    <div style="font-size:13.5px;color:var(--c-fg-muted);line-height:1.7">
+      <div><strong>Crédito de produção</strong></div>
+      <div>Gerado por <strong>4 agentes Claude Opus 4.7 (xhigh)</strong></div>
+      <div>em paralelo · 2026-05-24</div>
+      <div style="margin-top:6px">
+        <span class="badge da">deepagents</span>
+        <span class="badge info">Python 3.11+</span>
+      </div>
+    </div>
+    <div style="font-size:12.5px;color:var(--c-fg-soft)">
+      <div><strong>Navegação rápida</strong></div>
+      <div><a href="#sobre">Sobre</a> · <a href="#fontes-oficiais">Fontes</a></div>
+      <div><a href="#s-create">create_deep_agent</a> · <a href="#s-subagents">Sub-agents</a></div>
+      <div><a href="#s-backends">Backends</a> · <a href="#s-middleware">Middleware</a></div>
+      <div><a href="#s-hitl">HITL</a> · <a href="#s-context">Context engineering</a></div>
+      <div><a href="#ref-create">API ref</a> · <a href="#ref-imports">Imports</a></div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  (function(){
+    var btn = document.getElementById('theme-toggle');
+    var pref = localStorage.getItem('deepagents-theme');
+    if (pref) document.documentElement.setAttribute('data-theme', pref);
+    btn.addEventListener('click', function(){
+      var cur = document.documentElement.getAttribute('data-theme') || 'light';
+      var nxt = cur === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', nxt);
+      localStorage.setItem('deepagents-theme', nxt);
+    });
+  })();
+  (function(){
+    var links = document.querySelectorAll('nav.toc a[href^="#"]');
+    var map = {};
+    links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+    var ids = Object.keys(map);
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        var id = e.target.id; if (!map[id]) return;
+        if (e.isIntersecting) {
+          links.forEach(function(l){ l.classList.remove('active'); });
+          map[id].classList.add('active');
+        }
+      });
+    }, { rootMargin: '-40% 0% -55% 0%', threshold: 0 });
+    ids.forEach(function(id){ var el = document.getElementById(id); if (el) io.observe(el); });
+  })();
+</script>
+</body></html>

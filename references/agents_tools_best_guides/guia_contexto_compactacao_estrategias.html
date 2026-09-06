@@ -1,0 +1,1826 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Guia independente de gerenciamento manual de contexto, orçamento por fatias, snapshots cumulativos e compactação para orquestrações de IA.">
+  <meta name="ai-summary" content="Defina um teto operacional X abaixo da janela do modelo, subtraia reservas de saída e margem, divida o input em fatias, compacte por estágios auditáveis, persista snapshots cumulativos sem apagar originais e preserve ledger próprio, tool pairs, anexos por retrieval, estado selado de provedor, microconversas e privacidade.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' fill='%230b6b5f'/%3E%3Cpath d='M14 35h36v8H14zM14 21h24v8H14z' fill='white'/%3E%3C/svg%3E">
+  <title>Guia SOTA de Contexto e Compactação para Orquestrações de IA</title>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Guia SOTA de Gerenciamento de Contexto e Compactacao",
+    "inLanguage": "pt-BR",
+    "dateModified": "2026-06-10",
+    "about": [
+      "LLM context management",
+      "manual compaction",
+      "context budget slices",
+      "agent orchestration",
+      "tool result compression",
+      "zero data retention"
+    ],
+    "articleSection": [
+      "Orientacao",
+      "Modelo mental",
+      "Definir teto X",
+      "Subdividir X",
+      "Topologia de sessão",
+      "Escada de compactacao",
+      "Snapshots cumulativos",
+      "Skills antigas",
+      "Tool results e RAG",
+      "Anexos e session retrieval",
+      "Transcript recall",
+      "Chamadas ao modelo e microconversas",
+      "Privacidade e ZDR",
+      "Observabilidade",
+      "Admin parametrizavel",
+      "Playbooks",
+      "Riscos comuns",
+      "Glossario"
+    ]
+  }
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f8;
+      --surface: #ffffff;
+      --surface-alt: #eef5f3;
+      --surface-warm: #fff8ec;
+      --ink: #18201f;
+      --ink-soft: #596663;
+      --ink-muted: #6f7c78;
+      --line: #d8e0dd;
+      --brand: #0b6b5f;
+      --brand-deep: #084b43;
+      --brand-soft: #dff1ed;
+      --accent: #a95016;
+      --ok: #1d7a47;
+      --warn: #a66a00;
+      --risk: #b33636;
+      --zdr: #4f5fa8;
+      --info: #26688f;
+      --code-bg: #edf1f0;
+      --shadow: 0 18px 45px rgba(24, 32, 31, 0.08);
+      --radius: 8px;
+      --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-mono: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      --measure: 78ch;
+      --wide: 1180px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        color-scheme: dark;
+        --bg: #121615;
+        --surface: #1a201f;
+        --surface-alt: #172824;
+        --surface-warm: #2b2418;
+        --ink: #f1f5f3;
+        --ink-soft: #c3ceca;
+        --ink-muted: #9ea9a5;
+        --line: #34413d;
+        --brand: #45b9a9;
+        --brand-deep: #8dd6ca;
+        --brand-soft: #13322d;
+        --accent: #d39352;
+        --code-bg: #222b29;
+        --shadow: none;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      font-family: var(--font-sans);
+      background:
+        linear-gradient(180deg, rgba(11, 107, 95, 0.08), transparent 420px),
+        var(--bg);
+      color: var(--ink);
+      line-height: 1.62;
+      letter-spacing: 0;
+    }
+
+    a {
+      color: var(--brand-deep);
+      text-decoration-thickness: 0.08em;
+      text-underline-offset: 0.18em;
+    }
+
+    a:hover {
+      color: var(--accent);
+    }
+
+    :focus-visible {
+      outline: 3px solid color-mix(in srgb, var(--brand) 50%, transparent);
+      outline-offset: 3px;
+      border-radius: 4px;
+    }
+
+    header.hero {
+      max-width: var(--wide);
+      margin: 0 auto;
+      padding: 56px 24px 28px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+      gap: 32px;
+      align-items: end;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 14px;
+      padding: 5px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--brand-deep);
+      background: color-mix(in srgb, var(--surface) 86%, var(--brand-soft));
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 12em;
+      font-size: clamp(2.1rem, 4vw, 4.2rem);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      max-width: 65ch;
+      margin: 20px 0 0;
+      color: var(--ink-soft);
+      font-size: 1.08rem;
+    }
+
+    .hero-panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero-panel h2 {
+      margin-top: 0;
+      font-size: 1.05rem;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 10px;
+      background: var(--surface-alt);
+    }
+
+    .metric strong {
+      display: block;
+      color: var(--brand-deep);
+      font-size: 1.1rem;
+    }
+
+    .layout {
+      max-width: var(--wide);
+      margin: 0 auto;
+      padding: 18px 24px 56px;
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      gap: 28px;
+      align-items: start;
+    }
+
+    nav.toc {
+      position: sticky;
+      top: 18px;
+      background: color-mix(in srgb, var(--surface) 93%, transparent);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: 0 8px 24px rgba(24, 32, 31, 0.06);
+    }
+
+    nav.toc h2 {
+      margin: 0 0 10px;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+    }
+
+    nav.toc ol {
+      margin: 0;
+      padding-left: 18px;
+      font-size: 0.92rem;
+    }
+
+    nav.toc li {
+      margin: 7px 0;
+    }
+
+    main {
+      min-width: 0;
+    }
+
+    section {
+      min-width: 0;
+      margin: 0 0 22px;
+      padding: 28px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: 0 10px 30px rgba(24, 32, 31, 0.04);
+      scroll-margin-top: 20px;
+    }
+
+    section h2 {
+      margin: 0 0 10px;
+      font-size: clamp(1.4rem, 2vw, 2rem);
+      line-height: 1.15;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 24px 0 8px;
+      font-size: 1.08rem;
+      color: var(--brand-deep);
+    }
+
+    p {
+      max-width: var(--measure);
+    }
+
+    .tldr {
+      max-width: none;
+      margin: 14px 0 18px;
+      padding: 13px 15px;
+      border-left: 4px solid var(--brand);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      background: var(--brand-soft);
+      color: var(--ink);
+      font-weight: 650;
+    }
+
+    .keyfacts {
+      display: grid;
+      gap: 8px;
+      margin: 16px 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .keyfacts li {
+      padding: 9px 11px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: color-mix(in srgb, var(--surface) 76%, var(--surface-alt));
+    }
+
+    code,
+    kbd {
+      font-family: var(--font-mono);
+      font-size: 0.92em;
+      background: var(--code-bg);
+      padding: 0.08em 0.32em;
+      border-radius: 4px;
+    }
+
+    pre {
+      overflow: auto;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--code-bg);
+      line-height: 1.45;
+    }
+
+    pre code {
+      padding: 0;
+      background: transparent;
+    }
+
+    .callout {
+      margin: 18px 0;
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-left-width: 5px;
+      border-radius: var(--radius);
+      background: color-mix(in srgb, var(--surface) 84%, var(--surface-alt));
+    }
+
+    .callout strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 0.86rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .callout.invariant { border-left-color: var(--info); }
+    .callout.risk { border-left-color: var(--risk); }
+    .callout.tip { border-left-color: var(--warn); }
+    .callout.zdr { border-left-color: var(--zdr); }
+    .callout.evidence { border-left-color: var(--ok); }
+    .callout code { overflow-wrap: anywhere; word-break: break-word; }
+
+    .pill {
+      display: inline-block;
+      padding: 1px 8px;
+      border-radius: 999px;
+      font-size: 11.5px;
+      font-weight: 600;
+    }
+
+    .pill.partial {
+      background: color-mix(in srgb, var(--warn) 15%, var(--surface));
+      color: var(--warn);
+      border: 1px solid color-mix(in srgb, var(--warn) 35%, var(--line));
+    }
+
+    .slice-bars {
+      display: grid;
+      gap: 12px;
+      margin: 16px 0;
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 140px minmax(0, 1fr);
+      gap: 12px;
+      align-items: center;
+    }
+
+    .bar-label {
+      font-family: var(--font-mono);
+      font-size: 0.86rem;
+      color: var(--ink-soft);
+    }
+
+    .bar {
+      display: flex;
+      min-height: 28px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--code-bg);
+    }
+
+    .bar span {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 54px;
+      padding: 0 8px;
+      color: #ffffff;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      white-space: nowrap;
+    }
+
+    .sys { background: #246d82; }
+    .conv { background: #0b6b5f; }
+    .tool { background: #a95016; }
+    .mem { background: #5f6aa7; }
+
+    table {
+      width: 100%;
+      table-layout: fixed;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.93rem;
+    }
+
+    caption {
+      text-align: left;
+      color: var(--ink-soft);
+      margin-bottom: 8px;
+      font-weight: 650;
+      overflow-wrap: anywhere;
+    }
+
+    th,
+    td {
+      padding: 10px 11px;
+      border: 1px solid var(--line);
+      vertical-align: top;
+      text-align: left;
+      overflow-wrap: anywhere;
+    }
+
+    th {
+      background: var(--surface-alt);
+      color: var(--brand-deep);
+    }
+
+    .checklist {
+      display: grid;
+      gap: 8px;
+      padding-left: 0;
+      list-style: none;
+    }
+
+    .checklist li {
+      display: grid;
+      grid-template-columns: 20px minmax(0, 1fr);
+      gap: 8px;
+      align-items: start;
+    }
+
+    .checklist input {
+      width: 16px;
+      height: 16px;
+      margin-top: 5px;
+      accent-color: var(--brand);
+    }
+
+    details {
+      margin: 16px 0;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: color-mix(in srgb, var(--surface) 88%, var(--surface-alt));
+    }
+
+    summary {
+      cursor: pointer;
+      padding: 12px 14px;
+      font-weight: 750;
+      color: var(--brand-deep);
+    }
+
+    details > div {
+      padding: 0 14px 14px;
+    }
+
+    .path-list {
+      display: grid;
+      gap: 8px;
+      padding-left: 0;
+      list-style: none;
+      font-size: 0.9rem;
+    }
+
+    .path-list li {
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--code-bg);
+      font-family: var(--font-mono);
+      word-break: break-word;
+    }
+
+    dl {
+      display: grid;
+      grid-template-columns: minmax(170px, 0.32fr) minmax(0, 1fr);
+      gap: 10px 18px;
+    }
+
+    dt {
+      font-family: var(--font-mono);
+      color: var(--brand-deep);
+      font-weight: 800;
+    }
+
+    dd {
+      margin: 0;
+      color: var(--ink-soft);
+    }
+
+    footer {
+      max-width: var(--wide);
+      margin: 0 auto 48px;
+      padding: 0 24px;
+      color: var(--ink-muted);
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 980px) {
+      header.hero,
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      nav.toc {
+        position: static;
+      }
+    }
+
+    @media (max-width: 720px) {
+      header.hero,
+      .layout {
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+
+      section {
+        padding: 20px;
+      }
+
+      .metric-grid,
+      .bar-row {
+        grid-template-columns: 1fr;
+      }
+
+      table,
+      thead,
+      tbody,
+      tr,
+      th,
+      td {
+        display: block;
+      }
+
+      thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+      }
+
+      tr {
+        margin: 0 0 12px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        overflow: hidden;
+      }
+
+      td {
+        border: 0;
+        border-top: 1px solid var(--line);
+      }
+
+      td:first-child {
+        border-top: 0;
+      }
+
+      td::before {
+        content: attr(data-label);
+        display: block;
+        margin-bottom: 4px;
+        color: var(--brand-deep);
+        font-size: 0.78rem;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+
+      dl {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media print {
+      body {
+        background: #ffffff;
+      }
+
+      nav.toc,
+      .hero-panel {
+        box-shadow: none;
+      }
+
+      section {
+        break-inside: avoid;
+        box-shadow: none;
+      }
+
+      a {
+        color: #000000;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div>
+      <p class="eyebrow">Guia independente de contexto SOTA</p>
+      <h1>Contexto e compactação em orquestrações de IA</h1>
+      <p class="subtitle">Uma estratégia prática para definir um teto operacional <strong>X</strong>, dividir o input em fatias com políticas diferentes, compactar sem quebrar protocolo, persistir snapshots cumulativos e provar que o contexto está sob controle.</p>
+    </div>
+    <aside class="hero-panel" aria-label="Resumo operacional">
+      <h2>Para ler em 90 segundos</h2>
+      <div class="metric-grid">
+        <div class="metric"><strong>X</strong> teto operacional abaixo da janela do provedor</div>
+        <div class="metric"><strong>3+ fatias</strong> kernel, conversa, tools/RAG, recall e assets</div>
+        <div class="metric"><strong>W steady</strong> compactação que libera espaço real</div>
+        <div class="metric"><strong>Ledger</strong> estado próprio, auditável, sem depender do provedor</div>
+        <div class="metric"><strong>Snapshot</strong> compaction event cumulativo, sem apagar originais</div>
+      </div>
+    </aside>
+  </header>
+
+  <div class="layout">
+    <nav class="toc" aria-label="Sumário">
+      <h2>Sumário</h2>
+      <ol>
+        <li><a href="#orientacao">Orientação</a></li>
+        <li><a href="#modelo-mental">Modelo mental</a></li>
+        <li><a href="#definir-teto">Definir teto X</a></li>
+        <li><a href="#subdividir-x">Subdividir X</a></li>
+        <li><a href="#topologia">Topologia de sessão</a></li>
+        <li><a href="#escada">Escada de compactação</a></li>
+        <li><a href="#compactacao-servidor">Compactação server-side (OpenAI)</a></li>
+        <li><a href="#compactacao-servidor-anthropic">Compactação server-side (Anthropic)</a></li>
+        <li><a href="#snapshots">Snapshots cumulativos</a></li>
+        <li><a href="#skills">Skills antigas</a></li>
+        <li><a href="#tools-rag">Tool results e RAG</a></li>
+        <li><a href="#anexos">Anexos e session retrieval</a></li>
+        <li><a href="#transcript-recall">Transcript recall</a></li>
+        <li><a href="#model-call-micro">Chamadas ao modelo e microconversas</a></li>
+        <li><a href="#privacidade">Privacidade e ZDR</a></li>
+        <li><a href="#observabilidade">Observabilidade</a></li>
+        <li><a href="#admin-parametros">Admin parametrizável</a></li>
+        <li><a href="#playbooks">Playbooks</a></li>
+        <li><a href="#achados">Riscos comuns</a></li>
+        <li><a href="#glossario">Glossário</a></li>
+      </ol>
+    </nav>
+
+    <main>
+      <article>
+        <section id="orientacao" data-section="orientation">
+          <h2>0. Orientação</h2>
+          <p class="tldr" data-fact="este guia e prescritivo o suficiente para orientar implementacao, mas nao e uma lei universal de contexto">Use este guia como um mapa de decisão, não como uma tabela imutável. Os números são pontos de partida; a verdade final vem de domínio, latência, custo, risco, testes e telemetria.</p>
+          <ul class="keyfacts" aria-label="Fatos chave de orientação">
+            <li data-fact="uma IA pode extrair os principais fatos via atributos data-fact, listas keyfacts e glossario">Para agentes de IA: procure <code>data-fact</code>, blocos <code>keyfacts</code> e o glossário final.</li>
+            <li data-fact="o guia separa estrategia geral de exemplos e riscos comuns">As seções de estratégia são universais; exemplos numéricos e riscos comuns são apenas guias de calibração.</li>
+            <li data-fact="o objetivo e manter qualidade funcional sem depender de janela maxima do provedor">A meta é qualidade sob restrição, não usar a maior janela disponível por reflexo.</li>
+            <li data-fact="compactacao reduz payload mas nao apaga originais completos">Compactação reduz o payload da próxima chamada; originais completos continuam em ledger/storage para replay, auditoria e retrieval.</li>
+          </ul>
+          <div class="callout evidence" data-fact="validacao funcional vale mais que volume de tokens">
+            <strong>Evidência</strong>
+            Em orquestrações sérias, confiança vem de comportamento validado, não de jogar todo o histórico no prompt. O contexto deve ser montado, medido e auditado como qualquer outro recurso crítico.
+          </div>
+        </section>
+
+        <section id="modelo-mental" data-section="mental-model">
+          <h2>1. Modelo mental: teto X e fatias</h2>
+          <p class="tldr" data-fact="contexto de orquestracao deve ser tratado como envelope orcado por fatias e nao como transcript infinito">Pense no contexto como um envelope orçado. O envelope tem teto <strong>X</strong>; dentro dele, cada fatia tem função, prioridade, política de compactação e telemetria própria.</p>
+          <p>O erro mais comum é tratar contexto como uma lista linear de mensagens. Para uma orquestração real, o prompt de entrada é uma montagem de camadas: instruções e skills, histórico conversacional, tool results, RAG, memórias, planos, scratchpad e reservas de saída.</p>
+
+          <div class="slice-bars" aria-label="Exemplos visuais de fatias de contexto">
+            <div class="bar-row">
+              <div class="bar-label">balanced</div>
+              <div class="bar" role="img" aria-label="balanced: 15 por cento system, 50 por cento conversa, 35 por cento tools">
+                <span class="sys" style="flex: 15">system 15%</span>
+                <span class="conv" style="flex: 50">conversa 50%</span>
+                <span class="tool" style="flex: 35">tools 35%</span>
+              </div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label">tool_heavy</div>
+              <div class="bar" role="img" aria-label="tool heavy: 12 por cento system, 38 por cento conversa, 50 por cento tools">
+                <span class="sys" style="flex: 12">system 12%</span>
+                <span class="conv" style="flex: 38">conversa 38%</span>
+                <span class="tool" style="flex: 50">tools 50%</span>
+              </div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label">long_horizon</div>
+              <div class="bar" role="img" aria-label="long horizon: 10 por cento system, 60 por cento conversa, 30 por cento tools">
+                <span class="sys" style="flex: 10">system 10%</span>
+                <span class="conv" style="flex: 60">conversa 60%</span>
+                <span class="tool" style="flex: 30">tools 30%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="callout invariant" data-fact="o ledger canonico do sistema deve ser a fonte de verdade e o payload de provedor deve ser apenas uma projecao">
+            <strong>Invariante</strong>
+            O ledger próprio da aplicação é a fonte de verdade. Payloads de provedor, caches e continuation handles são projeções temporárias, nunca o estado durável da conversa.
+          </div>
+        </section>
+
+        <section id="definir-teto" data-section="operational-ceiling">
+          <h2>2. Definir o teto X</h2>
+          <p class="tldr" data-fact="teto operacional X e menor que a janela do modelo e deve reservar saida ferramentas e margem de seguranca">Seu teto <strong>X</strong> não é a janela do modelo. É o limite operacional que você aceita usar depois de reservar saída, tool calls, RAG, margem de segurança, custo e latência.</p>
+          <pre><code>hard_input_budget = min(
+  teto_produto_ou_tier,
+  janela_modelo_segura,
+  teto_de_custo_e_latencia
+) - reserve_output - safety_margin
+
+W_steady = hard_input_budget * utilization_target
+soft = hard_input_budget * 0.70..0.75
+compact = hard_input_budget * 0.80..0.85
+hard = hard_input_budget * 0.90..0.92
+emergency = hard_input_budget * 0.95</code></pre>
+          <p>Projetos diferentes podem escolher fatores diferentes. Uma sessão clínica de alto risco, uma geração de relatório com RAG pesado e uma conversa de ajuda rápida não deveriam disputar a mesma proporção de contexto.</p>
+          <p><code>reserve_output</code> e <code>safety_margin</code> são reservas subtraídas antes do input: não são fatias compactáveis. A compactação opera sobre as fatias de input e só é bem-sucedida quando volta para <code>W_steady</code> com margem suficiente para continuar.</p>
+
+          <table>
+            <caption>Componentes que devem ser subtraídos antes de confiar em X</caption>
+            <thead>
+              <tr>
+                <th>Componente</th>
+                <th>Pergunta de decisão</th>
+                <th>Boa prática</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr data-fact="reserva de saida evita que a resposta final concorra com o contexto de entrada">
+                <td data-label="Componente"><code>reserva_saida</code></td>
+                <td data-label="Pergunta">Qual é o pior caso de resposta final ou raciocínio pago?</td>
+                <td data-label="Boa prática">Reserve explicitamente; não confie em default do SDK.</td>
+              </tr>
+              <tr data-fact="tool calls pendentes precisam de reserva por chamada para nao esmagar a resposta">
+                <td data-label="Componente"><code>reserva_tools</code></td>
+                <td data-label="Pergunta">Quantos resultados de function podem voltar antes da próxima resposta?</td>
+                <td data-label="Boa prática">Reserve por chamada e compacte resultados grandes como digest mais ponteiro.</td>
+              </tr>
+              <tr data-fact="RAG precisa de budget proprio e nao deve roubar silenciosamente o historico conversacional">
+                <td data-label="Componente"><code>reserva_rag</code></td>
+                <td data-label="Pergunta">Quantos chunks e citações entram no pior caso?</td>
+                <td data-label="Boa prática">Use cap por lane e reduza top-k antes de truncar invariantes.</td>
+              </tr>
+              <tr data-fact="latencia e custo sao restricoes de contexto tao reais quanto janela fisica do modelo">
+                <td data-label="Componente"><code>SLO/custo</code></td>
+                <td data-label="Pergunta">Quanto contexto ainda respeita TTFT, resposta completa e custo?</td>
+                <td data-label="Boa prática">Use telemetria real para reduzir teto quando o modelo permite mais do que o produto aguenta.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="callout tip" data-fact="contar mensagens nao substitui contar tokens por fatia">
+            <strong>Pegadinha</strong>
+            Contar turnos engana. Uma única resposta de ferramenta, um PDF ou uma matriz de evidência pode consumir mais tokens que dezenas de mensagens curtas.
+          </div>
+
+          <details open>
+            <summary>Exemplos com janela total de 258k tokens</summary>
+            <div>
+              <p>Os números abaixo são exemplos de calibração, não contratos universais. O teto máximo varia por modelo, provedor, tier, latência, custo, tipo de sessão e data da documentação oficial.</p>
+              <table>
+                <caption>Exemplos para uma janela física de 258k</caption>
+                <thead>
+                  <tr>
+                    <th>Perfil</th>
+                    <th>Cálculo</th>
+                    <th>W steady</th>
+                    <th>Uso típico</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr data-fact="exemplo 258k single session usa hard input 232k e w steady perto de 139k">
+                    <td data-label="Perfil">Sessão única longa</td>
+                    <td data-label="Cálculo">258k - 16k saída - 10k margem = 232k input hard.</td>
+                    <td data-label="W steady">~60% do input hard = 139k. Compactar em ~80% = 186k e voltar para <=139k.</td>
+                    <td data-label="Uso">Kernel/skills 32k, diálogo recente 60k, resumo cumulativo 18k, execução/RAG 18k, recall/assets 11k.</td>
+                  </tr>
+                  <tr data-fact="exemplo 258k multi sessao mantem parent mais leve e child ledgers fora do payload parent">
+                    <td data-label="Perfil">Multi-sessão / orquestração com ramos</td>
+                    <td data-label="Cálculo">Mesmo input hard de 232k, mas o parent deve ficar mais leve porque child ledgers e sessões antigas são retrieval-backed.</td>
+                    <td data-label="W steady">~50% a 56% do input hard = 116k a 130k. Burst de evidência pode ir além, mas deve voltar ao steady.</td>
+                    <td data-label="Uso">Kernel/skills 34k, sessão ativa 35k, memória/resumo 12k, execução/RAG 22k, recall/evidence 13k; ramos internos ficam em ledgers próprios.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </section>
+
+        <section id="subdividir-x" data-section="slice-budgeting">
+          <h2>3. Subdividir X em estratégias diferentes</h2>
+          <p class="tldr" data-fact="cada fatia do contexto deve ter conteudo permitido politica de compactacao prioridade e metrica propria">A subdivisão de X evita que uma parte barulhenta do input destrua uma parte crítica. Cada fatia precisa saber o que aceita, quando cede e como prova que cedeu corretamente.</p>
+          <p>Uma forma prática é separar <code>A_kernel</code> estável, <code>A_dialogue</code> volátil, <code>B_execution</code> para tools/RAG/assets/provedor/child packets, e <code>Recall</code> para evidências recuperadas sob demanda. RAG, assets e tools também precisam de sub-budgets para uma lane não esmagar as outras.</p>
+
+          <table>
+            <caption>Matriz independente de projeto para orçamento por fatias</caption>
+            <thead>
+              <tr>
+                <th>Fatia</th>
+                <th>Conteúdo típico</th>
+                <th>Razão inicial</th>
+                <th>Política de compactação</th>
+                <th>Risco principal</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr data-fact="system injected contem prompt guardrails skills e identidade operacional">
+                <td data-label="Fatia"><code>system_injected</code></td>
+                <td data-label="Conteúdo">System prompt, guardrails, skills ativas, contrato de segurança, estilo de resposta.</td>
+                <td data-label="Razão">10% a 20%</td>
+                <td data-label="Política">Cede por remoção inteira de skill obsoleta ou reload controlado; não por corte parcial.</td>
+                <td data-label="Risco">Mutar skill ou instrução crítica sem perceber.</td>
+              </tr>
+              <tr data-fact="conversation pairs preserva pares recentes user assistant e pode resumir pares antigos">
+                <td data-label="Fatia"><code>conversation_pairs</code></td>
+                <td data-label="Conteúdo">Pares user/assistant, decisões, preferências, estado visível ao usuário.</td>
+                <td data-label="Razão">33% a 60%</td>
+                <td data-label="Política">Preservar recentes, resumir antigos com epoch/span e invariantes.</td>
+                <td data-label="Risco">Resumo inventar ou apagar restrição de negócio.</td>
+              </tr>
+              <tr data-fact="tools rag contem resultados de function chunks evidencias e citacoes e deve ser volátil">
+                <td data-label="Fatia"><code>tools_rag</code></td>
+                <td data-label="Conteúdo">Function results, chamadas MCP, chunks RAG, citações, evidências temporárias.</td>
+                <td data-label="Razão">22% a 55%</td>
+                <td data-label="Política">TTL, digest, truncamento explícito, ponteiro para artefato bruto durável e sub-budgets por lane.</td>
+                <td data-label="Risco">Tool result gigante expulsar prompt ou histórico.</td>
+              </tr>
+              <tr data-fact="recall evidence injeta apenas evidencias recuperadas de pares compactados e dados historicos">
+                <td data-label="Fatia"><code>recall_evidence</code></td>
+                <td data-label="Conteúdo">Pares compactados recuperados, anexos históricos relevantes, offsets, refs e trechos seguros.</td>
+                <td data-label="Razão">5% a 15%</td>
+                <td data-label="Política">Buscar sob demanda, deduplicar contra o payload atual e limitar por escopo.</td>
+                <td data-label="Risco">Reintroduzir contexto duplicado, fora de escopo ou com metadata bruta de provedor.</td>
+              </tr>
+              <tr data-fact="memoria e scratchpad devem ser separados do transcript e ter budget limitado">
+                <td data-label="Fatia"><code>memory/scratchpad</code></td>
+                <td data-label="Conteúdo">Resumos sintéticos, planos ativos, notas de continuidade, scratchpad seguro.</td>
+                <td data-label="Razão">0% a 15%</td>
+                <td data-label="Política">Sintético, versionado, pequeno, recuperável sob demanda.</td>
+                <td data-label="Risco">Confundir resumo com fonte de verdade.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <details>
+            <summary>Perfis de partida</summary>
+            <div>
+              <ul>
+                <li><code>balanced</code>: quando a conversa, tools e prompt têm peso parecido.</li>
+                <li><code>tool_heavy</code>: quando functions ou MCPs devolvem muito contexto e precisam de budget maior.</li>
+                <li><code>rag_heavy</code>: quando qualidade depende de fontes e citações.</li>
+                <li><code>long_horizon</code>: quando uma sessão longa precisa preservar continuidade conversacional.</li>
+                <li><code>high_stakes</code>: quando instruções, segurança e invariantes precisam de piso maior.</li>
+              </ul>
+            </div>
+          </details>
+
+          <div class="callout invariant" data-fact="skills e system prompt nao devem ser tratados como texto de baixa prioridade">
+            <strong>Invariante</strong>
+            O bloco de sistema não é só texto antigo no topo. Ele carrega contrato operacional. Se precisar economizar tokens, prefira diminuir RAG, resumir histórico antigo ou evictar uma skill inteira com rastreabilidade.
+          </div>
+
+          <div class="callout" data-fact="as fatias deste guia mapeiam as zonas canonicas do guia de estado e contexto">
+            <strong>Mapa para as zonas canônicas.</strong> Estas fatias mapeiam às
+            <a href="guia_estado_contexto_memoria.html#zonas-canonicas">zonas canônicas</a> do contrato de
+            estado: <code>system_injected</code> → <code>authority_context</code>;
+            <code>conversation_pairs</code> → <code>conversation_context</code>; <code>tools_rag</code>
+            desdobra-se em <code>turn_working_context</code> (loop aberto do turno) e
+            <code>evidence_context</code> (RAG/web/fontes); <code>recall_evidence</code> →
+            <code>recall_context</code>. Em fluxos agentic, duas fatias merecem orçamento próprio:
+          </div>
+          <table>
+            <caption>Fatias adicionais para fluxos agentic</caption>
+            <thead>
+              <tr><th>Fatia</th><th>Conteúdo típico</th><th>Razão inicial</th><th>Política de compactação</th><th>Risco principal</th></tr>
+            </thead>
+            <tbody>
+              <tr data-fact="turn working e a fatia volatil do loop atual e expira quando o loop fecha">
+                <td data-label="Fatia"><code>turn_working</code></td>
+                <td data-label="Conteúdo">Prompt atual, arquivos inline do turno, tool calls abertas e seus results, carriers exigidos pelo loop.</td>
+                <td data-label="Razão">12% a 30% (volátil)</td>
+                <td data-label="Política">TTL curtíssimo; prioriza fechar o tool loop; expira ao produzir a resposta final.</td>
+                <td data-label="Risco">Planilha/PDF do turno expulsar histórico ou L2 ativo quando não tem fatia própria.</td>
+              </tr>
+              <tr data-fact="hot followup carrega dado transitorio por um turno e entra em role user tagueado nao no system">
+                <td data-label="Fatia"><code>hot_followup</code></td>
+                <td data-label="Conteúdo">Return packet de agent-as-tool, L3 pequeno ou evidência hot que precisa sobreviver a 1 follow-up.</td>
+                <td data-label="Razão">0% a 8% (TTL 1 turno)</td>
+                <td data-label="Política">TTL default 1 turno; depois digest/ref/reload. Renderizado em <code>role=user</code> tagueado, <strong>não</strong> no system.</td>
+                <td data-label="Risco">Virar memória permanente, poluir autoridade ou carregar injeção de fonte externa.</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="callout" data-fact="hot followup entra em role user tagueado e o invariante de colocacao esta no guia de estado">
+            <strong>Onde o <code>hot_followup</code> entra no wire.</strong> Depois que o loop fecha, o dado
+            transitório <strong>não</strong> volta como <code>tool_result</code> (não há tool call aberta)
+            nem no <code>system</code> (quebraria o cache do prefixo e misturaria dado com autoridade). Ele
+            entra como bloco tagueado no próximo turno <code>role=user</code>, com <code>ttl_turns=1</code>,
+            <code>source_item_ids</code> e <code>trust_tier</code> — detalhe completo no
+            <a href="guia_estado_contexto_memoria.html#zonas-canonicas">invariante de colocação</a>.
+          </div>
+        </section>
+
+        <section id="topologia" data-section="session-topology">
+          <h2>4. Topologia de sessão</h2>
+          <p class="tldr" data-fact="sessao unica longa multi sessao e hibrida exigem politicas diferentes de budget reload de skills e continuidade">Uma sessão única longa e uma orquestração multi-sessão não são o mesmo problema. Elas divergem em teto, persistência de skills, resumo, handoff e tolerância a esquecimento.</p>
+
+          <table>
+            <caption>Estratégia por topologia de sessão</caption>
+            <thead>
+              <tr>
+                <th>Modo</th>
+                <th>Quando usar</th>
+                <th>Política de skills antigas</th>
+                <th>Compactação dominante</th>
+                <th>Risco de projeto</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr data-fact="single session deve ter teto menor e evictar skills antigas episodicas quando nao presentes">
+                <td data-label="Modo"><code>single_session</code></td>
+                <td data-label="Quando">Atendimento focado, tarefa curta, fluxo com começo e fim claros.</td>
+                <td data-label="Skills">Skills ausentes podem ser <code>evicted</code>; recarregue corpo quando necessário.</td>
+                <td data-label="Compactação">Preservar últimos turnos, resumir antigos e encerrar com handoff se crescer demais.</td>
+                <td data-label="Risco">A sessão ficar longa demais sem mudar de estratégia.</td>
+              </tr>
+              <tr data-fact="multi session precisa de estado persistente e skill stale reload required em vez de reinjetar corpo bruto">
+                <td data-label="Modo"><code>multi_session</code></td>
+                <td data-label="Quando">Painéis, especialistas, agentes filhos, workflows longos e paralelos.</td>
+                <td data-label="Skills">Skills ausentes viram <code>stale/reload_required</code>; corpo não fica persistido.</td>
+                <td data-label="Compactação">Context packets, summaries, ledger e reidratação sob demanda.</td>
+                <td data-label="Risco">Misturar estado de agente filho com transcript público.</td>
+              </tr>
+              <tr data-fact="hybrid default mistura continuidade longa com sub sessoes ad hoc controladas">
+                <td data-label="Modo"><code>hybrid_default</code></td>
+                <td data-label="Quando">Produto precisa de continuidade, mas cria janelas episódicas para tarefas.</td>
+                <td data-label="Skills">Persistentes no tronco; episódicas nos ramos.</td>
+                <td data-label="Compactação">Resumo do tronco, handoff curto para ramos, retorno tipado.</td>
+                <td data-label="Risco">Subsessão virar fonte de verdade sem merge auditável.</td>
+              </tr>
+              <tr data-fact="hybrid ad hoc e episodico e deve ter budget curto e descarte limpo">
+                <td data-label="Modo"><code>hybrid_adhoc</code></td>
+                <td data-label="Quando">Consulta pontual, análise lateral, ferramenta isolada.</td>
+                <td data-label="Skills">Evict ao fim do episódio; guarde só referência segura se necessário.</td>
+                <td data-label="Compactação">Pouca ou nenhuma; descarte e resuma saída final.</td>
+                <td data-label="Risco">Carregar contexto demais para uma tarefa lateral.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="callout tip" data-fact="single session deve custar menos contexto que multi session por padrao">
+            <strong>Pegadinha</strong>
+            Se o modo leve tem teto maior que o modo pesado, a nomenclatura virou armadilha operacional. A topologia precisa bater com custo e risco esperados.
+          </div>
+        </section>
+
+        <section id="escada" data-section="compaction-ladder">
+          <h2>5. Escada de compactação</h2>
+          <p class="tldr" data-fact="compactacao responsavel acontece por estagios auditaveis e preserva protocolo antes de economizar tokens">Compactação boa não corta do começo nem economiza só cosmeticamente. Ela avança por estágios e deve recuperar folga suficiente para continuar a sessão.</p>
+
+          <div class="callout" data-fact="cada degrau da escada impacta o prompt cache de forma diferente e snapshot e o degrau canonico desenhado para mover o breakpoint atomically">
+            <strong>Compactação e prompt cache: cada degrau abaixo tem impacto diferente no prefix-cache.</strong>
+            Como cache depende de prefixo estável ou objeto explícito de cache (OpenAI: exact prefix match; Anthropic: prefix hash por breakpoint via <code>cache_control</code>, até 4 breakpoints; Gemini <code>generateContent</code>: <code>cachedContent</code> explícito; Gemini Interactions: implicit prefix caching default em Gemini 2.5+ (inclui séries 3.x; não causalmente acoplado a <code>previous_interaction_id</code>, mas ambos beneficiam prefixo estável)), qualquer operação que <em>modifique</em> conteúdo antes do breakpoint atual <strong>invalida o cache</strong>; operações que <em>cortam pela cauda</em> ou <em>movem o breakpoint atomically</em> preservam.
+            Resumo:
+            <code>hygiene</code> preserva cache só quando atua fora da projeção cacheada ou na cauda pós-breakpoint; qualquer dedupe/normalização em conteúdo <code>&lt;= breakpoint</code> invalida o prefixo;
+            <code>trim_old_pairs</code> preserva cache apenas quando remove cauda pós-breakpoint; se remove pares antigos dentro do prefixo cacheado, cria novo prefixo e paga nova cache write no próximo turno;
+            <code>summarize_old</code> invalida o prefixo quando substitui material <code>&lt;= breakpoint</code>; pode preservar cache se o resumo for novo bloco pós-breakpoint e o prefixo anterior permanecer byte-idêntico;
+            <code>snapshot</code> (§6) é o <strong>degrau canônico desta estratégia desenhado para mover o breakpoint atomically</strong>: commit do snapshot reposiciona o início do prefixo cacheável, então o turno seguinte paga uma cache write e os subsequentes leem.
+            <br><br>
+            <strong>Implementação:</strong> trate <code>cache_breakpoint_id</code>/<code>projection_version</code> como parte do contrato de projeção; qualquer compaction que altere itens <code>&lt;= cache_breakpoint_id</code> deve emitir novo <code>projection_version</code> e esperar uma cache write antes do próximo cache read.
+            Para detalhes de hit rate + <code>prompt_cache_key</code> (OpenAI) + <code>cache_control</code> (Anthropic) + <code>cachedContent</code> (Gemini <code>generateContent</code>) por provider, veja
+            <a href="guia_estado_contexto_memoria.html#zonas-canonicas">§8b — Zonas canônicas</a> do guia de Estado (callout "Cache-hit em projeção manual").
+            <span class="pill partial">derived</span> mapeamento operação→cache é inferência consistente; o ganho exato depende do provider + tamanho do prefix.
+          </div>
+
+          <table>
+            <caption>Escada operacional de compactação</caption>
+            <thead>
+              <tr>
+                <th>Estágio</th>
+                <th>Gatilho típico</th>
+                <th>O que faz</th>
+                <th>O que não pode quebrar</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr data-fact="higiene remove duplicatas e mensagens obsoletas sem alterar fatos">
+                <td data-label="Estágio"><code>hygiene</code></td>
+                <td data-label="Gatilho">Uso subindo, sem pressão crítica.</td>
+                <td data-label="Ação">Dedup, remover ruído, reduzir citações repetidas.</td>
+                <td data-label="Proteção">Nada de alterar pares tool-call/tool-result.</td>
+              </tr>
+              <tr data-fact="trim old pairs remove pares antigos de baixa prioridade e preserva recentes">
+                <td data-label="Estágio"><code>trim_old_pairs</code></td>
+                <td data-label="Gatilho">Histórico conversacional excede sua fatia.</td>
+                <td data-label="Ação">Mantém recentes e remove pares antigos não críticos.</td>
+                <td data-label="Proteção">Invariantes, decisões, preferências e estado de erro.</td>
+              </tr>
+              <tr data-fact="summarize old cria resumo sintetico com proveniencia e sem substituir ledger bruto">
+                <td data-label="Estágio"><code>summarize_old</code></td>
+                <td data-label="Gatilho">Continuidade importa, mas pares antigos não cabem.</td>
+                <td data-label="Ação">Cria resumo sintético com span, data e limites.</td>
+                <td data-label="Proteção">Não inventar fato nem apagar red-line.</td>
+              </tr>
+              <tr data-fact="compress tools transforma resultados grandes em digest com ponteiro para bruto duravel">
+                <td data-label="Estágio"><code>compress_tools</code></td>
+                <td data-label="Gatilho">Tools/RAG domina o envelope.</td>
+                <td data-label="Ação">Digest, top-k menor, truncamento marcado, artifact pointer.</td>
+                <td data-label="Proteção">Paridade tool_call/tool_result e citações usadas.</td>
+              </tr>
+              <tr data-fact="emergency truncate preserva apenas seguranca sistema recentes e estado minimo">
+                <td data-label="Estágio"><code>emergency_truncate</code></td>
+                <td data-label="Gatilho">Próximo request falharia por tamanho.</td>
+                <td data-label="Ação">Tenta janela/tier maior ou semantic handoff com digest portátil e assets reanexáveis antes de reduzir ao mínimo.</td>
+                <td data-label="Proteção">Não prosseguir fingindo que contexto foi preservado.</td>
+              </tr>
+              <tr data-fact="critical safety only deve falhar fechado se nao for possivel preservar seguranca">
+                <td data-label="Estágio"><code>critical_safety_only</code></td>
+                <td data-label="Gatilho">Risco de segurança, privacidade ou protocolo.</td>
+                <td data-label="Ação">Reduz ao mínimo e pede reinício ou reidratação.</td>
+                <td data-label="Proteção">Fail-closed, com mensagem honesta.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="callout invariant" data-fact="compactacao deve preservar pares tool call tool result e carriers nativos de provedor">
+            <strong>Invariante</strong>
+            Antes de economizar token, preserve protocolo: pares tool-call/tool-result, janelas com tool call aberta, reasoning/thinking selado, assinaturas nativas e invariantes de segurança.
+          </div>
+
+          <div class="callout evidence" data-fact="primeira compactacao deve voltar a w steady e nao apenas reduzir poucos tokens">
+            <strong>Gate de sucesso</strong>
+            A primeira compactação precisa voltar a <code>W_steady</code> com margem. Um piso como 15% de recuperação pode ser útil como diagnóstico, mas o contrato correto é liberar espaço suficiente para a conversa continuar sem recompactar a cada turno.
+          </div>
+
+          <div class="callout" data-fact="degraus finos para fluxos agentic removem L3 expirado hot followup filtram L1 e evictam L2 por ultimo">
+            <strong>Degraus finos para fluxos agentic.</strong> Com skills e subagentes, a escada ganha
+            degraus que não aparecem na tabela base. Dois princípios robustos governam a ordem:
+            <strong>(1) descartar o transitório/expirado de baixo valor antes de tocar em continuidade</strong>
+            e <strong>(2) tratar autoridade por último</strong>. Encaixe natural nos estágios:
+            <ol>
+              <li>junto do <code>hygiene</code>: remover L3 expirado e <code>hot_followup</code> vencido;</li>
+              <li><code>trim_old_pairs</code> + <code>summarize_old</code>: compactar pares antigos não-críticos;</li>
+              <li><code>compress_tools</code>: digest de tool/RAG/evidence antigos <em>e</em> reduzir arquivos inline a páginas/chunks relevantes;</li>
+              <li>filtrar o catálogo L1 (omitir/filtrar, sem resumir instrução crítica);</li>
+              <li>evictar L2 não-pinned como unidade e marcar <code>stale/reload_required</code> — <strong>nunca</strong> resumo parcial de L2 ativo;</li>
+              <li><code>emergency_truncate</code> / trocar tier-modelo; por fim <code>critical_safety_only</code> / fail-closed.</li>
+            </ol>
+            A ordem relativa entre reduzir tools (passo 3) e compactar conversa (passo 2) é
+            <strong>parametrizável por topologia</strong>: perfis <em>tool_heavy</em> podem reduzir evidência
+            antes dos pares; sessões de continuidade longa preservam mais tools e compactam conversa
+            primeiro. O ciclo de vida de L2/L3 está em <a href="guia_skills.html">Agent Skills</a>.
+          </div>
+        </section>
+
+        <section id="compactacao-servidor" data-section="server-side-compaction">
+          <h2>5A. Compactação server-side (OpenAI)</h2>
+          <p class="tldr" data-fact="openai oferece compactacao automatica no servidor via context_management com compact_threshold e compactacao manual via responses compact">A escada da <a href="#escada">seção 5</a> é a estratégia que você implementa no seu orquestrador. A OpenAI também expõe compactação <strong>nativa do provedor</strong> na Responses API, em dois modos: automática no servidor (<code>context_management</code> + <code>compact_threshold</code>) e manual sob demanda (<code>client.responses.compact()</code>). É o par funcional do <a href="#compactacao-servidor-anthropic">compaction da Anthropic (§5B)</a> — mesma ideia de "resumir em vez de cortar" no servidor, com mecânica e payload diferentes.</p>
+
+          <h3>Modo 1 — automático, no <code>responses.create()</code></h3>
+          <p>Habilite <code>context_management</code> com um <code>compact_threshold</code> (contagem de tokens renderizados) direto na chamada <code>responses.create()</code>. Quando a contagem de tokens renderizados cruza o limiar, o servidor executa a compactação sozinho, emite um item de compactação criptografado e opaco <strong>no mesmo stream</strong> (não é resumo legível por humano) e poda o contexto antes de continuar a inferência. Encadeando com <code>previous_response_id</code>, você continua enviando <strong>apenas a mensagem nova do usuário</strong> a cada turno — não precisa reenviar o histórico nem chamar nenhum endpoint separado.</p>
+
+          <pre><code>conversation = [
+    {"type": "message", "role": "user", "content": "Let's begin a long coding task."}
+]
+
+while keep_going:
+    response = client.responses.create(
+        model="gpt-5.3-codex",
+        input=conversation,
+        store=False,
+        context_management=[{"type": "compaction", "compact_threshold": 200000}],
+    )
+
+    conversation.extend(response.output)
+    conversation.append({
+        "type": "message",
+        "role": "user",
+        "content": get_next_user_input(),
+    })</code></pre>
+
+          <div class="callout" data-fact="context_management e uma lista com objeto type compaction e compact_threshold inteiro em tokens renderizados">
+            <strong>Forma exata do parâmetro</strong>
+            <code>context_management</code> é uma <em>lista</em> contendo um objeto <code>{"type": "compaction", "compact_threshold": N}</code>, onde <code>N</code> é um inteiro de tokens renderizados (no exemplo oficial, <code>200000</code>). É passado direto em <code>client.responses.create()</code> / <code>POST /responses</code>, junto com <code>store=False</code> para manter o fluxo compatível com ZDR.
+          </div>
+
+          <table>
+            <caption>Encadeamento após compactação automática no servidor</caption>
+            <thead>
+              <tr><th>Estratégia de encadeamento</th><th>O que enviar no próximo turno</th><th>Cuidado</th></tr>
+            </thead>
+            <tbody>
+              <tr data-fact="encadeamento por previous_response_id so envia a mensagem nova do usuario e nao faz pruning manual apos compactacao automatica">
+                <td data-label="Estratégia"><code>previous_response_id</code></td>
+                <td data-label="Enviar">Só a mensagem nova do usuário; o ID carrega o resto.</td>
+                <td data-label="Cuidado">Não faça pruning manual do histórico — o servidor já é a fonte de verdade do que foi retido.</td>
+              </tr>
+              <tr data-fact="encadeamento por array de input anexa output normalmente e pode descartar itens antes do ultimo item de compactacao para reduzir latencia">
+                <td data-label="Estratégia">Array de <code>input</code> (stateless)</td>
+                <td data-label="Enviar">Anexe os itens de saída (incluindo os de compactação) ao próximo array, como de costume.</td>
+                <td data-label="Cuidado">Itens anteriores ao último item de compactação podem ser descartados do array para reduzir latência de cauda longa — o item de compactação já carrega o estado necessário para continuar.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3>Modo 2 — manual, <code>client.responses.compact()</code></h3>
+          <p>Quando você mesmo gerencia o array completo de <code>input</code> (mensagens, tools e outros itens), chame <code>client.responses.compact(model=..., input=...)</code> diretamente. O endpoint é <code>POST /responses/compact</code>, é <strong>totalmente stateless e ZDR-friendly</strong>: recebe a janela completa e devolve uma nova janela compactada em <code>compacted.output</code>, que já inclui um item de compactação criptografado carregando o estado e o raciocínio prévio relevante em menos tokens (além de outros itens retidos da janela original — não é só o item de compactação sozinho).</p>
+
+          <pre><code>long_input_items_array = [...]  # janela completa de turnos anteriores
+
+compacted = client.responses.compact(
+    model="gpt-5.6",
+    input=long_input_items_array,
+)
+
+next_input = [
+    *compacted.output,  # usar a saída compactada como está
+    {
+        "type": "message",
+        "role": "user",
+        "content": user_input_message(),
+    },
+]
+
+next_response = client.responses.create(
+    model="gpt-5.6",
+    input=next_input,
+    store=False,  # mantém o fluxo compatível com ZDR
+)</code></pre>
+
+          <div class="callout risk" data-fact="output compactado do responses compact e estado de maquina opaco e nao deve ser editado ou podado manualmente apenas repassado como esta">
+            <strong>Não edite o output compactado</strong>
+            <code>compacted.output</code> não é um resumo legível para revisão humana — é <strong>estado de máquina opaco e criptografado</strong> (item de compactação + itens retidos). Não pode ser podado nem reescrito: a única operação válida é repassá-lo <em>como está</em> para o próximo <code>responses.create()</code>, anexando apenas a nova mensagem do usuário. A janela que você envia ao <code>/responses/compact</code> ainda precisa caber na janela de contexto do modelo.
+          </div>
+
+          <table>
+            <caption>Modo automático vs. modo manual (OpenAI)</caption>
+            <thead>
+              <tr><th>Aspecto</th><th>Automático (<code>context_management</code>)</th><th>Manual (<code>responses.compact()</code>)</th></tr>
+            </thead>
+            <tbody>
+              <tr data-fact="modo automatico dispara compactacao no mesmo stream quando cruza compact_threshold sem chamada separada">
+                <td data-label="Aspecto">Gatilho</td>
+                <td data-label="Automático">Servidor dispara sozinho ao cruzar <code>compact_threshold</code>, embutido no próprio <code>responses.create()</code> e emitido no mesmo stream.</td>
+                <td data-label="Manual">Você decide o momento e chama <code>responses.compact()</code> explicitamente — ex.: após fechar uma fase/milestone.</td>
+              </tr>
+              <tr data-fact="modo automatico encadeia por previous_response_id ou array stateless enquanto modo manual exige voce gerenciar o array completo">
+                <td data-label="Aspecto">Gerenciamento do histórico</td>
+                <td data-label="Automático"><code>previous_response_id</code> (sem pruning manual) ou array stateless (com descarte opcional de itens pré-compactação).</td>
+                <td data-label="Manual">Você já gerencia o array de <code>input</code> completo por conta própria.</td>
+              </tr>
+              <tr data-fact="ambos os modos sao zdr friendly com store false e devolvem item de compactacao opaco criptografado">
+                <td data-label="Aspecto">ZDR</td>
+                <td data-label="Automático">ZDR-friendly com <code>store=False</code>.</td>
+                <td data-label="Manual">Endpoint totalmente stateless e ZDR-friendly por natureza.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="callout tip" data-fact="compactacao server side openai e a versao de provedor da escada e nao substitui fatias proprias nem o ledger canonico do orquestrador">
+            <strong>Onde isso encaixa na estratégia deste guia</strong>
+            A compactação server-side da OpenAI resolve a fatia <em>conversa/tools</em> do jeito do provedor — análoga ao degrau <code>summarize_old</code>/<code>snapshot</code> da <a href="#escada">escada</a> (seção 5), mas decidida e executada pelo servidor, não pelo seu orquestrador. Ela não substitui o <a href="#snapshots">ledger canônico e os snapshots cumulativos</a> (seção 6): o item de compactação é opaco e não serve como registro auditável do que foi preservado ou removido — para isso, continue mantendo seu próprio snapshot com <code>preserved_ids</code>/<code>removed_ids</code>/<code>reclaimed_tokens</code> em paralelo.
+          </div>
+
+          <div class="callout" data-fact="fontes oficiais openai server side compaction guia dedicado deployment checklist e api reference responses compact">
+            <strong>Fontes oficiais</strong>
+            OpenAI — guia dedicado <code>developers.openai.com/api/docs/guides/compaction</code>; <code>developers.openai.com/api/docs/guides/deployment-checklist</code> (seção "Leverage compaction"); referência <code>developers.openai.com/api/docs/api-reference/responses/compact</code>.
+          </div>
+        </section>
+
+        <section id="compactacao-servidor-anthropic" data-section="server-side-compaction-anthropic">
+          <h2>5B. Compactação server-side (Anthropic)</h2>
+          <p class="tldr" data-fact="anthropic oferece compactacao server side beta compact-2026-01-12 via edit compact_20260112 em context_management que resume a conversa num bloco compaction e descarta blocos anteriores">A Anthropic expõe a mesma ideia na Messages API, como um <em>edit</em> de <code>context_management</code>: quando o input cruza um gatilho, o servidor gera um resumo, embute-o num bloco <code>compaction</code> e, nas requisições seguintes, <strong>descarta automaticamente todos os blocos de conteúdo anteriores</strong> a esse bloco, continuando a conversa a partir do resumo. É o par funcional da <a href="#compactacao-servidor">compactação da OpenAI (§5A)</a> — mesma intenção, payload e billing diferentes.</p>
+
+          <div class="callout" data-fact="compactacao anthropic e beta com header compact-2026-01-12 e strategy compact_20260112 note os formatos diferentes hifen no header sem hifen no type">
+            <strong>Header e strategy (atenção ao formato)</strong>
+            Beta header <code>anthropic-beta: compact-2026-01-12</code> (com hífens); a <em>strategy</em> em <code>context_management.edits[]</code> é <code>{"type": "compact_20260112"}</code> (<strong>sem</strong> hífens, como nos demais edits — <code>clear_tool_uses_20250919</code>, <code>clear_thinking_20251015</code>). Verificado na fonte oficial em 2026-07-12.
+          </div>
+
+          <pre><code>import anthropic
+
+client = anthropic.Anthropic()
+
+response = client.beta.messages.create(
+    model="claude-opus-4-8",
+    max_tokens=4096,
+    betas=["compact-2026-01-12"],
+    messages=conversation,               # histórico acumulado
+    context_management={
+        "edits": [
+            {
+                "type": "compact_20260112",
+                "trigger": {"type": "input_tokens", "value": 150000},  # default; mín. 50 000
+                # "instructions": "Preserve nomes de variáveis, decisões técnicas e próximos passos.",
+                # "pause_after_compaction": False,
+            }
+        ]
+    },
+)
+
+# Nas próximas requisições, anexe response ao messages: a API ignora todos os
+# blocos anteriores ao bloco `compaction` e continua a partir do resumo.
+conversation.extend(response.content)</code></pre>
+
+          <table>
+            <caption>Parâmetros de <code>compact_20260112</code></caption>
+            <thead>
+              <tr><th>Parâmetro</th><th>Default</th><th>Descrição</th></tr>
+            </thead>
+            <tbody>
+              <tr data-fact="trigger default input_tokens 150000 e o unico tipo suportado e o value precisa ser no minimo 50000">
+                <td data-label="Parâmetro"><code>trigger</code></td>
+                <td data-label="Default"><code>{"type":"input_tokens","value":150000}</code></td>
+                <td data-label="Descrição"><code>input_tokens</code> é o único tipo suportado; <code>value</code> precisa ser <strong>≥ 50 000</strong> — abaixo disso a API retorna erro.</td>
+              </tr>
+              <tr data-fact="pause_after_compaction default false pausa apos gerar o resumo com stop_reason compaction para voce injetar blocos antes de continuar">
+                <td data-label="Parâmetro"><code>pause_after_compaction</code></td>
+                <td data-label="Default"><code>false</code></td>
+                <td data-label="Descrição">Se <code>true</code>, a API para após gerar o resumo (<code>stop_reason: "compaction"</code>), permitindo injetar blocos (ex.: mensagens recentes a preservar) antes de continuar.</td>
+              </tr>
+              <tr data-fact="instructions substitui completamente o prompt padrao de sumarizacao quando fornecido">
+                <td data-label="Parâmetro"><code>instructions</code></td>
+                <td data-label="Default"><code>null</code></td>
+                <td data-label="Descrição">Prompt de sumarização custom. <strong>Substitui por completo</strong> o prompt padrão (que instrui o modelo a envolver o resumo em <code>&lt;summary&gt;…&lt;/summary&gt;</code>).</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="callout" data-fact="modelos que suportam compactacao anthropic fable5 mythos5 mythos preview opus 4.8 4.7 4.6 sonnet 5 e 4.6">
+            <strong>Modelos suportados</strong>
+            Fable 5, Mythos 5, Mythos Preview, Opus 4.8 / 4.7 / 4.6, Sonnet 5 e Sonnet 4.6 (lista verbatim da doc). ZDR-elegível — os dados enviados por essa feature não são retidos após a resposta.
+          </div>
+
+          <div class="callout risk" data-fact="compactacao anthropic contribui para rate limits e billing e o usage top level nao inclui a iteracao de compactacao some usage.iterations para o total cobrado">
+            <strong>Billing: some <code>usage.iterations</code></strong>
+            A compactação exige um passo extra de sampling que <strong>conta para rate limits e billing</strong> (não é grátis). O <code>input_tokens</code>/<code>output_tokens</code> de topo <em>não</em> incluem a iteração de compactação — cada entrada de <code>usage.iterations[]</code> tem <code>type: "compaction"</code> ou <code>"message"</code>; para o total cobrado, <strong>some todas as entradas</strong>. Reaplicar um bloco <code>compaction</code> já gerado (repassá-lo em turnos seguintes) <em>não</em> re-dispara custo de compactação.
+          </div>
+
+          <div class="callout tip" data-fact="compactacao anthropic e a versao de provedor da escada assim como a openai e nao substitui o ledger canonico">
+            <strong>Onde isso encaixa</strong>
+            Como a §5A da OpenAI, a compactação da Anthropic resolve a fatia <em>conversa</em> no servidor — análoga ao degrau <code>summarize_old</code>/<code>snapshot</code> da <a href="#escada">escada</a> (seção 5). Diferença material vs. OpenAI: aqui o bloco <code>compaction</code> traz um resumo em <code>&lt;summary&gt;</code> (não é opaco como o item criptografado da OpenAI), mas ainda <strong>não</strong> substitui o <a href="#snapshots">ledger canônico</a> (seção 6) — mantenha seu snapshot auditável em paralelo. O gatilho é checado no início de cada iteração de sampling, então pode disparar mais de uma vez por request (ex.: com server tools iterando).
+          </div>
+
+          <div class="callout" data-fact="fontes oficiais anthropic compaction guia dedicado platform claude com build with claude compaction">
+            <strong>Fontes oficiais</strong>
+            Anthropic — guia dedicado <code>platform.claude.com/docs/en/build-with-claude/compaction</code>; disponível também em Amazon Bedrock, Google Cloud (Vertex AI) e Microsoft Foundry.
+          </div>
+        </section>
+
+        <section id="snapshots" data-section="compaction-snapshots">
+          <h2>6. Snapshots cumulativos e ledger original</h2>
+          <p class="tldr" data-fact="compactacao reduz payload mas originais completos continuam no ledger e cada compactacao gera snapshot cumulativo">Compactar é criar uma visão menor para a próxima chamada. O original completo continua no ledger/storage; a compactação vira um snapshot cumulativo, versionado e auditável.</p>
+
+          <table>
+            <caption>Campos mínimos de um snapshot de compactação</caption>
+            <thead>
+              <tr>
+                <th>Campo</th>
+                <th>Finalidade</th>
+                <th>Regra</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr data-fact="compaction snapshot deve registrar policy version e trigger stage">
+                <td data-label="Campo"><code>policy_version</code> / <code>trigger_stage</code></td>
+                <td data-label="Finalidade">Explica por que compactou e qual política decidiu.</td>
+                <td data-label="Regra">Imutável por evento; admin muda apenas versões futuras.</td>
+              </tr>
+              <tr data-fact="compaction snapshot deve registrar ids preservados removidos resumidos e refs de recall">
+                <td data-label="Campo"><code>preserved_ids</code>, <code>removed_ids</code>, <code>summary_id</code>, <code>recall_refs</code></td>
+                <td data-label="Finalidade">Permite replay e reidratação sem duplicar texto bruto.</td>
+                <td data-label="Regra">Guardar IDs/refs; o texto original fica no ledger canônico.</td>
+              </tr>
+              <tr data-fact="compaction snapshot deve registrar before after tokens e reclaim ratio">
+                <td data-label="Campo"><code>budget_before</code>, <code>budget_after</code>, <code>reclaimed_tokens</code></td>
+                <td data-label="Finalidade">Prova se a compactação realmente liberou contexto.</td>
+                <td data-label="Regra">Medir por fatia e contra <code>hard_input_budget</code>.</td>
+              </tr>
+              <tr data-fact="compaction snapshot deve registrar carrier counts e fail reasons sem vazar PHI">
+                <td data-label="Campo"><code>sealed_carrier_counts</code>, <code>fail_reason</code></td>
+                <td data-label="Finalidade">Audita proteção de estado de provedor e motivo de abortar.</td>
+                <td data-label="Regra">Sem PHI, prompts crus, signatures ou raw reasoning.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="callout invariant" data-fact="snapshot nao duplica transcript bruto nem substitui replay">
+            <strong>Sem duplicar bruto</strong>
+            Um snapshot não deve copiar o transcript inteiro a cada evento. Ele referencia mensagens, pares, anexos, tool results e carriers persistidos; replay reconstrói a visão a partir do ledger original mais eventos de compactação.
+          </div>
+        </section>
+
+        <section id="skills" data-section="skills-lifecycle">
+          <h2>7. Skills antigas já disclosed</h2>
+          <p class="tldr" data-fact="skill antiga disclosed nao deve ficar como corpo bruto persistido e deve virar active stale ou evicted conforme topologia">Depois que uma skill foi carregada, o sistema não precisa reinjetar seu corpo bruto para sempre. Ele precisa saber se ela está ativa, stale, precisa de reload ou foi evictada.</p>
+          <p>Uma boa estratégia separa <strong>materialização</strong> de skill de <strong>referência</strong> de skill. A materialização traz o corpo completo antes de uma decisão que depende dele. A referência compacta mantém nome, versão, escopo, hash e status.</p>
+
+          <table>
+            <caption>Estados recomendados para skills</caption>
+            <thead>
+              <tr>
+                <th>Estado</th>
+                <th>Significado</th>
+                <th>Uso no prompt</th>
+                <th>Quando muda</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr data-fact="active skill pode ser referenciada por nome versao escopo e hash quando corpo ja foi materializado no ciclo correto">
+                <td data-label="Estado"><code>active</code></td>
+                <td data-label="Significado">A skill está válida para a janela atual.</td>
+                <td data-label="Uso">Referência compacta em <code>&lt;active_skills&gt;</code> ou equivalente.</td>
+                <td data-label="Muda quando">Versão, escopo, política ou agente mudam.</td>
+              </tr>
+              <tr data-fact="stale skill precisa de reload antes de influenciar decisao sensivel">
+                <td data-label="Estado"><code>stale</code></td>
+                <td data-label="Significado">A skill já existiu, mas a janela atual não prova que ainda é válida.</td>
+                <td data-label="Uso">Marcar <code>reload_required</code>, não assumir corpo.</td>
+                <td data-label="Muda quando">Recarregada do catálogo ou removida.</td>
+              </tr>
+              <tr data-fact="evicted skill sai da janela episodica e nao deve ser usada ate reload explicito">
+                <td data-label="Estado"><code>evicted</code></td>
+                <td data-label="Significado">A skill saiu do episódio e não deve influenciar decisões.</td>
+                <td data-label="Uso">Não usar, exceto para explicar que precisa recarregar.</td>
+                <td data-label="Muda quando">Nova intenção solicita a skill novamente.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <ul class="checklist" aria-label="Checklist de skills">
+            <li><input type="checkbox" disabled><span>Nunca persistir corpo bruto da skill em estado público ou metadata pública.</span></li>
+            <li><input type="checkbox" disabled><span>Persistir no máximo <code>name</code>, <code>version</code>, <code>scope</code>, <code>body_hash_ref</code> e <code>reload_required</code>.</span></li>
+            <li><input type="checkbox" disabled><span>Evictar skill inteira; nunca cortar metade do corpo por pressão de token.</span></li>
+            <li><input type="checkbox" disabled><span>Em sessão persistente, preferir <code>stale/reload_required</code>; em episódio curto, preferir <code>evicted</code>.</span></li>
+            <li><input type="checkbox" disabled><span>Skills de segurança sempre têm prioridade explícita e caminho de auditoria.</span></li>
+          </ul>
+
+          <div class="callout tip" data-fact="skills devem ser descarregadas por ASBM e pressao de tokens nao por contagem simples de pares">
+            <strong>Regra prática</strong>
+            Descarregue skills por pressão de <code>A1_hot</code>, recência/frequência, <code>idle_turns</code>, <code>min_residency</code> e <code>swap_margin</code>. Um piso como 15 pares recentes pode ser guardrail de coerência conversacional, mas não deve ser o gatilho principal para evictar skill.
+          </div>
+
+          <div class="callout risk" data-severity="alto" data-fact="reinjetar skill antiga inteira pode vazar contexto crescer prompt e mascarar versao obsoleta">
+            <strong>Risco alto</strong>
+            Reintroduzir automaticamente o corpo inteiro de uma skill antiga pode inflar o prompt, reativar instrução obsoleta e mascarar drift de versão. Referência compacta e reload explícito são mais controláveis.
+          </div>
+        </section>
+
+        <section id="tools-rag" data-section="tool-results-rag">
+          <h2>8. Tool results, functions e RAG</h2>
+          <p class="tldr" data-fact="resultado de function e RAG deve ser orcado como fatia volatil com TTL digest ponteiro e proveniencia">Resultados de ferramentas e RAG são voláteis. O bruto fica no store certo; o prompt recebe o menor digest verificável que ainda permite decidir.</p>
+
+          <table>
+            <caption>Política para resultados de functions e RAG</caption>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Prompt recebe</th>
+                <th>Store durável recebe</th>
+                <th>Compactação</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr data-fact="tool result pequeno pode entrar bruto se ainda estiver no TTL e for usado no proximo passo">
+                <td data-label="Item">Tool result pequeno</td>
+                <td data-label="Prompt">Bruto curto, com tool id e status.</td>
+                <td data-label="Store">Registro completo e auditável.</td>
+                <td data-label="Compactação">TTL por turnos; remover se não referenciado.</td>
+              </tr>
+              <tr data-fact="tool result grande deve virar digest mais ponteiro e nao ocupar toda fatia de contexto">
+                <td data-label="Item">Tool result grande</td>
+                <td data-label="Prompt">Resumo estruturado, campos decisivos, ponteiro seguro.</td>
+                <td data-label="Store">Bruto integral, checksum e provenance.</td>
+                <td data-label="Compactação">Truncar com marcador explícito e comprimento original.</td>
+              </tr>
+              <tr data-fact="RAG deve separar lanes sistema usuario paciente e registrar citacoes reais">
+                <td data-label="Item">RAG</td>
+                <td data-label="Prompt">Chunks top-k, citações, confiança, lane e escopo.</td>
+                <td data-label="Store">Manifesto de retrieval e artefatos.</td>
+                <td data-label="Compactação">Reduzir top-k, comprimir citações repetidas, preservar fontes usadas.</td>
+              </tr>
+              <tr data-fact="resultado de subagente deve retornar pacote tipado e nao transcript bruto inteiro">
+                <td data-label="Item">Subagente</td>
+                <td data-label="Prompt">Conclusão, evidência, limites e próximos passos.</td>
+                <td data-label="Store">Log completo do agente se permitido.</td>
+                <td data-label="Compactação">Context packet com escopo e confidence, não transcript inteiro.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="callout evidence" data-fact="tool result precisa ter evento de truncamento ou pruning quando perde conteudo">
+            <strong>Evidência</strong>
+            Todo pruning ou truncamento de tool result deve deixar evento auditável: id da ferramenta, tokens ou caracteres economizados, motivo, fatia afetada e ponteiro para o bruto quando houver.
+          </div>
+        </section>
+
+        <section id="anexos" data-section="attachments-session-retrieval">
+          <h2>9. Anexos e session-scoped retrieval</h2>
+          <p class="tldr" data-fact="anexos brutos ficam persistidos e anexos historicos entram por retrieval scoped a sessao">Arquivos enviados pelo usuário são estado de sessão, não texto barato de prompt. O bruto e os derivados ficam persistidos; a janela recebe refs, digestos ou trechos recuperados sob escopo.</p>
+
+          <ul class="checklist" aria-label="Checklist de anexos">
+            <li><input type="checkbox" disabled><span>Persistir bruto, checksum, metadados, parser state, derivados e refs antes de depender do arquivo em uma resposta.</span></li>
+            <li><input type="checkbox" disabled><span>Usar <code>session_id</code> e <code>owner_user_id</code> como escopo mínimo para anexos de sessão.</span></li>
+            <li><input type="checkbox" disabled><span>Enviar inline apenas arquivos atuais e selecionados; arquivos históricos entram por tool/RAG com top-k e provenance.</span></li>
+            <li><input type="checkbox" disabled><span>Apagar sessão deve enfileirar teardown de índice RAG, row de anexo e storage; itens promovidos a knowledge seguem outra retenção.</span></li>
+            <li><input type="checkbox" disabled><span>Formatos como Excel, CSV, PDF, DOCX, imagem e áudio precisam de contrato end-to-end consistente, não allowlists divergentes por canal.</span></li>
+          </ul>
+
+          <div class="callout invariant" data-fact="compactar par que tinha anexo deve preservar attachment refs e asset refs">
+            <strong>Quando um par tinha arquivo</strong>
+            Compactar o par não remove o arquivo. O snapshot preserva <code>attachment_refs</code>, <code>asset://</code>, <code>projection://</code> ou <code>rag-doc://</code>; o runtime reidrata por tool/RAG quando o modelo precisar.
+          </div>
+        </section>
+
+        <section id="transcript-recall" data-section="transcript-recall">
+          <h2>10. Transcript recall dos pares compactados</h2>
+          <p class="tldr" data-fact="transcript recall busca pares user assistant compactados que ja sairam do payload atual">Pares user/assistant compactados podem continuar consultáveis por uma lane de recall. Ela não substitui o ledger original; ela oferece busca segura sobre o que saiu do payload.</p>
+
+          <table>
+            <caption>Contrato de transcript recall</caption>
+            <thead>
+              <tr>
+                <th>Decisão</th>
+                <th>Boa prática</th>
+                <th>Bloqueio</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr data-fact="transcript recall tool so ativa quando existem pares compactados fora do payload atual">
+                <td data-label="Decisão">Ativação</td>
+                <td data-label="Boa prática">Expor a tool/lane só quando existir snapshot com pares removidos do payload atual.</td>
+                <td data-label="Bloqueio">Buscar histórico ativo, payload corrente ou conversa inteira por conveniência.</td>
+              </tr>
+              <tr data-fact="transcript recall so indexa pares fechados ja removidos do payload atual">
+                <td data-label="Decisão">Elegibilidade</td>
+                <td data-label="Boa prática">Indexar apenas pares fechados, server-owned, não ativos e já removidos da janela atual.</td>
+                <td data-label="Bloqueio">Pares atuais, incompletos, com tool window aberta ou com metadata bruta de provedor.</td>
+              </tr>
+              <tr data-fact="transcript recall usa embedding e lexical bm25 text grep com dimensao de indice igual a consulta">
+                <td data-label="Decisão">Busca</td>
+                <td data-label="Boa prática">Combinar embedding, lexical/BM25/text-grep, offsets e deduplicação, preservando palavras e frases.</td>
+                <td data-label="Bloqueio">Dimensão de índice diferente da consulta ou fonte sem scope.</td>
+              </tr>
+              <tr data-fact="remover do payload depende de commit do snapshot e indice de recall">
+                <td data-label="Decisão">Ordem</td>
+                <td data-label="Boa prática">Commitar snapshot e índice/registro de recall antes de remover do payload.</td>
+                <td data-label="Bloqueio">Se indexação/registro falhar, abortar compactação e manter payload anterior.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="callout evidence" data-fact="modelo de embedding deve vir de registry source dated e nao do guia generico">
+            <strong>Modelo e dimensão</strong>
+            O guia não fixa modelo nem provedor de embedding. O registry versionado define o perfil interno de busca, com fonte oficial, data, alias interno, dimensão e migração de índice; se o perfil canônico for 3072 dimensões, isso deve constar no registry e nos testes de compatibilidade, nunca como constante do runtime nem como nome de provedor no texto canônico.
+          </div>
+        </section>
+
+        <section id="model-call-micro" data-section="model-call-microconversations">
+          <h2>11. Chamadas ao modelo e microconversas internas</h2>
+          <p class="tldr" data-fact="cada chamada llm deve ter envelope tipado e microconversas internas nao entram como transcript bruto do parent">Cada chamada ao modelo precisa de um envelope tipado. Cada conversa interna de agente/tool precisa de um ledger próprio. O parent vê resultado tipado, não o transcript bruto do child.</p>
+
+          <ul class="checklist" aria-label="Checklist de chamadas ao modelo e microconversas">
+            <li><input type="checkbox" disabled><span><code>ModelCallEnvelope</code>: provedor, modelo, versão/alias, esforço/thinking, config, request id, usage, cache, fallback e status.</span></li>
+            <li><input type="checkbox" disabled><span><code>ReplayState</code>: carriers selados necessários ao protocolo, sem convertê-los em texto comum.</span></li>
+            <li><input type="checkbox" disabled><span><code>ProviderSwitch</code>: handoff semântico com capacidades perdidas, assets reanexados e protocolo antigo fechado.</span></li>
+            <li><input type="checkbox" disabled><span><code>ChildRunLedger</code>: eventos internos por <code>micro_context_id</code>, incluindo model/tool/MCP calls, resultados, budget e return packet.</span></li>
+            <li><input type="checkbox" disabled><span>Microconversas podem ficar suspensas em <code>waiting_user_input</code>, <code>waiting_parent_input</code>, <code>waiting_tool</code> ou <code>waiting_child_agent</code>, com contrato de retomada explícito.</span></li>
+            <li><input type="checkbox" disabled><span>Enquanto suspensa, a microconversa não é compactável como diálogo comum; ela só entra por refs e estado tipado.</span></li>
+            <li><input type="checkbox" disabled><span>Parent prompt recebe <code>return_packet</code>, digest e refs; nunca child transcript inteiro por conveniência.</span></li>
+          </ul>
+
+          <table>
+            <caption>Estados mínimos para microconversas retomáveis</caption>
+            <thead>
+              <tr>
+                <th>Estado</th>
+                <th>O que deve persistir</th>
+                <th>Quando continua</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr data-fact="microconversa pendente de input do usuario deve persistir pergunta contrato e refs">
+                <td data-label="Estado"><code>waiting_user_input</code></td>
+                <td data-label="Persistência">Pergunta feita ao usuário, contrato do input esperado, refs de contexto, owner, prazo e política de expiração.</td>
+                <td data-label="Continuação">Quando chegar a resposta do usuário com escopo compatível, a mesma microconversa retoma pelo <code>micro_context_id</code>.</td>
+              </tr>
+              <tr data-fact="microconversa pendente de parent tool ou child nao deve virar historico comum">
+                <td data-label="Estado"><code>waiting_parent_input</code> / <code>waiting_tool</code> / <code>waiting_child_agent</code></td>
+                <td data-label="Persistência">Dependência aguardada, call/result ids, budget restante, tentativa atual e estado de replay selado.</td>
+                <td data-label="Continuação">Quando a dependência resolve, o runtime adiciona novo evento ao ledger e reavalia terminalidade.</td>
+              </tr>
+              <tr data-fact="microconversa so fecha quando gera resposta definitiva ou terminal fail closed">
+                <td data-label="Estado"><code>completed_definitive</code> / <code>failed</code> / <code>canceled</code></td>
+                <td data-label="Persistência">Return packet final, evidência usada, limites, motivo terminal e refs de replay.</td>
+                <td data-label="Continuação">Não continua como conversa aberta; apenas reabre por nova tarefa ou revisão explícita.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="callout invariant" data-fact="microconversa aguardando usuario deve sobreviver entre chamadas ate terminal definitivo">
+            <strong>Continuação até terminal definitivo</strong>
+            Se um agente interno precisou perguntar algo ao usuário, a orquestração deve persistir esse estado pendente e retomar a mesma microconversa quando a resposta chegar. O objetivo é chegar a um <code>return_packet</code> definitivo, uma falha segura ou um cancelamento explícito, sem perder contexto no meio.
+          </div>
+        </section>
+
+        <section id="privacidade" data-section="privacy-zdr">
+          <h2>12. Privacidade, ZDR e estado de provedor</h2>
+          <p class="tldr" data-fact="estado de provedor e cache devem ser hints de performance e nao fonte de verdade para fluxos protegidos">Fluxos protegidos devem reconstruir o payload do provedor a partir do ledger próprio. O provedor recebe uma projeção mínima e descartável.</p>
+
+          <ul class="checklist" aria-label="Checklist de privacidade e ZDR">
+            <li><input type="checkbox" disabled><span>Definir <code>store=false</code> ou equivalente em todo fluxo protegido.</span></li>
+            <li><input type="checkbox" disabled><span>Rejeitar <code>previous_response_id</code>, <code>conversation_id</code>, sessões de provedor e handles equivalentes como estado durável.</span></li>
+            <li><input type="checkbox" disabled><span>Tratar cache de provedor como dica de performance, nunca como portador da conversa.</span></li>
+            <li><input type="checkbox" disabled><span>Não publicar reasoning, thinking, tool IDs sensíveis, raw transcript ou corpo de skill em payload público.</span></li>
+            <li><input type="checkbox" disabled><span>Logs e traces contam tokens, decisões e spans; não carregam PHI, prompts crus ou dados clínicos sensíveis.</span></li>
+          </ul>
+
+          <div class="callout zdr" data-fact="summary nao substitui replay state nem carriers nativos selados">
+            <strong>ZDR e replay</strong>
+            Um resumo ajuda a montar contexto, mas não substitui estado de replay, tool history, signatures nativas ou carriers selados exigidos pelo protocolo do provedor.
+          </div>
+
+          <details>
+            <summary>Troca de provedor como handoff, não continuação</summary>
+            <div>
+              <p>Ao trocar de provedor, feche janelas de ferramenta, sele carriers nativos não portáveis, gere um pacote portátil pequeno, reanexe assets permitidos e comece uma nova janela de protocolo. Não tente converter <code>thoughtSignature</code>, encrypted reasoning ou redacted thinking em conversa comum.</p>
+            </div>
+          </details>
+        </section>
+
+        <section id="observabilidade" data-section="observability">
+          <h2>13. Observabilidade</h2>
+          <p class="tldr" data-fact="sem telemetria por fatia nao ha gerenciamento real de contexto">Se você não mede tokens por fatia e eventos de compactação por turno, você não gerencia contexto; você só espera que caiba.</p>
+
+          <table>
+            <caption>Métricas mínimas para um ledger de contexto</caption>
+            <thead>
+              <tr>
+                <th>Métrica</th>
+                <th>Por que importa</th>
+                <th>Ação quando sobe</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr data-fact="tokens by slice mostra qual parte do prompt esta crescendo">
+                <td data-label="Métrica"><code>tokens_by_slice</code></td>
+                <td data-label="Importância">Mostra se o problema está em sistema, conversa, RAG ou tool result.</td>
+                <td data-label="Ação">Aplicar política da fatia, não truncamento global.</td>
+              </tr>
+              <tr data-fact="token budget utilization deve acionar thresholds de compactacao por tier">
+                <td data-label="Métrica"><code>token_budget_utilization</code></td>
+                <td data-label="Importância">Dispara a escada de compactação.</td>
+                <td data-label="Ação">Entrar em hygiene, summarize ou emergency conforme threshold.</td>
+              </tr>
+              <tr data-fact="summary tokens saved prova economia de compactacao e ajuda calibrar thresholds">
+                <td data-label="Métrica"><code>summary_tokens_saved</code></td>
+                <td data-label="Importância">Prova se resumo reduziu custo sem apagar fato.</td>
+                <td data-label="Ação">Ajustar cadência, max tokens e preservação de recentes.</td>
+              </tr>
+              <tr data-fact="overflow events devem ser raros e investigados por origem">
+                <td data-label="Métrica"><code>overflow_events</code></td>
+                <td data-label="Importância">Mostra que o envelope foi violado ou quase violado.</td>
+                <td data-label="Ação">Abrir incidente de política ou reduzir teto efetivo.</td>
+              </tr>
+              <tr data-fact="compaction events devem registrar estagio motivo e conteudo preservado">
+                <td data-label="Métrica"><code>compaction_events</code></td>
+                <td data-label="Importância">Permite explicar por que algo saiu do prompt.</td>
+                <td data-label="Ação">Auditar perdas e ajustar playbook.</td>
+              </tr>
+              <tr data-fact="compaction success rate mede se a primeira compactacao voltou a w steady">
+                <td data-label="Métrica"><code>compaction_success_rate</code></td>
+                <td data-label="Importância">Mostra se a primeira compactação recupera folga suficiente.</td>
+                <td data-label="Ação">Se cair, ajustar W steady, slices, recall e unload de skills.</td>
+              </tr>
+              <tr data-fact="recall hit rate mede se conteudo compactado continua recuperavel">
+                <td data-label="Métrica"><code>recall_hit_rate</code></td>
+                <td data-label="Importância">Prova se conteúdo removido do payload continua útil quando necessário.</td>
+                <td data-label="Ação">Ajustar indexação, chunking, filtros e limites de evidência.</td>
+              </tr>
+              <tr data-fact="critical path overhead mede custo de decidir e registrar compactacao">
+                <td data-label="Métrica"><code>critical_path_overhead_ms</code></td>
+                <td data-label="Importância">Evita compactação correta mas lenta demais para o produto.</td>
+                <td data-label="Ação">Mover embedding/summarization pesada para job, mantendo commit mínimo síncrono.</td>
+              </tr>
+              <tr data-fact="orphan cleanup count mede anexos indices e blobs que ficaram fora do cascade">
+                <td data-label="Métrica"><code>orphan_cleanup_count</code></td>
+                <td data-label="Importância">Detecta falha de cascade em anexos, RAG e storage.</td>
+                <td data-label="Ação">Bloquear PASS de privacidade até reconciliação zerar.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="callout evidence" data-fact="prova de contexto inclui comando logs diff artefatos screenshot ou trace conforme camada">
+            <strong>Evidência</strong>
+            A prova mínima muda por camada: domínio por teste de função, runtime por integração, UI por renderização, provedor por request sanitizado, e produção por logs/traces sem dados sensíveis.
+          </div>
+        </section>
+
+        <section id="admin-parametros" data-section="admin-parameterization">
+          <h2>14. Admin parametrizável</h2>
+          <p class="tldr" data-fact="parametros de contexto devem estar em registry admin parametrizavel com guardrails e auditoria">Watermarks, W steady, ASBM, retrieval caps e políticas de emergência não devem ficar espalhados em constantes. Eles pertencem a um registry parametrizável, com limites seguros e trilha de auditoria.</p>
+
+          <table>
+            <caption>Knobs mínimos para admin/config registry</caption>
+            <thead>
+              <tr>
+                <th>Grupo</th>
+                <th>Parâmetros</th>
+                <th>Guardrail</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr data-fact="admin deve parametrizar watermarks e w steady por topologia tier e modelo">
+                <td data-label="Grupo">Watermarks</td>
+                <td data-label="Parâmetros"><code>soft</code>, <code>compact</code>, <code>hard</code>, <code>emergency</code>, <code>W_steady</code></td>
+                <td data-label="Guardrail">Limites por topologia/tier/modelo; alteração versionada e canary.</td>
+              </tr>
+              <tr data-fact="admin deve parametrizar success gate e floors de reclaim sem permitir compactacao cosmetica">
+                <td data-label="Grupo">Reclaim</td>
+                <td data-label="Parâmetros"><code>min_reclaim_ratio</code>, <code>target_utilization_after</code>, <code>reserve_output_multiplier</code></td>
+                <td data-label="Guardrail">Não aceitar política que não volte a <code>W_steady</code> em fluxo contínuo.</td>
+              </tr>
+              <tr data-fact="admin deve parametrizar ASBM para skills com limites anti thrash">
+                <td data-label="Grupo">Skills ASBM</td>
+                <td data-label="Parâmetros"><code>A1_target</code>, <code>A1_hard</code>, <code>idle_turns</code>, <code>min_residency</code>, <code>swap_margin</code></td>
+                <td data-label="Guardrail">Skills kernel e safety não podem ser evictadas por edição admin comum.</td>
+              </tr>
+              <tr data-fact="admin deve parametrizar caps de retrieval por lane e escopo">
+                <td data-label="Grupo">Retrieval</td>
+                <td data-label="Parâmetros">top-k por lane, max snippets, max bytes, modos semantic/lexical/BM25/text-grep</td>
+                <td data-label="Guardrail">Scope isolation e no-leak tests antes de ativar.</td>
+              </tr>
+              <tr data-fact="admin deve parametrizar politica de emergency com handoff antes de fail closed">
+                <td data-label="Grupo">Emergency</td>
+                <td data-label="Parâmetros">tier escalation, semantic handoff, reattach assets, fail-closed copy</td>
+                <td data-label="Guardrail">Nunca emitir payload inválido para o provedor para evitar bloqueio de UX.</td>
+              </tr>
+              <tr data-fact="admin deve parametrizar tier caps inline pages e output caps como defaults ilustrativos">
+                <td data-label="Grupo">Tiers</td>
+                <td data-label="Parâmetros"><code>tier_cap</code>, <code>inline_pages</code>, <code>main_output_cap</code>, <code>agent_as_tool_output_cap</code>, <code>summary_output_cap</code></td>
+                <td data-label="Guardrail"><code>effective_cap = min(tier, janela do modelo, custo/latência, rota)</code>; hard de fatia é teto local, não somável.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="callout" data-fact="defaults por tier sao ilustrativos parametrizaveis e a formula de cap vincula nao a soma dos hards">
+            <strong>Defaults por tier (ilustrativos).</strong> Como ponto de partida — e
+            <strong>parametrizável</strong>, sujeito a recalibração por evals, idioma, densidade de
+            documento e SLO — uma escada de tiers pode ser:
+            <table>
+              <caption>Tetos por tier — exemplos iniciais, não axiomas</caption>
+              <thead><tr><th>Tier</th><th><code>tier_cap</code> sugerido</th><th>Páginas inline/turno</th><th>Perfil</th></tr></thead>
+              <tbody>
+                <tr><td data-label="Tier">Free</td><td data-label="tier_cap">~128k</td><td data-label="Páginas">~10</td><td data-label="Perfil">Contexto moderado, 1 skill ativa pequena, loops curtos.</td></tr>
+                <tr><td data-label="Tier">Plus</td><td data-label="tier_cap">~258k</td><td data-label="Páginas">~30</td><td data-label="Perfil">Contexto longo, L2 moderado, arquivos úteis no turno.</td></tr>
+                <tr><td data-label="Tier">Pro</td><td data-label="tier_cap">~512k</td><td data-label="Páginas">~40</td><td data-label="Perfil">Agentic, L2 robusto, tool loops longos.</td></tr>
+                <tr><td data-label="Tier">Super</td><td data-label="tier_cap">~1M se o modelo permitir</td><td data-label="Páginas">~60</td><td data-label="Perfil">Sessões longas, multiagentes, microcontextos.</td></tr>
+              </tbody>
+            </table>
+            Dois cuidados que mudam com o tempo: (a) <code>effective_context_cap = min(tier, janela do
+            modelo, custo/latência, política de rota)</code> — o tier não aumenta a janela real do modelo;
+            (b) ao quebrar o tier em fatias, cada <em>hard</em> de fatia é um <strong>teto local
+            não-simultâneo</strong> — a soma dos hards excede o cap de propósito (folga de design). O que
+            vincula é <code>projeção + reserva de saída + margem ≤ cap efetivo</code> (ver
+            <a href="guia_estado_contexto_memoria.html#budgets-e-invariantes">contrato de budgets</a>). As
+            páginas inline por tier detalham-se em
+            <a href="guia_file_inputs_no_storage.html">File inputs sem provider storage</a>.
+          </div>
+        </section>
+
+        <section id="playbooks" data-section="decision-playbooks">
+          <h2>15. Playbooks</h2>
+          <p class="tldr" data-fact="playbooks transformam thresholds de contexto em acoes previsiveis e auditaveis">Contexto manual fica sustentável quando o operador sabe o que fazer em cada estágio, sem improvisar em produção.</p>
+
+          <h3>Quando a conversa cresce</h3>
+          <ol>
+            <li>Calcule uso por fatia e confirme se o crescimento é de <code>conversation_pairs</code>.</li>
+            <li>Preserve últimos turnos verbatim e mensagens de alta prioridade.</li>
+            <li>Indexe e registre snapshot antes de remover pares do payload.</li>
+            <li>Resuma pares antigos com span, data, fatos, decisões, incertezas e refs de recall.</li>
+            <li>Registre <code>reclaimed_tokens</code>, <code>target_utilization_after</code> e mantenha bruto no ledger durável.</li>
+          </ol>
+
+          <h3>Quando tool results crescem</h3>
+          <ol>
+            <li>Separe resultados ainda referenciados de resultados antigos.</li>
+            <li>Converta bruto grande em digest estruturado e ponteiro.</li>
+            <li>Preserve pares tool-call/tool-result e IDs nativos necessários.</li>
+            <li>Reexecute tool ou peça reidratação se o digest não for suficiente.</li>
+          </ol>
+
+          <h3>Quando uma skill antiga aparece</h3>
+          <ol>
+            <li>Verifique se a topologia é persistente ou episódica.</li>
+            <li>Verifique <code>A1_hot</code>, recência, <code>idle_turns</code>, <code>min_residency</code> e <code>swap_margin</code>.</li>
+            <li>Se persistente, marque <code>stale/reload_required</code> até recarregar o corpo.</li>
+            <li>Se episódica, trate como <code>evicted</code> e não deixe influenciar a decisão.</li>
+            <li>Nunca reaproveite corpo bruto de uma janela antiga sem versionamento e escopo.</li>
+          </ol>
+
+          <div class="callout risk" data-severity="medio" data-fact="playbook deve falhar fechado quando contexto essencial nao puder ser recuperado">
+            <strong>Risco médio</strong>
+            A pior compactação é a silenciosa. Se o contexto essencial não cabe nem pode ser recuperado, a resposta correta é fail-closed, pedir reidratação ou reiniciar a janela com um pacote explícito.
+          </div>
+        </section>
+
+        <section id="achados" data-section="common-risks">
+          <h2>16. Riscos comuns e pendências típicas</h2>
+          <p class="tldr" data-fact="riscos comuns de compactacao devem virar testes backlog e metricas antes de qualquer claim sota">O desenho SOTA só vira operação confiável quando seus riscos comuns são testados, metrificados e tratados como backlog explícito.</p>
+
+          <table>
+            <caption>Riscos independentes de framework</caption>
+            <thead>
+              <tr>
+                <th>Risco</th>
+                <th>Sintoma</th>
+                <th>Mitigação</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr data-fact="recency only compaction pode quebrar protocolo e deve ser substituida por classificacao estrutural">
+                <td data-label="Risco">Corte por recência</td>
+                <td data-label="Sintoma">Mensagens antigas saem sem validar tool pairs, assets, carriers de provedor ou planos ativos.</td>
+                <td data-label="Mitigação">Usar <code>is_compactable</code> estrutural e validador before/after.</td>
+              </tr>
+              <tr data-fact="remover payload antes de registrar snapshot e recall gera esquecimento funcional">
+                <td data-label="Risco">Esquecimento funcional</td>
+                <td data-label="Sintoma">O original existe no banco, mas o agente não consegue recuperá-lo quando precisa.</td>
+                <td data-label="Mitigação">Commit de snapshot e registro/index de recall antes de remover do payload.</td>
+              </tr>
+              <tr data-fact="parametros hardcoded impedem admin observability e calibracao por modelo topologia e tier">
+                <td data-label="Risco">Parâmetros hardcoded</td>
+                <td data-label="Sintoma">Thresholds, janelas e caps divergem entre runtime, testes e admin.</td>
+                <td data-label="Mitigação">Registry versionado, bounds seguros, snapshot por run e painel read-only.</td>
+              </tr>
+              <tr data-fact="delete sem cascade deixa anexos indices e blobs orfaos">
+                <td data-label="Risco">Órfãos de dados</td>
+                <td data-label="Sintoma">Apagar sessão remove a UI, mas deixa anexos, chunks ou blobs históricos.</td>
+                <td data-label="Mitigação">Teardown determinístico, reconciliação de órfãos e exceção clara para knowledge promovido.</td>
+              </tr>
+              <tr data-fact="microconversas inlinadas incham parent prompt e confundem autoria">
+                <td data-label="Risco">Microconversa inlinada</td>
+                <td data-label="Sintoma">Turnos internos do child viram transcript comum do parent.</td>
+                <td data-label="Mitigação">Child ledger próprio e parent-facing return packet bounded.</td>
+              </tr>
+              <tr data-fact="formatos de arquivo divergentes por canal criam falhas invisiveis de retrieval">
+                <td data-label="Risco">Formatos divergentes</td>
+                <td data-label="Sintoma">Um canal aceita planilha, outro rejeita, e retrieval não tem parser equivalente.</td>
+                <td data-label="Mitigação">Contrato end-to-end por formato: upload, parser, index, fetch, delete e teste.</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="glossario" data-section="glossary">
+          <h2>17. Glossário rápido</h2>
+          <p class="tldr" data-fact="glossario define termos canonicos para humanos e agentes">Use estes termos de forma consistente em specs, prompts, testes e telemetria.</p>
+          <dl>
+            <dt id="term-teto-operacional">Teto operacional X</dt>
+            <dd>Limite de tokens que a orquestração escolhe usar, abaixo da janela física do modelo e depois de reservas.</dd>
+
+            <dt id="term-system-injected">system_injected</dt>
+            <dd>Fatia de instruções, guardrails, identidade operacional, skills ativas e políticas de segurança.</dd>
+
+            <dt id="term-conversation-pairs">conversation_pairs</dt>
+            <dd>Histórico user/assistant selecionado, com pares recentes preservados e antigos resumíveis.</dd>
+
+            <dt id="term-tools-rag">tools_rag</dt>
+            <dd>Resultados de functions, MCPs, RAG, citações, evidências e artefatos recuperados.</dd>
+
+            <dt id="term-compaction-snapshot">Compaction snapshot</dt>
+            <dd>Evento cumulativo que registra política, ids, refs e métricas de uma compactação sem copiar o transcript bruto.</dd>
+
+            <dt id="term-transcript-recall">Transcript recall</dt>
+            <dd>Lane de busca segura para pares user/assistant fechados que saíram do payload atual, com escopo, refs e offsets.</dd>
+
+            <dt id="term-model-call-envelope">ModelCallEnvelope</dt>
+            <dd>Envelope tipado de uma chamada ao modelo, incluindo provedor, modelo, config, usage, fallback e replay state selado.</dd>
+
+            <dt id="term-child-run-ledger">ChildRunLedger</dt>
+            <dd>Ledger local de uma microconversa interna; o parent recebe apenas return packet, digest e refs.</dd>
+
+            <dt id="term-ledger">Ledger canônico</dt>
+            <dd>Estado próprio, durável e auditável da aplicação; fonte de verdade para remontar payload de provedor.</dd>
+
+            <dt id="term-context-packet">Context packet</dt>
+            <dd>Pacote pequeno de continuidade para handoff entre agentes, janelas ou provedores, sem transcript bruto.</dd>
+
+            <dt id="term-zdr">ZDR</dt>
+            <dd>Postura em que estado de provedor e retenção são minimizados; a aplicação não depende de continuation handles externos.</dd>
+
+            <dt id="term-stale-skill">stale skill</dt>
+            <dd>Skill conhecida em sessão persistente, mas que exige reload antes de orientar decisão sensível.</dd>
+
+            <dt id="term-evicted-skill">evicted skill</dt>
+            <dd>Skill removida de episódio curto; não deve influenciar a próxima decisão sem nova materialização.</dd>
+
+            <dt id="term-fail-closed">Fail-closed</dt>
+            <dd>Quando o sistema não consegue preservar contexto/protocolo/segurança, ele para ou pede reidratação em vez de responder como se nada tivesse acontecido.</dd>
+
+            <dt id="term-turn-working">turn_working</dt>
+            <dd>Fatia volátil do loop atual: prompt, arquivos inline do turno, tool calls abertas e carriers exigidos; expira ao fechar o loop e produzir a resposta final.</dd>
+
+            <dt id="term-hot-followup">hot_followup</dt>
+            <dd>Dado transitório (return packet de agent-as-tool, L3 pequeno, evidência hot) carregado por ~1 turno em <code>role=user</code> tagueado — nunca no system; depois vira digest/ref/reload.</dd>
+          </dl>
+        </section>
+      </article>
+    </main>
+  </div>
+
+  <footer>
+    <p>Arquivo atualizado em 2026-06-10 (integração da proposta de gestão manual de contexto v0.6: fatias <code>turn_working</code>/<code>hot_followup</code>, degraus finos da escada e defaults por tier ilustrativos; o roteamento de modelo summarizer — modelo pequeno/barato, contrato de saída tipado e sucesso por <code>min_reclaim_ratio</code>/<code>target_utilization_after</code> (§14) — é deliberadamente deixado aos guias de modelo por ser perecível). Documento independente e framework-neutral. Claims perecíveis sobre modelos, janelas, SDKs, cache, thinking ou embeddings devem ser confirmados em fontes oficiais antes de virar código canônico.</p>
+  </footer>
+</body>
+</html>
