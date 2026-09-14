@@ -1,10 +1,10 @@
-<!-- FRESHNESS: Always verify against official docs. Links may change. Last structured: 2026-04-02 -->
+<!-- FRESHNESS: Always verify against official docs. Links may change. Last structured: 2026-08-28 -->
 
 # LangGraph Core Patterns
 
-> Official docs: https://langchain-ai.github.io/langgraph/
+> Official docs: https://docs.langchain.com/oss/python/langgraph/
 > GitHub: https://github.com/langchain-ai/langgraph
-> LangGraph 1.1+: v2 streaming and invoke
+> LangGraph 1.1+: v2 streaming and invoke; 1.2+: stream_events version="v3"
 
 ## StateGraph Fundamentals
 
@@ -57,7 +57,7 @@ Saves state at every super-step boundary (all nodes scheduled for that step exec
 
 | Backend | Use Case | Package |
 |---------|----------|---------|
-| `MemorySaver` | Dev/testing (ephemeral, local) | `langgraph.checkpoint.memory` |
+| `InMemorySaver` | Dev/testing (ephemeral, local; `MemorySaver` is the same in-RAM class) | `langgraph.checkpoint.memory` |
 | `SqliteSaver` | Light production | `langgraph-checkpoint-sqlite` |
 | `PostgresSaver` | Production (recommended) | `langgraph-checkpoint-postgres` |
 | `DynamoDBSaver` | AWS production (S3 for large payloads) | `langgraph-checkpoint-dynamodb` |
@@ -65,8 +65,8 @@ Saves state at every super-step boundary (all nodes scheduled for that step exec
 | Redis | Redis-backed | `langgraph-checkpoint-redis` |
 
 ```python
-from langgraph.checkpoint.memory import MemorySaver
-checkpointer = MemorySaver()
+from langgraph.checkpoint.memory import InMemorySaver
+checkpointer = InMemorySaver()
 app = graph.compile(checkpointer=checkpointer)
 
 config = {"configurable": {"thread_id": "user-123-conv-1"}}
@@ -80,6 +80,8 @@ for snapshot in app.get_state_history(config):
 ```
 
 DynamoDBSaver: small checkpoints (<350 KB) in DynamoDB; large payloads to S3 with reference pointer. Agent Server/API: checkpointers and stores handled automatically.
+
+**Security (re-checked 2026-08-28):** `langgraph-checkpoint`, `langgraph-checkpoint-sqlite`, `langgraph-checkpoint-postgres`, and the npm `@langchain/langgraph-checkpoint-redis` package have CVEs below stated floor versions (including CVE-2026-71433 namespace prefix matching, floor 3.1.1). CVE-2026-28277 (msgpack) is patched in `langgraph>=1.0.10` / `langgraph-checkpoint>=4.0.1`. See the advisory table in `references/VERSIONING_FRESHNESS.md` before pinning any of these backends.
 
 ## Streaming (7 Modes)
 
@@ -154,15 +156,20 @@ graph.add_node("tools", tool_node)
 graph.add_conditional_edges("agent", tools_condition)  # Routes to "tools" or END
 ```
 
-### Prebuilt ReAct Agent
+### Prebuilt agent (`create_agent`)
 
 ```python
-from langgraph.prebuilt import create_react_agent
+from langchain.agents import create_agent
 
-app = create_react_agent(model, tools=[search, calculator], checkpointer=checkpointer)
+app = create_agent(
+    model,
+    tools=[search, calculator],
+    system_prompt="You are a helpful assistant.",
+    checkpointer=checkpointer,
+)
 ```
 
-`create_react_agent` parameters: model, tools, checkpointer, store, interrupt_before, interrupt_after, system_message (since recent updates).
+`create_react_agent` from `langgraph.prebuilt` is **deprecated** (LangGraph v1). Use `create_agent` with `system_prompt=` (not `prompt=`). Parameters: model, tools, system_prompt, checkpointer, store, middleware.
 
 ### MCP Tools
 

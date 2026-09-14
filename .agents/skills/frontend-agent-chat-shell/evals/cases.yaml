@@ -1,0 +1,116 @@
+version: 1
+skill: "frontend-agent-chat-shell"
+cases:
+  # --- Positive activation: shell territory (outside the message bubble) ---
+  - id: positive-trigger-session-sidebar
+    type: activation
+    prompt: "Build a ChatGPT-like session sidebar with projects, pinned chats and recents"
+    expect:
+      activates: true
+
+  - id: positive-trigger-sidebar-pt
+    type: activation
+    prompt: "Criar a barra lateral de conversas com projetos e busca no historico"
+    expect:
+      activates: true
+
+  - id: positive-trigger-stream-resume
+    type: activation
+    prompt: "Add stream resume so an interrupted response survives a page refresh"
+    expect:
+      activates: true
+
+  - id: positive-trigger-composer-chrome
+    type: activation
+    prompt: "Design the composer chrome with a model picker, attachments and dictation separate from a voice session"
+    expect:
+      activates: true
+
+  - id: positive-trigger-artifact-placement
+    type: activation
+    prompt: "Where should generated artifacts live, a side panel or inline blocks?"
+    expect:
+      activates: true
+
+  # --- Negative activation: everything INSIDE the bubble belongs to the incumbent.
+  # The seam is bidirectional: frontend-ai-generative-ui carries the mirror probes.
+  - id: negative-trigger-in-thread-rendering
+    type: activation
+    prompt: "Render streaming markdown and tool-call cards inside the message list"
+    expect:
+      activates: false
+
+  - id: negative-trigger-sdk-streaming
+    type: activation
+    prompt: "Stream LLM output token by token into React with the Vercel AI SDK"
+    expect:
+      activates: false
+
+  - id: negative-trigger-persona-copy
+    type: activation
+    prompt: "Write the chatbot persona, tone and fallback repair copy"
+    expect:
+      activates: false
+
+  - id: negative-trigger-transport
+    type: activation
+    prompt: "Set up WebSocket reconnect backoff for our realtime feed"
+    expect:
+      activates: false
+
+  - id: negative-trigger-density
+    type: activation
+    prompt: "Make this cluttered admin screen breathable"
+    expect:
+      activates: false
+
+  # Mirror of frontend-canvas-doc-editor's probes. This skill owns WHERE a canvas sits
+  # (panel, inline block, route) and the focus/mobile mechanics; everything INSIDE the
+  # document — selection-scoped AI patches, suggestions, version history — belongs there.
+  # Enforced from both sides because the scorer strips negative clauses and only the
+  # positive surface routes.
+  - id: negative-trigger-canvas-scoped-edit
+    type: activation
+    prompt: "Add a canvas mode where the user selects a paragraph and asks the AI to rewrite only that span"
+    expect:
+      activates: false
+
+  - id: negative-trigger-doc-suggestions-versions
+    type: activation
+    prompt: "Add suggested edits with accept/reject and version history to the generated document"
+    expect:
+      activates: false
+
+  # --- Output checks: the bundle and the load-bearing corrections must survive edits ---
+  - id: output-bundle-present
+    type: output
+    prompt: "Which reference files and assets does this skill ship?"
+    expect:
+      checks:
+        - kind: file_exists
+          path: references/chat-shell-composer-sessions.md
+        - kind: file_exists
+          path: references/artifacts-resume-collaboration.md
+        - kind: file_exists
+          path: assets/chat-shell-mockup.html
+        - kind: no_secrets
+
+  - id: output-seam-and-corrections
+    type: output
+    prompt: "Build the shell around an agent chat thread"
+    expect:
+      checks:
+        - kind: contains_keywords
+          keywords:
+            - "frontend-ai-generative-ui"
+            - "dictation"
+            - "voice-session"
+            - "stop endpoint"
+            - "interrupted"
+        # The /fork evidence is Claude Code, never claude.ai web chat. A sweep that
+        # reintroduces the wrong attribution should fail here rather than ship.
+        - kind: not_contains
+          keywords:
+            - "claude.ai web has a fork"
+            - "Last-Event-ID is enough"
+        - kind: no_secrets

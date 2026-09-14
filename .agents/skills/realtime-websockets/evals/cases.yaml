@@ -1,0 +1,112 @@
+version: 1
+skill: "realtime-websockets"
+cases:
+  # --- Positive: the primary trigger, a real-time feature that must survive multiple instances
+  - id: positive-trigger-en-chat-rooms-presence
+    type: activation
+    prompt: "Build chat with rooms and a who-is-online list that keeps working once we run three app instances behind a load balancer"
+    expect:
+      activates: true
+      notes_contains: ["rooms", "chat", "pub/sub fan-out"]
+
+  # --- Positive: transport selection, phrased as the doubt rather than the menu
+  - id: positive-trigger-en-do-i-need-websocket
+    type: activation
+    prompt: "The server only ever pushes to the client, never the other way. Do I actually need a WebSocket for that?"
+    expect:
+      activates: true
+      notes_contains: ["transport selection", "Server-Sent Events", "WebSockets"]
+
+  # --- Positive: multi-instance fan-out, phrased as the bug it produces
+  - id: positive-trigger-en-messages-stuck-on-one-instance
+    type: activation
+    prompt: "Messages only reach the users who happen to be connected to the same server process. How do I get them across all of them?"
+    expect:
+      activates: true
+      notes_contains: ["pub/sub fan-out for multi-instance scaling", "fan-out", "real-time"]
+
+  # --- Positive: backpressure, phrased as the memory failure
+  - id: positive-trigger-en-slow-client-kills-node
+    type: activation
+    prompt: "One slow client makes a node's memory climb until it falls over. What do I do about a consumer that cannot keep up?"
+    expect:
+      activates: true
+      notes_contains: ["backpressure", "real-time", "collaboration"]
+
+  # --- Positive: auth on upgrade and mid-session token expiry
+  - id: positive-trigger-en-auth-on-handshake
+    type: activation
+    prompt: "The browser will not let me set an Authorization header on the handshake. How do I authenticate the connection, and what happens when the token expires mid-session?"
+    expect:
+      activates: true
+      notes_contains: ["auth", "WebSockets", "transport selection"]
+
+  # --- Positive: reconnection and ghost presence, phrased as the post-deploy failure
+  - id: positive-trigger-en-stuck-disconnected-after-deploy
+    type: activation
+    prompt: "After every deploy the clients sit there disconnected forever, and people who left still show as online"
+    expect:
+      activates: true
+      notes_contains: ["reconnection", "rooms", "real-time"]
+
+  # --- Positive: MQTT and constrained devices, the fourth transport
+  - id: positive-trigger-en-iot-telemetry
+    type: activation
+    prompt: "Thousands of sensors publish telemetry over flaky low-bandwidth links and a dashboard has to see it live. Which protocol, and how do I fan it out?"
+    expect:
+      activates: true
+      notes_contains: ["MQTT", "live dashboards", "fan-out"]
+
+  # --- Positive: PT-BR
+  - id: positive-trigger-pt-notificacoes-tempo-real
+    type: activation
+    prompt: "Preciso de notificacoes em tempo real no app, com reconexao automatica e indicador de presenca dos usuarios"
+    expect:
+      activates: true
+      notes_contains: ["notifications", "reconnection", "rooms"]
+
+  # --- Negative: subscription transport inside a GraphQL schema (graphql-realtime-subscriptions)
+  - id: negative-trigger-graphql-subscriptions
+    type: activation
+    prompt: "Add GraphQL subscriptions with graphql-ws and a Redis PubSub engine to our Apollo server"
+    expect:
+      activates: false
+
+  # --- Negative: game netcode (game-dev-networking-multiplayer)
+  - id: negative-trigger-rollback-netcode
+    type: activation
+    prompt: "Implement rollback netcode with lag compensation and client-side prediction for our fighting game"
+    expect:
+      activates: false
+
+  # --- Negative: multi-channel delivery to a person (notifications-omnichannel-delivery)
+  - id: negative-trigger-push-sms-email
+    type: activation
+    prompt: "Deliver this alert over push, SMS and email with per-channel fallback and quiet hours"
+    expect:
+      activates: false
+
+  # --- Negative: the razor's edge. SSE, Last-Event-ID, reconnect, resume - every token here is
+  # this skill's own transport vocabulary, and step 5 of the body genuinely covers reconnection.
+  # But the question is whether the GENERATION survives the disconnect, which is a durability
+  # layer above the wire: an event log, a replay cursor, an attempt that is not re-run.
+  # durable-resumable-streaming owns that, and it names this skill as its own non-trigger.
+  - id: negative-trigger-resume-llm-generation
+    type: activation
+    prompt: "The user closed the tab halfway through an LLM answer. On reconnect it has to replay what it missed and carry on, not start the generation over."
+    expect:
+      activates: false
+
+  # --- Negative: cross-service event integration (event-driven-architecture-patterns)
+  - id: negative-trigger-kafka-outbox
+    type: activation
+    prompt: "Wire Kafka between our services with a schema registry and the outbox pattern for reliable publishing"
+    expect:
+      activates: false
+
+  # --- Negative: same goal, polling instead of a live channel (frontend-data-fetching-caching)
+  - id: negative-trigger-polling-cache
+    type: activation
+    prompt: "Refetch this endpoint every thirty seconds with TanStack Query and invalidate the cache after a mutation"
+    expect:
+      activates: false
