@@ -28,3 +28,5 @@ Execute a verificação determinística mais próxima antes de ampliar. Testes `
 - `sprints/` é o registro versionado de entrega; `fleet_runtime/` é estado operacional persistente, nunca limpo por rotina; `fleet_tmp/` é a única raiz transitória de limpeza.
 
 Tracker: github — rafaelob/aiLine; Issue = autoridade editável (DEC-113); commits citam #N; TODO/sprints são histórico.
+
+Fleet: para migrar a instalação ou instruções legadas, consulte control_docs/MIGRACAO_FLEET.md
