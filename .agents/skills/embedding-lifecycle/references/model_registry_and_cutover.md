@@ -136,6 +136,41 @@ RETURNING id, title, body;
 
 `FOR UPDATE SKIP LOCKED` is what lets several workers drain the same queue without coordinating.
 
+### Drain reads: never min(raw distance) across specs
+
+Two `EmbeddingSpec`s are two spaces. Serving both during a drain is a coverage
+problem (a document present in only one column must still be findable), not a
+reason to compare distances. **Never** `UNION ALL` the old and new legs and take
+`min(distance)` / `min(dist)` per document: raw distances from different
+model/dimension/preprocessing are not a common scale, so the minimum is a
+meaningless ranking.
+
+Rank each spec independently against a query embedded in *that* spec, then fuse
+or route with an explicitly evaluated rule — reciprocal rank fusion, a learned
+fusion, a router, or "new space if the new vector is present else old":
+
+```sql
+-- Independent ranking per spec. Do NOT min() the raw distances across specs.
+-- $old_q is embedded with docs.v1; $new_q with docs.v2; $k is the per-leg depth.
+SELECT id, rank() OVER (ORDER BY emb_1536 <=> $old_q) AS rnk, 'docs.v1' AS spec
+FROM docs
+WHERE emb_1536 IS NOT NULL
+ORDER BY rnk
+LIMIT $k;
+
+SELECT id, rank() OVER (ORDER BY emb_3072 <=> $new_q) AS rnk, 'docs.v2' AS spec
+FROM docs
+WHERE emb_3072 IS NOT NULL
+ORDER BY rnk
+LIMIT $k;
+```
+
+Fuse the *ranks* (RRF or an evaluated overlay), not the distances. A same-spec
+blue-green of two tables that hold the same `EmbeddingSpec` may still union
+distances — that is an index rebuild, not a space change — and lives in
+`postgres-extensions-and-vector-search`'s `hnsw_scale_operations.md`. Do not copy
+that pattern across specs.
+
 ### Backlog and population, per class
 
 ```sql

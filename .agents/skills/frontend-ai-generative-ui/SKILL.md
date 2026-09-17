@@ -1,10 +1,10 @@
 ---
 name: frontend-ai-generative-ui
 description: >-
-  Build a frontend chat surface that streams model output, renders tool results, or selects UI
-  from prompts. Cover provider adapters, SSE/Fetch transport, stop/regenerate, and typed tool
-  calls across supported frameworks. Use when building message-level generative UI; session shell uses
-  frontend-agent-chat-shell.
+  Stream model output, render tool results, or let the LLM pick UI from prompts.
+  Covers provider adapters, SSE/Fetch, stop/regenerate, and typed tool calls.
+  Use for message-level generative UI ("UI generativa", "chat com streaming").
+  Session shell uses frontend-agent-chat-shell.
 license: Apache-2.0
 metadata:
   author: coding-agent

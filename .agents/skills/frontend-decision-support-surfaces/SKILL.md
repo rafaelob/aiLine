@@ -16,8 +16,8 @@ metadata:
   vendor: universal
   lifecycle: active
   coding_agent: true
-  user_level: true
-  project_level: false
+  user_level: false
+  project_level: true
   audience: developer
   output_format: markdown
   modality: text
@@ -34,7 +34,7 @@ metadata:
   - optimistic-concurrency
   - rbac
   - work-queue
-  - user_level
+  - project_level
 ---
 
 # Frontend Decision-Support Surfaces

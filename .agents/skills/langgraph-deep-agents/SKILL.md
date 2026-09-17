@@ -1,11 +1,12 @@
 ---
 name: langgraph-deep-agents
-description: Build stateful graph-based multi-agent systems with LangGraph orchestration and the
-  Deep Agents harness. Covers StateGraph with typed reducers, checkpointer persistence, HITL
-  interrupts, streaming, memory, create_agent plus subagents, LangChain handoffs, and create_deep_agent
-  planning. Use for durable graph agents with checkpointing/resume, approval workflows, or LangSmith
-  Deployment. Do not start new work on langgraph-supervisor or langgraph-swarm (legacy). For vendor-neutral
-  topology, use agent-orchestration-patterns; for the OpenAI Agents SDK, use openai-agents-sdk-python.
+description: >-
+  Build stateful LangGraph or Deep Agents graphs with checkpointing, HITL and
+  streaming. Use when designing StateGraph control flow, durable execution
+  with resume-after-failure, human-in-the-loop approval steps, multi-agent
+  composition, or Deep Agents subagent delegation. Vendor-neutral topology ->
+  agent-orchestration-patterns.
+  OpenAI Agents SDK -> openai-agents-sdk-python.
 license: Apache-2.0
 metadata:
   author: coding-agent

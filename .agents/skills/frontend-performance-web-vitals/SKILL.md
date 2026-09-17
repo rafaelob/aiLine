@@ -1,12 +1,10 @@
 ---
 name: frontend-performance-web-vitals
 description: >-
-  Use when Lighthouse, PageSpeed or CrUX shows LCP, INP or CLS out of budget, a page is slow to load
-  or freezes after a click ("site lento", "a página trava ao clicar", "nota do Lighthouse caiu"),
-  content jumps while it loads (layout shift), or a JS bundle grows. Measures lab and field baselines,
-  then fixes image and font loading, render-blocking resources, JS budgets, long tasks and caching,
-  proving each change with before/after traces. Pair with diagnosing-bugs when the slowdown is not in
-  the browser.
+  Tune Core Web Vitals (LCP, INP, CLS): lab/field, images, fonts, JS
+  budgets, long tasks, caching. Use when Lighthouse/PageSpeed/CrUX is
+  over budget, or "site lento", "a página trava ao clicar", "nota do
+  Lighthouse caiu". Pair with diagnosing-bugs for non-browser slowness.
 context: fork
 agent: frontend
 license: Apache-2.0
@@ -23,7 +21,7 @@ metadata:
   - performance
   - web
   - vitals
-  - user_level
+  - project_level
   audience: developer
   output_format: markdown
   modality: text

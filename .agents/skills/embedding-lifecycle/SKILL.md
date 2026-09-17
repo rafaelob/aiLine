@@ -1,15 +1,14 @@
 ---
 name: embedding-lifecycle
 description: >-
-  Migrate embeddings already stored in a corpus when model, dimension, preprocessing, or instruction
-  prefix changes. Covers schema facts, shadow columns, blue-green backfill, population tracking, and
-  cutover evaluation. Use when planning a re-embedding or vector-space transition after model and
-  chunking choices exist. For model benchmarking or ANN index tuning; use provider
-  documentation or postgres-extensions-and-vector-search.
+  Migrate stored embeddings when model, dimension, preprocessing, or
+  prefix changes: shadow columns, blue-green backfill, cutover. Use for
+  re-embedding a live corpus. ANN indexes ->
+  postgres-extensions-and-vector-search. Chunking -> rag-systems.
 license: Apache-2.0
 metadata:
   author: coding-agent
-  version: 1.0.1
+  version: 1.0.2
   category: data-analysis
   subcategory: dataset-analysis
   vendor: universal
@@ -164,16 +163,18 @@ read depends on, running while those reads continue. Treat it with migration dis
    embedding provider's quota. Track per-row state, not a global cursor: a global cursor cannot
    express "row 4,000,201 failed and needs a retry".
 3. **Build the index once**, after the drain, with the build-time session settings raised.
-4. **Read both during the drain**, if you must serve from the new space before it is complete:
-   `UNION ALL` the two legs and take `min(distance)` per document. This is a correctness device,
-   not an optimization — a document present in only one column must still be findable.
+4. **Never merge different spaces by `min(distance)`.** Distances compare only
+   inside one space (same model, dimension, preprocessing). Rank each spec
+   independently, then fuse or route with an evaluated rule (RRF, learned fusion,
+   or new-if-present). A document in only one column must still be findable —
+   that is coverage, not a shared metric. See `references/model_registry_and_cutover.md`.
 5. **Gate the swap** (next section). Never swap on elapsed time or on "the job finished".
 
-The runnable SQL for the index-side of this — partial indexes per class, the blue-green index
-rebuild with its session settings, reading both legs during the drain, and the pre-swap gate — is
-already written and maintained in `postgres-extensions-and-vector-search`'s reference file
-`hnsw_scale_operations.md` (sections 3 and 5). Read it there rather than re-deriving the SQL here;
-this skill owns the *lifecycle* decisions, that one owns the index mechanics.
+The runnable SQL for the index-side — partial indexes per class, the blue-green index
+rebuild with its session settings, and the pre-swap gate — is in
+`postgres-extensions-and-vector-search`'s `hnsw_scale_operations.md` (sections 3 and 5).
+That `UNION ALL` + `min(dist)` pattern is same-spec rebuild only; do not copy it
+across EmbeddingSpecs. This skill owns lifecycle; that one owns index mechanics.
 
 ## Pillar 3 — preprocessing variants are model variants
 

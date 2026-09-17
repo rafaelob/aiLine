@@ -1,11 +1,10 @@
 ---
 name: cache-redis-patterns
 description: >-
-  Design Redis caching and coordination patterns -- cache-aside/read-through/write-behind, TTL
-  jitter and stampede protection, rate limiting, distributed locking (Redlock), Streams, Pub/Sub,
-  session storage, invalidation. Use when adding caching to hot paths, implementing rate-limit or
-  locking algorithms in Redis/app code, or building Redis-backed messaging/leaderboards/counters.
-  Use background-jobs-queues for durable jobs and realtime-websockets for application transport.
+  Redis caching and coordination: cache-aside, TTL jitter, stampede protection,
+  rate limits, Redlock, Streams, Pub/Sub. Use when adding hot-path cache, locks,
+  or Redis messaging. Pair with background-jobs-queues for durable jobs and
+  realtime-websockets for transport.
 license: Apache-2.0
 metadata:
   author: coding-agent

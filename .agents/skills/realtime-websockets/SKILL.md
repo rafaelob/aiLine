@@ -1,12 +1,10 @@
 ---
 name: realtime-websockets
 description: >-
-  Build real-time features over WebSocket, SSE, WebTransport, or MQTT: transport choice for
-  server-push, auth on the handshake and an expiring token, pub/sub fan-out across app instances,
-  presence/rooms that do not go stale after a deploy, backpressure for a slow consumer,
-  reconnection. Use for chat, live dashboards, collaboration, IoT telemetry. Tambem "tempo real",
-  "reconexao", "presenca". Use graphql-realtime-subscriptions for GraphQL transport and
-  game-dev-networking-multiplayer for game netcode.
+  Real-time over WebSocket, SSE, WebTransport or MQTT: handshake auth,
+  pub/sub fan-out, presence, backpressure, reconnection. Use for chat,
+  dashboards, IoT; also "tempo real", "reconexao", "presenca". Pair with
+  graphql-realtime-subscriptions and game-dev-networking-multiplayer.
 license: Apache-2.0
 metadata:
   author: coding-agent

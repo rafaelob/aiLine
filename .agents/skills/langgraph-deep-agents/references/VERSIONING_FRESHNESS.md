@@ -53,7 +53,7 @@ auto-summarization. CLIs are **separate packages** — see Current pins.
 ## Operational and security references
 
 - **OWASP LLM Top 10 2025 relevance** (LLM06 Excessive Agency, LLM10 Unbounded Consumption): enforce `interrupt_before` on destructive nodes, cap iteration counts, scope cross-thread Store namespaces. https://genai.owasp.org/llm-top-10/
-- **Runtime defaults** (repo policy): Python 3.13 via `uv` / `.python-version` (Python 3.14 only if the project explicitly opts in). Deep Agents CLI tested under this runtime.
+- **Runtime**: use the interpreter the project declares (`.python-version` / `requires-python` / the project venv). Read the pin; never gate a newer interpreter behind an opt-in. Deep Agents CLI tested under this runtime.
 
 ## Security advisories — checkpoint and serialization backends (re-checked 2026-08-28)
 

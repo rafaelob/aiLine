@@ -1,10 +1,10 @@
 ---
 name: frontend-agent-chat-shell
 description: >-
-  Build the application shell around an AI chat thread: sessions/search/projects, sidebar,
-  composer attachments/drafts, artifact placement, multi-agent panel, stream resume, and
-  interrupted states. Use when building thread-level navigation and continuity; message rendering uses
-  frontend-ai-generative-ui.
+  Build the AI chat product shell: sessions/search/projects, sidebar, composer
+  attachments/drafts, artifact placement, stream resume, multi-agent panel.
+  Use for thread-level navigation ("barra lateral", "retomar stream"). Message
+  rendering uses frontend-ai-generative-ui.
 license: Apache-2.0
 metadata:
   author: coding-agent

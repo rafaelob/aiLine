@@ -1,11 +1,10 @@
 ---
 name: ux-usability-heuristics
 description: >-
-  Evaluate UX flows and information architecture with Nielsen's heuristics, interaction
-  principles, and AI-specific checks. Use when reviewing navigation, forms, onboarding,
-  error recovery, or a complete product flow. Pair with ui-density-refactor for one
-  overloaded screen, accessibility for WCAG, and ai-trust-transparency-ux for AI
-  trust UX.
+  Evaluate UX flows and IA with Nielsen's 10 heuristics, interaction
+  principles, and AI-specific checks. Use for navigation, forms,
+  onboarding, or error recovery. Pair with ui-density-refactor,
+  accessibility (WCAG), and ai-trust-transparency-ux.
 context: fork
 agent: frontend
 license: Apache-2.0
@@ -21,7 +20,7 @@ metadata:
   - ux
   - usability
   - heuristics
-  - user_level
+  - project_level
   audience: developer
   output_format: markdown
   modality: text
