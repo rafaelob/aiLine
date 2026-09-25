@@ -7,6 +7,7 @@ Plataforma educacional inclusiva com API FastAPI/SSE, agentes e frontend Next.js
 - `runtime/` contém núcleo, adaptadores e API; `agents/` contém fluxos; `frontend/` é a aplicação; `docs/` e `control_docs/` registram produto e operação.
 - `docker-compose.yml` sobe API, frontend, PostgreSQL e Redis. `README.md` orienta a execução e `control_docs/SYSTEM_DESIGN.md` define os limites arquiteturais.
 - `fleet.toml` é a autoridade da CI local. A certificação de entrega executa a suíte declarada nele no SHA completo e exato, em worktree isolada sob a trava global de suíte da máquina; GitHub é espelho opcional, não juiz. Teste no worktree compartilhado não a substitui.
+- **Skills:** `langgraph-deep-agents` designing a stateful LangGraph/Deep Agents graph; `claude-api` calling the Claude Messages API; `cache-redis-patterns` adding a hot-path Redis cache or lock; `embedding-lifecycle` re-embedding the pgvector corpus.
 
 ## Comandos locais
 
