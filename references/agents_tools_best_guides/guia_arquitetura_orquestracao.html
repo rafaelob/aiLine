@@ -2,10 +2,11 @@
 <html lang="pt-BR" data-theme="light">
 <head>
 <meta charset="utf-8" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%9A%3C/text%3E%3C/svg%3E" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Arquitetura &amp; Orquestração de Agentes — Núcleo agnóstico</title>
 <meta name="description" content="Arquitetura de runtime agnóstica de provider para sistemas agentic: primitivos canônicos, matriz de escolha agent/workflow/agent-as-tool/handoff, capability registry, microcontextos e active plan, skeleton de orquestrador, antipadrões, runtime por maturidade, model router, modos de injeção de skills, long-running jobs e blueprint SOTA." />
-<meta name="last-checked" content="2026-07-12" />
+<meta name="last-checked" content="2026-09-30" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -277,6 +278,7 @@
     details > summary { display: none; }
   }
 </style>
+<style id="rev-flag-css">main :not(pre) > code,main a{overflow-wrap:anywhere}.rev-flag{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:999px;font-size:.62em;font-weight:600;vertical-align:middle;letter-spacing:.02em;white-space:nowrap}.rev-flag.novo{background:#dcfce7;color:#14532d;border:1px solid #86efac}.rev-flag.atu{background:#e0f2fe;color:#0c4a6e;border:1px solid #7dd3fc}.rev-news{margin:16px 0;padding:12px 16px;border-left:4px solid #22c55e;border-radius:8px;background:rgba(34,197,94,.08)}.rev-news ul{margin:6px 0 0;padding-left:20px}.rev-news li{margin:2px 0}:root[data-theme="dark"] .rev-flag.novo{background:#14532d;color:#dcfce7;border-color:#166534}:root[data-theme="dark"] .rev-flag.atu{background:#0c4a6e;color:#e0f2fe;border-color:#075985}@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .rev-flag.novo{background:#14532d;color:#dcfce7;border-color:#166534}:root:not([data-theme="light"]) .rev-flag.atu{background:#0c4a6e;color:#e0f2fe;border-color:#075985}}</style>
 </head>
 <body>
 <a class="skip" href="#main">Pular para o conteúdo</a>
@@ -285,7 +287,7 @@
   <div class="header-row">
     <div class="brand">Arquitetura &amp; Orquestração <small>Núcleo agnóstico de agentes</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-12</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-09-30</strong></span>
       <span class="badge da">Núcleo · agnóstico de provider</span>
       <span class="badge info">Conceitual + referência</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
@@ -297,6 +299,7 @@
   <nav class="toc" aria-label="Sumário">
     <div class="toc-section">Início</div>
     <ol>
+      <li><a href="#para-agentes">Resumo para agentes</a></li>
       <li><a href="#sobre-guia">Sobre este guia</a></li>
       <li><a href="#fontes-oficiais">Fontes &amp; verificação</a></li>
       <li><a href="#mapa-do-nucleo">Mapa do núcleo</a></li>
@@ -333,11 +336,13 @@
     <div class="toc-section">Referência</div>
     <ol>
       <li><a href="#checklist-aceitacao">Checklist de aceitação</a></li>
+      <li><a href="#legado">Legado e migração</a></li>
       <li><a href="#verificacao">Notas de verificação</a></li>
     </ol>
   </nav>
 
   <main id="main">
+<aside class="rev-news" id="rev-news-2026-09-30" aria-label="Novidades desta revisão"><strong>O que há de novo nesta revisão (2026-09-30)</strong> — 2 seções novas e 8 atualizadas desde a revisão de 2026-09-23. Procure os selos <span class="rev-flag novo">Novo</span> e <span class="rev-flag atu">Atualizado</span> nos títulos.<details><summary>Ver lista</summary><ul><li><span class="rev-flag novo">Novo</span> <a href="#para-agentes">Resumo para agentes</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#fontes-oficiais">Fontes &amp; verificação</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#primitivos-canonicos">2. Primitivos canônicos</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#arquitetura-referencia">3. Arquitetura de referência</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#handoff-vs-agent-as-tool">8. Handoff versus agent-as-tool em detalhe</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#runtime-por-maturidade">11. Padrões de runtime por maturidade</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#model-router">12. Model router e seleção de agente</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#checklist-aceitacao">Checklist de aceitação arquitetural</a></li><li><span class="rev-flag novo">Novo</span> <a href="#legado">Legado e migração</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#verificacao">Notas de verificação</a></li><li>O legado (rota antiga do Gemini, Assistants API, <code>create_react_agent</code>, <code>langgraph-supervisor</code>, ADK 1.x, Agent Engine, A2A 0.3, MCP 2025-11-25) saiu do corpo e foi condensado em <a href="#legado">Legado e migração</a>; notas históricas empilhadas foram removidas.</li></ul></details></aside>
 
     <div class="hero">
       <h1>Arquitetura &amp; Orquestração de Agentes</h1>
@@ -351,9 +356,63 @@
       <div class="hero-meta">
         <span class="badge da">Núcleo · agnóstico de provider</span>
         <span class="badge info">Conceitual + referência</span>
-        <span class="badge ok">SOTA · verificado 2026-06-10</span>
+        <span class="badge ok">SOTA · verificado 2026-09-30 · fatos perecíveis nos guias de provider</span>
       </div>
     </div>
+
+    <section id="para-agentes">
+      <h2>Resumo para agentes (verificado 2026-09-30)<span class="rev-flag novo">Novo · 2026-09-30</span></h2>
+      <p><strong>Escopo:</strong> guia conceitual e agnóstico de provider; não há chamada de API aqui. Ele decide a <em>rota</em> e a topologia; o código de cada rota está nos guias <a href="guia_agents_sdk_orquestracao.html">Agents SDK</a>, <a href="guia_langgraph_orquestracao.html">LangGraph</a>, <a href="guia_google_adk_orquestracao.html">Google ADK</a> e nos guias de provider. IDs de modelo não são fixados aqui (<a href="#model-router">§12</a>).</p>
+      <h3>Rotas e versões correntes (2026-09-30)</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Rota</th><th>Pacote / endpoint</th><th>Versão</th><th>Status / nota</th></tr></thead>
+          <tbody>
+            <tr><td>OpenAI Agents SDK (loop no seu processo)</td><td><code>openai-agents</code> · <code>@openai/agents</code></td><td><code>0.22.3</code> · <code>0.18.0</code></td><td>Pré-1.0; default do SDK <code>gpt-5.6-luna</code> (não GPT-6)</td></tr>
+            <tr><td>OpenAI Responses + Conversations</td><td><code>POST /v1/responses</code> · <code>openai</code></td><td>PyPI <code>3.22.1</code> · npm <code>7.25.0</code></td><td>Rota recomendada; Chat Completions sem tools em Astra/<code>gpt-6.1-sol</code></td></tr>
+            <tr><td>OpenAI Agents API (harness gerenciado)</td><td><code>POST /v1/agents/sessions</code>, <code>OpenAI-Beta: agents=v1</code></td><td>—</td><td>beta (2026-09-10); sem ZDR; dados só nos EUA</td></tr>
+            <tr><td>OpenAI multi-agente hospedado</td><td><code>multi_agent.enabled</code>, <code>OpenAI-Beta: responses_multi_agent=v1</code></td><td>—</td><td>beta; <code>gpt-6.1-sol</code> e GPT-5.6</td></tr>
+            <tr><td>LangChain + LangGraph</td><td><code>langchain</code> · <code>langgraph</code></td><td><code>1.4.3</code> · <code>1.2.12</code></td><td><code>create_agent</code>; supervisor = subagentes como <code>@tool</code></td></tr>
+            <tr><td>Google ADK</td><td><code>google-adk</code> · <code>@google/adk</code></td><td><code>2.10.0</code> · <code>2.1.0</code></td><td>2.x = Workflow Runtime em grafo; 1.x (1.39.1) só manutenção</td></tr>
+            <tr><td>Google Interactions API</td><td><code>client.interactions</code> (<code>google-genai</code>)</td><td>—</td><td>GA desde junho de 2026; rota agentic recomendada</td></tr>
+            <tr><td>Anthropic</td><td>Messages · <code>claude-agent-sdk</code> · Managed Agents</td><td><code>anthropic</code> 1.9.0 · <code>claude-agent-sdk</code> 0.2.162</td><td>Managed Agents beta (<code>managed-agents-2026-04-01</code>), sem GA</td></tr>
+            <tr><td>A2A (agente ↔ agente)</td><td><code>a2a-sdk</code> · <code>@a2a-js/sdk</code></td><td>spec 1.0 (repo v1.0.1) · <code>1.2.1</code> · <code>1.3.0</code></td><td>Complementar a MCP; não concede autorização</td></tr>
+            <tr><td>MCP (host ↔ tool/resource)</td><td>spec <code>2026-07-28</code> · <code>mcp</code></td><td><code>2.2.0</code> (Python)</td><td>Use <code>mcp&gt;=2.2.0</code> (ou <code>&gt;=1.30.0</code>); <code>2025-11-25</code> é Legacy</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>Faça / Não faça</h3>
+      <ul>
+        <li>Não trate Agents SDK, Agents API e uma conversa Responses com <code>previous_response_id</code> como sinônimos → três <em>routes</em> distintas (<a href="#handoff-vs-agent-as-tool">§8</a>).</li>
+        <li>Não use o provider como banco de estado → ledger canônico externo; o payload do provider é projeção.</li>
+        <li>Não use handoff quando basta delegar → agent-as-tool (o parent continua no comando); handoff só para mudança de ownership.</li>
+        <li>Não deixe o subagente devolver transcript bruto → <code>output_schema</code>, provenance, status e lacunas.</li>
+        <li>Não abra fan-out sem limite → <code>max_fanout</code>, timeout, join, cancelamento e budget por escopo.</li>
+        <li>Não repita mutação após timeout sem idempotency key.</li>
+        <li>Não envie segredos, tokens de tenant ou autorização pelo prompt; MCP e A2A não autorizam por si.</li>
+        <li>Não use Assistants API (encerrada 2026-08-26) → Responses + Conversations; Agent Builder (shutdown 2026-11-30) → Agents SDK + servidor próprio.</li>
+        <li>Não use <code>langgraph.prebuilt.create_react_agent</code> nem <code>langgraph-supervisor</code> (repo arquivado) → <code>langchain.agents.create_agent</code> (<code>prompt=</code> vira <code>system_prompt=</code>).</li>
+        <li>Não comece trabalho novo em ADK 1.x nem em <code>vertexai.agent_engines</code> → ADK 2.x e <code>agentplatform.Client().runtimes</code> (Agent Runtime).</li>
+        <li>Não use Gemini <code>generateContent</code>/<code>google-generativeai</code> como rota agentic → Interactions API via <code>google-genai</code>.</li>
+        <li>Não use A2A 0.3 (<code>kind</code>, <code>/v1</code> no REST) → <code>a2a-sdk&gt;=1.0</code>; não use o handshake MCP <code>initialize</code>/<code>Mcp-Session-Id</code> (Legacy) → spec 2026-07-28.</li>
+        <li>Não conclua que uma rota gerenciada (Agents API, multi-agente hospedado, Managed Agents) é portátil → declare o que o runtime deixa de controlar e mantenha fallback testado.</li>
+        <li>Para runs ZDR estritos não use a Agents API → Agents SDK auto-hospedado ou Responses direta.</li>
+        <li>Não misture built-ins, funções externas com side effects e síntese no mesmo boundary (paralelismo sem fase).</li>
+      </ul>
+      <h3>Onde está cada coisa</h3>
+      <p>
+        <a href="#mapa-do-nucleo">Mapa do núcleo</a> · <a href="#primitivos-canonicos">Primitivos (§2)</a> · <a href="#arquitetura-referencia">Arquitetura de referência (§3)</a> · <a href="#matriz-de-escolha">Matriz de escolha (§4)</a> ·
+        <a href="#padroes-workflow-catalogo">Padrões de workflow (§4A)</a> · <a href="#capability-registry">Capability registry (§5)</a> · <a href="#microcontextos-active-plan">Microcontextos (§6)</a> · <a href="#skeleton-orquestrador">Skeleton (§7)</a> ·
+        <a href="#handoff-vs-agent-as-tool">Handoff vs agent-as-tool (§8)</a> · <a href="#antipadroes">Antipadrões (§10)</a> · <a href="#runtime-por-maturidade">Bases e versões (§11)</a> · <a href="#model-router">Model router (§12)</a> ·
+        <a href="#long-running-deep-research">Long-running (§13)</a> · <a href="#blueprint-sota">Blueprint SOTA (§14)</a> · <a href="#checklist-aceitacao">Checklist</a> · <a href="#legado">Legado e migração</a> · <a href="#verificacao">Notas de verificação</a>
+      </p>
+      <h3>Incertezas (não trate como fato)</h3>
+      <ul>
+        <li><span class="pill na">UNVERIFIED</span> Suporte de Astra/6 Sol/6 Luna ao multi-agente hospedado da Responses: o guia específico cita só <code>gpt-6.1-sol</code> e GPT-5.6.</li>
+        <li><span class="pill na">UNVERIFIED</span> Política formal de fim de vida do ADK 1.x e sunset de <code>langgraph-swarm</code> (<a href="#verificacao">Notas de verificação</a>).</li>
+        <li>Versões e status beta/GA são perecíveis (2026-09-30); nenhum exemplo foi executado neste corte.</li>
+      </ul>
+    </section>
 
     <section id="sobre-guia">
       <h2>Sobre este guia</h2>
@@ -383,24 +442,40 @@
     </section>
 
     <section id="fontes-oficiais">
-      <h2>Fontes &amp; verificação</h2>
+      <h2>Fontes &amp; verificação<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <p>
         As afirmações perecíveis (parâmetros de API, versões de spec, comportamento de SDK) foram
-        conferidas contra a documentação oficial em <strong>2026-06-10</strong> e consolidadas na folha
-        de fatos SOTA do projeto. Os contratos de arquitetura (registry, active plan, ledger) são
-        recomendações de engenharia derivadas dos padrões oficiais de cada provider.
+        conferidas contra as fontes oficiais em <strong>2026-09-30</strong>. Este capítulo mantém apenas
+        invariantes de arquitetura; IDs, limites e disponibilidade continuam no guia de provider e na
+        documentação do alvo. Os contratos de registry, active plan e ledger são recomendações de
+        engenharia derivadas desses contratos, não promessa de equivalência entre providers.
       </p>
       <div class="table-wrap"><table>
-        <thead><tr><th>Tema</th><th>Fonte oficial</th></tr></thead>
+        <thead><tr><th>Tema</th><th>Fonte oficial (verificado em 2026-09-30)</th></tr></thead>
         <tbody>
           <tr><td>Orquestração multi-agente (LLM-orchestrated vs code-orchestrated)</td><td><a href="https://openai.github.io/openai-agents-python/multi_agent/" target="_blank" rel="noopener">openai.github.io/openai-agents-python/multi_agent</a></td></tr>
-          <tr><td>OpenAI Agents SDK (primitivos: agents, handoffs, tools, guardrails)</td><td><a href="https://openai.github.io/openai-agents-python/" target="_blank" rel="noopener">openai.github.io/openai-agents-python</a></td></tr>
-          <tr><td>OpenAI Responses API (loop próprio, tools, estado)</td><td><a href="https://developers.openai.com/api/docs/guides/tools" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/tools</a></td></tr>
-          <tr><td>Model Context Protocol — spec <strong>2025-11-25</strong></td><td><a href="https://modelcontextprotocol.io/specification/2025-11-25" target="_blank" rel="noopener">modelcontextprotocol.io/specification/2025-11-25</a></td></tr>
-          <tr><td>Multi-agente em LangGraph (supervisor/swarm)</td><td><a href="https://docs.langchain.com/oss/python/langgraph/multi-agent" target="_blank" rel="noopener">docs.langchain.com/oss/python/langgraph/multi-agent</a></td></tr>
-          <tr><td>Multi-agente em Google ADK</td><td><a href="https://google.github.io/adk-docs/agents/multi-agents/" target="_blank" rel="noopener">google.github.io/adk-docs/agents/multi-agents</a></td></tr>
+          <tr><td>OpenAI Agents SDK — <code>openai-agents</code> 0.22.3 (Python) / <code>@openai/agents</code> 0.18.0 (JS); default <code>gpt-5.6-luna</code></td><td><a href="https://openai.github.io/openai-agents-python/" target="_blank" rel="noopener">openai.github.io/openai-agents-python</a> · <a href="https://openai.github.io/openai-agents-python/models/" target="_blank" rel="noopener">Models</a></td></tr>
+          <tr><td>OpenAI Responses API (tools, <code>conversation</code>, <code>previous_response_id</code>, paralelismo) e Conversations (recurso de estado, distinto do turn da Responses); família GPT-6 (Astra, <code>gpt-6.1-sol</code> desde 2026-09-29, Luna) e GPT-5.6</td><td><a href="https://developers.openai.com/api/reference/cli/resources/responses/methods/create" target="_blank" rel="noopener">API reference · responses.create</a> · <a href="https://developers.openai.com/api/docs/guides/conversation-state" target="_blank" rel="noopener">Conversation state</a> · <a href="https://developers.openai.com/api/docs/models" target="_blank" rel="noopener">Models</a></td></tr>
+          <tr><td>OpenAI Agents API (produto gerenciado, beta desde 2026-09-10 — distinto do Agents SDK)</td><td><a href="https://developers.openai.com/api/docs/guides/agents-api/overview" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/agents-api/overview</a></td></tr>
+          <tr><td>Google Interactions API (GA desde junho de 2026; stateful/stateless e steps observáveis; <code>client.interactions</code> no <code>google-genai</code>)</td><td><a href="https://ai.google.dev/gemini-api/docs/interactions" target="_blank" rel="noopener">ai.google.dev · Interactions</a> · doc atualizada em 2026-09-23</td></tr>
+          <tr><td>Anthropic Messages, tool use, Claude Agent SDK e Managed Agents (rotas distintas; Managed Agents em beta, sem GA); modelos <code>claude-opus-5-5</code> e <code>claude-sonnet-5-5</code> (2026-09-28)</td><td><a href="https://platform.claude.com/docs/en/build-with-claude/working-with-messages" target="_blank" rel="noopener">Messages</a> · <a href="https://platform.claude.com/docs/en/managed-agents/overview" target="_blank" rel="noopener">Managed Agents</a> · <a href="https://code.claude.com/docs/en/agent-sdk/overview" target="_blank" rel="noopener">Agent SDK</a> · <a href="https://platform.claude.com/docs/en/models/overview" target="_blank" rel="noopener">Models</a> · <a href="https://platform.claude.com/docs/en/release-notes/overview" target="_blank" rel="noopener">release notes</a></td></tr>
+          <tr><td>Model Context Protocol — spec atual <strong>2026-07-28</strong> (SDK Python <code>mcp</code> 2.2.0)</td><td><a href="https://modelcontextprotocol.io/specification/2026-07-28" target="_blank" rel="noopener">modelcontextprotocol.io/specification/2026-07-28</a></td></tr>
+          <tr><td>Agent2Agent — comunicação entre agentes opacos; complementar a MCP</td><td><a href="https://a2a-protocol.org/latest/specification/" target="_blank" rel="noopener">a2a-protocol.org/latest/specification</a> · <strong>spec 1.0</strong> (GA em 2026-03-12); o repositório <code>a2aproject/A2A</code> está em <strong>v1.0.1</strong> (2026-05-28, patch sobre a mesma spec 1.0); SDK Python <code>a2a-sdk</code> <strong>1.2.1</strong> (2026-09-30). Não confunda as três numerações.</td></tr>
+          <tr><td>Multi-agente em LangChain/LangGraph — <code>langchain</code> 1.4.3, <code>langgraph</code> 1.2.12 (subagents, handoffs, skills, router; supervisor via <code>create_agent</code> + tools)</td><td><a href="https://docs.langchain.com/oss/python/langchain/multi-agent" target="_blank" rel="noopener">docs.langchain.com/oss/python/langchain/multi-agent</a> · <a href="https://docs.langchain.com/oss/python/langchain/supervisor" target="_blank" rel="noopener">supervisor com subagents</a></td></tr>
+          <tr><td>Multi-agente em Google ADK — <code>google-adk</code> 2.10.0 (Python, linha 2.x; 1.x só manutenção), <code>@google/adk</code> 2.1.0; deploy gerenciado no <strong>Agent Runtime</strong> (ex-Vertex AI Agent Engine)</td><td><a href="https://adk.dev/workflows/" target="_blank" rel="noopener">adk.dev/workflows</a> · <a href="https://docs.cloud.google.com/gemini-enterprise-agent-platform/build/runtime" target="_blank" rel="noopener">Agent Runtime</a></td></tr>
         </tbody>
       </table></div>
+      <p>
+        <strong>Pesquisa aplicada ao checklist (não é compatibilidade de provider):</strong>
+        <a href="https://arxiv.org/abs/2604.25850" target="_blank" rel="noopener">AHE</a> (2026-04-28),
+        <a href="https://arxiv.org/abs/2607.25656" target="_blank" rel="noopener">OrchBench</a> (2026-07-28),
+        <a href="https://arxiv.org/abs/2606.04874" target="_blank" rel="noopener">APB</a> (2026-06-03),
+        <a href="https://arxiv.org/abs/2602.07962" target="_blank" rel="noopener">LOCA-bench/context rot</a> (2026-02-08),
+        <a href="https://www.microsoft.com/en-us/research/articles/memento-teaching-llms-to-manage-their-own-context/" target="_blank" rel="noopener">Memento</a> (2026-04-08) e
+        <a href="https://arxiv.org/abs/2602.05892" target="_blank" rel="noopener">ContextBench</a> (2026-02-05).
+        A consequência operacional é medir processo (seleção/autorização de tools, handoffs, retenção e retries)
+        separado do resultado (correção, segurança, latência e custo), com contexto e fan-out limitados.
+      </p>
       <p style="font-size:13px;color:var(--c-fg-muted)">
         Legenda dos selos: <span class="pill ok">Verificado</span> confirmado na doc oficial ·
         <span class="pill beta">Novo</span> recurso recente ·
@@ -462,7 +537,7 @@
     </section>
 
     <section id="primitivos-canonicos">
-      <h2>2. Primitivos canônicos</h2>
+      <h2>2. Primitivos canônicos<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <p>
         Sete primitivos cobrem praticamente toda topologia agentic. Conhecê-los explicitamente evita o
         erro de transformar todo problema em "um agente autônomo".
@@ -475,21 +550,23 @@
           <tr><td><strong>Agent-as-tool</strong></td><td>Subagente chamado como uma tool; o parent mantém controle e recebe output reduzido.</td><td>Especialização delimitada: análise de arquivo, pesquisa, classificação, normalização.</td><td>Permitir que o subagente despeje histórico bruto no parent.</td></tr>
           <tr><td><strong>Handoff</strong></td><td>Transferência de controle para outro agente ativo.</td><td>Mudança real de ownership: atendimento, triagem, especialista humano/IA.</td><td>Usar handoff quando bastava uma chamada subordinada.</td></tr>
           <tr><td><strong>MCP tool/resource/prompt</strong></td><td>Capability publicada em protocolo padronizado, acessada por host/client.</td><td>Integrar sistemas, dados e ferramentas reusáveis com schema e segurança.</td><td>Tratar MCP como túnel irrestrito para ações perigosas.</td></tr>
+          <tr><td><strong>A2A task/message</strong></td><td>Contrato de comunicação entre agentes independentes, potencialmente opacos, com descoberta e tarefas.</td><td>Delegar a um agente remoto sem assumir acesso ao seu estado, tools ou memória.</td><td>Usar A2A para mascarar autorização, schema ou SLA não verificados.</td></tr>
           <tr><td><strong>Provider built-in</strong></td><td>Tool executada no lado do provider (web/file/code conforme a API).</td><td>Quando a ferramenta oficial reduz integração e oferece rastreabilidade adequada.</td><td>Presumir retenção, ZDR, paralelismo e billing sem validar a doc.</td></tr>
           <tr><td><strong>Function tool</strong></td><td>Schema exposto ao modelo, execução feita pelo cliente/orquestrador.</td><td>Integrações internas, chamadas a APIs próprias, validação local.</td><td>Schemas vagos, side effects sem aprovação e tool result gigante.</td></tr>
         </tbody>
       </table></div>
       <p>
-        O OpenAI Agents SDK cobre agents, handoffs, agents-as-tools, guardrails, sessions, tracing e MCP;
-        a Responses API subjacente é apropriada quando o runtime precisa <em>possuir</em> o loop e o
-        dispatch. A escolha entre os dois é tratada no
+        MCP e A2A são complementares: MCP conecta um host a tools, recursos e prompts; A2A conecta
+        agentes por mensagens/tarefas. Nenhum dos dois concede autorização por si só. O OpenAI Agents
+        SDK cobre agents, handoffs, agents-as-tools, guardrails, sessions, tracing e MCP; a Responses API
+        subjacente é apropriada quando o runtime precisa <em>possuir</em> o loop e o dispatch. A escolha entre os dois é tratada no
         <a href="guia_providers_adapters.html">capítulo de providers</a> e nos guias de framework.
       </p>
-      <div class="source-link">Fontes oficiais: <a href="https://openai.github.io/openai-agents-python/" target="_blank" rel="noopener">Agents SDK</a> · <a href="https://developers.openai.com/api/docs/guides/tools" target="_blank" rel="noopener">OpenAI tools guide</a> · <a href="https://modelcontextprotocol.io/specification/2025-11-25" target="_blank" rel="noopener">MCP 2025-11-25</a>.</div>
+      <div class="source-link">Fontes oficiais (consultadas 2026-09-30): <a href="https://openai.github.io/openai-agents-python/" target="_blank" rel="noopener">Agents SDK</a> · <a href="https://modelcontextprotocol.io/specification/2026-07-28" target="_blank" rel="noopener">MCP 2026-07-28</a> · <a href="https://a2a-protocol.org/latest/specification/" target="_blank" rel="noopener">A2A — spec 1.0, repositório v1.0.1, <code>a2a-sdk</code> 1.2.1</a>.</div>
     </section>
 
     <section id="arquitetura-referencia">
-      <h2>3. Arquitetura de referência</h2>
+      <h2>3. Arquitetura de referência<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <p>
         A figura abaixo separa as quatro camadas que nunca devem ser confundidas. Trocar de provider,
         reduzir contexto, auditar tools e manter invariantes só é possível quando o estado real vive no
@@ -529,7 +606,7 @@
           <rect class="box" x="520" y="232" width="200" height="78" rx="10"/>
           <text class="lbl" x="620" y="256" text-anchor="middle">Provider adapters</text>
           <text class="sub" x="620" y="276" text-anchor="middle">OpenAI · Anthropic · Google</text>
-          <text class="sub" x="620" y="292" text-anchor="middle">Responses · Messages · Gemini</text>
+          <text class="sub" x="620" y="292" text-anchor="middle">Responses/Conversations · Messages/Agent SDK · Interactions</text>
 
           <path class="arrow" d="M380,70 L380,108"/>
           <path class="arrow" d="M330,170 L160,230"/>
@@ -543,7 +620,9 @@
         <figcaption>
           As quatro camadas. O orquestrador lê e escreve no ledger canônico, expõe um subconjunto do
           capability registry por turno e fala com os providers por meio de adapters que projetam o
-          estado durável. Nenhum segredo, token de tenant ou autorização trafega "pelo prompt".
+          estado durável. <strong>Route identity é parte do contrato:</strong> Responses é a interface de
+          execução da OpenAI e Conversations é o recurso de estado; Interactions (<code>google-genai</code>) é a rota agentic
+          do Google; Messages é a API direta da Anthropic, distinta do Agent SDK/Managed Agents. Nenhum segredo, token de tenant ou autorização trafega "pelo prompt".
         </figcaption>
       </div>
       <div class="callout tip">
@@ -751,13 +830,19 @@
       </p>
       <pre><code class="language-json">{
   "capability_id": "retrieve_domain_evidence.v1",
-  "kind": "mcp_tool | function_tool | agent_as_tool | handoff | provider_builtin",
+  "kind": "mcp_tool | a2a_task | function_tool | agent_as_tool | handoff | provider_builtin",
+  "route": "provider_route_or_protocol_version",
   "description_for_model": "Recupera evidências com proveniência e limites de confiança.",
   "input_schema":  { "type": "object", "properties": {} },
   "output_schema": { "type": "object", "required": ["summary", "citations", "confidence"] },
+  "capabilities_required": ["structured_output", "citations"],
+  "loss_declaration": { "status": "preserved | transformed | unavailable", "notes": [] },
   "side_effect_level": "none | read | write_low | write_high",
-  "auth_scope": "derived_from_runtime_not_model",
+  "authorization": { "scope": "derived_from_runtime_not_model", "approval": "policy_or_human" },
   "tenant_boundary": "required",
+  "concurrency": { "class": "parallel_read | serial | serial_by_resource", "max_fanout": 4 },
+  "retry": { "transient_only": true, "max_attempts": 2, "backoff": "bounded" },
+  "idempotency": { "required_for_write": true, "key_source": "runtime" },
   "max_input_tokens": 2000,
   "max_output_tokens": 1200,
   "timeout_ms": 15000,
@@ -765,9 +850,11 @@
   "observability": ["trace_span", "cost", "source_hashes", "tool_args_redacted"]
 }</code></pre>
       <p>
-        O mesmo contrato suporta ferramentas locais, MCP, RAG, agentes especializados e built-ins; o
-        adapter converte para o formato aceito por cada provider. As regras de design do schema de tool
-        (nomes, descrições, caps de output) e o envelope de resultado estão no
+        O mesmo contrato suporta ferramentas locais, MCP, A2A, RAG, agentes especializados e built-ins;
+        o adapter converte para o formato aceito por cada rota e registra capacidades preservadas,
+        transformadas ou indisponíveis. O scheduler continua sendo a autoridade sobre autorização,
+        fan-out, locks, retries e idempotência. As regras de design do schema de tool (nomes, descrições,
+        caps de output) e o envelope de resultado estão no
         <a href="guia_ferramentas_mcp_rag.html">capítulo de ferramentas</a>.
       </p>
       <div class="callout tip">
@@ -788,6 +875,7 @@
           <tr><td><strong>Microcontexto</strong></td><td>Subexecução isolada com input mínimo, policy, budget, tools permitidas e envelope de retorno.</td><td>Evita que subagentes herdem todo o histórico — só entram fatos necessários, assets autorizados e schema de saída.</td></tr>
           <tr><td><strong>Active plan</strong></td><td>Estado explícito do que está em andamento: objetivo, etapas, pendências, constraints, decisões e condição de finalização.</td><td>Substitui raciocínio implícito por estado auditável, com budgets e gates.</td></tr>
           <tr><td><strong>Delegation packet</strong></td><td>Pacote tipado para agent-as-tool/handoff/MCP: tarefa, contexto reduzido, constraints, capabilities, output contract e trace do parent.</td><td>Torna a delegação verificável e impede vazamento de contexto.</td></tr>
+          <tr><td><strong>Context health</strong></td><td>Medida de tamanho, idade, proveniência e retenção dos fatos após cada compactação/transferência.</td><td>Detecta context rot; fatos críticos precisam de revalidação, não apenas de um resumo plausível.</td></tr>
         </tbody>
       </table></div>
       <p>O active plan vive no ledger e é reprojetado a cada turno:</p>
@@ -797,7 +885,8 @@
     "stage": "collect_evidence | analyze | synthesize | finalize",
     "open_questions": [],
     "constraints": ["não vazar dados sensíveis", "citar fontes"],
-    "budgets": { "turns_remaining": 3, "tool_calls_remaining": 8, "tokens_remaining": 24000 },
+    "budgets": { "turns_remaining": 3, "tool_calls_remaining": 8, "tokens_remaining": 24000, "max_fanout": 4 },
+    "context_health": { "source_hashes": [], "critical_facts": [], "compaction_count": 0, "retention_check": "required" },
     "finalization_policy": { "reserve_tokens": 4000, "reserve_seconds": 20 }
   }
 }</code></pre>
@@ -825,26 +914,37 @@ class TurnPolicy:
     allowed_capabilities: list[str]
     max_agent_turns: int
     max_tool_calls: int
+    max_fanout: int
     final_reserve_tokens: int
     require_human_for: list[str]
+    retry_budget: int = 2
 
-async def run_agent_turn(user_input: str, ledger, policy: TurnPolicy) -> dict[str, Any]:
+async def run_agent_turn(user_input: str, ledger, policy: TurnPolicy, adapter) -> dict[str, Any]:
     ledger.record_user_input(user_input)
-    projected = ledger.project_for_provider(
-        provider="openai_responses",          # ou anthropic_messages, gemini, ...
+    projected = ledger.project_for_route(
+        route=adapter.route_id,                # rota explícita; não inferir pelo nome do modelo
         allowed_capabilities=policy.allowed_capabilities,
         reserve_tokens=policy.final_reserve_tokens,
     )
     for _step in range(policy.max_agent_turns):
-        response = await call_model(projected)
+        response = await adapter.invoke(projected)
         ledger.ingest_provider_response(response)
-        calls = ledger.extract_pending_tool_calls(limit=policy.max_tool_calls)
+        calls = adapter.normalize_tool_calls(response, limit=policy.max_tool_calls)
         if not calls:
             return ledger.final_answer()
-        safe_calls = authorize_tool_calls(calls, policy)   # runtime decide, não o modelo
-        results = await execute_capabilities(safe_calls)
-        ledger.record_tool_results(results)                # reduzir + provenance antes de registrar
-        projected = ledger.project_for_provider(provider="openai_responses")
+        safe_calls = authorize_and_validate(calls, policy, ledger)  # claims do runtime, nunca do modelo
+        results = await execute_with_policy(
+            safe_calls,
+            max_fanout=policy.max_fanout,
+            retry_budget=policy.retry_budget,
+            retry_only=lambda call: call.is_transient and (
+                call.spec.side_effect_level in {"none", "read"} or call.has_idempotency_key
+            ),
+            idempotency_key=lambda call: ledger.idempotency_key(call),
+            fail_closed_on_unknown=True,
+        )
+        ledger.record_tool_results(adapter.reduce_results(results))
+        projected = ledger.project_for_route(route=adapter.route_id)
     return ledger.force_wind_down_summary()                # respeita o final reserve</code></pre>
       <div class="callout tip">
         <strong>Mesmo quando o framework gerencia o loop</strong>, mantenha registro externo de traces,
@@ -857,7 +957,7 @@ async def run_agent_turn(user_input: str, ledger, policy: TurnPolicy) -> dict[st
     </section>
 
     <section id="handoff-vs-agent-as-tool">
-      <h2>8. Handoff versus agent-as-tool em detalhe</h2>
+      <h2>8. Handoff versus agent-as-tool em detalhe<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <p>
         <strong>Agent-as-tool</strong> é delegação subordinada: o parent formula a tarefa, envia um
         pacote mínimo e consome o retorno. <strong>Handoff</strong> é transferência de ownership: o
@@ -875,13 +975,55 @@ async def run_agent_turn(user_input: str, ledger, policy: TurnPolicy) -> dict[st
         </tbody>
       </table></div>
       <div class="callout">
-        <strong>Implementações concretas:</strong> handoffs e agents-as-tools no OpenAI Agents SDK
-        (incluindo filtros de input e <em>collapse</em> de transcript) estão no
-        <a href="guia_agents_sdk_orquestracao.html">guia do Agents SDK</a>; o equivalente multi-agente
-        em LangGraph (supervisor/swarm) e no Google ADK (coordenador + subagentes) está nos respectivos
-        guias de framework e nos guias dedicados <a href="guia_langgraph.html">LangGraph</a> e
-        <a href="guia_google_adk.html">Google ADK</a>.
+        <strong>Implementações concretas (verificado em 2026-09-30):</strong>
+        <ul>
+          <li><strong>OpenAI Agents SDK</strong> (<code>openai-agents</code> 0.22.3): handoffs, agents-as-tools, filtros de input e <em>collapse</em> de transcript — <a href="guia_agents_sdk_orquestracao.html">guia do Agents SDK</a>.</li>
+          <li><strong>LangChain/LangGraph</strong> (<code>langchain</code> 1.4.3, <code>langgraph</code> 1.2.12): <code>langchain.agents.create_agent</code> com subagentes expostos como <code>@tool</code> — o padrão supervisor direto, que substitui <code>langgraph-supervisor</code> (repositório arquivado) — e handoffs via tools/<code>Command</code>; ver <a href="guia_langgraph_orquestracao.html">orquestração em LangGraph</a> e <a href="guia_langgraph.html">LangGraph</a>.</li>
+          <li><strong>Google ADK</strong> (<code>google-adk</code> 2.10.0): workflows em grafo (graph/dynamic/collaborative), coordenador + subagentes e <code>RemoteA2aAgent</code> para A2A; deploy gerenciado no Agent Runtime (multiagente com A2A ainda em preview); ver <a href="guia_google_adk_orquestracao.html">orquestração no ADK</a> e <a href="guia_google_adk.html">Google ADK</a>.</li>
+        </ul>
       </div>
+      <div class="callout beta">
+        <strong>Rotas gerenciadas não são uma capacidade portátil.</strong> Uma API de execução de modelo,
+        um recurso de conversa e um harness de agentes hospedado podem ter nomes parecidos, mas contratos,
+        retenção, autorização, observabilidade e ciclo de vida diferentes. A Responses API/Conversations da
+        OpenAI, a Interactions API do Google e Messages/Agent SDK ou Managed Agents da Anthropic devem ser
+        registrados como <em>routes</em> distintas; não conclua que um adapter possui multi-agent apenas por
+        existir um SDK ou um recurso beta. Quando a orquestração fica hospedada, declare explicitamente o que
+        o runtime deixa de controlar (fan-out, contexto, retries, aprovação, dados) e mantenha uma saída
+        compatível ou um fallback testado.
+      </div>
+      <div class="callout beta">
+        <strong>A OpenAI tem DUAS rotas chamadas "Agents", e não são o mesmo produto.</strong> A
+        <strong>Agents SDK</strong> (<code>openai-agents</code>, biblioteca open-source) é a rota que os guias de
+        framework documentam: você hospeda o loop — runner, handoffs, guardrails, sessões — na sua arquitetura,
+        sobre chamadas à Responses API. A <strong><em>Agents API</em></strong> é um serviço gerenciado em beta
+        pública desde 2026-09-10 que roda o harness do Codex <em>na infraestrutura da OpenAI</em>: sessão,
+        compactação de contexto, recuperação de falha e delegação a subagentes ficam do lado do servidor. Blocos:
+        <code>agent</code> (modelo/instruções/tools/MCP), <code>environment</code> (<code>none</code> |
+        <code>openai_hosted</code> | <code>self_hosted</code>), <code>session</code> (durável) e
+        <code>events</code>/<code>items</code>; endpoint <code>POST /v1/agents/sessions</code> com o header
+        <code>OpenAI-Beta: agents=v1</code>; computer use hospedado desde 2026-09-29. Uma sessão da Agents API, uma
+        sessão da Agents SDK e uma conversa da Responses com <code>previous_response_id</code> são <strong>três
+        recursos diferentes</strong> — registre-os como três <em>routes</em> distintas, nunca como sinônimos.
+        Regra prática: Agents API quando o objetivo é operar menos harness; Agents SDK quando possuir e customizar o
+        harness é requisito. A Agents API <strong>não suporta ZDR</strong> (nem com sandbox self-hosted) e retém
+        dados só nos EUA — para runs ZDR-estritos, use a Agents SDK auto-hospedada ou a Responses direta. Há ainda o
+        multi-agente hospedado da própria Responses (beta; GPT-6.1 Sol e todos os GPT-5.6), em que o modelo raiz
+        coordena subagentes numa chamada. Do lado Anthropic, <strong>Managed Agents</strong> segue em
+        <span class="pill beta">beta</span> (header <code>managed-agents-2026-04-01</code>; sem data de GA;
+        política de permissão <code>auto</code> desde 2026-09-10; US$0,08 por hora-sessão + tokens), e o
+        <strong>Claude Agent SDK</strong> é outra biblioteca: roda o binário do Claude Code no seu processo.
+        Fontes: developers.openai.com/api/docs/guides/agents-api/overview e /responses-multi-agent;
+        platform.claude.com/docs/en/managed-agents/overview — todos 2026-09-30.
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Contrato de delegação</th><th>Entrada mínima</th><th>Saída obrigatória</th><th>Guard rail do parent</th></tr></thead>
+        <tbody>
+          <tr><td>Agent-as-tool local</td><td><code>task_id</code>, contexto autorizado, <code>input_schema</code>, deadline e budget.</td><td><code>output_schema</code>, provenance, status e lacunas; sem transcript bruto.</td><td><code>max_fanout</code>, timeout, join e cancelamento.</td></tr>
+          <tr><td>Handoff</td><td>Resumo de continuidade, claims, consentimentos e owner esperado.</td><td>Estado de ownership, próximo passo e evento auditável.</td><td>Revalidar autorização e não herdar segredos por contexto.</td></tr>
+          <tr><td>A2A remoto</td><td>Mensagem/tarefa tipada conforme Agent Card e capacidades negociadas.</td><td>Task/artifacts/status conforme versão do protocolo.</td><td>Verificar identidade, capability, idempotency e SLA antes de enviar.</td></tr>
+        </tbody>
+      </table></div>
     </section>
 
     <section id="skill-packs">
@@ -929,6 +1071,10 @@ async def run_agent_turn(user_input: str, ledger, policy: TurnPolicy) -> dict[st
         <li>☐ <strong>Subagente sem envelope:</strong> permitir que o child retorne narrativa longa em vez de output tipado e reduzido.</li>
         <li>☐ <strong>Handoff opaco:</strong> transferir controle sem registrar por quê, para quem, com qual contexto e qual consentimento.</li>
         <li>☐ <strong>Paralelismo sem fase:</strong> misturar built-ins, funções externas, side effects e síntese no mesmo boundary.</li>
+        <li>☐ <strong>Fan-out sem orçamento:</strong> deixar o modelo ou um subagente abrir tarefas sem limite por request, tenant, provider e recurso.</li>
+        <li>☐ <strong>Contrato de child implícito:</strong> delegar sem <code>input_schema</code>, <code>output_schema</code>, deadline, cancelamento e status desconhecido.</li>
+        <li>☐ <strong>Retry de mutação incerta:</strong> repetir após timeout sem idempotency key e sem distinguir falha antes da execução de resultado desconhecido.</li>
+        <li>☐ <strong>Context rot ignorado:</strong> aumentar o histórico sem medir retenção dos fatos críticos, proveniência e fidelidade da compactação.</li>
         <li>☐ <strong>Sem wind-down:</strong> continuar abrindo tools quando o orçamento da resposta final já acabou.</li>
       </ul>
       <div class="callout danger">
@@ -940,7 +1086,7 @@ async def run_agent_turn(user_input: str, ledger, policy: TurnPolicy) -> dict[st
     </section>
 
     <section id="runtime-por-maturidade">
-      <h2>11. Padrões de runtime por maturidade</h2>
+      <h2>11. Padrões de runtime por maturidade<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <p>
         O salto de maturidade não deve ser cosmético: cada fase adiciona uma peça <em>verificável</em>
         — política, schema, trace, eval ou manifest.
@@ -959,10 +1105,22 @@ async def run_agent_turn(user_input: str, ledger, policy: TurnPolicy) -> dict[st
         entradas, saídas, estado, tools, budgets, aprovações e pontos de replay, o sistema ainda está em
         protótipo — mesmo que responda bem em demonstrações.
       </div>
+      <h3>Bases de implementação — versões e APIs correntes (2026-09-30)</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Base</th><th>Versão corrente</th><th>O que importa para a arquitetura</th></tr></thead>
+        <tbody>
+          <tr><td>OpenAI Agents SDK</td><td><code>openai-agents</code> 0.22.3 · <code>@openai/agents</code> 0.18.0</td><td>Loop no seu processo sobre a Responses API; default <code>gpt-5.6-luna</code> (não GPT-6).</td></tr>
+          <tr><td>LangChain + LangGraph</td><td><code>langchain</code> 1.4.3 · <code>langgraph</code> 1.2.12</td><td><code>create_agent</code> (substitui <code>create_react_agent</code>); supervisor = subagentes como tools; estado durável via checkpointer; deploy em LangSmith Deployment (Agent Server).</td></tr>
+          <tr><td>Google ADK</td><td><code>google-adk</code> 2.10.0 (Python) · <code>@google/adk</code> 2.1.0</td><td>Linha 2.x = Workflow Runtime em grafo; 1.x só manutenção; deploy gerenciado no Agent Runtime; A2A via <code>RemoteA2aAgent</code>.</td></tr>
+          <tr><td>Anthropic</td><td><code>anthropic</code> 1.9.0 · <code>claude-agent-sdk</code> 0.2.162</td><td>Messages (direto, stateless) × Agent SDK (binário do Claude Code) × Managed Agents (beta).</td></tr>
+          <tr><td>A2A</td><td>spec 1.0 (repo v1.0.1) · <code>a2a-sdk</code> 1.2.1 · <code>@a2a-js/sdk</code> 1.3.0</td><td>Entre agentes opacos; Agent Card assinável; modo multi-replica no servidor Python (1.2.0).</td></tr>
+          <tr><td>MCP</td><td>spec 2026-07-28 · <code>mcp</code> 2.2.0 (Python)</td><td>Stateless, sem <code>initialize</code>/<code>Mcp-Session-Id</code>; <code>mcp&gt;=2.2.0</code> (ou <code>&gt;=1.30.0</code>) por dois advisories de cliente de 2026-09-28.</td></tr>
+        </tbody>
+      </table></div>
     </section>
 
     <section id="model-router">
-      <h2>12. Model router e seleção de agente</h2>
+      <h2>12. Model router e seleção de agente<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <p>
         O roteador deve considerar capacidade, latência, custo, janela de contexto, política de dados,
         suporte a tools, suporte multimodal, structured outputs, reasoning/thinking e histórico
@@ -977,11 +1135,13 @@ async def run_agent_turn(user_input: str, ledger, policy: TurnPolicy) -> dict[st
           <tr><td>Data policy</td><td>Dados sensíveis não podem ser retidos pelo provider.</td><td>Usar <code>store=false</code> quando aplicável, redaction ou rota autorizada.</td></tr>
           <tr><td>Structured output</td><td>Schema crítico precisa de alta aderência.</td><td>Usar structured outputs/validação e retry controlado.</td></tr>
           <tr><td>Latency/cost</td><td>Fan-out custoso com baixo valor marginal.</td><td>Reduzir tools, limitar subagentes ou usar um modelo menor para triagem.</td></tr>
+          <tr><td>Rotas alternativas</td><td>Fallback de custo/disponibilidade fora do trio principal.</td><td>Grok, OpenRouter, Maritaca, Muse e Mistral como rotas — ver <a href="guia_providers_adapters.html#provedores-adicionais">provedores adicionais</a>, com <code>loss_declaration</code>.</td></tr>
         </tbody>
       </table></div>
       <div class="callout warn">
         <strong>IDs de modelo são perecíveis.</strong> Este capítulo deliberadamente não fixa nomes de
-        modelo. Para o catálogo atual e os controles de reasoning/thinking por modelo, consulte os guias
+        modelo: a geração corrente em 2026-09-30 é OpenAI GPT-6 (Astra, <code>gpt-6.1-sol</code>, Luna) e GPT-5.6;
+        Anthropic Fable 5.1, Opus 5.5 e Sonnet 5.5 (mais Haiku 4.5) — e muda rápido. Para o catálogo atual e os controles de reasoning/thinking por modelo, consulte os guias
         dedicados: <a href="guia_openai_modelos.html">OpenAI (§ Seleção de modelo)</a>,
         <a href="guia_claude_api.html">Claude API</a>,
         <a href="guia_gemini_interactions_api.html">Gemini Interactions API</a> e a matriz cruzada em
@@ -1064,11 +1224,13 @@ async def run_agent_turn(user_input: str, ledger, policy: TurnPolicy) -> dict[st
           <tr><td>Manager</td><td>Manter a conversa e consolidar especialistas.</td><td>Agents-as-tools para subtarefas bounded.</td><td>Vários agentes disputando a resposta final.</td></tr>
           <tr><td>Specialist</td><td>Executar competência estreita com contexto mínimo.</td><td>Microcontexto, capability registry e output contract.</td><td>Subagente herdando o histórico inteiro ou vazando dados.</td></tr>
           <tr><td>Policy engine</td><td>Aplicar retenção, side effects, aprovação e quotas.</td><td>Policy-as-code fora do prompt.</td><td>Modelo tomando decisão de compliance sozinho.</td></tr>
-          <tr><td>Observer</td><td>Registrar trace, custos, tool calls, decisões e erros.</td><td>Spans por model/tool/guardrail/handoff.</td><td>Incidente sem replay auditável.</td></tr>
+          <tr><td>Observer</td><td>Registrar trace, custos, tool calls, decisões e erros.</td><td>Spans por model/tool/guardrail/handoff; processo e resultado separados.</td><td>Incidente sem replay auditável ou score que esconde violação de policy.</td></tr>
+          <tr><td>Eval harness</td><td>Exercitar planos, contexto, delegações e execução em conjunto.</td><td>Processo (seleção, auth, retries, transfers, retenção) + outcome (correção, segurança, latência, custo); replay determinístico quando possível.</td><td>Confundir resposta final plausível com execução segura.</td></tr>
         </tbody>
       </table></div>
-      <pre><code class="language-text">pedido → classificação → plano ativo → exposição mínima de capabilities → execução
-       → validação de tool/result → síntese → checagem de saída → trace/replay</code></pre>
+      <pre><code class="language-text">pedido → classificação → plano ativo → exposição mínima de capabilities → execução bounded
+       → validação de tool/result → síntese → checagem de saída → trace/replay
+       └→ eval: processo (policy/contexto/handoff) + outcome (qualidade/safety/latência/custo)</code></pre>
       <div class="callout tip">
         <strong>Onde cada camada é detalhada:</strong> policy engine e observer no
         <a href="guia_operacao_seguranca_evals.html">capítulo de operação</a>; specialist/manager nos
@@ -1079,26 +1241,54 @@ async def run_agent_turn(user_input: str, ledger, policy: TurnPolicy) -> dict[st
 
     <!-- ===================== REFERÊNCIA ===================== -->
     <section class="ref" id="checklist-aceitacao">
-      <h2>Checklist de aceitação arquitetural</h2>
+      <h2>Checklist de aceitação arquitetural<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <p>Use como gate antes de promover qualquer arquitetura de agentes para produção:</p>
       <ul>
         <li>☐ Existe um ledger canônico separado dos payloads de provider.</li>
-        <li>☐ Cada capability tem schema, side-effect level, auth scope, budget e policy de aprovação.</li>
-        <li>☐ Agent-as-tool e handoff usam delegation packet e envelope de retorno.</li>
+        <li>☐ Cada capability tem route, input/output schema, side-effect level, auth scope, budget, retry/idempotency e policy de aprovação.</li>
+        <li>☐ O adapter expõe uma matriz de capacidades e uma <em>loss declaration</em>; Responses/Conversations, Interactions e Messages/Agent SDK não são intercambiáveis por nome.</li>
+        <li>☐ MCP (host ↔ tool/resource/prompt) e A2A (agent ↔ agent/task) foram escolhidos para a fronteira correta, com identidade e autorização verificadas.</li>
+        <li>☐ Agent-as-tool e handoff usam delegation packet, I/O tipado, deadline, cancelamento e envelope de retorno.</li>
         <li>☐ O sistema separa as fases de recuperação, ação, análise e síntese.</li>
         <li>☐ O modelo nunca recebe segredos, tokens de tenant ou autorização "por prompt".</li>
-        <li>☐ Há limites explícitos para turns, tool calls, fan-out, tempo, tokens, output e custo.</li>
+        <li>☐ Há limites explícitos para turns, tool calls, fan-out por escopo, fila/backpressure, tempo, tokens, output e custo.</li>
+        <li>☐ Retry só ocorre em falhas transitórias e operações idempotentes; mutações têm chave idempotente e circuito aberto/half-open.</li>
+        <li>☐ Context health mede compactação, proveniência e retenção de fatos críticos; o plano falha fechado quando a retenção é desconhecida.</li>
+        <li>☐ Evals reportam processo (tool/auth/retry/handoff/contexto) separado do outcome (correção, segurança, latência e custo); planos difíceis têm cenário determinístico ou replay.</li>
         <li>☐ Traces e usage ledger permitem replay ou auditoria sem depender do provider.</li>
       </ul>
     </section>
 
+    <section class="ref" id="legado">
+      <h2>Legado e migração<span class="rev-flag novo">Novo · 2026-09-30</span></h2>
+      <p>Rotas e APIs que saíram do caminho principal deste capítulo. Status conforme as fontes oficiais lidas em 2026-09-30; detalhes de cada provedor/framework ficam nos guias dedicados.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Antigo</th><th>Status</th><th>Atual / migração</th></tr></thead>
+        <tbody>
+          <tr><td>Gemini <code>generateContent</code> como rota agentic (e o SDK <code>google-generativeai</code>)</td><td>Rota legada, ainda suportada pelo Google; o SDK <code>google-generativeai</code> não é mais a base.</td><td><strong>Interactions API</strong> (GA) via <code>google-genai</code> (<code>client.interactions.create</code>). Ver <a href="guia_gemini_interactions_api.html">Gemini Interactions API</a>.</td></tr>
+          <tr><td>OpenAI Assistants API; Chat Completions como rota de agente</td><td>Assistants encerrada em 2026-08-26. Chat Completions segue suportada, mas GPT-6 Astra e <code>gpt-6.1-sol</code> só a aceitam sem tools.</td><td>Responses API + Conversations. <a href="https://developers.openai.com/api/docs/guides/migrate-to-responses" target="_blank" rel="noopener">Migração</a></td></tr>
+          <tr><td>OpenAI Agent Builder</td><td>Deprecado; shutdown 2026-11-30 (ChatKit permanece).</td><td>Agents SDK + servidor próprio; ver <a href="guia_agents_sdk_orquestracao.html#legado">Agents SDK · Legado</a>.</td></tr>
+          <tr><td><code>langgraph.prebuilt.create_react_agent</code></td><td>Deprecado (movido para <code>langchain.agents</code>).</td><td><code>from langchain.agents import create_agent</code> (<code>prompt=</code> → <code>system_prompt=</code>). Ver <a href="guia_langgraph_orquestracao.html">LangGraph · orquestração</a>.</td></tr>
+          <tr><td><code>langgraph-supervisor</code> (<code>create_supervisor</code>); <code>langgraph-swarm</code></td><td>Supervisor: repositório <strong>arquivado</strong> (último release 0.0.31). Swarm: 0.1.0, repositório não arquivado, sunset formal UNVERIFIED.</td><td>Padrão supervisor direto: <code>create_agent</code> com subagentes expostos como <code>@tool</code>; handoffs via tools/<code>Command</code>.</td></tr>
+          <tr><td>Google ADK 1.x; "Vertex AI Agent Engine" / <code>vertexai.agent_engines</code>; docs em <code>google.github.io/adk-docs</code></td><td>ADK 1.x = só manutenção (último 1.39.1, 2026-08-27). Agent Engine virou <strong>Agent Runtime</strong>; <code>vertexai.agent_engines</code> foi refatorado para <code>agentplatform.Client().runtimes</code>. Docs migraram para <code>adk.dev</code>.</td><td>ADK 2.x (Workflow Runtime em grafo); SDK <code>google-cloud-agentplatform</code> para o Agent Runtime. Ver <a href="guia_google_adk_orquestracao.html">ADK · orquestração</a>.</td></tr>
+          <tr><td>A2A 0.3 (<code>kind</code>, enums minúsculos, <code>/v1</code> no REST)</td><td>Substituído pela spec 1.0.</td><td><code>a2a-sdk&gt;=1.0</code> (atual 1.2.1); <code>Part</code> unificado, enums <code>TASK_STATE_*</code>, header <code>A2A-Version</code>.</td></tr>
+          <tr><td>MCP 2025-11-25 e anteriores (handshake <code>initialize</code>, <code>Mcp-Session-Id</code>, HTTP+SSE)</td><td>Legacy. Roots, Sampling e Logging deprecados; remoção mais cedo na primeira revisão em/após 2027-07-28.</td><td>Spec 2026-07-28 (stateless, <code>server/discover</code>, MRTR); Streamable HTTP. Ver <a href="guia_protocolo_mcp.html">Protocolo MCP</a>.</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
     <section class="ref" id="verificacao">
-      <h2>Notas de verificação</h2>
+      <h2>Notas de verificação<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
+      <p>Afirmações perecíveis deste capítulo, conferidas em <strong>2026-09-30</strong> nas fontes oficiais listadas em
+        <a href="#fontes-oficiais">Fontes &amp; verificação</a> e em PyPI/npm/GitHub Releases. O capítulo mantém só invariantes de
+        arquitetura; IDs de modelo, limites e parâmetros ficam nos guias de provider.</p>
       <ul>
-        <li><span class="pill ok">Resolvido</span> <strong>Spec MCP = 2025-11-25.</strong> Versão alvo confirmada na folha de fatos SOTA (2026-05-25) e na documentação oficial do protocolo. Guias mais antigos do pacote podem citar revisões anteriores (2024-11-05 / 2025-03-26); a versão canônica do super-guia é <code>2025-11-25</code>. Re-verificado em 2026-07-05: a revisão <strong>2026-07-28</strong> deixou de ser draft — é uma <strong>Release Candidate travada em 2026-05-21</strong> com publicação final confirmada para 28/07/2026, trazendo breaking changes: protocolo stateless sem handshake <code>initialize</code>/<code>Mcp-Session-Id</code>, novo <code>server/discover</code>, Tasks como extensão, Roots/Sampling/Logging deprecados (SEP-2577, substituídos por MRTR). O SDK <code>mcp</code> v2.0.0 sai junto — <strong>fixe <code>mcp&lt;2</code> em produção antes de 28/07</strong> para evitar auto-upgrade. <code>2025-11-25</code> segue sendo a versão alvo até a nova revisão entrar em vigor.</li>
-        <li><span class="pill ok">Resolvido</span> <strong>Agents SDK ↔ Responses API.</strong> O OpenAI Agents SDK usa a Responses API por baixo para modelos OpenAI; este capítulo trata o SDK como uma base de orquestração possível, não como a única.</li>
-        <li><span class="pill ok">Resolvido</span> <strong>Sem IDs de modelo fixos.</strong> Nomes de modelo são perecíveis e ficam concentrados nos guias de provider e na folha de fatos SOTA; este capítulo permanece agnóstico (<code>model="..."</code>).</li>
-        <li><span class="pill ok">Resolvido</span> <strong>Cross-links robustos.</strong> Os links apontam para o arquivo do guia e nomeiam a seção em prosa; âncoras profundas só são usadas onde o guia-alvo expõe <code>id</code> estável.</li>
+        <li><span class="pill ok">Resolvido</span> <strong>Rotas de provider.</strong> OpenAI: Responses (execução) e Conversations (estado) são recursos distintos; <code>parallel_tool_calls</code>/<code>max_tool_calls</code> são controles da chamada, não política per-tool do runtime. Google: a Interactions API é GA desde junho de 2026 e é a rota recomendada (a rota antiga está em <a href="#legado">Legado e migração</a>). Anthropic: Messages é a API direta e stateless; Agent SDK e Managed Agents são outros harnesses.</li>
+        <li><span class="pill ok">Resolvido</span> <strong>Agents SDK × Agents API × Responses.</strong> Agents API: beta pública desde 2026-09-10, <code>POST /v1/agents/sessions</code> com <code>OpenAI-Beta: agents=v1</code>, sem ZDR, residência de dados só nos EUA; computer use hospedado desde 2026-09-29. Multi-agente hospedado da Responses: beta, suportado por GPT-6.1 Sol e todos os GPT-5.6. Managed Agents (Anthropic): beta (<code>managed-agents-2026-04-01</code>), sem GA.</li>
+        <li><span class="pill ok">Resolvido</span> <strong>Protocolos.</strong> MCP corrente = <code>2026-07-28</code>; <code>2025-11-25</code> é Legacy. A2A: spec 1.0, repositório v1.0.1, <code>a2a-sdk</code> 1.2.1. Uma versão de spec não prova adoção pelo SDK: alguns adapters ainda pinam <code>mcp</code> 1.x (ex.: <code>langchain-mcp-adapters</code>, CrewAI); ADK 2.10.0 e <code>openai-agents</code> 0.22.3 aceitam <code>mcp&lt;3</code>. Matriz em <a href="guia_protocolo_mcp.html#bibliotecas">Protocolo MCP §3</a>.</li>
+        <li><span class="pill ok">Resolvido</span> <strong>Frameworks.</strong> Versões e APIs correntes em <a href="#runtime-por-maturidade">§11</a>; migrações em <a href="#legado">Legado e migração</a>.</li>
+        <li><span class="pill partial">Pesquisa</span> Context rot/LOCA-bench, AHE, Memento, APB, ContextBench e OrchBench informam o checklist, não a compatibilidade de provider: meça retenção de fatos críticos, transferências, processo e outcome separadamente, com fan-out, orçamento, circuit breaker e replay determinístico quando possível.</li>
+        <li><span class="pill partial">UNVERIFIED</span> Suporte de Astra/6 Sol/6 Luna ao multi-agente hospedado da Responses (o guia da API cita só GPT-6.1 Sol e GPT-5.6); política formal de EOL do ADK 1.x; sunset de <code>langgraph-swarm</code>. Nenhum exemplo foi executado neste corte.</li>
       </ul>
     </section>
 
@@ -1110,16 +1300,15 @@ async def run_agent_turn(user_input: str, ledger, policy: TurnPolicy) -> dict[st
     <div style="max-width:540px">
       <div class="brand" style="font-size:15px">Arquitetura &amp; Orquestração <small>Núcleo agnóstico de agentes</small></div>
       <p style="margin:8px 0 0;color:var(--c-fg-muted);font-size:13.5px;line-height:1.55">
-        Capítulo de fundação do núcleo agnóstico, construído a partir da documentação oficial pública em
-        <strong>2026-06-10</strong>. Para fatos perecíveis (modelos, versões, parâmetros), consulte
+        Capítulo de fundação do núcleo agnóstico, conferido contra documentação oficial pública em
+        <strong>2026-09-30</strong>. Para fatos perecíveis (modelos, versões, parâmetros), consulte
         sempre os guias de provider e as
-        <a href="https://modelcontextprotocol.io/specification/2025-11-25" target="_blank" rel="noopener">fontes oficiais</a>.
+        <a href="https://modelcontextprotocol.io/specification/2026-07-28" target="_blank" rel="noopener">fontes oficiais</a>.
       </p>
     </div>
     <div style="font-size:13.5px;color:var(--c-fg-muted);line-height:1.7">
-      <div><strong>Crédito de produção</strong></div>
-      <div>Gerado por <strong>subagentes Claude Opus 4.7 (xhigh)</strong></div>
-      <div>revisão e montagem pelo orquestrador · 2026-05-25</div>
+      <div><strong>Revisão técnica</strong></div>
+      <div>Arquitetura provider-neutral · 2026-09-30</div>
       <div style="margin-top:6px">
         <span class="badge da">Núcleo · agnóstico de provider</span>
         <span class="badge info">Conceitual + referência</span>
@@ -1128,7 +1317,7 @@ async def run_agent_turn(user_input: str, ledger, policy: TurnPolicy) -> dict[st
     <div style="font-size:12.5px;color:var(--c-fg-soft)">
       <div><strong>Navegação rápida</strong></div>
       <div><a href="#escopo-orquestracao">Escopo</a> · <a href="#primitivos-canonicos">Primitivos</a> · <a href="#matriz-de-escolha">Matriz</a></div>
-      <div><a href="#blueprint-sota">Blueprint SOTA</a> · <a href="#checklist-aceitacao">Checklist</a></div>
+      <div><a href="#blueprint-sota">Blueprint SOTA</a> · <a href="#checklist-aceitacao">Checklist</a> · <a href="#legado">Legado</a></div>
     </div>
   </div>
 </footer>

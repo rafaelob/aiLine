@@ -4,7 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Guia independente de gerenciamento manual de contexto, orçamento por fatias, snapshots cumulativos e compactação para orquestrações de IA.">
-  <meta name="ai-summary" content="Defina um teto operacional X abaixo da janela do modelo, subtraia reservas de saída e margem, divida o input em fatias, compacte por estágios auditáveis, persista snapshots cumulativos sem apagar originais e preserve ledger próprio, tool pairs, anexos por retrieval, estado selado de provedor, microconversas e privacidade.">
+  <meta name="ai-summary" content="Defina um teto operacional X abaixo da janela do modelo, subtraia reservas de saída e margem, divida o input em fatias, compacte por estágios auditáveis, persista snapshots cumulativos sem apagar originais e preserve ledger próprio, tool pairs, anexos por retrieval, estado selado de provedor, microconversas e privacidade. Cache não é estado; compaction server-side exige reconciliação de uso e retenção. Anthropic tem duas mecânicas de compactação server-side (threshold e on-demand, ambas beta); a OpenAI tem compaction automática e /responses/compact. Verificado em 2026-09-30.">
+  <meta name="last-checked" content="2026-09-30">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' fill='%230b6b5f'/%3E%3Cpath d='M14 35h36v8H14zM14 21h24v8H14z' fill='white'/%3E%3C/svg%3E">
   <title>Guia SOTA de Contexto e Compactação para Orquestrações de IA</title>
   <script type="application/ld+json">
@@ -13,7 +14,7 @@
     "@type": "TechArticle",
     "headline": "Guia SOTA de Gerenciamento de Contexto e Compactacao",
     "inLanguage": "pt-BR",
-    "dateModified": "2026-06-10",
+    "dateModified": "2026-09-30",
     "about": [
       "LLM context management",
       "manual compaction",
@@ -607,11 +608,15 @@
       }
     }
   </style>
+<style id="rev-flag-css">main :not(pre) > code,main a{overflow-wrap:anywhere}.rev-flag{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:999px;font-size:.62em;font-weight:600;vertical-align:middle;letter-spacing:.02em;white-space:nowrap}.rev-flag.novo{background:#dcfce7;color:#14532d;border:1px solid #86efac}.rev-flag.atu{background:#e0f2fe;color:#0c4a6e;border:1px solid #7dd3fc}.rev-news{margin:16px 0;padding:12px 16px;border-left:4px solid #22c55e;border-radius:8px;background:rgba(34,197,94,.08)}.rev-news ul{margin:6px 0 0;padding-left:20px}.rev-news li{margin:2px 0}:root[data-theme="dark"] .rev-flag.novo{background:#14532d;color:#dcfce7;border-color:#166534}:root[data-theme="dark"] .rev-flag.atu{background:#0c4a6e;color:#e0f2fe;border-color:#075985}@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .rev-flag.novo{background:#14532d;color:#dcfce7;border-color:#166534}:root:not([data-theme="light"]) .rev-flag.atu{background:#0c4a6e;color:#e0f2fe;border-color:#075985}}</style>
 </head>
 <body>
   <header class="hero">
     <div>
-      <p class="eyebrow">Guia independente de contexto SOTA</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px">
+        <p class="eyebrow" style="margin:0">Guia independente de contexto SOTA</p>
+        <p class="eyebrow" style="margin:0">Verificado em <strong>2026-09-30</strong></p>
+      </div>
       <h1>Contexto e compactação em orquestrações de IA</h1>
       <p class="subtitle">Uma estratégia prática para definir um teto operacional <strong>X</strong>, dividir o input em fatias com políticas diferentes, compactar sem quebrar protocolo, persistir snapshots cumulativos e provar que o contexto está sob controle.</p>
     </div>
@@ -631,6 +636,7 @@
     <nav class="toc" aria-label="Sumário">
       <h2>Sumário</h2>
       <ol>
+        <li><a href="#para-agentes">Resumo para agentes</a></li>
         <li><a href="#orientacao">Orientação</a></li>
         <li><a href="#modelo-mental">Modelo mental</a></li>
         <li><a href="#definir-teto">Definir teto X</a></li>
@@ -638,7 +644,12 @@
         <li><a href="#topologia">Topologia de sessão</a></li>
         <li><a href="#escada">Escada de compactação</a></li>
         <li><a href="#compactacao-servidor">Compactação server-side (OpenAI)</a></li>
-        <li><a href="#compactacao-servidor-anthropic">Compactação server-side (Anthropic)</a></li>
+        <li><a href="#compactacao-servidor-anthropic">Compactação server-side (Anthropic)</a>
+          <ol>
+            <li><a href="#anthropic-compaction-threshold">5B.1 Threshold</a></li>
+            <li><a href="#anthropic-compaction-on-demand">5B.2 On-demand</a></li>
+          </ol>
+        </li>
         <li><a href="#snapshots">Snapshots cumulativos</a></li>
         <li><a href="#skills">Skills antigas</a></li>
         <li><a href="#tools-rag">Tool results e RAG</a></li>
@@ -651,11 +662,93 @@
         <li><a href="#playbooks">Playbooks</a></li>
         <li><a href="#achados">Riscos comuns</a></li>
         <li><a href="#glossario">Glossário</a></li>
+        <li><a href="#legado">Legado e migração</a></li>
       </ol>
     </nav>
 
     <main>
+<aside class="rev-news" id="rev-news-2026-09-30" aria-label="Novidades desta revisão"><strong>O que há de novo nesta revisão (2026-09-30)</strong> — 2 seções novas e 2 atualizadas desde a revisão de 2026-09-23. Procure os selos <span class="rev-flag novo">Novo</span> e <span class="rev-flag atu">Atualizado</span> nos títulos.<details><summary>Ver lista</summary><ul><li><span class="rev-flag novo">Novo</span> <a href="#para-agentes">Resumo para agentes (verificado 2026-09-30)</a></li><li><span class="rev-flag novo">Novo</span> <a href="#legado">Legado e migração</a> — o legado foi condensado aqui: Gemini <code>generateContent</code> (com a exceção do cache explícito), <code>prompt_cache_retention</code>, <code>budget_tokens</code> e <code>compaction_control</code></li><li><span class="rev-flag atu">Atualizado</span> <a href="#compactacao-servidor">Modo 2 — manual, client.responses.compact()</a> — modelos, <code>configuration_update</code> e <code>gpt-6-astra</code></li><li><span class="rev-flag atu">Atualizado</span> <a href="#compactacao-servidor-anthropic">5B. Compactação server-side (Anthropic)</a> — Sonnet 5.5, regra das três condições para thinking após on-demand, SDK Python 1.9.0</li></ul></details></aside>
       <article>
+        <section id="para-agentes" data-section="agent-summary">
+          <h2>Resumo para agentes (verificado 2026-09-30)<span class="rev-flag novo">Novo · 2026-09-30</span></h2>
+
+          <h3>1. Superfície atual</h3>
+          <ul>
+            <li>Compactação server-side existe na Anthropic (Messages API, beta) e na OpenAI (Responses API). Gemini: sem compactação server-side documentada (UNVERIFIED); mantenha a compactação no seu ledger.</li>
+            <li>Versões medidas em 2026-09-30: <code>anthropic</code> 1.9.0 (parâmetro <code>compaction</code> desde 1.6.0; <code>compact_before_next_turn()</code> desde 1.7.0), <code>openai</code> 3.22.1, <code>google-genai</code> 2.25.0.</li>
+          </ul>
+<pre><code class="language-python"># Anthropic, por limiar (beta compact-2026-01-12): o servidor decide
+r = client.beta.messages.create(model="claude-opus-5-5", max_tokens=4096, messages=conversation,
+    betas=["compact-2026-01-12"],
+    context_management={"edits": [{"type": "compact_20260112", "trigger": {"type": "input_tokens", "value": 150000}}]})
+conversation.extend(r.content)
+
+# Anthropic, sob demanda (beta compact-2026-09-04): a aplicação decide; substitua o histórico pelo bloco
+r = client.beta.messages.create(model="claude-opus-5-5", max_tokens=4096, messages=history,
+    betas=["compact-2026-09-04"], compaction={"type": "summarize"})
+if r.stop_reason == "compaction": history = [{"role": "assistant", "content": r.content}]
+
+# OpenAI, automático (Responses API): context_management no create(); store=False é compatível com ZDR
+r = client.responses.create(model="gpt-5.3-codex", input=conversation, store=False,
+    context_management=[{"type": "compaction", "compact_threshold": 200000}])</code></pre>
+
+          <h3>2. IDs e versões correntes</h3>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Mecanismo</th><th>ID / parâmetro</th><th>Status</th><th>Nota</th></tr></thead>
+            <tbody>
+              <tr><td>Anthropic threshold</td><td>header <code>compact-2026-01-12</code>; edit <code>compact_20260112</code></td><td>beta</td><td><code>trigger.input_tokens</code> padrão 150.000, mínimo 50.000; <code>pause_after_compaction</code> padrão <code>false</code>.</td></tr>
+              <tr><td>Anthropic on-demand</td><td>header <code>compact-2026-09-04</code>; parâmetro <code>compaction</code></td><td>beta (2026-09-14)</td><td>Resposta traz um bloco <code>compaction</code> assinado; <code>instructions</code> até 16.384 caracteres; não disponível no Bedrock.</td></tr>
+              <tr><td>Anthropic context editing</td><td>header <code>context-management-2025-06-27</code></td><td>beta</td><td>Outro recurso: limpa por regra, sem resumir.</td></tr>
+              <tr><td>Modelos Claude com compaction</td><td><code>claude-fable-5-1</code>, <code>claude-opus-5-5</code>, <code>claude-sonnet-5-5</code> (+ legados Fable 5, Opus 5/4.8/4.7/4.6, Sonnet 5/4.6, Mythos)</td><td>beta</td><td>Haiku 4.5 não consta na lista da doc. Janela 1M (Haiku 200K).</td></tr>
+              <tr><td>OpenAI automático</td><td><code>context_management: [{"type":"compaction","compact_threshold":N}]</code></td><td>Responses API</td><td>Item de compactação criptografado e opaco no mesmo stream.</td></tr>
+              <tr><td>OpenAI manual</td><td><code>POST /responses/compact</code> / <code>client.responses.compact()</code></td><td>Responses API</td><td>Stateless, compatível com ZDR; exemplo oficial com <code>gpt-6-astra</code>.</td></tr>
+              <tr><td>Gemini</td><td><code>client.interactions.create(..., previous_interaction_id=...)</code></td><td>GA</td><td>Estado server-side, não compactação. Cache explícito só em <code>generateContent</code> (legado).</td></tr>
+            </tbody>
+          </table></div>
+
+          <h3>3. Faça / Não faça</h3>
+          <ul>
+            <li>Faça: trate o ledger/event log da aplicação como autoridade; bloco <code>compaction</code>, item de compactação da OpenAI, cache e IDs de continuação são projeções, não backup.</li>
+            <li>Não envie <code>compaction</code> e <code>context_management</code> no mesmo request da Anthropic → erro. Escolha uma mecânica.</li>
+            <li>On-demand: o bloco <code>compaction</code> vai <strong>primeiro</strong> em <code>messages</code>, exatamente um; remova as mensagens resumidas (senão 400 <code>compaction_block_misplaced</code>); reenvie o header beta em todo request posterior que carregue o bloco.</li>
+            <li>Threshold: a API descarta sozinha o conteúdo anterior ao bloco; o resumo vem em <code>&lt;summary&gt;</code>. <code>instructions</code> substitui o prompt padrão por inteiro.</li>
+            <li>Some <code>usage.iterations[]</code> (entradas <code>compaction</code> e <code>message</code>) para custo e rate limit; <code>input_tokens</code>/<code>output_tokens</code> de topo não incluem a iteração de compactação. <code>count_tokens</code> não dispara compactação.</li>
+            <li>Não use <code>compaction_control</code> (SDK, legado) → <code>compact_20260112</code> em <code>context_management</code> ou o parâmetro <code>compaction</code>.</li>
+            <li>Com <code>pause_after_compaction</code> em Fable 5.1, Opus 5.5 e Sonnet 5.5, descarte o thinking dos turnos reinseridos. Só o on-demand preserva thinking, sob as três condições do guia (mesmo modelo, turnos mantidos inalterados e contíguos, <code>system</code>/tools estáveis). Não use <code>thinking.budget_tokens</code>: 400 em Fable 5.1, Opus 5.5 e Sonnet 5.5.</li>
+            <li>OpenAI: não edite nem pode (poda) <code>compacted.output</code>; repasse como está mais a nova mensagem. Com <code>previous_response_id</code>, não faça pruning manual. Use <code>store=False</code> para ZDR.</li>
+            <li>OpenAI: <code>configuration_update</code> (família GPT-6) não combina com compactação/truncation automáticos, e <code>/responses/compact</code> rejeita históricos que o contenham.</li>
+            <li>Não use <code>prompt_cache_retention</code> (≤ gpt-5.5, deprecado a partir do gpt-5.6) → <code>prompt_cache_options</code> (<code>ttl: "30m"</code>, <code>mode</code>, <code>prewarm</code>).</li>
+            <li>Gemini Interactions: <code>store=false</code> desliga <code>previous_interaction_id</code> e <code>background</code>; retenção 55 dias (pago) / 1 dia (gratuito). Não assuma compactação server-side.</li>
+            <li>Não trate a janela de 1M como orçamento: defina o teto X (<a href="#definir-teto">Definir teto X</a>); preço padrão em todo o contexto não elimina custo linear por turno, latência nem degradação de atenção.</li>
+          </ul>
+
+          <h3>4. Onde está cada coisa</h3>
+          <p>
+            <a href="#modelo-mental">modelo mental</a> ·
+            <a href="#definir-teto">teto X</a> ·
+            <a href="#subdividir-x">fatias</a> ·
+            <a href="#escada">escada de compactação</a> ·
+            <a href="#compactacao-servidor">server-side OpenAI</a> ·
+            <a href="#compactacao-servidor-anthropic">server-side Anthropic</a> ·
+            <a href="#anthropic-compaction-threshold">threshold</a> ·
+            <a href="#anthropic-compaction-on-demand">on-demand</a> ·
+            <a href="#snapshots">snapshots</a> ·
+            <a href="#privacidade">privacidade e ZDR</a> ·
+            <a href="#observabilidade">observabilidade</a> ·
+            <a href="#playbooks">playbooks</a> ·
+            <a href="#achados">riscos comuns</a> ·
+            <a href="#legado">legado e migração</a>
+          </p>
+
+          <h3>5. Incertezas (não trate como fato)</h3>
+          <ul>
+            <li>UNVERIFIED: compactação server-side no Gemini (não consta na documentação lida).</li>
+            <li>UNVERIFIED: se o modo automático da OpenAI vale para todos os modelos; a página não enumera os elegíveis. Confirme para o seu modelo.</li>
+            <li>Percentuais da escada (soft 0,70–0,75, compact 0,80–0,85, hard 0,90–0,92) e o exemplo de 258k são calibração, não contrato de provider.</li>
+            <li>Ambas as mecânicas da Anthropic são beta: confira o header vigente nas <a href="#anthropic-compaction-threshold">fontes da seção</a> antes de fixar em produção.</li>
+          </ul>
+        </section>
+
         <section id="orientacao" data-section="orientation">
           <h2>0. Orientação</h2>
           <p class="tldr" data-fact="este guia e prescritivo o suficiente para orientar implementacao, mas nao e uma lei universal de contexto">Use este guia como um mapa de decisão, não como uma tabela imutável. Os números são pontos de partida; a verdade final vem de domínio, latência, custo, risco, testes e telemetria.</p>
@@ -762,6 +855,13 @@ emergency = hard_input_budget * 0.95</code></pre>
           <div class="callout tip" data-fact="contar mensagens nao substitui contar tokens por fatia">
             <strong>Pegadinha</strong>
             Contar turnos engana. Uma única resposta de ferramenta, um PDF ou uma matriz de evidência pode consumir mais tokens que dezenas de mensagens curtas.
+          </div>
+
+          <div class="callout risk" data-fact="nos modelos claude atuais opus 5.5 sonnet 5.5 e fable 5.1 a janela de 1M e cobrada a preco padrao entao o teto X passa a ser limitado por custo latencia e atencao e nao por preco de janela">
+            <strong>Quando o preço para de defender o teto X (verificado 2026-09-30)</strong>
+            Nos modelos Claude atuais — Opus 5.5, Sonnet 5.5 e Fable 5.1 — a janela é de <strong>1M tokens</strong> com <strong>128K</strong> de saída máxima, cobrada a preço padrão, sem prêmio de long-context (o Haiku 4.5 tem 200K/64K). O preço deixou de segurar o contexto por você: o <code>teto_de_custo_e_latencia</code> da fórmula acima é um <strong>parâmetro que você define explicitamente</strong>. Os fatores que continuam vinculando são o custo linear por turno (Opus 5.5: US$ 4/MTok de input, então 1M de input custa ~US$ 4 <em>por chamada</em>, e um loop agêntico faz muitas), a latência de TTFT e a degradação de atenção em contexto longo.
+            <strong>Não trate isso como licença para inflar <code>W_steady</code>.</strong> A meta do §0 continua valendo: qualidade sob restrição, não a maior janela disponível por reflexo.
+            <span class="source-link"><a href="https://platform.claude.com/docs/en/about-claude/pricing" target="_blank" rel="noopener">platform.claude.com · pricing</a>, 2026-09-30.</span>
           </div>
 
           <details open>
@@ -970,7 +1070,7 @@ emergency = hard_input_budget * 0.95</code></pre>
 
           <div class="callout" data-fact="cada degrau da escada impacta o prompt cache de forma diferente e snapshot e o degrau canonico desenhado para mover o breakpoint atomically">
             <strong>Compactação e prompt cache: cada degrau abaixo tem impacto diferente no prefix-cache.</strong>
-            Como cache depende de prefixo estável ou objeto explícito de cache (OpenAI: exact prefix match; Anthropic: prefix hash por breakpoint via <code>cache_control</code>, até 4 breakpoints; Gemini <code>generateContent</code>: <code>cachedContent</code> explícito; Gemini Interactions: implicit prefix caching default em Gemini 2.5+ (inclui séries 3.x; não causalmente acoplado a <code>previous_interaction_id</code>, mas ambos beneficiam prefixo estável)), qualquer operação que <em>modifique</em> conteúdo antes do breakpoint atual <strong>invalida o cache</strong>; operações que <em>cortam pela cauda</em> ou <em>movem o breakpoint atomically</em> preservam.
+            Como cache depende de prefixo estável ou objeto explícito de cache (OpenAI: prefix match exato, implícito ou explícito via <code>prompt_cache_breakpoint</code> em <code>gpt-5.6</code>+, e a compaction pode reduzir o reuso de cache; Anthropic: prefix hash por breakpoint via <code>cache_control</code>, até 4 breakpoints; Gemini Interactions: implicit prefix caching default em Gemini 2.5+ (inclui séries 3.x; não causalmente acoplado a <code>previous_interaction_id</code>, mas ambos beneficiam prefixo estável; o cache explícito <code>cachedContent</code> só existe em <code>generateContent</code> — ver <a href="#legado">Legado e migração</a>)), qualquer operação que <em>modifique</em> conteúdo antes do breakpoint atual <strong>invalida o cache</strong>; operações que <em>cortam pela cauda</em> ou <em>movem o breakpoint atomically</em> preservam.
             Resumo:
             <code>hygiene</code> preserva cache só quando atua fora da projeção cacheada ou na cauda pós-breakpoint; qualquer dedupe/normalização em conteúdo <code>&lt;= breakpoint</code> invalida o prefixo;
             <code>trim_old_pairs</code> preserva cache apenas quando remove cauda pós-breakpoint; se remove pares antigos dentro do prefixo cacheado, cria novo prefixo e paga nova cache write no próximo turno;
@@ -978,9 +1078,17 @@ emergency = hard_input_budget * 0.95</code></pre>
             <code>snapshot</code> (§6) é o <strong>degrau canônico desta estratégia desenhado para mover o breakpoint atomically</strong>: commit do snapshot reposiciona o início do prefixo cacheável, então o turno seguinte paga uma cache write e os subsequentes leem.
             <br><br>
             <strong>Implementação:</strong> trate <code>cache_breakpoint_id</code>/<code>projection_version</code> como parte do contrato de projeção; qualquer compaction que altere itens <code>&lt;= cache_breakpoint_id</code> deve emitir novo <code>projection_version</code> e esperar uma cache write antes do próximo cache read.
-            Para detalhes de hit rate + <code>prompt_cache_key</code> (OpenAI) + <code>cache_control</code> (Anthropic) + <code>cachedContent</code> (Gemini <code>generateContent</code>) por provider, veja
+            Para detalhes de hit rate + <code>prompt_cache_key</code> (OpenAI) + <code>cache_control</code> (Anthropic) + cache implícito (Gemini Interactions) por provider, veja
             <a href="guia_estado_contexto_memoria.html#zonas-canonicas">§8b — Zonas canônicas</a> do guia de Estado (callout "Cache-hit em projeção manual").
             <span class="pill partial">derived</span> mapeamento operação→cache é inferência consistente; o ganho exato depende do provider + tamanho do prefix.
+          </div>
+
+          <div class="callout tip" data-fact="minimo cacheavel anthropic 512 tokens em opus 5.5 sonnet 5.5 e fable 5.1 e 4096 no haiku 4.5 leitura de cache 0.05x no opus 5.5 e 0.025x no fable 5.1">
+            <strong>Mínimo cacheável e break-even do snapshot na Anthropic (verificado 2026-09-30)</strong>
+            Um bloco só entra no prompt cache se atingir o <strong>mínimo cacheável</strong> do modelo: <strong>512 tokens</strong> no Opus 5.5, Sonnet 5.5 e Fable 5.1; <strong>4.096</strong> no Haiku 4.5. Se o seu <code>cache_breakpoint_id</code> é posicionado por uma regra do tipo "só corta acima de ~1k tokens", essa regra é <strong>específica de modelo</strong> e deve ser parametrizada no registry do §14, não hardcoded.
+            <br><br>
+            Multiplicadores sobre o preço base de input: cache write <strong>1,25×</strong> (TTL 5 min) ou <strong>2×</strong> (TTL 1 h); cache read <strong>0,1×</strong>, exceto <strong>0,05×</strong> no Opus 5.5 e <strong>0,025×</strong> no Fable 5.1. <span class="pill partial">derived</span> No Opus 5.5, o sobrecusto da escrita é 0,25× (5 min) ou 1,0× (1 h) e cada leitura economiza 0,95×: o reposicionamento se paga <strong>já na 1ª leitura</strong> com TTL de 5 min e a partir da <strong>2ª</strong> com TTL de 1 h, desde que o prefixo sobreviva ao TTL sem nova invalidação. O TTL, não o preço, costuma decidir.
+            <span class="source-link"><a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching" target="_blank" rel="noopener">platform.claude.com · prompt caching</a>, 2026-09-30.</span>
           </div>
 
           <table>
@@ -1064,7 +1172,7 @@ emergency = hard_input_budget * 0.95</code></pre>
         </section>
 
         <section id="compactacao-servidor" data-section="server-side-compaction">
-          <h2>5A. Compactação server-side (OpenAI)</h2>
+          <h2>5A. Compactação server-side (OpenAI)<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
           <p class="tldr" data-fact="openai oferece compactacao automatica no servidor via context_management com compact_threshold e compactacao manual via responses compact">A escada da <a href="#escada">seção 5</a> é a estratégia que você implementa no seu orquestrador. A OpenAI também expõe compactação <strong>nativa do provedor</strong> na Responses API, em dois modos: automática no servidor (<code>context_management</code> + <code>compact_threshold</code>) e manual sob demanda (<code>client.responses.compact()</code>). É o par funcional do <a href="#compactacao-servidor-anthropic">compaction da Anthropic (§5B)</a> — mesma ideia de "resumir em vez de cortar" no servidor, com mecânica e payload diferentes.</p>
 
           <h3>Modo 1 — automático, no <code>responses.create()</code></h3>
@@ -1119,7 +1227,7 @@ while keep_going:
           <pre><code>long_input_items_array = [...]  # janela completa de turnos anteriores
 
 compacted = client.responses.compact(
-    model="gpt-5.6",
+    model="gpt-6-astra",
     input=long_input_items_array,
 )
 
@@ -1133,7 +1241,7 @@ next_input = [
 ]
 
 next_response = client.responses.create(
-    model="gpt-5.6",
+    model="gpt-6-astra",
     input=next_input,
     store=False,  # mantém o fluxo compatível com ZDR
 )</code></pre>
@@ -1174,17 +1282,22 @@ next_response = client.responses.create(
 
           <div class="callout" data-fact="fontes oficiais openai server side compaction guia dedicado deployment checklist e api reference responses compact">
             <strong>Fontes oficiais</strong>
-            OpenAI — guia dedicado <code>developers.openai.com/api/docs/guides/compaction</code>; <code>developers.openai.com/api/docs/guides/deployment-checklist</code> (seção "Leverage compaction"); referência <code>developers.openai.com/api/docs/api-reference/responses/compact</code>.
+            OpenAI — guia dedicado <a href="https://developers.openai.com/api/docs/guides/compaction" target="_blank" rel="noopener"><code>developers.openai.com/api/docs/guides/compaction</code></a>; <a href="https://developers.openai.com/api/docs/guides/deployment-checklist#leverage-compaction" target="_blank" rel="noopener"><code>developers.openai.com/api/docs/guides/deployment-checklist</code></a> (seção "Leverage compaction"); referência <a href="https://developers.openai.com/api/docs/api-reference/responses/compact" target="_blank" rel="noopener"><code>developers.openai.com/api/docs/api-reference/responses/compact</code></a>. Verificado 2026-09-30: os exemplos oficiais usam <code>gpt-5.3-codex</code> no modo automático e <strong><code>gpt-6-astra</code></strong> no modo manual. A página não enumera os modelos elegíveis a cada modo — <span class="pill partial">UNVERIFIED</span> se o modo automático vale para todos os modelos; confirme para o seu antes de depender dele. Restrições de quem usa <code>configuration_update</code> (família GPT-6, muda só o effort): não combinar com compaction/truncation automáticos, e o <code>/responses/compact</code> rejeita históricos que contenham updates (<a href="https://developers.openai.com/api/docs/guides/reasoning#change-reasoning-mid-conversation" target="_blank" rel="noopener">reasoning guide</a>).
           </div>
         </section>
 
         <section id="compactacao-servidor-anthropic" data-section="server-side-compaction-anthropic">
-          <h2>5B. Compactação server-side (Anthropic)</h2>
-          <p class="tldr" data-fact="anthropic oferece compactacao server side beta compact-2026-01-12 via edit compact_20260112 em context_management que resume a conversa num bloco compaction e descarta blocos anteriores">A Anthropic expõe a mesma ideia na Messages API, como um <em>edit</em> de <code>context_management</code>: quando o input cruza um gatilho, o servidor gera um resumo, embute-o num bloco <code>compaction</code> e, nas requisições seguintes, <strong>descarta automaticamente todos os blocos de conteúdo anteriores</strong> a esse bloco, continuando a conversa a partir do resumo. É o par funcional da <a href="#compactacao-servidor">compactação da OpenAI (§5A)</a> — mesma intenção, payload e billing diferentes.</p>
+          <h2>5B. Compactação server-side (Anthropic)<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
+          <div class="callout tip" data-fact="anthropic tem duas mecanicas de compactacao server side ambas beta threshold compact-2026-01-12 e on-demand compact-2026-09-04 que nao podem ser combinadas no mesmo request">
+            <strong>Duas mecânicas, ambas beta (verificado 2026-09-30)</strong>
+            A Anthropic expõe <strong>duas</strong> formas de compactação server-side, escolhidas por quem decide o momento: <a href="#anthropic-compaction-threshold"><strong>Threshold</strong></a> (§5B.1 — o servidor decide, ao cruzar um gatilho de tokens) e <a href="#anthropic-compaction-on-demand"><strong>On-demand</strong></a> (§5B.2 — sua aplicação decide, enviando o parâmetro <code>compaction</code> num request dedicado). <strong>As duas não podem ser combinadas no mesmo request</strong> (<code>compaction</code> + <code>context_management</code> retornam erro). Pares na OpenAI (§5A): Threshold ↔ modo automático (<code>context_management</code> + <code>compact_threshold</code>); On-demand ↔ modo manual (<code>client.responses.compact()</code>). O context editing (<code>clear_tool_uses_*</code>/<code>clear_thinking_*</code>) é outro recurso — limpa por regra, sem resumir — descrito no <a href="guia_estado_contexto_memoria.html#context-editing-anthropic">guia de Estado §10.1</a>.
+          </div>
+          <h3 id="anthropic-compaction-threshold">5B.1 Threshold — o servidor decide (beta <code>compact-2026-01-12</code>)</h3>
+          <p class="tldr" data-fact="anthropic oferece compactacao server side beta compact-2026-01-12 via edit compact_20260112 em context_management que resume a conversa num bloco compaction e descarta blocos anteriores">A Anthropic expõe a mesma ideia na Messages API, como um <em>edit</em> de <code>context_management</code>: quando o input cruza um gatilho, o servidor gera um resumo, embute-o num bloco <code>compaction</code> e, nas requisições seguintes, <strong>descarta automaticamente todos os blocos de conteúdo anteriores</strong> a esse bloco, continuando a conversa a partir do resumo. É o par funcional do <a href="#compactacao-servidor">modo automático da OpenAI (§5A)</a> — mesma intenção, payload e billing diferentes.</p>
 
           <div class="callout" data-fact="compactacao anthropic e beta com header compact-2026-01-12 e strategy compact_20260112 note os formatos diferentes hifen no header sem hifen no type">
             <strong>Header e strategy (atenção ao formato)</strong>
-            Beta header <code>anthropic-beta: compact-2026-01-12</code> (com hífens); a <em>strategy</em> em <code>context_management.edits[]</code> é <code>{"type": "compact_20260112"}</code> (<strong>sem</strong> hífens, como nos demais edits — <code>clear_tool_uses_20250919</code>, <code>clear_thinking_20251015</code>). Verificado na fonte oficial em 2026-07-12.
+            Beta header <code>anthropic-beta: compact-2026-01-12</code> (com hífens); a <em>strategy</em> em <code>context_management.edits[]</code> é <code>{"type": "compact_20260112"}</code> (<strong>sem</strong> hífens, como nos demais edits — <code>clear_tool_uses_20250919</code>, <code>clear_thinking_20251015</code>). Verificado na fonte oficial em 2026-09-30.
           </div>
 
           <pre><code>import anthropic
@@ -1192,7 +1305,7 @@ next_response = client.responses.create(
 client = anthropic.Anthropic()
 
 response = client.beta.messages.create(
-    model="claude-opus-4-8",
+    model="claude-opus-5-5",
     max_tokens=4096,
     betas=["compact-2026-01-12"],
     messages=conversation,               # histórico acumulado
@@ -1236,9 +1349,9 @@ conversation.extend(response.content)</code></pre>
             </tbody>
           </table>
 
-          <div class="callout" data-fact="modelos que suportam compactacao anthropic fable5 mythos5 mythos preview opus 4.8 4.7 4.6 sonnet 5 e 4.6">
-            <strong>Modelos suportados</strong>
-            Fable 5, Mythos 5, Mythos Preview, Opus 4.8 / 4.7 / 4.6, Sonnet 5 e Sonnet 4.6 (lista verbatim da doc). ZDR-elegível — os dados enviados por essa feature não são retidos após a resposta.
+          <div class="callout" data-fact="modelos que suportam compactacao threshold anthropic verificado 2026-09-30 fable51 mythos51 fable5 mythos5 mythos preview opus55 opus5 opus48 opus47 opus46 sonnet55 sonnet5 sonnet46">
+            <strong>Modelos suportados (verificado 2026-09-30)</strong>
+            Lista verbatim da doc: Fable 5.1, Mythos 5.1, Fable 5, Mythos 5, Mythos Preview, <strong><code>claude-opus-5-5</code></strong>, Opus 5, Opus 4.8 / 4.7 / 4.6, <strong><code>claude-sonnet-5-5</code></strong>, Sonnet 5 e Sonnet 4.6. Plataformas: Claude API, Claude Platform on AWS, Amazon Bedrock, Google Cloud e Microsoft Foundry — todas em beta. ZDR-elegível (exclui Covered Models pelas regras de retenção específicas de modelo). Nos modelos Claude 5.1 e posteriores, uma request com <code>instructions</code> customizadas resume só a conversa visível: thinking blocks anteriores não entram no input do sumarizador. No threshold, em Fable 5.1, Opus 5.5 e Sonnet 5.5, remova ou descarte o thinking dos turnos que você reinsere após <code>pause_after_compaction</code> (a preservação sob condições é exclusiva do on-demand, §5B.2). Para confirmar por código em vez de lista estática, chame a <a href="https://platform.claude.com/docs/en/api/beta/models/list" target="_blank" rel="noopener">Models API</a> com o beta header e leia <code>capabilities.compaction</code> de cada modelo.
           </div>
 
           <div class="callout risk" data-fact="compactacao anthropic contribui para rate limits e billing e o usage top level nao inclui a iteracao de compactacao some usage.iterations para o total cobrado">
@@ -1251,9 +1364,104 @@ conversation.extend(response.content)</code></pre>
             Como a §5A da OpenAI, a compactação da Anthropic resolve a fatia <em>conversa</em> no servidor — análoga ao degrau <code>summarize_old</code>/<code>snapshot</code> da <a href="#escada">escada</a> (seção 5). Diferença material vs. OpenAI: aqui o bloco <code>compaction</code> traz um resumo em <code>&lt;summary&gt;</code> (não é opaco como o item criptografado da OpenAI), mas ainda <strong>não</strong> substitui o <a href="#snapshots">ledger canônico</a> (seção 6) — mantenha seu snapshot auditável em paralelo. O gatilho é checado no início de cada iteração de sampling, então pode disparar mais de uma vez por request (ex.: com server tools iterando).
           </div>
 
-          <div class="callout" data-fact="fontes oficiais anthropic compaction guia dedicado platform claude com build with claude compaction">
+          <div class="callout" data-fact="fontes oficiais anthropic compaction threshold guia dedicado platform claude com build with claude compaction threshold e confirmado tambem no bedrock e vertex e foundry">
             <strong>Fontes oficiais</strong>
-            Anthropic — guia dedicado <code>platform.claude.com/docs/en/build-with-claude/compaction</code>; disponível também em Amazon Bedrock, Google Cloud (Vertex AI) e Microsoft Foundry.
+            Anthropic — guia dedicado <a href="https://platform.claude.com/docs/en/build-with-claude/compaction-threshold" target="_blank" rel="noopener"><code>platform.claude.com/docs/en/build-with-claude/compaction-threshold</code></a> (verificado 2026-09-30: header <code>compact-2026-01-12</code>, strategy <code>compact_20260112</code>, modelos suportados, <code>trigger</code>/<code>pause_after_compaction</code>/<code>instructions</code> e <code>usage.iterations</code> conferem exatamente com este guia; não há parâmetro <code>keep</code> documentado — a preservação de turnos recentes nesta mecânica é via <code>pause_after_compaction</code> + reinjeção manual). Disponível em Claude API, Claude Platform on AWS, Amazon Bedrock, Google Cloud e Microsoft Foundry (todas em beta).
+          </div>
+
+          <h3 id="anthropic-compaction-on-demand">5B.2 On-demand — a aplicação decide (beta <code>compact-2026-09-04</code>)</h3>
+          <p class="tldr" data-fact="compactacao on demand anthropic beta compact-2026-09-04 parametro compaction top level type summarize aplicacao decide quando bloco vai primeiro em messages substituindo mensagens resumidas">Em vez de o servidor decidir ao cruzar um threshold, <strong>sua aplicação envia um request dedicado</strong> com o parâmetro de topo <code>compaction</code>, e a resposta devolve <strong>só</strong> um bloco <code>compaction</code> (sem resposta normal), que você troca no lugar das mensagens resumidas. É o par funcional do <a href="#compactacao-servidor">modo manual da OpenAI, <code>responses.compact()</code> (§5A)</a>.</p>
+
+          <div class="callout" data-fact="on demand nao pode ser combinado com context_management no mesmo request e bloco vai primeiro nao depois ao contrario do threshold">
+            <strong>Diferença estrutural vs. threshold — onde o bloco entra</strong>
+            No <strong>threshold</strong> (§5B.1), o bloco <code>compaction</code> vem <em>depois</em> das mensagens resumidas e a API as descarta para você. No <strong>on-demand</strong>, é o oposto: você mesmo remove as mensagens resumidas e coloca o bloco <em>primeiro</em> em <code>messages</code> (como uma mensagem <code>assistant</code> própria, ou como primeiro content block da primeira mensagem). Deixar mensagens resumidas na frente do bloco retorna <strong>400 <code>compaction_block_misplaced</code></strong>. As duas mecânicas <strong>não podem ser combinadas</strong>: enviar <code>compaction</code> e <code>context_management</code> no mesmo request é rejeitado.
+          </div>
+
+          <pre><code>import anthropic
+from anthropic.types.beta import BetaMessageParam
+
+client = anthropic.Anthropic()
+
+history: list[BetaMessageParam] = [
+    {"role": "user", "content": "..."},
+    {"role": "assistant", "content": "..."},
+    {"role": "user", "content": "..."},
+]
+
+response = client.beta.messages.create(
+    model="claude-opus-5-5",
+    max_tokens=4096,
+    betas=["compact-2026-09-04"],
+    messages=history,
+    compaction={"type": "summarize"},   # opcional: "instructions": "..." (até 16.384 chars, substitui o prompt padrão)
+)
+
+if response.stop_reason == "compaction":
+    # response.content tem exatamente um bloco {"type": "compaction", "content": "...", "signature": "..."}
+    # Substitua (nao anexe) o historico: o bloco assume o lugar de TODAS as mensagens resumidas.
+    history = [{"role": "assistant", "content": response.content}]
+# Qualquer outro stop_reason (max_tokens, model_context_window_exceeded, tool_use,
+# refusal, end_turn): nao ha resumo -- continue sem compactar e tente de novo depois.</code></pre>
+
+          <table>
+            <caption>Como o request de resumo é cobrado e o que fazer quando ele falha</caption>
+            <thead><tr><th><code>stop_reason</code></th><th>Causa</th><th>Ação</th></tr></thead>
+            <tbody>
+              <tr><td><code>max_tokens</code></td><td>Resumo cortado.</td><td>Reenvie com <code>max_tokens</code> maior.</td></tr>
+              <tr><td><code>model_context_window_exceeded</code></td><td>Não coube nem o prompt de sumarização.</td><td>Reenvie com <code>instructions</code> mais curta ou menos mensagens.</td></tr>
+              <tr><td><code>tool_use</code></td><td>O modelo chamou uma tool em vez de resumir.</td><td>Reenvie com <code>instructions</code> pedindo para não chamar tools.</td></tr>
+              <tr><td><code>refusal</code> / <code>end_turn</code></td><td>Recusa, ou call sem texto.</td><td>Continue sem resumo; tente compactar depois.</td></tr>
+            </tbody>
+          </table>
+
+          <div class="callout risk" data-fact="on demand billing usage iterations input output tokens topo zero porque nao ha resposta normal gerada">
+            <strong>Billing igual ao threshold — some <code>usage.iterations</code></strong>
+            O request de resumo é cobrado e sujeito a rate limit como qualquer outro; <code>usage.iterations</code> traz a entrada <code>"compaction"</code>. <code>input_tokens</code>/<code>output_tokens</code> de topo vêm <strong>zerados</strong> (não houve resposta normal). Reenviar o bloco em turnos seguintes <strong>não</strong> gera custo adicional de compactação. <code>cache_control</code> no bloco cria um breakpoint de cache logo após o resumo.
+          </div>
+
+          <div class="callout" data-fact="thinking em turnos reinseridos apos compactacao on demand preserved thinking tres condicoes header thinking-binding-controls-2026-08-01 drop_block">
+            <strong>Thinking nos turnos mantidos — três condições (verificado 2026-09-30)</strong>
+            Só importa se você reenvia thinking blocks a um modelo com <a href="https://platform.claude.com/docs/en/build-with-claude/preserved-thinking" target="_blank" rel="noopener">preserved thinking</a> e mantém turnos após o bloco. O thinking dos turnos mantidos segue válido enquanto valerem as três condições de <a href="https://platform.claude.com/docs/en/build-with-claude/compaction-thinking-blocks" target="_blank" rel="noopener">Compaction and preserved thinking</a>: (1) todo request de compactação roda num modelo com preserved thinking (o mais simples é usar o mesmo modelo da conversa); (2) os turnos mantidos seguem diretamente as mensagens resumidas e são enviados sem alteração, com o primeiro turno mantido de role diferente da última mensagem resumida; (3) <code>system</code> e as <code>tools</code> sem <code>defer_loading: true</code> não mudam. Se alguma falhar, a compactação não dá erro: o erro vem no primeiro request seguinte que reenvia o thinking — 400 por padrão, ou blocos descartados com <code>thinking.block_binding.prefix_mismatch_behavior: "drop_block"</code> (header <code>thinking-binding-controls-2026-08-01</code>; cada descarte aparece em <code>input_transformations</code>). Para trocar <code>system</code>/<code>tools</code> sem invalidar nada, compacte a conversa inteira antes.
+          </div>
+
+          <div class="callout" data-fact="sdk anthropic python compaction param 1.6.0 compact_before_next_turn 1.7.0 fix 1.8.0 atual 1.9.0">
+            <strong>SDK Python (verificado 2026-09-30)</strong>
+            O parâmetro <code>compaction</code> chegou ao SDK Python na 1.6.0 e o helper <code>compact_before_next_turn()</code> na 1.7.0; a 1.8.0 corrigiu o envio de parâmetros não suportados em requests de compactação. Versão atual: 1.9.0. Variações oficiais desta mecânica: <a href="https://platform.claude.com/docs/en/build-with-claude/compaction-keep-recent-turns" target="_blank" rel="noopener">manter os últimos turnos literais</a> (o resumo cobre só os mais antigos) e <a href="https://platform.claude.com/docs/en/build-with-claude/compaction-background" target="_blank" rel="noopener">compactar em background</a> (a conversa não pausa; você troca o bloco quando ele chega).
+          </div>
+
+          <div class="callout" data-fact="fontes oficiais on demand compaction platform claude com build with claude compaction on demand beta compact-2026-09-04">
+            <strong>Fontes oficiais</strong>
+            Anthropic — guia dedicado <a href="https://platform.claude.com/docs/en/build-with-claude/compaction-on-demand" target="_blank" rel="noopener"><code>platform.claude.com/docs/en/build-with-claude/compaction-on-demand</code></a> e visão geral <a href="https://platform.claude.com/docs/en/build-with-claude/compaction" target="_blank" rel="noopener"><code>platform.claude.com/docs/en/build-with-claude/compaction</code></a> — verificado 2026-09-30. Mesma lista de modelos/plataformas do threshold (§5B.1), exceto Amazon Bedrock (<span class="pill bad">not available</span> para on-demand; disponível para threshold).
+          </div>
+
+          <div class="callout evidence" id="provider-compaction-current" data-fact="contrato atual 2026-09-30 separa ledger app managed de state handles cache e entrega e registra retencao retries cancelamento e usage por provider">
+            <strong>Contrato atual (verificado 2026-09-30).</strong> Esta é a regra operacional que fecha a
+            ponte entre compactação e durabilidade: <strong>o ledger/event log da aplicação é a autoridade</strong>;
+            cache, IDs de continuação e objetos de compactação do provider são carriers/projeções, não backup.
+            <ul>
+              <li><strong>OpenAI Responses:</strong> <code>context_management</code> pode compactar automaticamente
+                ao cruzar <code>compact_threshold</code>; o endpoint standalone também devolve uma janela compactada.
+                Com <code>store=false</code>, a compactação é compatível com ZDR, mas <code>background=true</code>
+                ainda mantém a resposta transitoriamente em disco por cerca de 10 minutos para execução/polling.
+                Em timeout, consulte o estado/stream por <code>sequence_number</code> antes de criar outra resposta;
+                <code>responses.cancel</code> é explícito e idempotente, mas não apaga o log local.</li>
+              <li><strong>Anthropic Messages:</strong> a compactação server-side cria um bloco
+                <code>compaction</code> e ignora o conteúdo anterior a ele na projeção seguinte; o ledger local
+                continua completo. Quando houver <code>usage.iterations[]</code>, some as iterações de mensagem e
+                compactação para custo/rate-limit; <code>count_tokens</code> conta blocos existentes, mas não
+                dispara uma nova compactação. Vale para as duas mecânicas (<a href="#anthropic-compaction-threshold">threshold</a>
+                e <a href="#anthropic-compaction-on-demand">on-demand</a>): billing e regra de ledger são os mesmos.</li>
+              <li><strong>Gemini Interactions:</strong> o contrato atual não é “sem estado/resume”: com
+                <code>store=true</code>, <code>previous_interaction_id</code> encadeia estado server-side;
+                <code>background=true</code> permite execução assíncrona e o stream pode ser retomado por
+                <code>last_event_id</code>. <code>store=false</code> desabilita o encadeamento e background;
+                a retenção documentada é 55 dias no tier pago e 1 dia no gratuito. Compactação server-side de
+                Interactions não consta da documentação lida: <span class="pill partial">UNVERIFIED</span>,
+                mantenha a compactação no seu ledger. Isso é retenção de recurso, não garantia de entrega: persista eventos e
+                <code>usage.total_*_tokens</code> no app; <code>total_cached_tokens</code> é só telemetria de
+                cache best-effort.</li>
+            </ul>
+            <span class="source-link">Fontes atuais: <a href="https://developers.openai.com/api/docs/guides/compaction" target="_blank" rel="noopener">OpenAI compaction</a> · <a href="https://developers.openai.com/api/docs/guides/background" target="_blank" rel="noopener">OpenAI background</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/compaction" target="_blank" rel="noopener">Anthropic compaction</a> (visão geral) · <a href="https://platform.claude.com/docs/en/build-with-claude/compaction-on-demand" target="_blank" rel="noopener">Anthropic compaction on-demand</a> · <a href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">Gemini Interactions</a> · <a href="https://ai.google.dev/gemini-api/docs/background-execution" target="_blank" rel="noopener">Gemini background/reconnect</a> (consultadas em 2026-09-30).</span>
           </div>
         </section>
 
@@ -1815,12 +2023,27 @@ conversation.extend(response.content)</code></pre>
             <dd>Dado transitório (return packet de agent-as-tool, L3 pequeno, evidência hot) carregado por ~1 turno em <code>role=user</code> tagueado — nunca no system; depois vira digest/ref/reload.</dd>
           </dl>
         </section>
+        <section id="legado" data-section="legacy">
+          <h2>Legado e migração<span class="rev-flag novo">Novo · 2026-09-30</span></h2>
+          <p class="tldr" data-fact="legado condensado uma linha por item com status verificado em 2026-09-30 migracao e fonte oficial">Superfícies que este guia não usa como caminho principal. Cada linha: o que era, o status verificado em 2026-09-30, a migração em uma linha e a fonte.</p>
+          <table>
+            <caption>Legado relacionado a contexto e compactação</caption>
+            <thead><tr><th>Legado</th><th>Status</th><th>Migração</th><th>Fonte</th></tr></thead>
+            <tbody>
+              <tr><td data-label="Legado">Gemini <code>generateContent</code> com histórico no cliente e chat do SDK (<code>client.chats.create()</code>)</td><td data-label="Status">Legado: a página Interactions overview o descreve assim. Segue sendo o único caminho com <strong>cache explícito</strong> (objetos <code>cachedContent</code>); a Interactions só tem cache implícito.</td><td data-label="Migração">Usar <code>client.interactions.create</code> com <code>previous_interaction_id</code> (ou input completo com <code>store=false</code>); manter <code>generateContent</code> só onde o cache explícito for necessário.</td><td data-label="Fonte"><a href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">Interactions overview</a> · <a href="https://ai.google.dev/gemini-api/docs/migrate-to-interactions" target="_blank" rel="noopener">migrate to interactions</a></td></tr>
+              <tr><td data-label="Legado">OpenAI <code>prompt_cache_retention</code> (<code>in_memory</code>|<code>24h</code>)</td><td data-label="Status">Parâmetro dos modelos ≤ 5.5; deprecado a partir do <code>gpt-5.6</code>.</td><td data-label="Migração"><code>prompt_cache_options</code> (<code>ttl: "30m"</code>, <code>mode</code>, <code>prewarm</code>) + <code>prompt_cache_breakpoint</code>.</td><td data-label="Fonte"><a href="https://developers.openai.com/api/docs/guides/prompt-caching" target="_blank" rel="noopener">prompt caching</a></td></tr>
+              <tr><td data-label="Legado">Anthropic <code>thinking: {"type":"enabled","budget_tokens":N}</code></td><td data-label="Status">Retorna 400 em Opus 4.7+, Fable/Mythos e Sonnet 5+; deprecado em Opus 4.6/Sonnet 4.6; só resta em Haiku 4.5, Opus 4.5 e Sonnet 4.5.</td><td data-label="Migração"><code>thinking: {"type":"adaptive"}</code> + <code>output_config.effort</code>.</td><td data-label="Fonte"><a href="https://platform.claude.com/docs/en/build-with-claude/extended-thinking" target="_blank" rel="noopener">extended thinking</a></td></tr>
+              <tr><td data-label="Legado">Anthropic <code>compaction_control</code> (compactação client-side do SDK)</td><td data-label="Status">Deprecado nos SDKs TypeScript e Ruby e removido do SDK Python 1.x; a Anthropic recomenda a compactação server-side.</td><td data-label="Migração"><code>compact_20260112</code> em <code>context_management</code> (§5B.1) ou o parâmetro <code>compaction</code> sob demanda (§5B.2).</td><td data-label="Fonte"><a href="https://platform.claude.com/docs/en/build-with-claude/compaction" target="_blank" rel="noopener">compaction overview</a></td></tr>
+            </tbody>
+          </table>
+        </section>
       </article>
     </main>
   </div>
 
   <footer>
-    <p>Arquivo atualizado em 2026-06-10 (integração da proposta de gestão manual de contexto v0.6: fatias <code>turn_working</code>/<code>hot_followup</code>, degraus finos da escada e defaults por tier ilustrativos; o roteamento de modelo summarizer — modelo pequeno/barato, contrato de saída tipado e sucesso por <code>min_reclaim_ratio</code>/<code>target_utilization_after</code> (§14) — é deliberadamente deixado aos guias de modelo por ser perecível). Documento independente e framework-neutral. Claims perecíveis sobre modelos, janelas, SDKs, cache, thinking ou embeddings devem ser confirmados em fontes oficiais antes de virar código canônico.</p>
+    <p>Revisão de 2026-09-30. Documento independente e framework-neutral. Claims perecíveis sobre modelos, janelas, SDKs, cache, thinking ou embeddings devem ser confirmados em fontes oficiais antes de virar código canônico.</p>
+    <p>Fontes primárias verificadas em 2026-09-30 (as que sustentam este guia): <a href="https://developers.openai.com/api/docs/guides/compaction" target="_blank" rel="noopener">OpenAI compaction</a> (automático via <code>context_management</code> e manual via <code>/responses/compact</code>), <a href="https://platform.claude.com/docs/en/build-with-claude/compaction" target="_blank" rel="noopener">Anthropic compaction</a> (threshold beta <code>compact-2026-01-12</code>; on-demand beta <code>compact-2026-09-04</code>; modelos atuais Opus 5.5, Sonnet 5.5, Fable 5.1 e Haiku 4.5), <a href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">Gemini Interactions</a> (<code>google-genai</code> 2.25.0). Não foi encontrada documentação oficial de compactação server-side no Gemini: <span class="pill partial">UNVERIFIED</span>.</p>
   </footer>
 </body>
 </html>

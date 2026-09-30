@@ -2,10 +2,11 @@
 <html lang="pt-BR" data-theme="light">
 <head>
 <meta charset="utf-8" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%9A%3C/text%3E%3C/svg%3E" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Estado, Contexto &amp; Memória — Núcleo agnóstico de agentes</title>
 <meta name="description" content="Estado de orquestração agnóstico de provider: estado durável vs payload de provider, ledger canônico, modos provider-managed/app-managed/híbrido, reasoning e thinking state por provider, asset registry, contrato de compaction (perdas aceitáveis vs proibidas) e testes de memória. Complementa os guias de compactação e token counting sem duplicá-los." />
-<meta name="last-checked" content="2026-07-12" />
+<meta name="last-checked" content="2026-09-30" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -279,6 +280,7 @@
     details > summary { display: none; }
   }
 </style>
+<style id="rev-flag-css">main :not(pre) > code,main a{overflow-wrap:anywhere}.rev-flag{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:999px;font-size:.62em;font-weight:600;vertical-align:middle;letter-spacing:.02em;white-space:nowrap}.rev-flag.novo{background:#dcfce7;color:#14532d;border:1px solid #86efac}.rev-flag.atu{background:#e0f2fe;color:#0c4a6e;border:1px solid #7dd3fc}.rev-news{margin:16px 0;padding:12px 16px;border-left:4px solid #22c55e;border-radius:8px;background:rgba(34,197,94,.08)}.rev-news ul{margin:6px 0 0;padding-left:20px}.rev-news li{margin:2px 0}:root[data-theme="dark"] .rev-flag.novo{background:#14532d;color:#dcfce7;border-color:#166534}:root[data-theme="dark"] .rev-flag.atu{background:#0c4a6e;color:#e0f2fe;border-color:#075985}@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .rev-flag.novo{background:#14532d;color:#dcfce7;border-color:#166534}:root:not([data-theme="light"]) .rev-flag.atu{background:#0c4a6e;color:#e0f2fe;border-color:#075985}}</style>
 </head>
 <body>
 <a class="skip" href="#main">Pular para o conteúdo</a>
@@ -287,7 +289,7 @@
   <div class="header-row">
     <div class="brand">Estado, Contexto &amp; Memória <small>Núcleo agnóstico de agentes</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-12</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-09-30</strong></span>
       <span class="badge da">Núcleo · agnóstico de provider</span>
       <span class="badge info">Conceitual + referência</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
@@ -299,6 +301,7 @@
   <nav class="toc" aria-label="Sumário">
     <div class="toc-section">Início</div>
     <ol>
+      <li><a href="#para-agentes">Resumo para agentes</a></li>
       <li><a href="#sobre-guia">Sobre este guia</a></li>
       <li><a href="#fontes-oficiais">Fontes &amp; verificação</a></li>
       <li><a href="#mapa-do-nucleo">Mapa do núcleo</a></li>
@@ -333,11 +336,14 @@
     <div class="toc-section">Referência</div>
     <ol>
       <li><a href="#checklist-de-estado">Checklist de estado</a></li>
+      <li><a href="#estado-nos-frameworks">Estado nos frameworks</a></li>
+      <li><a href="#legado">Legado e migração</a></li>
       <li><a href="#verificacao">Notas de verificação</a></li>
     </ol>
   </nav>
 
   <main id="main">
+<aside class="rev-news" id="rev-news-2026-09-30" aria-label="Novidades desta revisão"><strong>O que há de novo nesta revisão (2026-09-30)</strong> — 3 seções novas e 10 atualizadas desde a revisão de 2026-09-23. Procure os selos <span class="rev-flag novo">Novo</span> e <span class="rev-flag atu">Atualizado</span> nos títulos.<details><summary>Ver lista</summary><ul><li><span class="rev-flag novo">Novo</span> <a href="#para-agentes">Resumo para agentes (verificado 2026-09-30)</a></li><li><span class="rev-flag novo">Novo</span> <a href="#estado-nos-frameworks">Estado nos frameworks</a> — sessions do Agents SDK, checkpointers/store do LangGraph, sessions/memory do ADK e memória do Deep Agents</li><li><span class="rev-flag novo">Novo</span> <a href="#legado">Legado e migração</a> — o legado foi condensado aqui: Gemini <code>generateContent</code>, Assistants API, <code>prompt_cache_retention</code>, <code>budget_tokens</code> e outros</li><li><span class="rev-flag atu">Atualizado</span> <a href="#estado-vs-payload">1. Estado durável vs payload de provider</a> — Gemini Interactions como caminho server-side; Conversations API</li><li><span class="rev-flag atu">Atualizado</span> <a href="#reasoning-thinking-por-provider">Controles de reasoning/thinking</a> — <code>configuration_update</code>, <code>between_tools</code>, binding de thinking blocks</li><li><span class="rev-flag atu">Atualizado</span> <a href="#estado-na-responses-api">6. Estado na Responses API</a> — manual, <code>previous_response_id</code> e Conversations</li><li><span class="rev-flag atu">Atualizado</span> <a href="#zonas-canonicas">8b. Zonas canônicas</a> — cache: <code>prompt_cache_options</code>, Opus 5.5 a 0,05×, diagnostics GA</li><li><span class="rev-flag atu">Atualizado</span> <a href="#memory-tool-anthropic">8b.1 Memory tool</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#agent-as-tool-multiturno">8c. Agent-as-tool multi-turno</a> — modelos e cache dos exemplos</li><li><span class="rev-flag atu">Atualizado</span> <a href="#budgets-e-invariantes">9. Budgets e invariantes</a> — modelos e preços atuais</li><li><span class="rev-flag atu">Atualizado</span> <a href="#compaction-contrato">10. Compaction</a> — OpenAI <code>/responses/compact</code> e Anthropic sob demanda</li><li><span class="rev-flag atu">Atualizado</span> <a href="#context-editing-anthropic">10.1 Context editing</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#verificacao">Notas de verificação</a></li></ul></details></aside>
 
     <div class="hero">
       <h1>Estado, Contexto &amp; Memória</h1>
@@ -352,9 +358,84 @@
       <div class="hero-meta">
         <span class="badge da">Núcleo · agnóstico de provider</span>
         <span class="badge info">Conceitual + referência</span>
-        <span class="badge ok">SOTA · verificado 2026-06-10</span>
+        <span class="badge ok">SOTA · verificado 2026-09-30</span>
       </div>
     </div>
+
+    <section id="para-agentes">
+      <h2>Resumo para agentes (verificado 2026-09-30)<span class="rev-flag novo">Novo · 2026-09-30</span></h2>
+
+      <h3>1. Superfície atual</h3>
+      <ul>
+        <li>Regra central: o ledger da aplicação é a fonte de verdade; <code>previous_response_id</code>, <code>conversation</code>, <code>previous_interaction_id</code>, sessions, cache e thinking blocks são carriers/projeções, não base de auditoria.</li>
+        <li>OpenAI: Responses API (estado por <code>previous_response_id</code> ou Conversations API). Anthropic: Messages API com histórico reenviado por você, memory tool e context editing. Google: Interactions API (<code>google-genai</code> ≥ 2.3.0; 2.25.0 em 2026-09-30).</li>
+      </ul>
+<pre><code class="language-python"># OpenAI, stateless: você reenvia a projeção do ledger
+r = client.responses.create(model="...", input=projected_items, store=False, include=["reasoning.encrypted_content"])
+# Anthropic, memory tool (client-side, GA, sem header beta): entrada completa em tools
+tools = [{"type": "memory_20250818", "name": "memory"}]
+# Gemini, estado server-side encadeado
+r2 = client.interactions.create(model="gemini-3.8-flash", input="...", previous_interaction_id=r1.id)</code></pre>
+
+      <h3>2. IDs e versões correntes</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Mecanismo</th><th>ID / parâmetro</th><th>Status</th><th>Nota</th></tr></thead>
+        <tbody>
+          <tr><td>OpenAI estado</td><td><code>previous_response_id</code>, <code>conversation</code> (Conversations API), <code>store</code></td><td>Responses API</td><td>Respostas: 30 dias por padrão; itens de uma conversation não têm esse TTL; tokens anteriores continuam cobrados.</td></tr>
+          <tr><td>Anthropic memory tool</td><td><code>memory_20250818</code>, name <code>memory</code>, raiz <code>/memories</code></td><td>GA, sem header</td><td>Client-side; seis comandos (<code>view</code>, <code>create</code>, <code>str_replace</code>, <code>insert</code>, <code>delete</code>, <code>rename</code>); modelos Claude 4 e posteriores.</td></tr>
+          <tr><td>Anthropic context editing</td><td>header <code>context-management-2025-06-27</code>; <code>clear_tool_uses_20250919</code>, <code>clear_thinking_20251015</code></td><td>beta</td><td>Limpa por regra, sem resumir. Distinto de compaction.</td></tr>
+          <tr><td>Anthropic compaction</td><td><code>compact-2026-01-12</code> (limiar) · <code>compact-2026-09-04</code> (sob demanda)</td><td>beta</td><td>Bloco <code>compaction</code> assinado; ver guia de contexto.</td></tr>
+          <tr><td>Anthropic modelos</td><td><code>claude-fable-5-1</code>, <code>claude-opus-5-5</code> (effort <code>medium</code>), <code>claude-sonnet-5-5</code>, <code>claude-haiku-4-5</code></td><td>Active</td><td>Cache read 0,05× no Opus 5.5; cache diagnostics GA desde 2026-09-23.</td></tr>
+          <tr><td>Gemini Interactions</td><td><code>previous_interaction_id</code>, <code>store</code>, <code>background</code>, <code>last_event_id</code></td><td>GA</td><td><code>store=true</code> por padrão: retenção 55 dias (pago) / 1 dia (gratuito).</td></tr>
+          <tr><td>Frameworks (2026-09-30)</td><td><code>openai-agents</code> 0.22.3 · <code>langgraph</code> 1.2.12 · <code>google-adk</code> 2.10.0 · <code>deepagents</code> 0.7.20</td><td>—</td><td>Ver <a href="#estado-nos-frameworks">Estado nos frameworks</a>.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>3. Faça / Não faça</h3>
+      <ul>
+        <li>Não use o estado do provider como fonte única do histórico; persista o ledger e reconstrua a projeção a cada turno.</li>
+        <li>OpenAI: <code>previous_response_id</code> não recarrega <code>instructions</code> anteriores; reenvie-as. Com <code>store=false</code> em <code>background=true</code>, dados ficam ~10 minutos em disco.</li>
+        <li>Não use a Assistants API (encerrada em 2026-08-26) → Responses API + Conversations API. Não use <code>prompt_cache_retention</code> (≤ gpt-5.5) → <code>prompt_cache_options</code> (<code>ttl: "30m"</code>, <code>mode</code>, <code>prewarm</code>) no gpt-5.6+.</li>
+        <li>Anthropic: não envie <code>thinking: {"type":"disabled"}</code> (400 em Opus 5.5, Fable 5.1, Sonnet 5.5) nem <code>enabled</code> + <code>budget_tokens</code> (400 em Opus 4.7+, Fable/Mythos, Sonnet 5+; só Haiku 4.5, Opus 4.5 e Sonnet 4.5). Use <code>adaptive</code> + <code>output_config.effort</code>; no Sonnet 5.5, <code>between_tools</code>.</li>
+        <li>Preserve thinking blocks e signatures no tool loop. Blocos ficam presos a modelo, conversa e conta; ao trocar de modelo, trate-os como não reaproveitáveis e reconstrua do ledger. Em contas criadas em/após 2026-08-31 00:00 UTC o prefixo é validado (400); para descartar use o header <code>thinking-binding-controls-2026-08-01</code> + <code>prefix_mismatch_behavior: "drop_block"</code>.</li>
+        <li>Context editing: liste <code>clear_thinking_20251015</code> antes de <code>clear_tool_uses_20250919</code> em <code>edits</code> e fixe <code>keep</code> explicitamente (o padrão varia por classe de modelo).</li>
+        <li>Memory tool: a validação de path é 100% da aplicação (exigir prefixo <code>/memories</code>, canonicalizar, rejeitar <code>../</code> e variantes URL-encoded); a raiz não pode ser deletada nem renomeada.</li>
+        <li>Gemini: <code>store=false</code> é incompatível com <code>previous_interaction_id</code> e <code>background=true</code>; <code>tools</code>, <code>system_instruction</code> e <code>generation_config</code> valem por interação (reenvie). Não use <code>generateContent</code> como caminho principal nem <code>thinking_budget</code> → <code>generation_config.thinking_level</code>.</li>
+        <li>OpenAI Agents SDK: uma session não combina com <code>conversation_id</code>, <code>previous_response_id</code> nem <code>auto_previous_response_id</code> na mesma run; escolha um modelo de estado.</li>
+        <li>Dado transitório que precisa sobreviver a um follow-up entra como bloco tagueado em <code>role=user</code>, nunca em system/instructions, <code>assistant</code> ou <code>tool_result</code> fabricado.</li>
+        <li>Memória compartilhada entre usuários/threads é superfície de injeção: trate como dado, prefira somente leitura, registre a origem no ledger.</li>
+        <li>Não use <code>compaction_control</code> (SDK, legado) → <code>compact_20260112</code> ou <code>compaction</code> sob demanda. Detalhes em <a href="#legado">Legado e migração</a>.</li>
+      </ul>
+
+      <h3>4. Onde está cada coisa</h3>
+      <p>
+        <a href="#estado-vs-payload">estado durável vs payload</a> ·
+        <a href="#ledger-canonico">ledger canônico</a> ·
+        <a href="#registrar-reduzir-projetar">registrar, reduzir, projetar</a> ·
+        <a href="#modos-de-estado">modos provider/app/híbrido</a> ·
+        <a href="#reasoning-thinking-por-provider">reasoning e thinking por provider</a> ·
+        <a href="#estado-na-responses-api">estado na Responses API</a> ·
+        <a href="#asset-registry">asset registry</a> ·
+        <a href="#zonas-canonicas">zonas canônicas</a> ·
+        <a href="#memory-tool-anthropic">memory tool</a> ·
+        <a href="#budgets-e-invariantes">budgets</a> ·
+        <a href="#compaction-contrato">compaction (contrato)</a> ·
+        <a href="#context-editing-anthropic">context editing</a> ·
+        <a href="#perdas-aceitaveis-proibidas">perdas aceitáveis vs proibidas</a> ·
+        <a href="#testes-de-memoria">testes de memória</a> ·
+        <a href="#estado-nos-frameworks">estado nos frameworks</a> ·
+        <a href="#legado">legado</a> ·
+        <a href="#verificacao">notas de verificação</a>
+      </p>
+
+      <h3>5. Incertezas (não trate como fato)</h3>
+      <ul>
+        <li>UNVERIFIED: compactação server-side equivalente no Gemini e opções de retenção da Interaction além de 55 dias (pago) e 1 dia (gratuito).</li>
+        <li>UNVERIFIED: default de <code>reasoning.effort</code> do <code>gpt-6-astra</code> (nenhuma página oficial o informa).</li>
+        <li>Número de cache breakpoints, TTLs e janelas por modelo mudam com frequência; confirme no guia do provider.</li>
+        <li>Os preprints citados em <a href="#verificacao">Notas de verificação</a> (MEMENTO, LOCA-bench) são pesquisa não normativa; adoção UNVERIFIED.</li>
+      </ul>
+    </section>
 
     <section id="sobre-guia">
       <h2>Sobre este guia</h2>
@@ -386,10 +467,10 @@
     <section id="fontes-oficiais">
       <h2>Fontes &amp; verificação</h2>
       <p>
-        Os fatos perecíveis (parâmetros de estado, modos de reasoning/thinking, campos de retenção) foram
-        conferidos contra a documentação oficial em <strong>2026-06-10</strong> e consolidados na folha de
-        fatos SOTA do projeto. Os contratos de dados (ledger, compaction item, asset registry) são
-        recomendações de engenharia derivadas dos padrões oficiais.
+        Os fatos perecíveis (parâmetros de estado, modos de reasoning/thinking, campos de retenção, cache e
+        compaction) foram conferidos contra a documentação oficial em <strong>2026-09-30</strong>. Os contratos
+        de dados (ledger, compaction item, asset registry) são recomendações de engenharia derivadas dos
+        padrões oficiais.
       </p>
       <div class="table-wrap"><table>
         <thead><tr><th>Tema</th><th>Fonte oficial</th></tr></thead>
@@ -398,6 +479,9 @@
           <tr><td>OpenAI — reasoning (effort, encrypted reasoning, stateless/ZDR)</td><td><a href="https://developers.openai.com/api/docs/guides/reasoning" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/reasoning</a></td></tr>
           <tr><td>Anthropic — extended/adaptive thinking (blocks &amp; signatures)</td><td><a href="https://platform.claude.com/docs/en/build-with-claude/extended-thinking" target="_blank" rel="noopener">platform.claude.com/docs/en/build-with-claude/extended-thinking</a></td></tr>
           <tr><td>Anthropic — context windows</td><td><a href="https://platform.claude.com/docs/en/build-with-claude/context-windows" target="_blank" rel="noopener">platform.claude.com/docs/en/build-with-claude/context-windows</a></td></tr>
+          <tr><td>OpenAI — compaction (<code>context_management</code>, <code>/responses/compact</code>)</td><td><a href="https://developers.openai.com/api/docs/guides/compaction" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/compaction</a></td></tr>
+          <tr><td>Anthropic — memory tool, context editing, compaction on demand</td><td><a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool" target="_blank" rel="noopener">memory tool</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/context-editing" target="_blank" rel="noopener">context editing</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/compaction-on-demand" target="_blank" rel="noopener">compaction on demand</a></td></tr>
+          <tr><td>Google — Interactions API (estado server-side, background, retenção)</td><td><a href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/interactions-overview</a></td></tr>
           <tr><td>Google — thinking (<code>thinking_level</code>, thought summaries)</td><td><a href="https://ai.google.dev/gemini-api/docs/thinking" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/thinking</a></td></tr>
           <tr><td>Google — thought signatures</td><td><a href="https://ai.google.dev/gemini-api/docs/thought-signatures" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/thought-signatures</a></td></tr>
         </tbody>
@@ -434,7 +518,7 @@
     </section>
 
     <section id="estado-vs-payload">
-      <h2>1. Estado durável versus payload de provider</h2>
+      <h2>1. Estado durável versus payload de provider<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <p>
         A regra mais importante: o histórico real pertence ao runtime da aplicação. APIs e SDKs oferecem
         conveniências de estado — <code>previous_response_id</code>, <code>conversation</code>, sessions,
@@ -446,12 +530,27 @@
       <div class="table-wrap"><table>
         <thead><tr><th>Mecanismo do provider</th><th>O que é</th><th>Por que não é a fonte da verdade</th></tr></thead>
         <tbody>
-          <tr><td>OpenAI <code>previous_response_id</code> / <code>conversation</code></td><td>Encadeamento de estado server-side entre respostas.</td><td>Sujeito a retenção/expiração; <code>instructions</code> antigas não são recarregadas automaticamente.</td></tr>
+          <tr><td>OpenAI <code>previous_response_id</code> / <code>conversation</code></td><td>Encadeamento de estado server-side entre respostas (Responses API). <code>previous_response_id</code> encadeia respostas; a Conversations API guarda um objeto durável com itens.</td><td>Respostas ficam 30 dias por padrão (<code>store=false</code> desliga); itens de uma conversation não têm esse TTL. Mesmo encadeado, todos os tokens anteriores são cobrados como input; <code>instructions</code> antigas não são recarregadas automaticamente.</td></tr>
           <tr><td>Anthropic message history</td><td>Você reenvia as mensagens; thinking blocks/signatures viajam junto.</td><td>É o seu payload — só é durável se você o persistir.</td></tr>
-          <tr><td>Google chat/history no SDK</td><td>O SDK pode manter o histórico da sessão de chat.</td><td>Conveniência de processo; precisa ser persistida pela aplicação.</td></tr>
+          <tr><td>Google Gemini Interactions</td><td><code>store=true</code> (default) guarda a Interaction; <code>previous_interaction_id</code> encadeia turnos e <code>background=true</code> executa em segundo plano.</td><td>Recurso server-side tem retenção própria e pode expirar; stream/background retomável usa <code>last_event_id</code>. <code>store=false</code> impede o encadeamento e background. Não confundir esse estado com prompt cache.</td></tr>
           <tr><td>Prompt cache (qualquer provider)</td><td>Acelera prefixos repetidos.</td><td>Otimização de custo/latência com TTL — não é armazenamento.</td></tr>
         </tbody>
       </table></div>
+      <div class="callout evidence" id="gemini-interactions-state-current">
+        <strong>Gemini — estado server-side na Interactions API (verificado em 2026-09-30).</strong>
+        A <strong>Interactions API</strong> (<code>client.interactions.create</code>, GA; <code>google-genai</code>
+        ≥ 2.3.0, schema de resposta em <code>steps[]</code>) oferece estado server-side por
+        <code>previous_interaction_id</code>, execução assíncrona por <code>background=true</code> e
+        reconexão do stream por <code>last_event_id</code>; cada evento tem seu identificador para que o
+        cliente continue do último evento recebido. O recurso é armazenado por padrão: a documentação
+        registra 55 dias no tier pago e 1 dia no gratuito. <code>store=false</code> é a escolha stateless e é
+        incompatível com <code>previous_interaction_id</code> e <code>background=true</code>. <code>tools</code>,
+        <code>system_instruction</code> e <code>generation_config</code> valem por interação: reenvie a cada turno.
+        Em qualquer modo, o ledger app-managed continua sendo a fonte de verdade; cache implícito é apenas
+        otimização best-effort. O caminho <code>generateContent</code> (histórico no cliente) está em
+        <a href="#legado">Legado e migração</a>.
+        <span class="source-link">Fontes: <a href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">Interactions overview</a> · <a href="https://ai.google.dev/gemini-api/docs/background-execution" target="_blank" rel="noopener">background execution</a> · <a href="https://ai.google.dev/gemini-api/docs/streaming" target="_blank" rel="noopener">streaming</a>.</span>
+      </div>
       <div class="callout warn">
         <strong>Para fluxos protegidos:</strong> quando requisitos de retenção/privacidade exigem controle
         estrito, prefira <code>store=false</code> quando aplicável e carregue você mesmo os itens
@@ -510,7 +609,12 @@
             .cbh{fill:var(--c-da-bg);stroke:var(--c-da);stroke-width:2;}
             .cl{fill:var(--c-fg);font-family:var(--font-sans);font-size:12px;font-weight:600;}
             .ca{stroke:var(--c-da);stroke-width:1.8;fill:none;marker-end:url(#cah);}
-          </style>
+          
+/* Variantes de pills/callouts usadas no HTML e ausentes da folha base.
+   Sem elas, essas pills/callouts caíam no estilo base, sem cor. */
+.callout.invariant { border-left-color: #4338ca; background: #eef0ff; color: #2f2a8c; }
+[data-theme="dark"] .callout.invariant { background: #16162e; color: #b9b6f2; }
+</style>
           <defs><marker id="cah" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="var(--c-da)"/></marker></defs>
           <rect class="cb" x="20"  y="20" width="150" height="40" rx="8"/><text class="cl" x="95"  y="44" text-anchor="middle">entrada bruta</text>
           <rect class="cb" x="210" y="20" width="180" height="40" rx="8"/><text class="cl" x="300" y="44" text-anchor="middle">validação de ingresso</text>
@@ -584,48 +688,71 @@
             <td>Anthropic Messages</td>
             <td>Thinking blocks e signatures em adaptive/extended thinking + tool use.</td>
             <td>Thinking blocks exigidos junto dos <code>tool_result</code> correspondentes, signatures, <code>tool_use</code> IDs e a ordem dos blocos.</td>
-            <td>Não remover thinking/signature necessário em tool loop; não esquecer que o thinking budget compete com <code>max_tokens</code> em modelos/documentação aplicáveis.</td>
+            <td>Não remover thinking/signature necessário em tool loop; não reenviar blocos de thinking a um modelo que não os lê (ver binding abaixo); lembrar que <code>max_tokens</code> cobre thinking + resposta.</td>
           </tr>
           <tr>
             <td>Google Gemini</td>
-            <td>Thought signatures em <code>parts</code> e <code>thoughts_token_count</code>/summaries quando habilitados.</td>
-            <td><code>parts</code> com <code>thought_signature</code> exatamente como recebidas; histórico completo quando o SDK não o faz automaticamente; function responses pareadas.</td>
-            <td>Não concatenar signatures em texto; não reordenar <code>parts</code>; não omitir signatures em chamadas subsequentes de function calling quando exigido.</td>
+            <td>Interactions API: steps com <code>thought_signature</code> e <code>thought_summary</code> (eventos <code>step.delta</code>), contador <code>usage.total_thought_tokens</code>.</td>
+            <td>Steps/signatures exatamente como recebidos; com <code>previous_interaction_id</code> o servidor os carrega, e em modo stateless (<code>store=false</code>) o histórico completo volta do seu ledger; function results pareados.</td>
+            <td>Não concatenar signatures em texto; não reordenar steps; não omitir signatures em chamadas subsequentes de function calling quando exigido.</td>
           </tr>
         </tbody>
       </table></div>
-      <h3>Controles de reasoning/thinking — parâmetros canônicos</h3>
+      <h3>Controles de reasoning/thinking — parâmetros canônicos<span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
       <p>Os controles abaixo são os <strong>nomes de parâmetro</strong> atuais (não modelos). Para a
       disponibilidade por modelo, siga os cross-links — IDs de modelo são perecíveis e ficam concentrados
       nos guias de provider.</p>
       <div class="table-wrap"><table>
         <thead><tr><th>Provider</th><th>Parâmetro</th><th>Valores</th><th>Notas de estado</th></tr></thead>
         <tbody>
-          <tr><td>OpenAI</td><td><code>reasoning.effort</code></td><td><code>none</code> · <code>low</code> · <code>medium</code> (default) · <code>high</code> · <code>xhigh</code> (dependente do modelo)</td><td>Reasoning tokens contam no orçamento; reasoning não é exposto como cadeia bruta. <span class="pill ok">Verificado</span></td></tr>
-          <tr><td>Anthropic</td><td><code>thinking</code></td><td><code>adaptive</code> · <code>enabled</code> + <code>budget_tokens</code> · <code>disabled</code> (disponibilidade do modo varia por modelo)</td><td>Thinking blocks/signatures devem voltar no tool loop; <code>display</code> pode ser <code>summarized</code> (default) ou <code>omitted</code>. <span class="pill ok">Verificado</span></td></tr>
-          <tr><td>Google</td><td><code>thinking_level</code></td><td><code>low</code> · <code>medium</code> · <code>high</code> (Flash/Flash-Lite também <code>minimal</code>)</td><td>Direto em <code>generation_config</code> na <strong>Interactions API</strong>; aninhado em <code>thinking_config</code> no <code>generateContent</code>/SDK. <code>thinking_budget</code> é legado (série 2.5); não misturar com <code>thinking_level</code> (erro 400). <span class="pill ok">Verificado</span></td></tr>
+          <tr><td>OpenAI</td><td><code>reasoning.effort</code></td><td><code>none</code> · <code>minimal</code> · <code>low</code> · <code>medium</code> (default em <code>gpt-5.5</code>, <code>gpt-5.6</code>, <code>gpt-6.1-sol</code>, <code>gpt-6-sol</code> e <code>gpt-6-luna</code>; <code>gpt-6.1-sol</code> não aceita <code>none</code> nem <code>minimal</code>; Astra <strong>não aceita <code>none</code></strong> e seu default não é documentado — <span class="pill partial">UNVERIFIED</span>) · <code>high</code> · <code>xhigh</code> · <code>max</code> (desde <code>gpt-5.6</code>; suporte por valor varia por modelo — checar a página do modelo)</td><td>Reasoning tokens contam no orçamento; reasoning não é exposto como cadeia bruta; em <code>gpt-5.6</code> e toda a família GPT-6 o modo (<code>reasoning.mode</code>: <code>standard</code>|<code>pro</code>, default <code>standard</code>) é independente do effort. <code>reasoning.context</code> (<code>auto</code>|<code>current_turn</code>|<code>all_turns</code>) define quanto reasoning de turnos anteriores entra na amostra seguinte; a resposta informa o modo efetivo. Reasoning persistido só é reaproveitável dentro da mesma família de modelo. Na família GPT-6, o item de input <code>configuration_update</code> (<code>{"type":"configuration_update","reasoning":{"effort":"high"}}</code>, antes da próxima mensagem do usuário) muda <strong>somente o effort</strong> no meio da conversa e vale até novo update; dois updates não podem ser adjacentes, não combinam com compaction/truncation automáticos e <code>/responses/compact</code> rejeita históricos que os contenham. <span class="pill ok">Verificado 2026-09-30</span></td></tr>
+          <tr><td>Anthropic</td><td><code>thinking</code> + <code>output_config.effort</code></td><td><code>adaptive</code> (padrão nos modelos atuais) · <code>between_tools</code> (Sonnet 5.5: thinking só entre tool calls; effort <code>low</code>|<code>medium</code>|<code>high</code>, sem <code>display</code>, sem <code>block_binding</code>) · <code>enabled</code> + <code>budget_tokens</code> retorna <strong>400</strong> em Opus 4.7+, Fable/Mythos e Sonnet 5+ (o modo só existe em Haiku 4.5, Opus 4.5 e Sonnet 4.5; deprecado em Opus 4.6/Sonnet 4.6) · <code>disabled</code> retorna 400 em Opus 5.5, Fable 5.1 e Sonnet 5.5</td><td>Thinking blocks/signatures devem voltar no tool loop. O <code>effort</code> (<code>low</code>…<code>max</code>; default <code>medium</code> no Opus 5.5, <code>high</code> no Fable 5.1 e no Sonnet 5.5) afeta todos os tokens gerados e <strong>não é budget rígido</strong>: não substitui a reserva de saída do §9. <code>display</code>: <code>summarized</code> ou <code>omitted</code> (default varia por modelo; no Sonnet 5.5 o texto entre tool calls volta em blocos <code>thinking</code> e fica vazio com <code>omitted</code>). <span class="pill ok">Verificado 2026-09-30</span></td></tr>
+          <tr><td>Google</td><td><code>thinking_level</code></td><td><code>low</code> · <code>medium</code> · <code>high</code> (vários modelos Flash/Flash-Lite também <code>minimal</code>; suporte exato e default variam por modelo — ex.: <code>gemini-3.8-flash</code> só low/medium/high, default medium; <code>gemini-3.1-pro-preview</code> só low/medium/high, default high; ver tabela oficial)</td><td>Direto em <code>generation_config</code> na <strong>Interactions API</strong>; contadores em <code>usage.total_thought_tokens</code>. <code>thinking_budget</code> é legado (ver <a href="#legado">Legado e migração</a>). <span class="pill ok">Verificado 2026-09-30</span></td></tr>
         </tbody>
       </table></div>
+      <div class="callout warn" id="thinking-binding-anthropic">
+        <strong>Anthropic — thinking blocks presos a modelo, conversa e conta (verificado 2026-09-30).</strong>
+        Cada bloco de thinking registra o modelo que o produziu: o Sonnet 5.5 lê blocos de Sonnet 5, Opus 4.8,
+        Haiku 4.5 e anteriores, mas <strong>não</strong> de Opus 5, Opus 5.5, Fable ou Mythos, e nenhum outro
+        modelo lê blocos do Sonnet 5.5. Bloco inválido é descartado (a request passa; não é faturado). Para
+        contas criadas a partir de 2026-08-31 00:00 UTC, o prefixo é validado por padrão (400 se
+        <code>system</code>, <code>tools</code> ou mensagens anteriores mudarem após o bloco); para descartar em
+        vez de falhar, use o header <code>thinking-binding-controls-2026-08-01</code> com
+        <code>thinking.block_binding.prefix_mismatch_behavior: "drop_block"</code> (só com <code>adaptive</code>).
+        Blocos do Sonnet 5.5 valem só na conta produtora ou em contas ligadas. Consequência para o ledger:
+        ao trocar de modelo no meio da conversa, trate os blocos de thinking como não reaproveitáveis e
+        reconstrua a projeção a partir do ledger.
+        <div class="source-link">Fontes: <a href="https://platform.claude.com/docs/en/build-with-claude/extended-thinking" target="_blank" rel="noopener">Anthropic extended thinking</a> · <a href="https://platform.claude.com/docs/en/release-notes/overview" target="_blank" rel="noopener">release notes</a> — verificado em 2026-09-30</div>
+      </div>
       <div class="callout beta">
         <strong>Onde aprofundar:</strong> adaptive/extended thinking, budget e display no
         <a href="guia_claude_api.html">guia do Claude</a>; <code>reasoning.effort</code> e verbosity no
         <a href="guia_openai_modelos.html">guia da OpenAI</a>; <code>thinking_level</code>, thought
         summaries e telemetria <code>usage.total_thought_tokens</code>/<code>total_output_tokens</code> no
-        <a href="guia_gemini_interactions_api.html">guia da Gemini Interactions API</a>
-        (no <code>generateContent</code>, os mesmos contadores aparecem como <code>usage_metadata.thoughts_token_count</code>/<code>candidates_token_count</code>).
+        <a href="guia_gemini_interactions_api.html">guia da Gemini Interactions API</a>.
       </div>
       <div class="source-link">Fontes oficiais: <a href="https://developers.openai.com/api/docs/guides/reasoning" target="_blank" rel="noopener">OpenAI reasoning</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/extended-thinking" target="_blank" rel="noopener">Anthropic extended thinking</a> · <a href="https://ai.google.dev/gemini-api/docs/thought-signatures" target="_blank" rel="noopener">Google thought signatures</a>.</div>
     </section>
 
     <section id="estado-na-responses-api">
-      <h2>6. Estado suportado pela OpenAI Responses API</h2>
+      <h2>6. Estado suportado pela OpenAI Responses API<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <p>
-        Na Responses API, <code>previous_response_id</code> encadeia respostas anteriores e
-        <code>conversation</code> referencia um objeto de conversa; a documentação explicita que os dois
-        mecanismos não devem ser usados juntos em certas condições e que <code>instructions</code> de
-        chamadas anteriores <strong>não</strong> são automaticamente carregadas com
-        <code>previous_response_id</code>. A política correta é registrar a sua própria versão de
-        <code>instructions</code> e reprojetá-las quando necessário.
+        A Responses API tem três formas de estado (verificado em 2026-09-30):
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Forma</th><th>Como</th><th>Retenção e cobrança</th></tr></thead>
+        <tbody>
+          <tr><td>Manual (stateless)</td><td>Você reenvia o histórico; para modelos de reasoning, devolva <strong>todos</strong> os itens de <code>output</code> (reasoning criptografado, <code>phase</code> das mensagens). <code>store=false</code>.</td><td>Nada fica no provider; você paga o histórico inteiro a cada chamada.</td></tr>
+          <tr><td><code>previous_response_id</code></td><td>Encadeia respostas; em cada turno envie só a mensagem nova.</td><td>Respostas ficam 30 dias por padrão (<code>store</code>); todos os tokens anteriores da cadeia continuam cobrados como input.</td></tr>
+          <tr><td>Conversations API (<code>conversation</code>)</td><td>Objeto durável com identificador próprio, reutilizável entre sessões, dispositivos e jobs; guarda mensagens, tool calls e outputs.</td><td>Itens da conversation e respostas ligadas a ela não têm o TTL de 30 dias.</td></tr>
+        </tbody>
+      </table></div>
+      <p>
+        Em qualquer forma, <code>instructions</code> de chamadas anteriores <strong>não</strong> são
+        automaticamente carregadas com <code>previous_response_id</code>: registre a sua própria versão de
+        <code>instructions</code> e reprojete-as quando necessário. No modo WebSocket, a continuação usa a mesma
+        semântica de <code>previous_response_id</code>; se um ID fora do cache de conexão não puder ser resolvido,
+        envie um novo turno com <code>previous_response_id: null</code> e o contexto completo.
       </p>
       <pre><code class="language-python"># Padrão stateless com store=false e reasoning encrypted quando o caso exige
 # retenção controlada. Note model="..." — IDs de modelo ficam nos guias de provider.
@@ -634,18 +761,33 @@ response = client.responses.create(
     input=projected_items,                       # projeção do ledger, não a UI crua
     instructions=current_instructions,           # reprojetadas a cada turno
     tools=allowed_tools,                          # só as tools permitidas da fase
-    store=False,                                  # nada retido no provider
+    store=False,                                  # sem retenção normal da resposta; veja a ressalva de background abaixo
     include=["reasoning.encrypted_content"],      # carrier de reasoning p/ próximo turno
     max_output_tokens=output_budget,             # reserve tokens p/ reasoning + final
 )
-ledger.ingest(response.output, usage=response.usage)</code></pre>
+      ledger.ingest(response.output, usage=response.usage)</code></pre>
+      <div class="callout beta">
+        <strong>Ressalva de ZDR/background:</strong> <code>store=false</code> evita a retenção normal da
+        resposta, mas uma requisição em background num projeto ZDR ainda pode manter os dados transitoriamente
+        em disco por cerca de 10 minutos para viabilizar a execução assíncrona e o polling. Não descreva essa
+        combinação como “nada retido no provider”.
+      </div>
+      <div class="callout evidence">
+        <strong>Timeout, retry e cancelamento.</strong> Um timeout do cliente não prova que a geração falhou:
+        persista o <code>response.id</code>/<code>attempt_id</code>, consulte o estado ou reconecte o stream antes
+        de reenviar. Faça retry apenas para falha transitória e com chave de idempotência no comando da aplicação;
+        nunca duplique uma geração ou uma tool de efeito externo por causa de um ACK perdido. Para uma interrupção
+        deliberada, grave <code>cancel_requested</code>, use <code>responses.cancel(id)</code> quando a execução o
+        suportar e só feche como <code>cancelled</code> após confirmação; o ledger local preserva o parcial e o
+        resultado de cancelamento, mesmo que o provider expire o handle.
+      </div>
       <div class="callout warn">
         <strong>Cuidado com <code>truncation</code>:</strong> a truncation automática do provider pode
         remover contexto crítico sem aviso. Prefira controlar a seleção de itens no seu lado (seleção +
         compaction) a delegar o corte ao provider. Os parâmetros completos da Responses API estão no
         <a href="guia_providers_adapters.html">capítulo de providers</a>.
       </div>
-      <div class="source-link">Fontes oficiais: <a href="https://developers.openai.com/api/docs/guides/conversation-state" target="_blank" rel="noopener">OpenAI conversation state</a> · <a href="https://developers.openai.com/api/docs/guides/reasoning" target="_blank" rel="noopener">OpenAI reasoning</a>.</div>
+      <div class="source-link">Fontes oficiais: <a href="https://developers.openai.com/api/docs/guides/conversation-state" target="_blank" rel="noopener">OpenAI conversation state</a> · <a href="https://developers.openai.com/api/docs/guides/reasoning" target="_blank" rel="noopener">OpenAI reasoning</a> · <a href="https://developers.openai.com/api/docs/guides/compaction" target="_blank" rel="noopener">OpenAI compaction</a> — verificado 2026-09-30.</div>
     </section>
 
     <section id="asset-registry">
@@ -687,11 +829,11 @@ ledger.ingest(response.output, usage=response.usage)</code></pre>
         <thead><tr><th>Elemento canônico</th><th>OpenAI Responses</th><th>Anthropic Messages</th><th>Google Gemini</th></tr></thead>
         <tbody>
           <tr><td>Instructions / system / developer</td><td><code>instructions</code> e/ou items de role conforme adapter.</td><td><code>system</code> top-level + messages.</td><td><code>system_instruction</code> + contents.</td></tr>
-          <tr><td>User/assistant messages</td><td>Input items multimodais.</td><td>Messages com content blocks.</td><td>Contents com <code>parts</code>.</td></tr>
-          <tr><td>Function tools</td><td><code>tools</code> com function schema; o client executa.</td><td><code>tools</code> com <code>input_schema</code>; o client retorna <code>tool_result</code>.</td><td>Function declarations; o SDK Python pode executar automaticamente.</td></tr>
-          <tr><td>Reasoning / thinking</td><td>Reasoning items / summaries / <code>encrypted_content</code>.</td><td>Thinking blocks / signatures.</td><td>Thought signatures em <code>parts</code>.</td></tr>
-          <tr><td>Structured output</td><td>JSON Schema / output format conforme docs.</td><td><code>output_config.format</code> (json_schema) conforme API/modelo.</td><td>response schema / structured output conforme Gemini.</td></tr>
-          <tr><td>State convenience</td><td><code>previous_response_id</code> ou <code>conversation</code>.</td><td>Message history / context management.</td><td>Stateless <code>generate_content</code> com history/SDK chat.</td></tr>
+          <tr><td>User/assistant messages</td><td>Input items multimodais.</td><td>Messages com content blocks.</td><td>Interactions <code>input</code> e <code>steps[]</code> da resposta.</td></tr>
+          <tr><td>Function tools</td><td><code>tools</code> com function schema; o client executa.</td><td><code>tools</code> com <code>input_schema</code>; o client retorna <code>tool_result</code>.</td><td><code>tools</code> com function declarations; o client executa e devolve o resultado na interaction seguinte.</td></tr>
+          <tr><td>Reasoning / thinking</td><td>Reasoning items / summaries / <code>encrypted_content</code>.</td><td>Thinking blocks / signatures.</td><td>Thought signatures e thought summaries em steps.</td></tr>
+          <tr><td>Structured output</td><td>JSON Schema / output format conforme docs.</td><td><code>output_config.format</code> (json_schema) conforme API/modelo.</td><td><code>response_format</code> (Interactions).</td></tr>
+          <tr><td>State convenience</td><td><code>previous_response_id</code> ou <code>conversation</code>.</td><td>Message history / context management.</td><td><code>previous_interaction_id</code> (stateful) ou input completo com <code>store=false</code> (stateless).</td></tr>
         </tbody>
       </table></div>
       <div class="callout">
@@ -706,7 +848,7 @@ ledger.ingest(response.output, usage=response.usage)</code></pre>
     </section>
 
     <section id="zonas-canonicas">
-      <h2>8b. Zonas canônicas da projeção e dados transitórios</h2>
+      <h2>8b. Zonas canônicas da projeção e dados transitórios<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <p>
         A projeção do ledger (§8) pode ser organizada em <strong>zonas canônicas tipadas</strong>. Cada
         zona tem uma função, um lugar no wire de cada provider e uma política de compactação própria. É
@@ -924,8 +1066,8 @@ ledger.ingest(response.output, usage=response.usage)</code></pre>
         <strong>Posição na cauda do role=user</strong> é cache-preservation, não só
         anti-confused-deputy. Anthropic prompt-caching trabalha com até 4 breakpoints e ~20 blocos
         de lookback do <code>cache_control</code> mais recente; OpenAI faz match exato de prefixo
-        (volatile content no fim); Gemini <code>cachedContent</code> só vale para contexto estático
-        — hot_followup, por ser transitório, NÃO entra no <code>cachedContent</code>.
+        (volatile content no fim); Gemini só tem cache implícito na Interactions API
+        — hot_followup, por ser transitório, NÃO entra em cache explícito.
         <br><br>
         <strong>Três camadas distintas — não confundir:</strong>
         (i) <strong>Memory tool</strong> (Anthropic) = persistência cross-sessão client-side em
@@ -950,38 +1092,40 @@ ledger.ingest(response.output, usage=response.usage)</code></pre>
         só na cauda do role=user com TTL) foi desenhada para tirar proveito do prompt caching
         cross-provider. Resumo operacional por provider:
         <br><br>
-        <strong>OpenAI Responses</strong> — cache automático de prefixos (geralmente ≥1024 tokens);
-        ative <code>prompt_cache_key</code> para rotear requests do mesmo "fio" para o mesmo worker
-        (aumenta hit rate em fan-out / concorrência); meça na Responses API via
-        <code>usage.input_tokens_details.cached_tokens</code>; em Chat Completions, via
-        <code>usage.prompt_tokens_details.cached_tokens</code>. Em
-        <code>previous_response_id</code> chaining, não fazer manual prune do histórico do chain
-        (<a href="https://developers.openai.com/api/docs/guides/prompt-caching" target="_blank" rel="noopener">prompt-caching</a>,
-        <a href="https://developers.openai.com/api/reference/resources/responses/methods/create#responses-create-prompt_cache_key" target="_blank" rel="noopener">prompt_cache_key</a>, 2026-05-26).
+        <strong>OpenAI Responses (<code>gpt-5.6</code>+ e GPT-6)</strong> — cache implícito ou explícito,
+        controlado por <code>prompt_cache_options</code> (<code>mode</code>: <code>implicit</code>|<code>explicit</code>;
+        <code>ttl</code>: <code>"30m"</code>; <code>prewarm: true</code> aquece o prefixo sem gerar saída). O kernel
+        byte-estável desta zona é candidato natural a <strong>breakpoint explícito</strong>
+        (<code>prompt_cache_breakpoint: {"mode":"explicit"}</code> em content blocks, até 4 writes por request) —
+        mas o <em>write</em> custa <strong>1,25×</strong> (<code>usage.input_tokens_details.cache_write_tokens</code>)
+        e o read 0,1× (0,05× no <code>gpt-6.1-sol</code>), então só marque o que realmente se repete. Mínimo
+        cacheável: 1.024 tokens. <code>prompt_cache_key</code> é opcional (só separa a contabilidade). Meça via
+        <code>usage.input_tokens_details.cached_tokens</code>; o Prompt Cache Diagnostics é GA desde 2026-09-08.
+        <code>prompt_cache_retention</code> é o parâmetro de modelos ≤5.5 e está deprecado a partir do 5.6
+        (ver <a href="#legado">Legado e migração</a>). Compaction pode reduzir o reuso de cache; em
+        <code>previous_response_id</code> chaining, não faça prune manual do histórico do chain
+        (<a href="https://developers.openai.com/api/docs/guides/prompt-caching" target="_blank" rel="noopener">prompt-caching</a>, 2026-09-30).
         <br><br>
         <strong>Anthropic Messages</strong> — caching explícito via <code>cache_control</code> em
         até <strong>4 breakpoints</strong>; ~20 blocos de lookback; TTL 5min default, extensível
         para 1h via <code>{"cache_control":{"type":"ephemeral","ttl":"1h"}}</code> no próprio
-        bloco. Coloque breakpoints no fim do system (kernel estável) e no último bloco estável de
-        messages; meça via <code>usage.cache_creation_input_tokens</code> e
-        <code>usage.cache_read_input_tokens</code>. Nunca empurre <code>runtime_context</code>
+        bloco. Mínimo cacheável: 512 tokens no Opus 5.5, Sonnet 5.5 e Fable 5.1; 4.096 no Haiku 4.5.
+        Leitura de cache custa 0,1× do input, exceto no <strong>Opus 5.5 (0,05×)</strong> e no Fable 5.1 (0,025×);
+        write de 5 min custa 1,25× e o de 1 h, 2×. Coloque breakpoints no fim do system (kernel estável) e no
+        último bloco estável de messages; meça via <code>usage.cache_creation_input_tokens</code> e
+        <code>usage.cache_read_input_tokens</code>; o cache diagnostics é GA desde 2026-09-23 (objeto
+        <code>diagnostics</code> opt-in, sem header beta). Nunca empurre <code>runtime_context</code>
         transitório para dentro do system — quebra o cache do kernel
-        (<a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching" target="_blank" rel="noopener">prompt-caching</a>, 2026-05-26).
+        (<a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching" target="_blank" rel="noopener">prompt-caching</a>, 2026-09-30).
         <br><br>
-        <strong>Gemini Interactions</strong> — <strong>somente implicit caching</strong>
-        (habilitado por default em Gemini 2.5+ e modelos posteriores).
-        <code>previous_interaction_id</code> é o mecanismo de continuidade da conversa
-        (preserva history server-side); por preservar prefixo estável, conversas encadeadas
-        tipicamente se beneficiam do implicit caching que já roda
-        <span class="pill partial">derived</span> — causalidade direta
-        <code>previous_interaction_id</code>→cache não está literalmente documentada.
-        <strong>Explicit caching</strong> com
-        <code>cached_content</code>/<code>cachedContent</code> é do <code>generateContent</code>,
-        <strong>não da Interactions API</strong>; hot_followup fica fora de caches explícitos por
-        ser transitório. Naming wire vs SDK: REST <code>cachedContent</code> (camelCase); Python
-        SDK config <code>cached_content</code>; JS SDK config <code>cachedContent</code>
-        (<a href="https://ai.google.dev/gemini-api/docs/interactions/caching" target="_blank" rel="noopener">Interactions caching</a>,
-        <a href="https://ai.google.dev/gemini-api/docs/caching" target="_blank" rel="noopener">generateContent caching</a>, 2026-05-26).
+        <strong>Gemini Interactions</strong> — <strong>somente cache implícito</strong> (default em Gemini 2.5+;
+        leitura em <code>usage.total_cached_tokens</code>). <code>previous_interaction_id</code> preserva o
+        histórico server-side e o prefixo estável tende a se beneficiar do cache implícito
+        <span class="pill partial">derived</span> — a causalidade direta não está literalmente documentada.
+        O <strong>cache explícito</strong> (objetos <code>cachedContent</code>) existe só no caminho
+        <code>generateContent</code>, fora da Interactions API; hot_followup fica fora de qualquer cache
+        explícito por ser transitório
+        (<a href="https://ai.google.dev/gemini-api/docs/caching" target="_blank" rel="noopener">Gemini caching</a>, 2026-09-30).
         <br><br>
         <strong>Disciplina cross-provider que esta zona já enforce:</strong>
         (1) kernel byte-estável (system/instructions imutável na sessão);
@@ -1003,11 +1147,12 @@ ledger.ingest(response.output, usage=response.usage)</code></pre>
         <strong>thinking block + signature</strong> (Anthropic),
         <strong>reasoning item</strong> (OpenAI Responses; <code>encrypted_content</code> só em
         stateless/<code>store=false</code>/ZDR),
-        <strong>part com thought_signature</strong> (Gemini).
+        <strong>step com thought_signature</strong> (Gemini Interactions).
         Em loops de tools esses carriers são <strong>obrigatórios</strong>: Anthropic exige o
         thinking block intacto; Gemini exige <code>thought_signature</code> para function-calling
-        signatures (omissão pode gerar erro ou perda de continuidade); OpenAI cookbook:
-        <em>"you do need to include the reasoning items"</em>.
+        signatures (omissão pode gerar erro ou perda de continuidade); a
+        <a href="https://developers.openai.com/api/docs/guides/reasoning#keeping-reasoning-items-in-context" target="_blank" rel="noopener">doc oficial da OpenAI</a>
+        recomenda fortemente reenviar os reasoning items do último function call (verificado 2026-09-30).
         Em chat puro são opcionais — mas a alternativa é <strong>omissão</strong>, nunca duplicação
         como <code>&lt;thinking&gt;</code> text em role=assistant (infla tokens cobrados, invalida
         prefix-cache e cria role-confusion: o modelo infere autoridade por estilo — texto
@@ -1042,7 +1187,7 @@ ledger.ingest(response.output, usage=response.usage)</code></pre>
     </section>
 
     <section id="memory-tool-anthropic">
-      <h2>8b.1 Memory tool (Anthropic) — mecânica concreta</h2>
+      <h2>8b.1 Memory tool (Anthropic) — mecânica concreta<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <p>
         O <strong>memory tool</strong> é um Anthropic-provided tool <strong>client-side</strong>: Claude
         solicita operações de arquivo, e a aplicação as executa contra o storage escolhido (disco, banco,
@@ -1061,7 +1206,7 @@ ledger.ingest(response.output, usage=response.usage)</code></pre>
           <tr><td>Beta header</td><td><span class="pill ok">Nenhum</span> para o memory tool isolado</td><td>O memory tool é <strong>GA</strong> ("generally available") na Messages API. O header <code>anthropic-beta: context-management-2025-06-27</code> só é exigido pelo <strong>context editing</strong> (<code>clear_tool_uses_20250919</code> / <code>clear_thinking_20251015</code>), não pelo memory tool.</td></tr>
           <tr><td>Diretório raiz</td><td><code>/memories</code></td><td>Prefixo lógico que o handler mapeia para storage real (ex.: diretório por usuário, chave em DB). Todas as operações devem ser restritas a essa raiz.</td></tr>
           <tr><td>Modelos suportados</td><td>Todos os modelos <strong>Claude 4 e posteriores</strong></td><td>Não disponível em modelos pré-Claude-4.</td></tr>
-          <tr><td>ZDR</td><td><span class="pill ok">Elegível</span></td><td>Em organizações com Zero Data Retention, dados enviados por esta feature não são retidos após a resposta da API.</td></tr>
+          <tr><td>ZDR</td><td>Ver <a href="https://platform.claude.com/docs/en/manage-claude/api-and-data-retention" target="_blank" rel="noopener">API and data retention</a></td><td>A página do memory tool remete a essa política; como o storage é seu, a retenção dos arquivos é decisão da aplicação.</td></tr>
         </tbody>
       </table></div>
       <p><strong>Comandos de arquivo (seis, todos client-side):</strong> as strings de retorno abaixo são as
@@ -1123,11 +1268,21 @@ losing any progress that is not recorded in your memory directory.</code></pre>
     "edits": [{"type": "clear_tool_uses_20250919"}]
   }
 }</code></pre>
+      <div class="callout beta">
+        <strong>Helpers de SDK para não implementar o loop na mão.</strong> Python, TypeScript, C# e
+        Java expõem um helper que já resolve a interface da tool e o loop tool-use: em Python/C#,
+        subclasse <code>BetaAbstractMemoryTool</code>; em TypeScript, use <code>betaMemoryTool</code>; em
+        Java, implemente <code>BetaMemoryToolHandler</code>. Python e TypeScript também trazem uma
+        implementação pronta em disco, <code>BetaLocalFilesystemMemoryTool</code> — útil para prototipagem,
+        troque por storage próprio em produção. Os helpers ficam no namespace <em>beta</em> de cada SDK
+        mesmo o memory tool em si não exigindo beta header. Go e Ruby não têm helper (o loop tool-use é
+        manual) e PHP usa o <code>BetaRunnableTool</code> genérico.
+      </div>
       <p>
         O memory tool também combina com <strong>compaction</strong> server-side pelo mesmo motivo:
         compaction resume a conversa inteira no servidor quando ela se aproxima do limite da janela;
         o memory preserva a informação que precisa <em>sobreviver</em> ao resumo. Para agentes de longa
-        duração, a doc recomenda usar os dois juntos.
+        duração, a doc recomenda usar os dois juntos (<a href="#compaction-contrato">§10</a>).
       </p>
       <div class="callout tip">
         <strong>Caso de uso canônico: sessões multi-turno de desenvolvimento de software.</strong>
@@ -1136,8 +1291,8 @@ losing any progress that is not recorded in your memory directory.</code></pre>
         Cada sessão seguinte abre lendo esses arquivos — restaura o estado do projeto sem re-explorar a base
         de código nem refazer decisões. Antes de encerrar, cada sessão atualiza o log. <strong>Regra-chave:
         marcar uma feature como concluída somente após verificação end-to-end, não quando o código é
-        escrito</strong> — mantém o log confiável entre sessões (padrão documentado em "Effective harnesses
-        for long-running agents", Anthropic engineering).
+        escrito</strong> — mantém o log confiável entre sessões (padrão documentado em
+        <a href="https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents" target="_blank" rel="noopener">"Effective harnesses for long-running agents"</a>, Anthropic engineering).
       </div>
       <p>
         Esta é a <strong>camada (i)</strong> do callout <a href="#zonas-canonicas">"Três camadas distintas"
@@ -1147,12 +1302,12 @@ losing any progress that is not recorded in your memory directory.</code></pre>
         transitórios) nem com o <strong>TTL de projeção</strong> do <code>hot_followup</code> ledger
         (camada iii).
       </p>
-      <div class="source-link">Fontes oficiais: <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool" target="_blank" rel="noopener">Anthropic — Memory tool</a> · <a href="https://platform.claude.com/docs/en/docs/build-with-claude/context-editing" target="_blank" rel="noopener">Anthropic — Context editing</a> (verificado 2026-07-12).</div>
+      <div class="source-link">Fontes oficiais: <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool" target="_blank" rel="noopener">Anthropic — Memory tool</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/context-editing" target="_blank" rel="noopener">Anthropic — Context editing</a> (verificado 2026-09-30).</div>
     </section>
 
     <!-- ===================== 8c ===================== -->
     <section id="agent-as-tool-multiturno">
-      <h2>8c. Agent-as-tool multi-turno &amp; continuidade conversacional</h2>
+      <h2>8c. Agent-as-tool multi-turno &amp; continuidade conversacional<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <p>
         O §8b resolve o follow-up de <em>um</em> turno. Esta seção resolve o caso mais difícil: um
         <strong>agent-as-tool que tem vida interna multi-turno</strong> — delibera, chama tools, faz
@@ -1348,11 +1503,11 @@ closure_marker {
         usar a Gemini API geral para triagem symptom-specific (os Termos da Gemini API proíbem clinical
         practice / medical advice em uso geral). PHI mínima por nível; <code>patient_context_id</code> opaco.
       </div>
-      <pre><code class="language-text">NÍVEL 0  conv_main  (orquestrador conversacional · Claude Sonnet 4.6 · low_friction)
+      <pre><code class="language-text">NÍVEL 0  conv_main  (orquestrador conversacional · Claude Sonnet 5.5 · low_friction)
   T0 user  "tosse há 6 dias, meio sufocada à noite, é grave?"
   T1 assistant → call_education_triage(...)        cache_key=HMAC(tenant, orchestrator, ...)
      │
-     ▼ spawn NÍVEL 1  conv_triage_001  (Opus 4.8 xhigh · deliberative · path=[main,triage])
+     ▼ spawn NÍVEL 1  conv_triage_001  (Opus 5.5 xhigh · deliberative · path=[main,triage])
         T1.1 reasoning_native (thinking+signature, no ledger isolado)
         T1.2 request_info{ idade, dias, febre, comorbidade, tabagismo }
              state=awaiting_user_info · lease=+15min            ↑ return_packet(request_info)
@@ -1365,7 +1520,7 @@ closure_marker {
         T1.3 role=user  {info validada}            # NÃO tool_result fabricado
         T1.4 reasoning_native → query_education_guidelines(...)
              │
-             ▼ spawn NÍVEL 2  conv_guidelines_001a  (Gemini 3.1 Pro · Vertex+BAA · path=[main,triage,guidelines])
+             ▼ spawn NÍVEL 2  conv_guidelines_001a  (Gemini 3.1 Pro Preview · Vertex+BAA · path=[main,triage,guidelines])
                 T2.1 retrieve_guideline (Web Grounding for Enterprise — HIPAA-safe)
                 T2.2 tool_result → SourceRecord NICE patient-info §3.2 (asset_id, sha256)  [bytes só aqui]
                 T2.3 cite_source(ref, span)
@@ -1402,23 +1557,22 @@ closure_marker {
       <div class="table-wrap"><table>
         <thead><tr><th>Provider</th><th>Mecanismo (hint)</th><th>Rota ZDR/store=false estrita</th></tr></thead>
         <tbody>
-          <tr><td>OpenAI</td><td><code>prompt_cache_key</code> por <code>agent_id</code>; extended retention 24h obrigatório em gpt-5.5 (<code>in_memory</code> → erro); desde 2026-05-29 o default de <code>prompt_cache_retention</code> é <code>"24h"</code> para <strong>qualquer</strong> organização sem ZDR (não só gpt-5.5)</td><td>permitido (cached tokens contam para TPM/janela)</td></tr>
+          <tr><td>OpenAI</td><td><code>prompt_cache_key</code> por <code>agent_id</code> (opcional; só separa a contabilidade). <code>gpt-5.6</code>+ e GPT-6: <code>prompt_cache_options</code> (<code>mode</code>, <code>ttl: "30m"</code>, <code>prewarm</code>) + <code>prompt_cache_breakpoint</code> explícito; o <strong>write custa 1,25×</strong> (<code>cache_write_tokens</code>). <code>prompt_cache_retention</code> <span class="pill bad">deprecated</span> a partir do 5.6 — ver <a href="#legado">Legado e migração</a></td><td>permitido (cached tokens contam para TPM/janela)</td></tr>
           <tr><td>Anthropic</td><td><code>cache_control</code> em até 4 breakpoints (<code>ttl "5m"|"1h"</code> no bloco)</td><td>permitido; <strong>usar breakpoints explícitos</strong> em tools/system/L2 estável — não confiar em automatic caching (escolhe o último bloco cacheável → pode pegar o <code>hot_followup</code> volátil)</td></tr>
-          <tr><td>Gemini</td><td><strong>implicit in-memory caching</strong> (prefixo estável) <span class="pill ok">ZDR-compatible</span> — RAM-only, isolado por projeto, TTL 24h</td><td>permitido; <strong>NÃO</strong> criar <code>cachedContents</code>; <strong>NÃO</strong> usar <code>previous_interaction_id</code> (é state handle server-side; <code>store=false</code> o impede)</td></tr>
+          <tr><td>Gemini</td><td><strong>Implicit caching</strong> com prefixo estável; habilitado por padrão nos modelos Gemini 2.5+ compatíveis e suportado em fluxos stateful e stateless. É best-effort: aumente a chance de hit e meça <code>usage.total_cached_tokens</code>, sem prometer hit, TTL genérico ou armazenamento RAM-only.</td><td><code>store=false</code> impede o handle <code>previous_interaction_id</code> e background, mas não desativa implicit caching. Avalie retenção/ZDR separadamente da telemetria de cache.</td></tr>
         </tbody>
       </table></div>
       <div class="callout beta">
-        <strong>Gemini, duas rotas (CACHE-004).</strong> O <em>implicit cache</em> do Gemini é ZDR-friendly e
-        <strong>sempre permitido</strong> — não confunda com handles de estado. Em ZDR estrito ficam
-        bloqueados apenas os objetos/handles que implicam armazenamento server-side:
-        <code>cachedContents</code>, <code>previous_interaction_id</code>, File API persistente, Live
-        <code>SessionResumptionConfig</code>. <code>previous_interaction_id</code> só vale como cache hint
-        não-autoritativo em <strong>rota não-ZDR opt-in</strong>. Detalhe canônico em
+        <strong>Gemini, dois modos de interação (CACHE-004).</strong> O <em>implicit cache</em> funciona com
+        fluxo stateful ou stateless; ele é uma otimização best-effort, não um handle de estado nem uma garantia
+        de retenção. <code>store=false</code> impede <code>previous_interaction_id</code> e background, porém
+        não torna os tokens em cache necessariamente zero. Não deduza RAM-only, TTL de 24 h ou aderência a ZDR
+        a partir de um cache hit; use a política de dados aplicável e meça a resposta. Detalhe canônico em
         <a href="guia_token_counting.html">Token counting — §10 caching+ZDR</a>.
       </div>
       <p>
         <strong>Pause/resume é wall-clock, não em turnos do pai:</strong> 3 turnos do orquestrador podem ser
-        30 s ou 30 min. Para retomar com cache-hit: mesmo <code>model</code>/<code>tools</code> (ordem
+        30 s ou 30 min. Para aumentar a chance de cache hit: mesmo <code>model</code>/<code>tools</code> (ordem
         estável)/<code>instructions</code>/<code>prompt_cache_key</code>; em Anthropic a sequência até o
         breakpoint deve ser byte-idêntica. Pausa esperada &gt; 5 min: <code>ttl "1h"</code>. Pausa &gt; 1 h:
         aceitar miss, mitigar com snapshot compactado antes da pausa.
@@ -1459,9 +1613,19 @@ closure_marker {
         <code>cache_read_tokens</code>, <code>cache_miss_reason</code>, <code>cache_hint_kind</code> e o
         <code>projection_hash</code> quando o provider expõe. Cache que não se mede vira ilusão de economia.
       </div>
+      <div class="callout evidence">
+        <strong>Uso e custo são eventos, não inferência.</strong> Para cada tentativa, persista o payload bruto de
+        <code>usage</code>, provider/model, request/response/interaction ID, attempt, status final e snapshot da
+        tabela de preços. Normalize separadamente input novo, tokens servidos do cache, cache write/read, output,
+        reasoning/thinking e tool-use; em OpenAI, <code>cached_tokens</code> é parte de input e cadeias com
+        <code>previous_response_id</code> continuam cobrando os inputs anteriores; em Gemini Interactions,
+        <code>total_cached_tokens</code> é subconjunto best-effort de <code>total_input_tokens</code>; na Anthropic,
+        some as entradas de <code>usage.iterations[]</code> quando a compactação server-side participar. Um retry
+        ou replay de eventos não é uma nova geração: reconcilie pelo ID/attempt e não conte duas vezes.
+      </div>
       <div class="callout tip">
         <strong>Cross-links.</strong> Carriers nativos e colocação do follow-up:
-        <a href="#zonas-canonicas">§8b</a>. Cache+ZDR por provider (IMPLICIT-ONLY Gemini):
+        <a href="#zonas-canonicas">§8b</a>. Cache e retenção por provider:
         <a href="guia_token_counting.html">Token counting §10</a>. Degraus de compactação e microconversas:
         <a href="guia_contexto_compactacao_estrategias.html">Contexto &amp; compactação §5/§6</a>. Assets e
         SourceRecord: <a href="guia_file_inputs_no_storage.html">File inputs</a>.
@@ -1487,9 +1651,9 @@ closure_marker {
     { "@type": "PropertyValue", "propertyID": "8c.recursion", "name": "Recursão", "value": "max_depth default 3. Invariantes: path-uniqueness (agent_id não repete no path[]); monotonicidade (filho não reduz classification nem amplia region_policy; capability_acl intersect_parent); budget_grant finito do residual do pai; cancellation cascade (parent_cascade)." },
     { "@type": "PropertyValue", "propertyID": "8c.bubble-up", "name": "Return packet bubble-up", "value": "Carrega só o essencial: final_answer curto, reasoning_summary redacted (nunca carrier bruto), asset_refs por valor (mesmo URI, não bytes), exec_meta. asset_refs propagam por valor nível-a-nível." },
     { "@type": "PropertyValue", "propertyID": "8c.token-explosion", "name": "Token explosion contida", "value": "O custo O(n²) da história interna fica CONTIDO na sub-conversação, não no orquestrador (que só vê return_packet de poucos KB). Requer hard caps no pai: parent_hot_followup_budget, max_return_packets_projected, TTL, digest/ref após N turnos." },
-    { "@type": "PropertyValue", "propertyID": "8c.cache.openai", "name": "Cache OpenAI", "value": "prompt_cache_key por agent_id; extended retention 24h obrigatório em gpt-5.5 (in_memory→erro). Desde 2026-05-29 o default de prompt_cache_retention é 24h para qualquer organização sem ZDR (não só gpt-5.5). Cached tokens contam para TPM/janela (CACHE-001: request válido on cache miss)." },
+    { "@type": "PropertyValue", "propertyID": "8c.cache.openai", "name": "Cache OpenAI", "value": "prompt_cache_key por agent_id (opcional). Em gpt-5.6+ e GPT-6: prompt_cache_options (mode implicit|explicit, ttl 30m, prewarm) + breakpoints explícitos (prompt_cache_breakpoint, máx 4 writes/request); cache write custa 1,25x o input não-cacheado (cache_write_tokens). prompt_cache_retention está deprecado a partir do 5.6. Cached tokens contam para TPM/janela (CACHE-001: request válido on cache miss). Verificado em 2026-09-30." },
     { "@type": "PropertyValue", "propertyID": "8c.cache.anthropic", "name": "Cache Anthropic", "value": "cache_control até 4 breakpoints (ttl 5m|1h no bloco). Usar breakpoints EXPLÍCITOS em tools/system/L2 estável quando há hot_followup volátil — top-level automatic caching escolhe o último bloco cacheável e pode pegar o bloco errado." },
-    { "@type": "PropertyValue", "propertyID": "8c.cache.gemini", "name": "Cache Gemini (duas rotas)", "value": "Implicit in-memory caching É ZDR-compatible (RAM-only, project-isolated, TTL 24h) → SEMPRE permitido. Em ZDR/store=false estrito: NÃO criar cachedContents; NÃO usar previous_interaction_id (state handle server-side; store=false o impede); NÃO File API/Live SessionResumptionConfig. previous_interaction_id só como hint não-autoritativo em rota não-ZDR opt-in. Alinhado a Token counting §10 IMPLICIT-ONLY." },
+    { "@type": "PropertyValue", "propertyID": "8c.cache.gemini", "name": "Cache Gemini (stateful e stateless)", "value": "Implicit caching é habilitado por padrão nos Gemini 2.5+ compatíveis e funciona nos dois modos. É best-effort: prefixo estável aumenta a chance de hit, que deve ser medido em usage.total_cached_tokens; a documentação não promete hit, TTL genérico ou backing RAM-only. store=false impede previous_interaction_id e background, mas não desativa implicit caching. Retenção/ZDR deve ser avaliada pela política de dados aplicável, não pelo cache." },
     { "@type": "PropertyValue", "propertyID": "8c.reasoning-carrier", "name": "Carrier nativo de reasoning", "value": "Opaco, provider-scoped, não normalizado (§8b). native_reasoning_portability: provider_native_replay | gemini_validation_bridge (dummy thought_signature adapter-only) | summary_only | unavailable. Cross-provider migration leva summary, não signature." },
     { "@type": "PropertyValue", "propertyID": "8c.recovery", "name": "Recuperação histórica", "value": "Gateway com 4 modos: A flashback (default, re-projeta return packet redacted como historical_subagent_decision); B nova sub-conversação (novo julgamento, parent_call_id à anterior); C child-recall EvidenceCard bounded; D forensic replay audit-only fora do live path." },
     { "@type": "PropertyValue", "propertyID": "8c.contamination", "name": "Vetores de contaminação a fechar", "value": "(1) cache leak por prefixo → prompt_cache_key por agent_id + tenant_id/security partition no seed (HKDF labels versionados em regulados); (2) índice RAG/vector → retrieval_scope=child_only|audit_only; (3) trace/exporter → trace_export_scope=redacted; (4) PHI bubbling via reasoning_summary → redactor obrigatório + phi_scan_status (se blocked, packet não projetável)." },
@@ -1515,7 +1679,7 @@ closure_marker {
     </section>
 
     <section id="budgets-e-invariantes">
-      <h2>9. Budgets e invariantes</h2>
+      <h2>9. Budgets e invariantes<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <p>
         Um princípio simples atravessa o material: <strong>limite que não é medido não existe</strong>.
         Defina budgets por turn, subagente, capability, provider, usuário e síntese final. O orçamento de
@@ -1547,10 +1711,22 @@ closure_marker {
         <code>reserved_unallocated</code> (folga de tokenização/overhead de provider) <strong>separado</strong>
         da margem de segurança da resposta, para não contar a mesma folga duas vezes.
       </div>
+      <div class="callout tip">
+        <strong>Quando <code>janela_do_modelo</code> deixa de ser a variável escassa (verificado 2026-09-30).</strong>
+        Nos modelos atuais Opus 5.5, Sonnet 5.5 e Fable 5.1 a janela é de <strong>1M tokens</strong> com
+        <strong>128K</strong> de saída máxima, cobrada a preço padrão (sem prêmio de long-context); o Haiku 4.5
+        tem 200K/64K. O invariante acima não muda, mas o teto que realmente vincula passa a ser custo por
+        turno, latência e degradação de atenção — não a janela física (ver a
+        <a href="guia_contexto_compactacao_estrategias.html#definir-teto">estratégia do teto X</a>). Preços por MTok:
+        Opus 5.5 <strong>US$ 4</strong> in · <strong>US$ 20</strong> out · cache read <strong>US$ 0,20</strong>
+        (<strong>0,05×</strong>, exceção à família de 0,1×); Sonnet 5.5 US$ 2 / US$ 10; Fable 5.1 US$ 10 / US$ 50
+        (cache read 0,025×). Detalhamento em <a href="guia_token_counting.html#anthropic-tc-opus55">Token counting §A.3</a>.
+        <div class="source-link">Fonte: <a href="https://platform.claude.com/docs/en/about-claude/pricing" target="_blank" rel="noopener">platform.claude.com · pricing</a> e <a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener">models overview</a> — verificado em 2026-09-30</div>
+      </div>
     </section>
 
     <section id="compaction-contrato">
-      <h2>10. Compaction e reidratação — o contrato</h2>
+      <h2>10. Compaction e reidratação — o contrato<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <p>
         Compaction <strong>não</strong> é "resumir a conversa". É substituir partes do ledger por
         artefatos menores <em>mantendo rastreabilidade</em>. Uma compaction aceitável preserva: fatos
@@ -1576,8 +1752,16 @@ closure_marker {
         Os dois são complementares: a estratégia deve sempre produzir um <code>compaction_item</code> que
         satisfaça este contrato.
       </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Provider</th><th>Compaction gerenciada pelo provider (verificado 2026-09-30)</th><th>Ponto de atenção para o contrato</th></tr></thead>
+        <tbody>
+          <tr><td>OpenAI Responses</td><td>Server-side: <code>context_management: [{"type":"compaction","compact_threshold":N}]</code> no <code>responses.create</code>; stateless: <code>POST /v1/responses/compact</code>. Ambos devolvem um item de compaction criptografado e opaco; compatíveis com <code>store=false</code>.</td><td>O item é opaco: guarde-o no ledger como carrier e declare a perda. Saída do <code>/responses/compact</code> vai ao próximo request como está, sem prune; com <code>previous_response_id</code>, não faça prune manual. Incompatível com <code>configuration_update</code> (§5).</td></tr>
+          <tr><td>Anthropic Messages</td><td>Threshold (<code>compact_20260112</code>, beta <code>compact-2026-01-12</code>) e sob demanda (parâmetro <code>compaction</code>, beta <code>compact-2026-09-04</code>): ambos produzem um bloco <code>compaction</code> assinado.</td><td>O bloco vai de volta exatamente como veio (com <code>signature</code>). Diferente do context editing (§10.1), que limpa por regra sem sumarizar. Mecânica e billing em <a href="guia_contexto_compactacao_estrategias.html#compactacao-servidor-anthropic">Contexto &amp; compactação §5B</a>.</td></tr>
+          <tr><td>Google Gemini</td><td>Sem compaction server-side documentada nas fontes lidas; o estado server-side da Interactions preserva <code>inputs</code>+<code>outputs</code>. <span class="pill partial">UNVERIFIED</span> para recurso equivalente.</td><td>Compacte no ledger e reenvie o resultado (<code>store=false</code> ou nova cadeia sem <code>previous_interaction_id</code>).</td></tr>
+        </tbody>
+      </table></div>
 
-      <h3 id="context-editing-anthropic">10.1 — Context editing (Anthropic): limpeza server-side de tool results e thinking <span class="pill beta">Beta</span></h3>
+      <h3 id="context-editing-anthropic">10.1 — Context editing (Anthropic): limpeza server-side de tool results e thinking <span class="pill beta">Beta</span><span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
       <p>
         A Anthropic oferece uma implementação <strong>server-side</strong> deste mesmo contrato de
         compaction: o parâmetro <code>context_management</code> na Messages API aplica edições automáticas
@@ -1591,8 +1775,11 @@ closure_marker {
         <strong>Beta — header obrigatório.</strong> Requer o header
         <code>anthropic-beta: context-management-2025-06-27</code> em toda requisição que usar
         <code>context_management</code> (nos SDKs, <code>betas=["context-management-2025-06-27"]</code>).
-        Disponível em <strong>todos os modelos Claude suportados</strong>. Elegível a Zero Data Retention
-        (ZDR): em orgs com acordo ZDR, os dados enviados por este recurso não são retidos após a resposta.
+        Disponível em <strong>todos os modelos Claude suportados</strong>. Para a maioria dos casos, a doc
+        oficial trata a <em>compaction</em> server-side (§10 e
+        <a href="guia_contexto_compactacao_estrategias.html#compactacao-servidor-anthropic">§5B do guia de compactação</a>)
+        como a estratégia principal; o context editing serve a cenários que pedem controle fino sobre o que é
+        limpo. Verificado 2026-09-30.
       </div>
 
       <h4>Forma do request</h4>
@@ -1640,9 +1827,10 @@ closure_marker {
       <div class="table-wrap"><table>
         <thead><tr><th>Classe</th><th>Mantém todo thinking anterior</th><th>Mantém só o thinking do último turno</th></tr></thead>
         <tbody>
-          <tr><td>Opus</td><td>Claude Opus 4.5 e posteriores</td><td>Claude Opus 4.1 (deprecated) e anteriores</td></tr>
-          <tr><td>Sonnet</td><td>Claude Sonnet 4.6 e posteriores</td><td>Claude Sonnet 4.5 e anteriores</td></tr>
-          <tr><td>Haiku</td><td>—</td><td>Todos os modelos até Claude Haiku 4.5</td></tr>
+          <tr><td>Opus</td><td>Claude Opus 4.5 e posteriores (inclui <strong>Opus 5.5</strong>)</td><td>Opus anteriores ao 4.5</td></tr>
+          <tr><td>Sonnet</td><td>Claude Sonnet 4.6 e posteriores (inclui <strong>Sonnet 5.5</strong>)</td><td>Claude Sonnet 4.5 e anteriores</td></tr>
+          <tr><td>Haiku</td><td>—</td><td>Todos os modelos Haiku, inclusive Claude Haiku 4.5</td></tr>
+          <tr><td>Fable e Mythos</td><td>Todos os modelos</td><td>—</td></tr>
         </tbody>
       </table></div>
       <div class="callout tip">
@@ -1659,7 +1847,9 @@ closure_marker {
           <code>clear_at_least</code> para que a invalidação "valha a pena" (evita limpezas pequenas e
           frequentes).</li>
         <li>Thinking blocks <strong>mantidos</strong> preservam o cache (cache hits, menos tokens de
-          input); thinking blocks <strong>limpos</strong> invalidam o cache a partir do ponto de corte.</li>
+          input); thinking blocks <strong>limpos</strong> invalidam o cache a partir do ponto de corte. No
+          Fable 5.1, Opus 5.5 e Sonnet 5.5, o context management server-side nunca invalida blocos de
+          thinking; edições client-side em turnos anteriores podem invalidá-los em todos os turnos seguintes.</li>
       </ul>
 
       <h4>Resposta: <code>context_management.applied_edits</code></h4>
@@ -1708,7 +1898,7 @@ closure_marker {
         Claude recebe um aviso automático para salvar informação importante em arquivos de memória antes do
         corte — casando com o modo <strong>Memory tool</strong> descrito em §8b.
       </div>
-      <div class="source-link">Fonte oficial: <a href="https://platform.claude.com/docs/en/docs/build-with-claude/context-editing" target="_blank" rel="noopener">Anthropic — Context editing</a>.</div>
+      <div class="source-link">Fonte oficial: <a href="https://platform.claude.com/docs/en/build-with-claude/context-editing" target="_blank" rel="noopener">Anthropic — Context editing</a> — verificado 2026-09-30.</div>
     </section>
 
     <section id="perdas-aceitaveis-proibidas">
@@ -1770,37 +1960,94 @@ closure_marker {
       </ul>
     </section>
 
+    <section class="ref" id="estado-nos-frameworks">
+      <h2>Estado nos frameworks<span class="rev-flag novo">Novo · 2026-09-30</span></h2>
+      <p>
+        Os frameworks empacotam o estado de conversa e a memória de longo prazo de formas diferentes. Em todos,
+        valem as regras do §1: o que o framework guarda é <em>carrier/projeção</em>; o ledger da aplicação
+        continua sendo a fonte de verdade. A tabela resume o que cada documentação oficial descreve em
+        2026-09-30; versões de pacote entre parênteses vêm do registro (PyPI) na mesma data.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Framework</th><th>Conversa (curto prazo)</th><th>Memória de longo prazo</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>OpenAI Agents SDK Python (0.22.3)</td>
+            <td>Protocolo <code>Session</code> client-side: antes da run o SDK lê o histórico com <code>session.get_items(...)</code> e, depois, grava só os itens novos. Backends: <code>SQLiteSession</code>, <code>AsyncSQLiteSession</code>, <code>RedisSession</code>, <code>SQLAlchemySession</code>, <code>MongoDBSession</code>, <code>DaprSession</code>, <code>EncryptedSession</code> (wrapper) e <code>OpenAIConversationsSession</code> (histórico na Conversations API). <code>RunConfig.session_input_callback</code> controla a fusão histórico + entrada nova.</td>
+            <td>Não há store de memória no protocolo; <code>OpenAIResponsesCompactionSession</code> envolve outra session e compacta via <code>responses.compact</code> (automático por <code>should_trigger_compaction</code> ou manual por <code>run_compaction()</code>). Uma session <strong>não</strong> combina com <code>conversation_id</code>, <code>previous_response_id</code> ou <code>auto_previous_response_id</code> na mesma run — escolha um dos dois modelos de estado.</td>
+          </tr>
+          <tr>
+            <td>LangGraph (1.2.12)</td>
+            <td>Checkpointer por <em>thread</em>: <code>{"configurable": {"thread_id": "..."}}</code> na config; persiste o estado do grafo como checkpoints (continuidade, human-in-the-loop, time travel, tolerância a falhas). Implementações citadas na doc: <code>InMemorySaver</code>, <code>SqliteSaver</code>, <code>PostgresSaver</code>/<code>AsyncPostgresSaver</code>.</td>
+            <td><code>Store</code>: dados definidos pela aplicação, compartilhados <em>entre threads</em> (preferências, fatos, conhecimento); <code>InMemoryStore</code> no exemplo. Ambos entram no grafo em <code>compile(checkpointer=..., store=...)</code>.</td>
+          </tr>
+          <tr>
+            <td>Google ADK Python (2.10.0)</td>
+            <td><code>Session</code> (uma interação contínua, com sua sequência de <code>Events</code>) e <code>State</code> (<code>session.state</code>, dados do escopo da sessão), geridos por um <code>SessionService</code>.</td>
+            <td><code>MemoryService</code> (conhecimento que atravessa sessões): <code>InMemoryMemoryService</code> (busca por palavra-chave, sem persistência), <code>VertexAiMemoryBankService</code> e <code>VertexAiRagMemoryService</code>. <code>add_session_to_memory</code> ingere uma sessão concluída; as tools <code>load_memory</code> (sob demanda) e <code>preload_memory</code> (no início de cada turno) recuperam via <code>search_memory</code>.</td>
+          </tr>
+          <tr>
+            <td>Deep Agents (0.7.20)</td>
+            <td>Estado do grafo LangGraph (checkpointer, acima); <code>StateBackend()</code> como backend padrão/fallback.</td>
+            <td>Memória como arquivos: <code>memory=["/memories/AGENTS.md"]</code> em <code>create_deep_agent()</code>; <code>backend=</code> define onde vivem. <code>StoreBackend()</code> persiste entre threads com um <code>namespace</code> (por assistente ou por usuário); <code>CompositeBackend(routes={...})</code> roteia prefixos como <code>/memories/</code> e <code>/skills/</code>. O agente edita a memória com <code>edit_file</code>, ou uma consolidação em background atualiza o store.</td>
+          </tr>
+        </tbody>
+      </table></div>
+      <div class="callout warn">
+        <strong>Memória compartilhada é superfície de injeção.</strong> Memória escrita pelo agente e lida por
+        outros usuários ou threads carrega conteúdo não confiável; a doc do Deep Agents recomenda tornar a memória
+        compartilhada somente leitura (permissions/policy hooks). Trate o que volta de qualquer store como dado,
+        nunca como instrução, e marque a origem no ledger (§2, §7).
+      </div>
+      <div class="source-link">Fontes oficiais (lidas em 2026-09-30): <a href="https://openai.github.io/openai-agents-python/sessions/" target="_blank" rel="noopener">Agents SDK · sessions</a> · <a href="https://docs.langchain.com/oss/python/langgraph/persistence" target="_blank" rel="noopener">LangGraph · persistence</a> · <a href="https://adk.dev/sessions/" target="_blank" rel="noopener">ADK · sessions</a> e <a href="https://adk.dev/sessions/memory/" target="_blank" rel="noopener">memory</a> · <a href="https://docs.langchain.com/oss/python/deepagents/memory" target="_blank" rel="noopener">Deep Agents · memory</a>. Aprofundamento: <a href="guia_agents_sdk.html">Agents SDK</a> · <a href="guia_langgraph.html">LangGraph</a> · <a href="guia_google_adk.html">ADK</a> · <a href="guia_deepagents.html">Deep Agents</a>.</div>
+    </section>
+
+    <section class="ref" id="legado">
+      <h2>Legado e migração<span class="rev-flag novo">Novo · 2026-09-30</span></h2>
+      <p>Superfícies que este capítulo não usa mais como caminho principal. Cada linha: o que era, o status verificado em 2026-09-30, a migração em uma linha e a fonte.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Legado</th><th>Status</th><th>Migração</th><th>Fonte</th></tr></thead>
+        <tbody>
+          <tr><td>Gemini <code>generateContent</code> com histórico no cliente e chat do SDK (<code>client.chats.create()</code>)</td><td>Legado: a página Interactions overview o descreve como legado. Segue sendo o único caminho com <strong>cache explícito</strong> (objetos <code>cachedContent</code>); a Interactions só tem cache implícito.</td><td>Trocar por <code>client.interactions.create</code> com <code>previous_interaction_id</code> (ou input completo com <code>store=false</code>); mantenha <code>generateContent</code> apenas onde precisar de cache explícito.</td><td><a href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">Interactions overview</a> · <a href="https://ai.google.dev/gemini-api/docs/migrate-to-interactions" target="_blank" rel="noopener">migrate to interactions</a></td></tr>
+          <tr><td>Schema Interactions <code>outputs[]</code> e eventos <code>content.*</code></td><td>Removido em 2026-06-08 (SDKs 1.x quebram).</td><td>Usar <code>steps[]</code>, eventos <code>step.*</code> e <code>response_format</code>; <code>google-genai</code> ≥ 2.3.0 (atual 2.25.0).</td><td><a href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">Interactions overview</a></td></tr>
+          <tr><td>Gemini <code>thinking_budget</code> (série 2.5) e <code>thinking_config</code> aninhado</td><td>Legado; aceito por compatibilidade no Gemini 3, não recomendado.</td><td><code>generation_config.thinking_level</code> na Interactions API.</td><td><a href="https://ai.google.dev/gemini-api/docs/thinking" target="_blank" rel="noopener">Gemini thinking</a></td></tr>
+          <tr><td>OpenAI Assistants API (threads, runs)</td><td>Encerrada em 2026-08-26; não está mais disponível.</td><td>Responses API + Conversations API (§6).</td><td><a href="https://developers.openai.com/api/docs/guides/migrate-to-responses" target="_blank" rel="noopener">migrate to Responses</a></td></tr>
+          <tr><td>OpenAI <code>prompt_cache_retention</code> (<code>in_memory</code>|<code>24h</code>)</td><td>Parâmetro dos modelos ≤ 5.5; deprecado a partir do <code>gpt-5.6</code>.</td><td><code>prompt_cache_options</code> (<code>ttl: "30m"</code>, <code>mode</code>, <code>prewarm</code>) + <code>prompt_cache_breakpoint</code> (§8b).</td><td><a href="https://developers.openai.com/api/docs/guides/prompt-caching" target="_blank" rel="noopener">prompt caching</a></td></tr>
+          <tr><td>Anthropic <code>thinking: {"type":"enabled","budget_tokens":N}</code></td><td>Retorna 400 em Opus 4.7+, Fable/Mythos e Sonnet 5+; deprecado em Opus 4.6/Sonnet 4.6; só resta em Haiku 4.5, Opus 4.5 e Sonnet 4.5.</td><td><code>thinking: {"type":"adaptive"}</code> + <code>output_config.effort</code> (§5).</td><td><a href="https://platform.claude.com/docs/en/build-with-claude/extended-thinking" target="_blank" rel="noopener">extended thinking</a></td></tr>
+          <tr><td>Anthropic <code>compaction_control</code> (compaction client-side do SDK)</td><td>Deprecado nos SDKs TypeScript e Ruby e removido do SDK Python 1.x; a Anthropic recomenda a compaction server-side.</td><td><code>compact_20260112</code> em <code>context_management</code> ou o parâmetro <code>compaction</code> sob demanda (§10).</td><td><a href="https://platform.claude.com/docs/en/build-with-claude/context-editing" target="_blank" rel="noopener">context editing</a></td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
     <section class="ref" id="verificacao">
-      <h2>Notas de verificação</h2>
+      <h2>Notas de verificação<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <ul>
-        <li><span class="pill beta">Atualizado 2026-06-10</span> <strong>Varredura de 2026-06-10.</strong> Fatos perecíveis re-conferidos contra docs oficiais + PyPI/npm. Mudança incorporada no §8c.6 (prosa + JSON-LD): desde 2026-05-29 o default de <code>prompt_cache_retention</code> na OpenAI é <code>"24h"</code> para <em>qualquer</em> organização sem ZDR — o fato gpt-5.5 (24h obrigatório; <code>in_memory</code> → erro) segue válido. Nota "Sem IDs de modelo fixos" clarificada (exceção do §8c). Demais contratos deste capítulo sem mudança upstream.</li>
-        <li><span class="pill beta">Atualizado 2026-06-10</span> <strong>Zonas canônicas &amp; colocação do hot follow-up (§8b).</strong> Integrada a proposta de gestão manual de contexto v0.6 (debate gpt-5.5-pro + revisão adversarial codex/gpt-5.5). Decisão validada: dado transitório de follow-up entra em <code>role=user</code> tagueado, não no <code>system</code>/autoridade — preservando o prefixo de cache e a separação autoria/dado. Re-confirmado contra docs oficiais que a Gemini Interactions API usa <code>generation_config.thinking_level</code> (não <code>thinking_config</code> aninhado) e <code>usage.total_thought_tokens</code>/<code>total_output_tokens</code> (renomeado de <code>total_reasoning_tokens</code> em 2025-12-19; <code>thoughtsTokenCount</code> é do <code>generateContent</code>).</li>
-        <li><span class="pill ok">Resolvido</span> <strong>Controles de reasoning/thinking.</strong> Conferidos na folha de fatos SOTA (2026-06-10): OpenAI <code>reasoning.effort</code> = <code>none|low|medium|high|xhigh</code>; Anthropic <code>thinking</code> = <code>adaptive</code>/<code>enabled</code>+<code>budget_tokens</code>/<code>disabled</code> com <code>display</code> <code>summarized</code>|<code>omitted</code>; Google <code>thinking_level</code> = <code>low|medium|high</code> (Flash/Flash-Lite também <code>minimal</code>), com <code>thinking_budget</code> legado não-combinável.</li>
-        <li><span class="pill ok">Resolvido</span> <strong>Estado na Responses API.</strong> <code>previous_response_id</code>/<code>conversation</code> são conveniência; <code>instructions</code> não são recarregadas automaticamente; <code>store=false</code> + <code>include=["reasoning.encrypted_content"]</code> para fluxos stateless/ZDR — confirmado na doc oficial.</li>
-        <li><span class="pill ok">Resolvido</span> <strong>Sem duplicação.</strong> Compaction <em>estratégica</em> e contagem de tokens permanecem nos guias dedicados; este capítulo trata apenas do contrato de estado e de compaction.</li>
-        <li><span class="pill ok">Resolvido</span> <strong>Sem IDs de modelo fixos.</strong> O capítulo cita parâmetros (perenes) e não modelos (perecíveis); disponibilidade por modelo fica nos guias de provider e na folha de fatos SOTA (exceção deliberada: o §8c cita IDs datados como exemplos verificados em 2026-06-10 — gpt-5.5, Claude Sonnet 4.6, Claude Opus 4.8, Gemini 3.1 Pro).</li>
-        <li><span class="pill partial">UNVERIFIED</span> <strong>Detalhes de domínio.</strong> O número exato de cache breakpoints e TTLs por provider, e limites de janela por modelo, mudam com frequência — consulte os guias de provider e a folha de fatos antes de afirmar valores específicos.</li>
+        <li><span class="pill ok">Verificado 2026-09-30</span> Conferido nas fontes oficiais nesta data: <a href="https://developers.openai.com/api/docs/guides/conversation-state" target="_blank" rel="noopener">OpenAI conversation state</a> (formas de estado, TTL de 30 dias das respostas e ausência dele nas conversations), <a href="https://developers.openai.com/api/docs/guides/compaction" target="_blank" rel="noopener">OpenAI compaction</a> (<code>context_management</code>, <code>/responses/compact</code>), <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching" target="_blank" rel="noopener">Anthropic prompt caching</a> (mínimos cacheáveis e multiplicadores), <a href="https://platform.claude.com/docs/en/build-with-claude/compaction-on-demand" target="_blank" rel="noopener">compaction on demand</a> (beta <code>compact-2026-09-04</code>), <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool" target="_blank" rel="noopener">memory tool</a>, <a href="https://platform.claude.com/docs/en/build-with-claude/context-editing" target="_blank" rel="noopener">context editing</a>, e as páginas de framework citadas em "Estado nos frameworks". Os demais fatos (IDs, preços, thinking por modelo, Interactions API, parâmetros da Responses API) vêm das folhas de fatos da revisão de 2026-09-30, lidas nas páginas oficiais de modelos, preços, release notes e changelog dos três providers.</li>
+        <li><span class="pill partial">Pesquisa primária · não normativa</span> <strong>Contexto crescente e memória seletiva.</strong> <a href="https://www.microsoft.com/en-us/research/articles/memento-teaching-llms-to-manage-their-own-context/" target="_blank" rel="noopener">MEMENTO</a> (Microsoft Research; preprint <a href="https://arxiv.org/abs/2604.09852" target="_blank" rel="noopener">arXiv:2604.09852</a>), <a href="https://arxiv.org/abs/2602.07962" target="_blank" rel="noopener">LOCA-bench</a> (arXiv:2602.07962) e <a href="https://arxiv.org/abs/2605.08538" target="_blank" rel="noopener">Human-Inspired Memory Architecture for LLM Agents</a> (arXiv:2605.08538) são evidência de pesquisa em ambientes controlados, sem contrato de persistência, provenance ou retenção. Use-os como hipóteses para tiers, compaction e testes de context rot, mantendo ledger bruto, provenance e replay como autoridade; adoção <span class="pill partial">UNVERIFIED</span> até prova no seu ambiente.</li>
+        <li><span class="pill partial">UNVERIFIED</span> (1) Default de <code>reasoning.effort</code> do <code>gpt-6-astra</code>: nenhuma página oficial o informa. (2) Compaction server-side equivalente no Gemini e opções configuráveis de retenção da Interaction além de 55 dias (pago) e 1 dia (gratuito): não confirmadas. (3) Número exato de cache breakpoints, TTLs e janelas por modelo mudam com frequência — consulte os guias de provider antes de afirmar valores.</li>
       </ul>
     </section>
 
   </main>
 </div>
 
+<section class="callout info" id="s-fontes-primarias-2026-09-30" style="margin-top:24px"><strong>Atualização 2026-09-30 — fontes primárias (aplica-se o trecho pertinente a este guia).</strong><ul><li>OpenAI (developers.openai.com/api/docs, 2026-09-30): Responses API com <code>previous_response_id</code>, Conversations API e compaction (<code>context_management</code>, <code>/responses/compact</code>); prompt caching em <code>gpt-5.6</code>+ com <code>prompt_cache_options</code>; Assistants API encerrada em 2026-08-26; família GPT-6 (<code>gpt-6-astra</code>, <code>gpt-6.1-sol</code>, <code>gpt-6-sol</code>, <code>gpt-6-luna</code>).</li><li>Anthropic (platform.claude.com/docs, 2026-09-30): modelos atuais <code>claude-fable-5-1</code>, <code>claude-opus-5-5</code>, <code>claude-sonnet-5-5</code> e <code>claude-haiku-4-5</code>; compaction sob demanda em beta (<code>compact-2026-09-04</code>); memory tool GA; cache diagnostics GA desde 2026-09-23.</li><li>Gemini (ai.google.dev/gemini-api/docs, 2026-09-30): Interactions API GA (<code>previous_interaction_id</code>, <code>background</code>, <code>steps[]</code>); <code>generateContent</code> descrito como legado.</li><li>SDKs e frameworks (PyPI, 2026-09-30): <code>google-genai</code> 2.25.0; <code>anthropic</code> 1.9.0; <code>openai-agents</code> 0.22.3; <code>langgraph</code> 1.2.12; <code>google-adk</code> 2.10.0; <code>deepagents</code> 0.7.20.</li></ul></section>
 <footer class="site">
   <div style="max-width:1440px;margin:0 auto;padding:0 24px;display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;justify-content:space-between;">
     <div style="max-width:540px">
       <div class="brand" style="font-size:15px">Estado, Contexto &amp; Memória <small>Núcleo agnóstico de agentes</small></div>
       <p style="margin:8px 0 0;color:var(--c-fg-muted);font-size:13.5px;line-height:1.55">
-        Capítulo de estado do núcleo agnóstico, construído a partir da documentação oficial pública em
-        <strong>2026-06-10</strong>. Para fatos perecíveis (controles de reasoning, janelas, retenção),
+        Capítulo de estado do núcleo agnóstico, construído a partir da documentação oficial pública, com
+        varredura completa de fatos perecíveis em <strong>2026-09-30</strong>. Para fatos perecíveis
+        (controles de reasoning, janelas, retenção),
         consulte os guias de provider e as
         <a href="https://developers.openai.com/api/docs/guides/conversation-state" target="_blank" rel="noopener">fontes oficiais</a>.
       </p>
     </div>
     <div style="font-size:13.5px;color:var(--c-fg-muted);line-height:1.7">
       <div><strong>Crédito de produção</strong></div>
-      <div>Gerado por <strong>subagentes Claude Opus 4.7 (xhigh)</strong></div>
-      <div>revisão e montagem pelo orquestrador · 2026-06-10</div>
+      <div>Registro editorial e reconciliação técnica</div>
+      <div>Revisão de contratos por provider · 2026-09-30</div>
       <div style="margin-top:6px">
         <span class="badge da">Núcleo · agnóstico de provider</span>
         <span class="badge info">Conceitual + referência</span>
@@ -1809,7 +2056,7 @@ closure_marker {
     <div style="font-size:12.5px;color:var(--c-fg-soft)">
       <div><strong>Navegação rápida</strong></div>
       <div><a href="#estado-vs-payload">Estado vs payload</a> · <a href="#ledger-canonico">Ledger</a> · <a href="#reasoning-thinking-por-provider">Reasoning</a></div>
-      <div><a href="#compaction-contrato">Compaction</a> · <a href="#checklist-de-estado">Checklist</a></div>
+      <div><a href="#compaction-contrato">Compaction</a> · <a href="#checklist-de-estado">Checklist</a> · <a href="#legado">Legado</a></div>
     </div>
   </div>
 </footer>

@@ -2,10 +2,11 @@
 <html lang="pt-BR" data-theme="light">
 <head>
 <meta charset="utf-8" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%9A%3C/text%3E%3C/svg%3E" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Orquestração com LangGraph — Guia complementar</title>
-<meta name="description" content="Como aplicar os padrões de orquestração do núcleo (ledger canônico, estado durável, HITL, multi-agente) usando LangGraph: StateGraph com reducers tipados, checkpointers, interrupt/Command, subgraphs, streaming v2, supervisor/swarm e Store." />
-<meta name="last-checked" content="2026-07-12" />
+<meta name="description" content="Como aplicar os padrões de orquestração do núcleo (ledger canônico, estado durável, HITL, multi-agente) usando LangGraph 1.2.12: StateGraph com reducers tipados, checkpointers, interrupt/Command, subgraphs, streaming v2, supervisor via tools (create_agent) e Store; legado condensado. Verificado em 2026-09-30." />
+<meta name="last-checked" content="2026-09-30" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -277,6 +278,7 @@
     details > summary { display: none; }
   }
 </style>
+<style id="rev-flag-css">main :not(pre) > code,main a{overflow-wrap:anywhere}.rev-flag{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:999px;font-size:.62em;font-weight:600;vertical-align:middle;letter-spacing:.02em;white-space:nowrap}.rev-flag.novo{background:#dcfce7;color:#14532d;border:1px solid #86efac}.rev-flag.atu{background:#e0f2fe;color:#0c4a6e;border:1px solid #7dd3fc}.rev-news{margin:16px 0;padding:12px 16px;border-left:4px solid #22c55e;border-radius:8px;background:rgba(34,197,94,.08)}.rev-news ul{margin:6px 0 0;padding-left:20px}.rev-news li{margin:2px 0}:root[data-theme="dark"] .rev-flag.novo{background:#14532d;color:#dcfce7;border-color:#166534}:root[data-theme="dark"] .rev-flag.atu{background:#0c4a6e;color:#e0f2fe;border-color:#075985}@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .rev-flag.novo{background:#14532d;color:#dcfce7;border-color:#166534}:root:not([data-theme="light"]) .rev-flag.atu{background:#0c4a6e;color:#e0f2fe;border-color:#075985}}</style>
 </head>
 <body>
 <a class="skip" href="#main">Pular para o conteúdo</a>
@@ -285,8 +287,8 @@
   <div class="header-row">
     <div class="brand">Orquestração com LangGraph <small>guia complementar de orquestração</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-12</strong></span>
-      <span class="badge da">langgraph 1.2.9</span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-09-30</strong></span>
+      <span class="badge da">langgraph 1.2.12</span>
       <span class="badge info">Python</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
     </div>
@@ -297,6 +299,7 @@
   <nav class="toc" aria-label="Sumário">
     <div class="toc-section">Início</div>
     <ol>
+      <li><a href="#para-agentes">Resumo para agentes</a></li>
       <li><a href="#sobre-guia">Sobre este guia</a></li>
       <li><a href="#fontes-oficiais">Fontes &amp; verificação</a></li>
     </ol>
@@ -316,7 +319,7 @@
     <ol>
       <li><a href="#hitl">4. HITL: interrupt &amp; Command</a></li>
       <li><a href="#subgraphs">5. Subgraphs como composição</a></li>
-      <li><a href="#multi-agente">6. Multi-agente: supervisor &amp; swarm</a></li>
+      <li><a href="#multi-agente">6. Multi-agente: supervisor via tools</a></li>
       <li><a href="#streaming">7. Streaming v2</a></li>
       <li><a href="#store">8. Store: memória cross-thread</a></li>
     </ol>
@@ -329,11 +332,13 @@
     <div class="toc-section">Referência</div>
     <ol>
       <li><a href="#cheat-sheet">Cheat sheet</a></li>
+      <li><a href="#legado">Legado e migração</a></li>
       <li><a href="#verificacao">Notas de verificação</a></li>
     </ol>
   </nav>
 
   <main id="main">
+<aside class="rev-news" id="rev-news-2026-09-30" aria-label="Novidades desta revisão"><strong>O que há de novo nesta revisão (2026-09-30)</strong> — 2 seções novas e 7 atualizadas desde a revisão de 2026-09-23. Procure os selos <span class="rev-flag novo">Novo</span> e <span class="rev-flag atu">Atualizado</span> nos títulos.<details><summary>Ver lista</summary><ul><li><span class="rev-flag novo">Novo</span> <a href="#para-agentes">Resumo para agentes</a> — superfície atual, IDs, faça/não faça e incertezas no topo do guia</li><li><span class="rev-flag atu">Atualizado</span> <a href="#streaming">7. Streaming</a> — aviso sobre o formato do chunk (v1 tupla vs v2 dict)</li><li><span class="rev-flag novo">Novo</span> <a href="#legado">Legado e migração</a> — <code>create_react_agent</code>, <code>langgraph-supervisor</code>, <code>langgraph-swarm</code> e <code>langchain-mcp-adapters</code> condensados numa única seção</li><li><span class="rev-flag atu">Atualizado</span> <a href="#quando-base">1. Quando LangGraph é a base</a> — pins 2026-09-30 (langchain 1.4.3, langchain-core 1.6.6, JS 1.4.18/1.5.14/1.2.13)</li><li><span class="rev-flag atu">Atualizado</span> <a href="#hitl">4. HITL</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#multi-agente">6. Multi-agente</a> — exemplo migrado para <code>create_agent</code> + <code>@tool</code></li><li><span class="rev-flag atu">Atualizado</span> <a href="#blueprint">9. Blueprint</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#cheat-sheet">Cheat sheet</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#verificacao">Notas de verificação</a></li></ul></details></aside>
 
     <div class="hero">
       <h1>Orquestração com LangGraph</h1>
@@ -346,11 +351,61 @@
         arquitetural. Prosa em PT-BR; código e identificadores em inglês.
       </p>
       <div class="hero-meta">
-        <span class="badge da">langgraph 1.2.9</span>
+        <span class="badge da">langgraph 1.2.12</span>
         <span class="badge info">Python</span>
-        <span class="badge ok">SOTA · verificado 2026-06-29</span>
+        <span class="badge ok">SOTA · verificado em 2026-09-30</span>
       </div>
     </div>
+
+    <section id="para-agentes">
+      <h2>Resumo para agentes (verificado 2026-09-30)<span class="rev-flag novo">Novo · 2026-09-30</span></h2>
+      <p>Orquestração no LangGraph/LangChain (Python). Referência da API e pisos de segurança: <a href="guia_langgraph.html#para-agentes">guia_langgraph.html</a>.</p>
+      <h3>1. Superfície atual</h3>
+      <pre><code class="language-bash">pip install "langgraph==1.2.12" "langchain==1.4.3" "langchain-core==1.6.6"
+pip install "langgraph-checkpoint-postgres==3.1.2" "psycopg[binary,pool]"   # produção; sem driver psycopg o import levanta ImportError</code></pre>
+      <pre><code class="language-python">from langchain.agents import create_agent
+from langchain.tools import tool
+from langgraph.checkpoint.memory import InMemorySaver      # prod: PostgresSaver.from_conn_string(DB_URI) + checkpointer.setup()
+
+math_agent = create_agent("anthropic:claude-sonnet-5-5", tools=[add], system_prompt="You are a math expert.")
+@tool
+def ask_math(request: str) -&gt; str:
+    """Delegate arithmetic to the math specialist."""
+    return math_agent.invoke({"messages": [{"role": "user", "content": request}]})["messages"][-1].text
+supervisor = create_agent("anthropic:claude-sonnet-5-5", tools=[ask_math], system_prompt="Route, then answer.",
+                          checkpointer=InMemorySaver())     # checkpointer só no supervisor
+supervisor.invoke({"messages": [{"role": "user", "content": "..."}]}, {"configurable": {"thread_id": "s-1"}})</code></pre>
+      <h3>2. IDs e versões correntes (2026-09-30)</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Item</th><th>Versão / ID</th><th>Nota</th></tr></thead>
+        <tbody>
+          <tr><td><code>langgraph</code> / <code>langchain</code> / <code>langchain-core</code></td><td><code>1.2.12</code> / <code>1.4.3</code> / <code>1.6.6</code></td><td>LangGraph é 1.x GA (sem 1.3 nem 2.x)</td></tr>
+          <tr><td><code>langgraph-checkpoint-postgres</code></td><td><code>3.1.2</code></td><td>piso de segurança <code>3.1.1</code> (CVE-2026-71433)</td></tr>
+          <tr><td>JS/TS</td><td><code>@langchain/langgraph</code> <code>1.4.18</code> · <code>langchain</code> <code>1.5.14</code> · <code>@langchain/core</code> <code>1.2.13</code></td><td>números não têm paridade com Python</td></tr>
+          <tr><td>Modelo nos exemplos</td><td><code>anthropic:claude-sonnet-5-5</code></td><td>string <code>provider:model</code>; em produção vem de config</td></tr>
+        </tbody>
+      </table></div>
+      <h3>3. Faça / Não faça</h3>
+      <ul>
+        <li>Não use <code>create_react_agent</code> (deprecated) nem <code>create_supervisor</code> (<code>langgraph-supervisor</code>, repo arquivado) → <code>create_agent</code> + subagentes em <code>@tool</code> (<a href="#multi-agente">§6</a>; <code>prompt=</code> vira <code>system_prompt=</code>).</li>
+        <li>Não use <code>langgraph-swarm</code> em código novo → tools de handoff com <code>Command(update=..., goto=..., graph=Command.PARENT)</code> ou middleware <code>@wrap_model_call</code>.</li>
+        <li>Reducers: campo sem <code>Annotated[tipo, reducer]</code> sobrescreve; <code>add_messages</code> e <code>operator.add</code> acumulam. O nó retorna só o delta (<a href="#state-graph">§2</a>).</li>
+        <li>Toda persistência e todo <code>interrupt()</code> exigem checkpointer + <code>thread_id</code> em <code>{"configurable": {...}}</code>. Retome com <code>Command(resume=...)</code>, nunca <code>Command(update=...)</code> (<a href="#hitl">§4</a>).</li>
+        <li>HITL em código novo: <code>graph.stream_events(..., version="v3")</code> e as projeções <code>stream.interrupted</code>/<code>stream.interrupts</code>; <code>invoke()</code> + <code>__interrupt__</code> continua válido.</li>
+        <li><code>graph.stream(..., stream_mode=[...])</code> sem <code>version=</code> devolve tuplas <code>(mode, chunk)</code>; com <code>version="v2"</code> devolve dicts <code>{"type","ns","data"}</code> (<a href="#streaming">§7</a>).</li>
+        <li>Memória entre threads: <code>compile(store=...)</code> + <code>get_store()</code> dentro do nó; produção = <code>PostgresStore</code> (<a href="#store">§8</a>).</li>
+        <li>MCP em Python: <code>langchain.mcp.MCPAdapter</code> (beta, <code>pip install "langchain[mcp]"</code>); não <code>langchain-mcp-adapters</code> (arquivado). JS: <code>@langchain/mcp-adapters</code>.</li>
+        <li>Claude Opus 5.5 via <code>ChatAnthropic</code>: não force <code>tool_choice</code> nem use <code>thinking={"type": "disabled"}</code> (issue #40777 aberta em 2026-09-30).</li>
+        <li>Não hardcode credenciais do Postgres: <code>DB_URI</code> vem de config/secret manager.</li>
+      </ul>
+      <h3>4. Onde está cada coisa</h3>
+      <p><a href="#quando-base">Quando LangGraph é a base</a> · <a href="#state-graph">StateGraph + reducers</a> · <a href="#checkpointers">Checkpointers</a> · <a href="#hitl">HITL</a> · <a href="#subgraphs">Subgraphs</a> · <a href="#multi-agente">Multi-agente</a> · <a href="#streaming">Streaming</a> · <a href="#store">Store</a> · <a href="#blueprint">Blueprint</a> · <a href="#cheat-sheet">Cheat sheet</a> · <a href="#legado">Legado</a> · <a href="#verificacao">Notas de verificação</a></p>
+      <h3>5. Incertezas (não trate como fato)</h3>
+      <ul>
+        <li><span class="pill partial">UNVERIFIED</span> Sunset formal do <code>langgraph-swarm</code> (repo não arquivado; sem página oficial de migração) (<a href="#legado">Legado</a>).</li>
+        <li><span class="pill partial">Atenção</span> A issue #40777 do <code>langchain-anthropic</code> estava aberta em 2026-09-30; reverifique antes de depender do comportamento (<a href="#verificacao">Notas de verificação</a>).</li>
+      </ul>
+    </section>
 
     <section id="sobre-guia">
       <h2>Sobre este guia</h2>
@@ -362,7 +417,7 @@
       </p>
       <div class="callout tip">
         <strong>Como ler:</strong> os fundamentos de cada primitiva (StateGraph, reducers, Send,
-        Command, checkpointers, interrupt, Store, supervisor/swarm, time-travel, durable execution e o
+        Command, checkpointers, interrupt, Store, supervisor via tools, time-travel, durable execution e o
         receituário R1–R14) estão em <a href="guia_langgraph.html">guia_langgraph.html</a>. Para o
         harness Deep Agents sobre LangGraph, ver <a href="guia_deepagents.html">guia_deepagents.html</a>.
         Aqui assumimos os fundamentos e mostramos <em>como mapear</em> os padrões agnósticos.
@@ -380,16 +435,16 @@
       <h2>Fontes &amp; verificação</h2>
       <p>
         APIs conferidas contra a referência oficial (reference.langchain.com / docs.langchain.com) e a
-        folha de fatos do projeto, re-conferida em 2026-07-12. Versões: <code>langgraph 1.2.9</code> (PyPI, 2026-07-10),
-        <code>langgraph-checkpoint-postgres 3.1.0</code> (PyPI).
+        folha de fatos do projeto, re-conferida em 2026-09-30. Versões: <code>langgraph 1.2.12</code> (PyPI, release 2026-09-21), <code>langchain 1.4.3</code>,
+        <code>langgraph-checkpoint-postgres 3.1.2</code> (PyPI; piso CVE-2026-71433: 3.1.1).
       </p>
       <div class="table-wrap"><table>
         <thead><tr><th>Recurso oficial</th><th>URL</th><th>Uso aqui</th></tr></thead>
         <tbody>
           <tr><td>LangGraph (docs)</td><td><a href="https://docs.langchain.com/oss/python/langgraph/overview" target="_blank" rel="noopener">docs.langchain.com/oss/python/langgraph</a></td><td>StateGraph, persistência, HITL, streaming</td></tr>
           <tr><td>API reference (Python)</td><td><a href="https://reference.langchain.com/python/langgraph/" target="_blank" rel="noopener">reference.langchain.com/python/langgraph</a></td><td><code>get_store</code>, <code>InMemoryStore</code>, <code>interrupt</code></td></tr>
-          <tr><td>langgraph-supervisor</td><td><a href="https://reference.langchain.com/python/langgraph-supervisor/supervisor/" target="_blank" rel="noopener">.../langgraph-supervisor</a></td><td><code>create_supervisor</code></td></tr>
-          <tr><td>langgraph-swarm</td><td><a href="https://reference.langchain.com/python/langgraph-swarm/swarm/" target="_blank" rel="noopener">.../langgraph-swarm</a></td><td><code>create_swarm</code>, <code>create_handoff_tool</code></td></tr>
+          <tr><td>Supervisor via tools</td><td><a href="https://docs.langchain.com/oss/python/langchain/supervisor" target="_blank" rel="noopener">docs.langchain.com/oss/python/langchain/supervisor</a></td><td><code>create_agent</code> + subagentes em <code>@tool</code></td></tr>
+          <tr><td>Legado (supervisor, swarm)</td><td><a href="#legado">Legado e migração</a></td><td>Status e migração numa tabela</td></tr>
         </tbody>
       </table></div>
       <p style="font-size:13px;color:var(--c-fg-muted)">
@@ -401,7 +456,7 @@
     </section>
 
     <section id="quando-base">
-      <h2>1. Quando LangGraph é a base</h2>
+      <h2>1. Quando LangGraph é a base<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <p>
         LangGraph é <strong>uma base recomendada — não a única</strong>. Escolha-o quando o problema pede
         um grafo de estado explícito, persistência durável com checkpoints versionados, time-travel e
@@ -421,6 +476,38 @@
         de graça três coisas que o núcleo pede — ledger reidratável, replay/time-travel e durabilidade
         contra falhas. Ver <a href="guia_arquitetura_orquestracao.html#runtime-por-maturidade">padrões
         por maturidade</a>.
+      </div>
+      <div class="callout tip">
+        <strong>Versões estáveis (verificado 2026-09-30).</strong>
+        Python: <code>langgraph==1.2.12</code>, <code>langchain==1.4.3</code>,
+        <code>langchain-core==1.6.6</code> (valor corrente único de <code>langchain-core</code> na
+        coleção). JS/TS: <code>@langchain/langgraph@1.4.18</code>, <code>langchain@1.5.14</code>,
+        <code>@langchain/core@1.2.13</code>. Linhas <code>alpha</code>/<code>next</code>/<code>rc</code>/<code>dev</code>
+        do npm são prerelease e não entram em produção; os números não têm paridade entre os
+        ecossistemas. Releases: <a href="https://github.com/langchain-ai/langgraph/releases/tag/1.2.12" target="_blank" rel="noopener">LangGraph Python</a> ·
+        <a href="https://github.com/langchain-ai/langchainjs/releases" target="_blank" rel="noopener">LangChain JS</a> ·
+        <a href="https://github.com/langchain-ai/langchain/releases" target="_blank" rel="noopener">LangChain Python</a>.
+      </div>
+      <div class="callout info">
+        <strong>Contrato de integração.</strong> Em Python, use <code>interrupt(payload)</code>
+        e retome com <code>Command(resume=...)</code>; em JS/TS, a forma equivalente é
+        <code>interrupt(payload)</code> e <code>new Command({ resume: ... })</code>.
+        Para streams, <code>version="v2"</code> (Python) / <code>version: "v2"</code>
+        (JS) entrega partes unificadas; o event streaming v3 é a projeção tipada
+        recomendada na documentação Python. Para tools MCP em Python, o caminho atual
+        (desde <code>langchain 1.4.0</code>, beta) é o namespace embutido
+        <code>langchain.mcp.MCPAdapter</code> — sobre FastMCP, sem pacote separado:
+        <code>async with MCPAdapter(url) as adapter: tools = await adapter.list_tools()</code>.
+        O pacote separado <code>langchain-mcp-adapters</code>
+        (<code>MultiServerMCPClient</code> + <code>get_tools()</code>) está no <a href="#legado">legado</a>: repositório
+        <strong>arquivado</strong> em 2026-09-16 (último release 0.3.2, 2026-08-06). Em JS/TS não há
+        port do namespace embutido: use <code>@langchain/mcp-adapters</code>
+        (<code>MultiServerMCPClient</code> + <code>getTools()</code>), stateless por padrão. Detalhe completo
+        e exemplo em <a href="guia_langgraph.html#s-install">guia_langgraph.html §2</a>.
+        Fontes: <a href="https://docs.langchain.com/oss/python/langgraph/interrupts" target="_blank" rel="noopener">interrupts Python</a> ·
+        <a href="https://docs.langchain.com/oss/javascript/langgraph/interrupts" target="_blank" rel="noopener">interrupts JS</a> ·
+        <a href="https://docs.langchain.com/oss/python/langchain/mcp" target="_blank" rel="noopener">MCP Python</a> ·
+        <a href="https://docs.langchain.com/oss/javascript/langchain/mcp" target="_blank" rel="noopener">MCP JS</a>.
       </div>
     </section>
 
@@ -493,9 +580,13 @@ graph.invoke({"messages": [("user", "oi")], "findings": [], "step": 0}, config)
 graph.invoke({"messages": [("user", "continua")]}, config)  # retoma o mesmo estado</code></pre>
         </div>
         <div class="code-pane" data-lang="bash" data-active="false">
-<pre><code class="language-bash"># Persistência durável em Postgres (verificado: langgraph-checkpoint-postgres 3.1.0)
+<pre><code class="language-bash"># Persistência durável em Postgres (verificado: langgraph-checkpoint-postgres 3.1.2)
 # PostgresSaver exige um driver psycopg utilizável — sem ele, o import levanta ImportError.
-pip install "langgraph==1.2.9" "langgraph-checkpoint-postgres==3.1.0" "psycopg[binary,pool]"</code></pre>
+pip install "langgraph==1.2.12" "langgraph-checkpoint-postgres==3.1.2" "psycopg[binary,pool]"
+# Piso de seguranca: a camada de checkpoint tem advisories.
+# langgraph==1.2.12 ja puxa langgraph-checkpoint>=4.1, acima do piso 4.0.0 do
+# CVE-2026-27794 -- mas confira o SEU lockfile em vez de confiar na transitiva.
+# CVE-2026-71433: piso langgraph-checkpoint-postgres 3.1.1 (corrente 3.1.2).</code></pre>
         </div>
       </div>
 <pre><code class="language-python"># Produção: PostgresSaver (estado sobrevive a reinícios e falhas)
@@ -522,13 +613,13 @@ with PostgresSaver.from_conn_string(DB_URI) as checkpointer:
       <h2 style="border-bottom:3px solid var(--c-da);padding:14px 0 10px;font-size:28px">Padrões de orquestração no grafo</h2>
       <p>
         Com estado tipado + checkpointer no lugar, os padrões do núcleo viram construções de grafo:
-        HITL é uma interrupção; composição é um subgraph; multi-agente é supervisor ou swarm; observar o
+        HITL é uma interrupção; composição é um subgraph; multi-agente é supervisor via tools ou handoff; observar o
         loop é streaming; memória entre threads é o Store.
       </p>
     </section>
 
     <section id="hitl">
-      <h2>4. HITL: interrupt() &amp; Command(resume=)</h2>
+      <h2>4. HITL: interrupt() &amp; Command(resume=)<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <p>
         O fluxo de aprovação humana do núcleo (HITL) é nativo: dentro de um nó, chame
         <code>interrupt(payload)</code> para <em>pausar</em> o grafo e devolver o controle. O estado é
@@ -551,19 +642,26 @@ def approve_refund(state: AgentState) -> dict:
 graph = builder.compile(checkpointer=InMemorySaver())
 config = {"configurable": {"thread_id": "ticket-9"}}
 
-# 1) Roda até a interrupção:
-graph.invoke(initial_state, config)
-# 2) Detecta o interrupt no stream/estado e mostra ao humano (chave __interrupt__).
-# 3) Retoma com a decisão humana:
-graph.invoke(Command(resume="approve"), config)</code></pre>
-      <div class="source-link">Fonte oficial: <a href="https://docs.langchain.com/oss/python/langgraph/add-human-in-the-loop" target="_blank" rel="noopener">docs.langchain.com/oss/python/langgraph/add-human-in-the-loop</a> · <code>interrupt()</code>, <code>Command(resume=)</code> (de <code>langgraph.types</code>)</div>
+# Driver recomendado: stream_events v3
+stream = graph.stream_events(initial_state, config=config, version="v3")
+_ = stream.output                               # drena o run até pausar ou terminar
+if stream.interrupted:                          # payload em stream.interrupts
+    resumed = graph.stream_events(
+        Command(resume="approve"), config=config, version="v3"
+    )
+    final = resumed.output</code></pre>
+      <div class="source-link">Fonte oficial: <a href="https://docs.langchain.com/oss/python/langgraph/interrupts" target="_blank" rel="noopener">docs.langchain.com/oss/python/langgraph/interrupts</a> · <code>interrupt()</code>, <code>Command(resume=)</code> (de <code>langgraph.types</code>) · driver <code>graph.stream_events(..., version="v3")</code></div>
 
       <div class="callout tip">
-        <strong>Por que isso é robusto:</strong> como o estado fica no checkpointer, a pausa pode durar
-        segundos ou dias — o processo pode até reiniciar. É o contrato HITL do núcleo
+        <strong>Driver e robustez.</strong> O caminho recomendado é
+        <code>graph.stream_events(..., version="v3")</code> com as projeções
+        <code>stream.interrupted</code> / <code>stream.interrupts</code>; retome só com
+        <code>Command(resume=...)</code> (não use <code>Command(update=...)</code> como input de resume).
+        <code>invoke()</code> + <code>__interrupt__</code> continua funcionando quando você não precisa das
+        projeções tipadas. Como o estado fica no checkpointer, a pausa pode durar segundos ou dias — o
+        processo pode até reiniciar: é o contrato HITL do núcleo
         (<a href="guia_ferramentas_mcp_rag.html#fluxo-de-aprovacao-hitl">fluxo de aprovação</a>) com
-        durabilidade real. Em stream, detecte a pausa pela chave <code>__interrupt__</code> no chunk de
-        <code>updates</code>.
+        durabilidade real. Detalhe em <a href="guia_langgraph.html#s-hitl">guia_langgraph.html §19</a>.
       </div>
     </section>
 
@@ -587,7 +685,7 @@ parent.add_edge(START, "research")
 parent.add_edge("research", "write")
 parent.add_edge("write", END)
 app = parent.compile(checkpointer=InMemorySaver())</code></pre>
-      <div class="source-link">Fonte oficial: <a href="https://docs.langchain.com/oss/python/langgraph/subgraphs" target="_blank" rel="noopener">docs.langchain.com/oss/python/langgraph/subgraphs</a> · subgraph compilado como nó</div>
+      <div class="source-link">Fonte oficial: <a href="https://docs.langchain.com/oss/python/langgraph/use-subgraphs" target="_blank" rel="noopener">docs.langchain.com/oss/python/langgraph/use-subgraphs</a> · subgraph compilado como nó</div>
       <div class="callout info">
         <strong>Fan-out:</strong> para disparar a mesma sub-rotina em paralelo sobre N itens
         (map-reduce), use <code>Send</code> — ver o detalhe em
@@ -597,75 +695,68 @@ app = parent.compile(checkpointer=InMemorySaver())</code></pre>
     </section>
 
     <section id="multi-agente">
-      <h2>6. Multi-agente: supervisor &amp; swarm</h2>
+      <h2>6. Multi-agente: supervisor com subagentes em <code>@tool</code><span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <p>
         O núcleo distingue <strong>handoff</strong> (transferir o dono do turno) de
-        <strong>agent-as-tool</strong> (delegar e continuar no comando). O LangGraph oferece dois pacotes
-        prebuilt que materializam topologias multi-agente:
+        <strong>agent-as-tool</strong> (delegar e continuar no comando). O caminho atual no ecossistema
+        LangChain/LangGraph é o <strong>supervisor via tools</strong>: cada especialista é um agente
+        criado com <code>langchain.agents.create_agent</code> e exposto ao coordenador como uma
+        <code>@tool</code>; o coordenador só vê a tool de alto nível e devolve a resposta final. É o
+        padrão "manager" do núcleo, sem pacote extra.
       </p>
-      <ul>
-        <li><strong>Supervisor</strong> (<code>langgraph-supervisor</code>): um agente coordenador
-        roteia para especialistas via tools de handoff e <em>retoma o controle</em> depois — é o padrão
-        "manager" do núcleo.</li>
-        <li><strong>Swarm</strong> (<code>langgraph-swarm</code>): agentes transferem controle
-        diretamente entre si (handoff peer-to-peer); o último agente ativo é lembrado por thread.</li>
-      </ul>
+<pre><code class="language-python">from langchain.agents import create_agent
+from langchain.tools import tool
+from langgraph.checkpoint.memory import InMemorySaver
 
-      <h3>Supervisor (coordenador retoma o controle)</h3>
-<pre><code class="language-python">from langgraph_supervisor import create_supervisor
-from langgraph.prebuilt import create_react_agent
+MODEL = "anthropic:claude-sonnet-5-5"     # "provider:model"; em produção vem da config
 
-# Especialistas (model resolvido por config — não hardcode o slug).
-math_agent = create_react_agent(model=MODEL, tools=[add], name="math_expert")
-research_agent = create_react_agent(model=MODEL, tools=[web_search], name="research_expert")
+math_agent = create_agent(MODEL, tools=[add], system_prompt="You are a math expert.")
+research_agent = create_agent(MODEL, tools=[web_search], system_prompt="You are a research expert.")
 
-workflow = create_supervisor(
-    [research_agent, math_agent],
-    model=SUPERVISOR_MODEL,                 # o modelo do coordenador, vindo da config
-    output_mode="last_message",             # default; ou "full_history"
+@tool
+def ask_math(request: str) -> str:
+    """Delegate arithmetic questions to the math specialist."""
+    result = math_agent.invoke({"messages": [{"role": "user", "content": request}]})
+    return result["messages"][-1].text          # só a resposta final volta ao coordenador
+
+@tool
+def ask_research(request: str) -> str:
+    """Delegate fact-finding questions to the research specialist."""
+    result = research_agent.invoke({"messages": [{"role": "user", "content": request}]})
+    return result["messages"][-1].text
+
+supervisor = create_agent(
+    MODEL,
+    tools=[ask_math, ask_research],
+    system_prompt="Route each question to the right specialist, then answer the user.",
+    checkpointer=InMemorySaver(),                # durabilidade/HITL só no nível do coordenador
 )
-app = workflow.compile()                     # adicione checkpointer= para durabilidade
-result = app.invoke({"messages": [{"role": "user", "content": "combined headcount of FAANG 2024?"}]})</code></pre>
-      <div class="source-link">Fonte oficial: <a href="https://reference.langchain.com/python/langgraph-supervisor/supervisor/" target="_blank" rel="noopener">reference.langchain.com/python/langgraph-supervisor</a> · <code>create_supervisor(agents, *, model, prompt=, output_mode=, handoff_tool_prefix=, supervisor_name=)</code></div>
-
-      <h3>Swarm (handoff peer-to-peer)</h3>
-<pre><code class="language-python">from langgraph_swarm import create_swarm, create_handoff_tool
-from langgraph.prebuilt import create_react_agent
-
-alice = create_react_agent(
-    model=MODEL, name="Alice", tools=[add,
-        create_handoff_tool(agent_name="Bob", description="Transfer to Bob")],
-)
-bob = create_react_agent(
-    model=MODEL, name="Bob",
-    tools=[create_handoff_tool(agent_name="Alice", description="Transfer to Alice for math")],
-)
-
-workflow = create_swarm([alice, bob], default_active_agent="Alice")
-app = workflow.compile(checkpointer=InMemorySaver())
-# A tool de handoff é nomeada transfer_to_&lt;agent_name&gt; por padrão.</code></pre>
-      <div class="source-link">Fonte oficial: <a href="https://reference.langchain.com/python/langgraph-swarm/swarm/" target="_blank" rel="noopener">reference.langchain.com/python/langgraph-swarm</a> · <code>create_swarm(agents, *, default_active_agent)</code> · <code>create_handoff_tool(agent_name=, name=, description=)</code></div>
+result = supervisor.invoke(
+    {"messages": [{"role": "user", "content": "combined headcount of FAANG 2024?"}]},
+    {"configurable": {"thread_id": "s-1"}},
+)</code></pre>
+      <div class="source-link">Fonte oficial: <a href="https://docs.langchain.com/oss/python/langchain/supervisor" target="_blank" rel="noopener">docs.langchain.com/oss/python/langchain/supervisor</a> · padrão <code>@tool</code> + <code>create_agent</code> (lido 2026-09-30)</div>
 
       <div class="table-wrap"><table>
-        <thead><tr><th>Padrão do núcleo</th><th>No LangGraph</th><th>Quem retoma o turno</th></tr></thead>
+        <thead><tr><th>Padrão do núcleo</th><th>No LangGraph / LangChain</th><th>Quem retoma o turno</th></tr></thead>
         <tbody>
-          <tr><td>Manager / delegação central</td><td><code>create_supervisor(...)</code></td><td>O supervisor (volta a ele)</td></tr>
-          <tr><td>Handoff peer-to-peer</td><td><code>create_swarm(...)</code> + <code>create_handoff_tool</code></td><td>O agente que recebeu o handoff</td></tr>
-          <tr><td>Agent-as-tool puro</td><td>Compilar o subgrafo e expô-lo como tool</td><td>O chamador</td></tr>
+          <tr><td>Manager / delegação central</td><td><code>create_agent</code> + workers <code>@tool</code></td><td>O supervisor (volta a ele)</td></tr>
+          <tr><td>Agent-as-tool puro</td><td>Igual: worker embrulhado em <code>@tool</code></td><td>O chamador</td></tr>
+          <tr><td>Handoff peer-to-peer</td><td>Tools que retornam <code>Command(update=..., goto=..., graph=Command.PARENT)</code> entre subgraphs, ou um único agente com middleware <code>@wrap_model_call</code> (<a href="https://docs.langchain.com/oss/python/langchain/multi-agent/handoffs" target="_blank" rel="noopener">doc de handoffs</a>); o pacote <code>langgraph-swarm</code> é <a href="#legado">legado</a></td><td>O agente que recebeu o handoff</td></tr>
         </tbody>
       </table></div>
-      <div class="callout warn">
-        <strong>Deprecação (LangGraph v1):</strong> <code>langgraph.prebuilt.create_react_agent</code>
-        foi deprecado em favor de <code>from langchain.agents import create_agent</code>. Os exemplos
-        de <code>create_supervisor</code>/<code>create_swarm</code> acima ainda usam
-        <code>create_react_agent</code> (continua funcional com aviso <code>@deprecated</code>); código
-        novo deve usar <code>create_agent(model, tools, system_prompt=…)</code>. Ver
-        <a href="guia_langgraph.html">guia_langgraph.html</a> para a tabela completa de deprecações v1.
+      <div class="callout tip">
+        <strong>Middleware no lugar dos hooks.</strong> <code>create_agent(model, tools, system_prompt=…)</code>
+        troca os antigos <code>pre_model_hook</code>/<code>post_model_hook</code> por
+        <strong>middleware</strong> componível (<code>before_model</code>/<code>after_model</code>/
+        <code>wrap_model_call</code>), com embutidos como <code>HumanInTheLoopMiddleware</code>,
+        <code>SummarizationMiddleware</code> e <code>TodoListMiddleware</code>. Tabela completa em
+        <a href="guia_langgraph.html">guia_langgraph.html</a>.
       </div>
     </section>
 
     <section id="streaming">
-      <h2>7. Streaming v2</h2>
+      <h2>7. Streaming v2<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <p>
         Observar o loop enquanto acontece (fan-out/wind-down visível, UX responsiva) é
         <code>graph.stream(...)</code>. Os <strong>modos</strong> determinam o que você recebe — combine
@@ -693,6 +784,7 @@ app = workflow.compile(checkpointer=InMemorySaver())
     elif mode == "updates":
         if "__interrupt__" in chunk:          # HITL pausou o grafo
             handle_human_review(chunk["__interrupt__"])</code></pre>
+      <div class="callout warn"><strong>Formato do chunk.</strong> O exemplo acima não passa <code>version=</code> e usa o formato default (v1): com lista de modos, cada item é uma tupla <code>(mode, chunk)</code>. Com <code>version="v2"</code> (langgraph &gt;= 1.1) cada parte é um dict <code>{"type", "ns", "data"}</code>; não misture as duas formas. Detalhe em <a href="guia_langgraph.html#s-streaming">guia_langgraph.html §17</a>.</div>
       <div class="source-link">Fonte oficial: <a href="https://docs.langchain.com/oss/python/langgraph/streaming" target="_blank" rel="noopener">docs.langchain.com/oss/python/langgraph/streaming</a> · modos <code>values | updates | messages | custom | tasks</code></div>
     </section>
 
@@ -733,15 +825,15 @@ graph = (
     </section>
 
     <section id="blueprint">
-      <h2>9. Mapeando o blueprint do núcleo ao grafo</h2>
+      <h2>9. Mapeando o blueprint do núcleo ao grafo<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <p>Tabela-âncora: cada camada do blueprint SOTA e sua materialização no LangGraph.</p>
       <div class="table-wrap"><table>
         <thead><tr><th>Camada do núcleo</th><th>No LangGraph</th><th>Status</th></tr></thead>
         <tbody>
           <tr><td>Estado durável (ledger canônico)</td><td><code>StateGraph</code> tipado + reducers; <code>checkpointer</code> persiste</td><td><span class="pill ok">nativo</span></td></tr>
           <tr><td>Router / triagem</td><td>Conditional edges / <code>Command(goto=)</code></td><td><span class="pill ok">nativo</span></td></tr>
-          <tr><td>Manager / multi-agente</td><td><code>create_supervisor</code> (coordenador retoma)</td><td><span class="pill ok">nativo</span></td></tr>
-          <tr><td>Handoff peer-to-peer</td><td><code>create_swarm</code> + <code>create_handoff_tool</code></td><td><span class="pill ok">nativo</span></td></tr>
+          <tr><td>Manager / multi-agente</td><td><code>create_agent</code> + workers <code>@tool</code></td><td><span class="pill ok">nativo</span></td></tr>
+          <tr><td>Handoff peer-to-peer</td><td>Tools de handoff com <code>Command(graph=Command.PARENT)</code> ou middleware</td><td><span class="pill ok">nativo</span></td></tr>
           <tr><td>Capability registry</td><td>Tools nos nós/ReAct; MCP via adapter</td><td><span class="pill ok">nativo</span></td></tr>
           <tr><td>HITL (aprovação)</td><td><code>interrupt()</code> + <code>Command(resume=)</code></td><td><span class="pill ok">nativo</span></td></tr>
           <tr><td>Composição</td><td>Subgraphs (grafo compilado como nó)</td><td><span class="pill ok">nativo</span></td></tr>
@@ -758,7 +850,7 @@ graph = (
     </section>
 
     <section class="ref" id="cheat-sheet">
-      <h2>Cheat sheet — imports, classes &amp; decisões</h2>
+      <h2>Cheat sheet — imports, classes &amp; decisões<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <h3>Imports essenciais</h3>
 <pre><code class="language-python"># Grafo e estado
 from langgraph.graph import StateGraph, START, END
@@ -772,53 +864,63 @@ from langgraph.checkpoint.postgres import PostgresSaver     # langgraph-checkpoi
 # Memória cross-thread
 from langgraph.store.memory import InMemoryStore
 from langgraph.config import get_store, get_stream_writer
-# Multi-agente (pacotes prebuilt)
-from langgraph_supervisor import create_supervisor
-from langgraph_swarm import create_swarm, create_handoff_tool
-from langgraph.prebuilt import create_react_agent</code></pre>
+# Agentes prontos e multi-agente
+from langchain.agents import create_agent
+from langchain.tools import tool</code></pre>
 
       <h3>Decisão rápida</h3>
       <ul style="overflow-wrap:anywhere">
         <li>☐ Estado precisa <strong>acumular</strong> (não overwrite) → <code>Annotated[tipo, reducer]</code>.</li>
         <li>☐ Precisa sobreviver a reinícios/falhas → <code>compile(checkpointer=PostgresSaver(...))</code>.</li>
         <li>☐ Precisa de aprovação humana no meio → <code>interrupt()</code> + <code>Command(resume=)</code>.</li>
-        <li>☐ Coordenador que delega e retoma → <code>create_supervisor(...)</code>.</li>
-        <li>☐ Agentes que transferem entre si → <code>create_swarm(...)</code>.</li>
+        <li>☐ Coordenador que delega e retoma → <code>create_agent</code> + workers em <code>@tool</code>.</li>
+        <li>☐ Agentes que transferem entre si → tools de handoff com <code>Command</code> (seção 6).</li>
         <li>☐ Memória entre sessões/usuários → <code>Store</code> + <code>get_store()</code>.</li>
         <li>☐ UX em tempo real → <code>graph.stream(stream_mode=["updates","messages"])</code>.</li>
       </ul>
     </section>
 
+    <section class="ref" id="legado">
+      <h2>Legado e migração<span class="rev-flag novo">Novo · 2026-09-30</span></h2>
+      <p>Só para reconhecer projetos existentes; nada abaixo deve ser copiado para código novo.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Antigo</th><th>Status (verificado 2026-09-30)</th><th>Migração</th></tr></thead>
+        <tbody>
+          <tr><td><code>langgraph.prebuilt.create_react_agent</code></td><td>Deprecated (<code>LangGraphDeprecatedSinceV10</code>); segue importável e funcional</td><td><code>from langchain.agents import create_agent</code>; <code>prompt=</code> → <code>system_prompt=</code>; <code>pre_model_hook</code>/<code>post_model_hook</code> → middleware. <a href="https://docs.langchain.com/oss/python/releases/langchain-v1" target="_blank" rel="noopener">Release notes v1</a></td></tr>
+          <tr><td><code>langgraph-supervisor</code> (<code>create_supervisor</code>)</td><td>Último release 0.0.31 (2025-11-19); repositório <strong>arquivado</strong> (último push 2026-07-15); o README oficial recomenda o padrão supervisor direto via tools em vez da biblioteca</td><td>Seção 6: <code>create_agent</code> + subagentes em <code>@tool</code>; <code>output_mode</code> vira decisão do wrapper. <a href="https://docs.langchain.com/oss/python/migrate/langgraph-supervisor" target="_blank" rel="noopener">Guia de migração</a></td></tr>
+          <tr><td><code>langgraph-swarm</code> (<code>create_swarm</code>, <code>create_handoff_tool</code>)</td><td>Último release 0.1.0 (2025-12-04); repositório <strong>não</strong> arquivado; sunset formal: <strong>UNVERIFIED</strong> (sem página oficial de migração)</td><td>Tools de handoff com <code>Command</code> / middleware, como na seção 6; tratar o pacote como legado de baixa manutenção.</td></tr>
+          <tr><td><code>langchain-mcp-adapters</code> (<code>MultiServerMCPClient</code>)</td><td>Repositório arquivado (último push 2026-09-16); 0.3.2 (2026-08-06), <code>mcp&lt;2</code></td><td><code>pip install "langchain[mcp]"</code> → <code>langchain.mcp.MCPAdapter</code> (beta). Em JS continua <code>@langchain/mcp-adapters</code>.</td></tr>
+        </tbody>
+      </table></div>
+<pre><code class="language-python"># antes (legado)                                       # depois
+workflow = create_supervisor([research, math],         supervisor = create_agent(
+    model=SUPERVISOR_MODEL, prompt="...")                  MODEL, tools=[ask_research, ask_math],
+app = workflow.compile(checkpointer=saver)                 system_prompt="...", checkpointer=saver)</code></pre>
+    </section>
+
     <section class="ref" id="verificacao">
-      <h2>Notas de verificação</h2>
-      <p>APIs conferidas contra a referência oficial LangChain/LangGraph e a folha de fatos do projeto em 2026-06-10; versões de libs re-conferidas em 2026-07-12.</p>
+      <h2>Notas de verificação<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
+      <p>Verificado em 2026-09-30 contra PyPI/npm, GitHub Releases e a documentação oficial. APIs e versões perecíveis: reconfirme antes de fixar pins.</p>
       <ul style="overflow-wrap:anywhere">
-        <li><span class="pill ok">Resolvido</span> <code>langgraph 1.2.9</code> e <code>langgraph-checkpoint-postgres 3.1.0</code> (PyPI, re-conferidos em 2026-07-12). LangGraph é <strong>1.x GA</strong> (não 0.x).</li>
-        <li><span class="pill ok">Resolvido</span> <code>StateGraph</code>, <code>START</code>/<code>END</code>, reducers via <code>Annotated</code>, <code>add_messages</code>.</li>
-        <li><span class="pill ok">Resolvido</span> <code>interrupt()</code> + <code>Command(resume=)</code> (de <code>langgraph.types</code>); detecção por <code>__interrupt__</code> no stream de <code>updates</code>.</li>
-        <li><span class="pill ok">Resolvido</span> <code>InMemoryStore</code> (de <code>langgraph.store.memory</code>), <code>store.put((ns,), key, value)</code>, <code>store.get((ns,), key).value</code>, <code>get_store()</code> (de <code>langgraph.config</code>), <code>compile(store=)</code> — confirmados na ref oficial em 2026-05-25 (resolve o item UNVERIFIED da folha §11).</li>
-        <li><span class="pill ok">Resolvido</span> <code>create_supervisor(agents, *, model, prompt=, output_mode='last_message', handoff_tool_prefix=, supervisor_name='supervisor')</code> (de <code>langgraph_supervisor</code>) — assinatura confirmada na ref oficial (resolve UNVERIFIED §11).</li>
-        <li><span class="pill ok">Resolvido</span> <code>create_swarm(agents, *, default_active_agent, state_schema=SwarmState)</code> + <code>create_handoff_tool(agent_name=, name=, description=)</code> → tool <code>transfer_to_&lt;agent_name&gt;</code> (de <code>langgraph_swarm</code>) — confirmados na ref oficial (resolve UNVERIFIED §11).</li>
-        <li><span class="pill ok">Resolvido</span> Streaming v2: modos <code>values | updates | messages | custom | tasks</code>; <code>get_stream_writer()</code> de <code>langgraph.config</code>.</li>
-        <li><span class="pill partial">Atenção</span> Prebuilt: a ref oficial expõe <code>langchain.agents.create_agent</code> como o mais novo; <code>create_react_agent</code> (de <code>langgraph.prebuilt</code>) segue válido e é o usado nos exemplos de supervisor. Use o que casa com a versão pinada do seu projeto (reconferido na ref oficial em 2026-06-10).</li>
-        <li><span class="pill partial">Atenção</span> Slugs de modelo NÃO são hardcoded (<code>MODEL</code>/<code>SUPERVISOR_MODEL</code> vêm da config). Para IDs vigentes, ver a folha SOTA do projeto e o portal.</li>
+        <li><span class="pill ok">Resolvido</span> Versões Python: <code>langgraph 1.2.12</code>, <code>langchain 1.4.3</code>, <code>langchain-core 1.6.6</code>, <code>langgraph-checkpoint-postgres 3.1.2</code> (PyPI). LangGraph é <strong>1.x GA</strong>.</li>
+        <li><span class="pill ok">Resolvido</span> <code>StateGraph</code>, reducers via <code>Annotated</code>, <code>interrupt()</code> + <code>Command(resume=)</code>, <code>stream_events(version="v3")</code>, <code>InMemoryStore</code>/<code>get_store()</code>, modos de stream <code>values | updates | messages | custom | tasks</code> — conforme a referência oficial.</li>
+        <li><span class="pill ok">Resolvido</span> Multi-agente: padrão supervisor-via-tools e hooks de middleware (<code>before_model</code>, <code>after_model</code>, <code>wrap_model_call</code>, <code>wrap_tool_call</code>) conferidos na doc LangChain.</li>
+        <li><span class="pill partial">Atenção</span> Claude Opus 5.5 / Sonnet 5.5 com <code>langchain-anthropic 1.7.5</code>: a issue <a href="https://github.com/langchain-ai/langchain/issues/40777" target="_blank" rel="noopener">#40777</a> (tool choice/thinking não suportados enviados por <code>ChatAnthropic</code>) segue <strong>aberta</strong> em 2026-09-30; veja <a href="guia_langgraph.html#s-install">guia_langgraph.html §2</a>.</li>
+        <li><span class="pill partial">Atenção</span> Slugs de modelo não são hardcoded nos exemplos de produção (<code>MODEL</code> vem da config); o valor do exemplo é ilustrativo.</li>
       </ul>
-      <div class="callout">
-        <strong>APIs UNVERIFIED neste guia:</strong> nenhuma. Os 3 itens que a folha §11 listava como
-        UNVERIFIED (Store, supervisor, swarm) foram confirmados ao vivo na referência oficial
-        (reference.langchain.com) em 2026-06-10.
-      </div>
+      <p style="font-size:13px;color:var(--c-fg-muted)">Fontes: <a href="https://docs.langchain.com/oss/python/langgraph/overview" target="_blank" rel="noopener">docs.langchain.com/oss/python/langgraph</a> · <a href="https://docs.langchain.com/oss/python/langchain/supervisor" target="_blank" rel="noopener">langchain/supervisor</a> · <a href="https://docs.langchain.com/oss/python/langchain/middleware/custom" target="_blank" rel="noopener">middleware/custom</a> · <a href="https://pypi.org/project/langgraph/" target="_blank" rel="noopener">pypi.org/project/langgraph</a>.</p>
     </section>
 
   </main>
 </div>
+
 
 <footer class="site">
   <div style="max-width:1440px;margin:0 auto;padding:0 24px;display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;justify-content:space-between;">
     <div style="max-width:540px">
       <div class="brand" style="font-size:15px">Orquestração com LangGraph <small>guia complementar de orquestração</small></div>
       <p style="margin:8px 0 0;color:var(--c-fg-muted);font-size:13.5px;line-height:1.55">
-        Referência técnica construída a partir da documentação oficial pública em <strong>2026-06-10</strong> (versões de libs reconferidas em 2026-06-19).
+        Referência técnica conferida contra a documentação oficial pública e os registros de pacotes em <strong>2026-09-30</strong>.
         Complementa <a href="guia_langgraph.html">guia_langgraph.html</a> (referência da API),
         <a href="guia_deepagents.html">guia_deepagents.html</a> (harness Deep Agents) e o
         <a href="guia_arquitetura_orquestracao.html">guia de arquitetura de orquestração</a>.
@@ -827,18 +929,17 @@ from langgraph.prebuilt import create_react_agent</code></pre>
       </p>
     </div>
     <div style="font-size:13.5px;color:var(--c-fg-muted);line-height:1.7">
-      <div><strong>Crédito de produção</strong></div>
-      <div>Gerado por <strong>subagentes Claude Opus 4.7 (xhigh)</strong></div>
-      <div>revisão e montagem pelo orquestrador · 2026-05-25</div>
+      <div><strong>Histórico editorial</strong></div>
+      <div>Última verificação · 2026-09-30</div>
       <div style="margin-top:6px">
-        <span class="badge da">langgraph 1.2.9</span>
+        <span class="badge da">langgraph 1.2.12</span>
         <span class="badge info">Python</span>
       </div>
     </div>
     <div style="font-size:12.5px;color:var(--c-fg-soft)">
       <div><strong>Navegação rápida</strong></div>
       <div><a href="#quando-base">Quando usar</a> · <a href="#state-graph">StateGraph</a> · <a href="#checkpointers">Checkpointers</a></div>
-      <div><a href="#hitl">HITL</a> · <a href="#multi-agente">Multi-agente</a> · <a href="#blueprint">Blueprint</a> · <a href="#cheat-sheet">Cheat sheet</a> · <a href="#verificacao">Verificação</a></div>
+      <div><a href="#hitl">HITL</a> · <a href="#multi-agente">Multi-agente</a> · <a href="#blueprint">Blueprint</a> · <a href="#cheat-sheet">Cheat sheet</a> · <a href="#legado">Legado</a> · <a href="#verificacao">Verificação</a></div>
     </div>
   </div>
 </footer>

@@ -2,10 +2,11 @@
 <html lang="pt-BR" data-theme="light">
 <head>
 <meta charset="utf-8" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%9A%3C/text%3E%3C/svg%3E" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Guia LangGraph — Referência completa (Python)</title>
-<meta name="description" content="Guia técnico SOTA do LangGraph em Python: StateGraph, nodes, edges, Send, Command, persistência (checkpointers), human-in-the-loop, streaming, memória, multi-agent, time travel, durable execution e Functional API. Verificado em 2026-06-29." />
-<meta name="last-checked" content="2026-07-12" />
+<meta name="description" content="Guia técnico SOTA do LangGraph 1.2.12 em Python: StateGraph, nodes, edges, Send, Command, persistência (checkpointers), human-in-the-loop, streaming v3, memória, multi-agent (supervisor via tools), time travel, durable execution e Functional API; legado condensado. Verificado em 2026-09-30." />
+<meta name="last-checked" content="2026-09-30" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -256,6 +257,7 @@
     details > summary { display: none; }
   }
 </style>
+<style id="rev-flag-css">main :not(pre) > code,main a{overflow-wrap:anywhere}.rev-flag{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:999px;font-size:.62em;font-weight:600;vertical-align:middle;letter-spacing:.02em;white-space:nowrap}.rev-flag.novo{background:#dcfce7;color:#14532d;border:1px solid #86efac}.rev-flag.atu{background:#e0f2fe;color:#0c4a6e;border:1px solid #7dd3fc}.rev-news{margin:16px 0;padding:12px 16px;border-left:4px solid #22c55e;border-radius:8px;background:rgba(34,197,94,.08)}.rev-news ul{margin:6px 0 0;padding-left:20px}.rev-news li{margin:2px 0}:root[data-theme="dark"] .rev-flag.novo{background:#14532d;color:#dcfce7;border-color:#166534}:root[data-theme="dark"] .rev-flag.atu{background:#0c4a6e;color:#e0f2fe;border-color:#075985}@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .rev-flag.novo{background:#14532d;color:#dcfce7;border-color:#166534}:root:not([data-theme="light"]) .rev-flag.atu{background:#0c4a6e;color:#e0f2fe;border-color:#075985}}</style>
 </head>
 <body>
 <a class="skip" href="#main">Pular para o conteúdo</a>
@@ -264,7 +266,7 @@
   <div class="header-row">
     <div class="brand">Guia LangGraph <small>Python — Referência completa</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-12</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-09-30</strong></span>
       <span class="badge lc">langgraph</span>
       <span class="badge info">Python</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
@@ -276,6 +278,7 @@
   <nav class="toc" aria-label="Sumário">
     <div class="toc-section">Sobre</div>
     <ol>
+      <li><a href="#para-agentes">Resumo para agentes</a></li>
       <li><a href="#sobre">Sobre este guia</a></li>
       <li><a href="#fontes-oficiais">Fontes oficiais</a></li>
     </ol>
@@ -305,7 +308,7 @@
       <li><a href="#s-time-travel">Time travel (replay &amp; fork)</a></li>
       <li><a href="#s-durable">Durable execution &amp; drain</a></li>
       <li><a href="#s-functional">Functional API</a></li>
-      <li><a href="#s-multi-agent">Multi-agent (supervisor &amp; swarm)</a></li>
+      <li><a href="#s-multi-agent">Multi-agent (supervisor via tools)</a></li>
       <li><a href="#s-workflows">Padrões de workflow</a></li>
       <li><a href="#s-migrations">Migrações de grafo</a></li>
     </ol>
@@ -336,10 +339,8 @@
       <li><a href="#ref-basestore">BaseStore</a></li>
       <li><a href="#ref-inmemory-store">InMemoryStore</a></li>
       <li><a href="#ref-postgres-store">PostgresStore</a></li>
-      <li><a href="#ref-react-agent">create_react_agent (legado)</a></li>
+      <li><a href="#ref-create-agent">create_agent</a></li>
       <li><a href="#ref-toolnode">ToolNode · tools_condition</a></li>
-      <li><a href="#ref-supervisor">langgraph-supervisor</a></li>
-      <li><a href="#ref-swarm">langgraph-swarm</a></li>
       <li><a href="#ref-errors">Exceções</a></li>
     </ol>
 
@@ -376,9 +377,15 @@
       <li><a href="#r-storm">STORM · pesquisa+escrita</a></li>
       <li><a href="#r-endpoints">Apêndice — endpoints REST</a></li>
     </ol>
+
+    <div class="toc-section">Legado</div>
+    <ol>
+      <li><a href="#legado">Legado e migração</a></li>
+    </ol>
   </nav>
 
   <main id="main">
+<aside class="rev-news" id="rev-news-2026-09-30" aria-label="Novidades desta revisão"><strong>O que há de novo nesta revisão (2026-09-30)</strong> — 3 seções novas e 11 atualizadas desde a revisão de 2026-09-23. Procure os selos <span class="rev-flag novo">Novo</span> e <span class="rev-flag atu">Atualizado</span> nos títulos.<details><summary>Ver lista</summary><ul><li><span class="rev-flag novo">Novo</span> <a href="#para-agentes">Resumo para agentes</a> — superfície atual, IDs e versões, faça/não faça e incertezas no topo do guia</li><li><span class="rev-flag novo">Novo</span> <a href="#legado">Legado e migração</a> — <code>create_react_agent</code>, <code>langgraph-supervisor</code>, <code>langgraph-swarm</code>, <code>langchain-mcp-adapters</code> e demais deprecations condensados numa única seção</li><li><span class="rev-flag novo">Novo</span> <a href="#ref-create-agent">create_agent</a> — referência da assinatura atual (substitui as referências de create_react_agent, supervisor e swarm)</li><li><span class="rev-flag atu">Atualizado</span> <a href="#sobre">Sobre este guia</a> — pins 2026-09-30 (langchain 1.4.3, langchain-core 1.6.6, JS 1.4.18/1.5.14/1.2.13); notas históricas empilhadas removidas</li><li><span class="rev-flag atu">Atualizado</span> <a href="#s-install">2. Instalação</a> — MCP via <code>langchain.mcp</code>, pisos de segurança revistos (CVE-2026-28277 corrigido na 1.0.10), modelos atuais (GPT-6.1 Sol, Claude Sonnet 5.5, Gemini 3.8 Flash)</li><li><span class="rev-flag atu">Atualizado</span> <a href="#s-messagesstate">Formato OpenAI</a> (MessagesState) — pins de pacotes</li><li><span class="rev-flag atu">Atualizado</span> <a href="#s-multi-agent">24. Multi-agent</a> — exemplo migrado para <code>create_agent</code> + <code>@tool</code></li><li><span class="rev-flag atu">Atualizado</span> <a href="#s-migrations">26. Migrações</a> — hooks de middleware corretos (<code>wrap_model_call</code>)</li><li><span class="rev-flag atu">Atualizado</span> <a href="#s-auth">33. Autenticação personalizada</a> — advisories de <code>langgraph-api</code> e <code>langgraph-sdk</code></li><li><span class="rev-flag atu">Atualizado</span> <a href="#s-deploy">37. Opções de deployment</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#r-supervisor">R7. Multi-agent supervisor</a> e receitas R2, R8, R9 migradas para <code>create_agent</code>; IDs de modelo dos exemplos atualizados</li></ul></details></aside>
 
     <div class="hero">
       <h1>Guia LangGraph — Referência completa (Python)</h1>
@@ -388,25 +395,80 @@
         construir agentes <em>stateful</em>, durables e de longa duração.
         Cobre <code>StateGraph</code>, <code>Send</code>, <code>Command</code>,
         persistência (checkpointers SQLite/Postgres/Redis), human-in-the-loop,
-        streaming v2, memória curta e longa, multi-agent (supervisor/swarm), time
+        streaming v3, memória curta e longa, multi-agent (supervisor via tools), time
         travel, durable execution e a Functional API.
       </p>
       <div class="hero-meta">
         <span class="badge lc">langgraph</span>
         <span class="badge info">Python 3.10+</span>
-        <span class="badge ok">SOTA · 2026-06-29</span>
+        <span class="badge ok">SOTA · verificado em 2026-09-30</span>
       </div>
     </div>
 
+    <section id="para-agentes">
+      <h2>Resumo para agentes (verificado 2026-09-30)<span class="rev-flag novo">Novo · 2026-09-30</span></h2>
+      <p>Leia antes de escrever código LangGraph/LangChain (Python). Cada item aponta para a seção com a fonte.</p>
+      <h3>1. Superfície atual</h3>
+      <pre><code class="language-bash">pip install "langgraph==1.2.12" "langchain==1.4.3" "langchain-core==1.6.6"   # Python 3.10+; linha 1.x (sem 1.3 nem 2.x)
+pip install "langgraph-checkpoint&gt;=4.1.1" "langgraph-checkpoint-postgres&gt;=3.1.1"   # pisos de segurança; Postgres corrente 3.1.2
+pip install "langchain[mcp]"    # MCP em Python: langchain.mcp.MCPAdapter (beta; fastmcp&gt;=4.0.1,&lt;5)</code></pre>
+      <pre><code class="language-python">from langgraph.graph import StateGraph, MessagesState, START, END
+from langgraph.checkpoint.memory import InMemorySaver      # prod: PostgresSaver (langgraph-checkpoint-postgres)
+from langgraph.types import Command, interrupt             # HITL: interrupt(payload) + Command(resume=...)
+from langchain.agents import create_agent                  # agente ReAct atual (NÃO langgraph.prebuilt)
+
+def hello(state: MessagesState): return {"messages": [{"role": "ai", "content": "hello"}]}
+g = StateGraph(MessagesState); g.add_node(hello); g.add_edge(START, "hello"); g.add_edge("hello", END)
+graph = g.compile(checkpointer=InMemorySaver())
+cfg = {"configurable": {"thread_id": "1"}}                  # thread_id obrigatório com checkpointer
+out = graph.invoke({"messages": [{"role": "user", "content": "hi"}]}, config=cfg, version="v2")   # GraphOutput: .value, .interrupts
+agent = create_agent("anthropic:claude-sonnet-5-5", tools=[], system_prompt="You are helpful.")</code></pre>
+      <h3>2. IDs e versões correntes (PyPI/npm, 2026-09-30)</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Item</th><th>Versão / ID</th><th>Nota</th></tr></thead>
+        <tbody>
+          <tr><td><code>langgraph</code> (Py)</td><td><code>1.2.12</code> (2026-09-21)</td><td>exige <code>langchain-core&gt;=1.4.7,&lt;2</code></td></tr>
+          <tr><td><code>langchain</code> / <code>langchain-core</code></td><td><code>1.4.3</code> / <code>1.6.6</code></td><td><code>langchain 1.4.3</code> exige <code>langgraph&gt;=1.2.11,&lt;1.3</code></td></tr>
+          <tr><td>Checkpointers</td><td><code>langgraph-checkpoint</code> <code>4.2.0</code> · <code>langgraph-checkpoint-postgres</code> <code>3.1.2</code></td><td>pisos <code>&gt;=4.1.1</code> e <code>&gt;=3.1.1</code> (CVEs em <a href="#s-install">§2</a>)</td></tr>
+          <tr><td>Provedores (Py)</td><td><code>langchain-openai</code> <code>1.6.7</code> · <code>langchain-anthropic</code> <code>1.7.5</code> · <code>langchain-google-genai</code> <code>4.4.0</code></td><td>mesmos números não valem em JS</td></tr>
+          <tr><td>JS/TS</td><td><code>@langchain/langgraph</code> <code>1.4.18</code> · <code>langchain</code> <code>1.5.14</code> · <code>@langchain/core</code> <code>1.2.13</code></td><td>sem port de <code>langchain.mcp</code>: use <code>@langchain/mcp-adapters</code> <code>1.1.4</code></td></tr>
+          <tr><td>Modelos nos exemplos</td><td><code>gpt-6.1-sol</code> · <code>claude-sonnet-5-5</code> · <code>gemini-3.8-flash</code></td><td>string provider:model; Google: <code>google_genai:gemini-3.8-flash</code></td></tr>
+          <tr><td>Deploy</td><td>LangSmith Deployment; runtime = Agent Server</td><td>Cloud (Plus+), Hybrid, Self-Hosted (Enterprise), Standalone</td></tr>
+        </tbody>
+      </table></div>
+      <h3>3. Faça / Não faça</h3>
+      <ul>
+        <li>Não use <code>from langgraph.prebuilt import create_react_agent</code> (deprecated, <code>LangGraphDeprecatedSinceV10</code>) → <code>from langchain.agents import create_agent</code>; <code>prompt=</code> vira <code>system_prompt=</code>; hooks viram middleware; <code>tools=</code> não aceita <code>ToolNode</code>; <code>state_schema</code> só <code>TypedDict</code> (<a href="#ref-create-agent">create_agent</a>).</li>
+        <li>Não use <code>langgraph-supervisor</code> (repo arquivado) nem <code>langgraph-swarm</code> (legado de baixa manutenção) → supervisor com subagents em <code>@tool</code>; handoff com <code>Command(goto=..., graph=Command.PARENT, update=...)</code> (<a href="#s-multi-agent">§24</a>).</li>
+        <li>MCP em Python: <code>langchain.mcp.MCPAdapter</code>, não <code>langchain-mcp-adapters</code> (arquivado; <code>mcp&lt;2</code>). Uma <code>target</code> string precisa ser URL http(s), senão <code>ValueError</code>; servidor local = <code>Path("server.py")</code>.</li>
+        <li>OpenAI: <code>ChatOpenAI(model="gpt-6.1-sol", use_responses_api=True)</code>. A string <code>"openai:gpt-6.1-sol"</code> sem gatilho cai em Chat Completions, que em GPT-6 não aceita tools.</li>
+        <li>Claude Opus 5.5: não force <code>tool_choice</code> (inclui <code>response_format=ToolStrategy(...)</code>, que usa <code>tool_choice="any"</code>) e não passe <code>thinking={"type": "disabled"}</code>: <code>400</code> (issue #40777, aberta em 2026-09-30).</li>
+        <li><code>langchain-google-genai</code> não expõe a Interactions API: para <code>client.interactions</code> use <code>google-genai</code> direto.</li>
+        <li>HITL: exige checkpointer + <code>thread_id</code>; retome só com <code>Command(resume=...)</code>; não envolva <code>interrupt()</code> em <code>try/except Exception</code>; efeitos antes do <code>interrupt()</code> reexecutam no resume (<a href="#s-hitl">§19</a>). <code>interrupt_before</code>/<code>interrupt_after</code> são breakpoints de debug.</li>
+        <li>Streaming: <code>stream(..., version="v2")</code> emite <code>{"type","ns","data"}</code>; <code>stream_events(..., version="v3")</code> é o driver recomendado em código novo e não é o mesmo <code>version</code> (<a href="#s-streaming">§17</a>). <code>ProtocolEvent.eventId</code> virou <code>event_id</code> na 1.2.3.</li>
+        <li><code>context_schema</code> substituiu <code>config_schema</code> (&gt;=0.6.0); <code>recursion_limit</code> default 1000 (&gt;=1.0.6); <code>TimeoutPolicy</code>/<code>RunControl</code> e <code>error_handler=</code> por nó exigem <code>langgraph&gt;=1.2</code> (<a href="#s-cache-retry-timeout">§15</a>).</li>
+        <li><code>AgentExecutor</code>/<code>initialize_agent</code>/chains legadas → <code>langchain-classic</code>. Pickle no checkpointer é opt-in: não habilite com dados não confiáveis.</li>
+      </ul>
+      <h3>4. Onde está cada coisa</h3>
+      <p><a href="#s-install">Instalação e modelos</a> · <a href="#s-stategraph">StateGraph</a> · <a href="#s-reducers">Reducers</a> · <a href="#s-command">Command</a> · <a href="#s-send">Send</a> · <a href="#s-persistence">Checkpointers</a> · <a href="#s-hitl">HITL</a> · <a href="#s-streaming">Streaming</a> · <a href="#s-multi-agent">Multi-agent</a> · <a href="#s-durable">Durable execution</a> · <a href="#ref-create-agent">create_agent</a> · <a href="#s-deploy">Deployment</a> · <a href="#s-migrations">Migrações de grafo</a> · <a href="#legado">Legado</a></p>
+      <h3>5. Incertezas (não trate como fato)</h3>
+      <ul>
+        <li><span class="pill partial">UNVERIFIED</span> Sunset formal do <code>langgraph-swarm</code> (repo não arquivado; ver <a href="#legado">Legado</a>). A regra "LangGraph Platform → LangSmith Deployment / LangGraph Server → Agent Server" não tem frase oficial "formerly known as": a doc usa os nomes novos.</li>
+        <li><span class="pill partial">UNVERIFIED</span> O advisory <code>CVE-2026-27022</code> é do pacote npm de Redis; o equivalente Python não foi reverificado (<a href="#s-install">§2</a>). Paridade de <code>stream_events</code> v3 em JS não foi confirmada.</li>
+      </ul>
+    </section>
+
     <section id="sobre">
-      <h2>Sobre este guia</h2>
+      <h2>Sobre este guia<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <p>
         Este guia é uma <strong>conversão fiel</strong> da documentação oficial pública
         do LangGraph em
         <a href="https://docs.langchain.com/oss/python/langgraph/overview" target="_blank" rel="noopener">docs.langchain.com/oss/python/langgraph</a>,
-        complementada pelos pacotes prebuilt <code>langgraph-supervisor</code> e
-        <code>langgraph-swarm</code> e pela referência de API em
+        complementada pela referência de API em
         <a href="https://reference.langchain.com/python/langgraph/" target="_blank" rel="noopener">reference.langchain.com/python/langgraph</a>.
+        Multi-agente usa <code>langchain.agents.create_agent</code>; o prebuilt
+        <code>create_react_agent</code> e os pacotes <code>langgraph-supervisor</code>/<code>langgraph-swarm</code>
+        estão em <a href="#legado">Legado e migração</a>.
       </p>
       <p>
         A <strong>Parte A</strong> apresenta os conceitos em 26 capítulos, na ordem de
@@ -431,7 +493,32 @@
         <code>context_schema</code> substituiu <code>config_schema</code> em
         <code>&gt;= 0.6.0</code>. O default da <code>recursion_limit</code> passou a ser
         <strong>1000</strong> em <code>&gt;= 1.0.6</code>.
-        <br><span class="small"><strong>Atualização 2026-07-12:</strong> último PyPI <code>langgraph 1.2.9</code> (2026-07-10; deps: <code>langchain-core &gt;=1.4.7,&lt;2</code>, <code>langgraph-checkpoint &gt;=4.1,&lt;5</code>, <code>langgraph-prebuilt &gt;=1.1,&lt;1.2</code>). As <code>1.2.7</code>→<code>1.2.9</code> são bugfix sobre a <code>1.2.6</code>, sem mudança de superfície pública; seguem na linha <strong>1.x</strong> (compromisso de estabilidade até a 2.0). <strong>Ressalva:</strong> "estável" não significa zero mudanças no histórico da série — a <code>1.2.3</code> foi <em>yanked</em> (regressão de merge) e depois corrigida na <code>1.2.6</code>, e renomeou <code>ProtocolEvent.eventId</code>→<code>event_id</code> (afeta quem consome o streaming v3/protocolo beta). Fixe uma versão específica testada (ex.: <code>==1.2.9</code>), não apenas <code>&gt;=1.2</code>. Novidades 1.2.x além das acima: <code>error_handler=</code> por nó (recebe <code>NodeError</code>, retorna <code>Command</code> para compensação/reroteamento — padrão Saga; Python-only), <code>interrupt_mode</code> + predicado <code>when</code> no <code>HumanInTheLoopMiddleware</code>, e event streaming <code>v2</code>/<code>v3</code> (beta, projeções tipadas por canal). Todos opt-in e retrocompatíveis. Resumo 1.2.2→1.2.4: fix de IDs estáveis para checkpoints com <code>DeltaChannel</code> (1.2.2); streaming <code>v3</code> no <code>RemoteGraph</code> e rename <code>ProtocolEvent.eventId</code> → <code>event_id</code> (1.2.3 — relevante para quem consome eventos do protocolo beta v3); <code>ensure_config</code> agora faz merge de <code>callbacks</code>/<code>tags</code>/<code>metadata</code> (1.2.3); fix de compatibilidade <code>_on_started</code> (1.2.4); merge de <code>lc_versions</code> nos metadados de config e fix de <code>updateState</code>/<code>DeltaChannel</code> em thread vazia (1.2.5 — só bugfix); nested-subgraph herda <code>checkpoint_ns</code> do pai (regressão da 1.2.3), cancelamento de subgraphs em abort de stream v3 e <code>Tornado</code>→6.5.6 (1.2.6 — só bugfix). Sem mudanças nas superfícies públicas de <code>StateGraph</code>/<code>interrupt</code>/<code>Command</code>.</span>
+        <br><span class="small">A linha <strong>1.2</strong> (desde 2026-05) trouxe <code>error_handler=</code> por nó
+        (recebe <code>NodeError</code> e retorna <code>Command</code> para compensação/reroteamento — padrão Saga),
+        <code>set_node_defaults()</code>, <code>trace_policy</code> em <code>add_node</code> (1.2.11),
+        <code>stream_events(version="v3")</code> com projeções tipadas e <code>response_schema</code> em
+        <code>interrupt()</code> (1.2.12). Todos opt-in; a linha segue <strong>1.x</strong> (sem 1.3 nem 2.x).
+        "Estável" não significa zero mudanças: <code>ProtocolEvent.eventId</code> virou <code>event_id</code> na 1.2.3
+        (afeta quem consome o protocolo de streaming v3). Fixe uma versão testada, não apenas <code>&gt;=1.2</code>.</span>
+        <br><span class="small"><strong>Segurança:</strong> fixe <code>langgraph-checkpoint&gt;=4.1.1</code> (atual 4.2.0) e
+        <code>langgraph-checkpoint-postgres</code>/<code>-sqlite</code> <code>&gt;=3.1.1</code> (postgres corrente 3.1.2);
+        detalhes dos advisories em <a href="#s-install">§2</a>.</span>
+      </div>
+      <div class="callout tip">
+        <strong>Versões estáveis (verificado em 2026-09-30, PyPI JSON e npm registry).</strong>
+        Python: <code>langgraph==1.2.12</code> (2026-09-21), <code>langchain==1.4.3</code> (2026-09-28) e
+        <strong><code>langchain-core==1.6.6</code></strong> (2026-09-29) — valor corrente único de
+        <code>langchain-core</code> na coleção. Pisos: <code>langgraph 1.2.12</code> exige
+        <code>langchain-core&gt;=1.4.7,&lt;2</code>; <code>langchain 1.4.3</code> exige
+        <code>langgraph&gt;=1.2.11,&lt;1.3</code> e <code>langchain-core&gt;=1.6.3,&lt;2</code>.
+        JavaScript/TypeScript: <code>@langchain/langgraph@1.4.18</code>, <code>langchain@1.5.14</code> e
+        <code>@langchain/core@1.2.13</code>; as tags prerelease do npm
+        (<code>alpha</code>/<code>next</code>/<code>rc</code>/<code>dev</code>) ficam fora do pin de produção.
+        Os números <strong>não são paralelos</strong> entre Python e JS.
+        <a href="https://github.com/langchain-ai/langgraph/releases/tag/1.2.12" target="_blank" rel="noopener">LangGraph Python 1.2.12</a> ·
+        <a href="https://github.com/langchain-ai/langchain/releases" target="_blank" rel="noopener">LangChain Python</a> ·
+        <a href="https://github.com/langchain-ai/langgraphjs/releases" target="_blank" rel="noopener">LangGraph JS</a> ·
+        <a href="https://github.com/langchain-ai/langchainjs/releases" target="_blank" rel="noopener">LangChain JS</a>.
       </div>
     </section>
 
@@ -455,16 +542,34 @@
             <tr><td>Choosing APIs</td><td><a href="https://docs.langchain.com/oss/python/langgraph/choosing-apis" target="_blank" rel="noopener">docs.langchain.com/.../langgraph/choosing-apis</a></td></tr>
             <tr><td>API reference</td><td><a href="https://reference.langchain.com/python/langgraph/" target="_blank" rel="noopener">reference.langchain.com/python/langgraph/</a></td></tr>
             <tr><td>Repositório GitHub</td><td><a href="https://github.com/langchain-ai/langgraph" target="_blank" rel="noopener">github.com/langchain-ai/langgraph</a></td></tr>
-            <tr><td>Supervisor prebuilt</td><td><a href="https://github.com/langchain-ai/langgraph-supervisor-py" target="_blank" rel="noopener">github.com/langchain-ai/langgraph-supervisor-py</a></td></tr>
-            <tr><td>Swarm prebuilt</td><td><a href="https://github.com/langchain-ai/langgraph-swarm-py" target="_blank" rel="noopener">github.com/langchain-ai/langgraph-swarm-py</a></td></tr>
+            <tr><td>Supervisor via tools (LangChain)</td><td><a href="https://docs.langchain.com/oss/python/langchain/supervisor" target="_blank" rel="noopener">docs.langchain.com/.../langchain/supervisor</a></td></tr>
+            <tr><td><code>create_agent</code> (API reference)</td><td><a href="https://reference.langchain.com/python/langchain/agents/factory/create_agent" target="_blank" rel="noopener">reference.langchain.com/.../agents/factory/create_agent</a></td></tr>
           </tbody>
         </table>
       </div>
       <p>
-        Última verificação contra estas fontes: <strong>2026-06-10</strong>.
+        Última verificação contra estas fontes: <strong>2026-09-30</strong>.
         Sempre que houver divergência entre este guia e a documentação oficial em
         produção, a documentação oficial é a fonte autoritativa.
       </p>
+      <div class="callout info">
+        <strong>Portas Python e JS/TS.</strong> Esta página exemplifica Python; a
+        tabela abaixo fixa apenas o mapeamento de nomes e versões verificados no
+        corte, sem sugerir paridade de APIs. Para JS/TS, consulte a documentação
+        oficial correspondente antes de copiar um snippet.
+        <div class="table-wrap" style="margin-top:10px"><table>
+          <thead><tr><th>Superfície</th><th>Python</th><th>JavaScript/TypeScript</th></tr></thead>
+          <tbody>
+            <tr><td>Runtime</td><td><code>langgraph==1.2.12</code></td><td><code>@langchain/langgraph@1.4.18</code></td></tr>
+            <tr><td>Agent loop</td><td><code>langchain==1.4.3</code></td><td><code>langchain@1.5.14</code></td></tr>
+            <tr><td>Core</td><td><code>langchain-core==1.6.6</code></td><td><code>@langchain/core@1.2.13</code></td></tr>
+            <tr><td>Streaming</td><td><code>stream_mode</code> e <code>version="v2"</code>; event streaming <code>version="v3"</code></td><td><code>streamMode</code> e <code>version: "v2"</code>; não presuma disponibilidade do driver Python v3</td></tr>
+            <tr><td>HITL</td><td><code>interrupt(payload)</code> + <code>Command(resume=...)</code></td><td><code>interrupt(payload)</code> + <code>new Command({ resume: ... })</code></td></tr>
+          </tbody>
+        </table></div>
+        Fontes: <a href="https://docs.langchain.com/oss/python/langgraph/overview" target="_blank" rel="noopener">LangGraph Python</a> ·
+        <a href="https://docs.langchain.com/oss/javascript/langgraph/overview" target="_blank" rel="noopener">LangGraph JS</a>.
+      </div>
     </section>
 
 <section class="chapter" id="part-a-divider">
@@ -525,10 +630,15 @@
 </section>
 
 <section id="s-install">
-  <h2>2. Instalação</h2>
+  <h2>2. Instalação<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
   <pre><code class="language-bash">pip install -U langgraph
 # ou
 uv add langgraph</code></pre>
+  <pre><code class="language-bash"># Pin reproduzível verificado em 2026-09-30 (Python)
+pip install "langgraph==1.2.12" "langchain==1.4.3" "langchain-core==1.6.6"
+
+# Porta JavaScript/TypeScript equivalente
+npm install "@langchain/langgraph@1.4.18" "langchain@1.5.14" "@langchain/core@1.2.13"</code></pre>
   <p>
     Pacotes complementares conforme o uso:
   </p>
@@ -538,17 +648,73 @@ uv add langgraph</code></pre>
       <tbody>
         <tr><td><code>langgraph</code></td><td>Núcleo (StateGraph, runtime, in-memory checkpointer).</td></tr>
         <tr><td><code>langgraph-checkpoint-sqlite</code></td><td><code>SqliteSaver</code> / <code>AsyncSqliteSaver</code>.</td></tr>
-        <tr><td><code>langgraph-checkpoint-postgres</code></td><td><code>PostgresSaver</code> / <code>AsyncPostgresSaver</code>.</td></tr>
+        <tr><td><code>langgraph-checkpoint-postgres</code></td><td><code>PostgresSaver</code> / <code>AsyncPostgresSaver</code> (3.1.2).</td></tr>
         <tr><td><code>langgraph-checkpoint-redis</code></td><td><code>RedisSaver</code> / <code>AsyncRedisSaver</code> (community Redis).</td></tr>
-        <tr><td><code>langgraph-supervisor</code></td><td>Padrão supervisor multi-agent (<code>create_supervisor</code>).</td></tr>
-        <tr><td><code>langgraph-swarm</code></td><td>Padrão swarm (<code>create_swarm</code>).</td></tr>
-        <tr><td><code>langchain</code> / <code>langchain-openai</code> / <code>langchain-anthropic</code> / <code>langchain-google-genai</code></td><td>Modelos e mensagens — opcionais, mas a maior parte dos exemplos depende deles.</td></tr>
+        <tr><td><code>langchain</code></td><td><code>create_agent</code>, middleware, <code>langchain.mcp</code> (1.4.3).</td></tr>
+        <tr><td><code>langchain-openai</code> (1.6.7) · <code>langchain-anthropic</code> (1.7.5) · <code>langchain-google-genai</code> (4.4.0)</td><td>Modelos e mensagens — opcionais, mas a maior parte dos exemplos depende deles.</td></tr>
       </tbody>
     </table>
   </div>
+  <p>
+    Multi-agente: <code>from langchain.agents import create_agent</code> com workers
+    embrulhados em <code>@tool</code> (§24). Os pacotes <code>langgraph-supervisor</code> e
+    <code>langgraph-swarm</code> não são baseline — ver <a href="#legado">Legado e migração</a>.
+  </p>
+<div class="callout tip"><strong>Veja também:</strong> para integrar um plugin (skills + MCP), só uma skill ou só um servidor MCP <em>self-hosted</em> neste e nos demais frameworks (Google ADK, OpenAI Agents SDK, LangChain, LangGraph, Deep Agents, Claude Agent SDK), com matriz de suporte nativo e receitas, consulte <a href="guia_plugins_skills_mcp_frameworks.html">Plugins, Skills &amp; MCP em frameworks</a>.</div>
+  <p>
+    Para ferramentas MCP em Python, use o namespace embutido <code>langchain.mcp</code>
+    (<strong>beta</strong>, desde <code>langchain 1.4.0</code>) — instale o extra
+    <code>fastmcp</code>: <code>pip install "langchain[mcp]"</code> (puxa
+    <code>fastmcp&gt;=4.0.1,&lt;5.0.0</code>) ou <code>pip install fastmcp</code> junto de
+    um <code>langchain&gt;=1.4</code> já instalado. A classe é
+    <code>MCPAdapter</code>: usa o FastMCP para negociação de protocolo e conexão, e
+    adapta as tools MCP descobertas em tools LangChain assíncronas prontas para
+    <code>create_agent</code>.
+  </p>
+  <pre><code class="language-python">from langchain.agents import create_agent
+from langchain.mcp import MCPAdapter
+
+# target aceita: URL http(s), Path (script local via stdio), um fastmcp.Client/FastMCP
+# já construído, ClientGroup ou MCPConfig. Uma string PRECISA ser URL http(s).
+async with MCPAdapter("https://example.com/mcp") as adapter:
+    tools = await adapter.list_tools()   # cache_mode="use" (default) | "refresh" | "bypass"
+    agent = create_agent("anthropic:claude-sonnet-5-5", tools)
+    result = await agent.ainvoke({"messages": [{"role": "user", "content": "..."}]})</code></pre>
+  <div class="callout info">
+    <strong>Beta — aviso obrigatório.</strong> Importar de <code>langchain.mcp</code>
+    dispara <code>LangChainBetaWarning</code> uma vez por processo (namespace ainda em
+    mudança). Silencie com
+    <code>warnings.filterwarnings("ignore", category=LangChainBetaWarning)</code> ou
+    <code>langchain_core._api.suppress_langchain_beta_warning()</code>. Uma
+    <code>target</code> em <code>str</code> que não seja URL <code>http</code>/<code>https</code>
+    levanta <code>ValueError</code> por padrão — proteção deliberada contra strings de
+    origem externa serem lidas como caminho de arquivo local e executadas como
+    subprocesso; para servidor local use <code>Path("server.py")</code>, um transporte
+    <code>fastmcp</code> explícito ou <code>MCPConfig</code>. Elicitation
+    (servidor pedindo input a meio da chamada) é resolvida por padrão via
+    <code>interrupt()</code> do LangGraph — a menos que o cliente passado já traga seu
+    próprio handler. Fontes:
+    <a href="https://docs.langchain.com/oss/python/langchain/mcp" target="_blank" rel="noopener">MCP Python (docs, 2026-09-30)</a> ·
+    <a href="https://github.com/langchain-ai/langchain/blob/master/libs/langchain_v1/langchain/mcp/adapter.py" target="_blank" rel="noopener">langchain_v1/langchain/mcp/adapter.py</a>
+    (detalhes de <code>target</code>/<code>cache_mode</code> lidos em 2026-09-23).
+    O pacote separado <code>langchain-mcp-adapters</code> (repositório arquivado) está em
+    <a href="#legado">Legado e migração</a>. Em JavaScript/TypeScript <strong>não há</strong> port
+    de <code>langchain.mcp</code>: use <code>@langchain/mcp-adapters</code>
+    (<code>MultiServerMCPClient</code>, <code>client.getTools()</code>, 1.1.4) —
+    <a href="https://docs.langchain.com/oss/javascript/langchain/mcp" target="_blank" rel="noopener">MCP JS</a>.
+  </div>
+  <div class="callout warn"><strong>Pisos de segurança da camada de checkpoint (GitHub Security Advisories de <code>langchain-ai/langgraph</code>, lidos em 2026-09-30).</strong>
+    <ul style="margin:6px 0 0;padding-left:20px">
+      <li><code>langgraph-checkpoint</code> — <strong><code>CVE-2026-48775</code></strong> (desserialização JSON insegura ao carregar checkpoints, ≤ 4.1.0, corrigido em <strong>4.1.1</strong>) e <strong><code>CVE-2026-27794</code></strong> (RCE via pickle no <code>BaseCache</code>, &lt; 4.0.0). Piso atual: <code>&gt;=4.1.1</code> (corrente 4.2.0).</li>
+      <li><code>langgraph-checkpoint-postgres</code>/<code>-sqlite</code> — <strong><code>CVE-2026-71433</code></strong> (prefixo de namespace cruza limites de segmento nos stores, &lt; 3.1.1) → piso <strong>3.1.1</strong> (postgres corrente 3.1.2). Além disso, <code>langgraph-checkpoint-sqlite</code> — <strong><code>CVE-2025-67644</code></strong>, SQL injection pela <strong>chave</strong> do filtro de metadados em <code>list</code>/<code>search</code> (≤ 3.0.0, corrigido na <strong>3.0.1</strong>): relevante se você repassa chaves de filtro de origem externa.</li>
+      <li><code>langgraph</code> (núcleo) — <strong><code>CVE-2026-28277</code></strong>, desserialização msgpack que reconstrói objetos Python, ≤ 1.0.9, corrigido na <strong>1.0.10</strong>; o pin atual (1.2.12) já cobre. Trate mesmo assim o store de checkpoint como superfície confiável (o vetor exige escrita no armazenamento de persistência).</li>
+      <li><code>langgraph-checkpoint-redis</code> — <strong><code>CVE-2026-27022</code></strong>, RediSearch query injection; o advisory é do pacote <strong>npm</strong> <code>@langchain/langgraph-checkpoint-redis</code> (corrigido na 1.0.2) — se você usa o equivalente Python, confira o advisory do seu pacote (não reverificado em 2026-09-30).</li>
+    </ul>
+    Detalhes de vetor e pré-condição em
+    <a href="guia_operacao_seguranca_evals.html">guia de operação e segurança</a>. Advisories da camada de servidor (<code>langgraph-api</code>, <code>langgraph-sdk</code>) estão no capítulo de autenticação (§33).</div>
   <p>O overview oficial não declara versão mínima de Python; na prática, o pacote suporta Python 3.10+.</p>
 
-  <h3>Política de integração de modelos (chat models)</h3>
+  <h3>Política de integração de modelos (chat models)<span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
   <p>
     O LangGraph não fala com provedores diretamente — ele orquestra
     <em>chat models</em> do LangChain. Como cada classe roteia para uma API
@@ -558,59 +724,90 @@ uv add langgraph</code></pre>
     <table>
       <thead><tr><th>Provedor</th><th>Classe / pacote</th><th>API atingida</th></tr></thead>
       <tbody>
-        <tr><td>OpenAI</td><td><code>ChatOpenAI</code> · <code>langchain-openai</code></td><td><strong>Responses API</strong> quando <code>use_responses_api=True</code>; caso contrário, <strong>Chat Completions</strong>.</td></tr>
+        <tr><td>OpenAI</td><td><code>ChatOpenAI</code> · <code>langchain-openai</code></td><td><strong>Responses API</strong> com <code>use_responses_api=True</code> ou quando a chamada usa um gatilho (abaixo); sem eles a classe cai na API legada Chat Completions (<a href="#legado">Legado</a>).</td></tr>
         <tr><td>Anthropic</td><td><code>ChatAnthropic</code> · <code>langchain-anthropic</code></td><td>Messages API nativa da Anthropic (SDK <code>anthropic</code>) — não é wrapper.</td></tr>
-        <tr><td>Google</td><td><code>ChatGoogleGenerativeAI</code> · <code>langchain-google-genai</code></td><td>SDK consolidado <code>google-genai</code> (v4.0.0+), via <code>generateContent</code>.</td></tr>
+        <tr><td>Google</td><td><code>ChatGoogleGenerativeAI</code> · <code>langchain-google-genai</code></td><td>SDK consolidado <code>google-genai</code> (v4.0.0+), Gemini Developer API ou Gemini Enterprise Agent Platform (<code>vertexai=</code>). Sem integração com a Interactions API (abaixo).</td></tr>
       </tbody>
     </table>
   </div>
   <div class="callout warn">
     <strong>OpenAI — Responses API não é automática com string.</strong> Passar uma
-    string <code>"openai:gpt-5.5"</code> a <code>create_agent</code>/<code>create_react_agent</code>
-    cai em <strong>Chat Completions</strong>. Para garantir a Responses API (ex.: ZDR,
-    threading server-side), instancie <code>ChatOpenAI(model="gpt-5.5", use_responses_api=True)</code>
-    e passe o objeto como <code>model=</code>.
+    string <code>"openai:gpt-6.1-sol"</code> a <code>create_agent</code>
+    sem gatilho cai em <strong>Chat Completions</strong>, que para a família GPT-6 não aceita tools
+    (exceto com <code>reasoning_effort="none"</code> nos modelos que o suportam). Para garantir a Responses API
+    (ex.: ZDR, threading server-side), instancie
+    <code>ChatOpenAI(model="gpt-6.1-sol", use_responses_api=True)</code> e passe o objeto como
+    <code>model=</code>.
   </div>
   <pre><code class="language-python">from langchain_openai import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
 from langchain_google_genai import ChatGoogleGenerativeAI
 
-# OpenAI — Responses API (NUNCA Chat Completions): use a flag explícita.
-openai_llm = ChatOpenAI(model="gpt-5.5", use_responses_api=True)
+# OpenAI — Responses API: use a flag explícita.
+openai_llm = ChatOpenAI(model="gpt-6.1-sol", use_responses_api=True)
 
 # Anthropic — SDK nativo (Messages API):
-anthropic_llm = ChatAnthropic(model="claude-sonnet-4-6")
+anthropic_llm = ChatAnthropic(model="claude-sonnet-5-5")
 
 # Google — SDK google-genai (>= 4.0); em strings provider:model use "google_genai:"
-google_llm = ChatGoogleGenerativeAI(model="gemini-3.5-flash")  # str: "google_genai:gemini-3.5-flash"
+google_llm = ChatGoogleGenerativeAI(model="gemini-3.8-flash")  # str: "google_genai:gemini-3.8-flash"
 
 # (opcional) threading server-side por response id no OpenAI:
-openai_llm = ChatOpenAI(model="gpt-5.4-mini", use_previous_response_id=True)</code></pre>
+openai_llm = ChatOpenAI(model="gpt-6-luna", use_previous_response_id=True)</code></pre>
   <p>
     O roteamento para a Responses API também é <strong>automático</strong> (sem a
     flag) quando o modelo usa: (a) <em>built-in tools</em> (<code>web_search</code>,
     <code>file_search</code>, image generation, computer use, code interpreter,
-    remote MCP), (b) o parâmetro <code>reasoning={"effort": ..., "summary": ...}</code>,
-    ou (c) <code>previous_response_id</code> na invocação. Não existe flag
+    remote MCP), (b) o parâmetro <code>reasoning</code> (ou o parâmetro padrão
+    <code>reasoning_effort</code>), ou (c) <code>previous_response_id</code> na invocação. Não existe flag
     <code>output_version</code> nem um ID de modelo que "force" Responses — o caminho
-    é <code>use_responses_api=True</code> ou um desses gatilhos.
+    é <code>use_responses_api=True</code> ou um desses gatilhos. Desde
+    <code>langchain-openai 1.6.3</code> a classe infere <code>use_responses_api=True</code> já na
+    <strong>inicialização</strong> quando as configurações da instância implicam a Responses API
+    (override explícito é respeitado), e <code>gpt-6-astra</code> roteia sozinho para ela em
+    <code>bind_tools</code>.
   </p>
   <pre><code class="language-python"># Estes já roteiam para a Responses API automaticamente:
-llm        = ChatOpenAI(model="gpt-5.5", reasoning={"effort": "medium", "summary": "auto"})
-llm_tools  = ChatOpenAI(model="gpt-5.4-mini").bind_tools([{"type": "web_search_preview"}])</code></pre>
+llm        = ChatOpenAI(model="gpt-6.1-sol", reasoning_effort="medium")
+llm_tools  = ChatOpenAI(model="gpt-6-luna").bind_tools([{"type": "web_search"}])</code></pre>
+  <div class="callout danger">
+    <strong>Anthropic — Opus 5.5: <code>bind_tools</code> ainda envia configuração que a
+    API rejeita (issue aberta em 2026-09-30).</strong> Desde a <code>langchain-anthropic 1.7.3</code> o
+    <code>with_structured_output()</code> roteia para <code>method="json_schema"</code> em Opus 5.5/Fable, a
+    <code>1.7.4</code> acrescentou perfis para Opus 5.5 e a <code>1.7.5</code> (2026-09-29) traz compatibilidade
+    com Sonnet 5.5 — mas a issue
+    <a href="https://github.com/langchain-ai/langchain/issues/40777" target="_blank" rel="noopener">#40777</a>
+    segue <strong>aberta</strong>. Dois sintomas relatados:
+    <ul style="margin:6px 0 0;padding-left:20px">
+      <li><code>model.bind_tools([...], tool_choice="any")</code> preserva
+        <code>{"type": "any"}</code> no payload — Opus 5.5 rejeita tool_choice forçado
+        (<code>400</code>). <code>create_agent(..., response_format=ToolStrategy(...))</code>
+        usa <code>tool_choice="any"</code> internamente, então esse caminho também é
+        atingido.</li>
+      <li><code>ChatAnthropic(model="claude-opus-5-5", thinking={"type": "disabled"})</code>
+        é aceito <strong>localmente</strong>, mas Opus 5.5 exige thinking adaptativo em
+        <strong>todo</strong> nível de effort: a requisição falha no lado da Anthropic (<code>400</code>).</li>
+    </ul>
+    Uma chamada simples <code>ChatAnthropic(model="claude-opus-5-5")</code> sem
+    tool_choice forçado e sem <code>thinking</code> explícito funciona. Até
+    um patch corrigir isso, evite forçar <code>tool_choice</code> com Opus 5.5 e não
+    passe <code>thinking={"type": "disabled"}</code>. Ver o
+    <a href="guia_claude_api.html">guia da API Claude</a> para as restrições por modelo.
+    Fonte: <a href="https://github.com/langchain-ai/langchain/issues/40777" target="_blank" rel="noopener">issue #40777</a> e
+    <a href="https://github.com/langchain-ai/langchain/releases" target="_blank" rel="noopener">releases do langchain-anthropic</a> — lidos em 2026-09-30.
+  </div>
   <div class="callout warn">
     <strong>Gemini Interactions API:</strong> a Interactions API do Gemini (endpoint
     <code>/interactions</code>, stateful/agêntica) <strong>não</strong> tem integração
-    nativa com LangChain/LangGraph/Deep Agents (maio/2026).
-    <code>ChatGoogleGenerativeAI</code> usa <code>generateContent</code> via
-    <code>google-genai</code>; recursos exclusivos da Interactions API
-    (histórico server-side via <code>previous_interaction_id</code>, agentes
-    gerenciados) <strong>não</strong> são expostos. Não existe
-    <code>ChatGoogleGenerativeAI(use_interactions_api=...)</code>. Para usá-la hoje,
-    chame o SDK <code>google-genai</code> diretamente — a Interactions API é coberta
-    no guia dedicado <em>Gemini Interactions API</em>.
+    nativa com LangChain/LangGraph/Deep Agents: nem a documentação de
+    <code>ChatGoogleGenerativeAI</code> nem os releases 4.2.6–4.4.0 do <code>langchain-google-genai</code>
+    a mencionam, e não existe <code>use_interactions_api=</code> na classe. Recursos exclusivos
+    da Interactions API (histórico server-side via <code>previous_interaction_id</code>, agentes
+    gerenciados) <strong>não</strong> são expostos; o histórico vive no estado do grafo. Para usá-la,
+    chame o SDK <code>google-genai</code> diretamente (<code>client.interactions</code>) — ver o guia
+    dedicado <a href="guia_gemini_interactions_api.html">Gemini Interactions API</a>.
   </div>
-  <div class="source-link">Fontes:
+  <div class="source-link">Fontes (lidas 2026-09-30):
     <a href="https://docs.langchain.com/oss/python/integrations/chat/openai" target="_blank" rel="noopener">integrations/chat/openai</a>,
     <a href="https://docs.langchain.com/oss/python/integrations/chat/anthropic" target="_blank" rel="noopener">anthropic</a>,
     <a href="https://docs.langchain.com/oss/python/integrations/chat/google_generative_ai" target="_blank" rel="noopener">google_generative_ai</a>.
@@ -847,18 +1044,35 @@ class GraphState(TypedDict):
 
 class State(MessagesState):
     documents: list[str]   # estende com campos extras</code></pre>
-  <h3>Formato OpenAI</h3>
+  <h3>Formato OpenAI<span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
   <p>
     <code>add_messages(format="langchain-openai")</code> reformata o conteúdo em
     blocos <code>text</code>/<code>image_url</code> e converte respostas de
     ferramenta em <code>ToolMessage</code>. Requer
     <code>langchain-core &gt;= 0.3.11</code> (piso mínimo do recurso). <strong>Atenção:</strong> a linha atual de
-    <code>langchain-core</code> é a <strong>1.x</strong> (último <code>1.4.9</code>) — a virada 0.3.x→1.0 trouxe
+    <code>langchain-core</code> é a <strong>1.x</strong> — <code>1.6.6</code>
+    <span class="pill ok">PyPI JSON, 2026-09-30</span>, valor corrente único desta coleção. A virada 0.3.x→1.0 trouxe
     mudanças incompatíveis (ex.: <code>AIMessage</code> como tipo concreto de retorno, <code>.text()</code> virou
-    <em>property</em>, Python 3.9 removido); o 0.3.x está em <em>maintenance mode</em> até dez/2026. Pacotes
-    relacionados na 1.x: <code>langchain</code> 1.3.13, <code>langchain-anthropic</code> 1.4.8,
-    <code>langchain-google-genai</code> 4.2.7 (requer <code>langchain-core&gt;=1.4.7</code>).
+    <em>property</em>, Python 3.9 removido); o 0.3.x está em <em>maintenance mode</em> até dez/2026.
+    Pacotes relacionados na 1.x: <code>langchain</code> <strong>1.4.3</strong>,
+    <code>langchain-openai</code> <strong>1.6.7</strong>, <code>langchain-anthropic</code> <strong>1.7.5</strong> e
+    <code>langchain-google-genai</code> <strong>4.4.0</strong> (exige <code>google-genai&gt;=2.20.0,&lt;3.0.0</code>).
+    Mantenha o conjunto resolvido no lockfile: atualizar um pacote de integração pode exigir
+    a linha atual de <code>langchain-core</code>. LangChain e LangGraph estão <strong>GA (1.0) desde 2025-10-22</strong>.
+    <strong>Piso de segurança do <code>langchain-core</code>:</strong> a
+    <code>CVE-2025-68664</code> (crítica) explora <em>serialization injection</em> em
+    <code>dumps()</code>/<code>dumpd()</code> — a chave <code>lc</code>, que o LangChain usa para marcar objeto
+    serializado, não era escapada, então dado de usuário com essa estrutura era tratado como objeto legítimo no
+    <code>loads</code>, abrindo extração de segredo. Corrigida em <strong>1.2.5</strong> <em>e</em>
+    <strong>0.3.81</strong>; qualquer <code>&gt;=1.2.5</code> serve, e o pin atual (1.6.6) já cobre.
   </p>
+  <div class="callout warn">
+    <strong>Divergência Python × JS:</strong> a numeração dos pacotes deixou de ser
+    travada entre ecossistemas. O <code>langgraph</code> (Python) está na
+    <strong>1.2.12</strong> enquanto o <code>@langchain/langgraph</code> (JS/TS) está na
+    <strong>1.4.18</strong> (<code>langchain</code> npm em <code>1.5.14</code>). Não assuma
+    paridade de minor entre as duas linhas ao consultar changelogs.
+  </div>
 </section>
 
 <section id="s-nodes">
@@ -1004,7 +1218,7 @@ def node_a(state: State, runtime: Runtime[ContextSchema]):
     <code>runtime.execution_info</code> expõe <code>thread_id</code>,
     <code>run_id</code>, <code>checkpoint_id</code>, <code>checkpoint_ns</code>,
     <code>task_id</code>, <code>node_attempt</code>,
-    <code>node_first_attempt_time</code>. Em LangGraph Server,
+    <code>node_first_attempt_time</code>. No Agent Server,
     <code>runtime.server_info</code> traz <code>assistant_id</code>,
     <code>graph_id</code> e <code>user</code>.
   </p>
@@ -1118,6 +1332,21 @@ graph = builder.compile(cache=InMemoryCache())</code></pre>
     hash do input) e <code>ttl</code> (segundos; sem TTL = nunca expira). Hits
     aparecem em streaming com <code>'__metadata__': {'cached': True}</code>.
   </p>
+  <div class="callout danger">
+    <strong>Segurança — CVE-2026-27794 (GHSA-mhr3-j7m5-c7c9, CVSS 6.6):</strong>
+    antes da <code>4.0.0</code>, o <code>BaseCache</code> usava
+    <code>JsonPlusSerializer(pickle_fallback=True)</code>; se a serialização msgpack
+    falha, o valor cacheado é lido com <code>pickle.loads(...)</code>, permitindo
+    <strong>RCE</strong> caso um atacante consiga escrever no backend de cache (ex.:
+    Redis exposto/fracamente autenticado, cache multi-tenant compartilhado, arquivo
+    SQLite gravável). A exploração exige que o app (a) configure um backend de cache,
+    (b) coloque um nó sob <code>CachePolicy</code> e (c) haja escrita não confiável
+    nesse backend — caching é opt-in, não ligado por default. <strong>Fixe
+    <code>langgraph-checkpoint&gt;=4.0.0</code></strong> (que passa a usar
+    <code>pickle_fallback=False</code>) e nunca exponha o backend de cache a escritores
+    não confiáveis.
+    <div class="source-link">Fonte: <a href="https://github.com/langchain-ai/langgraph/security/advisories/GHSA-mhr3-j7m5-c7c9" target="_blank" rel="noopener">GHSA-mhr3-j7m5-c7c9</a></div>
+  </div>
   <h3>Retry policy</h3>
   <pre><code class="language-python">from langgraph.types import RetryPolicy
 import sqlite3
@@ -1329,11 +1558,15 @@ async def generate_joke(state: State, writer: StreamWriter):
 
   <h3>Event streaming (<code>stream_events</code> / <code>version="v3"</code>) <span class="pill ok">recomendado</span></h3>
   <div class="callout tip">
-    <strong>API recomendada para código novo.</strong>
+    <strong>API recomendada para código novo</strong> — inclusive como
+    <strong>driver HITL</strong>.
     <code>graph.stream_events(...)</code> / <code>graph.astream_events(..., version="v3")</code>
     substitui o antigo <code>astream_events(..., version="v2")</code> com
     <strong>projeções tipadas</strong> sobre o fluxo de eventos, em vez de um dict
-    cru por evento.
+    cru por evento. Em HITL, leia <code>stream.interrupted</code> /
+    <code>stream.interrupts</code> e retome <strong>somente</strong> com
+    <code>Command(resume=...)</code> — não passe <code>Command(update=...)</code>
+    como input de resume. Ver <a href="#s-hitl">§19</a>.
   </div>
   <div class="callout warn">
     Não confunda esta <code>version="v3"</code> (específica de
@@ -1521,6 +1754,17 @@ print(snapshot.tasks)            # tasks pendentes do super-step
     aguarda <em>indefinidamente</em> o <code>Command(resume=...)</code>. Requer
     checkpointer e <code>thread_id</code>.
   </p>
+  <div class="callout tip">
+    <strong>Driver HITL recomendado.</strong>
+    O caminho atual é <code>graph.stream_events(..., version="v3")</code>
+    (projeções <code>stream.interrupted</code> + <code>stream.interrupts</code>) e
+    retomar <strong>somente</strong> com <code>Command(resume=...)</code>.
+    <code>invoke()</code> + <code>__interrupt__</code> continua funcionando.
+    Não passe <code>Command(update=...)</code> como input de resume.
+    <code>interrupt_before</code>/<code>interrupt_after</code> estáticos são
+    breakpoints de debug, não HITL. Ver
+    <a href="#s-streaming">§17 event streaming v3</a>.
+  </div>
   <pre><code class="language-python">from langgraph.types import Command, interrupt
 from langgraph.checkpoint.memory import InMemorySaver</code></pre>
   <h3>Gotchas críticos</h3>
@@ -1876,26 +2120,79 @@ graph.invoke({"urls": ["https://www.example.com"]}, config)</code></pre>
 </section>
 
 <section id="s-multi-agent">
-  <h2>24. Multi-agent (supervisor &amp; swarm)</h2>
+  <h2>24. Multi-agent (supervisor via tools &amp; handoffs)<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
   <p>
-    LangGraph oferece dois pacotes prebuilt — <code>langgraph-supervisor</code> e
-    <code>langgraph-swarm</code> — além do primitivo
-    <code>Command(goto=..., graph=Command.PARENT, update=...)</code> que viabiliza
-    qualquer padrão custom.
+    O caminho oficial para multi-agente é <code>langchain.agents.create_agent</code> com
+    especialistas embrulhados em <code>@tool</code> (supervisor), ou o primitivo
+    <code>Command(goto=..., graph=Command.PARENT, update=...)</code> quando o controle deve
+    passar de um agente para outro (handoff). Os pacotes prebuilt
+    <code>langgraph-supervisor</code> e <code>langgraph-swarm</code> estão em
+    <a href="#legado">Legado e migração</a>.
   </p>
   <h3>Padrões</h3>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Padrão</th><th>Resumo</th></tr></thead>
       <tbody>
-        <tr><td>Supervisor</td><td>LLM central roteia para subagents especializados via tool calls</td></tr>
-        <tr><td>Swarm</td><td>Peer-to-peer; agents transferem controle entre si; sistema lembra o último active agent</td></tr>
+        <tr><td>Supervisor</td><td>LLM central roteia para subagents especializados via tool calls e retoma o controle</td></tr>
+        <tr><td>Handoff (swarm)</td><td>Peer-to-peer; agents transferem controle entre si; o sistema lembra o último active agent (via estado + checkpointer)</td></tr>
         <tr><td>Network</td><td>Comunicação many-to-many</td></tr>
         <tr><td>Hierarchical</td><td>Supervisores aninhados (multi-team)</td></tr>
         <tr><td>Custom workflow</td><td><code>StateGraph</code> manual com handoffs via <code>Command</code></td></tr>
       </tbody>
     </table>
   </div>
+  <h3>Supervisor com subagents em <code>@tool</code></h3>
+  <pre><code class="language-python">from langchain.agents import create_agent
+from langchain.tools import tool
+from langgraph.checkpoint.memory import InMemorySaver
+from langchain_openai import ChatOpenAI
+
+model = ChatOpenAI(model="gpt-6.1-sol", use_responses_api=True)
+
+def add(a: float, b: float) -&gt; float:
+    """Add two numbers."""
+    return a + b
+
+def web_search(q: str) -&gt; str:
+    """Search the web."""
+    return "..."
+
+math_agent = create_agent(model, tools=[add], system_prompt="You are a math expert.")
+research_agent = create_agent(model, tools=[web_search],
+                              system_prompt="You are a world-class researcher.")
+
+@tool
+def ask_math(request: str) -&gt; str:
+    """Delegate arithmetic to the math expert."""
+    result = math_agent.invoke({"messages": [{"role": "user", "content": request}]})
+    return result["messages"][-1].text          # só a resposta final volta ao supervisor
+
+@tool
+def ask_research(request: str) -&gt; str:
+    """Delegate fact-finding to the research expert."""
+    result = research_agent.invoke({"messages": [{"role": "user", "content": request}]})
+    return result["messages"][-1].text
+
+supervisor = create_agent(
+    model,
+    tools=[ask_math, ask_research],
+    system_prompt="You are a team supervisor managing a research expert and a math expert.",
+    checkpointer=InMemorySaver(),               # checkpointer só no nível do supervisor
+)
+result = supervisor.invoke(
+    {"messages": [{"role": "user", "content": "..."}]},
+    config={"configurable": {"thread_id": "1"}},
+)</code></pre>
+  <p>
+    O wrapper decide o que volta ao supervisor: a resposta final (acima) ou o histórico completo
+    do subagent. Um <code>interrupt()</code> dentro de um subagent chamado por tool propaga até o
+    grafo mais externo, desde que só ele tenha checkpointer e receba <code>thread_id</code>. Para
+    hierarquias, achate em um supervisor com uma tool por agente-folha ou embrulhe supervisores
+    intermediários como tools do topo. Fonte:
+    <a href="https://docs.langchain.com/oss/python/langchain/supervisor" target="_blank" rel="noopener">langchain/supervisor</a> ·
+    <a href="https://docs.langchain.com/oss/python/migrate/langgraph-supervisor" target="_blank" rel="noopener">migrate/langgraph-supervisor</a> (2026-09-30).
+  </p>
   <h3>Handoff tool via <code>Command</code> (padrão canônico)</h3>
   <pre><code class="language-python">from typing import Annotated
 from langchain_core.tools import tool, InjectedToolCallId
@@ -1916,83 +2213,11 @@ def transfer_to_bob(
         graph=Command.PARENT,
         update={"messages": state["messages"] + [msg], "active_agent": "Bob"},
     )</code></pre>
-  <h3>Supervisor</h3>
-  <pre><code class="language-bash">pip install langgraph-supervisor</code></pre>
-  <pre><code class="language-python">from langchain_openai import ChatOpenAI
-from langgraph_supervisor import create_supervisor, create_handoff_tool
-from langgraph.prebuilt import create_react_agent
-from langgraph.checkpoint.memory import InMemorySaver
-
-model = ChatOpenAI(model="gpt-5.5", use_responses_api=True)
-
-def add(a: float, b: float) -&gt; float: return a + b
-def web_search(q: str) -&gt; str: return "..."
-
-math_agent = create_react_agent(model=model, tools=[add],
-                                name="math_expert", prompt="You are a math expert.")
-research_agent = create_react_agent(model=model, tools=[web_search],
-                                    name="research_expert",
-                                    prompt="You are a world-class researcher.")
-
-workflow = create_supervisor(
-    [research_agent, math_agent],
-    model=model,
-    prompt="You are a team supervisor managing a research expert and a math expert.",
-    tools=[
-        create_handoff_tool(agent_name="math_expert",
-                            name="assign_to_math_expert",
-                            description="Assign task to math expert"),
-        create_handoff_tool(agent_name="research_expert",
-                            name="assign_to_research_expert",
-                            description="Assign task to research expert"),
-    ],
-    output_mode="last_message",
-)
-
-app = workflow.compile(checkpointer=InMemorySaver())
-result = app.invoke({"messages": [{"role": "user", "content": "..."}]},
-                    config={"configurable": {"thread_id": "1"}})</code></pre>
-  <p>
-    <strong>output_mode:</strong>
-    <code>"full_history"</code> (anexa todas as mensagens do subagent) ou
-    <code>"last_message"</code> (anexa apenas a resposta final).
-    Helpers extras: <code>create_forward_message_tool</code>,
-    <code>METADATA_KEY_HANDOFF_DESTINATION</code> em
-    <code>langgraph_supervisor.handoff</code>.
-  </p>
-  <h3>Swarm</h3>
-  <pre><code class="language-bash">pip install langgraph-swarm</code></pre>
-  <pre><code class="language-python">from langchain_openai import ChatOpenAI
-from langgraph.checkpoint.memory import InMemorySaver
-from langgraph_swarm import create_handoff_tool, create_swarm
-from langgraph.prebuilt import create_react_agent
-
-model = ChatOpenAI(model="gpt-5.5", use_responses_api=True)
-def add(a: int, b: int) -&gt; int: return a + b
-
-alice = create_react_agent(
-    model,
-    tools=[add, create_handoff_tool(agent_name="Bob", description="Transfer to Bob")],
-    prompt="You are Alice, an addition expert.",
-    name="Alice",
-)
-bob = create_react_agent(
-    model,
-    tools=[create_handoff_tool(agent_name="Alice", description="Transfer to Alice for math")],
-    prompt="You are Bob, you speak like a pirate.",
-    name="Bob",
-)
-
-workflow = create_swarm([alice, bob], default_active_agent="Alice")
-app = workflow.compile(checkpointer=InMemorySaver())
-
-config = {"configurable": {"thread_id": "1"}}
-app.invoke({"messages": [{"role": "user", "content": "I want to talk to Bob"}]}, config)
-app.invoke({"messages": [{"role": "user", "content": "What's 2+2?"}]}, config)
-# Bob devolve para Alice via handoff tool</code></pre>
   <div class="callout warn">
-    Sem checkpointer, o swarm esquece o agent ativo entre invocações — sempre
-    passe <code>checkpointer=</code> no <code>compile()</code>.
+    Com handoffs, o agent ativo vive no estado do grafo: sem checkpointer ele se perde entre
+    invocações — sempre passe <code>checkpointer=</code> no <code>compile()</code>. A doc oficial de
+    <a href="https://docs.langchain.com/oss/python/langchain/multi-agent/handoffs" target="_blank" rel="noopener">handoffs</a>
+    também descreve a variante de um único agente com middleware <code>@wrap_model_call</code>.
   </div>
 </section>
 
@@ -2198,7 +2423,7 @@ agent = agent_builder.compile()</code></pre>
 </section>
 
 <section id="s-migrations">
-  <h2>26. Migrações de grafo (com checkpointer)</h2>
+  <h2>26. Migrações de grafo (com checkpointer)<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Cenário</th><th>Suportado</th></tr></thead>
@@ -2213,49 +2438,50 @@ agent = agent_builder.compile()</code></pre>
     </table>
   </div>
 
-  <h3>Deprecations do LangGraph v1</h3>
+  <div class="callout info">
+    As deprecations do LangGraph v1 (<code>create_react_agent</code>, <code>AgentState</code>,
+    <code>HumanInterrupt</code> etc.) estão em <a href="#legado">Legado e migração</a>. Todos os pacotes
+    LangChain exigem Python 3.10+. Fonte:
+    <a href="https://docs.langchain.com/oss/python/migrate/langgraph-v1" target="_blank" rel="noopener">migrate/langgraph-v1</a>.
+  </div>
+
+  <h3>Sistema de <em>middleware</em> (o novo mecanismo de customização)</h3>
   <p>
-    O LangGraph v1 deprecou os prebuilts agênticos em favor de
-    <code>langchain.agents</code>. Os símbolos abaixo continuam funcionando (com
-    aviso <code>@deprecated</code>), mas código novo deve usar as alternativas:
+    O <code>create_agent</code> substitui os antigos <code>pre_model_hook</code>/
+    <code>post_model_hook</code> por um sistema de <strong>middleware</strong> componível
+    (entra em ordem, sai em ordem reversa, como middleware de servidor web). Ganchos:
+    <code>before_agent</code>/<code>after_agent</code> (uma vez por invocação),
+    <code>before_model</code>/<code>after_model</code> (a cada chamada ao modelo) e
+    <code>wrap_model_call</code>/<code>wrap_tool_call</code> (envolvem cada chamada;
+    <code>request.override(...)</code> altera prompt, modelo ou tools apenas para aquela chamada).
+    Middleware embutidos (seleção):
   </p>
   <div class="table-wrap">
     <table>
-      <thead><tr><th>Deprecado</th><th>Alternativa</th></tr></thead>
+      <thead><tr><th>Middleware</th><th>Gancho · função</th></tr></thead>
       <tbody>
-        <tr><td><code>create_react_agent</code> (<code>langgraph.prebuilt</code>)</td><td><code>from langchain.agents import create_agent</code> — use <code>system_prompt=</code>, <strong>não</strong> <code>prompt=</code></td></tr>
-        <tr><td><code>MessageGraph</code></td><td><code>StateGraph</code> com a chave <code>messages</code> (como <code>create_agent</code> provê)</td></tr>
-        <tr><td><code>ValidationNode</code></td><td>Removido — tools validam o input automaticamente com <code>create_agent</code></td></tr>
-        <tr><td><code>AgentState</code></td><td><code>langchain.agents.AgentState</code></td></tr>
-        <tr><td><code>AgentStatePydantic</code></td><td><code>langchain.agents.AgentState</code> (sem estado Pydantic)</td></tr>
-        <tr><td><code>AgentStateWithStructuredResponse</code></td><td><code>langchain.agents.AgentState</code></td></tr>
-        <tr><td><code>HumanInterrupt</code></td><td><code>langchain.agents.middleware.human_in_the_loop.HITLRequest</code></td></tr>
-        <tr><td><code>HumanInterruptConfig</code></td><td><code>langchain.agents.middleware.human_in_the_loop.InterruptOnConfig</code></td></tr>
-        <tr><td><code>ActionRequest</code></td><td><code>langchain.agents.middleware.human_in_the_loop.InterruptOnConfig</code></td></tr>
+        <tr><td><code>HumanInTheLoopMiddleware</code></td><td><code>after_model</code> — adiciona interrupts de aprovação em tool calls (HITL para agentes <code>create_agent</code>, no lugar do <code>interrupt</code>/<code>Command</code> cru).</td></tr>
+        <tr><td><code>SummarizationMiddleware</code></td><td><code>before_model</code> — sumariza o histórico quando as mensagens passam um limiar.</td></tr>
+        <tr><td><code>TodoListMiddleware</code></td><td>Planejamento/tracking estruturado de tarefas (é o padrão que sustenta o <code>deepagents</code>).</td></tr>
+        <tr><td>Anthropic prompt-caching</td><td><code>wrap_model_call</code> — injeta tags de cache-control nas chamadas Anthropic.</td></tr>
       </tbody>
     </table>
   </div>
-  <pre><code class="language-python"># v1 (novo)
-from langchain.agents import create_agent
-agent = create_agent(model, tools, system_prompt="You are a helpful assistant.")
+  <div class="source-link">Fonte: <a href="https://www.langchain.com/blog/agent-middleware" target="_blank" rel="noopener">langchain.com/blog/agent-middleware</a></div>
 
-# v0 (antigo, deprecado)
-from langgraph.prebuilt import create_react_agent
-agent = create_react_agent(model, tools, prompt="You are a helpful assistant.")</code></pre>
-  <div class="callout danger">
-    <strong>Breaking change:</strong> o suporte a Python 3.9 foi removido — todos os
-    pacotes LangChain agora exigem <strong>Python 3.10+</strong> (Python 3.9 chegou
-    ao fim de vida em out/2025).
-  </div>
-  <div class="callout warn">
-    <code>create_supervisor</code> / <code>create_swarm</code> vêm dos pacotes
-    <strong>separados</strong> <code>langgraph-supervisor</code> /
-    <code>langgraph-swarm</code> e ainda podem usar <code>create_react_agent</code>
-    internamente. Verifique a versão do pacote antes de trocar cegamente — a
-    deprecação v1 acima é especificamente sobre
-    <code>langgraph.prebuilt.create_react_agent</code>.
-  </div>
-  <div class="source-link">Fonte: <a href="https://docs.langchain.com/oss/python/migrate/langgraph-v1" target="_blank" rel="noopener">migrate/langgraph-v1</a></div>
+  <h3>Blocos de conteúdo padrão (<code>content_blocks</code>)</h3>
+  <p>
+    <code>message.content_blocks</code> é a nova visão tipada e agnóstica de provedor do
+    conteúdo de uma mensagem (text, reasoning, citation, tool_call, image, video, audio,
+    file, plain-text, non-standard). O <code>.content</code> continua inalterado por
+    default (string/nativo do provedor); serialize os blocos padrão em <code>.content</code>
+    optando por <code>output_version="v1"</code> (ou a env <code>LC_OUTPUT_VERSION=v1</code>).
+    <strong>Sub-detalhe breaking:</strong> o <code>PlainTextContentBlock</code> mudou de
+    forma — só <code>type</code>/<code>text</code> sobreviveram e o <code>type</code> passou
+    de <code>'text'</code> para <code>'text-plain'</code>.
+  </p>
+  <div class="source-link">Fonte: <a href="https://www.langchain.com/blog/standard-message-content" target="_blank" rel="noopener">langchain.com/blog/standard-message-content</a></div>
+
 </section>
 
 <section class="chapter" id="part-b-divider">
@@ -2399,7 +2625,7 @@ Runtime(
         <tr><td><code>stream_writer</code></td><td>Função para emitir custom events</td></tr>
         <tr><td><code>previous</code></td><td>Retorno do checkpoint anterior (Functional API)</td></tr>
         <tr><td><code>execution_info</code></td><td><code>ExecutionInfo</code>: <code>thread_id</code>, <code>run_id</code>, <code>checkpoint_id</code>, <code>checkpoint_ns</code>, <code>task_id</code>, <code>node_attempt</code>, <code>node_first_attempt_time</code></td></tr>
-        <tr><td><code>server_info</code></td><td><code>ServerInfo</code>: <code>assistant_id</code>, <code>graph_id</code>, <code>user</code> (<code>None</code> fora do LangGraph Server)</td></tr>
+        <tr><td><code>server_info</code></td><td><code>ServerInfo</code>: <code>assistant_id</code>, <code>graph_id</code>, <code>user</code> (<code>None</code> fora do Agent Server)</td></tr>
         <tr><td><code>control</code></td><td><code>RunControl</code> da invocação atual</td></tr>
         <tr><td><code>drain_requested</code></td><td><code>bool</code> — true quando <code>request_drain</code> foi chamado</td></tr>
         <tr><td><code>drain_reason</code></td><td><code>str</code> — motivo</td></tr>
@@ -2602,53 +2828,41 @@ with PostgresStore.from_conn_string(uri) as store:
   <p>Ordena <code>search</code> por <code>updated_at</code> desc. Há também <code>AsyncPostgresStore</code> em <code>langgraph.store.postgres.aio</code>.</p>
 </section>
 
-<section class="ref" id="ref-react-agent">
-  <h2><code>create_react_agent</code> (legado) <span class="pill partial">deprecated</span></h2>
-  <pre><code class="language-python">from langgraph.prebuilt import create_react_agent
+<section class="ref" id="ref-create-agent">
+  <h2><code>create_agent</code> <span class="pill ok">atual</span></h2>
+  <pre><code class="language-python">from langchain.agents import create_agent
 
-def create_react_agent(
-    model: str | LanguageModelLike | Callable[..., BaseChatModel],
-    tools: Sequence[BaseTool | Callable | dict[str, Any]] | ToolNode,
+create_agent(
+    model: str | BaseChatModel,
+    tools: Sequence[BaseTool | Callable[..., Any] | dict[str, Any]] | None = None,
     *,
-    prompt: Prompt | None = None,
-    response_format: StructuredResponseSchema | tuple[str, StructuredResponseSchema] | None = None,
-    pre_model_hook: RunnableLike | None = None,
-    post_model_hook: RunnableLike | None = None,
-    state_schema: StateSchemaType | None = None,
-    context_schema: type[Any] | None = None,
+    system_prompt: str | SystemMessage | None = None,
+    middleware: Sequence[AgentMiddleware[StateT_co, ContextT]] = (),
+    response_format: ResponseFormat[ResponseT] | type[ResponseT] | dict[str, Any] | None = None,
+    state_schema: type[AgentState[ResponseT]] | None = None,
+    context_schema: type[ContextT] | None = None,
     checkpointer: Checkpointer | None = None,
     store: BaseStore | None = None,
     interrupt_before: list[str] | None = None,
     interrupt_after: list[str] | None = None,
     debug: bool = False,
-    version: Literal["v1", "v2"] = "v2",
     name: str | None = None,
+    cache: BaseCache[Any] | None = None,
+    transformers: Sequence[TransformerFactory] | None = None,
 ) -&gt; CompiledStateGraph</code></pre>
   <p>
-    Função decorada como <code>@deprecated</code> — direciona usuários a
-    <code>langchain.agents.create_agent</code> (que delega para o LangGraph).
-    Constrói um agente que chama tools em loop até atingir o stopping condition.
+    Constrói um agente que chama tools em loop até o stopping condition e devolve um
+    <code>CompiledStateGraph</code> (o mesmo runtime deste guia). <code>model</code> aceita uma string
+    <code>"provider:model"</code> ou uma instância de chat model; <code>state_schema</code> só aceita
+    <code>TypedDict</code> (estendendo <code>AgentState</code>); customização de prompt, modelo e tools por chamada
+    vai em <strong>middleware</strong> (<code>before_agent</code>, <code>before_model</code>,
+    <code>wrap_model_call</code>, <code>wrap_tool_call</code>, <code>after_model</code>,
+    <code>after_agent</code>; <code>@dynamic_prompt</code> para prompts dinâmicos). <code>tools</code> é uma
+    lista plana — <code>ToolNode</code> não é mais aceito; injeção de estado em tools usa
+    <code>ToolRuntime</code>. Saída estruturada: <code>ToolStrategy</code> ou <code>ProviderStrategy</code>
+    (de <code>langchain.agents.structured_output</code>).
   </p>
-  <div class="callout warn">
-    Note a mudança de assinatura: <code>create_agent</code> usa
-    <code>system_prompt=</code> em vez de <code>prompt=</code>. Veja a
-    <a href="#s-migrations">tabela completa de deprecations v1</a> (§26).
-  </div>
-  <p>
-    Quando <code>remaining_steps &lt; 2</code> e há tool calls, devolve
-    <code>"Sorry, need more steps to process this request."</code> em vez de
-    levantar <code>GraphRecursionError</code>.
-  </p>
-  <h3>Versões <code>v1</code> vs <code>v2</code></h3>
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>Versão</th><th>Diferença</th></tr></thead>
-      <tbody>
-        <tr><td><code>v1</code></td><td>Processa uma mensagem por vez</td></tr>
-        <tr><td><code>v2</code> (default)</td><td>Distribui tool calls via Send API (paralelo)</td></tr>
-      </tbody>
-    </table>
-  </div>
+  <div class="source-link">Fonte: <a href="https://reference.langchain.com/python/langchain/agents/factory/create_agent" target="_blank" rel="noopener">reference.langchain.com/python/langchain/agents/factory/create_agent</a> · <a href="https://docs.langchain.com/oss/python/migrate/langchain-v1" target="_blank" rel="noopener">migrate/langchain-v1</a> — lidas 2026-09-30.</div>
 </section>
 
 <section class="ref" id="ref-toolnode">
@@ -2683,44 +2897,6 @@ graph = builder.compile()</code></pre>
   </p>
 </section>
 
-<section class="ref" id="ref-supervisor">
-  <h2><code>langgraph-supervisor</code></h2>
-  <pre><code class="language-python">from langgraph_supervisor import (
-    create_supervisor, create_handoff_tool,
-)
-from langgraph_supervisor.handoff import (
-    create_forward_message_tool, METADATA_KEY_HANDOFF_DESTINATION,
-)</code></pre>
-  <h3><code>create_supervisor</code></h3>
-  <pre><code class="language-python">create_supervisor(
-    agents: list,
-    model: BaseChatModel,
-    prompt: str = None,
-    output_mode: Literal["full_history", "last_message"] = "full_history",
-    tools: list = None,
-    add_handoff_messages: bool = True,
-    handoff_tool_prefix: str = "transfer_to",
-    supervisor_name: str = "supervisor",
-) -&gt; StateGraph</code></pre>
-  <h3><code>create_handoff_tool</code></h3>
-  <pre><code class="language-python">create_handoff_tool(agent_name: str, name: str | None = None, description: str | None = None)</code></pre>
-</section>
-
-<section class="ref" id="ref-swarm">
-  <h2><code>langgraph-swarm</code></h2>
-  <pre><code class="language-python">from langgraph_swarm import (
-    create_swarm, create_handoff_tool, add_active_agent_router,
-)</code></pre>
-  <h3><code>create_swarm</code></h3>
-  <pre><code class="language-python">create_swarm(
-    agents: list,
-    default_active_agent: str,
-) -&gt; StateGraph</code></pre>
-  <h3><code>add_active_agent_router</code></h3>
-  <pre><code class="language-python">add_active_agent_router(builder, route_to: list[str], default_active_agent: str)</code></pre>
-  <p>Para builds manuais que querem a mesma semântica de "último agent" do swarm.</p>
-</section>
-
 <section class="ref" id="ref-errors">
   <h2>Exceções</h2>
   <pre><code class="language-python">from langgraph.errors import (
@@ -2751,6 +2927,17 @@ from langgraph_supervisor.handoff import (
   <p>A camada <em>Platform</em> entrega tudo o que está fora do runtime in-process: servidor HTTP com REST + SSE, persistência durável em Postgres, fila por <em>thread</em>, autenticação plugável, Studio, CLI de build/deploy, SDK Python/JS, e integrações (A2A, MCP, RemoteGraph). Esta parte cobre a superfície completa.</p>
   <div class="callout tip">
     <strong>Quando usar a plataforma.</strong> O <code>StateGraph</code> compilado roda bem em qualquer processo Python. A camada <em>Platform</em> é necessária quando você precisa de: 1) execução background com retomada após desconexão, 2) <em>threads</em> persistentes acessíveis por múltiplos clientes, 3) Crons, 4) Auth multi-tenant centralizada, 5) Studio (debug/replay/fork), 6) deploy gerenciado.
+  </div>
+  <div class="callout info">
+    <strong>Protocolos no deployment.</strong> Um grafo compilado localmente não vira
+    servidor MCP ou A2A por possuir tools. Em Agent Server/LangSmith Deployment,
+    trate essas superfícies como configuração de deployment, com autenticação e
+    allowlist próprias; o A2A tem documentação operacional em
+    <a href="https://docs.langchain.com/langsmith/server-a2a" target="_blank" rel="noopener">Server A2A</a>
+    e as tools MCP em
+    <a href="https://docs.langchain.com/oss/python/langchain/mcp" target="_blank" rel="noopener">MCP Python</a> /
+    <a href="https://docs.langchain.com/oss/javascript/langchain/mcp" target="_blank" rel="noopener">MCP JS</a>.
+    Não copie rotas entre ambientes sem confirmar a versão do Agent Server.
   </div>
 </section>
 
@@ -3177,8 +3364,15 @@ async for ev in client.runs.stream(
 </section>
 
 <section id="s-auth">
-  <h2>33. Autenticação personalizada (<code>@auth</code>)</h2>
+  <h2>33. Autenticação personalizada (<code>@auth</code>)<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
   <p>Duas fases em cada request: 1) <strong>Autenticação</strong> (<code>@auth.authenticate</code> devolve o usuário), 2) <strong>Autorização</strong> (handler mais específico decide; retorna <code>None</code>/<code>True</code> = permite, <code>False</code> = 403, ou um <code>dict</code> filtro restringindo metadata).</p>
+  <div class="callout danger">
+    <strong>Advisories de autorização (GitHub Security Advisories de <code>langchain-ai/langgraph</code>, lidos em 2026-09-30).</strong>
+    <code>GHSA-fvww-7h3r-vfhp</code> (2026-08-28): o <code>langgraph-sdk</code> ≤ 0.4.3 ignora em silêncio o argumento
+    <code>actions=</code> nos decorators de recurso da custom auth — atualize para <strong>≥ 0.4.4</strong> (corrente 0.4.5).
+    <code>GHSA-4hm6-w6qq-w73v</code> (2026-09-28): a custom authentication pode permitir acesso <em>cross-user</em> ao Store
+    em <code>langgraph-api</code> <code>&gt;=0.1.2,&lt;0.15.0</code> — atualize para <strong>≥ 0.15.0</strong>.
+  </div>
 
   <pre><code class="language-json">"auth": { "path": "./auth.py:auth", "disable_studio_auth": false }</code></pre>
 
@@ -3351,7 +3545,8 @@ await client.runs.create(thread_id, aid, input=msg, multitask_strategy="rollback
 </section>
 
 <section id="s-deploy">
-  <h2>37. Opções de deployment</h2>
+  <h2>37. Opções de deployment<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
+  <p>Na documentação oficial (lida em 2026-09-30) o produto de deployment é o <strong>LangSmith Deployment</strong> e o runtime de todas as opções é o mesmo <strong>Agent Server</strong> (<a href="https://docs.langchain.com/langsmith/deployment" target="_blank" rel="noopener">docs.langchain.com/langsmith/deployment</a>).</p>
   <div class="table-wrap"><table>
     <thead><tr><th>Opção</th><th>Control plane</th><th>Data plane</th><th>Infra</th><th>Plano</th></tr></thead>
     <tbody>
@@ -3410,7 +3605,7 @@ def search(query: str) -&gt; str: ...
 def respond(state: MessagesState):
     return {"final": state["messages"][-1].tool_calls[0]["args"]}
 
-llm = ChatOpenAI(model="gpt-5.5", use_responses_api=True).bind_tools([search, WeatherResponse])
+llm = ChatOpenAI(model="gpt-6.1-sol", use_responses_api=True).bind_tools([search, WeatherResponse])
 
 def call_model(state: MessagesState):
     return {"messages": [llm.invoke(state["messages"])]}
@@ -3430,10 +3625,11 @@ app = g.compile()</code></pre>
 </section>
 
 <section id="r-plan-execute">
-  <h2>R2. Plan-and-execute</h2>
+  <h2>R2. Plan-and-execute<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
   <p><strong>Ideia.</strong> Gera plano completo upfront, executa step-a-step e replaneja quando necessário.</p>
   <p><strong>URL:</strong> <a href="https://github.com/langchain-ai/langgraph/tree/main/examples/plan-and-execute" target="_blank" rel="noopener"><code>examples/plan-and-execute</code></a></p>
   <pre><code class="language-python">from pydantic import BaseModel
+from langchain.agents import create_agent
 from langgraph.graph import StateGraph, END
 
 class Plan(BaseModel):
@@ -3445,9 +3641,9 @@ class PlanExecute(TypedDict):
     past_steps: list[tuple[str, str]]
     response: str
 
-planner   = planner_prompt   | ChatOpenAI(model="gpt-5.5", use_responses_api=True).with_structured_output(Plan)
-executor  = create_react_agent("openai:gpt-5.4-mini", tools=[search])
-replanner = replanner_prompt | ChatOpenAI(model="gpt-5.5", use_responses_api=True).with_structured_output(Plan)
+planner   = planner_prompt   | ChatOpenAI(model="gpt-6.1-sol", use_responses_api=True).with_structured_output(Plan)
+executor  = create_agent(ChatOpenAI(model="gpt-6-luna", use_responses_api=True), tools=[search])
+replanner = replanner_prompt | ChatOpenAI(model="gpt-6.1-sol", use_responses_api=True).with_structured_output(Plan)
 
 async def plan_step(s):    return {"plan": (await planner.ainvoke({"input": s["input"]})).steps}
 async def execute_step(s):
@@ -3470,8 +3666,8 @@ app = g.compile()</code></pre>
   <p><strong>URL:</strong> <a href="https://github.com/langchain-ai/langgraph/tree/main/examples/reflection" target="_blank" rel="noopener"><code>examples/reflection</code></a> · <a href="https://blog.langchain.com/reflection-agents/" target="_blank" rel="noopener">blog</a></p>
   <pre><code class="language-python">from langgraph.graph import StateGraph, MessagesState, END
 
-generate = generator_prompt  | ChatOpenAI(model="gpt-5.5", use_responses_api=True)
-reflect  = reflection_prompt | ChatOpenAI(model="gpt-5.5", use_responses_api=True)
+generate = generator_prompt  | ChatOpenAI(model="gpt-6.1-sol", use_responses_api=True)
+reflect  = reflection_prompt | ChatOpenAI(model="gpt-6.1-sol", use_responses_api=True)
 
 async def generation_node(state: MessagesState):
     return {"messages": [await generate.ainvoke(state["messages"])]}
@@ -3510,8 +3706,8 @@ class AnswerQuestion(BaseModel):
     reflection: Reflection
     search_queries: list[str] = Field(description="1-3 queries to address gaps.")
 
-responder = responder_prompt | ChatOpenAI(model="gpt-5.5", use_responses_api=True).bind_tools([AnswerQuestion])
-revisor   = revisor_prompt   | ChatOpenAI(model="gpt-5.5", use_responses_api=True).bind_tools([AnswerQuestion])
+responder = responder_prompt | ChatOpenAI(model="gpt-6.1-sol", use_responses_api=True).bind_tools([AnswerQuestion])
+revisor   = revisor_prompt   | ChatOpenAI(model="gpt-6.1-sol", use_responses_api=True).bind_tools([AnswerQuestion])
 
 def run_tools(state):
     queries = state["messages"][-1].tool_calls[0]["args"]["search_queries"]
@@ -3541,7 +3737,7 @@ class State(TypedDict):
     task: str; modules: list[str]
     selected: str; adapted: str; plan: str; answer: str
 
-llm = ChatOpenAI(model="gpt-5.5", use_responses_api=True)
+llm = ChatOpenAI(model="gpt-6.1-sol", use_responses_api=True)
 
 def select(s):    return {"selected": llm.invoke(f"Select modules for: {s['task']}\nFrom: {s['modules']}").content}
 def adapt(s):     return {"adapted":  llm.invoke(f"Adapt these to the task '{s['task']}': {s['selected']}").content}
@@ -3593,41 +3789,51 @@ app = g.compile()</code></pre>
 </section>
 
 <section id="r-supervisor">
-  <h2>R7. Multi-agent supervisor</h2>
-  <p><strong>Ideia.</strong> Um LLM supervisor escolhe qual especialista chamar próximo; cada chamada retorna controle ao supervisor.</p>
-  <p><strong>URL:</strong> <a href="https://github.com/langchain-ai/langgraph-supervisor-py" target="_blank" rel="noopener"><code>langgraph-supervisor-py</code></a></p>
-  <pre><code class="language-python">from langgraph_supervisor import create_supervisor
-from langgraph.prebuilt import create_react_agent
+  <h2>R7. Multi-agent supervisor <span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
+  <p><strong>Ideia.</strong> Um LLM supervisor escolhe qual especialista chamar próximo; cada chamada retorna controle ao supervisor. Cada especialista é um agente <code>create_agent</code> exposto como <code>@tool</code> (detalhe e exemplo completo em <a href="#s-multi-agent">§24</a>).</p>
+  <p><strong>URL:</strong> <a href="https://docs.langchain.com/oss/python/langchain/supervisor" target="_blank" rel="noopener"><code>docs.langchain.com/oss/python/langchain/supervisor</code></a></p>
+  <pre><code class="language-python">from langchain.agents import create_agent
+from langchain.tools import tool
+from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import InMemorySaver
 
-def add(a: float, b: float) -&gt; float: return a + b
-def web_search(q: str) -&gt; str: return tavily.invoke(q)
+model = ChatOpenAI(model="gpt-6.1-sol", use_responses_api=True)
+math_agent     = create_agent(model, tools=[add], system_prompt="You are a math expert.")
+research_agent = create_agent(model, tools=[web_search], system_prompt="You are a research expert.")
 
-math_agent     = create_react_agent(model="openai:gpt-5.5", tools=[add], name="math_expert")
-research_agent = create_react_agent(model="openai:gpt-5.5", tools=[web_search], name="research_expert")
+@tool
+def ask_math(request: str) -&gt; str:
+    """Delegate arithmetic to the math expert."""
+    out = math_agent.invoke({"messages": [{"role": "user", "content": request}]})
+    return out["messages"][-1].text
 
-workflow = create_supervisor(
-    [research_agent, math_agent],
-    model=ChatOpenAI(model="gpt-5.5", use_responses_api=True),
-    prompt="You manage a research expert and a math expert. Route accordingly.",
+@tool
+def ask_research(request: str) -&gt; str:
+    """Delegate fact-finding to the research expert."""
+    out = research_agent.invoke({"messages": [{"role": "user", "content": request}]})
+    return out["messages"][-1].text
+
+app = create_agent(
+    model, tools=[ask_math, ask_research],
+    system_prompt="You manage a research expert and a math expert. Route accordingly.",
+    checkpointer=InMemorySaver(),
 )
-app = workflow.compile(checkpointer=InMemorySaver())
-result = app.invoke({"messages":[{"role":"user",
-    "content":"What's the combined FAANG headcount in 2024?"}]})</code></pre>
+result = app.invoke({"messages": [{"role": "user",
+    "content": "What's the combined FAANG headcount in 2024?"}]},
+    {"configurable": {"thread_id": "1"}})</code></pre>
   <div class="callout warn">
-    Note o contraste: os subagents acima usam a string <code>"openai:gpt-5.5"</code>
-    (que cai em <strong>Chat Completions</strong>), enquanto o supervisor recebe um
-    <code>ChatOpenAI(..., use_responses_api=True)</code> explícito. Para forçar a
-    Responses API nos subagents, instancie o modelo e passe o objeto em vez da
-    string — ver a <a href="#s-install">política de integração</a> (§2).
+    Passe o objeto <code>ChatOpenAI(..., use_responses_api=True)</code> (e não a string
+    <code>"openai:..."</code>) para que todos os agentes usem a Responses API — ver a
+    <a href="#s-install">política de integração</a> (§2).
   </div>
 </section>
 
 <section id="r-network">
-  <h2>R8. Multi-agent network (colaboração)</h2>
+  <h2>R8. Multi-agent network (colaboração)<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
   <p><strong>Ideia.</strong> Cada agent pode passar trabalho para qualquer peer; roteamento decidido por tool calls. <code>FINAL ANSWER</code> termina.</p>
   <p><strong>URL:</strong> <a href="https://github.com/langchain-ai/langgraph/tree/main/examples/multi_agent" target="_blank" rel="noopener"><code>multi-agent-collaboration.ipynb</code></a></p>
-  <pre><code class="language-python">from langgraph.graph import StateGraph, MessagesState, END
+  <pre><code class="language-python">from langchain.agents import create_agent
+from langgraph.graph import StateGraph, MessagesState, END
 
 def make_node(agent, name):
     def node(state):
@@ -3641,8 +3847,8 @@ def route(state):
     if "FINAL ANSWER" in last.content: return END
     return "Chart Generator" if last.name == "Researcher" else "Researcher"
 
-researcher = create_react_agent(llm, tools=[search],     prompt=research_prompt)
-charter    = create_react_agent(llm, tools=[python_repl], prompt=chart_prompt)
+researcher = create_agent(llm, tools=[search],      system_prompt=research_prompt)
+charter    = create_agent(llm, tools=[python_repl], system_prompt=chart_prompt)
 
 g = StateGraph(MessagesState)
 g.add_node("Researcher",      make_node(researcher, "Researcher"))
@@ -3654,7 +3860,7 @@ app = g.compile()</code></pre>
 </section>
 
 <section id="r-hierarchical">
-  <h2>R9. Times hierárquicos</h2>
+  <h2>R9. Times hierárquicos<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
   <p><strong>Ideia.</strong> Cada sub-time é um subgrafo com seu próprio supervisor; um supervisor de topo roteia entre times.</p>
   <p><strong>URL:</strong> <a href="https://github.com/langchain-ai/langgraph/tree/main/examples/multi_agent" target="_blank" rel="noopener"><code>hierarchical_agent_teams.ipynb</code></a></p>
   <pre><code class="language-python">from langgraph.graph import StateGraph, MessagesState, END
@@ -3762,7 +3968,7 @@ from langgraph.graph import StateGraph, END
 class Route(BaseModel):
     datasource: Literal["vectorstore","web_search"] = Field(description="Pick one")
 
-router = (router_prompt | ChatOpenAI(model="gpt-5.4-mini", temperature=0, use_responses_api=True)
+router = (router_prompt | ChatOpenAI(model="gpt-6-luna", use_responses_api=True)
                           .with_structured_output(Route))
 
 def route_query(s):
@@ -3829,7 +4035,6 @@ def lats(root, max_rollouts=10):
 <section id="r-storm">
   <h2>R14. STORM — pesquisa + escrita</h2>
   <p><strong>Ideia.</strong> Gera outline, simula entrevistas com múltiplos experts (cada um busca e responde em paralelo via <code>Send</code>), refina outline, escreve seções, monta artigo.</p>
-  <p><strong>URL:</strong> <a href="https://github.com/langchain-ai/langgraph/blob/main/examples/storm/storm.ipynb" target="_blank" rel="noopener"><code>examples/storm/storm.ipynb</code></a></p>
   <pre><code class="language-python">from langgraph.graph import StateGraph, END
 from langgraph.constants import Send
 
@@ -3928,6 +4133,31 @@ GET    /ok</code></pre>
   </table></div>
 </section>
 
+<section class="ref" id="legado">
+  <h2>Legado e migração<span class="rev-flag novo">Novo · 2026-09-30</span></h2>
+  <p>Só para reconhecer projetos existentes; nada aqui deve ser copiado para código novo. Status verificado em 2026-09-30.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Antigo</th><th>Status</th><th>Migração</th></tr></thead>
+      <tbody>
+        <tr><td><code>langgraph.prebuilt.create_react_agent</code></td><td>Deprecated (<code>LangGraphDeprecatedSinceV10</code>) em <code>langgraph-prebuilt 1.1.0</code>; segue importável e funcional</td><td><code>from langchain.agents import create_agent</code>; <code>prompt=</code> → <code>system_prompt=</code>; <code>pre_model_hook</code>/<code>post_model_hook</code> → middleware (<code>before_model</code>/<code>after_model</code>); estado só <code>TypedDict</code>; <code>tools=</code> não aceita <code>ToolNode</code>.</td></tr>
+        <tr><td><code>AgentState</code>, <code>AgentStatePydantic</code>, <code>AgentStateWithStructuredResponse</code> (<code>langgraph.prebuilt</code>)</td><td>Movidos/deprecados</td><td><code>langchain.agents.AgentState</code> (sem estado Pydantic).</td></tr>
+        <tr><td><code>HumanInterrupt</code>, <code>HumanInterruptConfig</code>, <code>ActionRequest</code>; <code>ValidationNode</code>; <code>MessageGraph</code></td><td>Deprecados na v1</td><td><code>langchain.agents.middleware.human_in_the_loop</code> (<code>HITLRequest</code>, <code>InterruptOnConfig</code>); validação de input pelas tools do <code>create_agent</code>; <code>StateGraph</code> com a chave <code>messages</code>.</td></tr>
+        <tr><td><code>langgraph-supervisor</code> (<code>create_supervisor</code>)</td><td>Último release 0.0.31 (2025-11-19); repositório <strong>arquivado</strong> (último push 2026-07-15); o README oficial recomenda o padrão supervisor direto via tools em vez da biblioteca</td><td>§24: <code>create_agent</code> + subagents em <code>@tool</code>; <code>output_mode</code> vira decisão do wrapper. <a href="https://docs.langchain.com/oss/python/migrate/langgraph-supervisor" target="_blank" rel="noopener">Guia de migração</a></td></tr>
+        <tr><td><code>langgraph-swarm</code> (<code>create_swarm</code>, <code>create_handoff_tool</code>)</td><td>Último release 0.1.0 (2025-12-04); repositório <strong>não</strong> arquivado; sunset formal <strong>UNVERIFIED</strong></td><td>Handoff tools com <code>Command(graph=Command.PARENT)</code> (§24) — tratar o pacote como legado de baixa manutenção.</td></tr>
+        <tr><td><code>langchain-mcp-adapters</code> (<code>MultiServerMCPClient</code>)</td><td>Repositório arquivado (último push 2026-09-16); 0.3.2 (2026-08-06), <code>mcp&lt;2</code></td><td><code>pip install "langchain[mcp]"</code> → <code>langchain.mcp.MCPAdapter</code> (§2). Em JS continua <code>@langchain/mcp-adapters</code>.</td></tr>
+        <tr><td><code>AgentExecutor</code>, <code>initialize_agent</code>, chains legadas, retrievers, hub</td><td>Saíram do pacote <code>langchain</code></td><td><code>langchain-classic</code> (<code>from langchain_classic...</code>); imports diretos de <code>langchain</code> levantam <code>ImportError</code>.</td></tr>
+        <tr><td><code>ChatOpenAI</code> sem <code>use_responses_api</code> (Chat Completions)</td><td>API legada; para GPT-6 sem tools</td><td><code>ChatOpenAI(model=..., use_responses_api=True)</code> (§2).</td></tr>
+        <tr><td>Python 3.9</td><td>Removido na v1 (EOL 2025-10)</td><td>Python 3.10+.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <pre><code class="language-python"># antes (legado)                                              # depois
+from langgraph.prebuilt import create_react_agent             from langchain.agents import create_agent
+agent = create_react_agent(model, tools, prompt="...")        agent = create_agent(model, tools, system_prompt="...")</code></pre>
+  <div class="source-link">Fontes: <a href="https://docs.langchain.com/oss/python/migrate/langgraph-v1" target="_blank" rel="noopener">migrate/langgraph-v1</a> · <a href="https://docs.langchain.com/oss/python/migrate/langchain-v1" target="_blank" rel="noopener">migrate/langchain-v1</a> · <a href="https://docs.langchain.com/oss/python/langchain/mcp" target="_blank" rel="noopener">langchain/mcp</a> — lidas 2026-09-30.</div>
+</section>
+
   </main>
 </div>
 
@@ -3936,15 +4166,14 @@ GET    /ok</code></pre>
     <div style="max-width:520px">
       <div class="brand" style="font-size:15px">Guia LangGraph <small>Python</small></div>
       <p style="margin:8px 0 0;color:var(--c-fg-muted);font-size:13.5px;line-height:1.55">
-        Referência técnica construída a partir da documentação oficial pública em
-        <strong>2026-06-10</strong>. Para informações sempre atualizadas, consulte
+        Referência técnica conferida contra a documentação oficial pública e os registros de pacotes em
+        <strong>2026-09-30</strong>. Para informações sempre atualizadas, consulte
         <a href="https://docs.langchain.com/oss/python/langgraph/overview" target="_blank" rel="noopener">docs.langchain.com/oss/python/langgraph</a>.
       </p>
     </div>
     <div style="font-size:13.5px;color:var(--c-fg-muted);line-height:1.7">
-      <div><strong>Crédito de produção</strong></div>
-      <div>Gerado por <strong>4 agentes Claude Opus 4.7 (xhigh)</strong></div>
-      <div>em paralelo · 2026-05-24</div>
+      <div><strong>Histórico editorial</strong></div>
+      <div>Última verificação · 2026-09-30</div>
       <div style="margin-top:6px">
         <span class="badge lc">langgraph</span>
         <span class="badge info">Python</span>
@@ -3955,7 +4184,7 @@ GET    /ok</code></pre>
       <div><a href="#sobre">Sobre</a> · <a href="#fontes-oficiais">Fontes</a></div>
       <div><a href="#s-stategraph">StateGraph</a> · <a href="#s-command">Command</a> · <a href="#s-send">Send</a></div>
       <div><a href="#s-persistence">Persistência</a> · <a href="#s-hitl">HITL</a> · <a href="#s-streaming">Streaming</a></div>
-      <div><a href="#s-multi-agent">Multi-agent</a> · <a href="#ref-stategraph">API ref</a></div>
+      <div><a href="#s-multi-agent">Multi-agent</a> · <a href="#ref-stategraph">API ref</a> · <a href="#legado">Legado</a></div>
     </div>
   </div>
 </footer>
