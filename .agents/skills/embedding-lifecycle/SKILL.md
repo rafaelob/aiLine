@@ -1,44 +1,9 @@
 ---
 name: embedding-lifecycle
-description: >-
-  Migrate stored embeddings when model, dimension, preprocessing, or
-  prefix changes: shadow columns, blue-green backfill, cutover. Use for
-  re-embedding a live corpus. ANN indexes ->
-  postgres-extensions-and-vector-search. Chunking -> rag-systems.
+description: "Use when re-embedding a live corpus after a model, dimension, preprocessing or prefix change: shadow columns, blue-green backfill, cutover. Not ANN indexes or chunking."
 license: Apache-2.0
 metadata:
-  author: coding-agent
-  version: 1.0.2
-  category: data-analysis
-  subcategory: dataset-analysis
-  vendor: universal
-  lifecycle: active
-  coding_agent: true
-  user_level: false
-  project_level: true
-  audience: developer
-  output_format: markdown
-  modality: text
-  freshness: 2026-07
-  tags:
-  - embeddings
-  - vector-search
-  - migration
-  - blue-green
-  - re-embedding
-  - backfill
-  - dimension
-  - matryoshka
-  - mrl
-  - truncation
-  - shadow-column
-  - model-versioning
-  - preprocessing
-  - instruction-prefix
-  - recall
-  - cutover
-  - data-lifecycle
-  - last_verified:2026-07-29
+  version: "1.0.2"
 ---
 
 # Embedding Lifecycle

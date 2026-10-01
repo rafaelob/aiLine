@@ -1,38 +1,9 @@
 ---
 name: langgraph-deep-agents
-description: >-
-  Build stateful LangGraph or Deep Agents graphs with checkpointing, HITL and
-  streaming. Use when designing StateGraph control flow, durable execution
-  with resume-after-failure, human-in-the-loop approval steps, multi-agent
-  composition, or Deep Agents subagent delegation. Vendor-neutral topology ->
-  agent-orchestration-patterns.
-  OpenAI Agents SDK -> openai-agents-sdk-python.
+description: "Use for LangGraph/Deep Agents graphs: StateGraph control flow, checkpointed resume-after-failure, HITL approval, multi-agent composition. Topology -> agent-orchestration-patterns. OpenAI SDK -> openai-agents-sdk-python."
 license: Apache-2.0
 metadata:
-  author: coding-agent
-  version: 1.4.0
-  category: ai-agents
-  subcategory: orchestration
-  vendor: universal
-  lifecycle: active
-  coding_agent: true
-  tags:
-  - ai-agents
-  - langgraph
-  - langgraph-1-2
-  - deep-agents
-  - dcode
-  - acp
-  - stategraph
-  - orchestration
-  - persistence
-  - human-in-the-loop
-  - streaming
-  - multi-agent
-  - project_level
-  audience: developer
-  output_format: markdown
-  modality: text
+  version: "1.4.1"
 ---
 
 # LangGraph Deep Agents
@@ -134,7 +105,7 @@ Current lines, measured 2026-08-28 via `pypi.org/pypi/<pkg>/json`: **`langgraph 
 - **Pin `0.7.10` for new work.** The retired advice "0.7 is alpha, pin 0.6.12" is now false. `0.6.12` is the end of the 0.6 line, not a maintained fallback: there is no 0.6.13. Freezing there is a legitimate short-term choice, but record it as a freeze on an end-of-line release, never as "0.7 isn't ready".
 - **Treat an existing agent's upgrade as a migration, not a bump.** 12 breaking items from 0.6.12 → 0.7.0 still apply through 0.7.10, and the three highest-consequence ones are silent (no default `TodoListMiddleware`, empty authored base prompt, recursive model-visible `delete` classified as a write).
 
-For new code prefer `stream_events(version="v3")` over parsing raw event dicts; do not confuse it with `invoke`/`stream` `version="v2"`, which controls `GraphOutput` and `StreamPart` typing. Official stream-mode name is **`checkpoints`** (plural), not `checkpoint`. Model examples use `model="anthropic:claude-sonnet-5"` via `langchain-anthropic` passthrough (no enum validation), so validate any newly-referenced model ID with a real call before production. Do not invent newer model IDs. LangGraph APIs evolve frequently: verify import paths, class names and signatures against the latest docs, and never hardcode minor versions in user code.
+For new code prefer `stream_events(version="v3")` over parsing raw event dicts; do not confuse it with `invoke`/`stream` `version="v2"`, which controls `GraphOutput` and `StreamPart` typing. Official stream-mode name is **`checkpoints`** (plural), not `checkpoint`. Model examples use `model="anthropic:claude-sonnet-5-5"` (Claude Sonnet 5.5, released 2026-09-28; previous generation `claude-sonnet-5`) via `langchain-anthropic` passthrough (no enum validation), so validate any newly-referenced model ID with a real call before production. Do not invent newer model IDs. LangGraph APIs evolve frequently: verify import paths, class names and signatures against the latest docs, and never hardcode minor versions in user code.
 
 **Read `references/VERSIONING_FRESHNESS.md`** before pinning, upgrading, or quoting a version: it holds the current dependency pins and floors (2026-08-28), the 0.6.12 -> 0.7.0 migration checklist and pin-decision reasoning, 0.7.6–0.7.10 notes, the full source list (official docs, GitHub, PyPI, supervisor/swarm status), OpenTelemetry/OWASP relevance, runtime defaults, and the checkpoint-backend security advisory table. Dated reconciliation history is in `CHANGELOG.md`.
 

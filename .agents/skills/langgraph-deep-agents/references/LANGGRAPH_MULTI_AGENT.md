@@ -185,7 +185,7 @@ result = agent.invoke({"messages": [{"role": "user", "content": "Research and wr
 
 # Custom configuration
 agent = create_deep_agent(
-    model=init_chat_model("anthropic:claude-sonnet-5"),
+    model=init_chat_model("anthropic:claude-sonnet-5-5"),
     tools=[my_custom_tool],
     system_prompt="You are a research assistant.",
     middleware=[TodoListMiddleware()],

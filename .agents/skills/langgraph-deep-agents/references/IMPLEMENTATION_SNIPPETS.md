@@ -215,14 +215,14 @@ result = agent.invoke({"messages": [{"role": "user", "content": "Research and su
 # On 0.7.0, pass TodoListMiddleware explicitly if you want write_todos planning
 # (and repeat it in each SubAgent's middleware to restore it there too).
 agent = create_deep_agent(
-    model=init_chat_model("anthropic:claude-sonnet-5"),
+    model=init_chat_model("anthropic:claude-sonnet-5-5"),
     tools=[my_custom_tool],
     system_prompt="You are a research assistant.",
     middleware=[TodoListMiddleware()],
 )
 ```
 
-**Model-selection caveat:** `langchain-anthropic` accepts any model string via passthrough (no enum validation), so `"anthropic:claude-sonnet-5"` works as shown above. As of `langchain-anthropic 1.7.0` (requires `anthropic>=0.120.0`, measured 2026-08-28), the connector is current with the Anthropic SDK -- this is also what brings **Claude Opus 5** to LangChain (`model="anthropic:claude-opus-5"` via the same passthrough). Do not invent newer model IDs. Still run a real validation call before production for any newly-referenced model ID, since passthrough means no enum validation catches a typo or an unsupported ID.
+**Model-selection caveat:** `langchain-anthropic` accepts any model string via passthrough (no enum validation) — this is how `"anthropic:claude-sonnet-5"` (previous generation) resolves. As of `langchain-anthropic 1.7.0` (requires `anthropic>=0.120.0`, measured 2026-08-28), the connector is current with the Anthropic SDK -- this is also what brings **Claude Opus 5** to LangChain (`model="anthropic:claude-opus-5"` via the same passthrough). `claude-sonnet-5-5` (released 2026-09-28) is a real, non-invented ID — confirmed at https://www.anthropic.com/claude-sonnet-5-5 — but whether this specific string resolves through `langchain-anthropic`'s passthrough is **UNVERIFIED** by this pass; run a real validation call before production for any newly-referenced model ID, since passthrough means no enum validation catches a typo or an unsupported ID. Do not invent newer model IDs.
 
 Deep Agents middleware:
 1. **`TodoListMiddleware`** (`write_todos` tool + planning instructions) — **auto-attached only through `0.6.x`. On `0.7.0` it is opt-in**: pass `middleware=[TodoListMiddleware()]` from `langchain.agents.middleware`, on the main agent and on every `SubAgent`. Omitting it silently removes the tool, the `todos` state channel, and the planning prompt.

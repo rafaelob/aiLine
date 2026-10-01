@@ -3,6 +3,27 @@
 All notable changes to this skill are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [2.6.5] - 2026-09-28
+### Added
+- Claude Sonnet 5.5 (`claude-sonnet-5-5`, released 2026-09-28) as the new default Sonnet-tier
+  model; `claude-sonnet-5` demoted to previous generation (still supported). Pricing unchanged
+  from Sonnet 5 ($2/$10 per MTok, cache read $0.20, 5m cache write $2.50, 1h cache write $4);
+  context window 1M tokens and max output 128K tokens, both confirmed at
+  https://platform.claude.com/docs/en/models/overview (2026-09-28). Documented the `between_tools`
+  thinking setting that replaces `thinking:{"type":"disabled"}` on this model — accepted at
+  `low`/`medium`/`high` effort only, 400 at `xhigh`/`max` (use adaptive thinking there instead) —
+  plus the other breaking changes confirmed against
+  https://platform.claude.com/docs/en/models/sonnet-5-5/migration-guide (2026-09-28):
+  `thinking:{"type":"enabled"}` 400, non-default `temperature`/`top_p`/`top_k` 400, assistant
+  prefill 400, forced `tool_choice` (`any`/`tool`) 400 including on token counting, minimum
+  cacheable prompt 512 tokens (down from 1,024 on Sonnet 5), and the same tokenizer as Sonnet 5.
+  Added the vendor's FrontierCode 1.1 benchmark (52.1% at `xhigh`, 46.2% at `max`) and the
+  Terminal-Bench 4.0 / CursorBench 4.0 / Humanity's Last Exam / OSWorld 2.1 comparisons to
+  `references/claude-api-model-capability-matrix.md` (source:
+  https://www.anthropic.com/claude-sonnet-5-5, 2026-09-28). Removed the house `xhigh`-only effort
+  policy from this generic reference — Fleet's subagent effort policy lives in the Fleet provider
+  facts and subagent cards, not here — and replaced it with the vendor's own effort guidance.
+
 ## [2.6.4] - 2026-09-05
 ### Changed
 Moved 10 implementation examples from the root into conditional references/EXAMPLES.md loading points while preserving their content.

@@ -3,6 +3,15 @@
 All notable changes to this skill are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.4.1] - 2026-09-28
+### Changed
+- Model examples updated from `anthropic:claude-sonnet-5` to `anthropic:claude-sonnet-5-5`
+  (Claude Sonnet 5.5, released 2026-09-28, confirmed real at
+  https://www.anthropic.com/claude-sonnet-5-5) in `SKILL.md`, `references/LANGGRAPH_MULTI_AGENT.md`
+  and `references/IMPLEMENTATION_SNIPPETS.md`. Whether `langchain-anthropic 1.7.x`'s passthrough
+  resolves this specific new ID is UNVERIFIED by this pass — flagged inline; the existing
+  "validate with a real call, do not invent newer IDs" caveat is unchanged and still governs.
+
 ## [1.4.0] - 2026-08-28
 ### Changed
 - Freshness sweep against live PyPI JSON (`pypi.org/pypi/<pkg>/json`) and official docs. Current pins: **`langgraph 1.2.11`** (upload `2026-08-11T14:00:35Z`) and **`deepagents 0.7.10`** (upload `2026-08-28T00:45:15Z`). Local `guia_completo_agentes/guia_deepagents.html` still said `0.7.9` as of 2026-08-27; official PyPI wins. Retargeted "pin 0.7.5" lines to **0.7.10**. The 0.6.12 → 0.7.0 12-item migration checklist is unchanged and still applies through 0.7.10 (`TodoListMiddleware` opt-in, empty base prompt, recursive `delete` as write).

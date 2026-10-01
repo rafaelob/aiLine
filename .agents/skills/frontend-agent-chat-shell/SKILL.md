@@ -1,38 +1,9 @@
 ---
 name: frontend-agent-chat-shell
-description: >-
-  Build the AI chat product shell: sessions/search/projects, sidebar, composer
-  attachments/drafts, artifact placement, stream resume, multi-agent panel.
-  Use for thread-level navigation ("barra lateral", "retomar stream"). Message
-  rendering uses frontend-ai-generative-ui.
+description: "Use to build the AI chat shell (\"barra lateral\", \"retomar stream\"): sessions/search/projects, composer attachments/drafts, artifact placement, stream resume, multi-agent panel. Messages -> frontend-ai-generative-ui."
 license: Apache-2.0
 metadata:
-  author: coding-agent
-  version: 1.0.2
-  category: content-production
-  subcategory: technical-writing
-  vendor: universal
-  lifecycle: active
-  coding_agent: true
-  user_level: false
-  project_level: true
-  audience: developer
-  output_format: markdown
-  modality: text
-  short-description: The product shell around an AI chat thread — sidebar, sessions, composer chrome,
-    artifact placement, resume
-  tags:
-  - frontend
-  - chat-shell
-  - session-sidebar
-  - composer
-  - artifact-panel
-  - stream-resume
-  - agent-ui
-  - empty-state
-  - voice-session
-  - branching
-  - project_level
+  version: "1.0.2"
 ---
 
 # Agent Chat Shell

@@ -1,39 +1,10 @@
 ---
 name: claude-api
-description: >-
-  Reference guide for the Anthropic Claude Messages API. Covers model selection, streaming, tool
-  use, structured output, adaptive/extended thinking, prompt caching, vision, batches, and
-  pitfalls in Python and TypeScript. Use when calling Claude API, using Anthropic SDK, configuring
-  streaming, getting structured JSON, using thinking mode, adding prompt caching, handling image
-  inputs, running batches, or troubleshooting API errors
+description: "Use when calling the Claude (Anthropic) Messages API or SDK in Python or TypeScript: model selection, streaming, tool use, structured JSON, thinking, prompt caching, vision, batches, API errors."
 license: Apache-2.0
 compatibility: Python 3.10+ (anthropic SDK) or Node 22+ (@anthropic-ai/sdk). Requires ANTHROPIC_API_KEY.
 metadata:
-  author: rafael
-  version: 2.6.4
-  category: library-reference
-  subcategory: api-reference
-  tags:
-  - library-reference
-  - claude
-  - anthropic
-  - api
-  - sdk
-  - streaming
-  - tool-use
-  - structured-output
-  - thinking
-  - prompt-caching
-  - batch
-  - vision
-  - project_level
-  vendor: anthropic
-  short-description: How to use the Claude Messages API correctly
-  audience: developer
-  output_format: code
-  modality: text
-  lifecycle: active
-  coding_agent: true
+  version: "2.6.5"
 ---
 
 ## Routing
@@ -77,13 +48,15 @@ See references/EXAMPLES.md, Example 2, for this implementation path.
 - Previous Fable generation: `claude-fable-5` — still supported for existing integrations (GA 2026-06-09; 1M ctx, 128k output, adaptive thinking always-on; $10/$50 per MTok). `claude-mythos-5` remains invitation-only (Project Glasswing).
 - Flagship (Opus tier): `claude-opus-5` — Anthropic's current Opus-tier flagship (GA 2026-07-24; the bare model ID is both the snapshot and the alias — no dated snapshot exists). 1M ctx **GA by default and by maximum**, no beta header, no long-context premium; 128k output (Batch API up to 300k with header `output-300k-2026-03-24`); $5/$25 per MTok — identical to Opus 4.8; knowledge cutoff May 2026 (most recent of the family). **Adaptive-only**: `thinking:{"type":"enabled",...}` returns 400 (use `adaptive`); `{"type":"disabled"}` only works at `effort` <= `high` — `xhigh`/`max` combined with disabled thinking also returns 400. Citations, Files API, PDF support, and the memory tool are **not yet confirmed** for Opus 5 — do not assume parity with Opus 4.8 on those surfaces.
 - Still supported (Opus tier): `claude-opus-4-8` — most capable Opus-tier before Opus 5, still excellent for complex reasoning and agentic coding; **not deprecated**, retirement not before 2027-05-28 (source: https://platform.claude.com/docs/en/about-claude/model-deprecations — `Model status` row reads `claude-opus-4-8 | Active | N/A | Not sooner than May 28, 2027`; verified_at 2026-09-17; recheck that table before relying on the date). Note the two official pages disagree in framing: models/overview now lists Opus 4.8 under **Legacy models (still available)** rather than in the current line-up, while model-deprecations still gives its state as `Active` — treat it as supported-but-no-longer-current and prefer `claude-opus-5` for new work. Unlike Opus 5, `{"type":"disabled"}` works at any `effort` level on Opus 4.8.
-- Default (Sonnet tier): `claude-sonnet-5` — recommended balance of speed and intelligence (GA 2026-06-30; 1M ctx, 128k output; adaptive thinking on by default; $2/$10 per MTok, now the standard price). Supersedes `claude-sonnet-4-6`.
-- Legacy Sonnet: `claude-sonnet-4-6` — still supported, old tokenizer; prefer `claude-sonnet-5` in new code
+- Default (Sonnet tier): `claude-sonnet-5-5` — released 2026-09-28; $2 input / $10 output per MTok, cache read $0.20 / cache write $2.50 (source: https://www.anthropic.com/claude-sonnet-5-5, read 2026-09-28); ~30% faster and up to 30% cheaper per task than Sonnet 5. Best at well-scoped implementation, bug fixing and iteration; the Opus tier stays stronger on open-ended, sustained-judgment work (same source). Vendor guidance on effort: `high` is the API default; for agentic coding and multistep tool use start at `medium` for well-specified tasks and move to `high` for harder or longer ones; for chat and other latency-sensitive work start at `medium` or `low`; reach for `xhigh`/`max` only where evals show a quality gain (source: https://platform.claude.com/docs/en/build-with-claude/effort, read 2026-09-28). Fleet's subagent effort policy lives in the Fleet provider facts and subagent cards. Left unset, `effort` defaults to `medium` in Claude Code and `high` on the Claude Platform (same source). Supersedes `claude-sonnet-5`; see `references/claude-api-model-capability-matrix.md` for the `between_tools` setting, benchmarks, and what is still UNVERIFIED.
+- Previous Sonnet generation: `claude-sonnet-5` — GA 2026-06-30; 1M ctx, 128k output; adaptive thinking on by default; $2/$10 per MTok. Still supported.
+- Legacy Sonnet: `claude-sonnet-4-6` — still supported, old tokenizer; prefer `claude-sonnet-5-5` in new code
 - Fast/cheap: `claude-haiku-4-5` (alias) or dated `claude-haiku-4-5-20251001`
 - **Aliases are stable**. Dated snapshot IDs (e.g. `claude-haiku-4-5-20251001`) also work and pin behavior; prefer aliases for latest-in-family, dated IDs for reproducibility (verify the exact dated snapshot at https://platform.claude.com/docs/en/about-claude/models/overview)
-- Context: Fable 5.1, Fable 5, Opus 5, Opus 4.8, Sonnet 5, and Sonnet 4.6: 1M tokens at standard pricing (no beta header required). Haiku 4.5: 200K tokens
-- Max output (sync Messages API): Fable 5.1 = 128k, Fable 5 = 128k, Opus 5 = 128k, Opus 4.8 = 128k, Sonnet 5 = 128k, Sonnet 4.6 = 128k, Haiku 4.5 = 64k
-- Migrating `claude-sonnet-4-6` → `claude-sonnet-5` is **not drop-in**: manual `thinking:{"type":"enabled",...}` returns 400 (use `adaptive`, or `{"type":"disabled"}` to turn off); recalibrate `effort` (Sonnet 5 `medium` ≈ 4.6 `high`, Sonnet 5 `high` ≈ 4.6 `max`); re-baseline `max_tokens`/cost for the new tokenizer (~1.0–1.35× tokens) and the intro-pricing cutoff
+- Context: Fable 5.1, Fable 5, Opus 5, Opus 4.8, Sonnet 5, Sonnet 5.5, and Sonnet 4.6: 1M tokens at standard pricing (no beta header required, source: https://platform.claude.com/docs/en/models/overview, read 2026-09-28). Haiku 4.5: 200K tokens
+- Max output (sync Messages API): Fable 5.1 = 128k, Fable 5 = 128k, Opus 5 = 128k, Opus 4.8 = 128k, Sonnet 5 = 128k, Sonnet 5.5 = 128k, Sonnet 4.6 = 128k, Haiku 4.5 = 64k (source: https://platform.claude.com/docs/en/models/overview, read 2026-09-28)
+- Migrating `claude-sonnet-5` → `claude-sonnet-5-5`: pricing unchanged; `thinking:{"type":"disabled"}` now returns 400 — send `thinking:{"type":"between_tools"}` instead to turn off up-front thinking (accepted at `low`/`medium`/`high` effort only, with no beta header; it takes no `display`, `budget_tokens`, or `block_binding` field). At `xhigh`/`max`, `between_tools` itself returns 400 — thinking cannot be turned off at those levels, so use adaptive thinking instead (omit `thinking`, or send `{"type": "adaptive"}`). With `between_tools` set, effort cannot change mid-conversation. Forced `tool_choice` (`any` or `tool`) now returns 400 too, including on the token-counting endpoint — every earlier Sonnet model accepted it, Sonnet 5.5 is the first to reject it; switch to `auto` with `strict: true` tools. Source: https://platform.claude.com/docs/en/models/sonnet-5-5/migration-guide, read 2026-09-28. See the capability matrix reference
+- Migrating `claude-sonnet-4-6` → `claude-sonnet-5` is **not drop-in**: manual `thinking:{"type":"enabled",...}` returns 400 (use `adaptive`, or `{"type":"disabled"}` to turn off); recalibrate `effort` (Sonnet 5 `medium` ≈ 4.6 `high`, Sonnet 5 `high` ≈ 4.6 `max`); re-baseline `max_tokens`/cost for the new tokenizer (~1.0–1.35× tokens)
 - Migrating `claude-opus-4-8` → `claude-opus-5` is **not drop-in either**: `enabled` thinking already returned 400 on Opus 4.8, but Opus 5 adds a second break — `{"type":"disabled"}` now also returns 400 at `effort` `xhigh`/`max` (Opus 4.8 allows `disabled` at any effort). Re-check any code path that disables thinking at high effort levels before switching.
 - As of September 2026 -- verify current models at https://platform.claude.com/docs/en/about-claude/models/overview
 
@@ -211,7 +184,7 @@ Opus 5, Opus 4.8, Opus 4.7, Opus 4.6, and Sonnet 4.6 support up to 300k output t
 - `prompt-caching` — multi-provider prompt caching with breakpoints, TTL, pricing, ZDR eligibility (verified 2026-04-29).
 
 ## Versioning & freshness
-- Models: `claude-fable-5-1` (highest capability, released 2026-09-01), `claude-fable-5` (prior Fable generation, GA 2026-06-09), `claude-opus-5` (Opus-tier flagship, GA 2026-07-24), `claude-opus-4-8` (still supported, not deprecated, retirement not before 2027-05-28), `claude-opus-4-7` (now Legacy), `claude-sonnet-5` (recommended Sonnet, GA 2026-06-30), `claude-sonnet-4-6` (legacy), `claude-haiku-4-5` (alias) / `claude-haiku-4-5-20251001` (dated). Legacy Sonnet 4 / Opus 4 (2025-05-14 snapshots) are deprecated, retired 2026-06-15 — do not use those IDs. Verify at https://platform.claude.com/docs/en/about-claude/models/overview.
+- Models: `claude-fable-5-1` (highest capability, released 2026-09-01), `claude-fable-5` (prior Fable generation, GA 2026-06-09), `claude-opus-5` (Opus-tier flagship, GA 2026-07-24), `claude-opus-4-8` (still supported, not deprecated, retirement not before 2027-05-28), `claude-opus-4-7` (now Legacy), `claude-sonnet-5-5` (recommended Sonnet, released 2026-09-28, source https://www.anthropic.com/claude-sonnet-5-5 read 2026-09-28), `claude-sonnet-5` (previous Sonnet generation, GA 2026-06-30, still supported), `claude-sonnet-4-6` (legacy), `claude-haiku-4-5` (alias) / `claude-haiku-4-5-20251001` (dated). Legacy Sonnet 4 / Opus 4 (2025-05-14 snapshots) are deprecated, retired 2026-06-15 — do not use those IDs. Verify at https://platform.claude.com/docs/en/about-claude/models/overview.
 - SDK: `anthropic` (Python), `@anthropic-ai/sdk` (TypeScript) -- verify at https://platform.claude.com/.
 - Aliases track the latest in-family model; dated snapshot IDs pin behavior and are useful for reproducibility.
 - **Context editing** (`platform.claude.com/docs/en/build-with-claude/context-editing`) and **compaction** are first-class long-context tools; the memory tool is available for durable agent state — reach for these before hand-rolling truncation.

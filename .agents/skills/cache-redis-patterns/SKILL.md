@@ -1,30 +1,9 @@
 ---
 name: cache-redis-patterns
-description: >-
-  Redis caching and coordination: cache-aside, TTL jitter, stampede protection,
-  rate limits, Redlock, Streams, Pub/Sub. Use when adding hot-path cache, locks,
-  or Redis messaging. Pair with background-jobs-queues for durable jobs and
-  realtime-websockets for transport.
+description: "Use when adding hot-path cache, locks or Redis messaging: cache-aside, TTL jitter, stampede protection, rate limits, Redlock, Streams, Pub/Sub. Durable jobs -> background-jobs-queues. Not transport."
 license: Apache-2.0
 metadata:
-  author: coding-agent
-  version: 1.1.6
-  category: library-reference
-  subcategory: api-reference
-  vendor: universal
-  lifecycle: active
-  coding_agent: true
-  tags:
-  - library-reference
-  - cache
-  - redis
-  - cache-aside
-  - distributed-locking
-  - rate-limiting
-  - project_level
-  audience: developer
-  output_format: markdown
-  modality: text
+  version: "1.1.6"
 ---
 
 ## Routing
