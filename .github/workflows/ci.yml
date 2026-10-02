@@ -1,10 +1,78 @@
 name: CI
 
+# Runs only when a critical path changes (fleet-machine-hub#248): auth/permissions, secrets,
+# money, DB migrations, deploy/infra and public API contracts. Keep both lists identical.
 on:
   push:
     branches: [main]
+    paths:
+      # auth/permissions + public API contracts (routers, middleware, setup wizard, SSE events)
+      - "runtime/ailine_runtime/api/**"
+      - "runtime/ailine_runtime/app/authz.py"
+      - "runtime/ailine_runtime/shared/tenant.py"
+      - "runtime/ailine_runtime/adapters/db/user_repository.py"
+      - "frontend/src/proxy.ts"
+      - "frontend/src/stores/auth-store.ts"
+      - "frontend/src/app/api/**"
+      # secrets handling
+      - "runtime/ailine_runtime/shared/jwt_dev_secret.py"
+      - "runtime/ailine_runtime/shared/config.py"
+      - "runtime/ailine_runtime/config.py"
+      - ".env.example"
+      # money (per-tenant token budget)
+      - "runtime/ailine_runtime/app/cost_guard.py"
+      # database migrations and schema
+      - "runtime/alembic.ini"
+      - "runtime/ailine_runtime/adapters/db/alembic/**"
+      - "runtime/ailine_runtime/adapters/db/models.py"
+      - "runtime/ailine_runtime/data/migrations/**"
+      - "infra/db/**"
+      # deploy/infra, dependency manifests and lockfiles
+      - "**/Dockerfile*"
+      - "**/.dockerignore"
+      - "docker-compose*.yml"
+      - "frontend/next.config.ts"
+      - "**/pyproject.toml"
+      - "**/uv.lock"
+      - "**/.python-version"
+      - "**/package.json"
+      - "**/pnpm-lock.yaml"
+      - "frontend/pnpm-overrides.json"
   pull_request:
     branches: [main]
+    paths:
+      # auth/permissions + public API contracts (routers, middleware, setup wizard, SSE events)
+      - "runtime/ailine_runtime/api/**"
+      - "runtime/ailine_runtime/app/authz.py"
+      - "runtime/ailine_runtime/shared/tenant.py"
+      - "runtime/ailine_runtime/adapters/db/user_repository.py"
+      - "frontend/src/proxy.ts"
+      - "frontend/src/stores/auth-store.ts"
+      - "frontend/src/app/api/**"
+      # secrets handling
+      - "runtime/ailine_runtime/shared/jwt_dev_secret.py"
+      - "runtime/ailine_runtime/shared/config.py"
+      - "runtime/ailine_runtime/config.py"
+      - ".env.example"
+      # money (per-tenant token budget)
+      - "runtime/ailine_runtime/app/cost_guard.py"
+      # database migrations and schema
+      - "runtime/alembic.ini"
+      - "runtime/ailine_runtime/adapters/db/alembic/**"
+      - "runtime/ailine_runtime/adapters/db/models.py"
+      - "runtime/ailine_runtime/data/migrations/**"
+      - "infra/db/**"
+      # deploy/infra, dependency manifests and lockfiles
+      - "**/Dockerfile*"
+      - "**/.dockerignore"
+      - "docker-compose*.yml"
+      - "frontend/next.config.ts"
+      - "**/pyproject.toml"
+      - "**/uv.lock"
+      - "**/.python-version"
+      - "**/package.json"
+      - "**/pnpm-lock.yaml"
+      - "frontend/pnpm-overrides.json"
 
 concurrency:
   group: ci-${{ github.ref }}
