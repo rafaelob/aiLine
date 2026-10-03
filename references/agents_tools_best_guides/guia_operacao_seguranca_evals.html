@@ -2,10 +2,11 @@
 <html lang="pt-BR" data-theme="light">
 <head>
 <meta charset="utf-8" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%9A%3C/text%3E%3C/svg%3E" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Operação, Segurança &amp; Evals de Agentes — Núcleo</title>
 <meta name="description" content="Operação como parte da arquitetura: privacidade/retenção/ZDR, guardrails em 3 pontos (L0/L1/L2), tracing/replay/cost ledger, evals e acceptance gates, runbooks, policy-as-code, RACI, threat model alinhado a OWASP LLM Top 10 e Agentic (ASI), SLIs/SLOs, release controlado e kit de evidência de incidente — agnóstico de provider." />
-<meta name="last-checked" content="2026-07-09" />
+<meta name="last-checked" content="2026-09-30" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -277,6 +278,7 @@
     details > summary { display: none; }
   }
 </style>
+<style id="rev-flag-css">main :not(pre) > code,main a{overflow-wrap:anywhere}.rev-flag{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:999px;font-size:.62em;font-weight:600;vertical-align:middle;letter-spacing:.02em;white-space:nowrap}.rev-flag.novo{background:#dcfce7;color:#14532d;border:1px solid #86efac}.rev-flag.atu{background:#e0f2fe;color:#0c4a6e;border:1px solid #7dd3fc}.rev-news{margin:16px 0;padding:12px 16px;border-left:4px solid #22c55e;border-radius:8px;background:rgba(34,197,94,.08)}.rev-news ul{margin:6px 0 0;padding-left:20px}.rev-news li{margin:2px 0}:root[data-theme="dark"] .rev-flag.novo{background:#14532d;color:#dcfce7;border-color:#166534}:root[data-theme="dark"] .rev-flag.atu{background:#0c4a6e;color:#e0f2fe;border-color:#075985}@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .rev-flag.novo{background:#14532d;color:#dcfce7;border-color:#166534}:root:not([data-theme="light"]) .rev-flag.atu{background:#0c4a6e;color:#e0f2fe;border-color:#075985}}</style>
 </head>
 <body>
 <a class="skip" href="#main">Pular para o conteúdo</a>
@@ -285,7 +287,7 @@
   <div class="header-row">
     <div class="brand">Operação, Segurança &amp; Evals <small>Núcleo agnóstico · super-guia de agentes</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-09</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-09-30</strong></span>
       <span class="badge da">Núcleo · v1</span>
       <span class="badge info">PT-BR · agnóstico</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
@@ -297,6 +299,7 @@
   <nav class="toc" aria-label="Sumário">
     <div class="toc-section">Início</div>
     <ol>
+      <li><a href="#para-agentes">Resumo para agentes</a></li>
       <li><a href="#sobre-guia">Sobre este guia</a></li>
       <li><a href="#fontes-oficiais">Fontes &amp; verificação</a></li>
     </ol>
@@ -330,11 +333,13 @@
     <div class="toc-section">Referência</div>
     <ol>
       <li><a href="#cheatsheet">Cheat sheet operacional</a></li>
+      <li><a href="#legado">Legado e migração</a></li>
       <li><a href="#verificacao">Notas de verificação</a></li>
     </ol>
   </nav>
 
   <main id="main">
+<aside class="rev-news" id="rev-news-2026-09-30" aria-label="Novidades desta revisão"><strong>O que há de novo nesta revisão (2026-09-30)</strong> — 2 seções novas e 5 atualizadas desde a revisão de 2026-09-23. Procure os selos <span class="rev-flag novo">Novo</span> e <span class="rev-flag atu">Atualizado</span> nos títulos.<details><summary>Ver lista</summary><ul><li><span class="rev-flag novo">Novo</span> <a href="#para-agentes">Resumo para agentes</a> — pisos de versão por advisory, Faça/Não faça e incertezas</li><li><span class="rev-flag atu">Atualizado</span> <a href="#guardrails">3.3. Fluxo de aprovação humana (HITL)</a> — guardrails de servidor MCP, sem citação literal não verificada</li><li><span class="rev-flag atu">Atualizado</span> <a href="#evals-acceptance-gates">Ecossistema de evals e guardrails — mapa de escolha</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#threat-model">8. Threat model (OWASP)</a> — OWASP AST10 publicada, Skills sobre MCP, cronograma do EU AI Act</li><li><span class="rev-flag atu">Atualizado</span> <a href="#advisories-supply-chain">Advisories de cadeia de suprimentos — pisos mínimos a fixar</a> — um único catálogo; novos: mcp GHSA-qx49/GHSA-rwrf, litellm GHSA-7hp6, claude-agent-sdk CVE-2026-96620, pydantic-ai 2.52.0</li><li><span class="rev-flag novo">Novo</span> <a href="#legado">Legado e migração</a> — pins antigos, numeração OWASP 2025 e varreduras datadas condensados numa seção</li><li><span class="rev-flag atu">Atualizado</span> <a href="#verificacao">Notas de verificação</a></li></ul></details></aside>
 
     <div class="hero">
       <h1>Operação, Segurança &amp; Evals de Agentes</h1>
@@ -349,9 +354,78 @@
       <div class="hero-meta">
         <span class="badge da">Núcleo · v1</span>
         <span class="badge info">PT-BR · agnóstico</span>
-        <span class="badge ok">SOTA · verificado 2026-06-10</span>
+        <span class="badge ok">SOTA · conteúdo 2026-09-30 · bibliotecas 2026-09-30</span>
       </div>
     </div>
+
+    <section id="para-agentes">
+      <h2>Resumo para agentes (verificado 2026-09-30)<span class="rev-flag novo">Novo · 2026-09-30</span></h2>
+      <h3>Superfície atual</h3>
+      <p>Este guia é contrato de operação, não SDK: não há chamada mínima. O que um agente precisa gravar no lockfile são os <strong>pisos de versão por advisory</strong> abaixo (fato perecível: confira o advisory da versão instalada). Catálogo completo e justificativa em <a href="#advisories-supply-chain">Advisories de cadeia de suprimentos</a>.</p>
+
+      <h3>Pisos mínimos por advisory (lidos em 2026-09-30)</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Pacote</th><th>Piso</th><th>Advisory principal</th><th>Corrente</th></tr></thead>
+        <tbody>
+          <tr><td><code>mcp</code> (PyPI)</td><td><code>&gt;=2.2.0</code> ou <code>&gt;=1.30.0</code> (linha 1.x)</td><td>GHSA-qx49-fqc8-xw99 (high) · GHSA-rwrf-2pqf-9j8j</td><td>2.2.0 / 1.30.0</td></tr>
+          <tr><td><code>@modelcontextprotocol/sdk</code> (npm v1)</td><td><code>&gt;=1.26.0</code></td><td>CVE-2025-66414 · CVE-2026-0621 · CVE-2026-25536</td><td>1.31.0</td></tr>
+          <tr><td><code>fastmcp</code> (Prefect)</td><td><code>&gt;=3.2.0</code> (alvo: 4.x) + <code>starlette&gt;=1.0.1</code></td><td>CVE-2026-32871 (crítica) · CVE-2026-48710 (Starlette)</td><td>4.0.10</td></tr>
+          <tr><td><code>pydantic-ai</code> / <code>-slim</code></td><td><code>&gt;=2.52.0</code> (1.x: <code>&gt;=1.107.7</code>)</td><td>GHSA-v36g-jcw9-x7cw · GHSA-vmxc-h2x2-jmf3 · CVE-2026-65975</td><td>2.52.0</td></tr>
+          <tr><td><code>claude-agent-sdk</code></td><td><code>&gt;=0.2.121</code></td><td>CVE-2026-96620 (crítica, opção <code>resume</code>)</td><td>0.2.162</td></tr>
+          <tr><td><code>litellm</code></td><td>por linha: <code>1.100.4</code> · <code>1.101.3</code> · <code>1.102.2</code> · <code>1.103.1</code></td><td>GHSA-7hp6-4w63-5g45 (crítica, 9.9)</td><td>1.103.1</td></tr>
+          <tr><td><code>langgraph-checkpoint</code> · <code>-postgres</code>/<code>-sqlite</code> · <code>langgraph</code></td><td><code>&gt;=4.1.1</code> · <code>&gt;=3.1.1</code> · <code>&gt;=1.0.10</code></td><td>CVE-2026-48775 · CVE-2026-71433 · CVE-2026-28277</td><td>4.2.0 · 3.1.2/3.1.1 · 1.2.12</td></tr>
+          <tr><td><code>langgraph-api</code> · <code>langgraph-sdk</code></td><td><code>&gt;=0.15.0</code> · <code>&gt;=0.4.4</code></td><td>GHSA-4hm6-w6qq-w73v · GHSA-fvww-7h3r-vfhp</td><td>0.15.1 / —</td></tr>
+          <tr><td><code>langchain-core</code> · <code>langchain</code> · <code>langchain-anthropic</code></td><td><code>&gt;=1.3.3</code> (0.3.x: <code>&gt;=0.3.85</code>) · <code>&gt;=1.3.9</code> · <code>&gt;=1.4.6</code></td><td>CVE-2025-68664 (crítica) · CVE-2026-44843 · CVE-2026-55443</td><td>1.6.6 · 1.4.3 · 1.7.5</td></tr>
+          <tr><td><code>@langchain/core</code> · <code>@langchain/langgraph-checkpoint-redis</code> (npm)</td><td><code>&gt;=1.1.8</code> (0.3.x: <code>&gt;=0.3.80</code>) · <code>&gt;=1.0.2</code></td><td>CVE-2025-68665 · CVE-2026-27022</td><td>1.2.13 / —</td></tr>
+          <tr><td><code>anthropic</code> (PyPI) · <code>@anthropic-ai/sdk</code> (npm)</td><td><code>&gt;=0.87.0</code> · <code>&gt;=0.91.1</code></td><td>CVE-2026-34450/34452 · CVE-2026-34451/41686 (memory tool local)</td><td>1.9.0 · 0.129.0</td></tr>
+          <tr><td><code>google-adk</code></td><td>CVE-2026-4810: <code>1.28.1</code> / <code>2.0.0a2</code> · CVE-2026-18236: <code>&gt;=2.5.0</code></td><td>CVE-2026-4810 (crítica, RCE; exige redeploy)</td><td>2.10.0</td></tr>
+          <tr><td><code>@ai-sdk/harness</code> (npm)</td><td><code>&gt;=1.0.133</code> (subpacotes: <code>-claude-code&gt;=1.0.137</code>, <code>-codex</code>/<code>-opencode&gt;=1.0.135</code>, <code>-deepagents&gt;=1.0.133</code>, <code>-acp&gt;=1.0.71</code>)</td><td>GHSA-4mqq-99j3-3hmv (high)</td><td>—</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Faça / Não faça</h3>
+      <ul>
+        <li>Faça: fixe os pisos acima no lockfile; <code>langgraph-checkpoint</code>, <code>-postgres</code>/<code>-sqlite</code> e <code>langgraph</code> são três pacotes com pisos que não se substituem.</li>
+        <li>Faça: em adapter que limita <code>mcp&lt;2</code>, use <code>mcp&gt;=1.30.0,&lt;2</code> quando o teto permitir. <code>crewai</code> (<code>mcp~=1.28.1</code>) não alcança o piso e <code>strands-agents</code> (<code>mcp&lt;2.2</code>) só o alcança pela 1.x: isole o adapter, não remova o teto sem testar.</li>
+        <li>Faça: nunca passe session ID de origem externa ao <code>resume</code> do <code>claude-agent-sdk</code> sem validar (valor iniciado por <code>-</code> vira flag do CLI).</li>
+        <li>Faça: trate o store de checkpoint do LangGraph como superfície confiável; defesa extra: <code>LANGGRAPH_STRICT_MSGPACK=true</code> com <code>allowed_msgpack_modules</code>.</li>
+        <li>Faça: SSRF = resolver o nome, validar o IP final, revalidar cada redirect e sair por proxy de egresso com allowlist; blocklist de endereços sozinha já foi contornada várias vezes.</li>
+        <li>Faça: approval binding com <code>args hash</code>, nonce, TTL, versão da policy e confirmação imediatamente antes do efeito; HITL obrigatório em ações High/Critical.</li>
+        <li>Faça: valide issuer, audience, tenant e escopos no executor; trate descrição/annotations de tool MCP e conteúdo de skill servido por MCP como não confiáveis.</li>
+        <li>Faça: gates <code>SEC-01</code>, <code>DATA-01</code>, <code>TOOL-01</code>, <code>COST-01</code>, <code>OBS-01</code> bloqueiam release; <code>SCHEMA-01</code> e <code>CTX-01</code> em fluxos críticos/longos (<a href="#hardening-sota">§14</a>).</li>
+        <li>Faça: atributos <code>gen_ai.*</code> de input/output/tool só com opt-in, redaction e retenção definida.</li>
+        <li>Não use os pisos antigos <code>mcp&gt;=1.28.1,&lt;2</code>, <code>mcp&gt;=2.1.1</code>, <code>langgraph-checkpoint&gt;=4.0.0</code>, <code>langchain-core&gt;=1.2.5</code>, <code>pydantic-ai&gt;=1.102.0</code>/<code>&gt;=2.5.0</code>/<code>&gt;=2.30.0</code>: estão abaixo dos advisories posteriores (<a href="#legado">Legado</a>).</li>
+        <li>Não use a numeração OWASP LLM Top 10 2025 → 2026: Excessive Agency é <code>LLM03</code>, Supply Chain <code>LLM04</code>, System Prompt Leakage virou <code>LLM08</code> Hidden Context Exposure. Agentic: ASI01–ASI10; skills: AST10 v1.0.</li>
+        <li>Não dereferencie <code>$ref</code> remoto automaticamente (GHSA-rwrf-2pqf-9j8j) nem aceite token emitido para outra audiência.</li>
+        <li>Não trate "nenhum advisory" como seguro sem o escopo consultado: vazio e não consultado são coisas diferentes.</li>
+        <li>Não infira aprovação humana; não use a spec MCP ou a annotation de tool como substituto de ACL.</li>
+      </ul>
+
+      <h3>Onde está cada coisa</h3>
+      <p>
+        <a href="#operacao-e-arquitetura">§1 operação</a> ·
+        <a href="#privacidade-retencao-zdr">§2 retenção/ZDR</a> ·
+        <a href="#guardrails">§3 guardrails e HITL</a> ·
+        <a href="#tracing-replay-cost">§4 tracing e cost ledger</a> ·
+        <a href="#evals-acceptance-gates">§5 evals e gates</a> ·
+        <a href="#runbooks">§6 runbooks</a> ·
+        <a href="#policy-as-code">§7 policy-as-code</a> ·
+        <a href="#threat-model">§8 threat model</a> ·
+        <a href="#advisories-supply-chain">advisories</a> ·
+        <a href="#release-controlado">§10 release</a> ·
+        <a href="#kit-evidencia-incidente">§11 incidente</a> ·
+        <a href="#checklist-producao">§13 checklist</a> ·
+        <a href="#hardening-sota">§14 gates SOTA</a> ·
+        <a href="#cheatsheet">cheat sheet</a> ·
+        <a href="#legado">legado</a>
+      </p>
+
+      <h3>Incertezas (não trate como fato)</h3>
+      <ul>
+        <li><span class="pill partial">UNVERIFIED</span> Advisories dos SDKs MCP de Java, Ruby, Go, Rust, Kotlin, PHP, Swift e dos pacotes npm <code>@modelcontextprotocol/server</code>/<code>client</code>; piso 1.x do ADK para CVE-2026-18236 (<code>1.38.0</code>); quatro CVEs extras do <code>langchain-core</code>.</li>
+        <li><span class="pill partial">UNVERIFIED</span> Edição posterior do OWASP Agentic Top 10 (a página só dá a data 09/12/2025) e o mecanismo de adiamento do EU AI Act. Ver <a href="#verificacao">Notas de verificação</a>.</li>
+      </ul>
+    </section>
 
     <section id="sobre-guia">
       <h2>Sobre este guia</h2>
@@ -387,7 +461,7 @@
     <section id="fontes-oficiais">
       <h2>Fontes &amp; verificação</h2>
       <p>
-        Todo fato perecível deste guia foi conferido contra a documentação oficial em <strong>2026-06-10</strong>
+        Todo fato perecível deste guia foi conferido contra a documentação oficial até <strong>2026-09-30</strong>
         ou anotado como <span class="pill partial">UNVERIFIED</span> nas
         <a href="#verificacao">notas de verificação</a>. Os IDs de modelo <strong>não são fixados no corpo</strong>
         (use sempre <code>model="..."</code>); a folha de fatos SOTA do super-guia concentra os IDs perecíveis.
@@ -397,29 +471,29 @@
         <tbody>
           <tr><td>Agents SDK (guardrails, tracing)</td><td><a href="https://openai.github.io/openai-agents-python/" target="_blank" rel="noopener">openai.github.io/openai-agents-python</a></td></tr>
           <tr><td>OpenAI Responses (estado, retenção)</td><td><a href="https://developers.openai.com/api/docs/guides/conversation-state" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/conversation-state</a></td></tr>
+          <tr><td>OpenAI data controls / ZDR</td><td><a href="https://developers.openai.com/api/docs/guides/your-data" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/your-data</a> (abuse monitoring, elegibilidade ZDR e retenção de terceiros)</td></tr>
+          <tr><td>OpenAI remote MCP / connectors</td><td><a href="https://developers.openai.com/api/docs/guides/tools-connectors-mcp" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/tools-connectors-mcp</a> (servidor third-party, approval e prompt injection)</td></tr>
           <tr><td>OpenAI reasoning</td><td><a href="https://developers.openai.com/api/docs/guides/reasoning" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/reasoning</a></td></tr>
           <tr><td>Pydantic AI — evals</td><td><a href="https://pydantic.dev/docs/ai/evals/evals/" target="_blank" rel="noopener">pydantic.dev/docs/ai/evals/evals</a></td></tr>
           <tr><td>Pydantic AI — Logfire / observabilidade</td><td><a href="https://pydantic.dev/docs/ai/integrations/logfire/" target="_blank" rel="noopener">pydantic.dev/docs/ai/integrations/logfire</a></td></tr>
-          <tr><td>MCP — spec (segurança/consentimento)</td><td><a href="https://modelcontextprotocol.io/specification/2025-11-25" target="_blank" rel="noopener">modelcontextprotocol.io/specification/2025-11-25</a></td></tr>
-          <tr><td>OWASP — LLM Top 10 (2025)</td><td><a href="https://genai.owasp.org/llm-top-10/" target="_blank" rel="noopener">genai.owasp.org/llm-top-10</a></td></tr>
+          <tr><td>MCP SDK Python — distribuição e advisories</td><td><a href="https://pypi.org/project/mcp/" target="_blank" rel="noopener">PyPI · mcp</a> · <a href="https://github.com/modelcontextprotocol/python-sdk/security/advisories" target="_blank" rel="noopener">advisories do python-sdk</a></td></tr>
+          <tr><td>MCP — spec atual (segurança/consentimento)</td><td><a href="https://modelcontextprotocol.io/specification/2026-07-28" target="_blank" rel="noopener">modelcontextprotocol.io/specification/2026-07-28</a> · <a href="https://modelcontextprotocol.io/docs/2026-07-28/tutorials/security/security_best_practices" target="_blank" rel="noopener">best practices</a></td></tr>
+          <tr><td>OpenTelemetry GenAI</td><td><a href="https://opentelemetry.io/docs/specs/semconv/registry/attributes/gen-ai/" target="_blank" rel="noopener">registry Semantic Conventions 1.44.0</a> · <a href="https://github.com/open-telemetry/semantic-conventions-genai" target="_blank" rel="noopener">repositório dedicado de atributos GenAI</a>; atributos podem conter PII/segredos, use redaction e opt-in</td></tr>
+          <tr><td>OWASP — LLM Top 10 (2026, vigente)</td><td><a href="https://genai.owasp.org/resource/owasp-genai-llm-top-10-2026/" target="_blank" rel="noopener">genai.owasp.org · LLM Top 10 2026</a></td></tr>
+          <tr><td>OWASP — Agentic Skills Top 10 (AST10, v1.0 · 2026 Edition)</td><td><a href="https://owasp.github.io/www-project-agentic-skills-top-10/" target="_blank" rel="noopener">owasp.github.io/www-project-agentic-skills-top-10</a></td></tr>
           <tr><td>OWASP — Top 10 for Agentic Apps (2026)</td><td><a href="https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/" target="_blank" rel="noopener">genai.owasp.org/.../agentic-applications-for-2026</a></td></tr>
           <tr><td>EU AI Act — texto e cronograma</td><td><a href="https://artificialintelligenceact.eu/implementation-timeline/" target="_blank" rel="noopener">artificialintelligenceact.eu/implementation-timeline</a></td></tr>
+          <tr><td>NIST AI RMF — perfil GenAI (voluntário, final)</td><td><a href="https://www.nist.gov/publications/artificial-intelligence-risk-management-framework-generative-artificial-intelligence" target="_blank" rel="noopener">NIST AI 600-1</a> · <a href="https://doi.org/10.6028/NIST.AI.600-1" target="_blank" rel="noopener">DOI</a> (publicado 2024-07-26; página atualizada 2026-04-08)</td></tr>
+          <tr><td>A2A — especificação 1.0 e segurança</td><td><a href="https://a2a-protocol.org/latest/specification/" target="_blank" rel="noopener">a2a-protocol.org · latest specification</a> (Agent Card, autenticação e assinaturas JWS; versão publicada 1.0.0)</td></tr>
         </tbody>
       </table></div>
       <p style="font-size:13px;color:var(--c-fg-muted)">
-        Legenda dos selos: <span class="pill ok">Verificado</span> confirmado na doc oficial em 2026-06-10 ·
+        Legenda dos selos: <span class="pill ok">Verificado</span> confirmado na doc oficial até 2026-09-30 ·
         <span class="pill beta">Novo</span> recurso/spec recente ·
         <span class="pill partial">UNVERIFIED</span> não confirmado dentro do orçamento (fonte/lacuna anotada) ·
         <span class="pill bad">Evitar</span> descontinuado/antipadrão ·
         <span class="pill na">N/D</span> não documentado.
       </p>
-      <div class="callout warn">
-        <strong>Mudança de domínio do Pydantic AI (verificada ao vivo):</strong> em 2026-05-25,
-        <code>ai.pydantic.dev/…</code> retorna <strong>301 Moved Permanently</strong> para
-        <code>pydantic.dev/docs/ai/…</code> (confirmado para <code>/overview/</code>, <code>/evals/evals/</code> e
-        <code>/integrations/logfire/</code>). Este guia usa o destino canônico vivo
-        <code>pydantic.dev/docs/ai/…</code>. Ver <a href="#verificacao">notas de verificação</a>.
-      </div>
     </section>
 
     <!-- ===================== PARTE 1 ===================== -->
@@ -578,7 +652,7 @@
         FP/FN/concordância verde e fallback declarado).
       </div>
 
-      <h3>3.3. Fluxo de aprovação humana (HITL)</h3>
+      <h3>3.3. Fluxo de aprovação humana (HITL)<span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
       <p>
         Ações com efeito colateral irreversível, financeiro ou sobre PII exigem aprovação humana. O HITL separa
         explicitamente <em>plan</em> de <em>execute</em>, registra o racional e os parâmetros aprovados, e
@@ -597,7 +671,55 @@
         O contrato de aprovação de tool agnóstico (níveis de side-effect) está em
         <a href="guia_ferramentas_mcp_rag.html">Ferramentas, MCP &amp; RAG</a>.
       </div>
-      <div class="source-link">Fonte oficial: <a href="https://openai.github.io/openai-agents-python/" target="_blank" rel="noopener">OpenAI Agents SDK</a> · OWASP — <a href="https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/" target="_blank" rel="noopener">Top 10 for Agentic Applications (2026)</a></div>
+      <div class="callout info">
+        <strong>Guardrails por servidor MCP inteiro (<code>openai-agents</code> ≥ 0.22.1).</strong> Antes, um
+        <code>InputGuardrail</code>/<code>OutputGuardrail</code> do Agents SDK se prendia a uma tool nomeada; a
+        partir da 0.22.1 o SDK aceita guardrails anexados a um <code>MCPServer</code> inteiro — eles se aplicam a
+        <strong>toda tool desse servidor</strong>, sem listar cada nome. Útil para um MCP server externo (terceiro,
+        marketplace, cliente) cujas tools individuais você não controla mas cujo acesso, como classe, precisa de
+        política. Desde a 0.22.0, a saída de uma function tool terminal rejeitada por um output guardrail é
+        redigida do estado replayable e persistido do SDK, em vez de ficar guardada. Este é um mecanismo específico
+        do Agents SDK (runtime), complementar — não substituto — das camadas L0/L1/L2 acima. Fonte: release notes de
+        <a href="https://github.com/openai/openai-agents-python/releases" target="_blank" rel="noopener">openai-agents-python</a>
+        (0.22.0 e 0.22.1; versão corrente 0.22.3), lidas em 2026-09-30.
+      </div>
+      <h3>3.4. Identidade, delegação e vínculo de aprovação</h3>
+      <p>
+        Autenticação do transporte não transfere autoridade ao modelo. Antes de cada chamada client-side,
+        o runtime resolve o <code>principal_id</code> autenticado, a cadeia de delegação e os escopos para o
+        tenant e a capability; o executor revalida tudo no momento do efeito. Um cartão de agente, descrição de
+        tool ou mensagem A2A/MCP é metadado de descoberta, nunca uma concessão de privilégio.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Vínculo obrigatório</th><th>Registro mínimo</th><th>Falha</th></tr></thead>
+        <tbody>
+          <tr><td>Principal e delegação</td><td><code>principal_id</code>, <code>tenant_id</code>, emissor, audiência, scopes e <code>delegation_chain</code> verificados</td><td>Token ausente, audiência errada, escopo expirado ou cadeia desconhecida → negar</td></tr>
+          <tr><td>Aprovação</td><td><code>approval_id</code>, aprovador/papel, <code>policy_version</code>, <code>tool_name@version</code>, hash canônico dos argumentos, TTL e nonce</td><td>Argumentos, tenant, ferramenta, policy ou janela temporal divergentes → negar; aprovação não é reutilizável</td></tr>
+          <tr><td>Execução</td><td><code>idempotency_key</code>, <code>execution_id</code>, estado <code>requested|authorized|started|committed|verified|unknown</code></td><td>Timeout ou confirmação ausente → <code>unknown</code>, nunca sucesso inferido do texto do modelo</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout warn">
+        <strong>Approval binding:</strong> mostre ao humano o alvo e o resumo dos argumentos que serão
+        executados; assine/registre o hash canônico desse payload e exija correspondência byte-a-byte no
+        executor. A confirmação deve ocorrer imediatamente antes da ação de risco. Uma alteração de schema,
+        redirect, destinatário ou argumento reabre a aprovação. Para A2A, use os esquemas declarados no
+        <code>AgentCard</code>, valide TLS/audiência e, quando houver assinatura, verifique o JWS sobre o card
+        canonizado; isso não substitui ACL, consentimento por operação nem o vínculo local da aprovação.
+      </div>
+      <div class="callout info">
+        <strong>Governança de criação de API key (OpenAI, desde 2026-09-15) — controle a montante da delegação
+        acima.</strong> A tabela e o binding de §3.4 tratam de <em>quem o runtime deixa agir</em> com uma
+        credencial já existente; a OpenAI adicionou um controle anterior a esse, na origem da credencial:
+        administradores de organização e de projeto podem restringir, na seção de governança de API keys do
+        Platform settings, <strong>quais tipos de key podem ser criados</strong> — só service-account keys, só
+        keys de projeto de propriedade de usuário, ou desabilitar toda criação de key nova. Restrição no nível de
+        organização sempre prevalece sobre a de projeto (um projeto só pode apertar, nunca afrouxar, o que a
+        organização definiu); keys já existentes não são afetadas — o controle vale só para criação futura. Trate
+        isso como parte do seu inventário de identidade (§3.4): uma política de guardrail L0–L2 correta não
+        compensa uma organização que ainda permite qualquer membro criar uma key de escopo amplo por fora do
+        processo de delegação. Fonte: OpenAI — API key governance controls, changelog 2026-09-15.
+      </div>
+      <div class="source-link">Fonte oficial: <a href="https://openai.github.io/openai-agents-python/" target="_blank" rel="noopener">OpenAI Agents SDK</a> · OWASP — <a href="https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/" target="_blank" rel="noopener">Top 10 for Agentic Applications (2026)</a> · <a href="https://developers.openai.com/api/docs/changelog" target="_blank" rel="noopener">OpenAI API changelog</a></div>
     </section>
 
     <section id="tracing-replay-cost">
@@ -617,6 +739,25 @@
     "parameters": { "max_output_tokens": 4096, "tool_choice": "auto" },
     "input_hash": "sha256:...",
     "output_hash": "sha256:...",
+    "actor": {
+      "principal_id": "usr_123",
+      "tenant_id": "tenant_456",
+      "delegation_chain": ["user", "agent:triage"]
+    },
+    "approval_binding": {
+      "approval_id": "apr_123",
+      "args_hash": "sha256:...",
+      "policy_version": "policy-2026-09-30",
+      "expires_at": "2026-09-30T18:00:00Z"
+    },
+    "side_effect": {
+      "execution_id": "exec_123",
+      "state": "requested | authorized | started | committed | verified | unknown",
+      "idempotency_key": "idem_123",
+      "external_receipt": null,
+      "before_hash": "sha256:...",
+      "after_hash": null
+    },
     "usage": { "input_tokens": 1000, "output_tokens": 300, "reasoning_tokens": 120 },
     "cost_estimate": { "amount": 0.012, "currency": "USD", "known": false },
     "status": "success"
@@ -642,7 +783,15 @@
         <li><strong>Replay sem dados sensíveis:</strong> hashes e ponteiros em vez do conteúdo bruto quando a classe de dado exigir.</li>
         <li><strong>Atribuição de custo:</strong> <code>cost_per_success</code> por rota/tenant/provider (ver §9).</li>
         <li><strong>Reconstrução de decisão:</strong> ligar span → policy aplicada → aprovação humana → gate que passou/falhou.</li>
+        <li><strong>Evidência de efeito:</strong> separar <code>requested</code>, <code>authorized</code>, <code>started</code>, <code>committed</code> e <code>verified</code>; guardar receipt/ID externo e hashes before/after quando disponíveis. <code>unknown</code> exige reconciliação, não retry cego.</li>
       </ul>
+      <div class="callout warn">
+        <strong>Side effect não é texto de resposta:</strong> uma tool call emitida pelo modelo prova apenas
+        intenção. HTTP 200, <code>ok:true</code> ou uma mensagem final não provam que o estado externo mudou.
+        O teste de resultado precisa usar a integração real (ou sandbox equivalente) e registrar o recibo,
+        estado observado ou reconciliação; sem essa evidência, o resultado é <span class="pill partial">NAO-MEDIDO</span>
+        e a rota permanece em <strong>HOLD</strong>.
+      </div>
       <div class="callout beta">
         <strong>Tracing/persistência por framework (cross-link):</strong> módulo de tracing do
         <a href="guia_agents_sdk.html#s-tracing">OpenAI Agents SDK</a>; checkpointers como persistência durável em
@@ -670,6 +819,10 @@
           <tr><td><code>BUDGET-001</code></td><td><em>Final reserve</em> impede esgotamento da resposta final.</td><td>Sistema finaliza sem abrir tools quando a reserva é atingida.</td></tr>
           <tr><td><code>PROVIDER-001</code></td><td>Provider switch declara perdas.</td><td><em>Loss declaration</em> presente em todo switch.</td></tr>
           <tr><td><code>SEC-001</code></td><td>Prompt injection em tool/RAG não ganha autoridade.</td><td>Modelo ignora instruções em documentos como comandos.</td></tr>
+          <tr><td><code>IDENTITY-001</code></td><td>Delegação, audiência, tenant e escopos são verificados no executor.</td><td>Token forjado/expirado, escopo insuficiente ou tenant divergente nunca executa.</td></tr>
+          <tr><td><code>APPROVAL-001</code></td><td>Aprovação é vinculada ao hash canônico dos argumentos e à policy.</td><td>Replay, alteração de argumento, redirect ou destinatário reabre a aprovação.</td></tr>
+          <tr><td><code>SIDEFX-001</code></td><td>Resultado de tool com efeito colateral é reconciliado com estado/recibo externo.</td><td>Há <code>execution_id</code>, estado final observado e evidência before/after; ausência vira <code>unknown</code>/<span class="pill partial">NAO-MEDIDO</span>.</td></tr>
+          <tr><td><code>RESILIENCE-001</code></td><td>Budgets, fan-out, timeout e circuit breaker encerram cascatas.</td><td>Nenhuma nova chamada após o limite; motivo e contadores aparecem no trace.</td></tr>
         </tbody>
       </table></div>
       <p>
@@ -679,6 +832,21 @@
         (factualidade, tom, aderência a política) e <strong>adversariais</strong> (injection, exfiltração,
         escalonamento) — estes últimos antes de cada release.
       </p>
+      <div class="callout info">
+        <strong>Processo e resultado são gates diferentes.</strong> Evals de <em>process</em> verificam a
+        trajetória: identidade, seleção de tool, ordem, aprovação vinculada, limites, retries e abertura do
+        circuit breaker. Evals de <em>outcome</em> verificam o estado entregue: exatidão, valor para o usuário,
+        recibo/estado externo e ausência de efeitos indevidos. Os dois precisam de casos positivos e negativos;
+        mock prova uma unidade, não a fiação nem o side effect. Sem evidência de execução/reconciliação, marque
+        <span class="pill partial">NAO-MEDIDO</span> e não promova a release.
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Dimensão</th><th>Falsificador mínimo</th><th>Artefato que fecha a prova</th></tr></thead>
+        <tbody>
+          <tr><td>Processo</td><td>Prompt injection tenta chamar tool proibida; delegation/audience inválida; aprovação com argumento alterado; fan-out excede budget.</td><td>Trace ordenado com decisão <code>deny</code>, <code>approval_id</code>/<code>args_hash</code>, contadores e circuit-open.</td></tr>
+          <tr><td>Resultado</td><td>Tool de escrita executa em sandbox/integração controlada e retorna estado esperado; falha/timeout é reconciliado.</td><td><code>execution_id</code>, recibo ou leitura posterior do estado, hashes before/after e status final; caso contrário <code>unknown</code>.</td></tr>
+        </tbody>
+      </table></div>
       <div class="source-link">Fonte oficial: <a href="https://pydantic.dev/docs/ai/evals/evals/" target="_blank" rel="noopener">Pydantic AI · evals</a></div>
       <div class="callout beta">
         <strong>Evals por framework (cross-link):</strong> Pydantic AI como camada de evals/observabilidade
@@ -686,6 +854,18 @@
         critérios do ADK (tool trajectory, response match, rubric, safety, simulação de usuário) em
         <a href="guia_google_adk.html#evaluate">Google ADK · avaliação</a>.
       </div>
+      <h3>Ecossistema de evals e guardrails — mapa de escolha<span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Projeto</th><th>Versão verificada</th><th>Papel principal</th><th>Fonte oficial</th></tr></thead>
+        <tbody>
+          <tr><td>Pydantic Evals</td><td><code>pydantic-ai 2.52.0</code> <span class="small">(PyPI, 2026-09-30)</span></td><td>Datasets/cases tipados, evaluators code-first e integração com o harness Pydantic AI.</td><td><a href="https://pydantic.dev/docs/ai/evals/evals/" target="_blank" rel="noopener">docs</a> · <a href="https://pypi.org/project/pydantic-ai/" target="_blank" rel="noopener">PyPI</a></td></tr>
+          <tr><td>DeepEval</td><td><code>deepeval 4.2.7</code> <span class="small">(PyPI, 2026-09-30)</span></td><td>Métricas para agentes, tools, RAG e MCP integradas a pytest/CI.</td><td><a href="https://deepeval.com/docs/introduction" target="_blank" rel="noopener">docs</a></td></tr>
+          <tr><td>Ragas</td><td><code>ragas 0.4.3</code> <span class="small">(PyPI, 2026-09-30; release de 2026-01-13)</span></td><td>Avaliação orientada a datasets e métricas de RAG.</td><td><a href="https://docs.ragas.io/en/stable/getstarted/evals/" target="_blank" rel="noopener">docs</a></td></tr>
+          <tr><td>TruLens</td><td><code>trulens-eval 2.14.0</code> <span class="small">(PyPI, 2026-09-30)</span></td><td>Instrumentação compatível com OpenTelemetry, feedback/eval e guardrails em runtime. <code>trulens-eval</code> hoje é só o pacote de compatibilidade retroativa (fixa <code>trulens-core</code>/<code>trulens-dashboard</code>/<code>trulens-feedback</code> ≥2.0,&lt;3.0); projeto novo deve instalar os pacotes <code>trulens-*</code> diretamente.</td><td><a href="https://www.trulens.org/component_guides/instrumentation/" target="_blank" rel="noopener">docs</a></td></tr>
+          <tr><td>Guardrails AI</td><td><code>guardrails-ai 0.11.0</code> <span class="small">(PyPI, 2026-09-30)</span></td><td>Guards de entrada/saída e validação de dados estruturados; não substitui eval offline.</td><td><a href="https://guardrailsai.com/guardrails/docs" target="_blank" rel="noopener">docs</a></td></tr>
+        </tbody>
+      </table></div>
+      <p class="small">Versões medidas em registries oficiais em 2026-09-30. Versão atual não implica adequação: escolha pela superfície a proteger e fixe no lockfile após um teste funcional do seu caso.</p>
     </section>
 
     <!-- ===================== PARTE 2 ===================== -->
@@ -715,6 +895,10 @@
           <tr><td>Prompt injection</td><td>Documento/tool output tenta alterar instruções.</td><td>Tratar como dado não confiável; remover comandos.</td><td>Classificador de injection e delimitação de evidence.</td></tr>
           <tr><td>Cost spike</td><td>Usage acima do limite por usuário/tenant.</td><td>Cortar fan-out e forçar síntese.</td><td>Cost ledger, quotas e alertas.</td></tr>
           <tr><td>Privacy breach risk</td><td>Dado sensível prestes a ir a provider/tool não autorizado.</td><td>Bloquear chamada e redigir output.</td><td>Classificação e policy-as-code.</td></tr>
+          <tr><td>Sandbox / RCE / SSRF</td><td>Tool ou conteúdo tenta executar código, alcançar rede interna, metadata ou destino fora da allowlist.</td><td>Interromper, preservar evidência e bloquear egresso/credenciais; não seguir redirect cego.</td><td>Sandbox sem privilégios, egress proxy/allowlist, validação de DNS/IP e teste adversarial.</td></tr>
+          <tr><td>Identity / approval mismatch</td><td>Principal, audiência, tenant, escopo ou hash aprovado não coincide com a chamada.</td><td>Negar antes do executor; invalidar approval e emitir evento de auditoria.</td><td>Delegation chain assinada, approval binding e nonce/TTL de uso único.</td></tr>
+          <tr><td>Memory poisoning</td><td>Memória persistida contém instrução, segredo ou fato sem provenance.</td><td>Isolar item e reprocessar sem injetá-lo no contexto.</td><td>Write guardrail, provenance, quarentena e eval de recuperação.</td></tr>
+          <tr><td>Cascade / circuit open</td><td>Retries/fan-out propagam falha ou consomem budget.</td><td>Abrir circuit, cancelar descendentes e degradar para resposta segura.</td><td>Budgets por turno/tenant, backoff limitado, deadline e circuit breaker observável.</td></tr>
         </tbody>
       </table></div>
       <div class="callout">
@@ -739,6 +923,15 @@
     max_tool_calls: 12
     final_reserve_tokens: 3500
     providers_allowed: [openai, anthropic, google]
+    identity:
+      principal_source: verified_token
+      require_audience: true
+      delegation_max_depth: 2
+    egress:
+      mode: allowlist_proxy
+      hosts: ["api.example.internal"]
+      block_private_ranges: true
+      recheck_after_redirect: true
     retention:
       provider_store: false
       internal_days: 30
@@ -746,6 +939,9 @@
     tools:
       retrieve_evidence.v1: { side_effect: read,        approval: auto,           timeout_ms: 12000 }
       update_record.v1:     { side_effect: write_high,  approval: human_required, timeout_ms: 8000 }
+    approval_binding: [principal_id, tenant_id, tool_name, tool_version, args_hash, policy_version, expires_at, nonce]
+    circuit_breaker: { max_failures: 3, cooldown_ms: 30000, stop_fan_out: true }
+    side_effect_evidence: [execution_id, idempotency_key, before_hash, after_hash, external_receipt, final_state]
     guardrails:
       input:       [classify_data, detect_prompt_injection, cap_size]
       output:      [schema_validate, citation_check, safety_policy]
@@ -754,34 +950,47 @@
         <strong>Por que código e não prompt:</strong> o prompt influencia o modelo, mas não o impede. O
         <code>approval: human_required</code> e o <code>side_effect: write_high</code> são avaliados pelo
         orquestrador <em>antes</em> de a tool executar — fora do alcance de uma prompt injection. Risco
-        (tier) → política → gate é a cadeia que sobrevive a um modelo "convencido" pelo atacante.
+        (tier) → política → gate é a cadeia que sobrevive a um modelo "convencido" pelo atacante. O
+        <code>approval_binding</code>, a allowlist de egresso e o circuit breaker também são enforcement,
+        não instruções para o modelo.
       </div>
     </section>
 
     <section id="threat-model">
-      <h2>8. Threat model resumido (OWASP)</h2>
+      <h2>8. Threat model resumido (OWASP)<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <p>
         O threat model de um agente combina as ameaças clássicas de LLM com as ameaças <em>agênticas</em>
-        (multi-agente, tools, memória). Use os dois catálogos da OWASP como baseline: <strong>LLM Top 10 (2025)</strong>
-        e o <strong>Top 10 for Agentic Applications (2026)</strong>, este último com as dez categorias ASI01–ASI10 —
-        ambos seguem vigentes (re-verificados em 2026-06-29: o LLM Top 10 <strong>2025</strong> inclui os itens novos
-        <strong>LLM07 System Prompt Leakage</strong> e <strong>LLM08 Vector &amp; Embedding Weaknesses</strong>; o
-        Agentic <strong>ASI01–ASI10</strong> foi publicado em 09/12/2025). Para observabilidade, as convenções
-        <em>OpenTelemetry GenAI</em> (<code>gen_ai.*</code>) migraram para repositório dedicado na v1.42.0 (2026-06-12)
-        e seguem em status <em>Experimental</em>. A OWASP incuba ainda o <em>Agentic Skills Top 10</em>
-        (AST10), sem lista publicada.
+        (multi-agente, tools, memória, skills). Use os catálogos da OWASP como baseline: <strong>LLM Top 10 (2026)</strong>
+        (lançado em agosto/2026 em
+        <a href="https://genai.owasp.org/resource/owasp-genai-llm-top-10-2026/" target="_blank" rel="noopener">genai.owasp.org</a>),
+        o <strong>Top 10 for Agentic Applications</strong> (ASI01–ASI10, publicado em 09/12/2025) e o
+        <strong>Agentic Skills Top 10</strong> (AST10, v1.0 · 2026 Edition, projeto incubator da OWASP, publicado —
+        <a href="https://owasp.github.io/www-project-agentic-skills-top-10/" target="_blank" rel="noopener">owasp.github.io</a>).
+        Na edição 2026 do LLM Top 10, <strong>Excessive Agency é LLM03</strong>, Supply Chain é LLM04 e o antigo
+        System Prompt Leakage virou <strong>LLM08 Hidden Context Exposure</strong>; a correspondência com a edição
+        2025 está em <a href="#legado">Legado e migração</a>. Para observabilidade, os atributos <code>gen_ai.*</code>
+        do <em>OpenTelemetry GenAI</em> vivem no
+        <a href="https://github.com/open-telemetry/semantic-conventions-genai" target="_blank" rel="noopener">repositório dedicado</a>;
+        o registry core corrente é <strong>Semantic Conventions 1.44.0</strong> (2026-08-04). Atributos de
+        input/output/tool podem conter PII ou segredos: não os colete sem opt-in, redaction e política de retenção.
       </p>
       <div class="table-wrap"><table>
         <thead><tr><th>Ameaça</th><th>Vetor</th><th>Mitigação</th><th>OWASP</th></tr></thead>
         <tbody>
           <tr><td>Prompt injection externo</td><td>Documentos, páginas web, tool outputs.</td><td>Delimitar como dados, classificar comandos maliciosos, não elevar autoridade.</td><td>LLM01 · ASI01</td></tr>
           <tr><td>Tool misuse</td><td>Modelo chama ação indevida.</td><td>Policy-as-code, approval e side-effect levels.</td><td>ASI02 · ASI03</td></tr>
+          <tr><td>Sandbox escape / RCE</td><td>Entrada ou tool transforma dados em código executável, ou executor excede o isolamento.</td><td>Worker efêmero sem privilégios/capabilities, filesystem mínimo, quotas, deny-by-default e teste de escape; nunca confiar em “sandbox” sem verificar o executor.</td><td>ASI05</td></tr>
+          <tr><td>SSRF / egress abuse</td><td>URL, redirect, schema ou metadata aponta para loopback, rede privada ou serviço de credencial.</td><td>Parse URL, resolver e validar IP final, bloquear ranges reservados, revalidar cada redirect e usar proxy de egresso com allowlist.</td><td>ASI04 · ASI05</td></tr>
           <tr><td>Data exfiltration</td><td>Contexto inclui segredo ou dado sensível.</td><td>Redaction, tenant boundary e retenção controlada.</td><td>LLM02 · ASI01</td></tr>
           <tr><td>Context / memory poisoning</td><td>Memória salva instrução maliciosa.</td><td>Memory write guardrails e provenance.</td><td>ASI06</td></tr>
-          <tr><td>Schema bypass</td><td>Modelo produz JSON inválido ou campos inesperados.</td><td>Structured outputs, <code>additionalProperties:false</code> e validação local.</td><td>LLM05 · ASI05</td></tr>
-          <tr><td>Cost denial</td><td>Loops/fan-out consomem budget.</td><td>Max turns/tools, cost ledger e wind-down.</td><td>ASI08</td></tr>
-          <tr><td>Inter-agent / supply chain</td><td>Mensagens forjadas entre agentes; descritor de tool/MCP envenenado.</td><td>Cards assinados, verificação de domínio, fonte confiável de tool.</td><td>ASI07 · ASI04</td></tr>
-          <tr><td>System prompt leakage</td><td>Extração do prompt de sistema/segredos embutidos.</td><td>Não embutir segredo no prompt; bloco de confidencialidade no fim do kernel.</td><td>LLM07</td></tr>
+          <tr><td>Schema bypass</td><td>Modelo produz JSON inválido ou campos inesperados.</td><td>Structured outputs, <code>additionalProperties:false</code> e validação local.</td><td>LLM10 · ASI05</td></tr>
+          <tr><td>Cost denial</td><td>Loops/fan-out consomem budget.</td><td>Max turns/tools, cost ledger e wind-down.</td><td>LLM06 · ASI08</td></tr>
+          <tr><td>Inter-agent / supply chain (MCP/A2A)</td><td>Mensagem, Agent Card, tool descriptor, pacote ou servidor é forjado, trocado ou envenenado.</td><td>Pin/lockfile e provenance de dependência; TLS/audiência; verificar assinatura JWS de Agent Card quando publicada; allowlist de servidor e consentimento por operação.</td><td>ASI07 · ASI04</td></tr>
+          <tr><td>Identity / delegation abuse</td><td>Token é aceito para audiência errada, cadeia de delegação é forjada ou escopo do subagente é ampliado.</td><td>Validar issuer/audience/tenant/scopes no executor, limite de profundidade e credencial por serviço; modelo não pode conceder autoridade.</td><td>ASI03 · ASI10</td></tr>
+          <tr><td>Approval replay / confused deputy</td><td>Confirmação antiga é reaproveitada em argumento, destinatário ou principal diferente.</td><td>Approval binding com args hash, nonce, TTL, policy version e confirmação imediatamente antes do efeito.</td><td>ASI02 · ASI03</td></tr>
+          <tr><td>Excessive agency</td><td>Modelo com tools/memória age além da autoridade.</td><td>Policy-as-code, approval, least-privilege, step limits.</td><td>LLM03 · ASI02</td></tr>
+          <tr><td>Hidden context exposure</td><td>Prompt de sistema, memória ou contexto oculto extraído (ex-LLM07).</td><td>Não embutir segredo no prompt; bloco de confidencialidade no fim do kernel.</td><td>LLM08</td></tr>
+          <tr><td>Skill ou plugin malicioso / superprivilegiado</td><td>Skill (<code>SKILL.md</code>, scripts) ou plugin instalado de fonte não confiável, com instruções ou código que agem com os privilégios do agente.</td><td>Allowlist de origem, revisão e scan antes de instalar, isolamento do que a skill executa, privilégio mínimo, pin de versão e governança de atualização.</td><td>AST01 · AST02 · AST03</td></tr>
           <tr><td>Rogue agent / cascata</td><td>Sub-agente com autoridade indevida; falha em cascata.</td><td>Least-privilege, circuit breakers, step limits, anomaly detection.</td><td>ASI08 · ASI10</td></tr>
         </tbody>
       </table></div>
@@ -799,29 +1008,109 @@
         </tbody>
       </table></div>
       <div class="callout">
-        <strong>Consentimento na fronteira de tool (MCP):</strong> a própria spec MCP <code>2025-11-25</code>
-        determina que descrições/anotações de tool de servidores não confiáveis sejam tratadas como
-        <em>não confiáveis</em>, que o host obtenha consentimento explícito antes de invocar uma tool, e que o
-        usuário controle exposição de dados e <em>sampling</em>. Isso reforça as camadas de input e tool selection
-        acima. A revisão <code>2026-07-28</code> é uma <strong>Release Candidate travada (2026-05-21), publicação em 28/07/2026</strong>: torna o protocolo
-        stateless e deprecia <em>Roots/Sampling/Logging</em> (SEP-2577, substituídos por MRTR) — reavalie os fluxos de consentimento e sampling
-        ao migrar e fixe <code>mcp&lt;2</code> antes de 28/07 para não sofrer auto-upgrade do SDK para v2.
+        <strong>Consentimento na fronteira de tool (MCP):</strong> a especificação vigente (<code>2026-07-28</code>)
+        trata tools como caminhos de execução arbitrária: descrições/anotações de servidor são dados não
+        confiáveis salvo origem confiável, o host obtém consentimento explícito antes de invocar e o usuário
+        controla os dados expostos. O mesmo vale para o conteúdo de skills servido por um MCP server (extensão
+        <code>io.modelcontextprotocol/skills</code>): o host deve tratá-lo como não confiável. A revisão atual usa
+        requests stateless e negociação por request.
+        <strong>Isso não substitui ACL nem aprovação vinculada:</strong> validação de issuer/audience/tenant,
+        escopo, egress e confirmação continuam no host/executor.
+        O guia de segurança MCP documenta confused deputy, token passthrough, state-handle hijacking e
+        SSRF em descoberta OAuth. Não faça dereference automático de <code>$ref</code> remoto (o
+        GHSA-rwrf-2pqf-9j8j do SDK Python foi exatamente isso); valide cada URL, redirect e IP final, bloqueie
+        ranges privados e prefira proxy de egresso. Detalhamento em
+        <a href="guia_protocolo_mcp.html#mrtr">Protocolo MCP §9</a> e <a href="guia_protocolo_mcp.html#resultados-transporte">§10.1</a>.
       </div>
       <div class="callout warn">
-        <strong>EU AI Act (cronograma, perecível):</strong> em vigor desde 01/08/2024; práticas proibidas desde
-        02/02/2025; obrigações de GPAI desde 02/08/2025; obrigações de alto risco do Anexo III a partir de
-        <strong>02/08/2026</strong> (sistemas embarcados de alto risco até 02/08/2027). <strong>Marco imediato: em 02/08/2026 entram em vigor os poderes de <em>enforcement</em> e multas da Comissão para GPAI</strong> (as obrigações em si já valem desde 02/08/2025) — é a data a monitorar agora. Um pacote "Digital Omnibus"
-        (acordo político de 07/05/2026) adiou obrigações de alto risco (Anexo III → 02/12/2027; Anexo I → 02/08/2028), mas <strong>não afeta GPAI nem práticas proibidas</strong>. Planeje
-        para agosto/2026 (cronograma re-verificado em 2026-07-09).
+        <strong>EU AI Act (cronograma, perecível):</strong> em vigor desde 01/08/2024; práticas proibidas e
+        alfabetização em IA desde 02/02/2025; GPAI, governança e parte das penalidades desde 02/08/2025;
+        <strong>o restante do AI Act passa a valer em 02/08/2026</strong>, salvo exceções. Segundo a página de
+        cronograma (atualizada em 31/08/2026), o alto risco do Anexo III vale a partir de <strong>02/12/2027</strong>
+        e o do Anexo I a partir de <strong>02/08/2028</strong>; provedores de GPAI colocados no mercado antes de
+        02/08/2025 têm até 02/08/2027. O mecanismo que adiou essas datas e a data de início dos poderes de
+        enforcement da Comissão para GPAI não constam na página lida: <span class="pill partial">UNVERIFIED</span>.
         Classifique cada tool por tier (Low/Medium/High/Critical) alinhado a esse risco.
+        <span class="source-link">Fonte: <a href="https://artificialintelligenceact.eu/implementation-timeline/" target="_blank" rel="noopener">artificialintelligenceact.eu/implementation-timeline</a>, lida em 2026-09-30.</span>
       </div>
-      <div class="source-link">Fonte oficial: OWASP — <a href="https://genai.owasp.org/llm-top-10/" target="_blank" rel="noopener">LLM Top 10 (2025)</a> · <a href="https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/" target="_blank" rel="noopener">Top 10 for Agentic Applications (2026)</a> · MCP — <a href="https://modelcontextprotocol.io/specification/2026-07-28" target="_blank" rel="noopener">spec RC 2026-07-28</a> (Release Candidate; final prevista para 28/07) · <a href="https://artificialintelligenceact.eu/implementation-timeline/" target="_blank" rel="noopener">EU AI Act timeline</a></div>
+      <div class="source-link">Fonte oficial: OWASP — <a href="https://genai.owasp.org/resource/owasp-genai-llm-top-10-2026/" target="_blank" rel="noopener">LLM Top 10 (2026)</a> · <a href="https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/" target="_blank" rel="noopener">Top 10 for Agentic Applications</a> · <a href="https://owasp.github.io/www-project-agentic-skills-top-10/" target="_blank" rel="noopener">Agentic Skills Top 10</a> · MCP — <a href="https://modelcontextprotocol.io/specification/2026-07-28" target="_blank" rel="noopener">spec 2026-07-28</a> · <a href="https://artificialintelligenceact.eu/implementation-timeline/" target="_blank" rel="noopener">EU AI Act timeline</a></div>
       <div class="callout beta">
         <strong>Segurança de tools/MCP (cross-link):</strong> o hardening de MCP server, os trust tiers e o
         contrato de tool result envelope estão em <a href="guia_ferramentas_mcp_rag.html">Ferramentas, MCP &amp;
         RAG</a>; a integração concreta de MCP por framework, em
         <a href="guia_claude_api.html#c-mcp">Claude · MCP</a> e <a href="guia_google_adk.html#mcp">ADK · MCP</a>.
       </div>
+      <h3 id="advisories-supply-chain">Advisories de cadeia de suprimentos (perecível) — pisos mínimos a fixar<span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
+      <p>
+        A superfície <strong>ASI04 (Agentic Supply Chain)</strong> inclui as próprias bibliotecas do harness.
+        Trate advisories de dependência como fato perecível: <strong>verifique o advisory da versão instalada e
+        fixe o piso mínimo</strong> no lockfile. A tabela é o estado lido em <strong>2026-09-30</strong> nas bases de
+        advisories do GitHub (GitHub Advisory Database e advisories dos repositórios); "corrente" é o
+        <code>latest</code> do registry no dia, não piso.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Pacote</th><th>Advisories (o que é)</th><th>Piso a fixar</th><th>Corrente</th></tr></thead>
+        <tbody>
+          <tr><td><code>mcp</code><br><span class="small">PyPI · SDK oficial</span></td><td>
+            <strong>GHSA-qx49-fqc8-xw99</strong> (high, CVSS 7.5, 2026-09-28): cliente OAuth podia enviar credenciais a um authorization server escolhido pelo servidor MCP.<br>
+            <strong>GHSA-rwrf-2pqf-9j8j</strong> (medium, 6.5, 2026-09-28): cliente buscava um <code>$ref</code> escolhido pelo servidor ao validar <code>outputSchema</code>.<br>
+            <code>CVE-2026-59950</code> (WebSocket sem validação de <code>Host</code>/<code>Origin</code>) · <code>CVE-2026-52869</code> (transportes HTTP atendem request de sessão sem verificar o principal autenticado) · <code>CVE-2026-52870</code> (handlers de task experimentais acessíveis entre clientes) · <code>CVE-2025-66416</code> (DNS rebinding desligado por padrão).</td>
+            <td><strong><code>&gt;=2.2.0</code></strong> (linha 2.x) ou <strong><code>&gt;=1.30.0</code></strong> (linha 1.x) — cobre todos</td><td>2.2.0 / 1.30.0</td></tr>
+          <tr><td><code>@modelcontextprotocol/sdk</code><br><span class="small">npm · v1, em manutenção</span></td><td><code>CVE-2025-66414</code> (DNS rebinding desligado por padrão) · <code>CVE-2026-0621</code> (ReDoS em <code>UriTemplate</code>) · <code>CVE-2026-25536</code> (vazamento de dados entre clientes por reuso de instância de servidor/transporte). Os pacotes v2 (<code>@modelcontextprotocol/server</code>/<code>client</code>) não foram consultados: <span class="pill partial">UNVERIFIED</span>.</td><td><code>&gt;=1.26.0</code></td><td>1.31.0</td></tr>
+          <tr><td><code>fastmcp</code><br><span class="small">PyPI · Prefect</span></td><td><code>CVE-2026-32871</code> (<span class="pill bad">crítica</span> SSRF + path traversal no OpenAPI Provider) · <code>CVE-2026-27124</code> (confused deputy no OAuth Proxy) · <code>CVE-2025-64340</code> (command injection no <code>fastmcp install</code>, Windows) · <code>CVE-2025-69196</code> (reuso de token OAuth entre servidores). <code>CVE-2026-48710</code> é do <strong>Starlette</strong> (falta de validação do header <code>Host</code>, corrigida na <code>starlette 1.0.1</code>) e chega por dependência transitiva.</td><td><code>&gt;=3.2.0</code> para os CVEs do FastMCP; confirme <code>starlette&gt;=1.0.1</code> no lockfile resolvido. O alvo é a série 4.x corrente.</td><td>4.0.10</td></tr>
+          <tr><td><code>pydantic-ai</code> / <code>-slim</code><br><span class="small">PyPI</span></td><td>
+            <code>GHSA-v36g-jcw9-x7cw</code> (medium, 2026-09-30): uso excessivo de recurso ao converter HTML aninhado no web fetch local.<br>
+            <code>GHSA-vmxc-h2x2-jmf3</code> (medium, 2026-09-17): bypass do blocklist SSRF de metadata de nuvem por IPv6 zone id.<br>
+            <code>GHSA-q2xc-rrxj-58x9</code> (medium): <code>Agent.to_web()</code>/<code>clai web</code> sem validação de <code>Host</code> (DNS rebinding).<br>
+            <code>CVE-2026-65975</code> (<code>GHSA-jpr8-2v3g-wgf9</code>): tool call pendente enviada pelo cliente executa nos UI adapters (AG-UI, Vercel AI).<br>
+            Cadeia de SSRF <code>CVE-2026-25580</code> → <code>CVE-2026-46678</code> → <code>CVE-2026-48782</code> (duas correções declaradamente incompletas) e <code>CVE-2026-25640</code> (XSS nas superfícies web).</td>
+            <td><strong><code>&gt;=2.52.0</code></strong> (2.x) ou <strong><code>&gt;=1.107.7</code></strong> (1.x) — cobre todos</td><td>2.52.0</td></tr>
+          <tr><td><code>langgraph-checkpoint</code>, <code>-postgres</code>, <code>-sqlite</code>, <code>langgraph</code><br><span class="small">PyPI</span></td><td><code>CVE-2026-27794</code> (RCE por <em>fallback</em> de <code>pickle</code> no cache, &lt;4.0.0) · <code>CVE-2026-48775</code> (desserialização insegura de JSON no carregamento de checkpoint, &lt;4.1.1) · <code>CVE-2026-71433</code> (prefixo de namespace vaza entre tenants, postgres/sqlite &lt;3.1.1) · <code>CVE-2025-67644</code> (SQL injection por chave de filtro de metadata, sqlite &lt;3.0.1) · <code>CVE-2026-28277</code> (msgpack inseguro no carregamento, <code>langgraph</code> ≤1.0.9). Os de desserialização exigem escrita no armazenamento do checkpoint (rede adjacente, privilégio alto): mantenha o store como superfície confiável; para defesa adicional use <code>LANGGRAPH_STRICT_MSGPACK=true</code> com allowlist de <code>allowed_msgpack_modules</code>.</td><td><code>langgraph-checkpoint&gt;=4.1.1</code> · <code>-postgres</code>/<code>-sqlite&gt;=3.1.1</code> · <code>langgraph&gt;=1.0.10</code> — três pacotes distintos; pisos não se substituem</td><td>4.2.0 · 3.1.2 / 3.1.1 · 1.2.12</td></tr>
+          <tr><td><code>langgraph-api</code>, <code>langgraph-sdk</code><br><span class="small">PyPI</span></td><td><code>GHSA-4hm6-w6qq-w73v</code> (high, 2026-09-28): auth custom do LangGraph JS pode permitir acesso cross-user ao Store (<code>langgraph-api</code> &lt;0.15.0) · <code>GHSA-fvww-7h3r-vfhp</code> (high, 2026-08-28): <code>langgraph-sdk</code> ignora <code>actions=</code> nos decorators de recurso da custom auth (0.1.45–0.4.3).</td><td><code>langgraph-api&gt;=0.15.0</code> · <code>langgraph-sdk&gt;=0.4.4</code></td><td>0.15.1 / —</td></tr>
+          <tr><td><code>@langchain/langgraph-checkpoint-redis</code><br><span class="small">npm (não é o pacote Python)</span></td><td><code>CVE-2026-27022</code>: RediSearch query injection em <code>RedisSaver</code>/<code>ShallowRedisSaver</code> — filtros interpolados sem escapar.</td><td><code>&gt;=1.0.2</code></td><td>—</td></tr>
+          <tr><td><code>langchain-core</code><br><span class="small">PyPI</span></td><td><code>CVE-2025-68664</code> (<span class="pill bad">crítica</span> serialization injection: a chave <code>lc</code> não escapada vaza segredos no <code>loads</code>; reintroduzida na linha 1.0) · <code>CVE-2026-44843</code> (high, desserialização por allowlist ampla no <code>load()</code>). Quatro outros CVEs do pacote (SSRF por <code>image_url</code>, template injection, f-string, path traversal em <code>load_prompt</code>) foram catalogados na enumeração OSV de 2026-09-23 e não foram reverificados hoje.</td><td><code>&gt;=1.3.3</code> (legado 0.3.x: <code>&gt;=0.3.85</code>)</td><td>1.6.6</td></tr>
+          <tr><td><code>langchain</code>, <code>langchain-anthropic</code><br><span class="small">PyPI</span></td><td><code>CVE-2026-55443</code> (medium): path traversal e sandbox escape no middleware e nos loaders de file-search.</td><td><code>langchain&gt;=1.3.9</code> · <code>langchain-anthropic&gt;=1.4.6</code></td><td>1.4.3 · 1.7.5</td></tr>
+          <tr><td><code>@langchain/core</code>, <code>langchain</code><br><span class="small">npm</span></td><td><code>CVE-2025-68665</code> (high): mesma classe da CVE-2025-68664 (chave <code>lc</code> não escapada).</td><td><code>@langchain/core&gt;=1.1.8</code> (0.3.x: <code>&gt;=0.3.80</code>) · <code>langchain&gt;=1.2.3</code> (0.3.x: <code>&gt;=0.3.37</code>)</td><td>1.2.13 · 1.5.14</td></tr>
+          <tr><td><code>anthropic</code><br><span class="small">PyPI</span></td><td><code>CVE-2026-34450</code> (permissões de arquivo padrão inseguras) e <code>CVE-2026-34452</code> (condição de corrida na validação de path, sandbox escape) — ambos no filesystem memory tool local; afetam a 0.86.x.</td><td><code>&gt;=0.87.0</code></td><td>1.9.0</td></tr>
+          <tr><td><code>@anthropic-ai/sdk</code><br><span class="small">npm</span></td><td><code>CVE-2026-34451</code> (sandbox escape para diretórios irmãos, corrigido na 0.81.0) e <code>CVE-2026-41686</code> (permissões padrão inseguras, corrigido na 0.91.1) — memory tool local.</td><td><code>&gt;=0.91.1</code></td><td>0.129.0</td></tr>
+          <tr><td><code>claude-agent-sdk</code><br><span class="small">PyPI</span></td><td><code>CVE-2026-96620</code> / <code>GHSA-h4mw-j7qp-8mwm</code> (<span class="pill bad">crítica</span>, CVSS v4 9.2, 2026-09-12): injeção de argumento pela opção <code>resume</code> — um valor iniciado por <code>-</code> vira flag do CLI e permite injetar um <code>--mcp-config</code> stdio, com execução de comando que contorna as permissões do SDK. Só explorável se a aplicação passa entrada não confiável como session ID.</td><td><code>&gt;=0.2.121</code>; nunca repasse session ID de origem externa sem validar</td><td>0.2.162</td></tr>
+          <tr><td><code>google-adk</code><br><span class="small">PyPI</span></td><td><code>CVE-2026-4810</code> (<span class="pill bad">crítica</span>, RCE remota sem autenticação: code injection + missing authentication; afeta <code>&gt;=1.7.0,&lt;1.28.1</code> e <code>&gt;=2.0.0a1,&lt;2.0.0a2</code>; <strong>exige redeploy</strong> do ADK atualizado e atualização do ADK Web local) · <code>CVE-2026-18236</code> / <code>GHSA-8qg5-x5vm-75jx</code> (<span class="pill bad">crítica</span>, CVSS v4 9.3): falsificação de continuação na confirmação de tool — um atacante que injeta eventos no histórico da sessão executa tools sem autorização.</td><td>1.28.1 / 2.0.0a2 para a primeira. Segunda: <code>&gt;=2.5.0</code>; piso 1.x <code>1.38.0</code> (<span class="pill partial">UNVERIFIED</span>: a base de advisories não traz faixa por pacote em 2026-09-30)</td><td>2.10.0</td></tr>
+          <tr><td><code>litellm</code><br><span class="small">PyPI</span></td><td><code>GHSA-7hp6-4w63-5g45</code> (<span class="pill bad">crítica</span>, CVSS 9.9, 2026-09-30): escalonamento a Proxy Admin por reuso do salt key entre domínios. Há outros advisories do pacote (Host header injection, SSRF, path traversal na extração de skills) sem piso catalogado aqui.</td><td>Por linha: <code>1.100.4</code> · <code>1.101.3</code> · <code>1.102.2</code> · <code>1.103.1</code></td><td>1.103.1</td></tr>
+          <tr><td><code>@ai-sdk/harness*</code><br><span class="small">npm</span></td><td><code>GHSA-4mqq-99j3-3hmv</code> (high, 2026-09-28): a retomada de sessão do harness pode expor credenciais do host a código em sandbox.</td><td><code>@ai-sdk/harness&gt;=1.0.133</code> · <code>-claude-code&gt;=1.0.137</code> · <code>-codex</code>/<code>-opencode&gt;=1.0.135</code> · <code>-deepagents&gt;=1.0.133</code> · <code>-acp&gt;=1.0.71</code></td><td>—</td></tr>
+          <tr><td>Outros SDKs MCP e <code>agno</code></td><td>Existem advisories no SDK Java (<code>mcp-core</code>, <code>GHSA-4x8c-5vv7-973f</code>, high), no <code>rmcp</code> (Rust), no SDK Ruby e no Go; e no <code>agno</code> (<code>CVE-2026-10105</code> SQL injection, <code>CVE-2026-35002</code> <code>eval()</code> em <code>FunctionCall</code>). Pisos medidos em 2026-08-04 (Ruby <code>mcp&gt;=0.23.0</code>, Go <code>go-sdk&gt;=1.4.1</code>, <code>rmcp&gt;=1.4.0</code>) não foram reverificados hoje; Kotlin, PHP e Swift nunca foram consultados.</td><td><span class="pill partial">UNVERIFIED</span> — leia a página de advisories de cada repositório antes de fixar</td><td>—</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout warn">
+        <strong>Três leituras que valem mais que os números.</strong>
+        <ul style="margin:8px 0 0;padding-left:20px">
+          <li><strong>Uma blocklist de SSRF corrigida várias vezes é um sinal de arquitetura, não de azar.</strong>
+            No <code>pydantic-ai</code>, a cadeia <code>25580 → 46678 → 48782</code> e depois o bypass por IPv6 zone id
+            mostram que bloquear por lista de endereços é uma corrida que o defensor perde. Se a exposição é séria,
+            <strong>não confie só no piso de versão</strong>: resolva o nome e valide o IP final antes de conectar, ou
+            saia por um proxy de egresso com allowlist.</li>
+          <li><strong>Mudança de spec não é patch.</strong> A revisão <code>2026-07-28</code> remove sessões e exige
+            autenticação por request, o que reduz a superfície do <code>CVE-2026-52869</code>, mas os advisories do SDK
+            só se resolvem com o piso do SDK (<code>mcp&gt;=2.2.0</code> ou <code>&gt;=1.30.0</code>); ver
+            <a href="guia_protocolo_mcp.html#fim-das-sessoes">Protocolo MCP §7</a>.</li>
+          <li><strong>Piso e teto de adapter se chocam em alguns casos.</strong> Pelo <code>requires_dist</code> (2026-09-30):
+            <code>crewai</code> declara <code>mcp~=1.28.1</code> (≡ <code>&gt;=1.28.1,&lt;1.29.0</code>) e, por inferência,
+            não alcança o <code>1.30.0</code> corrigido; <code>strands-agents</code> declara <code>mcp&lt;2.2</code> e só
+            chega ao piso pela linha 1.x; <code>langchain-mcp-adapters</code>, <code>semantic-kernel</code> e
+            <code>mcp-use</code> (teto <code>&lt;2</code>) aceitam <code>mcp&gt;=1.30.0,&lt;2</code>. Nesses casos,
+            fixe o piso compatível ou isole o adapter — não remova o teto sem testar. Compatibilidade em
+            <a href="guia_protocolo_mcp.html#bibliotecas">Protocolo MCP §3</a>.</li>
+        </ul>
+      </div>
+      <div class="callout tip">
+        <strong>Ao auditar, registre três coisas separadas:</strong> o que você consultou, o que voltou vazio e o que
+        você <em>não</em> consultou. Um "nenhum advisory" só vale junto com o escopo que o produziu; colapsar "vazio" e
+        "não consultado" é um alarme que não distingue "sem fogo" de "sem sensor". Aqui, a última enumeração completa
+        por pacote na OSV (PyPI e npm) foi de 2026-09-23 e não encontrou advisories em <code>openai</code>,
+        <code>openai-agents</code>, <code>@openai/agents</code>, <code>google-genai</code>, <code>@google/genai</code>,
+        <code>deepagents</code>, <code>a2a-sdk</code>, <code>xai-sdk</code> e <code>@langchain/langgraph</code>; essa
+        lista não foi repetida hoje.
+      </div>
+      <div class="source-link">Fontes (lidas em 2026-09-30): <a href="https://github.com/modelcontextprotocol/python-sdk/security/advisories/GHSA-qx49-fqc8-xw99" target="_blank" rel="noopener">MCP GHSA-qx49-fqc8-xw99</a> · <a href="https://github.com/modelcontextprotocol/python-sdk/security/advisories/GHSA-rwrf-2pqf-9j8j" target="_blank" rel="noopener">MCP GHSA-rwrf-2pqf-9j8j</a> · <a href="https://github.com/anthropics/claude-agent-sdk-python/security/advisories/GHSA-h4mw-j7qp-8mwm" target="_blank" rel="noopener">claude-agent-sdk GHSA-h4mw-j7qp-8mwm</a> · <a href="https://github.com/BerriAI/litellm/security/advisories/GHSA-7hp6-4w63-5g45" target="_blank" rel="noopener">litellm GHSA-7hp6-4w63-5g45</a> · <a href="https://github.com/pydantic/pydantic-ai/security/advisories/GHSA-v36g-jcw9-x7cw" target="_blank" rel="noopener">pydantic-ai GHSA-v36g-jcw9-x7cw</a> · <a href="https://github.com/langchain-ai/langgraph/security/advisories/GHSA-4hm6-w6qq-w73v" target="_blank" rel="noopener">langgraph-api GHSA-4hm6-w6qq-w73v</a> · <a href="https://github.com/advisories/GHSA-8qg5-x5vm-75jx" target="_blank" rel="noopener">ADK GHSA-8qg5-x5vm-75jx</a> · <a href="https://github.com/advisories" target="_blank" rel="noopener">GitHub Advisory Database</a> · <a href="https://osv.dev/" target="_blank" rel="noopener">OSV</a>. Compatibilidade do protocolo em <a href="guia_protocolo_mcp.html#bibliotecas">Protocolo MCP §3</a>.</div>
     </section>
 
     <section id="slis-slos">
@@ -1031,43 +1320,61 @@
       </table></div>
     </section>
 
+    <section class="ref" id="legado">
+      <h2 id="legado-e-migracao">Legado e migração</h2>
+      <p>
+        O que saiu do caminho principal deste guia, em um só lugar. Não construa nada novo sobre estes itens.
+        Verificado em 2026-09-30.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Legado</th><th>Status</th><th>Migração (uma linha)</th><th>Fonte</th></tr></thead>
+        <tbody>
+          <tr><td>OWASP LLM Top 10 <strong>2025</strong> (LLM03 Supply Chain, LLM06 Excessive Agency, LLM07 System Prompt Leakage)</td><td>Substituída pela edição 2026; a URL antiga <code>/llm-top-10/</code> ainda mostra a lista 2025</td><td>Correspondência: Supply Chain LLM03 → <strong>LLM04</strong>; Excessive Agency LLM06 → <strong>LLM03</strong>; System Prompt Leakage LLM07 → <strong>LLM08 Hidden Context Exposure</strong>.</td><td><a href="https://genai.owasp.org/resource/owasp-genai-llm-top-10-2026/" target="_blank" rel="noopener">LLM Top 10 2026</a></td></tr>
+          <tr><td>Pin de SDK MCP Python <code>mcp&gt;=1.28.1,&lt;2</code> e alvo <code>&gt;=2.1.1,&lt;3</code></td><td>Abaixo do piso de segurança desde 2026-09-28</td><td>Use <code>mcp&gt;=2.2.0,&lt;3</code>; em adapter que ainda exige a 1.x, <code>mcp&gt;=1.30.0,&lt;2</code> quando o teto do adapter permitir.</td><td><a href="https://github.com/modelcontextprotocol/python-sdk/security/advisories/GHSA-qx49-fqc8-xw99" target="_blank" rel="noopener">GHSA-qx49</a></td></tr>
+          <tr><td>Pin <code>fastmcp&gt;=3.4.4,&lt;4</code> (3.x, última <code>3.4.7</code>)</td><td>Série 4.x é GA desde 2026-08-31</td><td>Suba para a 4.x corrente; quem fica na 3.x precisa ao menos de <code>&gt;=3.2.0</code> e <code>starlette&gt;=1.0.1</code>.</td><td><a href="https://github.com/PrefectHQ/fastmcp/releases" target="_blank" rel="noopener">fastmcp releases</a></td></tr>
+          <tr><td>Pacote <code>@modelcontextprotocol/sdk</code> (v1) como caminho principal</td><td>Segue mantido (correções de bug e segurança por ao menos 6 meses após a v2); <code>1.31.0</code></td><td>Em projeto novo use <code>@modelcontextprotocol/server</code>/<code>client</code> (v2).</td><td><a href="https://github.com/modelcontextprotocol/typescript-sdk" target="_blank" rel="noopener">typescript-sdk</a></td></tr>
+          <tr><td>Revisão MCP <code>2025-11-25</code></td><td>Legacy; a corrente é <code>2026-07-28</code></td><td>Ver <a href="guia_protocolo_mcp.html#legado">Protocolo MCP · Legado e migração</a>.</td><td><a href="https://modelcontextprotocol.io/specification/versioning" target="_blank" rel="noopener">versioning</a></td></tr>
+          <tr><td>Pisos antigos: <code>langgraph-checkpoint&gt;=4.0.0</code>, <code>langchain-core&gt;=1.2.5</code>, <code>pydantic-ai&gt;=1.102.0</code> / <code>&gt;=2.5.0</code> / <code>&gt;=2.30.0</code></td><td>Insuficientes para os advisories posteriores</td><td>Use os pisos da tabela de <a href="#advisories-supply-chain">advisories</a>: <code>&gt;=4.1.1</code>, <code>&gt;=1.3.3</code>, <code>&gt;=2.52.0</code> (1.x <code>&gt;=1.107.7</code>).</td><td><a href="#advisories-supply-chain">tabela</a></td></tr>
+          <tr><td>Domínio <code>ai.pydantic.dev/…</code></td><td>Responde <strong>301</strong> para <code>pydantic.dev/docs/ai/…</code> (confirmado em 2026-09-30 para <code>/evals/</code>)</td><td>Use o destino canônico <code>pydantic.dev/docs/ai/…</code>.</td><td><a href="https://pydantic.dev/docs/ai/evals/evals/" target="_blank" rel="noopener">pydantic.dev/docs/ai</a></td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
     <section class="ref" id="verificacao">
-      <h2>Notas de verificação</h2>
-      <p>Pontos perecíveis conferidos contra a documentação oficial em 2026-06-10, e os que permanecem em aberto.</p>
+      <h2>Notas de verificação<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
+      <p>Pontos perecíveis conferidos em <strong>2026-09-30</strong>; lacunas continuam <span class="pill partial">UNVERIFIED</span>.</p>
       <ul>
-        <li><span class="pill ok">Resolvido</span> <strong>URLs do Pydantic AI.</strong> A regra do mapa/time pedia
-          <code>ai.pydantic.dev</code> e proibia <code>pydantic.dev/docs/ai</code>. Verificação ao vivo (2026-05-25):
-          <code>ai.pydantic.dev/</code>, <code>/evals/</code> e <code>/logfire/</code> retornam <strong>301</strong>
-          para <code>pydantic.dev/docs/ai/overview/</code>, <code>/evals/evals/</code> e
-          <code>/integrations/logfire/</code> — que servem a doc oficial real. Este guia usa o destino canônico vivo
-          <code>pydantic.dev/docs/ai/…</code>. Confirmado na validação #13 (2026-05-25): a regra antiga do mapa estava
-          desatualizada; <code>guia_providers_adapters.html</code> foi alinhado a este mesmo destino.</li>
-        <li><span class="pill ok">Resolvido</span> <strong>Spec MCP <code>2025-11-25</code>.</strong> Confirmada como a
-          revisão autoritativa (host/client/server; princípios de consentimento, tool safety e sampling controls).
-          Usada uniformemente aqui. Re-verificado em 2026-07-05: segue a revisão atual; a próxima revisão
-          (<code>2026-07-28</code>) é uma <strong>Release Candidate travada em 2026-05-21</strong> (publicação em 28/07): traz protocolo stateless (sem handshake
-          <code>initialize</code>/<code>Mcp-Session-Id</code>) e deprecia Roots/Sampling/Logging. Fixe <code>mcp&lt;2</code> antes de 28/07 (o SDK v2.0.0 sai junto).
-          Observação para o validador: <code>guia_agents_sdk.html</code> existente cita
-          <code>2024-11-05</code>/<code>2025-03-26</code> — não modificar o guia existente; o portal/validação deve
-          marcar a versão canônica.</li>
-        <li><span class="pill ok">Resolvido</span> <strong>OWASP.</strong> LLM Top 10 (2025) e Top 10 for Agentic
-          Applications (2026, dez/2025) com ASI01–ASI10; mapeamento camadas→ASI conferido contra a referência da
-          skill <code>agent-guardrails</code> (last verified 2026-04-21) e as URLs oficiais
-          <code>genai.owasp.org</code>. Re-verificado em 2026-06-10: ambos seguem vigentes (novo projeto
-          incubado: Agentic Skills Top 10 — AST10, sem lista publicada).</li>
-        <li><span class="pill ok">Resolvido</span> <strong>EU AI Act (cronograma).</strong> <strong>Enforcement/multas de GPAI começam em 02/08/2026</strong> (obrigações GPAI já vigentes desde 02/08/2025). O "Digital Omnibus" (acordo político de 07/05/2026) adiou o Anexo III de alto risco para 02/12/2027, mas <strong>não</strong> afeta GPAI. Re-verificado em 2026-07-09.</li>
+        <li><span class="pill ok">Verificado</span> <strong>Advisories (§8).</strong> Cada linha da tabela foi lida na GitHub
+          Advisory Database (<code>gh api advisories</code>) ou nos advisories do repositório de origem (mcp,
+          claude-agent-sdk, litellm, pydantic-ai, langgraph, vercel/ai): IDs, severidade, faixas afetadas e versões
+          corrigidas. Versões "corrente" vieram do PyPI e do npm no mesmo dia.</li>
+        <li><span class="pill ok">Verificado</span> <strong>Guardrails e governança OpenAI.</strong> Guardrails de servidor MCP
+          (0.22.1) e redação de saída bloqueada (0.22.0) nas release notes do <code>openai-agents-python</code>
+          (corrente 0.22.3); governança de criação de API key no changelog da OpenAI de 15/09/2026
+          (administradores permitem só service-account keys, só keys de projeto de usuário ou desabilitam a criação;
+          a restrição da organização prevalece; keys existentes não são afetadas).</li>
+        <li><span class="pill ok">Verificado</span> <strong>Padrões e ecossistema.</strong> LLM Top 10 2026 e AST10 v1.0 na
+          OWASP; OpenTelemetry semantic-conventions <code>v1.44.0</code> (release de 2026-08-04) e migração dos atributos
+          GenAI para o repositório dedicado; cronograma do EU AI Act na página de implementação (atualizada em
+          31/08/2026); versões de pydantic-ai, deepeval, ragas, trulens-eval e guardrails-ai no PyPI.</li>
+        <li><span class="pill partial">UNVERIFIED</span> <strong>Pisos não reconfirmados hoje:</strong> faixas do
+          <code>CVE-2026-18236</code> no ADK (1.x <code>1.38.0</code>), os quatro CVEs adicionais do
+          <code>langchain-core</code>, advisories dos SDKs MCP de Ruby, Go, Rust e Java, do <code>agno</code> e dos
+          pacotes <code>@modelcontextprotocol/server</code>/<code>client</code>.</li>
+        <li><span class="pill partial">UNVERIFIED</span> <strong>OWASP Agentic Top 10:</strong> a página oficial informa só a
+          data de publicação (09/12/2025), sem número de versão; não confirmei se existe edição posterior.</li>
+        <li><span class="pill partial">UNVERIFIED</span> <strong>EU AI Act:</strong> mecanismo de adiamento do alto risco e data
+          de início do enforcement de GPAI pela Comissão (a página de cronograma lida não os cita).</li>
+        <li><span class="pill partial">UNVERIFIED</span> <strong>Managed Agents da Anthropic:</strong> status de GA/beta não
+          confirmado; fora do escopo deste guia (ver <a href="guia_arquitetura_orquestracao.html">Arquitetura &amp; orquestração</a>).</li>
         <li><span class="pill ok">Resolvido</span> <strong>Sem IDs de modelo no corpo.</strong> O guia usa
-          <code>model="..."</code> e <code>provider/model</code>; IDs perecíveis ficam na folha de fatos SOTA do
-          super-guia, conforme política do mapa.</li>
-        <li><span class="pill ok">Verificado</span> <strong>Anchors de cross-link.</strong> Todos os
-          <code>id</code> de destino em guias existentes foram revalidados na validação #13 (2026-05-25) e
-          resolvem corretamente: <code>#s-guardrails</code>, <code>#s-tracing</code>, <code>#s-conversation</code>,
-          <code>#s-store</code>, <code>#a-context-windows</code>, <code>#tool-confirm</code>,
-          <code>#observability</code>, <code>#evaluate</code>, <code>#c-mcp</code>, <code>#mcp</code>,
-          <code>#s-hitl</code>, <code>#s-persistence</code>, <code>#s-deployment</code>,
-          <code>#s-ops-cookbook</code>. Os guias de núcleo (<code>guia_arquitetura_orquestracao</code>,
-          <code>guia_estado_contexto_memoria</code>, <code>guia_ferramentas_mcp_rag</code>,
-          <code>guia_providers_adapters</code>) já existem; este guia não depende de âncoras internas deles.</li>
+          <code>model="..."</code> e <code>provider/model</code>; IDs perecíveis ficam nos guias de provider.</li>
+        <li><span class="pill ok">Verificado</span> <strong>Anchors de cross-link.</strong> Os <code>id</code> de destino em
+          guias existentes foram validados em 2026-05-25 (<code>#s-guardrails</code>, <code>#s-tracing</code>,
+          <code>#s-conversation</code>, <code>#s-store</code>, <code>#a-context-windows</code>, <code>#tool-confirm</code>,
+          <code>#observability</code>, <code>#evaluate</code>, <code>#c-mcp</code>, <code>#mcp</code>, <code>#s-hitl</code>,
+          <code>#s-persistence</code>, <code>#s-deployment</code>, <code>#s-ops-cookbook</code>); o validador da coleção
+          os revalida a cada revisão.</li>
       </ul>
     </section>
 
@@ -1079,16 +1386,16 @@
     <div style="max-width:540px">
       <div class="brand" style="font-size:15px">Operação, Segurança &amp; Evals <small>Núcleo agnóstico · super-guia de agentes</small></div>
       <p style="margin:8px 0 0;color:var(--c-fg-muted);font-size:13.5px;line-height:1.55">
-        Referência técnica construída a partir da documentação oficial pública em <strong>2026-06-10</strong>.
+        Referência técnica construída a partir da documentação oficial pública e reconferida até <strong>2026-09-30</strong>.
         Operação como arquitetura: privacidade/ZDR, guardrails, tracing, evals, runbooks e threat model alinhado
         à OWASP. Para informação sempre atualizada, consulte as
         <a href="#fontes-oficiais">fontes oficiais</a>.
       </p>
     </div>
     <div style="font-size:13.5px;color:var(--c-fg-muted);line-height:1.7">
-      <div><strong>Crédito de produção</strong></div>
-      <div>Gerado por <strong>subagentes Claude Opus 4.7 (xhigh)</strong></div>
-      <div>autor <code>autor_ops</code> · revisão e montagem pelo orquestrador · 2026-06-10</div>
+      <div><strong>Estado da edição</strong></div>
+      <div>Fontes oficiais e controles revisados até <strong>2026-09-30</strong></div>
+      <div>Documento agnóstico de provider · revisão de frescor registrada em §Verificação</div>
       <div style="margin-top:6px">
         <span class="badge da">Núcleo · v1</span>
         <span class="badge info">PT-BR · agnóstico</span>

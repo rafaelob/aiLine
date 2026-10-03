@@ -2,10 +2,11 @@
 <html lang="pt-BR" data-theme="light">
 <head>
 <meta charset="utf-8" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%9A%3C/text%3E%3C/svg%3E" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Streaming Durável &amp; Resumível — resposta agêntica que sobrevive a reconexão</title>
-<meta name="description" content="Arquitetura de resposta agêntica durável e resumível: as duas camadas de transporte (backend↔provider vs backend↔frontend), HTTP/SSE vs WebSocket mode da Responses API, event store com seq e replay Last-Event-ID, execução desacoplada, snapshots, timestamps, idempotência e tool ledger, failover cross-provider (OpenAI, Anthropic, Gemini) e padrões de maturidade M0–M3. Verificado em 2026-07-09." />
-<meta name="last-checked" content="2026-07-09" />
+<meta name="description" content="Arquitetura de resposta agêntica durável e resumível: as duas camadas de transporte (backend↔provider vs backend↔frontend), HTTP/SSE vs WebSocket mode da Responses API, async tool calling e mid-turn steering (GPT-6), event store com seq e replay Last-Event-ID, execução desacoplada, snapshots, timestamps, idempotência e tool ledger, failover cross-provider (OpenAI, Anthropic, Gemini) e padrões de maturidade M0–M3. Inclui o reconnect nativo da Gemini Interactions por last_event_id. Verificado em 2026-09-30." />
+<meta name="last-checked" content="2026-09-30" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -268,6 +269,7 @@
     details > summary { display: none; }
   }
 </style>
+<style id="rev-flag-css">main :not(pre) > code,main a{overflow-wrap:anywhere}.rev-flag{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:999px;font-size:.62em;font-weight:600;vertical-align:middle;letter-spacing:.02em;white-space:nowrap}.rev-flag.novo{background:#dcfce7;color:#14532d;border:1px solid #86efac}.rev-flag.atu{background:#e0f2fe;color:#0c4a6e;border:1px solid #7dd3fc}.rev-news{margin:16px 0;padding:12px 16px;border-left:4px solid #22c55e;border-radius:8px;background:rgba(34,197,94,.08)}.rev-news ul{margin:6px 0 0;padding-left:20px}.rev-news li{margin:2px 0}:root[data-theme="dark"] .rev-flag.novo{background:#14532d;color:#dcfce7;border-color:#166534}:root[data-theme="dark"] .rev-flag.atu{background:#0c4a6e;color:#e0f2fe;border-color:#075985}@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .rev-flag.novo{background:#14532d;color:#dcfce7;border-color:#166534}:root:not([data-theme="light"]) .rev-flag.atu{background:#0c4a6e;color:#e0f2fe;border-color:#075985}}</style>
 </head>
 <body>
 <a class="skip" href="#main">Pular para o conteúdo</a>
@@ -276,7 +278,7 @@
   <div class="header-row">
     <div class="brand">Streaming Durável &amp; Resumível <small>arquitetura transversal · super-guia de agentes</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-09</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-09-30</strong></span>
       <span class="badge da">Arquitetura · v1</span>
       <span class="badge info">OpenAI · Anthropic · Gemini</span>
       <span class="badge ok">Resume = camada 2</span>
@@ -289,6 +291,7 @@
   <nav class="toc" aria-label="Sumário">
     <div class="toc-section">Início</div>
     <ol>
+      <li><a href="#para-agentes">Resumo para agentes</a></li>
       <li><a href="#sobre-guia">Sobre este guia</a></li>
       <li><a href="#fontes-oficiais">Fontes &amp; verificação</a></li>
     </ol>
@@ -337,11 +340,13 @@
     <div class="toc-section">Referência</div>
     <ol>
       <li><a href="#cheatsheet">Cheat sheet</a></li>
+      <li><a href="#legado">Legado e migração</a></li>
       <li><a href="#verificacao">Notas de verificação</a></li>
     </ol>
   </nav>
 
   <main id="main">
+<aside class="rev-news" id="rev-news-2026-09-30" aria-label="Novidades desta revisão"><strong>O que há de novo nesta revisão (2026-09-30)</strong> — 2 seções novas e 11 atualizadas desde a revisão de 2026-09-23. Procure os selos <span class="rev-flag novo">Novo</span> e <span class="rev-flag atu">Atualizado</span> nos títulos.<details><summary>Ver lista</summary><ul><li><span class="rev-flag novo">Novo</span> <a href="#para-agentes">Resumo para agentes</a> — cursores por provider, Faça/Não faça e incertezas</li><li><span class="rev-flag novo">Novo</span> <a href="#legado">Legado e migração</a> — o legado foi condensado aqui (generateContent, Assistants, Chat Completions, Opus 5 com thinking desligado)</li><li><span class="rev-flag atu">Atualizado</span> <a href="#transporte-providers">3. Transporte por provider</a> e <a href="#http-vs-ws">4. HTTP vs WebSocket</a> — o WS mode passou a multiplexar (lanes <code>stream_id</code>); Gemini só por Interactions</li><li><span class="rev-flag atu">Atualizado</span> <a href="#openai-transporte">12. OpenAI Responses</a> — lanes do WS mode, SDKs atuais e resume de background por <code>starting_after</code></li><li><span class="rev-flag atu">Atualizado</span> <a href="#anthropic-gemini">13. Anthropic &amp; Gemini</a> — eventos e recuperação do Messages atual; streaming, background e reconexão da Interactions</li><li><span class="rev-flag atu">Atualizado</span> <a href="#alternativas-sota">19. Alternativas SOTA</a> — LangGraph 1.2.12 (durabilidade de execução)</li><li><span class="rev-flag atu">Atualizado</span> <a href="#sobre-guia">Sobre</a>, <a href="#fontes-oficiais">Fontes</a>, <a href="#duas-camadas">2</a>, <a href="#edge-cases">11</a>, <a href="#cheatsheet">Cheat sheet</a> e <a href="#verificacao">Notas de verificação</a></li></ul></details></aside>
 
     <div class="hero">
       <h1>Streaming Durável &amp; Resumível</h1>
@@ -359,13 +364,82 @@
       <div class="hero-meta">
         <span class="badge da">Arquitetura · v1</span>
         <span class="badge info">OpenAI · Anthropic · Gemini</span>
-        <span class="badge ok">SOTA · verificado 2026-07-09</span>
+        <span class="badge ok">SOTA · verificado 2026-09-30</span>
         <span class="badge warn">3 rodadas adversariais</span>
       </div>
     </div>
 
+    <section id="para-agentes">
+      <h2>Resumo para agentes (verificado 2026-09-30)<span class="rev-flag novo">Novo · 2026-09-30</span></h2>
+      <h3>Superfície atual</h3>
+      <p>São duas camadas independentes. <strong>Camada 2 (backend↔frontend)</strong> entrega o resume ao usuário: execução desacoplada do socket + event log com <code>seq</code> + replay por cursor + snapshot. <strong>Camada 1 (backend↔provider)</strong> só decide latência e integridade; nenhum transporte dá durabilidade, idempotência ou exactly-once. Cursores nativos do provider, para retomar o stream dele:</p>
+      <pre><code class="language-python"># OpenAI Responses: background + stream; persista event.sequence_number no SEU event log
+stream = client.responses.create(model="gpt-6-astra", input="...", background=True, stream=True)
+#   retomar (REST): GET /v1/responses/{id}?stream=true&amp;starting_after={sequence_number}
+# Gemini Interactions: background exige store=true (padrão); persista interaction.id e o event_id de cada delta
+stream = client.interactions.create(model="gemini-3.8-flash", input="...", stream=True, background=True)
+#   retomar (REST): GET /v1beta/interactions/{id}?stream=true&amp;last_event_id={event_id}</code></pre>
+
+      <h3>Transporte e resume por provider (2026-09-30)</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Provider / modo</th><th>Transporte</th><th>Resume nativo</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>OpenAI Responses SSE</td><td>HTTP + SSE (<code>stream:true</code>)</td><td>não; nova request</td><td><span class="pill ok">GA</span></td></tr>
+          <tr><td>OpenAI WS mode</td><td><code>wss://api.openai.com/v1/responses</code>; lanes <code>stream_id</code>, até 16 responses ativos, conexão até 60 min</td><td>não entre conexões; com <code>store=false</code> a cadeia se perde</td><td><span class="pill ok">público</span></td></tr>
+          <tr><td>OpenAI background</td><td>HTTP (<code>background:true</code> + <code>stream:true</code>)</td><td>sim: <code>starting_after</code>; vale também com <code>store=false</code> (ZDR: ~10 min em disco)</td><td><span class="pill ok">GA</span></td></tr>
+          <tr><td>Anthropic Messages</td><td>HTTP + SSE</td><td>não; recuperação = nova request com o parcial (nova tentativa)</td><td><span class="pill ok">GA</span></td></tr>
+          <tr><td>Gemini Interactions</td><td>HTTP + SSE (<code>/v1beta/interactions</code>)</td><td>sim: <code>last_event_id</code>; retenção 55 dias (pago) / 1 dia (free)</td><td><span class="pill ok">GA</span></td></tr>
+          <tr><td>Gemini Live</td><td>WebSocket (realtime)</td><td>session resumption (<span class="pill partial">UNVERIFIED</span>)</td><td><span class="pill ok">Stable</span></td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Faça / Não faça</h3>
+      <ul>
+        <li>Faça: append atômico no event log (Lua/Redis Function ou <code>MULTI/EXEC</code>; pipeline sozinho não é atômico), single-writer por attempt com lease + fencing epoch e dedupe no ingresso.</li>
+        <li>Faça: leitores SSE com <code>XREAD BLOCK</code> simples por conexão (replay e tail na mesma operação); consumer groups distribuem trabalho, não fazem broadcast para browsers.</li>
+        <li>Faça: cursor recebido expirado → <code>410 Gone</code> + snapshot (<code>snapshot_seq</code>) e reconexão com <code>Last-Event-ID = snapshot_seq</code>; cursor futuro → <code>409</code> (mesmo reset); sem cursor → snapshot + tail.</li>
+        <li>Faça: entrega at-least-once: salve o cursor só depois de aplicar o evento; reducer idempotente por <code>seq</code>; materialize o resultado final fora do TTL do log.</li>
+        <li>Faça: retry silencioso só com zero side-effect, zero conteúdo visível e zero tool call; senão finalize como <code>incomplete</code> e abra nova tentativa (<code>retry_of</code>).</li>
+        <li>Faça: tool ledger <code>prepared → running → succeeded|failed|outcome_unknown</code>; reconcilie ou compense o <code>outcome_unknown</code>, nunca re-execute.</li>
+        <li>Faça: timeout de conexão ≠ falha: consulte o status, reconecte do último cursor e só emita <code>completed</code> após o evento terminal e o uso final.</li>
+        <li>Faça: Anthropic: selecione blocos por <code>type</code> (thinking sempre ligado em Opus 5.5/Fable 5.1) e trate <code>error</code> como terminal. Gemini: ignore tipos de evento desconhecidos; function call encerra o stream em <code>requires_action</code>.</li>
+        <li>Faça: cada lane <code>stream_id</code> do WS mode é uma execução com seu próprio <code>seq</code>.</li>
+        <li>Não adote o WebSocket "para ter resume": trocar WS↔SSE não muda se o usuário retoma; reconexão de WS = novo socket, e com <code>store=false</code> a cadeia recomeça (<code>previous_response_id=null</code> + contexto completo ou compactado).</li>
+        <li>Não trate o cursor como credencial (autorize no endpoint) nem guarde "último seq entregue" global no servidor: o cursor é por conexão.</li>
+        <li>Não promova stream truncado a <code>completed</code>; não retome por offset de bytes (UTF-8): o resume é pelo event log.</li>
+        <li>Não use streaming de Chat Completions, run streaming da Assistants API (encerrada em 2026-08-26) nem <code>generateContent</code> streaming (<code>?alt=sse</code>) em projeto novo → <a href="#legado">Legado e migração</a>; background e WS mode só existem na Responses.</li>
+        <li>Não combine <code>store=false</code> com <code>background=true</code> no Gemini; encadear sobre interação <code>in_progress</code> retorna 400.</li>
+        <li>Não sanitize nem reclassifique deltas no ingresso do event log (texto que parece tool call fica texto; o ledger só aceita bloco tipado); limpe tags internas na renderização.</li>
+        <li>Não confunda sessão da Agents API (beta, sem ZDR) nem ZDR-background (~10 min em disco) com durabilidade: o event store é seu.</li>
+      </ul>
+
+      <h3>Onde está cada coisa</h3>
+      <p>
+        <a href="#contrato-ux">§1 contrato de UX</a> ·
+        <a href="#duas-camadas">§2 duas camadas</a> ·
+        <a href="#transporte-providers">§3 transporte por provider</a> ·
+        <a href="#http-vs-ws">§4 HTTP vs WS</a> ·
+        <a href="#event-log">§7 event log</a> ·
+        <a href="#replay-cursor">§8 replay e cursor</a> ·
+        <a href="#timestamps">§9 timestamps</a> ·
+        <a href="#idempotencia-ledger">§10 idempotência e ledger</a> ·
+        <a href="#edge-cases">§11 edge cases</a> ·
+        <a href="#openai-transporte">§12 OpenAI</a> ·
+        <a href="#anthropic-gemini">§13 Anthropic e Gemini</a> ·
+        <a href="#failover">§14 failover</a> ·
+        <a href="#checklist">§21 checklist</a> ·
+        <a href="#legado">legado</a>
+      </p>
+
+      <h3>Incertezas (não trate como fato)</h3>
+      <ul>
+        <li><span class="pill partial">UNVERIFIED</span> Nome do atributo <code>event_id</code> no SDK Python da Interactions (a doc mostra Go e REST); forma exata do helper <code>ResponsesWS</code> do SDK JS; Gemini Live session resumption (~2h) e <code>GoAway</code>.</li>
+        <li><span class="pill warn">Fontes em conflito</span> Nomes de evento de status da Interactions: a página de streaming documenta <code>interaction.status_update</code>, a de breaking changes lista outros; siga a de streaming e ignore desconhecidos. Async tool calling, steering e Agents API foram verificados só em 2026-09-23. Ver <a href="#verificacao">Notas de verificação</a>.</li>
+      </ul>
+    </section>
+
     <section id="sobre-guia">
-      <h2>Sobre este guia</h2>
+      <h2>Sobre este guia<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <p>
         Este é um guia <strong>para IA e humanos</strong>, transversal aos três providers e às duas pontas
         (backend e frontend). Ele responde à pergunta que os guias de capacidade não respondem: <em>como garantir
@@ -388,15 +462,16 @@
         idempotência ou exactly-once — isso é sempre trabalho seu.
       </div>
       <div class="callout beta">
-        <strong>Como este guia foi validado:</strong> fatos perecíveis conferidos na documentação oficial em
-        <strong>2026-07-09</strong> e o desenho submetido a <strong>três rodadas adversariais</strong> (dois
-        modelos frontier externos + reconciliação na fonte primária). As correções que sobreviveram estão
-        incorporadas; o que não pôde ser confirmado está marcado <span class="pill partial">UNVERIFIED</span>.
+        <strong>Como este guia foi validado:</strong> fatos perecíveis (transportes, eventos, parâmetros, versões)
+        reconferidos na documentação oficial em <strong>2026-09-30</strong>. O desenho da camada 2, que independe do
+        provider, foi submetido a <strong>três rodadas adversariais</strong> em 2026-07-09 (dois modelos frontier
+        externos + reconciliação na fonte primária). As correções que sobreviveram estão incorporadas; o que não
+        pôde ser confirmado está marcado <span class="pill partial">UNVERIFIED</span>.
       </div>
     </section>
 
     <section id="fontes-oficiais">
-      <h2>Fontes &amp; verificação</h2>
+      <h2>Fontes &amp; verificação<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <div class="table-wrap"><table>
         <thead><tr><th>Tema</th><th>Recurso oficial</th></tr></thead>
         <tbody>
@@ -408,14 +483,15 @@
           <tr><td>OpenAI — Compaction</td><td><a href="https://developers.openai.com/api/docs/guides/compaction" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/compaction</a></td></tr>
           <tr><td>OpenAI — Data controls / ZDR</td><td><a href="https://developers.openai.com/api/docs/guides/your-data" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/your-data</a></td></tr>
           <tr><td>Anthropic — Streaming Messages (SSE)</td><td><a href="https://platform.claude.com/docs/en/build-with-claude/streaming" target="_blank" rel="noopener">platform.claude.com/docs/en/build-with-claude/streaming</a></td></tr>
-          <tr><td>Gemini — generateContent streaming</td><td><a href="https://ai.google.dev/gemini-api/docs/text-generation" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/text-generation</a></td></tr>
+          <tr><td>Gemini — Interactions state/background</td><td><a href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/interactions-overview</a> · <a href="https://ai.google.dev/gemini-api/docs/background-execution" target="_blank" rel="noopener">background-execution</a></td></tr>
+          <tr><td>Gemini — Interactions streaming/reconnect</td><td><a href="https://ai.google.dev/gemini-api/docs/streaming" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/streaming</a></td></tr>
           <tr><td>Gemini — Live API (WebSocket)</td><td><a href="https://ai.google.dev/api/live" target="_blank" rel="noopener">ai.google.dev/api/live</a></td></tr>
           <tr><td>Web — Server-Sent Events / <code>Last-Event-ID</code></td><td><a href="https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events" target="_blank" rel="noopener">developer.mozilla.org · Server-sent events</a></td></tr>
           <tr><td>Redis — Streams (<code>XADD</code>/<code>XREAD</code>)</td><td><a href="https://redis.io/docs/latest/develop/data-types/streams/" target="_blank" rel="noopener">redis.io/docs · Streams</a></td></tr>
         </tbody>
       </table></div>
       <p style="font-size:13px;color:var(--c-fg-muted)">
-        Legenda: <span class="pill ok">Verificado</span> confirmado na doc oficial em 2026-07-09 ·
+        Legenda: <span class="pill ok">Verificado</span> confirmado na doc oficial na data do item (revisão 2026-09-30) ·
         <span class="pill beta">Novo</span> recurso recente ·
         <span class="pill partial">UNVERIFIED</span> não confirmado em URL oficial direta ·
         <span class="pill bad">Evitar</span> antipadrão.
@@ -451,7 +527,7 @@
     </section>
 
     <section id="duas-camadas">
-      <h2>2. As duas camadas de transporte — a distinção que organiza tudo</h2>
+      <h2>2. As duas camadas de transporte — a distinção que organiza tudo<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <p>
         Misturar as duas camadas é a fonte número um de decisões erradas ("vou usar WebSocket para ter resume").
         Elas são independentes e têm papéis diferentes:
@@ -459,7 +535,7 @@
       <pre><code>┌─────────────┐   CAMADA 1: backend ↔ PROVIDER          ┌──────────────┐
 │  FRONTEND   │   OpenAI: HTTP/SSE ou WS mode (opt-in)   │   PROVIDER   │
 │  (browser)  │   Anthropic: SSE · Gemini: SSE           │ OpenAI/Anthr/│
-└──────┬──────┘   (Gemini Live WS = realtime, Preview)   │   Gemini     │
+└──────┬──────┘   (Gemini Live WS = realtime)            │   Gemini     │
        │                                                 └──────▲───────┘
        │ CAMADA 2: backend ↔ FRONTEND                           │
        │ NOSSO SSE, resumível: replay por cursor                │
@@ -488,23 +564,24 @@
     </section>
 
     <section id="transporte-providers">
-      <h2>3. Transporte por provider (camada 1)</h2>
+      <h2>3. Transporte por provider (camada 1)<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <div class="table-wrap"><table>
         <thead><tr><th>Provider / modo</th><th>Transporte</th><th>Input incremental</th><th>Estado server-side</th><th>Resume nativo</th><th>Status</th></tr></thead>
         <tbody>
           <tr><td><strong>OpenAI Responses (SSE)</strong></td><td>HTTP + SSE (<code>stream:true</code>)</td><td>Não</td><td><code>previous_response_id</code> (só com <code>store=true</code>)</td><td>nova request</td><td><span class="pill ok">GA</span></td></tr>
-          <tr><td><strong>OpenAI Responses (WS mode)</strong></td><td>WebSocket <code>wss://api.openai.com/v1/responses</code></td><td><strong>Sim</strong> — novos <em>itens completos</em> + <code>previous_response_id</code> via <code>response.create</code> (não deltas em voo)</td><td>cache in-memory <strong>connection-local</strong> (compatível <code>store=false</code>/ZDR)</td><td><strong>não entre conexões</strong>: caiu/60&nbsp;min → novo socket; sob <code>store=false</code> a cadeia se perde (<code>prev_id=null</code> + contexto completo ou compactado)</td><td><span class="pill ok">público, sem rótulo beta</span></td></tr>
-          <tr><td><strong>OpenAI background</strong></td><td>HTTP (<code>background:true</code> + <code>stream:true</code>)</td><td>Não</td><td>sim — cursor <code>sequence_number</code></td><td>sim (<code>starting_after</code>), <strong>mas exige <code>store=true</code></strong> (não-ZDR, ~10&nbsp;min)</td><td><span class="pill ok">GA</span></td></tr>
-          <tr><td><strong>Anthropic Messages</strong></td><td>HTTP + SSE puro</td><td>Não</td><td>nenhum (cliente reenvia histórico)</td><td>—</td><td><span class="pill ok">GA</span></td></tr>
-          <tr><td><strong>Gemini generateContent</strong></td><td>HTTP + SSE (<code>?alt=sse</code>)</td><td>Não</td><td>nenhum</td><td>—</td><td><span class="pill ok">GA</span></td></tr>
-          <tr><td><strong>Gemini Live</strong></td><td>WebSocket bidirecional</td><td>Sim (texto, áudio e vídeo)</td><td>sessão + handle</td><td>SessionResumption (handle ~2h), <code>GoAway</code></td><td><span class="pill beta">Preview · realtime</span></td></tr>
+          <tr><td><strong>OpenAI Responses (WS mode)</strong></td><td>WebSocket <code>wss://api.openai.com/v1/responses</code> (lanes <code>stream_id</code>; até 16 responses em voo)</td><td><strong>Sim</strong> — novos <em>itens completos</em> + <code>previous_response_id</code> via <code>response.create</code> (não deltas em voo)</td><td>cache in-memory <strong>connection-local</strong> (compatível <code>store=false</code>/ZDR)</td><td><strong>não entre conexões</strong>: caiu/60&nbsp;min → novo socket; sob <code>store=false</code> a cadeia se perde (<code>prev_id=null</code> + contexto completo ou compactado)</td><td><span class="pill ok">público, sem rótulo beta</span></td></tr>
+          <tr><td><strong>OpenAI background</strong></td><td>HTTP (<code>background:true</code> + <code>stream:true</code>)</td><td>Não</td><td>sim — cursor <code>sequence_number</code></td><td>sim (<code>starting_after</code>) — <strong>funciona também com <code>store=false</code> em projetos ZDR</strong>; a OpenAI documenta retenção temporária em disco por ~10&nbsp;min para viabilizar execução e polling/resume</td><td><span class="pill ok">GA</span></td></tr>
+          <tr><td><strong>Anthropic Messages</strong></td><td>HTTP + SSE puro</td><td>Não</td><td>nenhum (cliente reenvia histórico)</td><td>— (recuperação = novo request com o parcial, §13)</td><td><span class="pill ok">GA</span></td></tr>
+          <tr><td><strong>Gemini Interactions</strong></td><td>HTTP + SSE (<code>/v1beta/interactions</code>)</td><td>Não — input por turno</td><td><code>previous_interaction_id</code> quando <code>store=true</code>; <code>background=true</code> cria execução assíncrona</td><td><strong>sim</strong> — <code>last_event_id</code> ao retomar o stream; também é possível consultar o status</td><td><span class="pill ok">GA</span></td></tr>
+          <tr><td><strong>Gemini Live</strong></td><td>WebSocket bidirecional</td><td>Sim (texto, áudio e vídeo)</td><td>sessão + handle</td><td>SessionResumption (handle ~2h), <code>GoAway</code> (<span class="pill partial">UNVERIFIED</span> em 2026-09-30)</td><td><span class="pill ok">modelos Stable · realtime</span></td></tr>
         </tbody>
       </table></div>
       <div class="callout info">
         <strong>Leituras que importam:</strong> (1) o fallback cross-provider de texto é obrigatoriamente
-        <strong>HTTP/SSE</strong> — Anthropic e Gemini não têm WebSocket de texto em produção; (2) o Gemini Live
-        <em>aceita texto</em>, mas é Preview e orientado a realtime/native-audio — não é substituto do
-        <code>generateContent</code> para chat textual; (3) o WS mode da OpenAI é ZDR-ok justamente porque o cache é
+        <strong>HTTP/SSE</strong> — Anthropic e Gemini Interactions são SSE;
+        (2) o Gemini Live
+        <em>aceita texto</em>, mas é orientado a realtime/native-audio — não é substituto da Interactions
+        para chat textual; (3) o WS mode da OpenAI é ZDR-ok justamente porque o cache é
         in-memory da conexão — <strong>e por isso mesmo a reconexão não retoma nada</strong>: novo socket = nova
         cadeia sob <code>store=false</code>. Detalhes de frames, erros e limites: <a
         href="guia_openai_modelos.html#s-streaming-websocket">guia OpenAI §12.2</a>.
@@ -513,12 +590,14 @@
         <a href="https://developers.openai.com/api/docs/guides/websocket-mode" target="_blank" rel="noopener">websocket-mode</a> ·
         <a href="https://developers.openai.com/api/docs/guides/background" target="_blank" rel="noopener">background</a> ·
         <a href="https://platform.claude.com/docs/en/build-with-claude/streaming" target="_blank" rel="noopener">Anthropic streaming</a> ·
-        <a href="https://ai.google.dev/api/live" target="_blank" rel="noopener">Gemini Live</a>
+        <a href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">Gemini Interactions</a> ·
+        <a href="https://ai.google.dev/gemini-api/docs/background-execution" target="_blank" rel="noopener">Gemini background/reconnect</a> ·
+        <a href="https://ai.google.dev/api/live" target="_blank" rel="noopener">Gemini Live</a> — lidas 2026-09-30
       </p>
     </section>
 
     <section id="http-vs-ws">
-      <h2>4. HTTP(S) vs WebSocket — quando cada um é melhor</h2>
+      <h2>4. HTTP(S) vs WebSocket — quando cada um é melhor<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <p>
         O ponto que o hype esconde: o caminho "normal" da Responses API é <strong>request/response e SSE sobre
         HTTPS</strong>; o WS mode é <code>wss://</code> (também TLS) e <strong>opt-in</strong>. A recomendação
@@ -537,7 +616,8 @@
           <tr><td>Simetria cross-provider (fallback Anthropic/Gemini)</td><td><strong>HTTP(S)/SSE</strong></td><td>Anthropic/Gemini texto são SSE-only — HTTP-first mantém um caminho de transporte (os adapters semânticos continuam distintos)</td></tr>
           <tr><td>Execuções longas sem teto de conexão</td><td><strong>HTTP(S)/SSE</strong></td><td>WS mode tem limite de 60 min/conexão (exige rollover); HTTP não herda esse teto — mas segue sujeito a timeouts de cliente/runtime/proxy/provider</td></tr>
           <tr><td>Loop agêntico tool-heavy (muitos round trips) em worker de vida longa</td><td><strong>WS mode</strong></td><td>HTTP/2 + keep-alive já amortizam TCP/TLS; o ganho real do WS é o <em>request state quente connection-local</em> + envio só dos itens novos</td></tr>
-          <tr><td>Latência agregada em rollouts longos</td><td><strong>WS mode</strong> (a medir)</td><td>"Até ~40%" citado pela OpenAI vale para <strong>20+ tool calls</strong> — dado observado, não limiar; medir p95/p99 no seu workload</td></tr>
+          <tr><td>Vários responses concorrentes no mesmo worker</td><td><strong>WS mode</strong> (lanes)</td><td>Uma conexão aceita até 16 responses ativos em lanes <code>stream_id</code> (até 32 nomeadas; mesma lane = FIFO). Com HTTP cada response é um request independente. No event log, cada lane é uma execução própria</td></tr>
+          <tr><td>Latência agregada em rollouts longos</td><td><strong>WS mode</strong> (a medir)</td><td>A OpenAI cita "até ~40%" mais rápido de ponta a ponta em <strong>20+ tool calls</strong> — dado observado, não limiar; medir p95/p99 no seu workload</td></tr>
         </tbody>
       </table></div>
       <div class="callout tip">
@@ -693,6 +773,14 @@ async def stream(attempt_id: str, request: Request):
         <li><strong>Snapshot com watermark:</strong> todo snapshot carrega <code>snapshot_seq</code>, <code>attempt_id</code> e <code>reducer_version</code> — sem isso não há como saber onde o tail começa. Tail começa estritamente em <code>&gt; snapshot_seq</code>.</li>
         <li><strong>Cursor é por conexão, não por conversa:</strong> duas abas abertas têm cursores independentes. Nunca guarde "último seq entregue" global server-side — isso fura um dos clientes.</li>
         <li><strong>TTL:</strong> estenda o TTL do log ao completar e <strong>materialize</strong> o resultado final em storage durável — o contrato "voltar no dia seguinte" não pode depender do TTL do log de deltas.</li>
+        <li><strong>Dois cursores, duas responsabilidades:</strong> <code>last_event_id</code>/<code>starting_after</code>
+        retomam o stream do provider; <code>Last-Event-ID</code> e <code>seq</code> retomam o event log da
+        aplicação. Persista ambos no envelope da tentativa e nunca trate um cursor do provider como prova de
+        entrega ao browser.</li>
+        <li><strong>Timeout não é falha terminal:</strong> se a conexão com o provider cair, consulte o status,
+        reconecte do último cursor suportado e reconcilie o uso final antes de abrir retry. Só emita
+        <code>completed</code> depois do evento terminal/uso final; ausência de ACK fica <code>incomplete</code> ou
+        <code>outcome_unknown</code>, conforme o efeito que possa ter ocorrido.</li>
       </ul>
     </section>
 
@@ -727,6 +815,15 @@ async def stream(attempt_id: str, request: Request):
         <li><strong>Fencing por attempt:</strong> um attempt ativo por conversa; criar o segundo exige finalizar o primeiro (CAS).</li>
         <li><strong>Critério de retry silencioso — as TRÊS condições:</strong> (a) <strong>zero side-effects</strong> (nenhum tool com efeito externo executado ou em estado ambíguo), (b) <strong>zero conteúdo user-visible</strong> (inclui reasoning summary, se exibido), (c) <strong>zero tool call disparado</strong>. Um tool call pode ocorrer <em>antes</em> do primeiro delta de texto — o critério ingênuo "zero deltas visíveis" reexecutaria o tool e duplicaria o side-effect.</li>
         <li><strong>Se qualquer condição falhou:</strong> finalize o attempt como <code>failed</code>/<code>incomplete</code> com o parcial preservado e crie <strong>nova tentativa explícita</strong> (nova bolha, <code>retry_of</code> apontando para a anterior) — não uma "continuação" invisível.</li>
+        <li><strong>Retry bounded:</strong> use backoff exponencial com jitter somente para timeout de transporte,
+        <code>429</code> e erros <code>5xx</code>; limite tentativas e registre a causa. Se já existe
+        <code>response.id</code>/<code>interaction.id</code>, consulte ou reconecte esse recurso antes de um novo
+        POST. O timeout do cliente não autoriza duplicar uma geração.</li>
+        <li><strong>Cancelamento explícito:</strong> grave <code>cancel_requested</code> no attempt e envie a operação
+        de cancelamento documentada pelo provider quando disponível. Só transicione para <code>cancelled</code> após
+        confirmação de status; se a confirmação for perdida, preserve o parcial e marque a conclusão como
+        <code>unknown</code>/<code>incomplete</code> até reconciliar. Cancelar a conexão SSE não cancela o trabalho
+        do worker nem apaga o event log.</li>
       </ul>
       <h3>10.1 Tool ledger — o caso <code>outcome_unknown</code></h3>
       <p>
@@ -740,7 +837,7 @@ async def stream(attempt_id: str, request: Request):
     </section>
 
     <section id="edge-cases">
-      <h2>11. Edge cases que quebram o replay ingênuo</h2>
+      <h2>11. Edge cases que quebram o replay ingênuo<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <div class="table-wrap"><table>
         <thead><tr><th>#</th><th>Edge case</th><th>Correção</th></tr></thead>
         <tbody>
@@ -752,6 +849,7 @@ async def stream(attempt_id: str, request: Request):
           <tr><td>6</td><td><strong>TTL expira no meio</strong></td><td><code>410 Gone</code> + snapshot/reset; materialização durável do final; TTL estendido ao completar</td></tr>
           <tr><td>7</td><td><strong>Schema de ontem ≠ parser de hoje</strong></td><td><code>schema_version</code> por evento + <em>upcasters</em>; versione também o reducer/snapshot (<code>reducer_version</code>)</td></tr>
           <tr><td>8</td><td><strong>Duas abas/dispositivos simultâneos</strong></td><td>Cursor por conexão (§8.2); ambos os leitores são independentes</td></tr>
+          <tr><td>9</td><td><strong>Tool call vazando para dentro do canal de texto</strong> — o parser espera <code>tool_use</code>/<code>content_block_start</code> e recebe a chamada como texto comum (ver <a href="#legado">Legado e migração</a>: Opus 5 com thinking desligado)</td><td>Nunca inferir tool call a partir do canal de texto; o reducer persiste o delta como texto (fiel ao que o provider mandou) e o <em>tool ledger</em> (§10) só registra o que veio em bloco tipado. Sanitize tags internas na renderização, não no event log</td></tr>
         </tbody>
       </table></div>
     </section>
@@ -762,7 +860,7 @@ async def stream(attempt_id: str, request: Request):
     </section>
 
     <section id="openai-transporte">
-      <h2>12. OpenAI Responses — SSE, WS mode, background e compaction</h2>
+      <h2>12. OpenAI Responses — SSE, WS mode, background e compaction<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <p>
         A superfície detalhada (frames, erros, exemplos) é do
         <a href="guia_openai_modelos.html#s-streaming-websocket">guia OpenAI §12.2</a>. O que importa para a
@@ -770,11 +868,28 @@ async def stream(attempt_id: str, request: Request):
       </p>
       <ul>
         <li><strong>SSE (<code>stream:true</code>)</strong> é o caminho default. Eventos tipados (<code>response.output_text.delta</code>, tool events, <code>response.completed</code>) — normalize e persista cada um com <code>seq</code> próprio.</li>
-        <li><strong>WS mode</strong> (<code>wss://api.openai.com/v1/responses</code>): público, sem rótulo beta. Compatível com <code>store=false</code>/ZDR — o cache do último response é in-memory da conexão. Sem multiplexação (1 response em voo por conexão; use pool para paralelismo). Limite de <strong>60 min/conexão</strong>. Continuação entre turnos: novo <code>response.create</code> com <strong>itens novos completos</strong> + <code>previous_response_id</code>. <strong>Reconexão = novo socket + nova cadeia</strong> sob <code>store=false</code> (<code>prev_id=null</code> + contexto completo, ou a janela compactada do <code>/responses/compact</code>). Erros a tratar: <code>previous_response_not_found</code>, <code>websocket_connection_limit_reached</code>. Não há evento de cancel — cancelar = fechar o socket (e o SEU cancelamento end-to-end cuida do resto). <span class="pill ok">Verificado</span></li>
-          <li><strong>Requisito de SDK:</strong> o WS mode <strong>não exige versão específica</strong> — o exemplo oficial usa <code>websocket-client</code> puro e o helper <code>responses.connect()</code> existe no SDK Python desde antes da série 2.45 (2.45.x é sobre os types do GPT-5.6, não sobre o transporte). <span class="pill ok">Verificado</span></li>
-        <li><strong>Background mode</strong> (<code>background:true</code> + <code>stream:true</code>): resumível por <code>starting_after=&lt;sequence_number&gt;</code>, mas <strong>exige <code>store=true</code></strong> (retém ~10 min; <strong>não-ZDR</strong>). Sob ZDR/<code>store=false</code>, a durabilidade vem do SEU event store — cuidado com o "compliance drift" de alguém ligar background "porque resolve resume". <span class="pill ok">Verificado</span></li>
+        <li><strong>WS mode</strong> (<code>wss://api.openai.com/v1/responses</code>): público, sem rótulo beta; conexões duram até <strong>60 min</strong> (<code>websocket_connection_limit_reached</code>; reconecte). Compatível com <code>store=false</code>/ZDR — o cache é connection-local. <strong>Multiplexação por lanes:</strong> uma conexão aceita até <strong>16 responses ativos</strong>; <code>stream_id</code> nomeia uma lane ordenada (mesma lane = FIFO, sem sobreposição; lanes diferentes rodam em paralelo; até 32 lanes nomeadas, fora a lane default; 1–256 caracteres: letras, números, <code>_</code>, <code>-</code>, <code>.</code>). O que encadeia a conversa continua sendo <code>previous_response_id</code>; eventos de lane nomeada trazem o <code>stream_id</code>; um fork é o <code>previous_response_id</code> de uma resposta concluída + um novo <code>stream_id</code>. Requests além de 16 ficam em fila. Continuação entre turnos: novo <code>response.create</code> com <strong>itens novos completos</strong> + <code>previous_response_id</code>. <strong>Reconexão = novo socket</strong>: o cache de todas as lanes some; com <code>store=true</code> dá para continuar por <code>previous_response_id</code> (o serviço pode reidratar IDs do estado persistido); com <code>store=false</code> não há fallback persistido — recomece com <code>previous_response_id=null</code> + contexto completo, ou com a janela compactada do <code>/responses/compact</code>. Na camada 2, trate cada lane como uma execução com seu próprio <code>seq</code>. <span class="pill ok">Verificado 2026-09-30</span></li>
+        <li><strong>SDKs:</strong> o WS mode <strong>não exige nenhum SDK específico</strong> — o exemplo oficial conecta com <code>websocket-client</code> (Python) ou <code>ws</code> (JS). Os SDKs atuais (<code>openai</code> 3.22.1 / npm 7.25.0) têm suporte opcional: <code>pip install "openai[realtime]"</code> e, em JS, <code>ResponsesWS</code> de <code>openai/resources/responses/ws</code>; o <code>openai-agents</code> 0.22.3 troca o transporte por <code>set_default_openai_responses_transport("websocket")</code>. O <code>client.beta.responses.connect</code> é beta e específico do fluxo <a href="https://developers.openai.com/api/docs/guides/responses-multi-agent" target="_blank" rel="noopener">Multi-agent</a> (header <code>OpenAI-Beta: responses_multi_agent=v1</code>). <span class="pill ok">Verificado 2026-09-30</span> (pacotes) · <span class="pill partial">UNVERIFIED</span> (forma exata do helper <code>ResponsesWS</code>, não lida)</li>
+        <li><strong>Background mode</strong> (<code>background:true</code> + <code>stream:true</code>): resumível por <code>starting_after=&lt;sequence_number&gt;</code>. Projetos ZDR executam background com <code>store=false</code> — <strong>não exige <code>store=true</code></strong> — e a resposta fica temporariamente em disco por ~10 min para viabilizar a execução assíncrona e o polling; com <code>store</code> omitido ou <code>false</code>, ela é apagada após ~10 min. ZDR elegível, portanto, não equivale a retenção física literal zero. Além disso, a durabilidade vem do SEU event store. Os SDKs ainda não expõem o resume do stream (a doc diz "SDK support for resuming the stream is coming soon"): use o GET REST abaixo. <span class="pill ok">Verificado 2026-09-30</span></li>
+        <li><strong>Cancelamento:</strong> para uma execução em background, use <code>client.responses.cancel(id)</code>
+        ou o endpoint equivalente e confirme o estado antes de fechar o attempt. O cancelamento repetido é
+        idempotente na API; fechar SSE/WS sozinho só encerra a conexão, não prova que o trabalho parou. Preserve no
+        event log o parcial, o pedido de cancelamento e o estado terminal observado.</li>
         <li><strong>Compaction — dois mecanismos</strong>, ambos ZDR-friendly: o endpoint standalone <code>/responses/compact</code> (stateless) e <code>context_management.compact_threshold</code> dentro do <code>/responses</code>. Use a janela compactada como base do input após reset de cadeia no WS. Deep dive: <a href="guia_contexto_compactacao_estrategias.html">guia de Compactação</a>.</li>
+        <li><strong>Async tool calling (GPT-6 Astra e seguintes)</strong> — <code>async:true</code> em uma tool <code>function</code>/<code>custom</code>: o modelo não pausa o turno esperando; sua aplicação roda a tool e devolve <code>function_call_output</code>/<code>custom_tool_call_output</code> depois, numa nova <code>responses.create</code> com <code>previous_response_id</code> e o <code>call_id</code> original. A execução continua sendo sua (não é <em>Background mode</em>). Para o modelo esperar de propósito, o padrão oficial é uma tool síncrona <em>wait</em> definida pela aplicação. No tool ledger (§10), uma chamada <code>async</code> fica <code>pending</code> até o output chegar; nunca assuma sucesso silencioso. <span class="pill ok">Verificado 2026-09-23</span></li>
+        <li><strong>Mid-turn steering (GPT-6, só no WS mode)</strong> — após o <code>response.created</code>, o cliente envia <code>{"type":"response.steer","previous_response_id":"resp_...","input":"..."}</code>; o servidor responde <code>response.steer.accepted</code> e substitui a resposta por uma sucessora que preserva o trabalho feito (correção de rumo, não rollback: não desfaz ação nem cancela tool já iniciada). Se depender de tool pendente, vem <code>response.steer.pending</code> com <code>required_input</code>; falhas vêm em <code>response.steer.failed</code>. Não existe equivalente em SSE, e não é mecanismo de resume da camada 2. <span class="pill ok">Verificado 2026-09-23</span></li>
+        <li><strong>Agents API (beta desde 2026-09-10) — não confundir com sessão/resume deste guia.</strong> Serviço gerenciado sobre o harness do Codex (<code>POST /v1/agents/sessions</code>, header <code>OpenAI-Beta: agents=v1</code>) com <code>agent</code>, <code>environment</code>, <code>session</code> e <code>events</code>; uma <em>Agents API session</em>, uma <em>Agents SDK session</em> e uma conversa da Responses com <code>previous_response_id</code> são recursos diferentes. Não suporta ZDR e retém dados só nos EUA: não substitui o event store da camada 2. <span class="pill ok">Verificado 2026-09-23</span></li>
       </ul>
+      <pre><code class="language-python">stream = client.responses.create(
+    model="gpt-6-astra", input="...", background=True, stream=True,
+)
+cursor = None
+for event in stream:
+    # persista cada evento no SEU event log (camada 2) junto do cursor do provider
+    cursor = getattr(event, "sequence_number", cursor)
+# caiu no meio? retome do último evento aplicado (REST):
+#   GET https://api.openai.com/v1/responses/{response_id}?stream=true&amp;starting_after={cursor}
+#   (response_id vem do evento response.created)</code></pre>
       <div class="callout warn">
         <strong>WebSocket Mode não fornece resume de UX.</strong> Ele otimiza a conversa backend↔OpenAI dentro de
         uma conexão. O usuário que fechou a aba é atendido pela camada 2 (§5–§11) — com WS ou sem WS.
@@ -783,26 +898,58 @@ async def stream(attempt_id: str, request: Request):
         <a href="https://developers.openai.com/api/docs/guides/websocket-mode" target="_blank" rel="noopener">websocket-mode</a> ·
         <a href="https://developers.openai.com/api/docs/guides/background" target="_blank" rel="noopener">background</a> ·
         <a href="https://developers.openai.com/api/docs/guides/compaction" target="_blank" rel="noopener">compaction</a> ·
-        <a href="https://developers.openai.com/api/docs/guides/your-data" target="_blank" rel="noopener">your-data (ZDR)</a>
+        <a href="https://developers.openai.com/api/docs/guides/your-data" target="_blank" rel="noopener">your-data (ZDR)</a> ·
+        <a href="https://developers.openai.com/api/docs/guides/async-tool-calling" target="_blank" rel="noopener">async tool calling</a> ·
+        <a href="https://developers.openai.com/api/docs/guides/steering" target="_blank" rel="noopener">mid-turn steering</a> ·
+        <a href="https://developers.openai.com/api/docs/guides/agents-api/overview" target="_blank" rel="noopener">Agents API</a> — lidas 2026-09-30 (async tool calling, steering e Agents API: verificados em 2026-09-23)
       </p>
     </section>
 
     <section id="anthropic-gemini">
-      <h2>13. Anthropic &amp; Gemini — SSE-only no texto</h2>
+      <h2>13. Anthropic &amp; Gemini — SSE e continuidade por Interactions<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <ul>
-        <li><strong>Anthropic Messages:</strong> SSE puro, sem WebSocket, sem estado server-side — o cliente reenvia o histórico completo a cada turno (o que casa naturalmente com envelope local). Eventos: <code>message_start</code>, <code>content_block_start/delta/stop</code>, <code>message_delta</code>, <code>message_stop</code>, <code>ping</code>, <code>error</code>. Deltas de tool input chegam como <code>input_json_delta</code> (JSON parcial — edge case §11.2).</li>
-        <li><strong>Gemini <code>generateContent</code>:</strong> HTTP + SSE (<code>?alt=sse</code>), sem estado server-side. É o caminho de produção para chat de texto.</li>
-        <li><strong>Gemini Live:</strong> WebSocket bidirecional com session resumption (handle ~2h) e <code>GoAway</code> — aceita texto, áudio e vídeo, mas é <span class="pill beta">Preview</span>, orientado a realtime/native-audio. Não é o substituto do <code>generateContent</code> para chat textual, e não entra na cadeia de fallback de texto.</li>
+        <li><strong>Anthropic Messages:</strong> SSE puro, sem WebSocket, sem estado server-side — o cliente reenvia o histórico completo a cada turno (o que casa naturalmente com envelope local). Eventos: <code>message_start</code>, <code>content_block_start/delta/stop</code>, <code>message_delta</code>, <code>message_stop</code>, <code>ping</code>, <code>error</code>. Deltas: <code>text_delta</code>; <code>input_json_delta</code> (JSON parcial; só vira objeto no <code>content_block_stop</code> — edge case §11.2); <code>thinking_delta</code> e <code>signature_delta</code> (enviado logo antes do <code>content_block_stop</code> do bloco de thinking). Erros podem chegar no meio do stream (ex.: <code>overloaded_error</code>, o equivalente ao HTTP 529): trate <code>error</code> como evento terminal do attempt. <span class="pill ok">Verificado 2026-09-30</span></li>
+        <li><strong>Anthropic · modelos atuais (<code>claude-opus-5-5</code>, <code>claude-fable-5-1</code>, <code>claude-sonnet-5-5</code>):</strong> o transporte não muda; muda o parsing. O thinking é sempre ligado no Opus 5.5 e no Fable 5.1 (<code>disabled</code> e <code>enabled</code> com <code>budget_tokens</code> retornam 400; o Sonnet 5.5 é adaptive ou <code>between_tools</code>), então toda resposta pode abrir com blocos <code>thinking</code>: selecione blocos por <code>type</code>, nunca por posição. No <code>display</code> <code>omitted</code> (padrão atual) o bloco abre, recebe um <code>thinking_delta</code> com texto vazio e um único <code>signature_delta</code>, e fecha. O texto curto que o modelo escreve <em>entre</em> tool calls chega como bloco <code>thinking</code> (progress update), não como <code>text_delta</code>: vazio em <code>omitted</code>, e com <code>display:"updates"</code> (beta) só esses updates carregam texto. Uma UI que exibia esse texto fica muda, sem erro: configure <code>thinking.display</code> se depende dele. Fontes: <a href="https://platform.claude.com/docs/en/build-with-claude/streaming" target="_blank" rel="noopener">streaming</a> · <a href="https://platform.claude.com/docs/en/models/opus-5-5/whats-new-opus-5-5" target="_blank" rel="noopener">What's new in Opus 5.5</a> · <a href="https://platform.claude.com/docs/en/models/sonnet-5-5/whats-new-sonnet-5-5" target="_blank" rel="noopener">What's new in Sonnet 5.5</a>. <span class="pill ok">Verificado 2026-09-30</span></li>
+        <li><strong>Anthropic · recuperação de stream interrompido</strong> (não é resume nativo): a doc oficial recupera capturando o parcial e enviando um <em>novo request</em>. Claude 4.6 e posteriores: uma mensagem <code>user</code> com o parcial e a instrução de continuar ("Your previous response was interrupted and ended with [...]. Continue from where you left off."). Claude 4.5 e anteriores (Haiku 4.5): o parcial como início de uma mensagem <code>assistant</code>. Blocos <code>tool_use</code> e <code>thinking</code> não se recuperam parcialmente; retome a partir do último bloco de texto. Para a camada 2 isso é uma <strong>nova tentativa</strong> (marque <code>continues</code>/<code>retry_of</code>; a continuação pode divergir do que o primeiro attempt teria dito), não continuidade invisível. <span class="pill ok">Verificado 2026-09-30</span></li>
+        <li><strong>Gemini Interactions</strong> (rota única do Gemini neste guia; <code>generateContent</code> está em <a href="#legado">Legado e migração</a>): HTTP + SSE em <code>/v1beta/interactions</code> com <code>stream=True</code>. Eventos: <code>interaction.created</code> (id, model, status), <code>interaction.status_update</code>, <code>step.start</code> (<code>type</code>, <code>index</code>), <code>step.delta</code> (<code>delta.type</code>: <code>text</code>, <code>thought_summary</code>, <code>thought_signature</code>, <code>image</code>, <code>arguments_delta</code> — JSON parcial a concatenar), <code>step.stop</code>, <code>interaction.completed</code> (com <code>usage</code>, sem <code>steps</code> no payload do evento) e <code>error</code>; no REST há o marcador <code>[DONE]</code>. Novos tipos podem aparecer: registre e ignore os desconhecidos (orientação da doc). Um function call encerra o stream em <code>requires_action</code>: responda com um novo <code>create</code> (<code>previous_interaction_id</code> + item <code>function_result</code>). <span class="pill ok">Verificado 2026-09-30</span></li>
+        <li><strong>Gemini Interactions · estado, background e reconexão:</strong> <code>previous_interaction_id</code> dá estado quando <code>store=true</code>; <code>store=false</code> desabilita o encadeamento e o background. <code>background=True</code> devolve o ID na hora e permite polling (<code>interactions.get</code>), stream e reconexão; estados: <code>in_progress</code>, <code>requires_action</code>, <code>completed</code>, <code>failed</code>, <code>cancelled</code>. Cancelar: <code>POST /interactions/{id}/cancel</code> (vira <code>cancelled</code>); encadear sobre uma interação <code>in_progress</code> retorna 400. Cada delta traz um <code>event_id</code>; passá-lo como <code>last_event_id</code> retoma o stream daquele evento (REST: <code>GET .../interactions/{id}?stream=true&amp;last_event_id=...</code>). A retenção do recurso é 55 dias no tier pago e 1 dia no gratuito; isso não substitui o event log local. <span class="pill ok">Verificado 2026-09-30</span></li>
+        <li><strong>Gemini Live:</strong> WebSocket bidirecional (<code>v1beta</code>) para voz, vídeo e texto em tempo real; modelos <code>gemini-3.8-live</code> e <code>gemini-3.8-live-extended-thinking</code> (Stable desde 2026-09-15). É orientado a realtime/native-audio e não entra na cadeia de fallback de texto (decisão de posicionamento, não incapacidade técnica). Session resumption (handle ~2h) e <code>GoAway</code>: não relidos em 2026-09-30 (<span class="pill partial">UNVERIFIED</span>).</li>
       </ul>
+      <pre><code class="language-python">stream = client.interactions.create(
+    model="gemini-3.8-flash", input="...", stream=True, background=True,
+)
+interaction_id, last_event_id = None, None
+for event in stream:
+    if event.event_type == "interaction.created":
+        interaction_id = event.interaction.id   # persista antes de seguir
+    elif event.event_type == "step.delta":
+        # o payload de cada delta traz event_id; grave-o no event log (camada 1)
+        # UNVERIFIED: nome do atributo no SDK Python (a doc mostra o resume em Go)
+        last_event_id = event.event_id
+# caiu no meio? retome do último evento aplicado (REST):
+#   GET https://generativelanguage.googleapis.com/v1beta/interactions/{interaction_id}?stream=true&amp;last_event_id={last_event_id}</code></pre>
+      <div class="callout warn">
+        <strong>Consequência para a camada 2 (chamada de tool que aparece como texto).</strong> O event log continua
+        fiel: grave o delta como o provider mandou, com <code>seq</code> próprio — <strong>não</strong> tente
+        "consertar" reclassificando texto em <code>tool_use</code> no ingresso. Duas regras práticas:
+        (1) o <a href="#idempotencia-ledger">tool ledger</a> (§10) só admite entrada vinda de bloco tipado —
+        uma chamada que apareceu como texto <em>não</em> executa e <em>não</em> vira
+        <code>outcome_unknown</code>; (2) a limpeza de tags internas é do renderizador (§15), não do
+        event store — sanitizar no ingresso quebra o replay byte-a-byte e a auditoria.
+      </div>
       <div class="callout info">
         <strong>Consequência arquitetural:</strong> como o fallback de texto é SSE/HTTP em todos os providers, o
         seu <em>TransportSelector</em> (§14) tem exatamente um transporte especial (OpenAI WS) e um baseline
-        universal (HTTP/SSE). Isso é um argumento a favor de construir o baseline primeiro e plugar o WS depois.
+        universal (HTTP/SSE). Interactions adiciona continuidade e reconnect no provider, mas não elimina a
+        necessidade do event log da camada 2. Isso é um argumento a favor de construir o baseline primeiro e
+        plugar as capabilities provider-specific depois.
       </div>
       <p class="source-link"><strong>Fontes:</strong>
         <a href="https://platform.claude.com/docs/en/build-with-claude/streaming" target="_blank" rel="noopener">Anthropic streaming</a> ·
-        <a href="https://ai.google.dev/gemini-api/docs/text-generation" target="_blank" rel="noopener">Gemini text-generation</a> ·
-        <a href="https://ai.google.dev/api/live" target="_blank" rel="noopener">Gemini Live</a>
+        <a href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">Gemini Interactions</a> ·
+        <a href="https://ai.google.dev/gemini-api/docs/background-execution" target="_blank" rel="noopener">Gemini background/reconnect</a> ·
+        <a href="https://ai.google.dev/gemini-api/docs/streaming" target="_blank" rel="noopener">Gemini streaming</a> ·
+        <a href="https://ai.google.dev/api/live" target="_blank" rel="noopener">Gemini Live</a> — lidas 2026-09-30
       </p>
     </section>
 
@@ -813,7 +960,7 @@ async def stream(attempt_id: str, request: Request):
         <li><strong>Reasoning não é portável:</strong> blobs de raciocínio (ex.: <code>reasoning.encrypted_content</code>) são do provider de origem. No failover, descarte-os; texto e resultados de tools <em>confirmados</em> atravessam.</li>
         <li><strong>Failover mid-flight nunca é continuidade invisível:</strong> mesmo com o mesmo texto+tools, o novo modelo responde diferente. Feche o attempt como <code>incomplete</code>, preserve o parcial e abra <strong>nova tentativa marcada</strong> (<code>retry_of</code>/<code>supersedes</code>) — o usuário vê uma nova bolha, não um Frankenstein "texto A + continuação B".</li>
         <li><strong>Input do failover:</strong> o input imutável da tentativa original (envelope local) + tool results <em>confirmados no ledger</em> — nunca tools em <code>outcome_unknown</code>.</li>
-        <li><strong>Capability/compliance matrix</strong> por provider (o que suporta <code>store=false</code>, quais tools built-in existem, limites) mora no <a href="guia_providers_adapters.html">guia Providers &amp; Adapters</a> — o router lê essa matriz para decidir se o failover é elegível.</li>
+        <li><strong>Capability/compliance matrix</strong> por provider (o que suporta <code>store=false</code>, quais tools built-in existem, limites) mora no <a href="guia_providers_adapters.html">guia Providers &amp; Adapters</a> (incluindo <a href="guia_providers_adapters.html#provedores-adicionais">provedores adicionais</a>) — o router lê essa matriz para decidir se o failover é elegível.</li>
       </ul>
     </section>
 
@@ -867,7 +1014,7 @@ function apply(ev: NormalizedEvent) {
         <li><strong>Lease + heartbeat:</strong> o worker renova a lease do attempt; lease expirada = attempt órfão.</li>
         <li><strong>Fencing epoch monotônico:</strong> a cada takeover, o epoch incrementa; TODO append/tool-claim/transição terminal valida o epoch — o worker-zumbi da lease anterior escreve e falha (attempt_id sozinho não o barra).</li>
         <li><strong>Recovery scan / orphan reaper:</strong> processo que encontra attempts órfãos e decide: retomar (se o modelo de execução permitir re-drive), ou fechar como <code>incomplete</code> com o parcial (mais comum com LLM streaming, já que o stream do provider morreu com o worker).</li>
-        <li><strong>Quando usar um engine pronto:</strong> <em>Temporal/DBOS</em> valem quando há tools com side-effects reais, retries idempotentes e fluxos longos que DEVEM sobreviver a deploy. Para chat sem side-effects críticos, fila + leases + fencing caseiros bastam. Deep dive de engines: <a href="guia_arquitetura_orquestracao.html">guia Arquitetura &amp; Orquestração</a>.</li>
+        <li><strong>Quando usar um engine pronto:</strong> <em>Temporal/DBOS</em> valem quando há tools com side-effects reais, retries idempotentes e fluxos longos que DEVEM sobreviver a deploy. A integração OpenAI↔Temporal deve ser tratada como <span class="pill beta">public preview</span> até a documentação do seu tenant declarar GA; não transforme preview em requisito de produção. Para chat sem side-effects críticos, fila + leases + fencing caseiros bastam. Deep dive de engines: <a href="guia_arquitetura_orquestracao.html">guia Arquitetura &amp; Orquestração</a>.</li>
       </ul>
     </section>
 
@@ -888,22 +1035,30 @@ function apply(ev: NormalizedEvent) {
         <li><strong>Latência por fase:</strong> TTFT dos dois carimbos (§9), persist latency (<code>provider_event_received_at</code> → <code>committed_at</code>), replay lag na reconexão.</li>
         <li><strong>Saúde do log:</strong> gaps de seq detectados, taxa de dedupe no ingresso, attempts órfãos, tools em <code>outcome_unknown</code>, taxa de <code>410 Gone</code> (cursores expirados = TTL curto demais).</li>
         <li><strong>Property tests que valem ouro:</strong> (1) <em>replay == live view</em> — reconstruir do log dá exatamente o que o cliente ao vivo viu; (2) terminal único e imutável; (3) writer com epoch obsoleto é rejeitado; (4) reconexão em ponto arbitrário nunca perde nem duplica evento.</li>
+        <li><strong>Uso e custo:</strong> registre o <code>usage</code> final uma vez por tentativa, junto de
+        <code>provider_request_id</code>, <code>attempt_id</code>, status e política de preço. Preserve campos de
+        input/output/reasoning, cache hit/write/read e tool-use sem tratá-los como deltas cumulativos. Em
+        reconnect, dedupe pelo ID/cursor e reconcilie o uso final; replay local não é nova geração nem novo custo.</li>
         <li><strong>Benchmark HTTP vs WS honesto:</strong> conexão fria vs quente, RTT, concorrência, bytes reenviados por turno, custo de FDs/memória — antes de adotar o WS mode por causa do "até ~40%".</li>
       </ul>
     </section>
 
     <section id="alternativas-sota">
-      <h2>19. Alternativas SOTA — quando cada uma é melhor</h2>
+      <h2>19. Alternativas SOTA — quando cada uma é melhor<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <div class="table-wrap"><table>
         <thead><tr><th>Padrão</th><th>Quando é MELHOR</th><th>Trade-off / limite</th></tr></thead>
         <tbody>
           <tr><td><strong>Redis Streams</strong> (XADD/XREAD)</td><td>O primitive certo para o event log da camada 2: append atômico, IDs monotônicos, replay+tail nativos (<code>XREAD BLOCK</code> fecha a janela §8.1), trimming controlado</td><td>Não deduplica produtor; não atomiza Redis+SQL (outbox); trimming/failover = declarar RPO; consumer groups ≠ broadcast</td></tr>
           <tr><td><strong>Temporal / DBOS</strong> (durable execution)</td><td>Execução que DEVE sobreviver a crash/deploy; tools com side-effects e retry idempotente; cancel/pause robustos</td><td>Peso operacional; overkill para chat curto sem side-effects. Não substitui o SSE da camada 2</td></tr>
           <tr><td><strong>LangGraph checkpointer</strong></td><td>Retomar o ESTADO do agente (grafo, memória, tool state) entre turnos/crashes</td><td>Checkpointa execução — não entrega stream resumível ao browser; complementa, não substitui</td></tr>
-          <tr><td><strong>Vercel AI SDK resumable streams</strong></td><td>Stack Next.js/Edge — resume de UX "80% pronto" no ecossistema</td><td>Fora de Next/Edge vira reimplementação; use como referência conceitual</td></tr>
+          <tr><td><strong>Vercel AI SDK resumable streams</strong></td><td>Stack Next.js/Edge quando o recurso de streams resumíveis estiver configurado</td><td>Exige persistência do estado/eventos, um stream store (por exemplo, Redis) e endpoints de criação/consulta/reconexão sob autorização. Abort/fechamento do stream interrompe a entrega ao cliente, mas não é cancelamento garantido do provider/worker; reconcilie o attempt. Fora de Next/Edge vira reimplementação.</td></tr>
           <tr><td><strong>WebTransport / HTTP3</strong></td><td>Altíssima interatividade, multiplex real, cliente custom</td><td>Troca o cano, <strong>não cria durabilidade</strong>; suporte/infra ainda irregulares — SSE/HTTP2 segue o confiável para texto</td></tr>
         </tbody>
       </table></div>
+      <div class="callout info">
+        <strong>LangGraph 1.2 — durabilidade de execução (série desde 2026-05-12; <code>langgraph</code> 1.2.12, de 2026-09-21, é a versão corrente em 2026-09-30).</strong>
+        Além do checkpointer (linha acima), a série 1.2 trouxe: <strong>timeout por nó</strong> (<code>TimeoutPolicy</code>); <strong>tratamento de erro por nó</strong> (<code>error_handler=</code>, com compensação estilo Saga via <code>Command</code>) e retomada durável dos handlers após crash do host; <strong>graceful shutdown</strong> — um <code>RunControl</code> permite chamar <code>request_drain()</code> de qualquer thread, o agente completa o superstep corrente, salva um checkpoint resumível e levanta <code>GraphDrained</code>, um estado <em>pausado</em>, não uma falha; <code>DeltaChannel</code> (beta), que grava só o delta de cada passo em vez de reserializar o valor acumulado (útil para listas de mensagens longas); e <code>stream_events(version="v3")</code>, um streaming por content blocks com projeções tipadas por canal. Continua sendo checkpoint de ESTADO do grafo (mesma ressalva da linha acima): não substitui o event log/stream resumível da camada 2 deste guia. Fonte: release notes do <code>langgraph</code> 1.2 (GitHub, <code>langchain-ai/langgraph</code>), lidas em 2026-09-30.
+      </div>
     </section>
 
     <section id="maturidade">
@@ -949,12 +1104,13 @@ function apply(ev: NormalizedEvent) {
 
     <!-- ===================== REFERÊNCIA ===================== -->
     <section class="ref" id="cheatsheet">
-      <h2>Cheat sheet</h2>
+      <h2>Cheat sheet<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <ul>
         <li><strong>Resume do usuário = camada 2.</strong> WS com o provider não participa dessa conta.</li>
-        <li><strong>HTTP/SSE = baseline portátil; WS mode = capability opt-in com ganho medido</strong> ("até ~40%" oficial vale para 20+ tool calls).</li>
+        <li><strong>HTTP/SSE = baseline portátil; WS mode = capability opt-in com ganho medido</strong> ("até ~40%" oficial vale para 20+ tool calls). O WS mode multiplexa até 16 responses por conexão em lanes <code>stream_id</code>.</li>
+        <li><strong>Resume nativo no provider:</strong> só OpenAI background (<code>starting_after</code>) e Gemini Interactions (<code>last_event_id</code>). Anthropic recupera por novo request com o parcial = nova tentativa.</li>
         <li><strong>WS + <code>store=false</code>:</strong> reconectar = novo socket + reenviar contexto (o cache era da conexão).</li>
-        <li><strong>Background mode:</strong> resume nativo, mas <code>store=true</code> (não-ZDR, ~10 min) — sob ZDR a durabilidade é SUA.</li>
+        <li><strong>Background mode:</strong> resume nativo mesmo com <code>store=false</code> em projetos ZDR, com ~10 min de retenção temporária em disco explicitamente documentada; além disso, a durabilidade é SUA.</li>
         <li><strong>"Primeiro token real" = <code>first_answer_text_delta_at</code></strong>, carimbado no commit do backend; <code>phase</code> vem da mensagem (via <code>item_id</code>), não do delta.</li>
         <li><strong>Replay seguro:</strong> XREAD BLOCK desde o cursor; 410 → snapshot(<code>snapshot_seq</code>)+tail; reducer idempotente; cursor por conexão.</li>
         <li><strong>Retry silencioso só com:</strong> zero side-effect + zero user-visible + zero tool call. Senão: <code>incomplete</code> + nova tentativa explícita.</li>
@@ -962,16 +1118,32 @@ function apply(ev: NormalizedEvent) {
       </ul>
     </section>
 
+    <section class="ref" id="legado">
+      <h2>Legado e migração<span class="rev-flag novo">Novo · 2026-09-30</span></h2>
+      <p>O corpo deste guia usa só as superfícies atuais: OpenAI Responses, Anthropic Messages e Gemini Interactions. O que restou do passado está aqui, com status, migração em uma linha e fonte oficial. Estado em 2026-09-30.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Legado</th><th>Status (data)</th><th>Migração</th><th>Fonte</th></tr></thead>
+        <tbody>
+          <tr><td>Gemini <code>generateContent</code> com streaming (<code>?alt=sse</code>)</td><td>Legada desde a GA da Interactions (junho/2026); segue suportada e sem estado server-side nem resume do provider (client-managed)</td><td>Interactions com <code>stream=True</code> (§13). Continuam só em <code>generateContent</code>: Batch API, explicit caching, AFC em Python e safety settings customizados</td><td><a href="https://ai.google.dev/gemini-api/docs/migrate-to-interactions" target="_blank" rel="noopener">migrate-to-interactions</a></td></tr>
+          <tr><td>OpenAI Assistants API (run streaming)</td><td>Encerrada em 2026-08-26</td><td>Responses + Conversations; SSE <code>response.*</code> ou WS mode (§12)</td><td><a href="https://developers.openai.com/api/docs/assistants/migration" target="_blank" rel="noopener">assistants/migration</a></td></tr>
+          <tr><td>OpenAI Chat Completions (streaming de chunks)</td><td>Suportada; <code>gpt-6-astra</code> e <code>gpt-6.1-sol</code> só a aceitam sem tools</td><td>Responses (§12); background e WS mode só existem nela</td><td><a href="https://developers.openai.com/api/docs/guides/migrate-to-responses" target="_blank" rel="noopener">migrate-to-responses</a></td></tr>
+          <tr><td>WS mode sem multiplexação ("1 response em voo por conexão; use pool")</td><td>Superado: a doc atual descreve lanes <code>stream_id</code> (até 16 responses ativos)</td><td>Use lanes; cada lane é uma execução no event log (§12)</td><td><a href="https://developers.openai.com/api/docs/guides/websocket-mode" target="_blank" rel="noopener">websocket-mode</a></td></tr>
+          <tr><td>Claude Opus 5 com thinking desligado</td><td>Modelo legado (Active, sem novas atualizações). Em 2026-07-27 a ficha do modelo avisava que, com thinking desligado, ele podia escrever a tool call no texto ou incluir tags XML internas na resposta visível; não relido em 2026-09-30 (<span class="pill partial">UNVERIFIED</span>)</td><td>Opus 5.5 e Fable 5.1 têm thinking sempre ligado; Sonnet 5.5 usa adaptive ou <code>between_tools</code>. O edge case §11.9 segue valendo para qualquer provider: o reducer grava o delta como veio</td><td><a href="https://platform.claude.com/docs/en/about-claude/model-deprecations" target="_blank" rel="noopener">model-deprecations</a></td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
     <section class="ref" id="verificacao">
-      <h2>Notas de verificação</h2>
+      <h2>Notas de verificação<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
+      <p>Estado verificado em <strong>2026-09-30</strong>; o que não foi relido nessa data está dito no item. Fatos perecíveis são medições da data, não contrato.</p>
       <ul>
-        <li><span class="pill ok">Verificado</span> <strong>WS mode: reconexão e recuperação.</strong> A doc oficial (websocket-mode, seção <em>Reconnect and recover</em>) confirma: após queda ou limite de 60 min, abre-se novo socket; com <code>store=true</code> continua-se por <code>previous_response_id</code>; com <code>store=false</code>/ZDR inicia-se nova resposta com <code>previous_response_id=null</code> e contexto completo (ou janela do <code>/responses/compact</code>). Conferido em 2026-07-09.</li>
-        <li><span class="pill ok">Verificado</span> <strong>Semântica de <code>phase</code>.</strong> A doc oficial (reasoning, seção <em>phase parameter</em>) confirma: <code>phase</code> é campo de <strong>mensagens do assistente</strong> (<code>commentary</code>/<code>final_answer</code>), recomendado para evitar early-stopping; ao replay manual de histórico deve-se preservar o valor original. Não existe <code>phase</code> no evento de delta — a correlação é por <code>item_id</code>. Conferido em 2026-07-09.</li>
-        <li><span class="pill ok">Verificado</span> <strong>WS mode não exige SDK específico.</strong> O exemplo oficial usa <code>websocket-client</code> diretamente; <code>responses.connect()</code> existe no SDK Python antes da série 2.45 (verificado no código-fonte do SDK). Conferido em 2026-07-09.</li>
-        <li><span class="pill ok">Verificado</span> <strong>Background mode.</strong> Requer <code>background:true</code> (+ <code>stream:true</code> para streaming), retomada por <code>starting_after=&lt;sequence_number&gt;</code>, exige estado armazenado (~10 min de retenção; incompatível com ZDR). Helper de retomada no SDK anotado como "coming soon" na doc. Conferido em 2026-07-09.</li>
-        <li><span class="pill ok">Verificado</span> <strong>"Até ~40% em 20+ tool calls"</strong> é o enunciado oficial de desempenho do WS mode — é dado observado, não limiar de break-even; este guia não converte isso em regra.</li>
-        <li><span class="pill partial">UNVERIFIED (menor)</span> <strong>Gemini Live com texto em produção de chat:</strong> o protocolo aceita texto (referência oficial da Live API), mas o posicionamento continua realtime/native-audio em Preview; este guia o mantém fora da cadeia de fallback de texto por posicionamento, não por incapacidade técnica.</li>
-        <li><span class="pill beta">Método</span> <strong>Três rodadas adversariais (2026-07-09):</strong> o desenho da camada 2 foi desafiado por dois modelos frontier externos em rodadas independentes; as objeções que sobreviveram à reconciliação com a doc oficial estão incorporadas (janela replay→tail, fencing epoch, tool ledger/<code>outcome_unknown</code>, commit-before-emit, dedupe no ingresso, dois timestamps, cursor por conexão, snapshot com watermark, limites do Redis Streams, separação TransportSelector/ProviderRouter).</li>
+        <li><span class="pill ok">Verificado 2026-09-30</span> <strong>OpenAI.</strong> <a href="https://developers.openai.com/api/docs/guides/websocket-mode" target="_blank" rel="noopener">websocket-mode</a> (lanes <code>stream_id</code>, 16 responses ativos, 32 lanes nomeadas, 60 min, reconnect/recover por <code>store</code>); <a href="https://developers.openai.com/api/docs/guides/background" target="_blank" rel="noopener">background</a> (<code>starting_after</code>, cancel idempotente, ZDR com ~10 min em disco, resume no SDK "coming soon"); <a href="https://developers.openai.com/api/docs/guides/deployment-checklist" target="_blank" rel="noopener">deployment-checklist</a> ("até ~40%" em 20+ tool calls); SDKs <code>openai</code> 3.22.1 / npm 7.25.0 e <code>openai-agents</code> 0.22.3 nos registries.</li>
+        <li><span class="pill ok">Verificado 2026-09-30</span> <strong>Anthropic.</strong> <a href="https://platform.claude.com/docs/en/build-with-claude/streaming" target="_blank" rel="noopener">Streaming Messages</a>: eventos e deltas, erro no meio do stream, recuperação por novo request (4.6+ por mensagem <code>user</code>; 4.5 e anteriores por mensagem <code>assistant</code>), <code>display</code> <code>omitted</code>/<code>updates</code>; modelos em <a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener">models overview</a>.</li>
+        <li><span class="pill ok">Verificado 2026-09-30</span> <strong>Gemini.</strong> <a href="https://ai.google.dev/gemini-api/docs/streaming" target="_blank" rel="noopener">streaming</a> (eventos, <code>interaction.status_update</code>, <code>requires_action</code>) e <a href="https://ai.google.dev/gemini-api/docs/background-execution" target="_blank" rel="noopener">background-execution</a> (estados, cancel, <code>event_id</code>/<code>last_event_id</code>); retenção 55 dias/1 dia e <code>store=false</code> × background conforme <a href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">Interactions overview</a>.</li>
+        <li><span class="pill ok">Verificado 2026-09-30</span> <strong>LangGraph 1.2.12:</strong> release notes no GitHub (<code>langchain-ai/langgraph</code>) e PyPI.</li>
+        <li><span class="pill warn">Fontes em conflito</span> A página de streaming da Interactions documenta <code>interaction.status_update</code>, enquanto a página de breaking changes lista outros nomes de evento de status; este guia segue a página de streaming e recomenda ignorar eventos desconhecidos. A URL antiga <code>interactions</code> ainda diz "Beta"; a visão geral diz GA desde junho/2026 e prevalece.</li>
+        <li><span class="pill partial">UNVERIFIED</span> Nome do atributo <code>event_id</code> no SDK Python da Interactions (a doc mostra o resume em Go e em REST); forma exata do helper <code>ResponsesWS</code> do SDK JS; Gemini Live com session resumption (~2h) e <code>GoAway</code>; aviso da ficha do Opus 5 sobre thinking desligado (registro de 2026-07-27).</li>
+        <li><span class="pill partial">Não rechecado em 2026-09-30</span> Semântica de <code>phase</code> (reasoning, conferida em 2026-07-09); async tool calling, mid-turn steering e Agents API (verificados em 2026-09-23); desenho da camada 2 (três rodadas adversariais de 2026-07-09).</li>
       </ul>
     </section>
 
@@ -983,15 +1155,15 @@ function apply(ev: NormalizedEvent) {
     <div style="max-width:540px">
       <div class="brand" style="font-size:15px">Streaming Durável &amp; Resumível <small>arquitetura transversal · super-guia de agentes</small></div>
       <p style="margin:8px 0 0;color:var(--c-fg-muted);font-size:13.5px;line-height:1.55">
-        Referência técnica construída a partir da documentação oficial pública em <strong>2026-07-09</strong>.
+        Referência técnica construída a partir da documentação oficial pública, recheque mais recente em <strong>2026-09-30</strong>.
         Resume do usuário na camada 2; transporte com o provider como decisão independente e medida. Para
         informação sempre atualizada, consulte as <a href="#fontes-oficiais">fontes oficiais</a>.
       </p>
     </div>
     <div style="font-size:13.5px;color:var(--c-fg-muted);line-height:1.7">
       <div><strong>Crédito de produção</strong></div>
-      <div>Pesquisa multi-agente + <strong>3 rodadas adversariais</strong> (frontier externos, fontes oficiais)</div>
-      <div>montagem e reconciliação pelo orquestrador <strong>Fable 5 / Opus 4.8</strong> · 2026-07-09</div>
+      <div>Pesquisa, reconciliação e revisão técnica</div>
+      <div>Fontes oficiais e padrões de durabilidade · 2026-09-30</div>
       <div style="margin-top:6px">
         <span class="badge da">Arquitetura · v1</span>
         <span class="badge ok">Resume = camada 2</span>
@@ -1000,7 +1172,7 @@ function apply(ev: NormalizedEvent) {
     <div style="font-size:12.5px;color:var(--c-fg-soft)">
       <div><strong>Navegação rápida</strong></div>
       <div><a href="#duas-camadas">Duas camadas</a> · <a href="#replay-cursor">Replay &amp; cursor</a> · <a href="#maturidade">Maturidade M0–M3</a></div>
-      <div><a href="#cheatsheet">Cheat sheet</a> · <a href="#verificacao">Verificação</a></div>
+      <div><a href="#cheatsheet">Cheat sheet</a> · <a href="#legado">Legado</a> · <a href="#verificacao">Verificação</a></div>
     </div>
   </div>
 </footer>

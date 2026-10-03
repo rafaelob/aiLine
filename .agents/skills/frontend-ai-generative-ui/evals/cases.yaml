@@ -1,0 +1,68 @@
+version: 1
+skill: "frontend-ai-generative-ui"
+cases:
+  # --- Positive activation: everything INSIDE the message bubble ---
+  - id: positive-trigger-sdk-streaming
+    type: activation
+    prompt: "Stream LLM output token by token into React with the Vercel AI SDK"
+    expect:
+      activates: true
+
+  - id: positive-trigger-generative-ui
+    type: activation
+    prompt: "Build a generative UI where the LLM picks which component to render"
+    expect:
+      activates: true
+
+  - id: positive-trigger-raw-sse
+    type: activation
+    prompt: "Add raw SSE streaming from our LLM endpoint to the frontend"
+    expect:
+      activates: true
+
+  # --- Negative activation. Mirror of frontend-agent-chat-shell's probes: the seam is
+  # the message-bubble boundary, and it is enforced from BOTH sides because the scorer
+  # strips negative clauses and only the positive surface routes.
+  - id: negative-trigger-session-sidebar
+    type: activation
+    prompt: "Build a ChatGPT-like session sidebar with projects, pinned chats and recents"
+    expect:
+      activates: false
+
+  - id: negative-trigger-stream-resume
+    type: activation
+    prompt: "Add stream resume so an interrupted response survives a page refresh"
+    expect:
+      activates: false
+
+  - id: negative-trigger-composer-chrome
+    type: activation
+    prompt: "Design the composer chrome with a model picker, attachments and dictation separate from a voice session"
+    expect:
+      activates: false
+
+  # Mirror of frontend-canvas-doc-editor's probes: in-thread streaming and tool-call
+  # rendering stay here, but co-editing a generated document — selection-scoped patches
+  # instead of regeneration, suggestions, version history — is that skill's territory.
+  - id: negative-trigger-canvas-coedit
+    type: activation
+    prompt: "After the AI generates a document, let the user and the AI co-edit it instead of regenerating it"
+    expect:
+      activates: false
+
+  - id: negative-trigger-canvas-scoped-patch
+    type: activation
+    prompt: "Add a canvas mode where the user selects a paragraph and asks the AI to rewrite only that span"
+    expect:
+      activates: false
+
+  # --- Output check: the seam pointer must survive future edits ---
+  - id: output-seam-pointer
+    type: output
+    prompt: "What does this skill own in a chat UI?"
+    expect:
+      checks:
+        - kind: contains_keywords
+          keywords:
+            - "frontend-agent-chat-shell"
+        - kind: no_secrets

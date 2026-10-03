@@ -44,13 +44,17 @@ Add durable execution and real-time output.
 - **Checkpointing**: Saves state as snapshots at every super-step (all nodes scheduled for a step execute, producing a checkpoint). Enables resume after failures, time-travel debugging, and human-in-the-loop interrupts.
 
 ```python
-from langgraph.checkpoint.memory import MemorySaver
+from langgraph.checkpoint.memory import InMemorySaver
+# MemorySaver is the same in-RAM class; official persistence examples use InMemorySaver.
 # Production backends:
 # from langgraph.checkpoint.sqlite import SqliteSaver
 # from langgraph.checkpoint.postgres import PostgresSaver
 # Also: DynamoDBSaver (AWS), MongoDB, Redis checkpointers
+# Security (re-checked 2026-08-28): langgraph-checkpoint, langgraph-checkpoint-sqlite,
+# langgraph-checkpoint-postgres, and the npm @langchain/langgraph-checkpoint-redis package
+# carry CVEs below stated floors -- see references/VERSIONING_FRESHNESS.md before pinning.
 
-checkpointer = MemorySaver()
+checkpointer = InMemorySaver()
 app = graph.compile(checkpointer=checkpointer)
 
 config = {"configurable": {"thread_id": "user-123-conv-1"}}
@@ -69,7 +73,7 @@ for snapshot in app.get_state_history(config):
   - `stream_mode="updates"`: State delta from each node
   - `stream_mode="messages"`: Token-level streaming from LLM nodes
   - `stream_mode="custom"`: Custom events emitted from nodes via `adispatch_custom_event`
-  - `stream_mode="checkpoint"`: Checkpoint snapshots
+  - `stream_mode="checkpoints"`: Checkpoint snapshots (plural — official stream-mode name)
   - `stream_mode="tasks"`: Task-level events
   - `stream_mode="debug"`: Debug-level events for development
 
@@ -89,6 +93,12 @@ print(result.value, result.interrupts)
 # Multiple modes simultaneously
 async for event in app.astream(input, config, stream_mode=["updates", "messages"]):
     ...
+
+# New apps: event streaming v3 (typed projections). Do not confuse with invoke/stream version="v2".
+stream = app.stream_events(input, config, version="v3")
+for message in stream.messages:
+    print(message.text)
+final_state = stream.output
 ```
 
 **v2 StreamPart types** (importable from `langgraph.types`): `ValuesStreamPart`, `UpdatesStreamPart`, `MessagesStreamPart`, `CustomStreamPart`, `CheckpointStreamPart`, `TasksStreamPart`, `DebugStreamPart`. Union type `StreamPart` is a discriminated union on `part["type"]`.
@@ -157,11 +167,11 @@ def my_node(state, config, *, store):
 
 Choose and implement the right multi-agent architecture.
 
-- **Supervisor** (via `langgraph-supervisor-py`): Central supervisor routes tasks to specialized workers via tool-based handoff mechanism. Supports multi-level hierarchies (supervisor managing supervisors), message forwarding (`create_forward_message_tool`), flexible message history management.
+- **Supervisor (current)**: `from langchain.agents import create_agent` plus specialists wrapped as `@tool`. Official replacement for unmaintained `langgraph-supervisor` (`create_supervisor`). Compile only the outermost graph with a checkpointer. See `references/LANGGRAPH_MULTI_AGENT.md`.
 
-- **Swarm** (via `langgraph-swarm-py`): Agents hand off control to each other dynamically using `Command(goto="agent_name")`. System remembers last active agent. Decentralized, no central controller. ~40% reduction in end-to-end response time vs supervisor (eliminates supervisor intermediary hop).
+- **Handoffs (current)**: LangChain handoffs — tools return `Command` updating `current_step` / `active_agent`. Prefer a single agent + middleware. Replaces `langgraph-swarm` (last PyPI 0.1.0, 2025-12-04; sunset UNVERIFIED).
 
-- **Hierarchical Teams**: Nested supervisors via subgraph composition. Top supervisor delegates to team leads (subgraphs), who delegate to workers.
+- **Hierarchical Teams**: Nested `StateGraph` subgraphs. Top graph delegates to team-lead subgraphs, who delegate to workers.
 
 - **Deep Agents** (standalone library `deepagents`): Hierarchical planning pattern with `create_deep_agent()`. Middleware architecture: write_todos (planning), filesystem tools (context offloading), task tool (subagent spawning). Pluggable filesystem backends. Built on LangGraph runtime.
 
@@ -173,49 +183,55 @@ Wire tools, configure Deep Agents, and deploy.
 
 - **ToolNode**: Built-in node that executes tool calls from LLM responses.
 - **tools_condition**: Routes to "tools" node or END based on tool_calls presence.
-- **create_react_agent**: Prebuilt ReAct agent with tool loop.
+- **`create_agent`**: Prebuilt ReAct-style agent (`from langchain.agents import create_agent`, `system_prompt=`). Do **not** use deprecated `create_react_agent` from `langgraph.prebuilt`.
 - **MCP tools**: Via `langchain-mcp-adapters` for external tool server access.
 
 ```python
-from langgraph.prebuilt import ToolNode, tools_condition, create_react_agent
+from langgraph.prebuilt import ToolNode, tools_condition
+from langchain.agents import create_agent
 
 tools = [search_tool, calculator_tool]
 tool_node = ToolNode(tools)
 graph.add_node("tools", tool_node)
 graph.add_conditional_edges("agent", tools_condition)
 
-# Prebuilt ReAct agent
-app = create_react_agent(model, tools=tools, checkpointer=checkpointer)
+# Prebuilt agent (LangGraph v1: create_react_agent is deprecated)
+app = create_agent(model, tools=tools, system_prompt="You are a helpful assistant.", checkpointer=checkpointer)
 ```
 
-- **Deep Agents** (`pip install deepagents`, MIT license, current stable line `deepagents == 0.6.12` released 2026-06-25; Python `>=3.11,<4.0` — 3.11 through 3.14; verify at https://pypi.org/project/deepagents/). A preview-only `0.7.0a3` alpha (2026-07-01) exists with middleware override by name, sandbox round-trip optimization, and Bedrock prompt-caching (`deepagents[aws]`) — do not use the alpha line in production:
+- **Deep Agents** (`pip install deepagents`, MIT license; Python `>=3.11,<4.0` — 3.11 through 3.14). The current pin lives in `references/VERSIONING_FRESHNESS.md` § "Current pins" — read it there rather than trusting a version restated here, and verify at https://pypi.org/project/deepagents/. `0.7.0` is a **breaking** release: `0.6.12` (2026-06-25) is the end of the 0.6 line and gets no further fixes. Walk the 12-item migration checklist in `references/VERSIONING_FRESHNESS.md` § "Freshness (as-of 2026-07-30)" before upgrading an existing agent — several breaks are silent (behaviour and permission changes, not `ImportError`):
 
 ```python
 from deepagents import create_deep_agent
+from langchain.agents.middleware import TodoListMiddleware  # 0.7.0: no longer default
 from langchain.chat_models import init_chat_model
 
-# Basic usage -- returns compiled LangGraph graph
+# Basic usage -- returns compiled LangGraph graph.
+# 0.7.0 note: this agent has NO planning tool and an EMPTY authored base prompt.
 agent = create_deep_agent()
 result = agent.invoke({"messages": [{"role": "user", "content": "Research and summarize LangGraph"}]})
 
-# Custom configuration
+# Custom configuration.
+# On 0.7.0, pass TodoListMiddleware explicitly if you want write_todos planning
+# (and repeat it in each SubAgent's middleware to restore it there too).
 agent = create_deep_agent(
-    model=init_chat_model("anthropic:claude-sonnet-5"),
+    model=init_chat_model("anthropic:claude-sonnet-5-5"),
     tools=[my_custom_tool],
     system_prompt="You are a research assistant.",
+    middleware=[TodoListMiddleware()],
 )
 ```
 
-**Model-selection caveat:** `langchain-anthropic` accepts any model string via passthrough (no enum validation), so `"anthropic:claude-sonnet-5"` works as shown above -- but the last published connector (`1.4.8`, 2026-06-26) predates Sonnet 5's GA (2026-06-30), and no changelog confirms tested support for Sonnet-5-specific beta features (new tokenizer, beta headers). Run a real validation call before production and track `langchain-anthropic` releases newer than `1.4.8`.
+**Model-selection caveat:** `langchain-anthropic` accepts any model string via passthrough (no enum validation) — this is how `"anthropic:claude-sonnet-5"` (previous generation) resolves. As of `langchain-anthropic 1.7.0` (requires `anthropic>=0.120.0`, measured 2026-08-28), the connector is current with the Anthropic SDK -- this is also what brings **Claude Opus 5** to LangChain (`model="anthropic:claude-opus-5"` via the same passthrough). `claude-sonnet-5-5` (released 2026-09-28) is a real, non-invented ID — confirmed at https://www.anthropic.com/claude-sonnet-5-5 — but whether this specific string resolves through `langchain-anthropic`'s passthrough is **UNVERIFIED** by this pass; run a real validation call before production for any newly-referenced model ID, since passthrough means no enum validation catches a typo or an unsupported ID. Do not invent newer model IDs.
 
-Deep Agents middleware (auto-attached):
-1. **write_todos middleware**: Adds `write_todos` tool + instructions for explicit planning and todo tracking.
-2. **Filesystem middleware**: Adds `ls`, `read_file`, `write_file`, `edit_file`, `glob`, `grep` for context offloading.
-3. **Subagent middleware**: Adds `task` tool for spawning subagents with isolated context windows.
+Deep Agents middleware:
+1. **`TodoListMiddleware`** (`write_todos` tool + planning instructions) — **auto-attached only through `0.6.x`. On `0.7.0` it is opt-in**: pass `middleware=[TodoListMiddleware()]` from `langchain.agents.middleware`, on the main agent and on every `SubAgent`. Omitting it silently removes the tool, the `todos` state channel, and the planning prompt.
+2. **Filesystem middleware** (auto-attached): adds `ls`, `read_file`, `write_file`, `edit_file`, `glob`, `grep` for context offloading — plus, **on `0.7.0`, a recursive `delete`** whenever the backend supports it. Restrict the set with the keyword-only allowlist `FilesystemMiddleware(tools=[...])` (typed by the exported `FsToolName` literal; the list must include `"read_file"`).
+3. **Subagent middleware** (auto-attached): adds `task` tool for spawning subagents with isolated context windows. On `0.7.0` its `system_prompt` defaults to `None`, so it injects no tool-usage prose.
 
 Filesystem backends (named classes): `StateBackend` (default; ephemeral per thread, stored in LangGraph state), `FilesystemBackend` (local disk), `StoreBackend` (LangGraph Store, cross-thread persistence), `ContextHubBackend` (LangChain Context Hub), `LocalShellBackend` (shell-backed filesystem), `CompositeBackend` (route paths across multiple backends). Sandboxes (Modal, Daytona, Runloop) and S3/PostgreSQL are available via `deepagents-backends` or custom implementations.
 
-Additional Deep Agents features: auto-summarization (triggers when conversations grow long), shell access (`execute` with sandboxing), MCP support via `langchain-mcp-adapters`, CLI with web search/persistent memory/HITL, **async subagents** (April 2026 — subagents run as non-blocking background tasks so users keep interacting with the main agent; requires LangSmith Deployment), **multi-modal `read_file`** (PDFs, audio, and video in addition to images), updated backend protocol / file format in State and Store backends to support binary files (backwards-compatible), the `dcode` CLI (`pip install deepagents-code`) for terminal-driven coding workflows, and an Agent Communication Protocol (ACP) integration via `pip install deepagents-acp` for IDE wiring.
+Additional Deep Agents features: auto-summarization (triggers when conversations grow long), shell access (`execute` with sandboxing), MCP support via `langchain-mcp-adapters`, **async subagents** (April 2026 — subagents run as non-blocking background tasks so users keep interacting with the main agent; requires LangSmith Deployment), **multi-modal `read_file`** (PDFs, audio, and video in addition to images), updated backend protocol / file format in State and Store backends to support binary files (backwards-compatible). CLIs are **separate packages**, not the library: `dcode` TUI is `pip install deepagents-code` (own `0.1.x` line; 0.7.9 removed the deprecated in-tree `libs/cli`); deploy/init is `pip install deepagents-cli`; ACP is `pip install deepagents-acp`.
 
 - **Deployment options**:
   - **LangSmith Deployment** (formerly LangGraph Platform): Managed deployment with built-in persistence, streaming, monitoring. Self-hosted lite (free, 100k nodes/month), self-hosted enterprise (fully in VPC), hybrid BYOC (SaaS control plane + self-hosted data plane).

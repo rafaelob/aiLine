@@ -2,10 +2,11 @@
 <html lang="pt-BR" data-theme="light">
 <head>
 <meta charset="utf-8" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%9A%3C/text%3E%3C/svg%3E" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Guia de Agent Skills — Autoria, Ativação &amp; Harness</title>
 <meta name="description" content="Guia agnóstico do padrão Agent Skills: SKILL.md, progressive disclosure (L1/L2/L3), autoria portável, ativação por description, recursos/scripts/assets, implementação em harness próprio, contexto/budget/eviction, segurança e avaliação." />
-<meta name="last-checked" content="2026-07-12" />
+<meta name="last-checked" content="2026-09-30" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -277,6 +278,7 @@
     details > summary { display: none; }
   }
 </style>
+<style id="rev-flag-css">main :not(pre) > code,main a{overflow-wrap:anywhere}.rev-flag{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:999px;font-size:.62em;font-weight:600;vertical-align:middle;letter-spacing:.02em;white-space:nowrap}.rev-flag.novo{background:#dcfce7;color:#14532d;border:1px solid #86efac}.rev-flag.atu{background:#e0f2fe;color:#0c4a6e;border:1px solid #7dd3fc}.rev-news{margin:16px 0;padding:12px 16px;border-left:4px solid #22c55e;border-radius:8px;background:rgba(34,197,94,.08)}.rev-news ul{margin:6px 0 0;padding-left:20px}.rev-news li{margin:2px 0}:root[data-theme="dark"] .rev-flag.novo{background:#14532d;color:#dcfce7;border-color:#166534}:root[data-theme="dark"] .rev-flag.atu{background:#0c4a6e;color:#e0f2fe;border-color:#075985}@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .rev-flag.novo{background:#14532d;color:#dcfce7;border-color:#166534}:root:not([data-theme="light"]) .rev-flag.atu{background:#0c4a6e;color:#e0f2fe;border-color:#075985}}</style>
 </head>
 <body>
 <a class="skip" href="#main">Pular para o conteúdo</a>
@@ -285,8 +287,8 @@
   <div class="header-row">
     <div class="brand">Guia de Agent Skills <small>Autoria, ativação &amp; harness — agnóstico</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-07-12</strong></span>
-      <span class="badge da">Spec Agent Skills</span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-09-30</strong></span>
+      <span class="badge da">Spec Agent Skills · sem versão formal</span>
       <span class="badge info">PT-BR</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
     </div>
@@ -297,6 +299,7 @@
   <nav class="toc" aria-label="Sumário">
     <div class="toc-section">Início</div>
     <ol>
+      <li><a href="#para-agentes">Resumo para agentes</a></li>
       <li><a href="#sobre-guia">Sobre este guia &amp; fronteira</a></li>
       <li><a href="#vocabulario">Vocabulário &amp; modelo mental</a></li>
       <li><a href="#topologias-sessao">Topologias de sessão</a></li>
@@ -316,6 +319,8 @@
       <li><a href="#recursos-scripts-assets">6. Recursos, scripts &amp; assets</a></li>
       <li><a href="#skills-claude-api">6A. Skills na Claude API</a></li>
       <li><a href="#s-claude-code-plugins">6B. Skills no Claude Code &amp; plugins</a></li>
+      <li><a href="#s-agent-plugins">6C. Padrão Agent Plugins</a></li>
+      <li><a href="#s-skills-mcp">6D. Skills sobre MCP</a></li>
     </ol>
 
     <div class="toc-section">Parte 3 — Implementação</div>
@@ -330,11 +335,13 @@
     <ol>
       <li><a href="#templates">Templates copy-paste</a></li>
       <li><a href="#troubleshooting">Troubleshooting</a></li>
+      <li><a href="#legado">Legado e migração</a></li>
       <li><a href="#fontes-oficiais">Fontes &amp; verificação</a></li>
     </ol>
   </nav>
 
   <main id="main">
+<aside class="rev-news" id="rev-news-2026-09-30" aria-label="Novidades desta revisão"><strong>O que há de novo nesta revisão (2026-09-30)</strong> — 4 seções novas e 6 atualizadas desde a revisão de 2026-09-23. Procure os selos <span class="rev-flag novo">Novo</span> e <span class="rev-flag atu">Atualizado</span> nos títulos.<details><summary>Ver lista</summary><ul><li><span class="rev-flag novo">Novo</span> <a href="#para-agentes">Resumo para agentes (verificado 2026-09-30)</a></li><li><span class="rev-flag novo">Novo</span> <a href="#s-skills-mcp">6D. Skills sobre MCP (extensão oficial Final)</a></li><li><span class="rev-flag novo">Novo</span> <a href="#seguranca-governanca">OWASP Agentic Skills Top 10 (AST01–AST10)</a></li><li><span class="rev-flag novo">Novo</span> <a href="#legado">Legado e migração (condensado; substitui as notas históricas empilhadas)</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#skills-claude-api">6A. Skills na Claude API: GA desde 2026-08-19, até 20 skills por request, modelos atuais</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#s-claude-code-plugins">6B. Claude Code: plugins, <code>claude plugin validate</code>, skills sincronizadas</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#s-agent-plugins">6C. Agent Plugins: working draft 1.1.0 confirmado</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#contexto-budget-eviction">Eviction: cache e tool changes com Sonnet 5.5 e Opus 5.5</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#recursos-scripts-assets">Recursos e MCP</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#fontes-oficiais">Fontes &amp; verificação e notas UNVERIFIED</a></li></ul></details></aside>
 
     <div class="hero">
       <h1>Guia de Agent Skills</h1>
@@ -346,11 +353,98 @@
         campos e código em inglês.
       </p>
       <div class="hero-meta">
-        <span class="badge da">Spec Agent Skills</span>
+        <span class="badge da">Spec Agent Skills · sem versão formal</span>
         <span class="badge info">PT-BR</span>
-        <span class="badge ok">SOTA · verificado 2026-06-29</span>
+        <span class="badge ok">Verificado 2026-09-30</span>
+        <span class="badge info">Skills sobre MCP · extensão Final</span>
+      </div>
+      <div class="callout info">
+        <strong>Fonte canônica verificada em 2026-09-30.</strong> <code>agentskills.io/specification</code>
+        não publica um identificador formal de versão da especificação. Os campos e limites abaixo são o
+        estado da página nesta data; versões em <code>metadata</code>, manifests ou registries são
+        metadados definidos pelo publisher, não uma versão wire comum. <code>allowed-tools</code> continua
+        <strong>Experimental</strong>: sua sintaxe não concede autorização nem define semântica portátil de
+        execução. Progressive disclosure e os caps de autoria são recomendações; o harness ainda deve impor
+        sua própria política, sandbox e budget.
       </div>
     </div>
+
+    <section id="para-agentes">
+      <h2>Resumo para agentes (verificado 2026-09-30)<span class="rev-flag novo">Novo · 2026-09-30</span></h2>
+
+      <h3>1. Superfície atual</h3>
+      <ul>
+        <li>Padrão: Agent Skills (<code>agentskills.io/specification</code>, página única sem versão formal). Uma skill é um diretório com <code>SKILL.md</code> (frontmatter YAML + corpo). Obrigatórios: <code>name</code> (1–64; minúsculas, dígitos, hífens; sem <code>--</code>; igual ao diretório) e <code>description</code> (1–1024). Opcionais: <code>license</code>, <code>compatibility</code> (≤ 500), <code>metadata</code> (string → string), <code>allowed-tools</code> (experimental). Subdiretórios: <code>scripts/</code>, <code>references/</code>, <code>assets/</code>. Validador: <code>skills-ref validate</code>.</li>
+        <li>Claude API: skills rodam dentro do code execution tool via <code>container.skills[]</code> (até 20 por request). Skills API (<code>/v1/skills</code>) e Files API são GA desde 2026-08-19, sem header beta.</li>
+        <li>Claude Code: <code>.claude/skills/&lt;nome&gt;/SKILL.md</code> (project), <code>~/.claude/skills/</code> (personal), plugin em <code>&lt;plugin&gt;/skills/</code>. Plugin = <code>.claude-plugin/plugin.json</code> na raiz do plugin; teste local com <code>claude --plugin-dir ./caminho</code> e <code>claude plugin validate ./caminho</code>.</li>
+        <li>Skills sobre MCP: extensão oficial Final <code>io.modelcontextprotocol/skills</code> (SEP-2640): <code>skills/list</code>, <code>skills/get</code>, URIs <code>skill://</code>.</li>
+      </ul>
+<pre><code class="language-json">POST /v1/messages   (headers: x-api-key, anthropic-version: 2023-06-01; sem anthropic-beta)
+{
+  "model": "claude-opus-5-5",
+  "max_tokens": 16000,
+  "container": {"skills": [{"type": "anthropic", "skill_id": "pptx", "version": "latest"}]},
+  "tools": [{"type": "code_execution_20260521", "name": "code_execution"}],
+  "messages": [{"role": "user", "content": "Create a presentation about renewable energy with 5 slides"}]
+}</code></pre>
+
+      <h3>2. IDs e versões correntes</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Item</th><th>ID / versão</th><th>Status</th><th>Nota</th></tr></thead>
+        <tbody>
+          <tr><td>Skills pré-construídas (Anthropic)</td><td><code>pptx</code>, <code>xlsx</code>, <code>docx</code>, <code>pdf</code></td><td>GA</td><td><code>type: "anthropic"</code>; <code>version</code> por data (ex.: <code>"20251013"</code>) ou <code>"latest"</code>.</td></tr>
+          <tr><td>Skill custom</td><td><code>skill_01...</code> / <code>skver_01...</code></td><td>GA</td><td><code>type: "custom"</code>; <code>version</code> é ID opaco <code>skver_...</code> ou <code>"latest"</code>, não epoch timestamp.</td></tr>
+          <tr><td>Code execution tool (exigido)</td><td><code>code_execution_20260521</code> (também <code>_20260120</code>, <code>_20250825</code>)</td><td>GA</td><td>Sem header. Modelos: <code>claude-fable-5-1</code>, <code>claude-opus-5-5</code>, <code>claude-sonnet-5-5</code>, <code>claude-haiku-4-5-20251001</code>.</td></tr>
+          <tr><td>Agent Plugins (padrão aberto)</td><td><code>1.0.0</code></td><td>Published</td><td>Rascunho 1.1.0 no repositório da spec, sem release. Formato diferente do plugin do Claude Code.</td></tr>
+          <tr><td>Extensão MCP de skills</td><td><code>io.modelcontextprotocol/skills</code></td><td>Final (SEP-2640)</td><td>Spec MCP corrente <code>2026-07-28</code>; máx. recomendado 512 arquivos / 16 MiB por skill.</td></tr>
+          <tr><td>SDKs</td><td><code>anthropic</code> 1.9.0, <code>@anthropic-ai/sdk</code> 0.129.0</td><td>2026-09-28</td><td>Sem header de skills/files desde Python 1.2.0 / TypeScript 0.122.0.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>3. Faça / Não faça</h3>
+      <ul>
+        <li>Não envie <code>anthropic-beta: skills-2025-10-02</code> nem <code>files-api-2025-04-14</code> → Skills e Files são GA, sem header; <code>client.beta.skills</code>/<code>client.beta.files</code> já não os enviam (Python ≥ 1.2.0, TypeScript ≥ 0.122.0); remova-os de requests REST.</li>
+        <li>Faça: declarar o code execution tool em <code>tools</code> sempre que usar <code>container.skills</code>; sem ele a skill não roda.</li>
+        <li>Não trate <code>version</code> de skill custom como timestamp; use o <code>id</code> <code>skver_...</code> devolvido pela API. Campos renomeados: <code>display_title</code> → <code>display_name</code>, <code>latest_version</code> → <code>latest_version_id</code>.</li>
+        <li>Não use <code>name</code> contendo "anthropic" ou "claude" nem tags XML em skills para clientes Claude.</li>
+        <li>Skills da API rodam em container sem rede e sem instalação de pacotes; não cobertas por ZDR.</li>
+        <li>Arquivo gerado por skill: leia <code>file_id</code> em <code>code_execution_tool_result</code> <em>ou</em> <code>bash_code_execution_tool_result</code> e baixe por <code>GET /v1/files/{file_id}/content</code>.</li>
+        <li>Se <code>stop_reason</code> for <code>pause_turn</code>, reenvie a resposta no histórico com o mesmo <code>container.id</code>; container expira em 30 dias.</li>
+        <li>Não trate <code>allowed-tools</code> como allowlist portátil nem como autorização; é experimental e não substitui sandbox/policy do harness.</li>
+        <li>Não misture Agent Plugins (<code>plugin.json</code> na raiz + <code>mcp.json</code>) com plugin do Claude Code (<code>.claude-plugin/plugin.json</code> + <code>.mcp.json</code>). Compatibilidade entre os dois não está confirmada por fonte oficial.</li>
+        <li>Não use HTTP+SSE em <code>mcp.json</code> novo → <code>streamable-http</code> (<code>sse</code> é opcional/legado). Sem credencial em <code>headers</code>.</li>
+        <li>Skill lida por MCP é conteúdo não confiável: digest SHA-256 prova consistência, não confiança; aprovação do usuário vale por conjunto de URIs e digests.</li>
+        <li>Skills customizadas não sincronizam entre claude.ai, API e Claude Code; a da API é do workspace, a do claude.ai é individual.</li>
+      </ul>
+
+      <h3>4. Onde está cada coisa</h3>
+      <p>
+        <a href="#skill-md">Formato do SKILL.md</a> ·
+        <a href="#progressive-disclosure">progressive disclosure</a> ·
+        <a href="#ativacao-descriptions">ativação e descriptions</a> ·
+        <a href="#recursos-scripts-assets">recursos, scripts e assets</a> ·
+        <a href="#skills-claude-api">skills na Claude API</a> ·
+        <a href="#s-claude-code-plugins">Claude Code e plugins</a> ·
+        <a href="#s-agent-plugins">Agent Plugins</a> ·
+        <a href="#s-skills-mcp">skills sobre MCP</a> ·
+        <a href="#implementacao-harness">harness próprio</a> ·
+        <a href="#contexto-budget-eviction">budget e eviction</a> ·
+        <a href="#seguranca-governanca">segurança e OWASP AST10</a> ·
+        <a href="#templates">templates</a> ·
+        <a href="#troubleshooting">troubleshooting</a> ·
+        <a href="#legado">legado e migração</a> ·
+        <a href="#fontes-oficiais">fontes e UNVERIFIED</a>
+      </p>
+
+      <h3>5. Incertezas (não trate como fato)</h3>
+      <ul>
+        <li>Não há versão formal da Agent Skills Specification; versões em <code>metadata</code> são do publisher.</li>
+        <li>UNVERIFIED: interoperabilidade entre Claude Code plugin e Agent Plugins; a página oficial do Agent Plugins não menciona Claude Code.</li>
+        <li>UNVERIFIED: suporte de cada runtime (Codex, Gemini CLI, Cursor etc.) a skills além da lista do showcase de <code>agentskills.io/clients</code>; a lista de clientes compatíveis de <code>agent-plugins.org</code> foi lida em 2026-09-23.</li>
+        <li>Suporte a skills sobre MCP nos clientes é parcial (ChatGPT, fast-agent, Inspector) ou completo (mcpc) segundo a matriz de 2026-09-30; confira antes de depender.</li>
+        <li>Ver <a href="#fontes-oficiais">Fontes e verificação</a> para a lista completa.</li>
+      </ul>
+    </section>
 
     <section id="sobre-guia">
       <h2>Sobre este guia &amp; fronteira</h2>
@@ -366,7 +460,8 @@
         <a href="guia_claude_api.html#c-skills">guia_claude_api.html#c-skills</a> (skills no Claude / Anthropic),
         <a href="guia_deepagents.html#s-skills">guia_deepagents.html#s-skills</a> (SkillsMiddleware do Deep Agents),
         <a href="guia_agents_sdk.html">guia_agents_sdk.html</a> (skills no Sandbox do OpenAI Agents SDK) e
-        <a href="guia_agents_sdk_orquestracao.html">guia_agents_sdk_orquestracao.html</a>. A teoria geral de
+        <a href="guia_agents_sdk_orquestracao.html">guia_agents_sdk_orquestracao.html</a> e
+        <a href="guia_google_adk.html">guia_google_adk.html</a> (skills no ADK 2.10.0, ciclo de vida experimental). A teoria geral de
         contexto/compactação fica em
         <a href="guia_contexto_compactacao_estrategias.html">guia_contexto_compactacao_estrategias.html</a> e
         <a href="guia_estado_contexto_memoria.html">guia_estado_contexto_memoria.html</a>; o threat model e os
@@ -412,6 +507,12 @@
           <tr><td><code>MCP</code></td><td>Protocolo para expor ferramentas, recursos e prompts externos a clientes de IA.</td></tr>
         </tbody>
       </table></div>
+      <div class="callout warn">
+        <strong>Não há uma versão wire do padrão publicada na fonte canônica.</strong> Um campo como
+        <code>metadata.org.example.version</code>, uma versão de pacote ou um manifest pode identificar a
+        distribuição de um publisher, mas não estabelece compatibilidade entre clientes. Registre a URL e a
+        data do snapshot quando precisar reproduzir o contrato.
+      </div>
 
       <h3>Modelo mental correto</h3>
       <p>A confusão mais comum em harnesses de skills é tratar "disponível", "montado" e "ativo" como
@@ -501,7 +602,7 @@ description: A description of what this skill does and when to use it.
 license: Apache-2.0
 compatibility: Requires Python 3.11+ and read-only filesystem access.
 metadata:
-  org.example.version: "1.0.0"
+  org.example.version: "1.0.0" # versão do publisher; não é versão da spec Agent Skills
   org.example.owner: platform-team
 allowed-tools: Bash(git:*) Read
 ---
@@ -526,17 +627,27 @@ Before final output, verify...</code></pre>
           <tr><td><code>description</code></td><td><span class="pill ok">Sim</span></td><td>1–1024 caracteres, não-vazio; descreve o que faz, quando usar, termos de gatilho e limites de escopo. <span class="pill ok">Verificado</span></td></tr>
           <tr><td><code>license</code></td><td><span class="pill na">Não</span></td><td>Nome curto da licença ou referência a um arquivo de licença.</td></tr>
           <tr><td><code>compatibility</code></td><td><span class="pill na">Não</span></td><td>1–500 caracteres se presente. Requisitos de ambiente: produto-alvo, pacotes de sistema, runtime, rede. <span class="pill ok">Verificado</span></td></tr>
-          <tr><td><code>metadata</code></td><td><span class="pill na">Não</span></td><td>Mapa chave/valor para versão, owner, trust, dependências ou dados de registry.</td></tr>
-          <tr><td><code>allowed-tools</code></td><td><span class="pill beta">Experimental</span></td><td>Pode pré-aprovar ferramentas em clientes que suportam essa semântica, mas <strong>não substitui policy/sandbox</strong>.</td></tr>
+          <tr><td><code>metadata</code></td><td><span class="pill na">Não</span></td><td>Mapa chave/valor <strong>com valores string</strong> — a spec define como "a map from string keys to string values"; use para versão, owner, trust, dependências ou dados de registry. <span class="pill ok">Verificado</span></td></tr>
+          <tr><td><code>allowed-tools</code></td><td><span class="pill beta">Experimental</span></td><td>Lista separada por espaços de ferramentas pré-aprovadas <em>somente em clientes que implementam o campo</em>; não é allowlist universal, não concede capacidade e <strong>não substitui policy/sandbox</strong>.</td></tr>
         </tbody>
       </table></div>
       <div class="callout tip">
         <strong>Limites verificados:</strong> os limites de <code>name</code> (1–64), <code>description</code>
         (1–1024) e <code>compatibility</code> (1–500) foram confirmados contra a
         <a href="https://agentskills.io/specification" target="_blank" rel="noopener">AgentSkills Specification</a>
-        em 2026-06-10. A doc da Anthropic adiciona regras próprias para clientes Claude (o <code>name</code>
-        não pode conter tags XML nem as palavras reservadas "anthropic"/"claude") — ver
+        em 2026-09-30. A doc da Anthropic adiciona regras próprias para clientes Claude (o <code>name</code>
+        não pode conter tags XML nem as palavras reservadas "anthropic"/"claude", e a Anthropic recomenda a
+        forma de <strong>gerúndio</strong> — ex.: <code>processing-pdfs</code>, não <code>pdf-processing</code>)
+        — ver
         <a href="https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview" target="_blank" rel="noopener">platform.claude.com</a>.
+      </div>
+      <div class="callout warn">
+        <strong><code>allowed-tools</code> não é uma fronteira de segurança.</strong> A especificação o marca
+        como <em>Experimental</em> e não define quais nomes um cliente deve aceitar, como pedir a ferramenta
+        ou como aplicar autorização. Um cliente pode ignorar ou rejeitar o campo; o runtime deve validar a
+        ferramenta contra sua própria policy, sandbox, identidade e consentimento. A semântica descrita mais
+        adiante para Claude Code é específica daquele produto e não deve ser exportada como contrato Agent
+        Skills portátil.
       </div>
 
       <h3>Estrutura recomendada do corpo</h3>
@@ -573,12 +684,12 @@ Permissões, confirmações, ações proibidas e escalonamento humano.</code></p
     <section id="progressive-disclosure">
       <h2>3. Progressive disclosure</h2>
       <p>O padrão reduz custo e interferência instrucional dividindo o carregamento em camadas. O modelo só vê
-      o que a tarefa atual justifica — o catálogo está sempre presente, mas o corpo e os recursos entram sob
-      demanda.</p>
+      o que a tarefa atual justifica — clientes normalmente carregam um catálogo leve, mas podem filtrar ou
+      limitar esse catálogo; o corpo e os recursos entram sob demanda.</p>
       <div class="table-wrap"><table>
         <thead><tr><th>Camada</th><th>Conteúdo</th><th>Quando entra no contexto</th><th>Política</th></tr></thead>
         <tbody>
-          <tr><td><strong>L1 Catálogo</strong></td><td><code>name</code>, <code>description</code>, opcionalmente <code>location</code></td><td>No início da sessão/request, ou após filtro de registry.</td><td>Leve, roteável, dentro de budget.</td></tr>
+          <tr><td><strong>L1 Catálogo</strong></td><td><code>name</code>, <code>description</code>, opcionalmente <code>location</code></td><td>No início da sessão/request, ou após filtro de registry.</td><td>Leve, roteável, dentro de budget — <strong>~50–100 tokens por skill</strong> segundo a spec e o guia de client-implementation. <span class="pill ok">Verificado</span></td></tr>
           <tr><td><strong>L2 Instruções</strong></td><td><code>SKILL.md</code> completo</td><td>Quando a skill é ativada por correspondência de intenção ou invocação explícita.</td><td>Manter <strong>exato</strong> enquanto ativo.</td></tr>
           <tr><td><strong>L3 Recursos</strong></td><td><code>references/</code>, <code>scripts/</code>, <code>assets/</code></td><td>Somente quando o workflow da skill ou a tarefa atual exigir.</td><td>TTL curto, nunca bulk-load.</td></tr>
         </tbody>
@@ -593,9 +704,9 @@ Permissões, confirmações, ações proibidas e escalonamento humano.</code></p
           <text x="134" y="56" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="700" fill="var(--c-da)">L1 · Catálogo</text>
           <text x="134" y="80" text-anchor="middle" font-family="sans-serif" font-size="11.5" fill="var(--c-fg)">name + description</text>
           <text x="134" y="98" text-anchor="middle" font-family="sans-serif" font-size="11.5" fill="var(--c-fg)">(+ location opcional)</text>
-          <text x="134" y="130" text-anchor="middle" font-family="sans-serif" font-size="11" fill="var(--c-fg-muted)">SEMPRE presente</text>
+          <text x="134" y="130" text-anchor="middle" font-family="sans-serif" font-size="11" fill="var(--c-fg-muted)">normalmente presente</text>
           <text x="134" y="148" text-anchor="middle" font-family="sans-serif" font-size="11" fill="var(--c-fg-muted)">(dentro do budget)</text>
-          <text x="134" y="190" text-anchor="middle" font-family="monospace" font-size="10.5" fill="var(--c-ok)">~ centenas de tokens</text>
+          <text x="134" y="190" text-anchor="middle" font-family="monospace" font-size="10.5" fill="var(--c-ok)">~ 50–100 tokens/skill</text>
           <!-- arrow -->
           <line x1="244" y1="125" x2="288" y2="125" stroke="var(--c-fg-muted)" stroke-width="1.5" marker-end="url(#arr)"/>
           <text x="266" y="116" text-anchor="middle" font-family="sans-serif" font-size="9.5" fill="var(--c-fg-muted)">ativa</text>
@@ -605,7 +716,7 @@ Permissões, confirmações, ações proibidas e escalonamento humano.</code></p
           <text x="400" y="80" text-anchor="middle" font-family="sans-serif" font-size="11.5" fill="var(--c-fg)">SKILL.md completo</text>
           <text x="400" y="112" text-anchor="middle" font-family="sans-serif" font-size="11" fill="var(--c-fg-muted)">só enquanto ativa</text>
           <text x="400" y="130" text-anchor="middle" font-family="sans-serif" font-size="11" fill="var(--c-fg-muted)">mantido exato</text>
-          <text x="400" y="190" text-anchor="middle" font-family="monospace" font-size="10.5" fill="var(--c-warn)">soft cap &lt; 5k tokens</text>
+          <text x="400" y="190" text-anchor="middle" font-family="monospace" font-size="10.5" fill="var(--c-warn)">recomendação &lt; 5k tokens</text>
           <!-- arrow -->
           <line x1="510" y1="125" x2="554" y2="125" stroke="var(--c-fg-muted)" stroke-width="1.5" marker-end="url(#arr)"/>
           <text x="532" y="116" text-anchor="middle" font-family="sans-serif" font-size="9.5" fill="var(--c-fg-muted)">passo</text>
@@ -623,12 +734,14 @@ Permissões, confirmações, ações proibidas e escalonamento humano.</code></p
             </marker>
           </defs>
         </svg>
-        <figcaption>Progressive disclosure em três camadas. O catálogo L1 está sempre no contexto (leve);
+        <figcaption>Progressive disclosure em três camadas. O catálogo L1 costuma entrar no contexto (leve),
+        sujeito a filtro e budget do cliente;
         o corpo L2 entra ao ativar e é mantido exato; os recursos L3 entram só quando um passo do workflow os
-        exige. O harness adiciona ainda L0 (registry), L4 (arquivos montados) e L5 (binding de tools/MCP) —
+        exige. Os limites de 500 linhas/5.000 tokens são recomendações de autoria, não limites wire. O harness
+        adiciona ainda L0 (registry), L4 (arquivos montados) e L5 (binding de tools/MCP) —
         ver <a href="#contexto-budget-eviction">§8</a>.</figcaption>
       </div>
-      <div class="source-link">Fonte oficial: <a href="https://agentskills.io/skill-creation/best-practices" target="_blank" rel="noopener">agentskills.io/skill-creation/best-practices</a> · <a href="https://developers.openai.com/codex/skills" target="_blank" rel="noopener">developers.openai.com/codex/skills</a></div>
+      <div class="source-link">Fonte oficial: <a href="https://agentskills.io/skill-creation/best-practices" target="_blank" rel="noopener">agentskills.io/skill-creation/best-practices</a> · <a href="https://agentskills.io/client-implementation/adding-skills-support" target="_blank" rel="noopener">adding skills support</a> · <a href="https://learn.chatgpt.com/docs/build-skills" target="_blank" rel="noopener">learn.chatgpt.com/docs/build-skills</a>. Os caps de 500 linhas/5.000 tokens são recomendações; os caps da página de especificação (~100 tokens de metadata, &lt; 5000 de instruções, &lt; 500 linhas) foram relidos em <strong>2026-09-30</strong>.</div>
     </section>
 
     <section class="chapter" id="parte-autoria">
@@ -643,6 +756,24 @@ Permissões, confirmações, ações proibidas e escalonamento humano.</code></p
       <p>Uma boa skill captura conhecimento operacional que o agente não teria de forma confiável: sequência
       de execução, critérios de decisão, validações, formatos de saída, gotchas, integrações, limites e regras
       de segurança. Ela <strong>não</strong> deve ensinar conceitos básicos que o modelo já sabe.</p>
+      <div class="callout tip">
+        <strong>Teste de inclusão (agentskills.io · best practices):</strong> para cada trecho do
+        <code>SKILL.md</code>, pergunte "o agente erraria isso sem esta instrução?". Se a resposta for não,
+        corte. Adicione o que o agente <em>não saberia sozinho</em> — convenções do projeto, procedimentos de
+        domínio, edge cases não óbvios, a API/ferramenta específica a usar — e omita o que ele já sabe (o que é
+        um PDF, como HTTP funciona). Cada token da skill ativa compete por atenção com o resto do contexto
+        (histórico, system prompt, outras skills ativas).
+      </div>
+      <div class="callout">
+        <strong>Favoreça procedimento sobre declaração.</strong> Uma skill deve ensinar <em>como abordar</em>
+        uma classe de problema, não <em>o que produzir</em> para uma instância específica. "Junte a tabela
+        <code>orders</code> com <code>customers</code> por <code>customer_id</code>, filtre
+        <code>region='EMEA'</code>" só serve para aquela tarefa; "leia o schema em
+        <code>references/schema.yaml</code>, junte tabelas pela convenção <code>_id</code>, aplique os filtros
+        do pedido do usuário" generaliza para qualquer query analítica. Isso não impede detalhes específicos
+        (templates de output, restrições como "nunca exponha PII") — o que deve generalizar é a
+        <em>abordagem</em>, não necessariamente cada detalhe.
+      </div>
       <div class="table-wrap"><table>
         <thead><tr><th>Atributo</th><th>O que significa</th></tr></thead>
         <tbody>
@@ -687,6 +818,27 @@ Permissões, confirmações, ações proibidas e escalonamento humano.</code></p
           <tr><td><strong>Baixo</strong></td><td>Operação frágil, auditável ou com risco operacional.</td><td>Script específico, comandos exatos, validação, confirmação.</td></tr>
         </tbody>
       </table></div>
+      <div class="callout info">
+        <strong>Explique o porquê, não só o o-quê.</strong> Para instruções de grau <strong>alto</strong>,
+        explicar a razão por trás de uma regra ("faça X porque Y tende a causar Z") funciona melhor que uma
+        diretiva rígida ("SEMPRE faça X, NUNCA faça Y") — um agente que entende o propósito toma decisões
+        melhores quando o contexto varia. Para grau <strong>baixo</strong> (operação frágil), a diretiva exata
+        continua certa; calibre por trecho, não pela skill inteira.
+      </div>
+
+      <h3>Padrões de instrução eficazes</h3>
+      <p>Técnicas reutilizáveis para estruturar o corpo da skill, confirmadas contra
+      <code>agentskills.io/skill-creation/best-practices</code>. Nem toda skill precisa de todas — use as que
+      se encaixam na tarefa:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Padrão</th><th>Quando usar</th><th>Por quê</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Templates de output</strong></td><td>Formato de saída específico é exigido.</td><td>Agentes fazem melhor pattern-matching contra uma estrutura concreta do que contra uma descrição em prosa. Templates curtos ficam inline no <code>SKILL.md</code>; templates longos ou usados só às vezes vão em <code>assets/</code> e são referenciados sob demanda.</td></tr>
+          <tr><td><strong>Checklist de progresso</strong></td><td>Workflow multi-etapa com dependências entre passos.</td><td>Um checklist explícito (<code>- [ ] Passo N: ...</code>) no próprio corpo ajuda o agente a rastrear progresso e não pular etapas — é diferente do checklist de autoria (§ para quem escreve a skill): este é conteúdo da skill, para o agente marcar durante a execução.</td></tr>
+          <tr><td><strong>Loop de validação</strong></td><td>A saída precisa de um check objetivo antes de finalizar.</td><td>Padrão: execute → rode um validador (script, checklist de referência ou self-check) → corrija → repita até passar. Um documento de referência também pode servir de "validador": instrua o agente a conferir o trabalho contra ele antes de finalizar.</td></tr>
+          <tr><td><strong>Plan-validate-execute</strong></td><td>Operação em lote ou destrutiva.</td><td>O agente cria um plano intermediário em formato estruturado, valida esse plano contra uma fonte de verdade (ex.: um script que confere se cada campo do plano existe no schema real) e só então executa. O ingrediente-chave é o passo de validação: erros como "campo X não encontrado — campos disponíveis: A, B, C" dão ao agente contexto suficiente para se autocorrigir sem tentativa-e-erro.</td></tr>
+        </tbody>
+      </table></div>
 
       <h3>Anti-padrões de autoria</h3>
       <ul>
@@ -726,6 +878,25 @@ Permissões, confirmações, ações proibidas e escalonamento humano.</code></p
       <div class="callout info">
         <strong>Regra prática:</strong> escreva a description como um <em>roteador de intenção</em> — "faz X;
         use quando o usuário pedir Y, Z ou mencionar A/B/C; não use para W".
+      </div>
+      <p><strong>Princípios de escrita (agentskills.io · optimizing-descriptions):</strong></p>
+      <ul>
+        <li><strong>Fraseado imperativo:</strong> "Use this skill when..." em vez de "This skill does..." — o
+        agente está decidindo <em>se age</em>, então diga <em>quando agir</em>, não apenas o que a skill faz.</li>
+        <li><strong>Intenção do usuário, não implementação:</strong> descreva o que o usuário está tentando
+        alcançar, não a mecânica interna da skill — o match acontece contra o pedido, não contra os detalhes
+        de implementação.</li>
+        <li><strong>Erre para o lado explícito:</strong> liste contextos de uso mesmo quando o usuário não nomeia
+        o domínio diretamente — ex. "even if they don't explicitly mention 'CSV' or 'analysis'".</li>
+        <li><strong>Concisão:</strong> poucas frases a um parágrafo curto; o limite duro continua 1024 caracteres.</li>
+      </ul>
+      <div class="callout warn">
+        <strong>Nuance sobre undertriggering (agentskills.io):</strong> agentes normalmente só consultam skills
+        para tarefas que exigem conhecimento ou capacidade além do que resolvem sozinhos. Um pedido simples de
+        um passo só ("leia este PDF") pode não ativar uma skill de PDF mesmo com description perfeita, porque o
+        agente já resolve com ferramentas básicas — isso não é necessariamente um bug de description. O ganho
+        de uma boa description aparece em tarefas que envolvem conhecimento especializado: API pouco comum,
+        workflow de domínio, formato incomum.
       </div>
 
       <h3>Modelo de description</h3>
@@ -801,6 +972,12 @@ Resolve relative paths against the skill directory.</code></pre>
     "additionalProperties": false
   }
 }</code></pre>
+      <div class="callout tip">
+        <strong>Por que <code>enum</code>:</strong> restringir o parâmetro <code>name</code> ao conjunto de
+        skills válidas impede o modelo de alucinar um nome de skill inexistente. Se não houver skills
+        disponíveis nesta sessão, <strong>não registre a tool</strong> — não ofereça uma <code>activate_skill</code>
+        sem opções válidas.
+      </div>
 
       <h3>Entrega de L1/L2/L3 por provider</h3>
       <div class="table-wrap"><table>
@@ -820,7 +997,8 @@ Resolve relative paths against the skill directory.</code></pre>
 
       <h3>Evals de ativação</h3>
       <p>Teste a description com prompts <em>should-trigger</em> e <em>should-not-trigger</em>. Separe
-      treino/validação para evitar overfitting da description aos próprios casos de teste:</p>
+      treino/validação para evitar overfitting da description aos próprios casos de teste. A metodologia abaixo
+      é o processo publicado em <code>agentskills.io/skill-creation/optimizing-descriptions</code>:</p>
       <pre><code class="language-json">{
   "skill_name": "code-review",
   "should_trigger": [
@@ -834,6 +1012,65 @@ Resolve relative paths against the skill directory.</code></pre>
     "Qual a diferença entre TCP e UDP?"
   ]
 }</code></pre>
+      <h4>Desenhando as queries (~20 no total)</h4>
+      <p>Mire 8–10 <em>should-trigger</em> e 8–10 <em>should-not-trigger</em>, variando fraseado (formal,
+      casual, com erro de digitação), explicitude (nomeia o domínio vs. descreve a necessidade sem nomear),
+      detalhe (terso vs. com contexto/paths/nomes) e complexidade (single-step vs. multi-step com a tarefa
+      enterrada numa cadeia maior). As queries <em>should-trigger</em> mais úteis são aquelas em que a skill
+      ajudaria mas a conexão não é óbvia na query — se a query já pede exatamente o que a skill faz, qualquer
+      description razoável ativaria.</p>
+      <div class="callout warn">
+        <strong>Negativos fracos vs. <em>near-miss</em>.</strong> Um negativo fraco ("escreva uma função de
+        fibonacci" para uma skill de análise de CSV) não testa nada — zero overlap de conceito. Um
+        <em>near-miss</em> forte compartilha vocabulário mas precisa de algo diferente: "preciso atualizar as
+        fórmulas da minha planilha Excel" compartilha "planilha"/"dados" mas precisa de edição de Excel, não
+        análise de CSV; "escreva um script Python que lê um CSV e sobe cada linha num Postgres" envolve CSV mas
+        é ETL de banco, não análise. Priorize <em>near-misses</em> — eles testam se a description tem fronteira
+        precisa, não só amplitude.
+      </div>
+      <h4>Rodando e medindo (trigger rate)</h4>
+      <p>Comportamento de modelo é não determinístico — a mesma query pode ativar num run e não noutro. Rode
+      cada query <strong>3 vezes</strong> (ponto de partida razoável) e calcule a <strong>trigger rate</strong>
+      (fração de runs em que a skill foi invocada). Uma query <em>should-trigger</em> passa se a trigger rate
+      superar um limiar (<strong>0.5</strong> como default); uma <em>should-not-trigger</em> passa se ficar
+      abaixo. Com 20 queries × 3 runs = 60 invocações — script isso.</p>
+      <h4>Split treino/validação e loop de otimização</h4>
+      <p>Avaliar contra o próprio conjunto de queries e otimizar nele produz overfitting — a description passa
+      a funcionar só para aquelas frases exatas. Separe <strong>~60% treino / ~40% validação</strong>,
+      proporcional entre should/should-not, embaralhado e fixo entre iterações. O loop:</p>
+      <ol>
+        <li>Avalie a description atual nos dois conjuntos.</li>
+        <li>Identifique falhas <strong>só no treino</strong> — nunca use o resultado de validação para guiar a
+        mudança.</li>
+        <li>Revise: se <em>should-trigger</em> falha, a description está estreita demais — amplie o escopo ou
+        acrescente contexto de quando é útil. Se <em>should-not-trigger</em> dispara, está ampla demais —
+        adicione especificidade sobre o que a skill <strong>não</strong> faz. Evite copiar palavras-chave
+        específicas das queries que falharam (overfitting); busque a categoria geral que elas representam. Se
+        travar após várias iterações, tente uma reformulação estrutural, não só um ajuste incremental.</li>
+        <li>Repita até todas as queries de treino passarem ou o ganho parar.</li>
+        <li>Escolha a <strong>melhor iteração pela taxa de passagem na validação</strong> — não necessariamente
+        a última; uma iteração anterior pode generalizar melhor que uma posterior que overfitou ao treino.</li>
+      </ol>
+      <p>Cinco iterações costumam bastar. Depois de aplicar, verifique o limite de 1024 caracteres (descriptions
+      tendem a crescer durante a otimização) e rode um check final com <strong>5–10 queries novas</strong>,
+      nunca usadas na otimização, para uma leitura honesta de generalização.</p>
+      <div class="callout tip">
+        <strong>Automação de referência:</strong> a skill <a href="https://github.com/anthropics/skills/tree/main/skills/skill-creator" target="_blank" rel="noopener"><code>skill-creator</code></a>
+        automatiza esse loop ponta a ponta — divide o conjunto de eval, avalia trigger rates em paralelo,
+        propõe melhorias de description e gera um relatório HTML ao vivo.
+      </div>
+
+      <div class="callout tip">
+        <strong>Eval-driven development (workflow formal da Anthropic, distinto do acima).</strong> A doc de
+        best-practices da Anthropic para Claude trata avaliações como etapa de primeira classe:
+        <strong>escreva 3+ evals ANTES</strong> de redigir a documentação extensa do <code>SKILL.md</code>,
+        estabeleça um baseline sem a skill e itere com o loop <strong>"Claude A / Claude B"</strong> — uma
+        instância autora a skill, uma instância nova a testa, e o feedback retorna ao autor. Antes de
+        compartilhar, faça <strong>teste multi-modelo</strong> explícito (Haiku / Sonnet / Opus) além dos
+        checks de qualidade, de código e de scripts. Este workflow é específico do best-practices da Anthropic;
+        a metodologia de trigger-rate/train-validation acima é a da spec agnóstica agentskills.io — as duas se
+        complementam.
+      </div>
 
       <h3>Sinais de problemas</h3>
       <div class="table-wrap"><table>
@@ -867,13 +1104,50 @@ Resolve relative paths against the skill directory.</code></pre>
       <p>Scripts servem quando <em>variação é bug</em>: validação determinística, parsing, transformação de
       arquivos, geração de artefatos, linting, sumarização mecânica, checks repetíveis. Regras:</p>
       <ul>
-        <li>Não use prompts interativos; aceite argumentos.</li>
-        <li>Documente <code>--help</code>.</li>
-        <li>Retorne erros úteis em <code>stderr</code> e dados estruturados em <code>stdout</code>.</li>
-        <li>Implemente <code>--dry-run</code> em ações de escrita.</li>
-        <li>Seja idempotente sempre que possível.</li>
+        <li>Não use prompts interativos; aceite argumentos — é requisito, não estilo: agentes rodam em shells
+        não interativos e travam indefinidamente num prompt TTY/senha/confirmação.</li>
+        <li>Documente <code>--help</code> (é a forma primária de o agente aprender a interface do script:
+        descrição breve, flags disponíveis, exemplos de uso — mantenha conciso, o output entra no contexto).</li>
+        <li>Retorne erros úteis em <code>stderr</code> (o que deu errado, o que era esperado, o que tentar) e
+        dados estruturados (JSON/CSV/TSV, não texto alinhado por espaço) em <code>stdout</code>.</li>
+        <li>Implemente <code>--dry-run</code> em ações de escrita/destrutivas; considere exigir flag de
+        confirmação explícita (<code>--confirm</code>/<code>--force</code>) para o risco mais alto.</li>
+        <li>Seja idempotente sempre que possível — agentes podem repetir o comando; "criar se não existir" é
+        mais seguro que "criar e falhar em duplicata".</li>
+        <li>Use exit codes distintos por tipo de falha (não encontrado, argumento inválido, falha de auth) e
+        documente cada um no <code>--help</code>.</li>
+        <li>Limite o tamanho do output: muitos harnesses truncam saída de tool em ~10–30K caracteres. Se o
+        output puder ser grande, retorne resumo/limite por padrão e suporte <code>--offset</code> (paginação)
+        ou exija uma flag <code>--output</code> (arquivo ou <code>-</code> para stdout explícito).</li>
         <li>Declare dependências e versões quando relevantes.</li>
       </ul>
+      <h4>Comandos avulsos antes de empacotar em <code>scripts/</code></h4>
+      <p>Quando um pacote existente já resolve o problema, referencie-o direto na instrução da skill — sem
+      criar <code>scripts/</code> — usando um runner que resolve dependências no ato, sempre com
+      <strong>versão fixada</strong> para reprodutibilidade: <code>uvx ruff@0.8.0 check .</code>,
+      <code>pipx run 'black==24.10.0' .</code>, <code>npx eslint@9 --fix .</code>, <code>bunx eslint@9 --fix .</code>,
+      <code>deno run --allow-read npm:eslint@9 -- --fix .</code>, <code>go run golang.org/x/tools/cmd/goimports@v0.28.0 .</code>.
+      Declare pré-requisitos de runtime no campo <code>compatibility</code> do frontmatter em vez de assumir que
+      o ambiente do agente já os tem. Quando o comando cresce a ponto de ser difícil acertar de primeira, mova
+      para um script testado em <code>scripts/</code>.</p>
+      <h4>Scripts autocontidos com dependências inline</h4>
+      <p>Para lógica reutilizável, declare as dependências <strong>dentro do próprio script</strong> — sem
+      manifest separado nem passo de instalação. Em Python, use
+      <a href="https://peps.python.org/pep-0723/" target="_blank" rel="noopener">PEP 723</a> (bloco TOML entre
+      marcadores <code># ///</code>) executado com <code>uv run</code>:</p>
+      <pre><code class="language-python"># /// script
+# dependencies = [
+#   "beautifulsoup4",
+# ]
+# ///
+
+from bs4 import BeautifulSoup
+# uso: uv run scripts/extract.py</code></pre>
+      <p>Equivalentes noutros runtimes: Deno resolve <code>npm:pacote@1.0.0</code>/<code>jsr:pacote@1.0.0</code>
+      inline no import (cache global, use <code>--reload</code> para forçar refetch); Bun auto-instala pacotes
+      ausentes quando não há <code>node_modules</code> no diretório (versão fixada direto no import); Ruby usa
+      <code>bundler/inline</code> com um bloco <code>gemfile do ... end</code> no topo do script. Todos evitam o
+      passo "instale isto antes de rodar" que quebra a execução não supervisionada do agente.</p>
       <pre><code class="language-python">#!/usr/bin/env python3
 import argparse, json, sys
 
@@ -929,7 +1203,7 @@ print(json.dumps(result, ensure_ascii=False))</code></pre>
         como superfície de ataque.
       </div>
 
-      <h3>Recursos e MCP</h3>
+      <h3>Recursos e MCP<span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
       <p>Reafirmando a fronteira skill/tool: a skill ensina o workflow; tools e MCP fornecem ações e dados.</p>
       <pre><code class="language-text">Skill = instrução, workflow, exemplos, scripts, references, assets.
 Tool  = ação invocável com schema e execução pelo host.
@@ -940,27 +1214,31 @@ MCP   = protocolo para expor tools, resources e prompts externos.</code></pre>
         <a href="guia_ferramentas_mcp_rag.html">guia_ferramentas_mcp_rag.html</a>, e por framework em
         <a href="guia_claude_api.html#c-mcp">guia_claude_api.html#c-mcp</a> e
         <a href="guia_deepagents.html#s-mcp">guia_deepagents.html#s-mcp</a>. Para construir um servidor MCP do
-        zero, a skill <code>mcp-server-builder</code> é o recurso de referência. A spec MCP alvo é
-        <strong>2025-11-25</strong> <span class="pill ok">Verificado</span> (versão canônica do super-guia).
+        zero, a skill <code>mcp-server-builder</code> é o recurso de referência. A spec MCP atual é
+        <strong>2026-07-28</strong> <span class="pill ok">Verificado 2026-09-30</span>. Para <em>servir</em>
+        skills a partir de um servidor MCP, use a extensão oficial <code>io.modelcontextprotocol/skills</code>
+        (<a href="#s-skills-mcp">§6D</a>). Quando uma skill referencia uma tool de MCP, use sempre o nome <strong>totalmente qualificado</strong>
+        <code>ServerName:tool_name</code> — sem o prefixo do servidor, a referência falha com "tool not found"
+        quando há múltiplos servidores MCP no host.
       </div>
-      <div class="source-link">Fonte oficial: <a href="https://agentskills.io/skill-creation/using-scripts" target="_blank" rel="noopener">agentskills.io/skill-creation/using-scripts</a> · <a href="https://modelcontextprotocol.io/specification/2025-11-25" target="_blank" rel="noopener">modelcontextprotocol.io/specification/2025-11-25</a></div>
+      <div class="source-link">Fonte oficial: <a href="https://agentskills.io/skill-creation/using-scripts" target="_blank" rel="noopener">agentskills.io/skill-creation/using-scripts</a> · <a href="https://modelcontextprotocol.io/specification/2026-07-28" target="_blank" rel="noopener">modelcontextprotocol.io/specification/2026-07-28</a></div>
     </section>
 
     <section id="skills-claude-api">
-      <h2>6A. Skills na Claude API (execução via <code>code_execution</code>)</h2>
+      <h2>6A. Skills na Claude API (execução via <code>code_execution</code>)<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <p>Tudo que as seções 1–6 descrevem é a <em>spec</em> agnóstica AgentSkills.io. Na Claude API, uma Skill não é
       um mecanismo próprio de carregamento de arquivo: ela é <strong>declarada no parâmetro <code>container</code></strong>
       de uma chamada <code>POST /v1/messages</code> e roda dentro do <strong>code execution tool</strong> — o mesmo
       sandbox Python/Bash usado para análise de dados. Skills pré-construídas pela Anthropic (<code>pptx</code>,
       <code>xlsx</code>, <code>docx</code>, <code>pdf</code>) e Skills customizadas (criadas via <a
       href="https://platform.claude.com/docs/en/api/skills/create-skill" target="_blank" rel="noopener"><code>POST
-      /v1/skills</code></a>) usam exatamente a mesma forma de integração. <span class="pill beta">Beta</span></p>
+      /v1/skills</code></a>) usam exatamente a mesma forma de integração. <span class="pill ok">GA</span></p>
 
       <h3>O contrato <code>container.skills[]</code></h3>
       <p>Cada Skill referenciada em uma request é um objeto com os campos obrigatórios <code>type</code> e
       <code>skill_id</code> e o campo opcional <code>version</code>, dentro do array <code>container.skills</code>.
       A estrutura é idêntica para Skills Anthropic e customizadas. É possível declarar até
-      <strong>8 Skills por request</strong>.</p>
+      <strong>20 Skills por request</strong> (<a href="https://platform.claude.com/docs/en/build-with-claude/skills-guide" target="_blank" rel="noopener">skills-guide</a>, 2026-09-30).</p>
       <pre><code>"container": {
   "skills": [
     { "type": "anthropic", "skill_id": "pptx", "version": "latest" },
@@ -972,26 +1250,25 @@ MCP   = protocolo para expor tools, resources e prompts externos.</code></pre>
         <thead><tr><th>Aspecto</th><th>Skill Anthropic (<code>type: "anthropic"</code>)</th><th>Skill custom (<code>type: "custom"</code>)</th></tr></thead>
         <tbody>
           <tr><td><code>skill_id</code></td><td>Nome curto: <code>pptx</code>, <code>xlsx</code>, <code>docx</code>, <code>pdf</code></td><td>Gerado pela API: <code>skill_01AbCdEfGhIjKlMnOpQrStUv</code></td></tr>
-          <tr><td>Formato de <code>version</code></td><td>Baseado em data: <code>"20251013"</code> ou <code>"latest"</code></td><td>Epoch timestamp: <code>"1759178010641129"</code> ou <code>"latest"</code></td></tr>
+          <tr><td>Formato de <code>version</code></td><td>Baseado em data: <code>"20251013"</code> ou <code>"latest"</code></td><td>ID opaco: <code>"skver_01AbCdEfGhIjKlMnOpQrStUv"</code> ou <code>"latest"</code> <span class="pill bad">não é epoch timestamp</span></td></tr>
           <tr><td>Gestão</td><td>Mantida pela Anthropic, disponível a todos os usuários</td><td>Upload/gestão via <code>/v1/skills</code>, privada ao workspace da chave de API</td></tr>
         </tbody>
       </table></div>
 
-      <h3>Header beta e o tool <code>code_execution</code></h3>
-      <p>Toda request com Skills exige o header <code>anthropic-beta: skills-2025-10-02</code> e o code execution
-      tool declarado em <code>tools</code> (o code execution é obrigatório para Skills). Qualquer versão do tool
-      satisfaz o requisito — as três versões GA (<code>code_execution_20250825</code>,
-      <code>code_execution_20260120</code> e <code>code_execution_20260521</code>) não exigem beta header próprio;
-      os headers beta legados de code execution (ex.: <code>code-execution-2025-08-25</code>) continuam válidos como
-      opt-in. Mantenha o <code>type</code> do tool e qualquer header consistentes, e inclua sempre
-      <code>skills-2025-10-02</code>.</p>
+      <h3>Skills é GA — sem header beta — e o tool <code>code_execution</code></h3>
+      <p><span class="pill ok">GA desde 2026-08-19</span> Skills não usa header beta: nem para CRUD via
+      <code>/v1/skills</code>, nem para <code>container.skills[]</code> na Messages API (os SDKs Python 1.2.0 /
+      TypeScript 0.122.0 em diante já não enviam <code>skills-2025-10-02</code>; ver <a href="#legado">Legado</a>).
+      O que <strong>continua</strong> obrigatório é declarar o code execution tool em <code>tools</code>.
+      Qualquer das três versões do tool (<code>code_execution_20250825</code>,
+      <code>code_execution_20260120</code>, <code>code_execution_20260521</code>) satisfaz o requisito, sem beta
+      header próprio; a lista de modelos suportados é a da página do code execution tool.</p>
       <pre><code>curl https://api.anthropic.com/v1/messages \
   -H "x-api-key: $ANTHROPIC_API_KEY" \
   -H "anthropic-version: 2023-06-01" \
-  -H "anthropic-beta: skills-2025-10-02" \
   -H "content-type: application/json" \
   -d '{
-    "model": "claude-opus-4-8",
+    "model": "claude-opus-5-5",
     "max_tokens": 16000,
     "container": {
       "skills": [{"type": "anthropic", "skill_id": "pptx", "version": "latest"}]
@@ -1001,6 +1278,12 @@ MCP   = protocolo para expor tools, resources e prompts externos.</code></pre>
     ],
     "tools": [{"type": "code_execution_20260521", "name": "code_execution"}]
   }'</code></pre>
+      <p class="small">O code execution tool (GA) lista como suportados, em 2026-09-30, <code>claude-fable-5-1</code>,
+      <code>claude-opus-5-5</code>, <code>claude-sonnet-5-5</code> e <code>claude-haiku-4-5-20251001</code>, além de
+      modelos anteriores ainda servidos; no Haiku 4.5 o REPL persistente e o programmatic tool calling não existem.
+      Confira a lista na
+      <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool" target="_blank" rel="noopener">referência do tool</a>
+      antes de assumir suporte. Skills não são elegíveis a ZDR (abaixo).</p>
 
       <h3>O objeto <code>container</code> e seu ciclo de vida</h3>
       <p>Quando Claude executa código (com ou sem Skill), a resposta traz um objeto de nível superior
@@ -1026,8 +1309,7 @@ MCP   = protocolo para expor tools, resources e prompts externos.</code></pre>
       Python ou pela Bash, verifique os dois tipos de bloco: <code>code_execution_tool_result</code> ou
       <code>bash_code_execution_tool_result</code>. Esse ID é baixado com a
       <a href="https://platform.claude.com/docs/en/api/files-content" target="_blank" rel="noopener">Files API</a>
-      (<code>GET /v1/files/{file_id}/content</code>), que exige o header adicional <code>anthropic-beta:
-      files-api-2025-04-14</code>.</p>
+      (<code>GET /v1/files/{file_id}/content</code>). A Files API é <span class="pill ok">GA</span> desde 2026-08-19, sem header beta.</p>
 
       <h3>Operações longas: <code>pause_turn</code></h3>
       <p>Skills que rodam operações demoradas podem devolver <code>stop_reason: "pause_turn"</code> em vez de
@@ -1044,18 +1326,19 @@ MCP   = protocolo para expor tools, resources e prompts externos.</code></pre>
       <div class="callout tip">
         <strong>CRUD de Skills fica em outro guia.</strong> Esta seção cobre apenas a <em>mecânica de execução</em>
         (como uma Skill já criada roda dentro de uma request de Messages API). Criação, versionamento e exclusão de
-        Skills customizadas via <code>POST/GET/DELETE /v1/skills</code> — <code>POST /v1/skills</code> usa
-        <code>multipart/form-data</code>, exige <code>anthropic-beta: skills-2025-10-02</code> e retorna
-        <code>id</code>, <code>created_at</code>, <code>display_title</code>, <code>latest_version</code>,
-        <code>source</code> (<code>"custom"</code> ou <code>"anthropic"</code>), <code>type</code>
-        (<code>"skill"</code>) e <code>updated_at</code> — são cobertos na seção de Claude API deste material.
+        Skills customizadas via <code>POST/GET/DELETE /v1/skills</code> (GA, sem header beta) retorna
+        <code>id</code>, <code>created_at</code>, <code>display_name</code>, <code>latest_version_id</code>,
+        <code>source</code> (objeto <code>{"type": ...}</code>, com <code>"custom"</code> · <code>"anthropic"</code> ·
+        <code>"anthropic_example"</code> · <code>"plugin"</code>), <code>type</code> (<code>"skill"</code>) e
+        <code>updated_at</code> — são cobertos na seção de Claude API deste material.
       </div>
 
       <div class="source-link">Fonte oficial: <a href="https://platform.claude.com/docs/en/agents-and-tools/agent-skills/quickstart" target="_blank" rel="noopener">platform.claude.com · agent-skills/quickstart</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/skills-guide" target="_blank" rel="noopener">build-with-claude/skills-guide</a> · <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool" target="_blank" rel="noopener">tool-use/code-execution-tool</a> · <a href="https://platform.claude.com/docs/en/api/skills/create-skill" target="_blank" rel="noopener">api/skills/create-skill</a></div>
     </section>
 
     <section id="s-claude-code-plugins">
-      <h2>6B. Onde Skills rodam: Claude Code &amp; plugin bundles</h2>
+      <h2>6B. Onde Skills rodam: Claude Code &amp; plugin bundles<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
+<div class="callout tip"><strong>Veja também:</strong> para integrar um plugin (skills + MCP), só uma skill ou só um servidor MCP <em>self-hosted</em> neste e nos demais frameworks (Google ADK, OpenAI Agents SDK, LangChain, LangGraph, Deep Agents, Claude Agent SDK), com matriz de suporte nativo e receitas, consulte <a href="guia_plugins_skills_mcp_frameworks.html">Plugins, Skills &amp; MCP em frameworks</a>.</div>
       <p>
         O Claude Code é um cliente concreto do padrão Agent Skills, com uma superfície própria de
         descoberta, escopo, invocação e empacotamento que vai além do que a spec agnóstica define. Esta seção
@@ -1065,15 +1348,17 @@ MCP   = protocolo para expor tools, resources e prompts externos.</code></pre>
       </p>
 
       <h3>Escopos de descoberta: personal, project, plugin, enterprise</h3>
-      <p>O Claude Code descobre <code>SKILL.md</code> em quatro localizações, cada uma com um escopo de
-      aplicação diferente:</p>
+      <p>O Claude Code descobre <code>SKILL.md</code> em seis localizações, cada uma com um escopo de
+      aplicação diferente (confirmado em 2026-09-30):</p>
       <div class="table-wrap"><table>
         <thead><tr><th>Escopo</th><th>Path</th><th>Aplica-se a</th></tr></thead>
         <tbody>
-          <tr><td>Enterprise</td><td>Managed settings (política da organização)</td><td>Todos os usuários da organização</td></tr>
-          <tr><td>Personal</td><td><code>~/.claude/skills/&lt;skill-name&gt;/SKILL.md</code></td><td>Todos os projetos do usuário</td></tr>
-          <tr><td>Project</td><td><code>.claude/skills/&lt;skill-name&gt;/SKILL.md</code></td><td>Apenas este projeto (carrega de diretórios pai até a raiz do repo, e de diretórios aninhados sob demanda — útil em monorepos)</td></tr>
+          <tr><td>Enterprise</td><td><code>.claude/skills/&lt;skill-name&gt;/SKILL.md</code> no diretório de managed settings</td><td>Todos os usuários das máquinas onde a organização faz o deploy</td></tr>
+          <tr><td>Personal</td><td><code>~/.claude/skills/&lt;skill-name&gt;/SKILL.md</code></td><td>Todos os projetos do usuário nesta máquina (não alcança sessões Cowork/cloud)</td></tr>
+          <tr><td>Project</td><td><code>.claude/skills/&lt;skill-name&gt;/SKILL.md</code></td><td>Este repositório (carrega de diretórios pai até a raiz do repo, e de diretórios aninhados sob demanda — útil em monorepos)</td></tr>
+          <tr><td>Diretório adicional</td><td><code>.claude/skills/&lt;skill-name&gt;/SKILL.md</code> num diretório passado via <code>--add-dir</code></td><td>Apenas aquela sessão</td></tr>
           <tr><td>Plugin</td><td><code>&lt;plugin&gt;/skills/&lt;skill-name&gt;/SKILL.md</code></td><td>Onde o plugin está habilitado</td></tr>
+          <tr><td>Conta claude.ai</td><td>Skills habilitadas na conta claude.ai (baixadas para <code>~/.claude/skills/synced/</code>; nome de pasta <code>synced</code> é reservado)</td><td>Sessões Cowork, cloud e terminal autenticadas com essa conta</td></tr>
         </tbody>
       </table></div>
       <p>Quando skills de escopos diferentes têm o mesmo nome, <strong>enterprise sobrepõe personal, e
@@ -1092,8 +1377,11 @@ MCP   = protocolo para expor tools, resources e prompts externos.</code></pre>
         qualificado por diretório <code>/apps/web:deploy</code>. Digitar apenas <code>/deploy</code> roda a
         versão da raiz, mas o Claude Code anexa ao conteúdo dela uma lista das variantes qualificadas com
         instrução para também invocar aquela cujo diretório contém os arquivos em edição — então a variante
-        aninhada ainda se aplica ao trabalho no seu diretório mesmo pelo nome curto. Requer Claude Code
-        v2.1.203+.
+        aninhada ainda se aplica ao trabalho no seu diretório mesmo pelo nome curto. Recursos relacionados são
+        versionados: <code>/cd</code> passa a recarregar as skills do novo diretório a partir do Claude Code
+        v2.1.246+, <code>/add-dir</code> para carregar skills de subdiretório antecipadamente requer v2.1.257+,
+        e o fallback para as skills do checkout principal dentro de um git worktree sem
+        <code>.claude/skills</code> próprio requer v2.1.277+.
       </div>
 
       <h3>Invocação: Skill tool (automática) vs <code>/nome</code> (explícita)</h3>
@@ -1125,7 +1413,8 @@ MCP   = protocolo para expor tools, resources e prompts externos.</code></pre>
         <code>deny</code> na entrada <code>Skill</code> (sem argumento) desabilita todas as skills.
       </p>
       <p>
-        Campos de frontmatter específicos do Claude Code (além de <code>name</code>/<code>description</code>
+        <strong>Escopo Claude Code (não é contrato portátil):</strong> campos de frontmatter específicos do
+        produto (além de <code>name</code>/<code>description</code>
         da spec agnóstica) incluem: <code>allowed-tools</code> (tools que o Claude pode usar sem pedir
         aprovação enquanto a skill está ativa — não restringe o pool: toda tool continua invocável e as
         permission settings ainda valem para as não listadas); <code>disallowed-tools</code> (tools removidas
@@ -1178,13 +1467,18 @@ MCP   = protocolo para expor tools, resources e prompts externos.</code></pre>
       </p>
       <p>
         Plugins são instalados via marketplace (<code>/plugin install nome@marketplace</code>) ou testados
-        localmente com <code>claude --plugin-dir ./caminho</code> — que também aceita um <code>.zip</code>
-        (requer Claude Code v2.1.128+) — e <code>claude --plugin-url</code> para um zip hospedado remotamente,
-        carregado só naquela sessão. Após alterar um plugin já carregado, <code>/reload-plugins</code>
+        localmente com <code>claude --plugin-dir ./caminho</code> — que também aceita um arquivo
+        <code>.zip</code> do plugin — e <code>claude --plugin-url</code> para um zip hospedado remotamente,
+        carregado só naquela sessão. <code>--plugin-dir</code> repetido carrega vários plugins, e apontado para
+        uma pasta com vários plugins dentro (sem manifesto próprio no topo) carrega cada subpasta com
+        <code>.claude-plugin/plugin.json</code> como um plugin — requer Claude Code v2.1.265+ (a variável
+        <code>CLAUDE_CODE_PLUGIN_DIRS</code>, v2.1.280+, carrega plugins quando não dá para passar a flag).
+        <code>claude plugin validate ./caminho</code> checa o manifesto e o frontmatter antes de rodar. Após alterar um
+        plugin já carregado, <code>/reload-plugins</code>
         recarrega skills, agentes, hooks e servidores MCP/LSP do plugin sem reiniciar a sessão.
         Alternativamente, <code>claude plugin init nome</code> cria um plugin em
         <code>~/.claude/skills/nome/</code> (com seu próprio <code>.claude-plugin/plugin.json</code> e um
-        <code>SKILL.md</code> inicial) que carrega automaticamente na sessão seguinte como
+        <code>SKILL.md</code> inicial; requer v2.1.157+) que carrega automaticamente na sessão seguinte como
         <code>nome@skills-dir</code>, sem passo de marketplace — em um <code>.claude/skills/</code> de projeto
         isso exige aceitar o diálogo de confiança do workspace primeiro. A Anthropic mantém dois marketplaces
         públicos: <code>claude-plugins-official</code> (curado pela Anthropic, registrado automaticamente na
@@ -1197,7 +1491,214 @@ MCP   = protocolo para expor tools, resources e prompts externos.</code></pre>
         distribuído via git, o SHA do commit é usado como versão e <em>todo commit</em> conta como uma nova
         versão.
       </div>
-      <div class="source-link">Fonte oficial: <a href="https://code.claude.com/docs/en/skills" target="_blank" rel="noopener">code.claude.com/docs/en/skills</a> · <a href="https://code.claude.com/docs/en/plugins" target="_blank" rel="noopener">code.claude.com/docs/en/plugins</a></div>
+      <div class="source-link">Fonte oficial: <a href="https://code.claude.com/docs/en/skills" target="_blank" rel="noopener">code.claude.com/docs/en/skills</a> · <a href="https://code.claude.com/docs/en/plugins" target="_blank" rel="noopener">code.claude.com/docs/en/plugins</a> · <a href="https://code.claude.com/docs/en/plugins/manifest-reference" target="_blank" rel="noopener">plugins/manifest-reference</a> · <a href="https://code.claude.com/docs/en/plugins/create" target="_blank" rel="noopener">plugins/create</a> (reconfirmado em 2026-09-30)</div>
+    </section>
+
+    <section id="s-agent-plugins">
+      <h2>6C. O padrão Agent Plugins (agent-plugins.org)<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
+      <p>
+        <strong>Agent Plugins</strong> é um padrão aberto e vendor-neutral separado da Agent Skills
+        Specification, publicado em <a href="https://agent-plugins.org/specification" target="_blank" rel="noopener">agent-plugins.org/specification</a>
+        como especificação <strong>1.0.0</strong> ("Published"). O repositório da spec
+        (<a href="https://github.com/agentplugins/agent-plugins-spec" target="_blank" rel="noopener">agentplugins/agent-plugins-spec</a>)
+        abriu o <em>working draft</em> <strong>1.1.0</strong> em 2026-08-12 (merge em 2026-08-19), sem release ou tag
+        publicado: o contrato vigente continua sendo o 1.0.0 descrito abaixo.
+        A própria página o define como <em>"a portable package format for reusable components that extend AI
+        agents"</em> — <em>"an open, vendor-neutral standard for packaging reusable components into portable
+        plugins"</em>. O Comitê Técnico inicial (Technical Steering Committee) reúne Core Maintainers de
+        <strong>Amazon, Cursor, Microsoft, OpenAI e Vercel</strong>, citação literal da home page. <span class="pill ok">Verificado 2026-09-30</span>
+      </p>
+      <div class="callout warn">
+        <strong>Não confunda com o plugin bundle do Claude Code (§6B).</strong> São dois formatos diferentes,
+        com manifestos e schemas distintos — o texto primário da especificação Agent Plugins e
+        da home de <code>agent-plugins.org</code> <strong>não menciona</strong> Claude Code nem Anthropic (verificado em 2026-09-30). Não
+        há hoje suporte nativo documentado do Claude Code a este padrão; trate qualquer afirmação de
+        compatibilidade entre os dois como não confirmada por fonte primária até a documentação oficial de um
+        dos dois lados declarar interoperabilidade.
+      </div>
+
+      <h3>Relação com a Agent Skills Specification</h3>
+      <p>
+        Agent Plugins <strong>não redefine</strong> o formato de skill: ele usa a Agent Skills Specification
+        (Partes 1–2 deste guia) sem alterações para o que vai dentro de <code>skills/</code>. O padrão de
+        plugin só normatiza <em>onde</em> as skills vivem dentro do pacote e como falhas de carregamento são
+        isoladas — não o conteúdo do <code>SKILL.md</code>. Descoberta é rasa: cada subdiretório imediato de
+        <code>skills/</code> que contenha um arquivo chamado exatamente <code>SKILL.md</code> conta como uma
+        skill; descendentes mais profundos não são buscados recursivamente.
+      </p>
+
+      <h3>Estrutura do pacote</h3>
+      <pre><code class="language-text">my-plugin/
+├── plugin.json              # obrigatório — manifesto do plugin
+├── skills/                  # opcional — cada subpasta com SKILL.md (Agent Skills spec)
+│   └── deploy/
+│       ├── SKILL.md
+│       ├── scripts/
+│       ├── references/
+│       └── assets/
+├── mcp.json                 # opcional — configuração de servidores MCP (schema próprio)
+├── LICENSE                  # opcional
+├── CHANGELOG.md             # opcional
+└── com.example.client/      # opcional — dados/arquivos específicos de UM cliente,
+                              # diretório nomeado pelo namespace reverse-domain</code></pre>
+      <p>Todo caminho que o cliente descobre, lê ou executa deve permanecer dentro da raiz do plugin resolvida
+      no filesystem (symlinks só são aceitos se resolverem para dentro dela) — a mesma disciplina de path
+      traversal que §6 exige para <code>load_skill_resource</code>.</p>
+
+      <h3>Manifesto <code>plugin.json</code></h3>
+      <p>Schema <strong>fechado</strong>: só os campos abaixo são permitidos no nível raiz. Um campo desconhecido
+      é reportado e ignorado (não invalida o plugin); qualquer outra violação de schema é fatal — o cliente
+      rejeita o plugin sem descobrir ou executar seus componentes.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Campo</th><th>Obrigatório</th><th>Regra</th></tr></thead>
+        <tbody>
+          <tr><td><code>$schema</code></td><td><span class="pill ok">Sim</span></td><td>Deve ser exatamente <code>"https://agent-plugins.org/schemas/1.0.0/plugin.schema.json"</code> — seleciona as regras de validação/interpretação.</td></tr>
+          <tr><td><code>name</code></td><td><span class="pill ok">Sim</span></td><td>1–64 caracteres; só minúsculas ASCII, dígitos, hífen e ponto; começa/termina alfanumérico; sem <code>--</code> nem <code>..</code> consecutivos. Válido: <code>my-plugin</code>, <code>acme.tools</code>. Inválido: <code>My-Plugin</code>, <code>-start</code>, <code>has--double</code>.</td></tr>
+          <tr><td><code>version</code></td><td><span class="pill na">Não</span></td><td>SemVer recomendado, não validado estritamente.</td></tr>
+          <tr><td><code>description</code>, <code>homepage</code>, <code>repository</code>, <code>license</code></td><td><span class="pill na">Não</span></td><td>Strings livres — o cliente não rejeita por não serem URL/SPDX válidos, só por não serem string.</td></tr>
+          <tr><td><code>author</code></td><td><span class="pill na">Não</span></td><td>Objeto com só <code>name</code>/<code>email</code>/<code>url</code> (todos opcionais).</td></tr>
+          <tr><td><code>keywords</code></td><td><span class="pill na">Não</span></td><td>Array de strings.</td></tr>
+          <tr><td><code>extensions</code></td><td><span class="pill na">Não</span></td><td>Objeto chaveado por namespace reverse-domain — dados de cliente (ver abaixo). Se não for objeto, o cliente reporta e ignora, sem invalidar o plugin.</td></tr>
+        </tbody>
+      </table></div>
+      <pre><code class="language-json">{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "deployment.tools",
+  "version": "1.2.0",
+  "description": "Deployment skills and MCP tools for the platform team."
+}</code></pre>
+
+      <h3><code>mcp.json</code> — configuração portátil de servidores MCP</h3>
+      <p>Arquivo próprio na raiz do plugin (não inline em <code>plugin.json</code>), schema fechado com só
+      <code>$schema</code> (deve ser <code>".../schemas/1.0.0/mcp.schema.json"</code>) e
+      <code>mcpServers</code> (objeto de configs; vazio é válido). Cada entrada declara <code>type</code> —
+      esse campo escolhe o transporte para a tentativa de conexão inicial, não é uma dica neutra de URL:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th><code>type</code></th><th>Campos</th><th>Nota</th></tr></thead>
+        <tbody>
+          <tr><td><code>stdio</code></td><td><code>command</code> (obrig., um único token executável — nome no PATH ou path <code>./</code>-relativo; sem expansão de placeholder), opcionais <code>args</code>, <code>env</code>, <code>cwd</code></td><td>Cliente injeta <code>PLUGIN_ROOT</code> (raiz resolvida) e <code>PLUGIN_DATA</code> (dir gravável, persiste entre updates) como env vars — nessa ordem, por último, não sobrescrevíveis pelo config. Placeholders <code>${PLUGIN_ROOT}</code>/<code>${PLUGIN_DATA}</code> só expandem em <code>args</code>, valores de <code>env</code> e <code>cwd</code>.</td></tr>
+          <tr><td><code>streamable-http</code></td><td><code>url</code> (obrig., HTTP/HTTPS absoluta, sem userinfo/fragment; HTTPS obrigatório fora de loopback), opcional <code>headers</code></td><td>Transporte remoto atual; sem expansão de placeholder em <code>url</code>/headers.</td></tr>
+          <tr><td><code>sse</code></td><td><code>url</code> (mesmas regras)</td><td>Transporte HTTP+SSE legado — suporte de cliente é opcional.</td></tr>
+        </tbody>
+      </table></div>
+      <pre><code class="language-json">{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "validator": {
+      "type": "stdio",
+      "command": "./bin/validator",
+      "args": ["--data", "${PLUGIN_DATA}/validator"],
+      "cwd": "${PLUGIN_ROOT}"
+    },
+    "deployment-api": {
+      "type": "streamable-http",
+      "url": "https://deploy.example.com/mcp",
+      "headers": { "X-Tenant": "public-tenant" }
+    }
+  }
+}</code></pre>
+      <div class="callout danger">
+        <strong>Sem campo portátil de credencial.</strong> Headers são dados literais do pacote — nunca inclua
+        segredo neles. A spec deliberadamente não define OAuth/credential-reference portátil; autenticação fica
+        a cargo do cliente. Headers configurados nunca devem seguir para uma origem diferente via redirect ou
+        eventos SSE legados sem autorização explícita do usuário.
+      </div>
+
+      <h3>Client extensions: dados/arquivos privados de um cliente</h3>
+      <p>
+        Um cliente específico pode anexar dados de manifesto e arquivos próprios sem entrar no núcleo portátil,
+        via namespace reverse-domain (convenção idêntica a pacotes Java ou bundle IDs do macOS) — sem registro
+        central:
+      </p>
+      <pre><code class="language-json">"extensions": {
+  "com.example.client": { "setting": true }
+}</code></pre>
+      <p>
+        Um diretório com o mesmo nome do namespace (<code>com.example.client/</code>) pode carregar arquivos
+        reais — hooks, configs, o que o cliente quiser. Quem é dono do namespace define conteúdo, validação e
+        comportamento de falha; outros clientes ignoram namespaces que não implementam, sem validar seu
+        conteúdo — extensões de outro cliente não são um componente portátil e podem ser descartadas sem afetar
+        conformidade.
+      </p>
+
+      <h3>Isolamento de falhas</h3>
+      <p>Princípio geral: uma falha fica contida no menor escopo afetado, exceto quando o próprio manifesto ou a
+      fronteira da raiz é violada:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Falha</th><th>Efeito</th></tr></thead>
+        <tbody>
+          <tr><td><code>plugin.json</code> ausente, schema inválido ou escapa da raiz</td><td>Plugin inteiro rejeitado.</td></tr>
+          <tr><td><code>skills/</code> ou <code>mcp.json</code> ausentes</td><td>Ausência válida — não é erro.</td></tr>
+          <tr><td><code>skills/</code> existe mas não é diretório; <code>mcp.json</code> raiz malformado</td><td>Só aquele tipo de componente é invalidado; os demais seguem carregando.</td></tr>
+          <tr><td>Uma <code>SKILL.md</code> individual inválida ou escapando da raiz</td><td>Só aquela skill é pulada; as demais carregam.</td></tr>
+          <tr><td>Uma entrada de <code>mcpServers</code> com <code>type</code> desconhecido/campo inválido</td><td>Só aquela entrada é pulada; servidores irmãos seguem.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Checklist mínimo de conformidade de cliente (1.0.0)</h3>
+      <ul>
+        <li>☐ Carrega o plugin de um diretório e aplica a fronteira de raiz resolvida no filesystem.</li>
+        <li>☐ Seleciona regras locais a partir de <code>$schema</code> — não busca schema remotamente durante o load.</li>
+        <li>☐ Valida o schema fechado de <code>plugin.json</code>; reporta e ignora campos desconhecidos e <code>extensions</code> não-objeto.</li>
+        <li>☐ Descobre cada tipo de componente só a partir do local fixo (<code>skills/</code>, <code>mcp.json</code>).</li>
+        <li>☐ Suporta ao menos um dos dois tipos de componente (skills ou MCP) — adoção incremental é permitida; suporte completo aos dois não é exigido.</li>
+        <li>☐ Se suportar MCP, suporta ao menos <code>stdio</code> ou <code>streamable-http</code> (os dois é recomendado).</li>
+        <li>☐ Ao lançar subprocessos, injeta <code>PLUGIN_ROOT</code>/<code>PLUGIN_DATA</code> e expande placeholders só em <code>args</code>/<code>env</code>/<code>cwd</code>.</li>
+        <li>☐ Isola falhas por componente — uma skill ou entrada MCP ruim não derruba o resto.</li>
+        <li>☐ Exige que <code>$schema</code> de <code>plugin.json</code> e <code>mcp.json</code> casem em versão.</li>
+      </ul>
+      <div class="callout">
+        <strong>Clientes compatíveis</strong> (página <a href="https://agent-plugins.org/compatible-clients" target="_blank" rel="noopener">agent-plugins.org/compatible-clients</a>,
+        renderizada em navegador em 2026-09-23; componente dinâmico, não relido em 2026-09-30). A página lista os componentes que cada cliente documenta carregar;
+        todos os dez carregam <strong>Agent Skills</strong> e <strong>MCP</strong>:
+        <ul>
+          <li>MCP via <code>stdio</code> e Streamable HTTP: NanoClaw, ChatGPT &amp; Codex, OpenHands, Hermes Agent.</li>
+          <li>MCP via <code>stdio</code>, Streamable HTTP e SSE legado: Cursor, OpenClaw, Grok Bot, Kiro, VS Code, GitHub Copilot.</li>
+        </ul>
+        Claude Code não aparece nessa lista (ele carrega o formato próprio <code>.claude-plugin/</code> — ver §6B).
+        A lista é mantida pelo site e muda com o tempo; confira antes de assumir suporte.
+      </div>
+      <div class="source-link">Fonte oficial: <a href="https://agent-plugins.org/specification" target="_blank" rel="noopener">agent-plugins.org/specification</a> · <a href="https://agent-plugins.org/plugin-authors/manifest" target="_blank" rel="noopener">plugin-authors/manifest</a> · <a href="https://agent-plugins.org/plugin-authors/skills" target="_blank" rel="noopener">plugin-authors/skills</a> · <a href="https://agent-plugins.org/plugin-authors/mcp-servers" target="_blank" rel="noopener">plugin-authors/mcp-servers</a> · <a href="https://agent-plugins.org/plugin-authors/client-extensions" target="_blank" rel="noopener">plugin-authors/client-extensions</a> · <a href="https://agent-plugins.org/plugin-authors/build-an-agent-plugin" target="_blank" rel="noopener">plugin-authors/build-an-agent-plugin</a> · <a href="https://agent-plugins.org/client-implementers/implement-an-agent-plugins-client" target="_blank" rel="noopener">client-implementers/implement-an-agent-plugins-client</a> · <a href="https://agent-plugins.org/client-implementers/loading-and-discovery" target="_blank" rel="noopener">loading-and-discovery</a> · <a href="https://agent-plugins.org/client-implementers/mcp-runtime" target="_blank" rel="noopener">mcp-runtime</a> · <a href="https://agent-plugins.org/client-implementers/conformance" target="_blank" rel="noopener">conformance</a> · <a href="https://agent-plugins.org/schemas" target="_blank" rel="noopener">schemas</a> — especificação relida em 2026-09-30; guias <code>plugin-authors/*</code> e <code>client-implementers/*</code> lidos em 2026-09-23.</div>
+    </section>
+
+    <section id="s-skills-mcp">
+      <h2>6D. Skills sobre MCP (extensão oficial)<span class="rev-flag novo">Novo · 2026-09-30</span></h2>
+      <p>
+        <strong>Skills over MCP</strong> é uma extensão oficial do protocolo, <span class="pill ok">Final</span>
+        (<a href="https://modelcontextprotocol.io/seps/2640-skills-extension" target="_blank" rel="noopener">SEP-2640</a>),
+        identificada por <code>io.modelcontextprotocol/skills</code> e mantida no repositório
+        <a href="https://github.com/modelcontextprotocol/ext-skills" target="_blank" rel="noopener">modelcontextprotocol/ext-skills</a>.
+        Ela <strong>não redefine</strong> o formato: a skill continua sendo um diretório com <code>SKILL.md</code> da
+        Agent Skills Specification; a extensão só define <em>descoberta e leitura</em> por MCP. O suporte em SDKs e
+        hosts ainda está sendo implementado: na matriz de clientes (2026-09-30) é parcial em ChatGPT, fast-agent e
+        Inspector e completo em <code>mcpc</code> — confira a
+        <a href="https://modelcontextprotocol.io/extensions/client-matrix" target="_blank" rel="noopener">matriz</a> antes de assumir.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Aspecto</th><th>Contrato (spec MCP 2026-07-28 ou posterior)</th></tr></thead>
+        <tbody>
+          <tr><td>Declaração</td><td>O servidor <strong>MUST</strong> declarar a capability <code>resources</code> e <code>extensions["io.modelcontextprotocol/skills"]</code> em <code>server/discover</code>; <code>directoryRead: true</code> (opcional, padrão <code>false</code>) habilita <code>resources/directory/read</code>.</td></tr>
+          <tr><td>Métodos</td><td><code>skills/list</code> (paginado, com <code>ttlMs</code>/<code>cacheScope</code>) e <code>skills/get</code> (por URI). O conteúdo trafega por <code>resources/read</code>.</td></tr>
+          <tr><td>Entrada de skill</td><td><code>uri</code> do <code>SKILL.md</code> (recomendado <code>skill://&lt;nome&gt;/SKILL.md</code>), <code>frontmatter</code> inalterado e <code>resources</code>: manifesto completo com URI, digest <code>sha256:</code> e tamanho em bytes de cada arquivo (ou <code>"dynamic"</code> para conteúdo gerado).</td></tr>
+          <tr><td>Limites</td><td>Servidores <strong>SHOULD NOT</strong> passar de <strong>512 arquivos ou 16 MiB por skill</strong>; hosts <strong>MUST</strong> aceitar skills até esses limites.</td></tr>
+          <tr><td>Identidade</td><td>Servidor de origem + URI. Nomes são rótulos, não únicos: o host não deixa uma skill homônima substituir outra em silêncio e não identifica skill só pelo esquema <code>skill://</code>.</td></tr>
+        </tbody>
+      </table></div>
+      <h3>Obrigações do host (resumo)</h3>
+      <ul>
+        <li>Ler <code>SKILL.md</code> por <code>resources/read</code> <strong>não ativa</strong> a skill: o host passa a leitura pelo seu caminho de carregamento, que verifica o conteúdo e aplica a aprovação do usuário.</li>
+        <li>Restringir leituras de arquivos aos URIs do manifesto retido; verificar tamanho e SHA-256 antes de usar; comparar o frontmatter lido com o da entrada; nunca buscar arquivos antes da necessidade.</li>
+        <li>A aprovação persistida vincula-se ao conjunto completo de URIs e digests: arquivo alterado, adicionado ou removido revoga a aprovação.</li>
+        <li>Tratar o conteúdo como <strong>não confiável</strong>: execução de código no host e concessões como <code>allowed-tools</code> exigem aprovação explícita por skill; leituras cross-servidor exigem aprovação por chamada; skill aninhada pede novo consentimento.</li>
+        <li>Erros: URI desconhecido ou inválido = <code>-32602</code>; falha interna = <code>-32603</code>; divergência de digest/tamanho/frontmatter é condição do host (rejeita e atualiza a entrada).</li>
+      </ul>
+      <div class="callout warn">
+        <strong>Digest prova consistência, não confiança.</strong> O hash casa o conteúdo com o manifesto do servidor; não
+        diz que o servidor é confiável. Aplique os trust tiers da <a href="#seguranca-governanca">§9</a> à origem MCP como a
+        qualquer outra fonte de skill. Não confunda a extensão com o <code>mcp.json</code> do Agent Plugins (§6C), que
+        só configura <em>servidores</em> MCP dentro de um pacote.
+      </div>
+      <div class="source-link">Fonte oficial: <a href="https://modelcontextprotocol.io/extensions/skills/overview" target="_blank" rel="noopener">modelcontextprotocol.io/extensions/skills/overview</a> · <a href="https://modelcontextprotocol.io/extensions/overview" target="_blank" rel="noopener">extensions/overview</a> · <a href="https://github.com/modelcontextprotocol/ext-skills" target="_blank" rel="noopener">ext-skills</a> — lidos em 2026-09-30. Protocolo MCP: <a href="guia_protocolo_mcp.html#extensoes">Protocolo MCP §13</a>.</div>
     </section>
 
     <section class="chapter" id="parte-implementacao">
@@ -1221,11 +1722,44 @@ MCP   = protocolo para expor tools, resources e prompts externos.</code></pre>
       <h3>Discovery</h3>
       <ul>
         <li>Escaneie diretórios configurados: usuário, organização, projeto, plugins, registry remoto ou assets embutidos.</li>
-        <li>Considere <code>.agents/skills/</code> (ou diretório equivalente) para interoperabilidade.</li>
-        <li>Ignore diretórios volumosos/irrelevantes: <code>.git</code>, <code>node_modules</code>, build artifacts, caches.</li>
-        <li>Aplique profundidade máxima e limites de tamanho.</li>
-        <li>Resolva colisões por escopo/trust/precedência — nunca por ordem aleatória.</li>
+        <li>Ignore diretórios volumosos/irrelevantes: <code>.git</code>, <code>node_modules</code>, build artifacts, caches; opcionalmente respeite <code>.gitignore</code>.</li>
+        <li>Aplique profundidade máxima e limites de tamanho — a referência oficial recomenda <strong>4–6 níveis</strong> e um teto de <strong>~2000 diretórios</strong> escaneados.</li>
+        <li>Resolva colisões por escopo/trust/precedência — nunca por ordem aleatória. Registre um warning quando uma skill for sombreada por outra.</li>
       </ul>
+      <p>Dentro de cada escopo, escaneie tanto um diretório <strong>específico do seu cliente</strong> quanto a
+      convenção <strong><code>.agents/skills/</code></strong> — ela virou a convenção adotada entre clientes
+      para skills portáveis entre implementações compatíveis, mesmo sem ser exigida pela spec:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Escopo</th><th>Path</th><th>Propósito</th></tr></thead>
+        <tbody>
+          <tr><td>Projeto</td><td><code>&lt;projeto&gt;/.&lt;seu-cliente&gt;/skills/</code></td><td>Local nativo do seu cliente.</td></tr>
+          <tr><td>Projeto</td><td><code>&lt;projeto&gt;/.agents/skills/</code></td><td>Interoperabilidade entre clientes.</td></tr>
+          <tr><td>Usuário</td><td><code>~/.&lt;seu-cliente&gt;/skills/</code></td><td>Local nativo do seu cliente.</td></tr>
+          <tr><td>Usuário</td><td><code>~/.agents/skills/</code></td><td>Interoperabilidade entre clientes.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout">
+        <strong>Precedência agnóstica: projeto sobrepõe usuário.</strong> Convenção universal entre as
+        implementações existentes citadas por <code>agentskills.io</code>. <strong>Não confunda</strong> com a
+        precedência <em>específica</em> do Claude Code documentada em <a href="#s-claude-code-plugins">§6B</a>
+        (enterprise &gt; personal &gt; project) — lá, a camada adicional de enterprise/managed settings inverte
+        a ordem para permitir política administrada; são modelos de escopo diferentes, não uma contradição
+        entre este guia e aquela seção.
+      </div>
+      <div class="callout warn">
+        <strong>Trust em skills de projeto.</strong> Skills de nível projeto vêm do repositório sendo
+        trabalhado, que pode ser não confiável (ex.: um projeto open-source recém-clonado). Considere condicionar
+        o carregamento de skills de projeto a um trust check — só carregue se o usuário marcou a pasta como
+        confiável — para impedir que um repositório não confiável injete instruções silenciosamente no contexto
+        do agente (paralelo ao diálogo de confiança de workspace do Claude Code, §6B).
+      </div>
+      <div class="callout">
+        <strong>Agentes cloud/sandbox não têm filesystem local do usuário.</strong> Skills de <strong>projeto</strong>
+        viajam com o código clonado no sandbox — caso mais simples. Skills de <strong>usuário/organização</strong>
+        precisam de provisionamento externo (clonar um repo de configuração, aceitar URLs/pacotes de skill nas
+        settings, upload via UI). Skills <strong>built-in</strong> podem ir empacotadas como assets estáticos no
+        artefato de deploy do agente, disponíveis em toda sessão sem fetch externo.
+      </div>
 
       <h3>Parsing e validação</h3>
       <pre><code class="language-python">def parse_skill_dir(path):
@@ -1244,6 +1778,29 @@ MCP   = protocolo para expor tools, resources e prompts externos.</code></pre>
         "hash": sha256_package(path),
         "trust": classify_trust(path),
     }</code></pre>
+      <div class="callout">
+        <strong>YAML malformado entre clientes.</strong> Skills escritas para outros clientes podem conter YAML
+        tecnicamente inválido que o parser deles aceita por acidente — o caso mais comum é valor sem aspas
+        contendo dois-pontos (<code>description: Use this skill when: the user asks...</code>, onde o segundo
+        <code>:</code> quebra o parsing). Considere um fallback que tenta envolver o valor em aspas ou convertê-lo
+        para um block scalar YAML antes de desistir — melhora compatibilidade cross-client a baixo custo.
+      </div>
+      <h4>Validação leniente na descoberta (deliberadamente mais frouxa que a spec)</h4>
+      <p>A spec define regras estritas para <code>name</code> (bater com o diretório pai, charset, tamanho
+      máximo). Para compatibilidade com skills escritas para outros clientes, relaxe deliberadamente na
+      descoberta — avise mas ainda carregue nos casos "cosméticos"; pule só nos casos que inviabilizam o
+      catálogo:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Problema</th><th>Ação</th></tr></thead>
+        <tbody>
+          <tr><td><code>name</code> não bate com o diretório pai</td><td>Avisar, carregar mesmo assim.</td></tr>
+          <tr><td><code>name</code> passa de 64 caracteres</td><td>Avisar, carregar mesmo assim.</td></tr>
+          <tr><td><code>description</code> ausente ou vazia</td><td><strong>Pular</strong> a skill (description é essencial para disclosure), registrar erro.</td></tr>
+          <tr><td>YAML completamente não-parseável</td><td><strong>Pular</strong> a skill, registrar erro.</td></tr>
+        </tbody>
+      </table></div>
+      <p>Registre diagnósticos para exibir num comando de debug, log ou UI — mas não bloqueie o carregamento por
+      questões cosméticas.</p>
 
       <h3>Arquitetura recomendada para agente generalista</h3>
       <pre><code class="language-text">system/developer prompt:
@@ -1298,6 +1855,28 @@ separate, and apply them in task order.</code></pre>
           <tr><td>Especialista com skills pré-carregadas</td><td>Baixa latência e foco.</td><td>Vira prompt monolítico se usado para agentes amplos.</td><td>Agente task-scoped com 1–3 skills essenciais.</td></tr>
         </tbody>
       </table></div>
+      <p>
+        Além da ativação guiada pelo modelo, a maioria dos harnesses também oferece <strong>ativação explícita
+        do usuário</strong> — um comando slash ou sintaxe de menção (<code>/nome-da-skill</code>,
+        <code>$nome-da-skill</code>) que o harness intercepta diretamente: a sintaxe exata é livre, a ideia é
+        que o harness faz o lookup e a injeção sem o modelo precisar agir. Um autocomplete listando skills
+        disponíveis ajuda a descoberta. (O <code>/nome</code> do Claude Code em §6B é uma instância concreta
+        desse padrão geral, com semântica adicional específica do produto.)
+      </p>
+      <p>
+        Ao ativar, decida se o modelo recebe o <strong>arquivo completo</strong> (com frontmatter YAML — saída
+        natural de file-read activation) ou só o <strong>corpo</strong> (frontmatter removido pelo harness após
+        extrair <code>name</code>/<code>description</code> na descoberta — abordagem mais comum entre tools
+        dedicadas). Ambas funcionam; escolha e documente uma.
+      </p>
+      <div class="callout tip">
+        <strong>Filtragem no catálogo:</strong> uma skill desabilitada pelo usuário, bloqueada por permissão ou
+        com opt-out de ativação por modelo (equivalente a <code>disable-model-invocation</code>) deve
+        <strong>sumir inteiramente</strong> do catálogo L1 — não listar e bloquear na ativação. Isso evita que o
+        modelo gaste turnos tentando carregar uma skill que não pode usar. Se nenhuma skill estiver disponível,
+        omita o catálogo e as instruções comportamentais por completo — não registre um bloco
+        <code>&lt;available_skills/&gt;</code> vazio nem uma tool de ativação sem opções.
+      </div>
 
       <h3>Agents-as-tools</h3>
       <p>Use agentes especialistas como tools quando o agente principal deve continuar dono da resposta final,
@@ -1588,7 +2167,7 @@ they are volatile execution payloads with TTL and artifact pointers.</code></pre
         prompt-injection.
       </div>
 
-      <h3>Eviction sem perder autoridade</h3>
+      <h3>Eviction sem perder autoridade<span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
       <p>Quando uma nova skill precisa entrar e o budget não comporta, remova <strong>skills inteiras</strong>.
       Não faça LRU puro — calcule a menor perda total de valor de retenção:</p>
       <pre><code class="language-text">needed = max(0, current_skill_tokens + token_cost(new_skill) - S_target)
@@ -1607,6 +2186,29 @@ retention_value considers:
   - pinning/min residency;
   - expected reactivation cost;
   - trust and user scope.</code></pre>
+      <div class="callout info">
+        <strong>O custo de cache do swap depende do provider.</strong>
+        Este guia é agnóstico de provider, mas o termo <code>expected_reactivation_cost</code> acima é o ponto onde
+        a plataforma entra na conta. Na Anthropic (verificado em 2026-09-30):
+        <ul style="margin:8px 0 0">
+          <li><strong>Beta <code>mid-conversation-tool-changes-2026-07-01</code>:</strong> permite alterar o
+          array <code>tools</code> <em>entre turnos da mesma conversa</em> <strong>preservando o prompt
+          cache</strong>. Como o binding L5 (tools/MCP) costuma acompanhar a ativação de skill, sem isso trocar a skill
+          ativa invalida o prefixo inteiro e empurra <code>min_residency_turns</code> e <code>swap_margin</code> para
+          cima. Modelos: Fable 5.1, Mythos 5.1, Fable 5, Mythos 5, Opus 5.5, Opus 5, Opus 4.8 e <strong>Sonnet 5.5</strong>;
+          <strong>não</strong> o Sonnet 5 (lá, use o campo <code>system</code> de nível superior).
+          <span class="pill beta">Beta</span> O header <code>inline-tools-2026-09-15</code> (só Claude API) deixa um
+          <code>tool_addition</code> carregar a definição completa da tool, nos mesmos modelos.</li>
+          <li><strong>Mínimo cacheável de 512 tokens</strong> em Opus 5.5, Sonnet 5.5, Fable 5.1 e Opus 5
+          (contra 1.024 em Sonnet 5 e Opus 4.8, e 4.096 em Haiku 4.5): corpos de <code>SKILL.md</code> pequenos — os
+          que o <code>skill_body_soft_cap</code> desta seção incentiva — cabem num breakpoint próprio.</li>
+        </ul>
+        <strong>O que isso não muda:</strong> a regra binária do topo desta seção. Cache mais barato reduz o
+        custo de <em>recarregar</em> uma skill, não autoriza manter um L2 resumido se passando por ativo.
+        Como a cobertura varia por modelo, calibre <code>swap_margin</code> por modelo — um roteador que cai
+        num modelo sem o beta continua pagando a invalidação cheia.
+        <div class="source-link">Fonte: <a href="https://platform.claude.com/docs/en/build-with-claude/mid-conversation-system-messages" target="_blank" rel="noopener">build-with-claude/mid-conversation-system-messages</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching" target="_blank" rel="noopener">build-with-claude/prompt-caching</a> — lidas em 2026-09-30</div>
+      </div>
 
       <h3>Single-session e limite de compressão</h3>
       <p>Em agente de sessão única ou episódio curto, é aceitável descartar o payload L2 para liberar espaço —
@@ -1728,6 +2330,29 @@ retention_value considers:
         </tbody>
       </table></div>
 
+      <h3>OWASP Agentic Skills Top 10 (AST01–AST10)<span class="rev-flag novo">Novo · 2026-09-30</span></h3>
+      <p>O projeto incubator da OWASP publicou a lista <strong>Agentic Skills Top 10</strong> (versão 1.0, edição 2026),
+      específica para o risco de skills. Use-a como checklist de ameaças sobre as práticas desta seção:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>ID</th><th>Risco</th><th>Onde este guia trata</th></tr></thead>
+        <tbody>
+          <tr><td>AST01</td><td>Malicious Skills</td><td>Checklist de auditoria de skill; trust tiers</td></tr>
+          <tr><td>AST02</td><td>Supply Chain Compromise</td><td>Trust tiers; hash/versão no registry; manifesto com digests (§6D)</td></tr>
+          <tr><td>AST03</td><td>Over-Privileged Skills</td><td>Permissões de tools e MCP; <code>allowed-tools</code> não é fronteira</td></tr>
+          <tr><td>AST04</td><td>Insecure Metadata</td><td>Parsing e validação de frontmatter (§7)</td></tr>
+          <tr><td>AST05</td><td>Untrusted External Instructions</td><td>Prompt injection e confused deputy</td></tr>
+          <tr><td>AST06</td><td>Weak Isolation</td><td>Política para scripts (sandbox)</td></tr>
+          <tr><td>AST07</td><td>Update Drift</td><td>Hash por versão; stale ledger; aprovação presa ao conjunto de digests (§6D)</td></tr>
+          <tr><td>AST08</td><td>Poor Scanning</td><td>Checklist de auditoria; CI/CD para skills (§10)</td></tr>
+          <tr><td>AST09</td><td>No Governance</td><td>Hierarquia de autoridade; logs mínimos de segurança</td></tr>
+          <tr><td>AST10</td><td>Cross-Platform Reuse</td><td>Campo <code>compatibility</code>; fronteira entre spec portátil e extensões de produto</td></tr>
+        </tbody>
+      </table></div>
+      <p class="small">A coluna "Onde este guia trata" é o mapeamento deste guia, não parte da lista OWASP. Para o restante
+      do threat model (LLM Top 10 2026, Agentic Top 10), ver
+      <a href="guia_operacao_seguranca_evals.html">guia_operacao_seguranca_evals.html</a>.</p>
+      <div class="source-link">Fonte oficial: <a href="https://owasp.github.io/www-project-agentic-skills-top-10/" target="_blank" rel="noopener">owasp.github.io/www-project-agentic-skills-top-10</a> · <a href="https://owasp.org/projects/agentic-skills-top-10" target="_blank" rel="noopener">owasp.org/projects/agentic-skills-top-10</a> — lidos em 2026-09-30.</div>
+
       <h3>Permissões de tools e MCP</h3>
       <ul>
         <li>Não exponha todas as tools globais; exponha apenas por active skill, tarefa, escopo, risco e usuário.</li>
@@ -1735,6 +2360,10 @@ retention_value considers:
         <li>Write tools exigem confirmação, salvo automação previamente aprovada.</li>
         <li>Destructive tools exigem confirmação forte, plano e rollback/dry-run quando possível.</li>
         <li>Use nomes fully qualified para tools MCP quando houver múltiplos servidores.</li>
+        <li><strong>Allowlist o diretório da skill ativa</strong> para leitura: sem isso, cada referência a um
+        script/reference/asset embutido dispara um diálogo de confirmação, quebrando o fluxo de uma skill que
+        empacota recursos além do <code>SKILL.md</code>. O allowlist cobre apenas leitura dentro da raiz da
+        skill — escrita e ações fora dela continuam exigindo a política normal.</li>
       </ul>
 
       <h3>Logs mínimos de segurança</h3>
@@ -1793,6 +2422,61 @@ retention_value considers:
     }
   ]
 }</code></pre>
+
+      <h3>Workflow oficial: baseline with/without-skill, assertions e iteração</h3>
+      <p>Processo publicado em <code>agentskills.io/skill-creation/evaluating-skills</code>, complementar ao
+      <em>trigger eval</em> de §5: aqui o alvo é a <strong>qualidade do output</strong>, não a ativação. Um caso
+      de teste tem três partes — <code>prompt</code>, <code>expected_output</code> (descrição legível de
+      sucesso) e <code>files</code> opcionais — armazenadas em <code>evals/evals.json</code> dentro do
+      diretório da skill. Comece com 2–3 casos; não invista mais antes de ver o primeiro round de resultados.</p>
+      <h4>Rodando: sempre em par, com e sem a skill</h4>
+      <p>Cada caso roda <strong>duas vezes</strong> — com a skill e sem ela (baseline), ou com a versão anterior
+      ao editar uma skill existente — cada run começando de um contexto limpo (subagente/sessão nova, sem
+      estado do processo de desenvolvimento). Organize os resultados por iteração:</p>
+      <pre><code class="language-text">csv-analyzer-workspace/
+└── iteration-1/
+    ├── eval-caso-1/
+    │   ├── with_skill/{outputs/, timing.json, grading.json}
+    │   └── without_skill/{outputs/, timing.json, grading.json}
+    └── benchmark.json          # estatísticas agregadas da iteração</code></pre>
+      <h4>Assertions: boas vs. fracas</h4>
+      <p>Adicione assertions só depois de ver o primeiro output — raramente se sabe o que é "bom" antes disso.
+      Boas assertions são verificáveis objetivamente: <em>"o output é JSON válido"</em>,
+      <em>"o gráfico de barras tem eixos rotulados"</em>, <em>"o relatório inclui ao menos 3 recomendações"</em>.
+      Assertions fracas são vagas (<em>"o output é bom"</em>) ou frágeis demais (<em>"usa exatamente a frase
+      'Total Revenue: $X'"</em> — uma resposta correta com outra redação falharia). Qualidades subjetivas
+      (estilo, design visual) ficam melhor para revisão humana, não assertion.</p>
+      <div class="callout warn">
+        <strong>Grading exige evidência concreta, não benefício da dúvida.</strong> Registre PASS/FAIL por
+        assertion citando ou referenciando o output real (<code>evidence</code>), nunca uma opinião solta. Para
+        checks mecânicos (JSON válido, contagem de linhas, arquivo existe com as dimensões esperadas), prefira
+        um script verificador a julgamento de LLM — mais confiável e reutilizável entre iterações.
+      </div>
+      <h4>Agregação e comparação</h4>
+      <p>Consolide <code>pass_rate</code>, tempo e tokens de cada configuração (<code>with_skill</code> vs.
+      <code>without_skill</code>) em <code>benchmark.json</code>, com o <code>delta</code> entre elas — isso diz
+      o que a skill <em>custa</em> (mais tempo, mais tokens) e o que ela <em>compra</em> (pass rate maior). Uma
+      skill que soma 13s mas melhora 50 pontos de pass rate provavelmente vale a pena; uma que dobra tokens por
+      2 pontos de ganho, talvez não. Para comparar duas versões de uma skill, use <strong>comparação cega</strong>:
+      apresente ambos os outputs a um LLM juiz sem revelar qual é qual — ele pontua qualidades holísticas
+      (organização, formatação, usabilidade) livre do viés de "qual deveria ser melhor".</p>
+      <h4>Analisando padrões e iterando</h4>
+      <ul>
+        <li>Remova/substitua assertions que sempre passam em ambas as configurações — não dizem nada, o modelo
+        já resolve sem a skill.</li>
+        <li>Investigue assertions que sempre falham em ambas — a assertion pode estar quebrada, o caso pode
+        estar difícil demais, ou está checando a coisa errada.</li>
+        <li>Estude assertions que passam com a skill e falham sem ela — é aí que a skill agrega valor de fato;
+        entenda qual instrução ou script fez a diferença.</li>
+        <li>Alta variação (<code>stddev</code>) entre runs do mesmo caso sinaliza instrução ambígua — adicione
+        exemplos ou seja mais específico.</li>
+      </ul>
+      <p>O loop: dê os sinais (assertions falhas, feedback humano, transcripts de execução) mais o
+      <code>SKILL.md</code> atual a um LLM e peça mudanças que generalizem — não patches estreitos para os
+      casos de teste específicos; mantenha a skill enxuta (menos instruções, melhores, tendem a superar regras
+      exaustivas); explique o <em>porquê</em> de cada correção. Reaplique, rode de novo numa
+      <code>iteration-N+1</code>, regrade, revise com um humano, repita até o feedback ficar consistentemente
+      vazio ou o ganho parar.</p>
 
       <h3>Métricas recomendadas</h3>
       <pre><code class="language-text">skill_activation_precision        avg_L1_catalog_tokens
@@ -2051,8 +2735,26 @@ SKILL.md states when each one is needed.</code></pre>
       </ul>
     </section>
 
+    <section class="ref" id="legado">
+      <h2>Legado e migração<span class="rev-flag novo">Novo · 2026-09-30</span></h2>
+      <p>Superfícies antigas que ainda aparecem em exemplos, SDKs e documentação de terceiros. O corpo do guia usa
+      só a coluna "Atual".</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Antigo</th><th>Atual</th><th>Status / migração</th></tr></thead>
+        <tbody>
+          <tr><td>Header <code>anthropic-beta: skills-2025-10-02</code> e <code>files-api-2025-04-14</code>; <code>client.beta.skills</code> / <code>client.beta.files</code></td><td>Skills API e Files API GA, sem header</td><td>GA em 2026-08-19. Python 1.2.0 / TypeScript 0.122.0 (2026-08-27) em diante já não enviam os headers: remova-os. O header só importava para endereçar versões por epoch timestamp (<code>DELETE /v1/skills/{id}/versions/{version}</code>). <code>BetaSkill</code> virou <code>BetaContainerSkill</code> e <code>client.beta.skills.delete()</code> apaga todas as versões. Fonte: <a href="https://platform.claude.com/docs/en/release-notes/overview" target="_blank" rel="noopener">release notes</a>.</td></tr>
+          <tr><td>Campos <code>display_title</code> e <code>latest_version</code> do objeto Skill; versão custom como timestamp</td><td><code>display_name</code>, <code>latest_version_id</code>, IDs opacos <code>skver_…</code>; <code>source</code> como objeto</td><td>Renomeados; ajuste parsers de resposta.</td></tr>
+          <tr><td><code>.claude/commands/nome.md</code>; <code>commands/</code> dentro de plugin</td><td><code>.claude/skills/nome/SKILL.md</code>; <code>skills/</code></td><td>Comandos foram unificados a skills: os arquivos antigos seguem funcionando e, em colisão de nome, a skill vence. Plugins novos usam <code>skills/</code>. Fonte: <a href="https://code.claude.com/docs/en/skills" target="_blank" rel="noopener">code.claude.com/docs/en/skills</a>.</td></tr>
+          <tr><td>Skills sobre MCP como proposta/rascunho ou só "recurso" MCP</td><td>Extensão <code>io.modelcontextprotocol/skills</code> (SEP-2640 Final)</td><td>Ver <a href="#s-skills-mcp">§6D</a>.</td></tr>
+          <tr><td>Transporte <code>sse</code> no <code>mcp.json</code> do Agent Plugins; HTTP+SSE do MCP</td><td><code>streamable-http</code></td><td>HTTP+SSE deprecado no MCP desde 2025-03-26; no Agent Plugins 1.0.0 o suporte a <code>sse</code> é opcional para o cliente.</td></tr>
+          <tr><td>Spec MCP 2025-11-25 (e anteriores)</td><td>Spec MCP 2026-07-28</td><td>Revisões anteriores são Legacy/Final. Mudanças que afetam quem serve skills: sem <code>initialize</code>/<code>Mcp-Session-Id</code>, <code>server/discover</code> obrigatório, metadados por request em <code>_meta</code>. Fonte: <a href="https://modelcontextprotocol.io/specification/2026-07-28/changelog" target="_blank" rel="noopener">changelog 2026-07-28</a>.</td></tr>
+          <tr><td><code>developers.openai.com/codex/skills</code></td><td><code>learn.chatgpt.com/docs/build-skills</code></td><td>URL antiga redireciona.</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
     <section class="ref" id="fontes-oficiais">
-      <h2>Fontes &amp; verificação</h2>
+      <h2>Fontes &amp; verificação<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <p>Todo fato relevante deste guia deve ser conferido contra a documentação oficial. As fontes abaixo
       fundamentam as recomendações; o guia privilegia a especificação aberta Agent Skills, documentação oficial
       de plataformas e referências reconhecidas de segurança/governança.</p>
@@ -2060,19 +2762,32 @@ SKILL.md states when each one is needed.</code></pre>
         <thead><tr><th>Fonte</th><th>URL</th><th>Uso</th></tr></thead>
         <tbody>
           <tr><td>Agent Skills · Overview</td><td><a href="https://agentskills.io/home" target="_blank" rel="noopener">agentskills.io/home</a></td><td>Definição de skills, estrutura geral e progressive disclosure.</td></tr>
-          <tr><td>Agent Skills · Specification</td><td><a href="https://agentskills.io/specification" target="_blank" rel="noopener">agentskills.io/specification</a></td><td>Contrato de diretórios, <code>SKILL.md</code>, campos de frontmatter, references/scripts/assets e validação. <span class="pill ok">Versão verificada</span> (spec sem mudanças; último commit 20/05/2026, rechecado em 2026-06-10).</td></tr>
+          <tr><td>Agent Skills · Specification</td><td><a href="https://agentskills.io/specification" target="_blank" rel="noopener">agentskills.io/specification</a></td><td>Contrato de diretórios, <code>SKILL.md</code>, campos de frontmatter, references/scripts/assets e validação. <span class="pill info">Sem versão formal publicada</span> — página canônica lida em <strong>2026-09-30</strong>; qualquer versão em <code>metadata</code> é definida pelo publisher.</td></tr>
           <tr><td>Agent Skills · Adding skills support</td><td><a href="https://agentskills.io/client-implementation/adding-skills-support" target="_blank" rel="noopener">agentskills.io/client-implementation/adding-skills-support</a></td><td>Discovery, parsing, catálogo, ativação, gestão de contexto, dedup, proteção contra compaction.</td></tr>
           <tr><td>Agent Skills · Best practices</td><td><a href="https://agentskills.io/skill-creation/best-practices" target="_blank" rel="noopener">agentskills.io/skill-creation/best-practices</a></td><td>Boas práticas de autoria, progressive disclosure, instruções úteis e controle de contexto.</td></tr>
           <tr><td>Agent Skills · Optimizing descriptions</td><td><a href="https://agentskills.io/skill-creation/optimizing-descriptions" target="_blank" rel="noopener">agentskills.io/skill-creation/optimizing-descriptions</a></td><td>Como escrever e testar descriptions para ativação correta.</td></tr>
           <tr><td>Agent Skills · Evaluating skills</td><td><a href="https://agentskills.io/skill-creation/evaluating-skills" target="_blank" rel="noopener">agentskills.io/skill-creation/evaluating-skills</a></td><td>Eval-driven iteration, casos de teste, assertions, grading, custo/qualidade.</td></tr>
-          <tr><td>Agent Skills · Using scripts</td><td><a href="https://agentskills.io/skill-creation/using-scripts" target="_blank" rel="noopener">agentskills.io/skill-creation/using-scripts</a></td><td>Scripts, interfaces não interativas, saída estruturada.</td></tr>
-          <tr><td>OpenAI Codex · Skills</td><td><a href="https://developers.openai.com/codex/skills" target="_blank" rel="noopener">developers.openai.com/codex/skills</a></td><td>Skills no Codex, progressive disclosure, budget da lista inicial, ativação implícita/explícita.</td></tr>
+          <tr><td>Agent Skills · Using scripts</td><td><a href="https://agentskills.io/skill-creation/using-scripts" target="_blank" rel="noopener">agentskills.io/skill-creation/using-scripts</a></td><td>Scripts, interfaces não interativas, saída estruturada, comandos avulsos pinados (uvx/npx/deno/go run) e dependências inline (PEP 723 etc.).</td></tr>
+          <tr><td>Agent Skills · Quickstart</td><td><a href="https://agentskills.io/skill-creation/quickstart" target="_blank" rel="noopener">agentskills.io/skill-creation/quickstart</a></td><td>Tutorial de primeira skill em VS Code; confirma discovery/activation/execution como os três passos do padrão.</td></tr>
+          <tr><td>Agent Skills · Client Showcase</td><td><a href="https://agentskills.io/clients" target="_blank" rel="noopener">agentskills.io/clients</a></td><td>Lista de clientes que suportam Agent Skills (Claude Code, VS Code/Copilot, ChatGPT/Codex, Cursor, Gemini CLI e dezenas de outros) — confirma adoção ampla, sem versão wire formal.</td></tr>
+          <tr><td>Agent Plugins · Overview</td><td><a href="https://agent-plugins.org/" target="_blank" rel="noopener">agent-plugins.org</a></td><td>Padrão 1.0.0 de empacotamento de skills + MCP em plugins portáveis; TSC com Amazon, Cursor, Microsoft, OpenAI, Vercel.</td></tr>
+          <tr><td>Agent Plugins · Specification</td><td><a href="https://agent-plugins.org/specification" target="_blank" rel="noopener">agent-plugins.org/specification</a></td><td>Contrato normativo: estrutura do pacote, schema de <code>plugin.json</code>/<code>mcp.json</code>, isolamento de falhas.</td></tr>
+          <tr><td>Agent Plugins · Manifest</td><td><a href="https://agent-plugins.org/plugin-authors/manifest" target="_blank" rel="noopener">plugin-authors/manifest</a></td><td>Referência completa de campos do <code>plugin.json</code>.</td></tr>
+          <tr><td>Agent Plugins · Skills</td><td><a href="https://agent-plugins.org/plugin-authors/skills" target="_blank" rel="noopener">plugin-authors/skills</a></td><td>Como <code>skills/</code> usa a Agent Skills Specification sem redefini-la.</td></tr>
+          <tr><td>Agent Plugins · MCP servers</td><td><a href="https://agent-plugins.org/plugin-authors/mcp-servers" target="_blank" rel="noopener">plugin-authors/mcp-servers</a></td><td>Formato de <code>mcp.json</code>: stdio, streamable-http, sse.</td></tr>
+          <tr><td>Agent Plugins · Client extensions</td><td><a href="https://agent-plugins.org/plugin-authors/client-extensions" target="_blank" rel="noopener">plugin-authors/client-extensions</a></td><td>Namespace reverse-domain para dados/arquivos privados de um cliente.</td></tr>
+          <tr><td>Agent Plugins · Conformance checklist</td><td><a href="https://agent-plugins.org/client-implementers/conformance" target="_blank" rel="noopener">client-implementers/conformance</a></td><td>Checklist mínimo de cliente conformante 1.0.0.</td></tr>
+          <tr><td>Agent Plugins · Loading &amp; discovery / MCP runtime</td><td><a href="https://agent-plugins.org/client-implementers/loading-and-discovery" target="_blank" rel="noopener">loading-and-discovery</a> · <a href="https://agent-plugins.org/client-implementers/mcp-runtime" target="_blank" rel="noopener">mcp-runtime</a></td><td>Validação, descoberta, isolamento de falha; mapeamento de config MCP portátil para conexões nativas.</td></tr>
+          <tr><td>OpenAI Codex · Skills</td><td><a href="https://learn.chatgpt.com/docs/build-skills" target="_blank" rel="noopener">learn.chatgpt.com/docs/build-skills</a></td><td>Skills no Codex, progressive disclosure, budget da lista inicial, ativação implícita/explícita. URL canônica; <code>developers.openai.com/codex/skills</code> redireciona para ela.</td></tr>
           <tr><td>OpenAI API · Skills (tools)</td><td><a href="https://developers.openai.com/api/docs/guides/tools-skills" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/tools-skills</a></td><td>Skills como bundles versionados, compatíveis com o padrão aberto Agent Skills.</td></tr>
-          <tr><td>Anthropic · Agent Skills Overview</td><td><a href="https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview" target="_blank" rel="noopener">platform.claude.com · agent-skills/overview</a></td><td>Skills como recursos filesystem-based; carregamento automático quando relevante. <span class="pill ok">Domínio verificado</span> (<code>platform.claude.com</code> é canônico, 2026-05-25).</td></tr>
+          <tr><td>Anthropic · Agent Skills Overview</td><td><a href="https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview" target="_blank" rel="noopener">platform.claude.com · agent-skills/overview</a></td><td>Skills como recursos filesystem-based; carregamento automático quando relevante. <span class="pill ok">Verificado 2026-09-30</span></td></tr>
           <tr><td>Anthropic · Skill authoring best practices</td><td><a href="https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices" target="_blank" rel="noopener">platform.claude.com · agent-skills/best-practices</a></td><td>Naming, descriptions, progressive disclosure, paths, scripts e testes.</td></tr>
           <tr><td>Anthropic Engineering · Agent Skills</td><td><a href="https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills" target="_blank" rel="noopener">anthropic.com/engineering · Agent Skills</a></td><td>Engenharia de skills como onboarding procedural para agentes.</td></tr>
           <tr><td>Microsoft Learn · Agent Skills</td><td><a href="https://learn.microsoft.com/en-us/agent-framework/agents/skills" target="_blank" rel="noopener">learn.microsoft.com · agent-framework/agents/skills</a></td><td>Agent Skills como pacotes portáveis com progressive disclosure.</td></tr>
-          <tr><td>Model Context Protocol · Specification</td><td><a href="https://modelcontextprotocol.io/specification/2025-11-25" target="_blank" rel="noopener">modelcontextprotocol.io/specification/2025-11-25</a></td><td>MCP como protocolo para tools, resources e prompts externos. <span class="pill ok">Versão verificada</span> (<code>2025-11-25</code> é a revisão atual, rechecada em 2026-06-10). <span class="pill beta">Novo</span> Próxima revisão <code>2026-07-28</code> — Release Candidate travada em 2026-05-21 (publicação em 28/07), com breaking changes: protocolo stateless (sem handshake <code>initialize</code>/<code>Mcp-Session-Id</code>) e Tasks movido para a extensão <code>io.modelcontextprotocol/tasks</code>.</td></tr>
+          <tr><td>Model Context Protocol · Specification</td><td><a href="https://modelcontextprotocol.io/specification/2026-07-28" target="_blank" rel="noopener">modelcontextprotocol.io/specification/2026-07-28</a></td><td>MCP como protocolo para tools, resources e prompts externos. <span class="pill ok">Revisão atual</span> (<code>2026-07-28</code>, verificada em 2026-09-30).</td></tr>
+          <tr><td>MCP · Skills over MCP</td><td><a href="https://modelcontextprotocol.io/extensions/skills/overview" target="_blank" rel="noopener">extensions/skills/overview</a> · <a href="https://github.com/modelcontextprotocol/ext-skills" target="_blank" rel="noopener">ext-skills</a></td><td>Extensão oficial <code>io.modelcontextprotocol/skills</code> (SEP-2640, Final): <code>skills/list</code>, <code>skills/get</code>, manifesto com digests. Ver <a href="#s-skills-mcp">§6D</a> e <a href="guia_protocolo_mcp.html#extensoes">Protocolo MCP §13</a>.</td></tr>
+          <tr><td>OWASP · Agentic Skills Top 10</td><td><a href="https://owasp.github.io/www-project-agentic-skills-top-10/" target="_blank" rel="noopener">owasp.github.io/www-project-agentic-skills-top-10</a></td><td>AST01–AST10, versão 1.0 (edição 2026). Ver <a href="#seguranca-governanca">§9</a>.</td></tr>
+          <tr><td>Claude Code · Skills e Plugins</td><td><a href="https://code.claude.com/docs/en/skills" target="_blank" rel="noopener">code.claude.com/docs/en/skills</a> · <a href="https://code.claude.com/docs/en/plugins" target="_blank" rel="noopener">plugins</a></td><td>Escopos de descoberta, precedência, plugins, marketplaces (§6B).</td></tr>
           <tr><td>MCP · Security best practices</td><td><a href="https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices" target="_blank" rel="noopener">modelcontextprotocol.io · security best practices</a></td><td>Riscos e boas práticas para integrações MCP.</td></tr>
           <tr><td>OWASP · Top 10 for LLM Applications</td><td><a href="https://owasp.org/www-project-top-10-for-large-language-model-applications/" target="_blank" rel="noopener">owasp.org · Top 10 LLM</a></td><td>Riscos de LLMs: prompt injection, output handling, supply chain.</td></tr>
           <tr><td>OWASP · LLM01 Prompt Injection</td><td><a href="https://genai.owasp.org/llmrisk/llm01-prompt-injection/" target="_blank" rel="noopener">genai.owasp.org · LLM01</a></td><td>Prompt injection e cenários de manipulação de comportamento.</td></tr>
@@ -2088,18 +2803,21 @@ SKILL.md states when each one is needed.</code></pre>
         <span class="pill na">N/D</span> não documentado.
       </p>
 
-      <h3>Notas de verificação &amp; itens UNVERIFIED</h3>
-      <p>Os fatos perecíveis deste guia foram confirmados contra a doc oficial em 2026-06-10. Nenhuma versão
-      foi inventada; o que permanece como heurística está rotulado como tal.</p>
+      <h3>Notas de verificação &amp; itens UNVERIFIED<span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
+      <p>Verificado em <strong>2026-09-30</strong> nas fontes oficiais listadas acima. Git guarda o histórico de revisões;
+      esta seção só afirma o estado corrente.</p>
       <ul style="overflow-wrap:anywhere">
-        <li><span class="pill ok">Verificado</span> <strong>Spec MCP <code>2025-11-25</code></strong> — confirmada como a revisão atual em <a href="https://modelcontextprotocol.io/specification" target="_blank" rel="noopener">modelcontextprotocol.io/specification</a> (schema <code>schema/2025-11-25/schema.ts</code>). É a versão canônica do super-guia. Nota: <a href="guia_agents_sdk.html">guia_agents_sdk.html</a> (guia pré-existente) referencia versões anteriores (<code>2024-11-05</code>/<code>2025-03-26</code>); por decisão do time, não reescrevemos o guia existente — a versão canônica aqui é a atual.</li>
-        <li><span class="pill ok">Verificado</span> <strong>Limites de frontmatter</strong> — <code>name</code> 1–64, <code>description</code> 1–1024 e <code>compatibility</code> 1–500 caracteres confirmados na <a href="https://agentskills.io/specification" target="_blank" rel="noopener">AgentSkills Specification</a>. A doc da Anthropic adiciona, para clientes Claude, a proibição de tags XML e das palavras reservadas "anthropic"/"claude" no <code>name</code>.</li>
-        <li><span class="pill ok">Verificado</span> <strong>Domínio da doc Anthropic</strong> — <code>platform.claude.com/docs/en/...</code> carrega como canônico (não redireciona para <code>docs.anthropic.com</code>). Verificado 2026-05-25.</li>
-        <li><span class="pill partial">Heurística</span> <strong>Budget de skills</strong> (§8: <code>S_target</code>, <code>swap_margin</code>, <code>N_active_max</code> etc.) — valores iniciais propostos, <em>não</em> números oficiais da spec. Mantidos deliberadamente como heurística: calibrar por evals/modelo/risco; não citar como limite normativo.</li>
-        <li><span class="pill ok">Resolvido</span> <strong>Fronteira autoria vs integração</strong> — declarada no topo (<a href="#sobre-guia">§ Sobre este guia</a>); cross-links para <a href="guia_claude_api.html#c-skills">guia_claude_api.html#c-skills</a>, <a href="guia_deepagents.html#s-skills">guia_deepagents.html#s-skills</a> e <a href="guia_agents_sdk.html">guia_agents_sdk.html</a> verificados contra as âncoras reais desses arquivos.</li>
-        <li><span class="pill ok">Resolvido</span> <strong>Sem IDs de modelo hardcoded</strong> — este guia é agnóstico de provedor e não fixa nomes de modelo; fatos de modelo ficam no portal e na folha de fatos SOTA.</li>
-        <li><span class="pill beta">Novo</span> <strong>Integração da proposta v0.6</strong> (2026-05-26) — reinjeção de L2 em follow-up a partir do skill store (não do tool result histórico, §8), política de L3/return packets em <code>hot_followup</code> (§8) e mapeamento de entrega de L1/L2/L3 por provider (§5).</li>
-        <li><span class="pill ok">Verificado</span> <strong>Varredura 2026-07-05</strong> — re-checagem contra as fontes oficiais: spec MCP <code>2025-11-25</code> segue atual, com próxima revisão <code>2026-07-28</code> agora em <strong>Release Candidate travada (2026-05-21), publicação em 28/07</strong>: protocolo stateless sem handshake <code>initialize</code>/<code>Mcp-Session-Id</code>, novo <code>server/discover</code>, Tasks movido para a extensão <code>io.modelcontextprotocol/tasks</code>, Roots/Sampling/Logging deprecados (SEP-2577) — fixe <code>mcp&lt;2</code> antes de 28/07; spec AgentSkills sem mudanças (último commit 20/05/2026) — limites de frontmatter inalterados.</li>
+        <li><span class="pill ok">Verificado</span> <strong>Agent Skills Specification.</strong> A página não publica versão formal.
+        Obrigatórios: <code>name</code> (1–64) e <code>description</code> (1–1024); opcionais: <code>license</code>, <code>compatibility</code> (1–500), <code>metadata</code> (string→string) e <code>allowed-tools</code> (experimental). Recomendações: metadata ~100 tokens, instruções &lt; 5000 tokens, <code>SKILL.md</code> &lt; 500 linhas; validador <code>skills-ref validate</code>.</li>
+        <li><span class="pill ok">Verificado</span> <strong>Skills na Claude API:</strong> GA desde 2026-08-19, até 20 skills por request, exige o code execution tool (§6A); fora de ZDR. <strong>Claude Code:</strong> seis escopos de descoberta e precedência enterprise &gt; personal &gt; project (§6B).</li>
+        <li><span class="pill ok">Verificado</span> <strong>Skills na Responses API (OpenAI):</strong> <code>skill_reference</code> só no hosted shell (<code>tools[].environment.skills</code>); o local shell não aceita <code>skill_reference</code> e usa <code>{name, description, path}</code>. Esse comportamento é da Responses API, não da Agent Skills Specification. Limites de upload: zip de 50 MB, 500 arquivos por versão, 25 MB por arquivo descomprimido, exatamente um <code>SKILL.md</code>. Fonte: <a href="https://developers.openai.com/api/docs/guides/tools-skills" target="_blank" rel="noopener">tools-skills</a>. O Codex/ChatGPT documenta skills em <a href="https://learn.chatgpt.com/docs/build-skills" target="_blank" rel="noopener">learn.chatgpt.com/docs/build-skills</a>.</li>
+        <li><span class="pill ok">Verificado</span> <strong>Skills sobre MCP</strong> é extensão oficial Final (§6D); suporte de clientes parcial.</li>
+        <li><span class="pill ok">Verificado</span> <strong>Agent Plugins:</strong> 1.0.0 "Published"; working draft 1.1.0 no repositório desde 2026-08-12 (sem release). O formato de plugin do Claude Code (<code>.claude-plugin/plugin.json</code>) é distinto (§6B vs §6C).</li>
+        <li><span class="pill ok">Verificado</span> <strong>ADK:</strong> o <code>google-adk</code> 2.10.0 (2026-09-25) trouxe ciclos de vida de skill (efêmero de 1 turno, <code>unload_skill</code>, limite de skills ativas, <code>SkillDiscoveryMode</code>), todos experimentais e ligados por <code>ADK_ENABLE_SKILL_LIFECYCLE=1</code> (notas de release do ADK; integração no <a href="guia_google_adk.html">guia do ADK</a>).</li>
+        <li><span class="pill partial">Heurística</span> <strong>Budget de skills</strong> (§8: <code>S_target</code>, <code>swap_margin</code>, <code>N_active_max</code> etc.) — valores iniciais propostos, <em>não</em> números oficiais da spec; calibre por evals, modelo e risco.</li>
+        <li><span class="pill ok">Confirmado</span> OpenAI Agents SDK 0.22.3: a capability de skills existe só no <code>SandboxAgent</code>. Na issue <a href="https://github.com/openai/openai-agents-python/issues/5025" target="_blank" rel="noopener">#5025</a> (fechada em 2026-09-17) o mantenedor afirmou que não planeja skills para agentes não-sandbox neste SDK e indicou a Agents API (<code>gh api</code>, 2026-09-30).</li>
+        <li><span class="pill partial">UNVERIFIED</span> Interoperabilidade entre o formato de plugin do Claude Code e o Agent Plugins: nenhuma das duas documentações declara suporte ao outro. A lista de clientes de <code>agent-plugins.org/compatible-clients</code> é renderizada dinamicamente e só foi lida em 2026-09-23.</li>
+        <li><span class="pill partial">UNVERIFIED</span> Coberturas por runtime (Cursor, Gemini CLI etc.): só a lista do showcase de <a href="https://agentskills.io/clients" target="_blank" rel="noopener">agentskills.io/clients</a> foi lida, não a documentação de cada produto.</li>
       </ul>
     </section>
 
@@ -2111,18 +2829,18 @@ SKILL.md states when each one is needed.</code></pre>
     <div style="max-width:540px">
       <div class="brand" style="font-size:15px">Guia de Agent Skills <small>Autoria, ativação &amp; harness — agnóstico</small></div>
       <p style="margin:8px 0 0;color:var(--c-fg-muted);font-size:13.5px;line-height:1.55">
-        Referência técnica construída a partir da documentação oficial pública do padrão Agent Skills em
-        <strong>2026-06-10</strong>. Cobre autoria/padrão; a integração por framework está nos guias
-        cross-linkados. Para informação sempre atualizada, consulte as
+        Referência técnica construída a partir da documentação oficial pública do padrão Agent Skills;
+        estado da especificação e das integrações verificado em <strong>2026-09-30</strong>. Cobre
+        autoria/padrão; a integração por framework está nos guias cross-linkados. Para informação sempre
+        atualizada, consulte as
         <a href="#fontes-oficiais">fontes oficiais</a>.
       </p>
     </div>
     <div style="font-size:13.5px;color:var(--c-fg-muted);line-height:1.7">
-      <div><strong>Crédito de produção</strong></div>
-      <div>Gerado por <strong>subagentes Claude Opus 4.7 (xhigh)</strong></div>
-      <div>revisão e montagem pelo orquestrador · 2026-05-26</div>
+      <div><strong>Referência de produção</strong></div>
+      <div>última revisão · 2026-09-30</div>
       <div style="margin-top:6px">
-        <span class="badge da">Spec Agent Skills</span>
+        <span class="badge da">Spec Agent Skills · sem versão formal</span>
         <span class="badge info">PT-BR</span>
       </div>
     </div>

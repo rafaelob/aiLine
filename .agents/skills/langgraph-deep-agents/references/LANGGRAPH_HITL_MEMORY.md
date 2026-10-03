@@ -1,10 +1,10 @@
-<!-- FRESHNESS: Always verify against official docs. Links may change. Last structured: 2026-04-02 -->
+<!-- FRESHNESS: Always verify against official docs. Links may change. Last structured: 2026-08-28 -->
 
 # LangGraph Human-in-the-Loop and Memory
 
-> HITL docs: https://langchain-ai.github.io/langgraph/concepts/human_in_the_loop/
-> Memory docs: https://langchain-ai.github.io/langgraph/concepts/memory/
-> Persistence docs: https://langchain-ai.github.io/langgraph/concepts/persistence/
+> HITL docs: https://docs.langchain.com/oss/python/langgraph/interrupts
+> Memory docs: https://docs.langchain.com/oss/python/langgraph/add-memory
+> Persistence docs: https://docs.langchain.com/oss/python/langgraph/persistence
 
 ## Human-in-the-Loop (HITL)
 
@@ -193,4 +193,6 @@ def review_node(state, *, store):
 
 ## Checkpointer Backends
 
-MemorySaver (dev only, ephemeral). SqliteSaver (light prod). **PostgresSaver** (recommended, durable, multi-worker). DynamoDBSaver (AWS, infinite scale). MongoDB, Redis also supported. In-memory not acceptable for production.
+`InMemorySaver` / `MemorySaver` (dev only, ephemeral — official examples use `InMemorySaver`). SqliteSaver (light prod). **PostgresSaver** (recommended, durable, multi-worker). DynamoDBSaver (AWS, infinite scale). MongoDB, Redis also supported. In-memory not acceptable for production.
+
+**Security (re-checked 2026-08-28):** before pinning SqliteSaver, PostgresSaver, or Redis in HITL flows, check the checkpoint-backend CVE table in `references/VERSIONING_FRESHNESS.md` -- including CVE-2026-71433 (Postgres/SQLite store namespace prefix matching, floor **3.1.1**) and the npm `@langchain/langgraph-checkpoint-redis` advisory.

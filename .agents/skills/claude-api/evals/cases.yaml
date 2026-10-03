@@ -1,0 +1,79 @@
+version: 1
+skill: "claude-api"
+cases:
+  # Positive activation tests
+  - id: positive-trigger-en-1
+    type: activation
+    prompt: "How do I call the Claude API with streaming in Python?"
+    expect:
+      activates: true
+      notes_contains: ["Claude API", "streaming"]
+
+  - id: positive-trigger-en-2
+    type: activation
+    prompt: "Set up tool use with the Anthropic SDK"
+    expect:
+      activates: true
+      notes_contains: ["tool use", "Anthropic SDK"]
+
+  - id: positive-trigger-pt-br-1
+    type: activation
+    prompt: "Como usar a API da Anthropic em TypeScript?"
+    expect:
+      activates: true
+      notes_contains: ["API", "Anthropic"]
+
+  - id: positive-trigger-pt-br-2
+    type: activation
+    prompt: "Chamar o Claude via SDK com structured output"
+    expect:
+      activates: true
+      notes_contains: ["Claude", "SDK"]
+
+  # Negative activation tests
+  - id: negative-trigger-1
+    type: activation
+    prompt: "Build an MCP server for my database"
+    expect:
+      activates: false
+      notes: "Should route to mcp-server-design"
+
+  - id: negative-trigger-agent-sdk
+    type: activation
+    prompt: "Build an AI agent using Claude Agent SDK"
+    expect:
+      activates: false
+      notes: "Agent SDK is UNVERIFIED and out of scope — check official docs"
+
+  - id: negative-trigger-2
+    type: activation
+    prompt: "Compare Claude vs GPT-4 for my use case"
+    expect:
+      activates: false
+      notes: "LLM comparison is general AI theory"
+
+  - id: negative-trigger-3
+    type: activation
+    prompt: "How do I use Claude in the Cowork desktop app?"
+    expect:
+      activates: false
+      notes: "Cowork features, not API usage"
+
+  # Output correctness tests
+  - id: output-happy-path
+    type: output
+    prompt: "Show me how to use Claude API with tool use in Python"
+    expect:
+      checks:
+        - kind: contains_keywords
+          keywords: ["anthropic", "tools", "input_schema", "messages.create"]
+        - kind: no_secrets
+
+  - id: output-edge-case
+    type: output
+    prompt: "Set up Claude streaming with error handling and retries"
+    expect:
+      checks:
+        - kind: contains_keywords
+          keywords: ["stream", "429", "retry", "backoff"]
+        - kind: no_secrets

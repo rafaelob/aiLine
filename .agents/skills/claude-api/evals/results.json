@@ -1,0 +1,132 @@
+{
+  "version": 1,
+  "skill": "claude-api",
+  "run_id": "2026-07-30T10:42:07Z",
+  "agent": {
+    "name": "eval-runner",
+    "model": "static"
+  },
+  "results": [
+    {
+      "case_id": "positive-trigger-en-1",
+      "type": "activation",
+      "passed": true,
+      "actual": {
+        "activated": true,
+        "score": 0.8,
+        "matched_keywords": [
+          "Claude API",
+          "streaming"
+        ]
+      },
+      "duration_ms": 0
+    },
+    {
+      "case_id": "positive-trigger-en-2",
+      "type": "activation",
+      "passed": true,
+      "actual": {
+        "activated": true,
+        "score": 0.8,
+        "matched_keywords": [
+          "tool use",
+          "Anthropic SDK"
+        ]
+      },
+      "duration_ms": 0
+    },
+    {
+      "case_id": "positive-trigger-pt-br-1",
+      "type": "activation",
+      "passed": true,
+      "actual": {
+        "activated": true,
+        "score": 0.75,
+        "matched_keywords": [
+          "API",
+          "Anthropic"
+        ]
+      },
+      "duration_ms": 0
+    },
+    {
+      "case_id": "positive-trigger-pt-br-2",
+      "type": "activation",
+      "passed": true,
+      "actual": {
+        "activated": true,
+        "score": 0.667,
+        "matched_keywords": [
+          "Claude",
+          "SDK"
+        ]
+      },
+      "duration_ms": 0
+    },
+    {
+      "case_id": "negative-trigger-1",
+      "type": "activation",
+      "passed": true,
+      "actual": {
+        "activated": false,
+        "score": 0.0
+      },
+      "duration_ms": 0
+    },
+    {
+      "case_id": "negative-trigger-agent-sdk",
+      "type": "activation",
+      "passed": false,
+      "actual": {
+        "activated": true,
+        "score": 0.5
+      },
+      "duration_ms": 0
+    },
+    {
+      "case_id": "negative-trigger-2",
+      "type": "activation",
+      "passed": false,
+      "actual": {
+        "activated": true,
+        "score": 0.333
+      },
+      "duration_ms": 0
+    },
+    {
+      "case_id": "negative-trigger-3",
+      "type": "activation",
+      "passed": false,
+      "actual": {
+        "activated": true,
+        "score": 0.4
+      },
+      "duration_ms": 0
+    },
+    {
+      "case_id": "output-happy-path",
+      "type": "output",
+      "passed": true,
+      "checks_passed": 2,
+      "checks_total": 2,
+      "duration_ms": 2,
+      "notes": "contains_keywords=OK; no_secrets=OK"
+    },
+    {
+      "case_id": "output-edge-case",
+      "type": "output",
+      "passed": true,
+      "checks_passed": 2,
+      "checks_total": 2,
+      "duration_ms": 2,
+      "notes": "contains_keywords=OK; no_secrets=OK"
+    }
+  ],
+  "summary": {
+    "passed": 7,
+    "failed": 3,
+    "total": 10,
+    "activation_accuracy": 0.625,
+    "output_pass_rate": 1.0
+  }
+}

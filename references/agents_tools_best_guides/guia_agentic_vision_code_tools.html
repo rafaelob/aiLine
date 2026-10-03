@@ -2,10 +2,12 @@
 <html lang="pt-BR" data-theme="light">
 <head>
 <meta charset="utf-8" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%9A%3C/text%3E%3C/svg%3E" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Agentic vision &amp; code tools — Code Interpreter, Code Execution, Shell e Tool Search</title>
-<meta name="description" content="Guia transversal de code tools para agentes: OpenAI Code Interpreter (python tool) e Shell, Gemini Code Execution, Anthropic Code Execution (20250825/20260120), Tool Search e defer_loading por provider, ToolRegistry de fallback no runtime, fallback local de visão com worker isolado, schemas de custom functions multi-provider, bloco de system prompt para visão, custos de containers e regra de gating. Verificado em 2026-06-29 (re-verificado na varredura de freshness 06-29: sem fatos pereciveis desatualizados)." />
-<meta name="last-checked" content="2026-06-29" />
+<meta name="description" content="Guia transversal de code tools para agentes: OpenAI Code Interpreter (python tool), Shell e computer, Gemini Code Execution e Computer Use (Interactions API), Anthropic Code Execution, computer/browser toolsets (computer_toolset_20260801), Tool Search e defer_loading por provider, ToolRegistry de fallback no runtime, fallback local de visão com worker isolado, schemas de custom functions multi-provider, privacidade, approval binding, evidência de side effect, custos de containers e regra de gating. Verificado em 2026-09-30." />
+<meta name="last-checked" content="2026-09-30" />
+<meta name="openai-last-checked" content="2026-09-30" />
 <meta name="robots" content="index,follow" />
 <script type="application/ld+json">
 {
@@ -14,21 +16,21 @@
   "name": "Agentic vision & code tools — Code Interpreter, Code Execution, Shell e Tool Search",
   "inLanguage": "pt-BR",
   "datePublished": "2026-06-10",
-  "dateModified": "2026-06-19",
+  "dateModified": "2026-09-30",
   "author": {
     "@type": "Organization",
     "name": "Referência técnica — documentação oficial OpenAI, Google Gemini e Anthropic"
   },
-  "about": "Code tools para agentes multi-provider: OpenAI Code Interpreter e Shell (Responses API), Gemini Code Execution (Interactions API), Anthropic Code Execution (code_execution_20250825 / code_execution_20260120), Tool Search com defer_loading (OpenAI e Anthropic), seleção dinâmica de tools no runtime, fallback local de visão e schemas de custom functions.",
+  "about": "Code tools para agentes multi-provider: OpenAI Code Interpreter, Shell e computer (Responses API), Gemini Code Execution e Computer Use, Anthropic Code Execution e computer/browser toolsets, Tool Search com defer_loading, seleção dinâmica de tools no runtime, fallback local de visão e schemas de custom functions.",
   "keywords": [
-    "OpenAI", "Responses API", "gpt-5.5", "code interpreter", "python tool", "shell tool",
+    "OpenAI", "Responses API", "gpt-6-astra", "gpt-6.1-sol", "code interpreter", "python tool", "shell tool", "computer use",
     "tool search", "defer_loading", "container_auto", "container_reference",
-    "Google Gemini", "Interactions API", "gemini-3.5-flash", "code execution",
-    "Anthropic", "Claude", "claude-fable-5", "claude-opus-4-8",
-    "code_execution_20250825", "code_execution_20260120",
+    "Google Gemini", "Interactions API", "gemini-3.8-flash", "code execution", "computer use",
+    "Anthropic", "Claude", "claude-opus-5-5", "computer_toolset_20260801", "browser_toolset_20260801",
+    "code_execution_20250825", "code_execution_20260120", "code_execution_20260521",
     "tool_search_tool_bm25_20251119", "tool_search_tool_regex_20251119",
     "agentic vision", "tool registry", "custom functions", "input_schema",
-    "verificado em 2026-06-19"
+    "verificado em 2026-09-30"
   ]
 }
 </script>
@@ -302,6 +304,7 @@
     details > summary { display: none; }
   }
 </style>
+<style id="rev-flag-css">main :not(pre) > code,main a{overflow-wrap:anywhere}.rev-flag{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:999px;font-size:.62em;font-weight:600;vertical-align:middle;letter-spacing:.02em;white-space:nowrap}.rev-flag.novo{background:#dcfce7;color:#14532d;border:1px solid #86efac}.rev-flag.atu{background:#e0f2fe;color:#0c4a6e;border:1px solid #7dd3fc}.rev-news{margin:16px 0;padding:12px 16px;border-left:4px solid #22c55e;border-radius:8px;background:rgba(34,197,94,.08)}.rev-news ul{margin:6px 0 0;padding-left:20px}.rev-news li{margin:2px 0}:root[data-theme="dark"] .rev-flag.novo{background:#14532d;color:#dcfce7;border-color:#166534}:root[data-theme="dark"] .rev-flag.atu{background:#0c4a6e;color:#e0f2fe;border-color:#075985}@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .rev-flag.novo{background:#14532d;color:#dcfce7;border-color:#166534}:root:not([data-theme="light"]) .rev-flag.atu{background:#0c4a6e;color:#e0f2fe;border-color:#075985}}</style>
 </head>
 <body>
 <a class="skip" href="#main">Pular para o conteúdo</a>
@@ -310,7 +313,8 @@
   <div class="header-row">
     <div class="brand">Agentic vision &amp; code tools <small>Code Interpreter · Code Execution · Shell · Tool Search</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-06-19</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-09-30</strong></span>
+      <span class="badge info">Fontes oficiais lidas em <strong style="margin-left:4px">2026-09-30</strong></span>
       <span class="badge da">Transversal</span>
       <span class="badge info">OpenAI</span>
       <span class="badge info">Gemini</span>
@@ -324,6 +328,7 @@
   <nav class="toc" aria-label="Sumário">
     <div class="toc-section">Início</div>
     <ol>
+      <li><a href="#para-agentes">Resumo para agentes</a></li>
       <li><a href="#sobre-guia">Sobre este guia</a></li>
       <li><a href="#mapa-de-fronteiras">Mapa de fronteiras &amp; cross-links</a></li>
     </ol>
@@ -339,6 +344,7 @@
       <li><a href="#gemini-code-execution">3. Gemini Code Execution</a></li>
       <li><a href="#anthropic-code-execution">4. Anthropic Code Execution</a></li>
       <li><a href="#openai-shell">5. OpenAI Shell tool</a></li>
+      <li><a href="#computer-browser-toolsets">Computer, browser e toolsets (status)</a></li>
     </ol>
 
     <div class="toc-section">Parte 3 — Tool Search &amp; seleção dinâmica</div>
@@ -363,11 +369,13 @@
 
     <div class="toc-section">Referência</div>
     <ol>
+      <li><a href="#legado">Legado e migração</a></li>
       <li><a href="#fontes-oficiais">Fontes oficiais &amp; verificação</a></li>
     </ol>
   </nav>
 
   <main id="main">
+<aside class="rev-news" id="rev-news-2026-09-30" aria-label="Novidades desta revisão"><strong>O que há de novo nesta revisão (2026-09-30)</strong> — 2 seções novas e 15 atualizadas desde a revisão de 2026-09-23. Procure os selos <span class="rev-flag novo">Novo</span> e <span class="rev-flag atu">Atualizado</span> nos títulos.<details><summary>Ver lista</summary><ul><li><span class="rev-flag novo">Novo</span> <a href="#para-agentes">Resumo para agentes</a> — chamada mínima, IDs, Faça/Não faça e incertezas</li><li><span class="rev-flag atu">Atualizado</span> <a href="#decisao-executiva">1. Decisão executiva: gating no runtime</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#openai-code-interpreter">2. OpenAI Code Interpreter (python tool)</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#gemini-code-execution">3. Gemini Code Execution</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#anthropic-code-execution">4. Anthropic Code Execution</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#anthropic-code-execution">4.1. Versões da ferramenta</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#openai-shell">5. OpenAI Shell tool</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#computer-browser-toolsets">Computer, browser e toolsets — matriz SOTA</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#tool-search-providers">6.1. OpenAI — {&quot;type&quot;:&quot;tool_search&quot;}</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#tool-search-providers">6.2. Anthropic — Regex e BM25</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#tool-search-providers">6.4. Comparativo</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#custos-gating">11.1. OpenAI</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#schemas-multi-provider">9. Schemas de custom functions multi-provider</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#smoke-tests-checklist">13. Smoke tests &amp; checklist de produção</a></li><li><span class="rev-flag novo">Novo</span> <a href="#legado">Legado e migração</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#fontes-oficiais">Fontes oficiais &amp; verificação</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#fontes-oficiais">Notas de verificação desta edição</a></li><li>Legado condensado: modelos, tools e headers aposentados, datas e migração em uma linha estão só em <a href="#legado">Legado e migração</a>; o corpo do guia descreve apenas o estado atual.</li></ul></details></aside>
 
     <div class="hero">
       <h1>Agentic vision &amp; code tools</h1>
@@ -383,9 +391,77 @@
       <div class="hero-meta">
         <span class="badge da">Transversal · OpenAI · Gemini · Anthropic</span>
         <span class="badge info">Code tools + Tool Search</span>
-        <span class="badge ok">SOTA · verificado 2026-06-10</span>
+        <span class="badge ok">SOTA · verificado 2026-09-30</span>
       </div>
     </div>
+
+    <section id="para-agentes">
+      <h2>Resumo para agentes (verificado 2026-09-30)<span class="rev-flag novo">Novo · 2026-09-30</span></h2>
+      <h3>Superfície atual (code tool por provider, só quando o gating pedir)</h3>
+      <pre><code class="language-python">client.responses.create(model="gpt-6.1-sol", store=False, tool_choice="auto", input=...,      # OpenAI Responses
+    tools=[{"type": "code_interpreter", "container": {"type": "auto", "memory_limit": "4g"}}])
+genai.Client().interactions.create(model="gemini-3.8-flash", store=False, input=...,          # Gemini Interactions (Python-only, 30 s)
+    tools=[{"type": "code_execution"}])
+anthropic.Anthropic().messages.create(model="claude-opus-5-5", max_tokens=4096, messages=..., # Anthropic (GA, sem beta header)
+    tools=[{"type": "code_execution_20260521", "name": "code_execution"}])</code></pre>
+
+      <h3>IDs e versões correntes (2026-09-30)</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Superfície</th><th>ID / tipo</th><th>Status</th><th>Nota</th></tr></thead>
+        <tbody>
+          <tr><td>OpenAI code tools</td><td><code>code_interpreter</code> · <code>shell</code> (<code>container_auto</code>/<code>container_reference</code>/local)</td><td><span class="pill ok">atual</span></td><td>Container auto expira em 20 min sem uso; cobrança por minuto (mín. 5) desde 2026-06-02.</td></tr>
+          <tr><td>OpenAI Tool Search</td><td><code>{"type":"tool_search"}</code> + <code>defer_loading</code></td><td><span class="pill ok">atual</span></td><td>Responses: <code>gpt-5.4</code>+. Hosted (<code>execution:"server"</code>) ou client (<code>"client"</code>).</td></tr>
+          <tr><td>Gemini</td><td><code>code_execution</code> · <code>computer_use</code></td><td><span class="pill ok">atual</span> · <span class="pill beta">Preview</span></td><td>Sem Tool Search nativo: mantenha 10–20 tools ativas. <code>computer_use</code> recomenda <code>gemini-3.8-flash</code>.</td></tr>
+          <tr><td>Anthropic code execution</td><td><code>code_execution_20250825</code> · <code>_20260120</code> · <code>_20260521</code></td><td><span class="pill ok">GA</span></td><td>Em Haiku 4.5 as duas últimas degradam para o comportamento da <code>20250825</code>.</td></tr>
+          <tr><td>Anthropic computer/browser</td><td><code>computer_toolset_20260801</code> · <code>browser_toolset_20260801</code></td><td><span class="pill ok">GA</span> (Claude API, Google Cloud)</td><td>Sem <code>name</code>, sem <code>display_*</code>, sem beta header; membros executados em ordem.</td></tr>
+          <tr><td>Anthropic Tool Search</td><td><code>tool_search_tool_regex_20251119</code> · <code>tool_search_tool_bm25_20251119</code></td><td><span class="pill ok">GA</span></td><td>≥1 tool não-deferida; até 10.000 tools deferidas por request.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Faça / Não faça</h3>
+      <ul>
+        <li>Faça: gating no runtime antes da request: sem necessidade de crop/zoom/rotação/execução, nenhuma code tool entra em <code>tools</code> (default = visão nativa).</li>
+        <li>Faça: Tool Search só para catálogos grandes de custom functions/MCP (&gt;20–30 tools); não serve para ligar/desligar code tools.</li>
+        <li>Faça: persista artefatos de container no artifact store a cada turno; trate o container como efêmero.</li>
+        <li>Faça: Claude atual: <code>tool_choice: auto</code> + <code>strict: true</code>; selecione blocos por <code>type</code>; em Haiku 4.5 declare <code>code_execution_20250825</code> explicitamente.</li>
+        <li>Faça: Anthropic Tool Search: mantenha ≥1 tool não-deferida; <code>cache_control</code> só em tool não-deferida.</li>
+        <li>Faça: Gemini stateless: preserve e reenvie <code>id</code> e <code>signature</code> dos steps.</li>
+        <li>Faça: computer/browser: VM ou container isolado, confirmação imediatamente antes de ação consequencial, página/screenshot como input não confiável e approval vinculado ao hash de <code>tool@version + args + principal + tenant + policy</code>.</li>
+        <li>Faça: Gemini Computer Use: <code>enable_prompt_injection_detection:true</code> (opt-in) e <code>safety_acknowledgement</code> só após consentimento.</li>
+        <li>Faça: só marque <code>verified</code> com recibo ou leitura posterior; <code>ok:true</code> do executor e timeout sem reconciliação ficam <code>unknown</code>.</li>
+        <li>Faça: nome de tool Anthropic respeita <code>^[a-zA-Z0-9_-]{1,128}$</code> (<a href="#schemas-multi-provider">§9</a>).</li>
+        <li>Não use <code>tool_choice</code> <code>any</code>/<code>tool</code> (400) nem <code>thinking: disabled</code> no Sonnet 5.5 (→ <code>between_tools</code>) nos Claude atuais.</li>
+        <li>Não use <code>computer_20251124</code> (rejeitado nos modelos 5.5 na Claude API/Google Cloud) → <code>computer_toolset_20260801</code>; <code>computer-use-preview</code> (OpenAI, desligado em 2026-07-23) → tool <code>computer</code>; <code>gemini-2.5-computer-use-preview-10-2025</code> → <code>gemini-3.8-flash</code> + <code>computer_use</code>.</li>
+        <li>Não use <code>code_execution_20250522</code> + header beta (→ <code>20250825</code>+), Code Interpreter/File Search da Assistants API (encerrada em 2026-08-26), Chat Completions com code interpreter (Shell não existe nela) nem <code>generateContent</code> com <code>types.Tool(code_execution=...)</code> → <a href="#legado">Legado e migração</a>.</li>
+        <li>Não espere shell, <code>pip install</code> ou outra linguagem no Gemini Code Execution: só Python, bibliotecas fixas, 30 s, até 5 regenerações.</li>
+        <li>Não defira todas as tools na Anthropic (400) nem ponha <code>defer_loading</code> na entry do toolset de computer/browser: vai por membro em <code>configs</code>.</li>
+        <li>Não exponha shell arbitrário para um simples crop/zoom: use custom function com allowlist (<code>vision_preprocess_document</code>, <a href="#vision-fallback-local">§8</a>).</li>
+        <li>Não herde <code>store</code>/<code>previous_response_id</code> nem <code>previous_interaction_id</code> do provider neste padrão: o runtime DB é a fonte do histórico.</li>
+      </ul>
+
+      <h3>Onde está cada coisa</h3>
+      <p>
+        <a href="#decisao-executiva">§1 gating</a> ·
+        <a href="#openai-code-interpreter">§2 Code Interpreter</a> ·
+        <a href="#gemini-code-execution">§3 Gemini Code Execution</a> ·
+        <a href="#anthropic-code-execution">§4 Anthropic Code Execution</a> ·
+        <a href="#openai-shell">§5 Shell</a> ·
+        <a href="#computer-browser-toolsets">computer e browser</a> ·
+        <a href="#tool-search-providers">§6 Tool Search</a> ·
+        <a href="#tool-registry-runtime">§7 ToolRegistry</a> ·
+        <a href="#vision-fallback-local">§8 fallback local</a> ·
+        <a href="#schemas-multi-provider">§9 schemas</a> ·
+        <a href="#custos-gating">§11 custos</a> ·
+        <a href="#smoke-tests-checklist">§13 smoke tests</a> ·
+        <a href="#legado">legado</a>
+      </p>
+
+      <h3>Incertezas (não trate como fato)</h3>
+      <ul>
+        <li><span class="pill partial">UNVERIFIED</span> Gemini <code>code_execution</code> via Interactions em Vertex (verificado só na Developer API); Code Execution with images documentado apenas em Gemini 3 Flash.</li>
+        <li><span class="pill partial">UNVERIFIED</span> Preços e tiers de container são snapshot de 2026-09-30; decisão comercial reconsulta o pricing oficial. Ver <a href="#fontes-oficiais">Fontes oficiais &amp; verificação</a>.</li>
+      </ul>
+    </section>
 
     <section id="sobre-guia">
       <h2>Sobre este guia</h2>
@@ -441,7 +517,7 @@
     </section>
 
     <section id="decisao-executiva">
-      <h2>1. Decisão executiva: gating no runtime</h2>
+      <h2>1. Decisão executiva: gating no runtime<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <div class="callout tip">
         <strong>Decisão SOTA:</strong> o runtime deve fazer <em>gating</em> antes de chamar o provider.
         Se a tarefa não precisa de visão agentic, não inclua Code Interpreter, Shell ou Code Execution
@@ -469,13 +545,13 @@
           </tr>
           <tr>
             <td><strong>Gemini</strong> (Interactions API)</td>
-            <td><code>code_execution</code> (Python-only, 30s) — Interactions API documentada/verificada só na <strong>Developer API</strong>; em Vertex use <code>generateContent</code> + <code>code_execution</code> (ver §3)</td>
-            <td>Visão nativa + Code Execution with images (documentado em Gemini 3 Flash; herdado pela linha 3.5)</td>
+            <td><code>code_execution</code> (Python-only, 30s) — Interactions API verificada na <strong>Developer API</strong>; Vertex: <span class="pill partial">UNVERIFIED</span> (ver §3)</td>
+            <td>Visão nativa + Code Execution with images (documentado em Gemini 3 Flash; exemplo oficial com <code>gemini-3.8-flash</code>)</td>
             <td><span class="pill bad">Não</span> — seleção dinâmica no runtime (10–20 tools ativas)</td>
           </tr>
           <tr>
             <td><strong>Anthropic</strong> (Messages API)</td>
-            <td><code>code_execution_20250825</code> / <code>code_execution_20260120</code> (Python + Bash + file ops)</td>
+            <td><code>code_execution_20250825</code> / <code>20260120</code> / <code>20260521</code> (Python + Bash + file ops)</td>
             <td>Visão/PDF nativa + Code Execution para manipular/processar</td>
             <td><span class="pill ok">Sim</span> <code>tool_search_tool_regex_20251119</code> / <code>tool_search_tool_bm25_20251119</code></td>
           </tr>
@@ -527,7 +603,7 @@
     </section>
 
     <section id="openai-code-interpreter">
-      <h2>2. OpenAI Code Interpreter (python tool)</h2>
+      <h2>2. OpenAI Code Interpreter (python tool)<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <p>
         Code Interpreter permite ao modelo escrever e executar Python em sandbox hospedada. A
         documentação cita explicitamente o uso para processar arquivos, gerar arquivos e melhorar a
@@ -538,8 +614,9 @@
       <p>
         Visão nativa vem primeiro: PDFs entram como <code>input_file</code> (texto + imagens das páginas
         em modelos com visão) e imagens como <code>input_image</code> com <code>detail</code>
-        (<code>low</code>/<code>high</code>/<code>original</code>/<code>auto</code>; em
-        <code>gpt-5.5</code>, <code>auto</code> e omitido equivalem a <code>original</code>). Arquivos
+        (<code>low</code>/<code>high</code>/<code>original</code>/<code>auto</code>). Use <code>auto</code>
+        por padrão e reserve <code>original</code> para imagens grandes/densas ou tarefas espaciais quando o
+        modelo/endpoint o suportar; não herde equivalência entre IDs sem revalidar a ficha do modelo. Arquivos
         não-PDF como <code>.docx</code> e <code>.pptx</code> são <strong>texto-only</strong> nesse fluxo
         — sem imagens das páginas. Para documentos grandes com retrieval, a doc aponta File Search; para
         planilhas pesadas (agregações, cálculos, custom charts), o Hosted Shell (§5). O detalhe
@@ -582,7 +659,7 @@ history = runtime_db.load_normalized_history(thread_id="thr_123")
 route = runtime_router.classify(history)
 
 response = client.responses.create(
-    model="gpt-5.5",
+    model="gpt-6.1-sol",
     store=False,
     instructions=runtime_db.load_system_prompt() + "\n\n" + VISION_TOOL_SYSTEM_SECTION,
     input=runtime_adapter.to_openai_input(history),
@@ -599,19 +676,19 @@ runtime_db.persist_provider_output(
 )</code></pre>
       <div class="callout warn">
         <strong>Custo:</strong> Code Interpreter cobra container por tier de memória, além dos tokens —
-        e desde <strong>2026-06-02 a cobrança é por minuto, com mínimo de 5 minutos</strong> (detalhes e
+        e desde <strong>2026-06-02 sessões elegíveis são cobradas por minuto, com mínimo de 5 minutos</strong> (changelog OpenAI; detalhes e
         tabela em <a href="#custos-gating">§11</a>). Mais um motivo para o gating: container não usado é
         dinheiro queimado por turno.
       </div>
       <div class="source-link">
         Fonte oficial: <a href="https://developers.openai.com/api/docs/guides/tools-code-interpreter" target="_blank" rel="noopener">OpenAI — Code Interpreter</a> ·
         <a href="https://developers.openai.com/api/docs/guides/file-inputs" target="_blank" rel="noopener">File inputs</a> ·
-        <a href="https://developers.openai.com/api/docs/guides/images-vision" target="_blank" rel="noopener">Images and vision</a>. Verificado em 2026-06-10.
+        <a href="https://developers.openai.com/api/docs/guides/images-vision" target="_blank" rel="noopener">Images and vision</a>. Verificado em 2026-09-30 (Code Interpreter: limite de 100 RPM por organização).
       </div>
     </section>
 
     <section id="gemini-code-execution">
-      <h2>3. Gemini Code Execution</h2>
+      <h2>3. Gemini Code Execution<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <p>
         O Gemini Code Execution gera e executa <strong>Python</strong> em ambiente hospedado pelo Google.
         Na Interactions API, habilita-se com <code>tools=[{"type": "code_execution"}]</code>. É a rota de
@@ -619,25 +696,16 @@ runtime_db.persist_provider_output(
         imagens/PDFs e recebe os resultados de volta no mesmo turno.
       </p>
       <div class="callout warn">
-        <strong>Vertex AI (agora Gemini Enterprise Agent Platform): code execution via Interactions API.</strong>
-        A Interactions API existe em <strong>duas superfícies</strong> com status e documentação diferentes.
-        Na <strong>Gemini Developer API (AI Studio)</strong> — endpoint
-        <code>generativelanguage.googleapis.com/v1beta/interactions</code>, auth <code>x-goog-api-key</code>,
-        status <strong>Beta</strong> — o <code>code_execution</code> dentro de Interactions é
-        <strong>documentado e exemplificado por inteiro</strong>. Na <strong>Vertex AI / Gemini Enterprise
-        Agent Platform</strong> — endpoint
-        <code>aiplatform.googleapis.com/v1beta1/projects/{project}/locations/global/interactions</code>,
-        auth OAuth/ADC, status <strong>experimental</strong> — <code>CodeExecution</code> aparece no
-        <em>schema</em> de ferramentas, mas a página oficial de execução de código da Vertex documenta o
-        recurso <strong>apenas via <code>generateContent</code></strong> (sem exemplo de
-        <code>code_execution</code> dentro de Interactions).
-        <strong>Observado (não é limitação oficial):</strong> em teste, <code>code_execution</code> via
-        Interactions API <strong>falhou</strong> autenticando por Vertex e funcionou pela Developer API — os
-        docs nem confirmam nem negam essa combinação na Vertex.
-        <strong>Recomendação:</strong> use <strong>Developer API + Interactions</strong> para
-        <code>code_execution</code>, ou na <strong>Vertex use <code>generateContent</code> +
-        <code>code_execution</code></strong> (caminho oficialmente documentado). O exemplo 3.2 abaixo
-        assume a Developer API. <em>Verificado em 2026-06-19 contra fontes oficiais Google.</em>
+        <strong>Superfície e retenção (verificado em 2026-09-30).</strong> A Interactions API é a superfície GA
+        do Gemini e a que este guia usa; o <code>generateContent</code> original é legado (ver
+        <a href="#legado">Legado e migração</a>). Por padrão, Interactions armazena o recurso
+        (<code>store=true</code>; retenção de 55 dias no tier pago e 1 dia no free) para permitir
+        <code>previous_interaction_id</code> e observabilidade; <code>store=false</code> é a opção stateless e
+        impede background/continuação por ID. Este guia usa <code>store:false</code> e histórico no runtime DB.
+        O exemplo de Code Execution com imagens está na documentação da Gemini Developer API;
+        disponibilidade de <code>code_execution</code> via Interactions em Vertex (Gemini Enterprise Agent
+        Platform) não foi reconferida: <span class="pill partial">UNVERIFIED</span> Confirme no contrato da superfície escolhida — não inferir
+        paridade a partir do schema.
       </div>
       <h3>3.1. Limites documentados</h3>
       <div class="table-wrap"><table>
@@ -645,22 +713,23 @@ runtime_db.persist_provider_output(
         <tbody>
           <tr><td>Linguagem</td><td><strong>Somente Python</strong> — sem Bash, sem shell, sem outras linguagens.</td></tr>
           <tr><td>Runtime máximo</td><td><strong>30 segundos</strong> por execução.</td></tr>
-          <tr><td>Retries</td><td>Até <strong>5 tentativas</strong> automáticas em caso de erro.</td></tr>
+          <tr><td>Retries</td><td>Se o ambiente gerar erro, o modelo pode regenerar o código <strong>até 5 vezes</strong>.</td></tr>
           <tr><td>Bibliotecas</td><td>Conjunto fixo, sem <code>pip install</code>: inclui <code>pillow</code>, <code>opencv-python</code>, <code>PyPDF2</code>, <code>python-docx</code>, <code>python-pptx</code>, <code>numpy</code>, <code>pandas</code>, <code>matplotlib</code>, entre outras.</td></tr>
-          <tr><td>Entrada preferida</td><td>Funciona melhor com texto/CSV; imagens entram pelo fluxo "Code Execution with images".</td></tr>
-          <tr><td>Imagens</td><td>Code Execution with images é <strong>oficialmente documentado em Gemini 3 Flash</strong> e herdado pela linha GA <code>gemini-3.5-flash</code> — use <code>gemini-3.5-flash</code> nos exemplos e valide por evals.</td></tr>
+          <tr><td>Arquivos e gráficos</td><td>Funciona melhor com texto/CSV, passados como inline data ou Files API (limite = janela de contexto do modelo); imagens entram pelo fluxo "Code Execution with images". Gráficos: só <code>matplotlib</code>, devolvidos como imagens inline; o modelo não devolve outros artefatos (ex.: arquivos de mídia).</td></tr>
+          <tr><td>Imagens</td><td>Code Execution with images é <strong>oficialmente suportado no Gemini 3 Flash</strong> e exige Code Execution + Thinking; o exemplo oficial usa <code>gemini-3.8-flash</code> (GA 2026-09-02). Valide por evals no modelo que escolher. <span class="source-link" style="display:inline;margin:0;padding:0">Fonte: <a href="https://ai.google.dev/gemini-api/docs/code-execution" target="_blank" rel="noopener">code-execution</a>.</span></td></tr>
+          <tr><td>Combinação de tools</td><td>Combina com Grounding with Google Search e, nos modelos Gemini 3, com function calling (built-in + custom).</td></tr>
           <tr><td>Custo extra</td><td><span class="pill ok">Nenhum</span> além de tokens: código gerado e resultados são cobrados como <em>intermediate tokens</em> (ver <a href="#custos-gating">§11</a> e <a href="guia_token_counting.html">Token counting</a>).</td></tr>
         </tbody>
       </table></div>
       <h3>3.2. Exemplo runtime-owned (Interactions API)</h3>
       <pre><code>from google import genai
 
-client = genai.Client()   # Developer API (GEMINI_API_KEY); em Vertex use generateContent + code_execution (ver aviso da secao 3)
+client = genai.Client()   # Developer API (GEMINI_API_KEY); Vertex: ver aviso da secao 3
 
 # Runtime-owned: store=False, sem previous_interaction_id, sem background provider-managed.
 # O runtime monta o input/historico e preserva id/signature dos steps retornados.
 interaction = client.interactions.create(
-    model="gemini-3.5-flash",   # Code Execution with images: documentado em Gemini 3 Flash, herdado pela linha 3.5 GA
+    model="gemini-3.8-flash",   # Flash estavel atual (GA 2026-09-02); imagem + code_execution
     store=False,
     input=runtime_adapter.to_gemini_interactions_input(thread_id="thr_123"),
     tools=[
@@ -702,24 +771,25 @@ runtime_db.persist_gemini_steps(
       </div>
       <div class="source-link">
         Fonte oficial: <a href="https://ai.google.dev/gemini-api/docs/code-execution" target="_blank" rel="noopener">Gemini — Code execution</a> ·
-        <a href="https://ai.google.dev/gemini-api/docs/interactions/code-execution" target="_blank" rel="noopener">Interactions — Code execution</a> ·
-        <a href="https://ai.google.dev/gemini-api/docs/interactions/tool-combination" target="_blank" rel="noopener">Interactions — Tool combination</a>. Verificado em 2026-06-10.
+        <a href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">Interactions API — overview</a> ·
+        <a href="https://ai.google.dev/gemini-api/docs/function-calling" target="_blank" rel="noopener">Function calling</a>. Verificado em 2026-09-30.
       </div>
     </section>
 
     <section id="anthropic-code-execution">
-      <h2>4. Anthropic Code Execution</h2>
+      <h2>4. Anthropic Code Execution<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <p>
         O Code Execution da Anthropic é a code tool mais ampla dos três providers: executa
         <strong>Python e Bash</strong> em sandbox server-side, com comandos shell, operações de arquivo
         (criar/editar/processar) e acesso aos arquivos enviados no request. Está <strong>GA — não exige
         beta header</strong>. A arquitetura de agentic vision resultante é composição: visão/PDF nativa
         para entender, Code Execution para manipular e processar, runtime para persistir artefatos.
-        <strong>Disponibilidade:</strong> Claude API, Claude Platform on AWS e Microsoft Foundry —
-        <strong>não</strong> em Amazon Bedrock nem Vertex AI (verificado em 2026-06-19; mesmo recorte do
+        <strong>Disponibilidade (verificado em 2026-09-30):</strong> GA na Claude API, no Claude Platform on
+        AWS e no Microsoft Foundry (este exige deployment <em>Hosted on Anthropic</em>); <strong>não</strong>
+        disponível em Amazon Bedrock nem Google Cloud. ZDR: não elegível (mesmo recorte do
         <a href="guia_claude_api.html">guia Claude API</a>).
       </p>
-      <h3>4.1. Versões da ferramenta</h3>
+      <h3>4.1. Versões da ferramenta<span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
       <div class="table-wrap"><table>
         <thead><tr><th>Versão</th><th>Capacidades</th><th>Modelos suportados</th></tr></thead>
         <tbody>
@@ -731,15 +801,34 @@ runtime_db.persist_gemini_steps(
           <tr>
             <td><code>code_execution_20260120</code></td>
             <td>Tudo da versão anterior + <strong>REPL persistence</strong> (estado Python mantido entre execuções no mesmo container) + <strong>programmatic tool calling</strong> (o código pode invocar outras tools).</td>
-            <td><span class="pill beta">Opus 4.5+ e Sonnet 4.5+</span> — <strong>não</strong> disponível em Haiku 4.5.</td>
+            <td><span class="pill ok">Todos os modelos</span> aceitam o tipo da tool, mas em <strong>Haiku 4.5</strong> REPL persistence e programmatic tool calling não funcionam — a versão degrada silenciosamente para o comportamento de <code>20250825</code> nesse modelo.</td>
+          </tr>
+          <tr>
+            <td><code>code_execution_20260521</code> <span class="pill beta">Mais recente</span></td>
+            <td>Mesmo runtime da <code>20260120</code>; a diferença é que a tool description informa a Claude o limite de <strong>90s de wall-clock por célula Python</strong> em programmatic tool calling, para orçar células longas.</td>
+            <td><span class="pill ok">Todos os modelos</span> — mesma ressalva de Haiku 4.5 acima.</td>
           </tr>
         </tbody>
       </table></div>
       <div class="callout info">
-        <strong>Modelos (verificado em 2026-06-10):</strong> <code>claude-fable-5</code> (GA em
-        2026-06-09) é o modelo mais novo da Anthropic; <code>claude-opus-4-8</code> segue ativo e
-        excelente para produção. Os exemplos deste guia usam <code>claude-opus-4-8</code>; ambos
-        satisfazem o requisito "Opus 4.5+" da versão <code>20260120</code>.
+        <strong>Modelos atuais (verificado em 2026-09-30):</strong> <code>claude-fable-5-1</code>,
+        <code>claude-opus-5-5</code> (recomendado para a maioria das cargas), <code>claude-sonnet-5-5</code> e
+        <code>claude-haiku-4-5</code>. As três versões da tool (<code>20250825</code>, <code>20260120</code>,
+        <code>20260521</code>) são GA, não exigem <code>anthropic-beta</code> e são aceitas por todo modelo
+        compatível; o que muda entre modelos é quanto da capacidade cada um exercita (Haiku 4.5 sem REPL
+        persistence nem programmatic tool calling). Os exemplos deste guia usam <code>claude-opus-5-5</code>.
+        Modelos Legacy: <a href="#legado">Legado e migração</a>.
+        <div class="source-link">Fontes: <a href="https://platform.claude.com/docs/en/models/overview" target="_blank" rel="noopener">models/overview</a> · <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool" target="_blank" rel="noopener">code-execution-tool</a> — verificado em 2026-09-30</div>
+      </div>
+      <div class="callout warn">
+        <strong>Mudanças dos modelos 5.5 que afetam o loop de tools (Opus 5.5 e Sonnet 5.5, verificado em 2026-09-30):</strong>
+        <ul style="margin:8px 0 0">
+          <li><strong>Computer use:</strong> na Claude API e no Google Cloud, só <code>computer_toolset_20260801</code> é aceito; <code>computer_20251124</code> retorna erro. Na Amazon Bedrock esses dois modelos ainda aceitam a tool antiga. Matriz por provider na seção <a href="#computer-browser-toolsets">Computer, browser e toolsets</a>.</li>
+          <li><strong>Code execution:</strong> nada muda; as três versões seguem GA em todos os modelos atuais (regra da tabela 4.1).</li>
+          <li><strong><code>tool_choice</code> forçado:</strong> <code>{"type":"any"}</code> e <code>{"type":"tool"}</code> retornam 400. Use <code>auto</code> com <code>strict: true</code> na tool e diga no prompt quando aplicá-la.</li>
+          <li><strong>Thinking:</strong> o Opus 5.5 tem thinking sempre ligado. No Sonnet 5.5, <code>{"type":"disabled"}</code> retorna 400; use adaptive (padrão) ou <code>{"type":"between_tools"}</code> (effort até <code>high</code>). Em ambos, o parser do loop de <code>vision_preprocess_document</code> deve selecionar blocos por <code>type</code>, sem assumir que todo texto fora de <code>tool_use</code> é a resposta final.</li>
+        </ul>
+        <div class="source-link">Fontes: <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/computer-use-tool" target="_blank" rel="noopener">computer-use-tool</a> · release notes e páginas de thinking/effort lidas na verificação de 2026-09-30.</div>
       </div>
       <h3>4.2. Exemplo runtime-owned</h3>
       <pre><code>import anthropic
@@ -747,12 +836,12 @@ runtime_db.persist_gemini_steps(
 client = anthropic.Anthropic()
 
 response = client.messages.create(
-    model="claude-opus-4-8",   # claude-fable-5 (GA 2026-06-09) tambem suporta; Haiku 4.5 exige a versao 20250825
+    model="claude-opus-5-5",   # Fable 5.1 / Sonnet 5.5 tambem suportam; em Haiku 4.5 a mesma tool roda sem REPL/programmatic
     max_tokens=4096,
     messages=runtime_adapter.to_anthropic_messages(thread_id="thr_123"),
     tools=[
-        # 20260120: REPL persistente + programmatic tool calling (Opus 4.5+ / Sonnet 4.5+)
-        {"type": "code_execution_20260120", "name": "code_execution"},
+        # 20260521 (mais recente): mesmo runtime da 20260120 + tool description com limite de 90s/celula
+        {"type": "code_execution_20260521", "name": "code_execution"},
         {
             "name": "vision_preprocess_document",
             "description": (
@@ -775,32 +864,36 @@ response = client.messages.create(
 )
 runtime_db.persist_anthropic_response(thread_id="thr_123", response=response)</code></pre>
       <div class="callout tip">
-        <strong>Quando usar cada versão:</strong> use <code>code_execution_20260120</code> por padrão em
-        Opus/Sonnet 4.5+ — REPL persistente reduz re-renderizações de página em fluxos de visão com
-        múltiplos crops, e programmatic tool calling permite que o código consulte outras tools sem
-        round-trip. Recue para <code>code_execution_20250825</code> quando o roteador puder cair em
-        Haiku 4.5 ou modelos anteriores.
+        <strong>Quando usar cada versão:</strong> use <code>code_execution_20260521</code> (ou
+        <code>20260120</code>) por padrão — REPL persistente reduz re-renderizações de página em fluxos
+        de visão com múltiplos crops, e programmatic tool calling permite que o código consulte outras
+        tools sem round-trip. Essas duas versões são aceitas por <strong>todos os modelos</strong>, mas o
+        ganho real (REPL + programmatic tool calling) só se realiza fora de Haiku 4.5 — nesse modelo elas
+        se comportam como <code>code_execution_20250825</code>, então prefira declarar
+        <code>code_execution_20250825</code> explicitamente quando o roteador puder cair em Haiku 4.5,
+        para deixar o comportamento esperado claro no código.
       </div>
       <p>
         Client tools continuam rodando no seu runtime e server tools na infraestrutura da Anthropic —
         em ambos os casos o runtime persiste <code>tool_use</code>/<code>tool_result</code> e artefatos.
-        Server tools não substituem o DB do orquestrador. Visão/PDF nativos (resolução alta em Opus 4.7+
-        e posteriores, custo em tokens) estão detalhados em <a href="guia_multimodal.html">Multimodal</a>.
+        Server tools não substituem o DB do orquestrador. Visão/PDF nativos (tier de resolução alta —
+        2576px/4784 tokens visuais — nos modelos Claude 4.7 e posteriores; os demais, incl. Haiku 4.5,
+        ficam no tier standard de 1568px/1568 tokens; custo em tokens) estão
+        detalhados em <a href="guia_multimodal.html">Multimodal</a>.
       </p>
       <div class="source-link">
         Fonte oficial: <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool" target="_blank" rel="noopener">Anthropic — Code execution tool</a> ·
         <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview" target="_blank" rel="noopener">Tool use overview</a> ·
-        <a href="https://platform.claude.com/docs/en/build-with-claude/vision" target="_blank" rel="noopener">Vision</a>. Verificado em 2026-06-10.
+        <a href="https://platform.claude.com/docs/en/build-with-claude/vision" target="_blank" rel="noopener">Vision</a>. Verificado em 2026-09-30.
       </div>
     </section>
 
     <section id="openai-shell">
-      <h2>5. OpenAI Shell tool</h2>
+      <h2>5. OpenAI Shell tool<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <p>
         O Shell dá ao modelo um <strong>ambiente de terminal completo</strong>. Há dois modos: containers
         hospedados pela OpenAI (hosted shell) e um runtime local que <em>você</em> hospeda e executa
-        (local shell). O Shell está disponível <strong>apenas na Responses API</strong> — não existe na
-        Chat Completions API.
+        (local shell). Este guia cobre o Shell na <strong>Responses API</strong>.
       </p>
       <div class="callout danger">
         <strong>Risco:</strong> executar comandos shell arbitrários é perigoso. Sempre sandbox a
@@ -820,7 +913,7 @@ runtime_db.persist_anthropic_response(thread_id="thr_123", response=response)</c
 client = OpenAI()
 
 response = client.responses.create(
-    model="gpt-5.5",
+    model="gpt-6.1-sol",
     store=False,
     tools=[{"type": "shell", "environment": {"type": "container_auto"}}],
     input=[
@@ -855,7 +948,7 @@ pending_input = runtime_adapter.to_openai_input(history)
 
 while True:
     response = client.responses.create(
-        model="gpt-5.5",
+        model="gpt-6.1-sol",
         store=False,
         tools=[shell_tool_local],   # shell tool configurada para execucao local (ver doc oficial / Agents SDK shell executor)
         input=pending_input,
@@ -887,7 +980,84 @@ while True:
         segura que shell arbitrário.
       </div>
       <div class="source-link">
-        Fonte oficial: <a href="https://developers.openai.com/api/docs/guides/tools-shell" target="_blank" rel="noopener">OpenAI — Shell</a>. Verificado em 2026-06-10.
+        Fonte oficial: <a href="https://developers.openai.com/api/docs/guides/tools-shell" target="_blank" rel="noopener">OpenAI — Shell</a>. Verificado em 2026-09-30.
+      </div>
+    </section>
+
+    <section id="computer-browser-toolsets">
+      <h2>Computer, browser e toolsets — matriz SOTA<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
+      <p>
+        <strong>Bloco datado: 2026-09-30.</strong> Computer use e browser use são superfícies de ação sobre
+        uma interface, não substitutos da visão nativa nem autorização do runtime. A aplicação executora é
+        responsável por aplicar o ambiente isolado, confirmação, allowlist e persistência do resultado. Conteúdo
+        de página, screenshot, e-mail, PDF e tool result é <strong>input não confiável</strong>; somente a
+        instrução direta do usuário concede intenção, e o executor ainda verifica a policy.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Provider / superfície</th><th>Status no corte</th><th>Contrato observado</th><th>Executor e controles</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>OpenAI Responses</strong><br><code>computer</code></td>
+            <td><span class="pill ok">atual</span><br>Também no Agents API desde 2026-09-29 (browser hospedado pela OpenAI, com aprovações de acesso e login tratados pela sua aplicação)</td>
+            <td>O guia oficial oferece dois caminhos: <strong>code execution</strong> (o modelo escreve código com PyAutoGUI/Playwright; recomendado para <code>gpt-6-astra</code>) e a tool <strong><code>computer</code></strong>, que continua suportada: o modelo retorna <code>computer_call</code>; o cliente executa cada ação em ordem, captura novo screenshot e envia <code>computer_call_output</code>.</td>
+            <td>Browser/VM isolado, confirmação imediatamente antes de enviar, apagar, comprar, alterar acesso ou transmitir dado sensível; página e screenshot não são instrução.</td>
+          </tr>
+          <tr>
+            <td><strong>Google Gemini Interactions</strong><br><code>computer_use</code></td>
+            <td><span class="pill beta">Preview</span><br>Modelo recomendado: <code>gemini-3.8-flash</code></td>
+            <td>Ambiente <code>browser</code>, <code>mobile</code> ou <code>desktop</code>; o fluxo retorna <code>function_call</code> com intenções e pode incluir <code>safety_decision=require_confirmation</code>. Detecção de prompt injection em screenshot é <strong>opt-in</strong>.</td>
+            <td>Executor client-side; após confirmação, devolva <code>safety_acknowledgement</code> no <code>function_result</code>. Sandbox, allowlist, logs de prompts/screenshots/ações e estado limpo são obrigatórios na integração.</td>
+          </tr>
+          <tr>
+            <td><strong>Anthropic Messages</strong><br><code>computer_toolset_20260801</code></td>
+            <td><span class="pill ok">toolset atual</span> (GA na Claude API e no Google Cloud; Beta em Bedrock, Claude Platform on AWS e Foundry)<br><code>computer_20251124</code> é legado: nos modelos 5.5 é <span class="pill bad">rejeitado</span> na Claude API/Google Cloud (ver <a href="#legado">Legado</a>)</td>
+            <td>Um item de toolset entrega 17 tools-membro, como <code>screenshot</code>, <code>left_click</code>, <code>type</code> e <code>zoom</code>; a resposta traz blocos <code>tool_use</code> com <code>toolset_name:"computer"</code>, potencialmente em lote (batch actions: execute em ordem, pare no primeiro erro).</td>
+            <td>O aplicativo executa os membros em ordem e responde com um <code>tool_result</code> por chamada. VM/container dedicado, perfil sem credenciais, confirmação por ação consequencial e página tratada como não confiável.</td>
+          </tr>
+          <tr>
+            <td><strong>Anthropic Messages</strong><br><code>browser_toolset_20260801</code></td>
+            <td><span class="pill ok">toolset atual</span></td>
+            <td>Browser usa estrutura (árvore de acessibilidade, elementos, forms, tabs) e pixels; referências são escopadas à tab e podem ficar stale após navegação/alteração do DOM.</td>
+            <td>Rede com allowlist revalidada após redirects; bloqueie loopback/link-local/faixas privadas. Deixe <code>javascript_exec</code> e <code>file_upload</code> desabilitados por padrão; não exponha cookies/arquivos internos.</td>
+          </tr>
+        </tbody>
+      </table></div>
+      <div class="callout warn">
+        <strong>Toolset não é permissão.</strong> O conjunto de membros habilitado é capability; ACL, tenant,
+        scopes, identidade/delegação e approval binding continuam no runtime. Para qualquer ação externa, registre
+        o hash canônico de <code>tool_name@version + args + principal + tenant + policy_version</code> no pedido de
+        aprovação e rejeite replay, alteração de argumento, redirect ou destinatário. Nunca digite segredo num
+        browser profile e nunca aceite um comando vindo da página como autorização.
+      </div>
+      <h3>Loop comum e evidência de side effect</h3>
+      <pre><code># Proposta do modelo não é execução nem sucesso.
+for call in model_calls:
+    validate_identity_and_scope(call, principal, tenant)
+    validate_approval_binding(call, approval_id, args_hash, policy_version)
+    if call.risk in {"write", "send", "delete", "financial"}:
+        require_confirmation_now(call)
+    result = executor.run(call, sandbox=safe_env, egress=allowlist)
+    runtime_db.persist({
+        "execution_id": result.execution_id,
+        "state": result.state,  # proposed|authorized|started|committed|verified|unknown
+        "before_hash": result.before_hash,
+        "after_hash": result.after_hash,
+        "external_receipt": result.external_receipt,
+    })</code></pre>
+      <p>
+        Um <code>computer_call</code>, <code>function_call</code> ou <code>tool_use</code> prova somente uma
+        proposta. <code>committed</code> exige resposta do executor; <code>verified</code> exige recibo ou leitura
+        posterior do estado. Timeout, cancelamento ou reconciliação ausente permanecem <code>unknown</code> e
+        <span class="pill partial">NAO-MEDIDO</span> para o eval de outcome.
+      </p>
+      <div class="source-link">
+        Fontes oficiais (conferidas em 2026-09-30):
+        <a href="https://developers.openai.com/api/docs/guides/tools-computer-use" target="_blank" rel="noopener">OpenAI · Computer use</a> ·
+        <a href="https://developers.openai.com/api/docs/guides/agents-api/tools/computer-use" target="_blank" rel="noopener">OpenAI · Agents API computer use</a> ·
+        <a href="https://ai.google.dev/gemini-api/docs/computer-use" target="_blank" rel="noopener">Gemini · Computer Use (Preview)</a> ·
+        <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/computer-use-tool" target="_blank" rel="noopener">Anthropic · Computer use tool</a> ·
+        <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/browser-use-tool" target="_blank" rel="noopener">Anthropic · Browser use tool</a>.
+        Superfícies marcadas preview/legado exigem smoke test por modelo e ambiente.
       </div>
     </section>
 
@@ -912,17 +1082,19 @@ while True:
         Code Interpreter, Shell ou Code Execution — isso é gating no runtime (§1).
       </div>
 
-      <h3>6.1. OpenAI — <code>{"type":"tool_search"}</code></h3>
+      <h3>6.1. OpenAI — <code>{"type":"tool_search"}</code><span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
       <ul>
-        <li>Suportado apenas em <strong>gpt-5.4+</strong>.</li>
+        <li>Na Responses API, suportado apenas em <strong><code>gpt-5.4</code> e posteriores</strong>.</li>
         <li>Ativação: incluir <code>{"type": "tool_search"}</code> no array <code>tools</code> e marcar functions/MCP com <code>defer_loading: true</code>.</li>
         <li><strong>Hosted tool search:</strong> a busca roda na OpenAI sobre as tools declaradas na própria request. Comece por aqui.</li>
-        <li><strong>Client-executed tool search:</strong> o modelo emite <code>tool_search_call</code>; sua aplicação responde com <code>tool_search_output</code>, podendo injetar definições novas via <code>additional_tools</code> — ideal quando a disponibilidade depende de tenant, projeto, permissões ou registry interno.</li>
+        <li><strong>Client-executed tool search:</strong> configure <code>tool_search</code> com <code>execution: "client"</code>, <code>description</code> e <code>parameters</code>. O primeiro response termina em <code>tool_search_call</code> com <code>execution: "client"</code> e um <code>call_id</code> preenchido; sua aplicação faz a descoberta e envia uma nova request com os outputs anteriores mais um <code>tool_search_output</code> que traz o mesmo <code>call_id</code>, <code>execution: "client"</code>, <code>status: "completed"</code> e o array <code>tools</code> carregado — tools fora desse array não ficam disponíveis ao modelo. Não é a busca hospedada (que responde com <code>execution: "server"</code> e <code>call_id: null</code> dentro da mesma resposta): a aplicação controla a seleção quando ela depende de tenant, projeto, permissões ou registry interno. Remover uma tool já carregada num <code>tool_search_output</code> subsequente é possível, mas quebra o cache a partir dali.</li>
         <li><strong>Namespaces:</strong> agrupe funções deferidas em namespaces ou MCP servers com descrições de alto nível; <code>defer_loading</code> aplica-se às funções <em>dentro</em> do namespace, não ao objeto namespace. Melhor prática oficial: <strong>menos de 10 functions por namespace</strong>. Um namespace pode misturar tools deferidas e não-deferidas.</li>
         <li>Para função deferida individual, o modelo continua vendo nome e descrição — na prática o que se difere é principalmente o <em>parameter schema</em>.</li>
+        <li>Item de input <code>additional_tools</code>: disponibiliza tools a partir de um ponto específico da conversa; ao reenviar itens manualmente, preserve a posição dele.</li>
+        <li><strong>Agents API (produto distinto, beta desde 2026-09-10; <code>/v1/agents/sessions</code>):</strong> as funções carregam de forma eager por padrão. Para diferir, inclua <code>{"type":"tool_search"}</code> em <code>agent.tools</code> e marque cada função com <code>defer_loading: true</code> (adicionar <code>tool_search</code> não difere todas). Tools MCP passam por discovery automático, sem <code>tool_search</code> nem <code>defer_loading</code> no servidor — a configuração da Responses API descrita aqui não se aplica a eles.</li>
       </ul>
       <pre><code>{
-  "model": "gpt-5.5",
+  "model": "gpt-6.1-sol",
   "store": false,
   "tools": [
     { "type": "tool_search" },
@@ -944,15 +1116,17 @@ while True:
   "input": "..."
 }</code></pre>
 
-      <h3>6.2. Anthropic — Regex e BM25</h3>
+      <h3>6.2. Anthropic — Regex e BM25<span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
       <ul>
         <li>Duas variantes de server tool: <code>tool_search_tool_regex_20251119</code> e <code>tool_search_tool_bm25_20251119</code>.</li>
         <li>Tools do catálogo levam <code>defer_loading: true</code>; a busca cobre nomes, descrições e argumentos.</li>
-        <li><strong>Pelo menos uma tool não-deferida</strong> é exigida no request.</li>
-        <li>Cada busca carrega tipicamente <strong>3–5 tools</strong> para o contexto; o mecanismo escala até <strong>~10.000 tools</strong> no catálogo.</li>
+        <li><strong>Pelo menos uma tool não-deferida</strong> é exigida no request (normalmente a própria tool search; deferir todas dá <strong>400</strong>). Como boa prática, mantenha suas <strong>3–5 tools mais usadas não-deferidas</strong> — isso é uma recomendação de design, não o tamanho do resultado de busca.</li>
+        <li>Cada busca retorna <strong>até 5 tools por padrão</strong> (Claude pode pedir um <code>limit</code> de 1 a 10.000 no próprio input da busca); o catálogo suporta até <strong>10.000 tools</strong> com <code>defer_loading: true</code> por request.</li>
+        <li>Uma tool com <code>defer_loading: true</code> não pode levar <code>cache_control</code> — a API retorna <strong>400</strong>; ponha o breakpoint de cache numa tool não-deferida.</li>
+        <li>Nos toolsets client-side de computer/browser use (<code>computer_toolset_20260801</code>, <code>browser_toolset_20260801</code>), <code>defer_loading</code> não vai no nível da entry do toolset — vai por tool-membro dentro do <code>configs</code> da entry, e precisa resolver para o <strong>mesmo valor em todo membro habilitado</strong>; setar no nível da entry é rejeitado, e ao ser descoberto por busca o toolset inteiro carrega de uma vez. Em MCP via <a href="guia_ferramentas_mcp_rag.html">MCP connector</a>, o mesmo vale para <code>mcp_toolset</code>: <code>defer_loading</code> fica no <code>default_config</code> da entry (todo o servidor) ou por tool em <code>configs</code> — nunca por definição de tool individual solta.</li>
       </ul>
       <pre><code>{
-  "model": "claude-opus-4-8",
+  "model": "claude-opus-5-5",
   "max_tokens": 4096,
   "tools": [
     { "type": "tool_search_tool_bm25_20251119", "name": "tool_search" },
@@ -976,6 +1150,22 @@ while True:
         No exemplo, <code>orders_get_order_status</code> permanece não-deferida (requisito mínimo) e
         atua como "hot tool"; o resto do catálogo é deferido e descoberto via BM25.
       </p>
+      <div class="callout info">
+        <strong>Trocar o conjunto de tools entre turnos sem invalidar o prompt cache (beta, verificado em 2026-09-30).</strong>
+        Editar o array <code>tools</code> invalida o cache da conversa inteira. Mensagens <code>role:"system"</code>
+        com blocos <code>tool_addition</code> e <code>tool_removal</code> mudam a disponibilidade de tools no meio da
+        conversa preservando o prefixo cacheado; isso deixa a seleção dinâmica no runtime (§7) compatível com caching
+        agressivo. Na Claude API, o header <code>inline-tools-2026-09-15</code> cobre mudanças <em>por referência</em>
+        (<code>tool_reference</code> para tool já declarada em <code>tools</code>) e <em>por valor</em>
+        (<code>tool_definition</code> com a definição completa, para tool desconhecida no início ou schema que muda
+        depois); o header anterior <code>mid-conversation-tool-changes-2026-07-01</code> segue valendo só para
+        mudanças por referência (Claude API, Bedrock e Google Cloud). Adicionar um servidor MCP por valor exige também
+        <code>mcp-client-2026-09-15</code>. Modelos: Fable 5.1, Mythos 5.1, Fable 5, Mythos 5, Opus 5.5, Opus 4.8,
+        Opus 5 e Sonnet 5.5 — <strong>não</strong> Sonnet 5 (use o campo <code>system</code> de topo nele). Limitação:
+        alguns tipos de tool (ex.: computer use) ainda não podem ser definidos por valor; declare em <code>tools</code>
+        o que já se conhece no início, com <code>defer_loading: true</code>. <span class="pill beta">Beta</span>
+        <div class="source-link">Fonte: <a href="https://platform.claude.com/docs/en/build-with-claude/mid-conversation-system-messages" target="_blank" rel="noopener">mid-conversation-system-messages</a> — verificado em 2026-09-30</div>
+      </div>
 
       <h3>6.3. Gemini — sem equivalente nativo</h3>
       <p>
@@ -987,15 +1177,15 @@ while True:
         <code>search_internal_tools</code> com loop de duas fases (§7).
       </p>
 
-      <h3>6.4. Comparativo</h3>
+      <h3>6.4. Comparativo<span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
       <div class="table-wrap"><table>
         <thead><tr><th>Dimensão</th><th>OpenAI</th><th>Anthropic</th><th>Gemini</th></tr></thead>
         <tbody>
           <tr><td>Mecanismo nativo</td><td><code>{"type":"tool_search"}</code></td><td><code>tool_search_tool_regex_20251119</code> / <code>tool_search_tool_bm25_20251119</code></td><td><span class="pill na">N/D</span> — runtime decide</td></tr>
           <tr><td>Flag de deferimento</td><td><code>defer_loading: true</code> (functions, MCP, funções de namespace)</td><td><code>defer_loading: true</code></td><td>—</td></tr>
-          <tr><td>Modelos</td><td>gpt-5.4+</td><td>Modelos com tool use atuais</td><td>—</td></tr>
-          <tr><td>Modos</td><td>Hosted e client-executed (<code>tool_search_call</code>/<code>tool_search_output</code> + <code>additional_tools</code>)</td><td>Server tool (busca na Anthropic)</td><td>Pré-seleção no runtime ou loop de duas fases</td></tr>
-          <tr><td>Restrições/escala</td><td>Namespaces &lt;10 functions (melhor prática)</td><td>≥1 tool não-deferida; 3–5 tools por busca; até ~10k tools</td><td>10–20 tools ativas (melhor prática oficial)</td></tr>
+          <tr><td>Modelos</td><td>Responses API: <code>gpt-5.4</code>+ (exemplos oficiais usam <code>gpt-6-astra</code>); Agents API: <code>tool_search</code> em <code>agent.tools</code></td><td>Fable 5.1/Mythos 5.1, Fable 5/Mythos 5, Opus 5.5, Opus 5, Sonnet 5.5, Opus 4.5–4.8, Sonnet 4.5/4.6, Haiku 4.5 (tabela oficial de compatibilidade de 2026-09-30; <strong>não lista Sonnet 5</strong>)</td><td>—</td></tr>
+          <tr><td>Modos</td><td>Hosted (<code>execution:"server"</code>): OpenAI busca nas tools deferidas declaradas. Client-executed (<code>execution:"client"</code>): a aplicação recebe <code>tool_search_call</code> e devolve <code>tool_search_output</code> com <code>tools</code> em nova request.</td><td>Server tool (busca na Anthropic); implementação client-side possível via <code>tool_reference</code> em <code>tool_result</code> (ex.: embeddings)</td><td>Pré-seleção no runtime ou loop de duas fases</td></tr>
+          <tr><td>Restrições/escala</td><td>Namespaces &lt;10 functions (melhor prática)</td><td>≥1 tool não-deferida; até 5 tools por busca por padrão (<code>limit</code> 1–10.000); até 10k tools deferidas/request; sem <code>cache_control</code> em tool deferida</td><td>10–20 tools ativas (melhor prática oficial)</td></tr>
         </tbody>
       </table></div>
       <div class="callout tip">
@@ -1007,7 +1197,7 @@ while True:
       <div class="source-link">
         Fontes oficiais: <a href="https://developers.openai.com/api/docs/guides/tools-tool-search" target="_blank" rel="noopener">OpenAI — Tool search</a> ·
         <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/tool-search-tool" target="_blank" rel="noopener">Anthropic — Tool search tool</a> ·
-        <a href="https://ai.google.dev/gemini-api/docs/function-calling" target="_blank" rel="noopener">Gemini — Function calling</a>. Verificado em 2026-06-10.
+        <a href="https://ai.google.dev/gemini-api/docs/function-calling" target="_blank" rel="noopener">Gemini — Function calling</a>. Seção revalidada em 2026-09-30 (OpenAI e Anthropic); Gemini: a doc de function calling segue recomendando 10–20 tools ativas.
       </div>
     </section>
 
@@ -1146,12 +1336,23 @@ async def vision_preprocess_document(
     # 4. Armazene artefatos derivados no object storage.
     # 5. Retorne apenas artifact IDs e metadata pequena, nunca segredos ou paths locais.
     return {
-        "ok": True,
+        "ok": True,  # só significa que o executor terminou; não prova efeito externo
+        "execution_id": "exec_123",
+        "state": "committed",  # use "verified" apenas após ler/reconciliar o estado
+        "before_hash": "sha256:...",
+        "after_hash": "sha256:...",
+        "external_receipt": None,
         "artifacts": [
             {"artifact_id": "art_crop_001", "mime_type": "image/png",
              "description": "Cropped zoom from page 2."}
         ],
     }</code></pre>
+      <div class="callout warn">
+        <strong>Prova de resultado:</strong> <code>ok:true</code> indica somente que o worker concluiu a
+        operação local. Para qualquer efeito externo, persista <code>execution_id</code>, estado, hashes
+        before/after e recibo ou leitura posterior; sem reconciliação, use <code>unknown</code> e não anuncie
+        sucesso. Um artefato de imagem também precisa de checksum, MIME e lifecycle no artifact store.
+      </div>
       <h3>8.2. Allowlist de operações</h3>
       <div class="table-wrap"><table>
         <thead><tr><th>Operação</th><th>Uso</th><th>Parâmetros</th><th>Risco a controlar</th></tr></thead>
@@ -1197,7 +1398,7 @@ async def vision_preprocess_document(
     </section>
 
     <section id="schemas-multi-provider">
-      <h2>9. Schemas de custom functions multi-provider</h2>
+      <h2>9. Schemas de custom functions multi-provider<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <p>
         Esta seção é canônica para geração/validação de schemas de custom functions nos três providers
         e deve ser indexada com <strong>alta prioridade</strong> em pipelines de RAG que consultam este
@@ -1209,8 +1410,8 @@ async def vision_preprocess_document(
       <div class="table-wrap"><table>
         <thead><tr><th>Conceito</th><th>OpenAI Responses / Agents</th><th>Anthropic Messages</th><th>Gemini Interactions / GenAI</th></tr></thead>
         <tbody>
-          <tr><td>Tipo da tool</td><td><code>tools[].type = "function"</code></td><td>Client tool sem <code>type</code>; server tools têm <code>type</code> versionado</td><td>Interactions: <code>type:"function"</code>; <code>generateContent</code>: <code>functionDeclarations</code></td></tr>
-          <tr><td>Nome</td><td><code>name</code></td><td><code>name</code>, regex <code>^[a-zA-Z0-9_-]{1,64}$</code></td><td><code>name</code></td></tr>
+          <tr><td>Tipo da tool</td><td><code>tools[].type = "function"</code></td><td>Client tool sem <code>type</code>; server tools têm <code>type</code> versionado</td><td>Interactions: <code>type:"function"</code></td></tr>
+          <tr><td>Nome</td><td><code>name</code></td><td><code>name</code>, regex <code>^[a-zA-Z0-9_-]{1,128}$</code></td><td><code>name</code></td></tr>
           <tr><td>Descrição</td><td><code>description</code></td><td><code>description</code> (fator mais importante na seleção)</td><td><code>description</code></td></tr>
           <tr><td>Schema de entrada</td><td><code>parameters</code></td><td><code>input_schema</code></td><td><code>parameters</code></td></tr>
           <tr><td>Strict mode</td><td><code>strict:true</code>; requer <code>additionalProperties:false</code> e todos os campos em <code>required</code></td><td><code>strict:true</code> disponível nas propriedades opcionais</td><td>Subset OpenAPI/JSON Schema; validar no runtime</td></tr>
@@ -1261,7 +1462,7 @@ async def vision_preprocess_document(
       <ul>
         <li>Use <code>snake_case</code> com prefixo por namespace: <code>orders_get_order_status</code>, <code>billing_list_invoices</code>, <code>vision_preprocess_document</code>.</li>
         <li>Verbo + objeto. Evite <code>get_data</code>, <code>process</code>, <code>run</code>, <code>lookup</code> genérico.</li>
-        <li>Em Anthropic, respeite <code>^[a-zA-Z0-9_-]{1,64}$</code>.</li>
+        <li>Em Anthropic, respeite <code>^[a-zA-Z0-9_-]{1,128}$</code>.</li>
       </ul>
       <h3>9.4. Regras para descriptions</h3>
       <p>
@@ -1304,7 +1505,7 @@ async def vision_preprocess_document(
       <div class="source-link">
         Fontes oficiais: <a href="https://developers.openai.com/api/docs/guides/function-calling" target="_blank" rel="noopener">OpenAI — Function calling</a> ·
         <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools" target="_blank" rel="noopener">Anthropic — Define tools</a> ·
-        <a href="https://ai.google.dev/gemini-api/docs/function-calling" target="_blank" rel="noopener">Gemini — Function calling</a>. Verificado em 2026-06-10.
+        <a href="https://ai.google.dev/gemini-api/docs/function-calling" target="_blank" rel="noopener">Gemini — Function calling</a>. Verificado em 2026-09-30 (o regex de nome de tool da Anthropic hoje é <code>^[a-zA-Z0-9_-]{1,128}$</code>).
       </div>
     </section>
 
@@ -1370,11 +1571,22 @@ Controle de custo e latência:
         execução). O custo detalhado de tokens por modalidade/provider — incluindo tokenização de
         imagens e PDFs — é dono do guia <a href="guia_token_counting.html">Token counting</a>.
       </div>
-      <h3>11.1. OpenAI</h3>
+      <h3>11.1. OpenAI<span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
       <p>
-        Tokens do <code>gpt-5.5</code> (Standard, por 1M tokens): contexto curto (&lt;272K tokens de
-        input) — US$5,00 input, US$0,50 cached input, US$30,00 output; contexto longo (≥272K) —
-        US$10,00 input, US$1,00 cached input, US$45,00 output. Batch tem preços menores.
+        Tokens por 1M, Standard (contexto curto ≤272K de input; contexto longo &gt;272K aplica a tarifa da coluna
+        seguinte a toda a request). Fonte: <a href="https://developers.openai.com/api/docs/pricing" target="_blank" rel="noopener">pricing oficial</a>, lido em 2026-09-30. Batch e Flex custam 50% do Standard.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Modelo</th><th>Papel</th><th>Input</th><th>Cached input</th><th>Output</th><th>Longo (input / cached / output)</th></tr></thead>
+        <tbody>
+          <tr><td><code>gpt-6-astra</code></td><td>Flagship</td><td>US$10,00</td><td>US$1,00</td><td>US$50,00</td><td>US$20,00 / US$2,00 / US$75,00</td></tr>
+          <tr><td><code>gpt-6.1-sol</code></td><td>Coding/agentic (2026-09-29); usado nos exemplos deste guia</td><td>US$2,00</td><td>US$0,10</td><td>US$10,00</td><td>US$4,00 / US$0,20 / US$15,00</td></tr>
+          <tr><td><code>gpt-6-sol</code></td><td>Sol anterior</td><td>US$2,00</td><td>US$0,20</td><td>US$10,00</td><td>US$4,00 / US$0,40 / US$15,00</td></tr>
+          <tr><td><code>gpt-6-luna</code></td><td>Volume</td><td>US$0,10</td><td>US$0,01</td><td>US$0,50</td><td>US$0,20 / US$0,02 / US$0,75</td></tr>
+        </tbody>
+      </table></div>
+      <p>
+        A família <code>gpt-5.6</code> segue ativa e precificada na mesma página.
       </p>
       <p>
         Containers de Hosted Shell e Code Interpreter têm preço-base por sessão de 20 minutos, por tier
@@ -1390,9 +1602,9 @@ Controle de custo e latência:
         </tbody>
       </table></div>
       <div class="callout warn">
-        <strong>Mudança de billing (2026-06-02):</strong> desde 02/06/2026, containers são cobrados
-        <strong>por minuto</strong> de atividade, com <strong>mínimo de 5 minutos</strong> por container
-        — os valores da tabela são a taxa-base de 20 minutos usada como referência de proporção. Um
+        <strong>Billing por minuto (2026-06-02, changelog OpenAI):</strong> desde 02/06/2026, sessões de container
+        <strong>elegíveis</strong> são cobradas por minuto de atividade, com <strong>mínimo de 5 minutos</strong> por container
+        — os valores da tabela (que a página de pricing ainda expressa por sessão de 20 minutos) são a taxa-base usada como referência de proporção. Um
         container <code>4g</code> usado por 6 minutos custa ~US$0,036; usado por 3 minutos, cobra o
         mínimo de 5 (~US$0,03). Decisão comercial deve reconsultar o
         <a href="https://developers.openai.com/api/docs/pricing" target="_blank" rel="noopener">pricing oficial</a>.
@@ -1400,14 +1612,14 @@ Controle de custo e latência:
       <div class="table-wrap"><table>
         <thead><tr><th>Tool</th><th>Custo adicional do provider</th><th>Uso recomendado</th></tr></thead>
         <tbody>
-          <tr><td>Code Interpreter</td><td>Container por tier (por minuto, mín. 5) + tokens</td><td>Python, arquivos, crop/zoom visual, plots, análise numérica.</td></tr>
+          <tr><td>Code Interpreter</td><td>Container por tier (sessões elegíveis: por minuto, mín. 5) + tokens</td><td>Python, arquivos, crop/zoom visual, plots, análise numérica.</td></tr>
           <tr><td>Hosted Shell</td><td>Mesma tabela de containers + tokens</td><td>CLI, repositórios, builds, multimedia, scripts de sistema.</td></tr>
           <tr><td>Local Shell</td><td>Sem container OpenAI; o custo é a sua infra</td><td>Quando precisa de controle total do ambiente e aceita executar <code>shell_call</code>.</td></tr>
         </tbody>
       </table></div>
       <h3>11.2. Anthropic</h3>
       <ul>
-        <li>Code Execution é <strong>gratuito quando usado junto com</strong> <code>web_search_20260209</code> ou <code>web_fetch_20260209</code>.</li>
+        <li>Code Execution é <strong>gratuito quando usado junto com</strong> <code>web_search_20260209</code> ou <code>web_fetch_20260209</code> ou posterior (a mais recente é <code>_20260318</code> em ambas).</li>
         <li>Sem essas tools: cobrança por tempo de execução com <strong>mínimo de 5 minutos</strong>; <strong>1.550 horas grátis por organização/mês</strong>; <strong>US$0,05 por hora/container</strong> além disso.</li>
         <li>Arquivos incluídos no request podem gerar cobrança <em>mesmo se a tool não for invocada</em>, porque são pré-carregados no container.</li>
       </ul>
@@ -1415,7 +1627,7 @@ Controle de custo e latência:
       <p>
         Code Execution não tem cobrança adicional por habilitação: paga-se apenas tokens do modelo,
         incluindo o código gerado e os resultados de execução, contabilizados como <em>intermediate
-        tokens</em>. Runtime máximo de 30s e até 5 retries valem como teto prático de custo por turno.
+        tokens</em>. Runtime máximo de 30s e até 5 regenerações valem como teto prático de custo por turno.
         Detalhe de contagem em <a href="guia_token_counting.html">Token counting</a>.
       </p>
       <h3>11.4. Regra de gating</h3>
@@ -1437,7 +1649,7 @@ Controle de custo e latência:
       <div class="source-link">
         Fontes oficiais: <a href="https://developers.openai.com/api/docs/pricing" target="_blank" rel="noopener">OpenAI — Pricing</a> ·
         <a href="https://platform.claude.com/docs/en/about-claude/pricing" target="_blank" rel="noopener">Anthropic — Pricing</a> ·
-        <a href="https://ai.google.dev/gemini-api/docs/code-execution" target="_blank" rel="noopener">Gemini — Code execution</a>. Verificado em 2026-06-10.
+        <a href="https://ai.google.dev/gemini-api/docs/code-execution" target="_blank" rel="noopener">Gemini — Code execution</a>. Verificado em 2026-09-30.
       </div>
     </section>
 
@@ -1497,20 +1709,24 @@ call_provider -&gt; finalize_response -&gt; END
     </section>
 
     <section id="smoke-tests-checklist">
-      <h2>13. Smoke tests &amp; checklist de produção</h2>
+      <h2>13. Smoke tests &amp; checklist de produção<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <h3>13.1. Smoke tests por provider</h3>
       <ul>
         <li><strong>OpenAI:</strong> <code>store:false</code> + histórico manual + resposta final coerente.</li>
         <li><strong>OpenAI:</strong> PDF como <code>input_file</code> + visão nativa + Code Interpreter acionado <em>só</em> quando o prompt pede crop/zoom.</li>
         <li><strong>OpenAI:</strong> Hosted Shell (<code>container_auto</code> e <code>container_reference</code>) e Local Shell em cenários separados, com <code>shell_call_output</code> persistido.</li>
         <li><strong>OpenAI:</strong> Tool Search hosted e client-executed com function deferida, <code>tool_search_call</code>/<code>tool_search_output</code> e function call final.</li>
+        <li><strong>OpenAI Computer use:</strong> loop <code>computer_call</code> → executar ações em ordem → novo screenshot → <code>computer_call_output</code>, com confirmação antes de ação consequencial.</li>
         <li><strong>Gemini Interactions:</strong> <code>store:false</code> sem <code>previous_interaction_id</code>; steps persistidos.</li>
-        <li><strong>Gemini Interactions:</strong> Code Execution com imagem em <code>gemini-3.5-flash</code>; verificar retorno de code/result/text. Confirmar o <strong>backend de auth</strong>: este teste passa na Developer API e pode <strong>falhar</strong> em Vertex — se o alvo for Vertex, validar <code>generateContent</code> + <code>code_execution</code> como caminho alternativo (§3).</li>
+        <li><strong>Gemini Interactions:</strong> Code Execution com imagem em Gemini 3 Flash (ex.: <code>gemini-3.8-flash</code>, estável mais recente); verificar retorno de code/result/text e confirmar o backend de auth antes de escolher Developer API ou Vertex.</li>
+        <li><strong>Gemini Computer Use:</strong> ambiente browser/desktop isolado, <code>enable_prompt_injection_detection:true</code>, confirmação de <code>require_confirmation</code> e <code>safety_acknowledgement</code> somente após consentimento (Preview).</li>
         <li><strong>Gemini Interactions:</strong> tool combination stateless preservando <code>id</code>/<code>signature</code>.</li>
         <li><strong>Anthropic:</strong> custom tool com <code>input_schema</code> + strict + <code>tool_result</code>.</li>
-        <li><strong>Anthropic:</strong> Code Execution com arquivo/imagem e artefatos persistidos no runtime — testar <code>code_execution_20250825</code> e, em Opus/Sonnet 4.5+, <code>code_execution_20260120</code> com REPL persistente entre execuções.</li>
+        <li><strong>Anthropic:</strong> Code Execution com arquivo/imagem e artefatos persistidos no runtime — testar <code>code_execution_20250825</code>, <code>code_execution_20260120</code> e <code>code_execution_20260521</code> com REPL persistente entre execuções (confirmar que Haiku 4.5 degrada de forma limpa para o comportamento de <code>20250825</code>) e, em Opus 5.5/Sonnet 5.5, que o loop não usa <code>tool_choice</code> forçado nem <code>computer_20251124</code>.</li>
+        <li><strong>Anthropic computer/browser:</strong> executar membros dos toolsets <code>computer_toolset_20260801</code>/<code>browser_toolset_20260801</code> em ordem, revalidar referências após navegação e comprovar allowlist/redirect.</li>
         <li><strong>Anthropic:</strong> Tool Search BM25 e Regex com deferred tools e ≥1 tool não-deferida.</li>
         <li><strong>Fallback local:</strong> <code>vision_preprocess_document</code> em Docker sem rede, com quotas, timeouts e artifact IDs.</li>
+        <li><strong>Negativos:</strong> screenshot/página com prompt injection, approval com args alterados, redirect para IP privado, token com audience/tenant errado e side effect que retorna timeout; todos devem negar ou terminar em <code>unknown</code>, nunca em falso verde.</li>
       </ul>
       <h3>13.2. Checklist de produção</h3>
       <ul>
@@ -1519,23 +1735,50 @@ call_provider -&gt; finalize_response -&gt; END
         <li>☐ Gating decide as tools <em>antes</em> da request; Tool Search não é usado como liga/desliga de code tools.</li>
         <li>☐ Todos os schemas têm descriptions suficientes, enums, <code>required</code> e validação no runtime.</li>
         <li>☐ Tool executors têm ACL, tenant isolation, idempotency, approval e audit logs.</li>
+        <li>☐ Approval binding contém principal/tenant/tool/version/args hash/policy/nonce/TTL e é verificado imediatamente antes do efeito.</li>
         <li>☐ Artifact store tem checksums, validação de MIME, lifecycle policy e redaction.</li>
         <li>☐ Worker local tem <code>no-new-privileges</code>, sem rede, quotas, tmpfs e allowlist.</li>
-        <li>☐ Custos de container monitorados por turno (billing por minuto, mínimos de 5 min na OpenAI e na Anthropic sem web tools).</li>
+        <li>☐ Custos de container monitorados por turno (OpenAI: billing por minuto nas sessões elegíveis, mínimo de 5 min; Anthropic: mínimo de 5 min sem web tools).</li>
         <li>☐ CI revalida versões de SDK (PyPI/npm) e executa smoke tests reais por provider.</li>
-        <li>☐ Preços são snapshot de 2026-06-10; decisão comercial reconsulta o pricing oficial.</li>
+        <li>☐ CI classifica superfície como atual, preview ou legado e registra recibo/estado posterior; se ausente, marca <code>NAO-MEDIDO</code>.</li>
+        <li>☐ Preços são snapshot de 2026-09-30; decisão comercial reconsulta o pricing oficial.</li>
       </ul>
+    </section>
+
+    <!-- ===================== LEGADO ===================== -->
+    <section class="ref">
+      <h2 id="legado">Legado e migração<span class="rev-flag novo">Novo · 2026-09-30</span></h2>
+      <p>
+        Superfícies e modelos que o corpo deste guia não ensina mais. Cada linha traz o status, a data e a migração
+        em uma frase. Estado verificado em <strong>2026-09-30</strong>.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Legado</th><th>Status e data</th><th>Migração</th><th>Fonte</th></tr></thead>
+        <tbody>
+          <tr><td>Gemini: <code>generateContent</code> com <code>types.Tool(code_execution=...)</code> (<code>inlineData</code>/<code>fileData</code>)</td><td>Legacy, ainda suportado; Interactions API é GA</td><td><code>client.interactions.create(tools=[{"type": "code_execution"}])</code> e leitura de <code>steps[]</code> (<code>code_execution_call</code>, <code>code_execution_result</code>, <code>model_output</code>). Em Vertex, disponibilidade de Interactions com code execution: <span class="pill partial">UNVERIFIED</span>.</td><td><a href="https://ai.google.dev/gemini-api/docs/migrate-to-interactions" target="_blank" rel="noopener">migrate-to-interactions</a></td></tr>
+          <tr><td>Gemini: <code>gemini-2.5-computer-use-preview-10-2025</code></td><td>Legado</td><td><code>gemini-3.8-flash</code> com <code>tools=[{"type": "computer_use", "environment": "browser"}]</code>.</td><td><a href="https://ai.google.dev/gemini-api/docs/computer-use" target="_blank" rel="noopener">computer-use</a></td></tr>
+          <tr><td>OpenAI: <code>computer-use-preview</code> (tool <code>computer_use_preview</code>)</td><td>Desligado em 2026-07-23 (substituto oficial na tabela: <code>gpt-5.6-terra</code>)</td><td>Tool <code>computer</code> da Responses API, ou code execution, em <code>gpt-6.1-sol</code>/<code>gpt-6-astra</code>.</td><td><a href="https://developers.openai.com/api/docs/deprecations" target="_blank" rel="noopener">deprecations</a></td></tr>
+          <tr><td>OpenAI: Assistants API (Code Interpreter e File Search de assistants)</td><td>Desligada em 2026-08-26</td><td>Responses API (tools <code>code_interpreter</code>/<code>file_search</code>) e Conversations API.</td><td><a href="https://developers.openai.com/api/docs/deprecations" target="_blank" rel="noopener">deprecations</a></td></tr>
+          <tr><td>OpenAI: Chat Completions com code interpreter</td><td>Suportada, não recomendada para projetos novos; Shell não existe nela; <code>gpt-6-astra</code> e <code>gpt-6.1-sol</code> só a aceitam sem tools</td><td>Responses API.</td><td><a href="https://developers.openai.com/api/docs/guides/migrate-to-responses" target="_blank" rel="noopener">migrate-to-responses</a></td></tr>
+          <tr><td>Anthropic: <code>computer_20251124</code> (header <code>computer-use-2025-11-24</code>)</td><td>Legado, em beta; rejeitado pelos modelos 5.5 na Claude API e no Google Cloud; Opus 5.5 e Sonnet 5.5 ainda o aceitam na Bedrock; Opus 4.7/4.6, Sonnet 4.6 e Opus 4.5 só têm esta versão</td><td><code>{"type": "computer_toolset_20260801"}</code> sem <code>name</code> nem <code>display_*</code> e sem beta header; o loop passa a ler blocos <code>tool_use</code> com <code>toolset_name:"computer"</code> e batch actions.</td><td><a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/computer-use-tool" target="_blank" rel="noopener">computer-use-tool</a></td></tr>
+          <tr><td>Anthropic: <code>mid-conversation-tool-changes-2026-07-01</code></td><td>Segue valendo só para mudanças por referência</td><td><code>inline-tools-2026-09-15</code> cobre referência e valor (§6.2).</td><td><a href="https://platform.claude.com/docs/en/build-with-claude/mid-conversation-system-messages" target="_blank" rel="noopener">mid-conversation-system-messages</a></td></tr>
+          <tr><td>Anthropic: <code>code_execution_20250522</code> e header <code>code-execution-2025-05-22</code></td><td>Legado; os headers beta seguem válidos como opt-in</td><td><code>code_execution_20250825</code> ou posterior, sem header (§4.1).</td><td><a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool" target="_blank" rel="noopener">code-execution-tool</a></td></tr>
+          <tr><td>Anthropic: <code>claude-opus-4-8</code> (exemplo padrão das edições anteriores)</td><td>Legacy, ainda ativo; retirada não antes de 2027-05-28</td><td><code>claude-opus-5-5</code>.</td><td><a href="https://platform.claude.com/docs/en/about-claude/model-deprecations" target="_blank" rel="noopener">model-deprecations</a></td></tr>
+          <tr><td>Anthropic: Claude Opus 4.1</td><td>Retirado em 2026-08-05</td><td><code>claude-opus-5-5</code>.</td><td><a href="https://platform.claude.com/docs/en/about-claude/model-deprecations" target="_blank" rel="noopener">model-deprecations</a></td></tr>
+        </tbody>
+      </table></div>
     </section>
 
     <!-- ===================== REFERÊNCIA ===================== -->
     <section class="ref" id="fontes-oficiais">
-      <h2>Fontes oficiais &amp; verificação</h2>
+      <h2>Fontes oficiais &amp; verificação<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <p>
         Fatos perecíveis (parâmetros de tools, versões de ferramentas, limites, preços, modelos) foram
-        conferidos contra a documentação oficial em <strong>2026-06-10</strong>. Padrões de registry,
-        fallback e schemas são recomendações de engenharia derivadas dos contratos oficiais.
-        O caveat de superfície <strong>Developer API vs Vertex AI</strong> (§1, §3, §4) e as versões de SDK
-        foram reconferidos em <strong>2026-06-19</strong>.
+        conferidos contra a documentação oficial em <strong>2026-09-30</strong> (OpenAI: Code Interpreter, Shell,
+        Tool Search, Computer use, pricing e changelog; Gemini: Code Execution e Computer Use; Anthropic: Code
+        Execution, Computer use, Tool Search e mid-conversation tool changes). Padrões de registry, fallback e
+        schemas são recomendações de engenharia derivadas dos contratos oficiais. Itens sem fonte oficial
+        confirmada nesta data estão marcados como <span class="pill partial">UNVERIFIED</span>.
       </p>
       <h3>OpenAI</h3>
       <div class="table-wrap"><table>
@@ -1544,8 +1787,11 @@ call_provider -&gt; finalize_response -&gt; END
           <tr><td>Code Interpreter</td><td><a href="https://developers.openai.com/api/docs/guides/tools-code-interpreter" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/tools-code-interpreter</a></td></tr>
           <tr><td>Shell tool</td><td><a href="https://developers.openai.com/api/docs/guides/tools-shell" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/tools-shell</a></td></tr>
           <tr><td>Tool Search</td><td><a href="https://developers.openai.com/api/docs/guides/tools-tool-search" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/tools-tool-search</a></td></tr>
+          <tr><td>Modelos GPT-6 (Astra, Sol, Luna) e compatibilidade de tools</td><td><a href="https://developers.openai.com/api/docs/models" target="_blank" rel="noopener">developers.openai.com/api/docs/models</a></td></tr>
+          <tr><td>Changelog (billing de containers, Agents API)</td><td><a href="https://developers.openai.com/api/docs/changelog" target="_blank" rel="noopener">developers.openai.com/api/docs/changelog</a></td></tr>
           <tr><td>File inputs</td><td><a href="https://developers.openai.com/api/docs/guides/file-inputs" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/file-inputs</a></td></tr>
           <tr><td>Images and vision</td><td><a href="https://developers.openai.com/api/docs/guides/images-vision" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/images-vision</a></td></tr>
+          <tr><td>Computer use</td><td><a href="https://developers.openai.com/api/docs/guides/tools-computer-use" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/tools-computer-use</a> · <span class="pill ok">tool <code>computer</code> atual</span> (code execution recomendado com <code>gpt-6-astra</code>)</td></tr>
           <tr><td>Function calling</td><td><a href="https://developers.openai.com/api/docs/guides/function-calling" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/function-calling</a></td></tr>
           <tr><td>Conversation state</td><td><a href="https://developers.openai.com/api/docs/guides/conversation-state" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/conversation-state</a></td></tr>
           <tr><td>Pricing (tokens + containers)</td><td><a href="https://developers.openai.com/api/docs/pricing" target="_blank" rel="noopener">developers.openai.com/api/docs/pricing</a></td></tr>
@@ -1557,10 +1803,11 @@ call_provider -&gt; finalize_response -&gt; END
       <div class="table-wrap"><table>
         <thead><tr><th>Tema</th><th>Fonte oficial</th></tr></thead>
         <tbody>
-          <tr><td>Interactions API — overview</td><td><a href="https://ai.google.dev/gemini-api/docs/interactions/interactions-overview" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/interactions/interactions-overview</a></td></tr>
-          <tr><td>Interactions — Code Execution (com imagens)</td><td><a href="https://ai.google.dev/gemini-api/docs/interactions/code-execution" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/interactions/code-execution</a></td></tr>
+          <tr><td>Interactions API — overview</td><td><a href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/interactions-overview</a> · <span class="small">GA (verificado em 2026-09-30)</span></td></tr>
+          <tr><td>Interactions — Code Execution (com imagens)</td><td><a href="https://ai.google.dev/gemini-api/docs/code-execution" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/code-execution</a> · <span class="small">Code Execution with images documentado em Gemini 3 Flash</span></td></tr>
           <tr><td>Interactions — Tool combination</td><td><a href="https://ai.google.dev/gemini-api/docs/interactions/tool-combination" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/interactions/tool-combination</a></td></tr>
           <tr><td>Code Execution (limites, libs, billing)</td><td><a href="https://ai.google.dev/gemini-api/docs/code-execution" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/code-execution</a></td></tr>
+          <tr><td>Computer Use</td><td><a href="https://ai.google.dev/gemini-api/docs/computer-use" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/computer-use</a> · <span class="pill beta">Preview</span> (screenshot prompt-injection detection opt-in)</td></tr>
           <tr><td>Function calling (best practices, 10–20 tools)</td><td><a href="https://ai.google.dev/gemini-api/docs/function-calling" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/function-calling</a></td></tr>
           <tr><td>Libraries</td><td><a href="https://ai.google.dev/gemini-api/docs/libraries" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/libraries</a></td></tr>
           <tr><td>Google ADK · PyPI — <code>google-genai</code> / <code>google-adk</code></td><td><a href="https://adk.dev/" target="_blank" rel="noopener">adk.dev</a> · <a href="https://pypi.org/project/google-genai/" target="_blank" rel="noopener">pypi.org/project/google-genai</a> · <a href="https://pypi.org/project/google-adk/" target="_blank" rel="noopener">pypi.org/project/google-adk</a></td></tr>
@@ -1570,7 +1817,10 @@ call_provider -&gt; finalize_response -&gt; END
       <div class="table-wrap"><table>
         <thead><tr><th>Tema</th><th>Fonte oficial</th></tr></thead>
         <tbody>
-          <tr><td>Code Execution tool (20250825 / 20260120)</td><td><a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool" target="_blank" rel="noopener">platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool</a></td></tr>
+          <tr><td>Code Execution tool (20250825 / 20260120 / 20260521)</td><td><a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool" target="_blank" rel="noopener">platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool</a> · <span class="small">GA, sem beta header; latest tool conforme o modelo</span></td></tr>
+          <tr><td>Computer use toolset</td><td><a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/computer-use-tool" target="_blank" rel="noopener">platform.claude.com/docs/en/agents-and-tools/tool-use/computer-use-tool</a> · <code>computer_toolset_20260801</code></td></tr>
+          <tr><td>Browser use toolset</td><td><a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/browser-use-tool" target="_blank" rel="noopener">platform.claude.com/docs/en/agents-and-tools/tool-use/browser-use-tool</a> · <code>browser_toolset_20260801</code></td></tr>
+          <tr><td>Mid-conversation system messages e tool changes</td><td><a href="https://platform.claude.com/docs/en/build-with-claude/mid-conversation-system-messages" target="_blank" rel="noopener">platform.claude.com/docs/en/build-with-claude/mid-conversation-system-messages</a> · beta <code>inline-tools-2026-09-15</code></td></tr>
           <tr><td>Tool Search tool (Regex/BM25)</td><td><a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/tool-search-tool" target="_blank" rel="noopener">platform.claude.com/docs/en/agents-and-tools/tool-use/tool-search-tool</a></td></tr>
           <tr><td>Tool use — overview</td><td><a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview" target="_blank" rel="noopener">platform.claude.com/docs/en/agents-and-tools/tool-use/overview</a></td></tr>
           <tr><td>Define tools (<code>input_schema</code>, <code>input_examples</code>, regex de nome)</td><td><a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools" target="_blank" rel="noopener">platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools</a></td></tr>
@@ -1593,16 +1843,13 @@ call_provider -&gt; finalize_response -&gt; END
         <span class="pill partial">UNVERIFIED</span> não confirmado dentro do orçamento de verificação ·
         <span class="pill na">N/D</span> não documentado.
       </p>
-      <h3>Notas de verificação desta edição</h3>
+      <h3>Notas de verificação desta edição<span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
       <ul>
-        <li><span class="pill ok">Corrigido</span> <strong>Billing de containers OpenAI:</strong> a edição anterior do material-fonte descrevia cobrança "por sessão de 20 minutos"; desde <strong>2026-06-02</strong> a cobrança é por minuto com mínimo de 5 minutos — os valores por tier viram taxa-base proporcional (§11.1).</li>
-        <li><span class="pill ok">Atualizado</span> <strong>Anthropic Code Execution:</strong> incluída a versão <code>code_execution_20260120</code> (REPL persistence + programmatic tool calling; Opus 4.5+/Sonnet 4.5+, não Haiku 4.5), além da <code>code_execution_20250825</code>; GA sem beta header (§4).</li>
-        <li><span class="pill ok">Atualizado</span> <strong>Modelos:</strong> <code>claude-fable-5</code> (GA 2026-06-09) registrado como o mais novo da Anthropic; exemplos mantêm <code>claude-opus-4-8</code> (ativo/excelente). Exemplos Gemini usam <code>gemini-3.5-flash</code>; Code Execution with images é documentado em Gemini 3 Flash e herdado pela linha 3.5 GA (§3–§4).</li>
-        <li><span class="pill ok">Removido</span> <strong>Referência local:</strong> a citação a um arquivo local anexado em conversa, presente no material-fonte, foi removida — todas as fontes desta página são URLs oficiais públicas.</li>
-        <li><span class="pill ok">Delegado</span> <strong>Matriz de versões:</strong> snapshots de versão de SDK saíram deste guia; consulte os badges dos guias de framework e a revalidação no CI (§12).</li>
+        <li><span class="pill ok">Varredura de 2026-09-30</span> <strong>Exemplos e contratos.</strong> Exemplos migrados para <code>gpt-6.1-sol</code>, <code>claude-opus-5-5</code> e <code>gemini-3.8-flash</code>. OpenAI: computer use ganhou o caminho por code execution (recomendado com Astra) e o Agents API; Tool Search no Agents API passou a aceitar <code>defer_loading</code> em funções; tabela de pricing atualizada para GPT-6 (Astra, 6.1 Sol, 6 Sol, Luna). Anthropic: Sonnet 5.5 incluído na compatibilidade de Tool Search e de mid-conversation tool changes (<code>inline-tools-2026-09-15</code>); quebras dos modelos 5.5 (computer use, <code>tool_choice</code> forçado, thinking) registradas em §4.1. Legado condensado em <a href="#legado">Legado e migração</a>.</li>
+        <li><span class="pill partial">GAP</span> <strong>Validação integral não executada.</strong> Este corte atualiza contratos e controles a partir das fontes oficiais, mas não executa chamadas pagas, browsers autenticados nem side effects reais. O smoke test (§13) segue obrigatório; sem recibo/estado posterior, o eval de outcome é <code>unknown</code>/<span class="pill partial">NAO-MEDIDO</span>.</li>
         <li><span class="pill partial">UNVERIFIED</span> <strong>Shape exato da configuração local do Shell:</strong> a doc oficial documenta o loop <code>shell_call</code>/<code>shell_call_output</code> e o shell executor do Agents SDK; o literal de <code>environment</code> para modo local não foi reproduzido aqui — consulte a página oficial do Shell antes de implementar.</li>
-        <li><span class="pill beta">Novo</span> <strong>Vertex AI vs Developer API (code execution + Interactions):</strong> a Interactions API existe na Developer API (AI Studio, <code>generativelanguage.googleapis.com</code>, status <em>Beta</em>) e na Vertex / Gemini Enterprise Agent Platform (<code>aiplatform.googleapis.com</code>, status <em>experimental</em>). <code>code_execution</code> dentro de Interactions é documentado/exemplificado só na Developer API; na Vertex a execução de código é documentada via <code>generateContent</code>. Observado em teste: <code>code_execution</code> via Interactions falhou em Vertex e funcionou na Developer API (não é limitação oficial). Caveats adicionados em §1, §3 e §4 (verificado em 2026-06-19, fontes oficiais Google).</li>
-        <li><span class="pill ok">Atualizado</span> <strong>SDKs (varredura 2026-06-19):</strong> o tool <code>code_execution_20260120</code> da Anthropic ganhou suporte tipado no SDK (<code>anthropic</code> 0.110.0 / <code>@anthropic-ai/sdk</code> 0.105.0) — a capacidade já estava documentada (§4); <code>google-genai</code> 2.9.0 reimplementou a Interactions internamente mantendo a API pública compatível. Sem mudança de comportamento nos exemplos.</li>
+        <li><span class="pill partial">UNVERIFIED</span> <strong>Gemini em Vertex (Gemini Enterprise Agent Platform):</strong> disponibilidade de <code>code_execution</code> via Interactions não foi reconferida em 2026-09-30 (§3).</li>
+        <li><span class="pill ok">Delegado</span> <strong>Matriz de versões:</strong> snapshots de versão de SDK saíram deste guia; consulte os badges dos guias de framework e a revalidação no CI (§12).</li>
       </ul>
     </section>
 
@@ -1615,15 +1862,16 @@ call_provider -&gt; finalize_response -&gt; END
       <div class="brand" style="font-size:15px">Agentic vision &amp; code tools <small>Code Interpreter · Code Execution · Shell · Tool Search</small></div>
       <p style="margin:8px 0 0;color:var(--c-fg-muted);font-size:13.5px;line-height:1.55">
         Guia transversal de code tools construído a partir da documentação oficial pública de OpenAI,
-        Google Gemini e Anthropic, verificada em <strong>2026-06-10</strong>. Preços, versões de tools e
+        Google Gemini e Anthropic, revalidada até <strong>2026-09-30</strong>.
+        Preços, versões de tools e
         modelos são perecíveis — reconsulte as <a href="#fontes-oficiais">fontes oficiais</a> antes de
         decisões de produção.
       </p>
     </div>
     <div style="font-size:13.5px;color:var(--c-fg-muted);line-height:1.7">
-      <div><strong>Crédito de produção</strong></div>
-      <div>Gerado por <strong>subagente Claude Fable 5</strong></div>
-      <div>revisão e montagem pelo orquestrador · 2026-06-10</div>
+      <div><strong>Estado da edição</strong></div>
+      <div>Fontes oficiais e superfícies preview/legado revisadas até <strong>2026-09-30</strong></div>
+      <div>Documento transversal · revisão de frescor registrada em Fontes oficiais</div>
       <div style="margin-top:6px">
         <span class="badge da">Transversal</span>
         <span class="badge info">OpenAI · Gemini · Anthropic</span>
@@ -1632,7 +1880,7 @@ call_provider -&gt; finalize_response -&gt; END
     <div style="font-size:12.5px;color:var(--c-fg-soft)">
       <div><strong>Navegação rápida</strong></div>
       <div><a href="#decisao-executiva">Decisão</a> · <a href="#openai-code-interpreter">Code Interpreter</a> · <a href="#anthropic-code-execution">Code Execution</a></div>
-      <div><a href="#tool-search-providers">Tool Search</a> · <a href="#custos-gating">Custos</a> · <a href="#smoke-tests-checklist">Checklist</a></div>
+      <div><a href="#tool-search-providers">Tool Search</a> · <a href="#custos-gating">Custos</a> · <a href="#smoke-tests-checklist">Checklist</a> · <a href="#legado">Legado</a></div>
     </div>
   </div>
 </footer>
