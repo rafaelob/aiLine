@@ -3,7 +3,7 @@ name: frontend-agent-chat-shell
 description: "Use to build the AI chat shell (\"barra lateral\", \"retomar stream\"): sessions/search/projects, composer attachments/drafts, artifact placement, stream resume, multi-agent panel. Messages -> frontend-ai-generative-ui."
 license: Apache-2.0
 metadata:
-  version: "1.0.2"
+  version: "1.0.3"
 ---
 
 # Agent Chat Shell
@@ -156,7 +156,7 @@ surface stays alive elsewhere: Claude Artifacts and Gemini Canvas keep a side pa
   side-by-side; long artifacts push the thread away.
 - **Dedicated route** — the work *is* the session. Own URL and layout; a second shell.
 
-Before choosing, read `references/artifacts-resume-collaboration.md` §1.1 — a six-question selection
+Before choosing, read `references/artifacts-resume-collaboration.md`, section 1.1 — a six-question selection
 table with the costs to accept in writing.
 
 Four mechanics are not optional whichever you pick `[portfolio requirement]`: **URL addressability**
