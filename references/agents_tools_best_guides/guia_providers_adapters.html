@@ -363,7 +363,7 @@
     </div>
 
     <section id="para-agentes">
-      <h2>Resumo para agentes (verificado 2026-09-30)<span class="rev-flag novo">Novo · 2026-09-30</span></h2>
+      <h2>Resumo para agentes (verificado 2026-10-19)<span class="rev-flag novo">Novo · 2026-09-30</span></h2>
       <h3>Superfície atual (chamada mínima por provider)</h3>
       <pre><code class="language-python"># pip install "openai&gt;=3.22" "anthropic&gt;=1.9" "google-genai&gt;=2.3,&lt;3"
 from openai import OpenAI
@@ -378,22 +378,22 @@ from google import genai
 it = genai.Client().interactions.create(model="gemini-3.8-flash", input="...")  # Interactions, nunca generateContent
 print(it.output_text)</code></pre>
 
-      <h3>IDs e versões correntes (2026-09-30)</h3>
+      <h3>IDs e versões correntes (2026-10-19; instructor medido em 2026-09-30)</h3>
       <div class="table-wrap"><table>
         <thead><tr><th>Provider</th><th>ID / pacote</th><th>Status</th><th>Nota</th></tr></thead>
         <tbody>
           <tr><td>OpenAI</td><td><code>gpt-6-astra</code> · <code>gpt-6.1-sol</code> · <code>gpt-6-sol</code> · <code>gpt-6-luna</code></td><td><span class="pill ok">atuais</span></td><td><code>gpt-6.1-sol</code> (2026-09-29) é o near-Astra; <code>gpt-6-sol</code> é o anterior. Tools exigem Responses.</td></tr>
-          <tr><td>OpenAI SDK</td><td><code>openai</code> 3.22.1 · <code>openai-agents</code> 0.22.3</td><td><span class="pill ok">atual</span></td><td><code>openai-agents</code> é pré-1.0 e o default é <code>gpt-5.6-luna</code>: passe <code>model=</code>.</td></tr>
-          <tr><td>Anthropic</td><td><code>claude-fable-5-1</code> · <code>claude-opus-5-5</code> · <code>claude-sonnet-5-5</code> · <code>claude-haiku-4-5</code></td><td><span class="pill ok">atuais</span></td><td>Sonnet 5.5 (2026-09-28) usa <code>between_tools</code>. Haiku 4.5: retirada não antes de 2026-10-15.</td></tr>
-          <tr><td>Anthropic SDK</td><td><code>anthropic</code> 1.9.0 · <code>claude-agent-sdk</code> 0.2.162</td><td><span class="pill ok">atual</span></td><td>Piso de segurança do agent SDK: <code>&gt;=0.2.121</code>.</td></tr>
-          <tr><td>Google</td><td><code>gemini-3.8-flash</code> · <code>gemini-3.1-pro-preview</code></td><td><span class="pill ok">GA</span> · <span class="pill beta">preview</span></td><td>Interactions API é GA desde junho/2026; <code>google-genai</code> 2.25.0 (mín. 2.3.0 para Interactions).</td></tr>
-          <tr><td>Adapters</td><td><code>pydantic-ai</code> 2.52.0 · <code>litellm</code> 1.103.1 · <code>crewai</code> 1.15.23 · <code>instructor</code> 1.17.0 · <code>mcp</code> 2.2.0</td><td><span class="pill ok">atuais</span></td><td>Versão corrente não é piso nem prova de compatibilidade; rode probe de contrato.</td></tr>
+          <tr><td>OpenAI SDK</td><td><code>openai</code> 3.35.1 · <code>openai-agents</code> 0.24.0</td><td><span class="pill ok">atual</span></td><td><code>openai-agents</code> é pré-1.0 e o default é <code>gpt-5.6-luna</code> (confirmado no código da 0.24.0): passe <code>model=</code>.</td></tr>
+          <tr><td>Anthropic</td><td><code>claude-fable-5-1</code> · <code>claude-opus-5-5</code> · <code>claude-sonnet-5-5</code> · <code>claude-haiku-5-5</code></td><td><span class="pill ok">atuais</span></td><td>Sonnet 5.5 (2026-09-28) usa <code>between_tools</code>. Haiku 5.5 (2026-10-07) substitui o Haiku 4.5, que segue Active como legado (retirada "não antes de 2026-10-15", sem aviso de depreciação em 2026-10-19).</td></tr>
+          <tr><td>Anthropic SDK</td><td><code>anthropic</code> 1.15.0 · <code>claude-agent-sdk</code> 0.2.168</td><td><span class="pill ok">atual</span></td><td>Piso de segurança do agent SDK: <code>&gt;=0.2.121</code>.</td></tr>
+          <tr><td>Google</td><td><code>gemini-4-argon</code> · <code>gemini-3.8-flash</code> · <code>gemini-3.1-pro-preview</code></td><td><span class="pill ok">GA</span> · <span class="pill ok">GA</span> · <span class="pill beta">preview</span></td><td>Interactions API (<code>client.interactions</code>) é o caminho padrão e GA desde junho/2026; <code>google-genai</code> 2.31.0 (mín. 2.3.0 para Interactions). <code>gemini-4-argon</code> (GA em 2026-10-13): só texto, sem Live API e só cache implícito.</td></tr>
+          <tr><td>Adapters</td><td><code>pydantic-ai</code> 2.57.0 · <code>litellm</code> 1.106.0 · <code>crewai</code> 1.15.28 · <code>instructor</code> 1.17.0 · <code>mcp</code> 2.3.0</td><td><span class="pill ok">atuais</span></td><td>Versão corrente não é piso nem prova de compatibilidade; rode probe de contrato. <code>litellm</code> 1.106.0 vem com servidores MCP stdio desligados: só <code>LITELLM_ENABLE_MCP_STDIO=true</code> no ambiente do processo os reativa (config.yaml e banco são ignorados).</td></tr>
         </tbody>
       </table></div>
 
       <h3>Faça / Não faça</h3>
       <ul>
-        <li>Faça: pisos de segurança no lockfile: <code>mcp&gt;=2.2.0</code> (ou <code>&gt;=1.30.0</code>), <code>litellm&gt;=1.103.1</code>, <code>claude-agent-sdk&gt;=0.2.121</code>, <code>pydantic-ai&gt;=2.52.0</code>; lista completa em <a href="guia_operacao_seguranca_evals.html#advisories-supply-chain">Operação, Segurança &amp; Evals</a>.</li>
+        <li>Faça: pisos de segurança no lockfile: <code>mcp&gt;=2.2.0</code> (ou <code>&gt;=1.30.0</code>), <code>litellm&gt;=1.103.1</code>, <code>claude-agent-sdk&gt;=0.2.121</code>, <code>pydantic-ai&gt;=2.53.0</code>, <code>fastmcp&gt;=4.1.1</code> (cliente MCP do extra <code>mcp</code> de Pydantic AI e LangChain; a 3.x precisa de <code>&gt;=3.4.9</code>, mas migre para a 4); lista completa em <a href="guia_operacao_seguranca_evals.html#advisories-supply-chain">Operação, Segurança &amp; Evals</a>.</li>
         <li>Faça: fixe <code>google-genai&lt;3.0.0</code> (o README oficial avisa que a 3.0 tira o AFC de <code>Models.generate_content</code>).</li>
         <li>Faça: OpenAI stateless/ZDR com <code>store=false</code> e devolva os output items; <code>previous_response_id</code> e <code>conversation</code> são mutuamente exclusivos.</li>
         <li>Faça: Gemini: reenvie <code>tools</code>, <code>system_instruction</code> e <code>generation_config</code> a cada interação; devolva steps <code>thought</code>/<code>function_call</code> intactos (assinaturas) e responda com <code>function_result</code> + <code>call_id</code>.</li>
@@ -524,7 +524,7 @@ print(it.output_text)</code></pre>
     </section>
 
     <section id="papel-sdks">
-      <h2>1. Papel de cada SDK/framework<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
+      <h2>1. Papel de cada SDK/framework<span class="rev-flag atu">Atualizado · 2026-10-19</span></h2>
       <p>Cada camada tem um papel; o erro comum é confundir um <em>provider adapter</em> com um banco de estado
       durável, ou um framework de runtime com governança de negócio. A tabela separa uso recomendado de
       "não confundir com".</p>
@@ -534,6 +534,7 @@ print(it.output_text)</code></pre>
           <tr><td>OpenAI Agents SDK (<code>openai-agents</code>)</td><td>Runtime de agentes com tools, handoffs, guardrails, sessions, tracing e MCP. Uma base de orquestração no ecossistema OpenAI.</td><td>Banco de estado durável universal ou substituto de políticas de negócio; é outra camada sobre a rota do provider.</td></tr>
           <tr><td>OpenAI Responses API</td><td>Interface direta para controle fino de <code>input</code>, <code>tools</code>, estado projetado, structured outputs e loop próprio.</td><td>Recurso Conversations, framework de governança ou política per-tool; o cliente ainda valida, executa tools e mantém o ledger.</td></tr>
           <tr><td>OpenAI Conversations</td><td>Recurso de estado/conversa que pode ser usado pela Responses; o adapter deve registrar quando o histórico vive nele.</td><td>Uma chamada de inferência ou garantia de retenção/ZDR.</td></tr>
+          <tr><td>OpenAI Decisions API (beta, <code>POST /v1/decisions</code>)</td><td>Respostas tipadas (<code>predicate</code>, <code>choice</code>, <code>score</code>) a partir de texto e imagens, hoje só com <code>gpt-6-luna</code>; exige <code>openai</code> Python 3.26.0+ / JS 7.30.0+. Em beta público, com GA esperado "nas próximas semanas" (<a href="https://developers.openai.com/api/docs/guides/decisions" target="_blank" rel="noopener">guia</a>, lido em 2026-10-19); <code>langchain-openai</code> 1.7.0 traz um wrapper beta.</td><td>Substituto da Responses API: não há loop de tools nem texto livre; é uma superfície à parte para classificar/pontuar.</td></tr>
           <tr><td>OpenAI Python SDK (<code>openai</code>)</td><td>Cliente oficial para chamar a API OpenAI.</td><td>Orquestrador por si só.</td></tr>
           <tr><td>Anthropic SDK / Messages API (<code>anthropic</code>)</td><td>API direta e stateless para Claude: tools (<code>tool_use</code>/<code>tool_result</code>), server tools e thinking conforme a rota/modelo.</td><td>Agent SDK/Managed Agents, estado durável ou a mesma semântica de roles/tokens/reasoning da OpenAI.</td></tr>
           <tr><td>Anthropic Agent SDK / Managed Agents</td><td>Harness separado para sessões/agentes gerenciados, com ciclo de vida, eventos e controles próprios.</td><td>Um alias da Messages API ou um contrato portátil de subagentes.</td></tr>
@@ -559,19 +560,19 @@ print(it.output_text)</code></pre>
         e <a href="https://agents.md/" target="_blank" rel="noopener">agents.md</a>, consultados 2026-09-23 (<span class="pill partial">UNVERIFIED</span> na data atual: não rechecado em 2026-09-30).
       </div>
       <div class="callout info">
-        <strong>Snapshot de versões — 2026-09-30</strong> (PyPI, npm e GitHub Releases lidos nesta data; é uma medição, não um pin — fixe no lockfile).
+        <strong>Snapshot de versões — 2026-10-19</strong> (PyPI, npm e GitHub Releases lidos nesta data, exceto <code>instructor</code>, Vercel <code>ai</code> e <code>@ai-sdk/openai</code>, medidos em 2026-09-30; é uma medição, não um pin — fixe no lockfile).
         <div class="table-wrap"><table>
           <thead><tr><th>Grupo</th><th>Pacotes</th></tr></thead>
           <tbody>
-            <tr><td>OpenAI</td><td><code>openai</code> 3.22.1 / npm 7.25.0 · <code>openai-agents</code> 0.22.3 (pré-1.0; modelo default <code>gpt-5.6-luna</code>; <code>mcp&lt;3,&gt;=1.19.0</code>) · <code>@openai/agents</code> 0.18.0</td></tr>
-            <tr><td>Anthropic</td><td><code>anthropic</code> 1.9.0 / <code>@anthropic-ai/sdk</code> 0.129.0 · <code>claude-agent-sdk</code> 0.2.162 / <code>@anthropic-ai/claude-agent-sdk</code> 0.3.285</td></tr>
-            <tr><td>Google</td><td><code>google-genai</code> 2.25.0 / <code>@google/genai</code> 2.24.0 (README oficial recomenda fixar <code>&lt;3.0.0</code>) · <code>google-adk</code> 2.10.0 (linha 1.x: 1.39.1, só manutenção) / <code>@google/adk</code> 2.1.0</td></tr>
-            <tr><td>Adapters</td><td><code>pydantic-ai</code> 2.52.0 · <code>litellm</code> 1.103.1 · <code>crewai</code> 1.15.23 · <code>instructor</code> 1.17.0 · Vercel <code>ai</code> 7.0.123 com <code>@ai-sdk/openai</code> 4.0.82 (dist-tag <code>latest</code>; o Vercel publica várias vezes ao dia)</td></tr>
-            <tr><td>LangChain</td><td><code>langgraph</code> 1.2.12 · <code>langchain</code> 1.4.3 · <code>langchain-core</code> 1.6.6 · <code>langchain-anthropic</code> 1.7.5 · <code>langchain-google-genai</code> 4.4.0 · <code>deepagents</code> 0.7.20</td></tr>
-            <tr><td>Protocolos</td><td><code>mcp</code> 2.2.0 (linha 1.x: 1.30.0) · <code>a2a-sdk</code> 1.2.1</td></tr>
+            <tr><td>OpenAI</td><td><code>openai</code> 3.35.1 / npm 7.39.0 · <code>openai-agents</code> 0.24.0 (pré-1.0; modelo default <code>gpt-5.6-luna</code>; <code>mcp&lt;3,&gt;=1.19.0</code>) · <code>@openai/agents</code> 0.20.0</td></tr>
+            <tr><td>Anthropic</td><td><code>anthropic</code> 1.15.0 / <code>@anthropic-ai/sdk</code> 0.135.0 · <code>claude-agent-sdk</code> 0.2.168 / <code>@anthropic-ai/claude-agent-sdk</code> 0.3.303</td></tr>
+            <tr><td>Google</td><td><code>google-genai</code> 2.31.0 / <code>@google/genai</code> 2.30.0 (README oficial recomenda fixar <code>&lt;3.0.0</code>) · <code>google-adk</code> 2.12.0 (linha 1.x: 1.39.1, só manutenção) / <code>@google/adk</code> 2.3.0</td></tr>
+            <tr><td>Adapters</td><td><code>pydantic-ai</code> 2.57.0 · <code>litellm</code> 1.106.0 · <code>crewai</code> 1.15.28 ·<code>instructor</code> 1.17.0 · Vercel <code>ai</code> 7.0.123 com <code>@ai-sdk/openai</code> 4.0.82 (dist-tag <code>latest</code>; o Vercel publica várias vezes ao dia)</td></tr>
+            <tr><td>LangChain</td><td><code>langgraph</code> 1.2.16 · <code>langchain</code> 1.4.6 · <code>langchain-core</code> 1.6.12 · <code>langchain-anthropic</code> 1.7.6 · <code>langchain-google-genai</code> 4.4.2 · <code>deepagents</code> 0.7.28</td></tr>
+            <tr><td>Protocolos</td><td><code>mcp</code> 2.3.0 (linha 1.x: 1.30.0) · <code>a2a-sdk</code> 1.2.3</td></tr>
           </tbody>
         </table></div>
-        <p style="margin:8px 0 0"><strong>Pisos de segurança</strong> (advisories lidos em 2026-09-30): <code>mcp&gt;=2.2.0</code> (ou <code>&gt;=1.30.0</code>; GHSA-qx49-fqc8-xw99 e GHSA-rwrf-2pqf-9j8j), <code>litellm&gt;=1.103.1</code> (GHSA-7hp6-4w63-5g45, crítico), <code>claude-agent-sdk&gt;=0.2.121</code> (GHSA-h4mw-j7qp-8mwm, crítico), <code>pydantic-ai&gt;=2.52.0</code> (GHSA-v36g-jcw9-x7cw). Versão corrente não é piso: confira seu lockfile contra a lista completa em
+        <p style="margin:8px 0 0"><strong>Pisos de segurança</strong> (advisories lidos em 2026-10-19): <code>mcp&gt;=2.2.0</code> (ou <code>&gt;=1.30.0</code>; GHSA-qx49-fqc8-xw99 e GHSA-rwrf-2pqf-9j8j), <code>litellm&gt;=1.103.1</code> (GHSA-7hp6-4w63-5g45, crítico), <code>claude-agent-sdk&gt;=0.2.121</code> (GHSA-h4mw-j7qp-8mwm, crítico), <code>pydantic-ai&gt;=2.53.0</code> (GHSA-6fqq-452j-qhrp e GHSA-v36g-jcw9-x7cw), <code>fastmcp&gt;=4.1.1</code> (GHSA-gpgx-58w2-xwwf, crítico). Versão corrente não é piso: confira seu lockfile contra a lista completa em
         <a href="guia_operacao_seguranca_evals.html">Operação, segurança &amp; evals</a>. Uma versão, sozinha, não prova compatibilidade de MCP, A2A, durable execution ou providers: rode o probe de contrato do adapter antes de habilitar.</p>
       </div>
     </section>
@@ -594,7 +595,7 @@ print(it.output_text)</code></pre>
     </section>
 
     <section id="responses-parametros">
-      <h2>2. OpenAI Responses API: parâmetros críticos<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
+      <h2>2. OpenAI Responses API: parâmetros críticos<span class="rev-flag atu">Atualizado · 2026-10-19</span></h2>
       <p>Para a orquestração, estes são os campos que mais influenciam controle de fase, estado e budget. A
       referência completa (anatomia da Responses, function calling, streaming) está em
       <a href="guia_openai_modelos.html">guia_openai_modelos</a>.</p>
@@ -614,7 +615,7 @@ print(it.output_text)</code></pre>
           <tr><td><code>truncation</code></td><td><code>auto</code> / <code>disabled</code>.</td><td>Truncation automática pode remover contexto crítico silenciosamente.</td></tr>
           <tr><td><code>background</code></td><td><code>true</code> roda em segundo plano: consulte por GET até sair de <code>queued</code>/<code>in_progress</code>; cancel idempotente; com streaming, retomável por <code>starting_after</code>.</td><td>Com <code>store=false</code> os dados ficam cerca de 10 minutos; durabilidade de ponta a ponta é da camada 2 (<a href="guia_streaming_durabilidade_resume.html">Streaming durável</a>).</td></tr>
           <tr><td><code>reasoning.effort</code></td><td>Valores (<code>none</code>/<code>minimal</code>/<code>low</code>/<code>medium</code>/<code>high</code>/<code>xhigh</code>/<code>max</code>) dependem do modelo.</td><td><code>gpt-6-astra</code> e <code>gpt-6.1-sol</code> não aceitam <code>none</code> (400); com effort diferente de <code>none</code>, remova <code>temperature</code>/<code>top_p</code>.</td></tr>
-          <tr><td><code>service_tier</code></td><td><code>standard</code>, <code>flex</code>, <code>batch</code>, <code>fast</code> (antes "priority"; <code>priority</code> segue equivalente) e <code>ultrafast</code> (GA para <code>gpt-6-astra</code> desde 2026-09-29).</td><td>Disponibilidade e residência variam por modelo; <code>ultrafast</code> recomenda WebSocket.</td></tr>
+          <tr><td><code>service_tier</code></td><td><code>standard</code>, <code>flex</code>, <code>batch</code>, <code>fast</code> (antes "priority"; <code>priority</code> segue equivalente) e <code>ultrafast</code> (GA para <code>gpt-6-astra</code> desde 2026-09-29 e para <code>gpt-6.1-sol</code> desde 2026-10-08).</td><td>Disponibilidade e residência variam por modelo (Astra: EUA e processamento global; 6.1 Sol: EUA, UE e global); <code>ultrafast</code> recomenda WebSocket.</td></tr>
           <tr><td><code>context_management</code></td><td>Compaction no servidor (<code>{"type":"compaction","compact_threshold":N}</code>) compatível com <code>store=false</code>.</td><td>Pode reduzir o reuso de cache; não combine com <code>configuration_update</code> nem com truncation automático.</td></tr>
           <tr><td><code>x-request-id</code>/<code>request_id</code></td><td>Identifica a requisição para suporte e correlação.</td><td>Persistir no trace redigido; não confundir correlação do provider com idempotência da tool.</td></tr>
         </tbody>
@@ -630,7 +631,7 @@ print(it.output_text)</code></pre>
     </section>
 
     <section id="agents-sdk-quando">
-      <h2>3. OpenAI Agents SDK: quando usar como base<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
+      <h2>3. OpenAI Agents SDK: quando usar como base<span class="rev-flag atu">Atualizado · 2026-10-19</span></h2>
       <p>Use o Agents SDK quando o projeto se beneficia de loop de agentes, guardrails, handoffs,
       agents-as-tools, sessions, tracing e MCP em código Python-first. A doc oficial o posiciona como
       <em>framework leve</em> e recomenda a Responses API direta quando você quer possuir manualmente o loop,
@@ -661,12 +662,12 @@ manager = Agent(
 result = Runner.run_sync(manager, "Pergunta do usuário")
 print(result.final_output)</code></pre>
       <div class="source-link">Detalhe da API e padrões de orquestração: <a href="guia_agents_sdk.html">guia_agents_sdk</a> · <a href="guia_agents_sdk_orquestracao.html">guia_agents_sdk_orquestracao</a> · doc oficial <a href="https://openai.github.io/openai-agents-python/" target="_blank" rel="noopener">openai.github.io/openai-agents-python</a></div>
-      <p>Em 2026-09-30 o <code>openai-agents</code> está na 0.22.3 (pré-1.0) e seu modelo default é <code>gpt-5.6-luna</code>, não um GPT-6: informe <code>model=</code> e <code>model_settings</code> explicitamente. O transporte da Responses pode ser HTTP ou WebSocket (<code>set_default_openai_responses_transport("websocket")</code>). A <strong>Agents API</strong> (beta, <code>/v1/agents/sessions</code>) é um produto distinto do Agents SDK. Mesmo quando o SDK gerencia o loop, mantenha registro externo de traces, usage, tool results e
+      <p>Em 2026-10-19 o <code>openai-agents</code> está na 0.24.0 (pré-1.0) e seu modelo default é <code>gpt-5.6-luna</code> (lido em <code>agents/models/default_models.py</code> das 0.23.1 e 0.24.0), não um GPT-6: informe <code>model=</code> e <code>model_settings</code> explicitamente. O transporte da Responses pode ser HTTP ou WebSocket (<code>set_default_openai_responses_transport("websocket")</code>). A <strong>Agents API</strong> (beta, <code>/v1/agents/sessions</code>) é um produto distinto do Agents SDK. Mesmo quando o SDK gerencia o loop, mantenha registro externo de traces, usage, tool results e
       decisões críticas se o sistema precisa ser auditável — o ledger canônico é seu, não do framework.</p>
     </section>
 
     <section id="pydantic-ai">
-      <h2>4. Pydantic AI como camada complementar<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
+      <h2>4. Pydantic AI como camada complementar<span class="rev-flag atu">Atualizado · 2026-10-19</span></h2>
       <p>O Pydantic AI brilha nas bordas tipadas: dependências, output estruturado, validação de ferramentas,
       evals, observabilidade (Logfire) e wrappers model-agnostic. Convive com o Agents SDK — use Pydantic para
       schemas/evals/validadores, o Agents SDK para orquestração/handoffs, e a Responses API direta nos pontos
@@ -687,7 +688,7 @@ class SpecialistOutput(BaseModel):
 # Use este modelo como contrato de saída de subagente/tool/eval,
 # independentemente do provider que gerou a resposta.</code></pre>
       <div class="callout beta">
-        <strong>Versão verificada em 2026-09-30:</strong> <code>pydantic-ai</code> <strong>2.52.0</strong> (PyPI). Na série 2.x o prefixo <code>openai:</code> usa a Responses API; Chat Completions só por <code>openai-chat:</code>. A versão, sozinha, não prova compatibilidade de MCPToolset, A2A, durable execution, providers ou integrações: cada capability deve ser conferida na documentação e no lockfile do projeto, com probe de contrato antes de habilitar. Piso de segurança: <code>&gt;=2.52.0</code> (GHSA-v36g-jcw9-x7cw).
+        <strong>Versão verificada em 2026-10-19:</strong> <code>pydantic-ai</code> <strong>2.57.0</strong> (PyPI; exige Python 3.11+ desde a 2.55.0). Na série 2.x o prefixo <code>openai:</code> usa a Responses API; Chat Completions só por <code>openai-chat:</code>. A versão, sozinha, não prova compatibilidade de MCPToolset, A2A, durable execution, providers ou integrações: cada capability deve ser conferida na documentação e no lockfile do projeto, com probe de contrato antes de habilitar. Piso de segurança: <code>&gt;=2.53.0</code> (GHSA-6fqq-452j-qhrp, GHSA-v36g-jcw9-x7cw). Desde a 2.53.0 um wrapper de modelo (<code>ConcurrencyLimitedModel</code>, <code>limit_model_concurrency</code>) levanta <code>UserError</code> se compartilha o limiter com o agente ou com outro wrapper envolvente, e um <code>AbstractConcurrencyLimiter</code> custom precisa permitir <code>release()</code> a partir de outra task.
       </div>
       <div class="callout">
         <strong>Regra de portabilidade:</strong> use Pydantic AI como camada de schemas, validação e evals
@@ -695,7 +696,7 @@ class SpecialistOutput(BaseModel):
         durabilidade ou transporte MCP da série de versão; registre a capability como preservada, transformada
         ou indisponível.
       </div>
-      <div class="source-link">Fonte oficial: <a href="https://pydantic.dev/docs/ai/overview/" target="_blank" rel="noopener">pydantic.dev/docs/ai</a> (overview, agents, tools, output, evals, Logfire, models) · versão confirmada no <a href="https://pypi.org/project/pydantic-ai/2.52.0/" target="_blank" rel="noopener">PyPI 2.52.0</a> em 2026-09-30. Repositório: <a href="https://github.com/pydantic/pydantic-ai" target="_blank" rel="noopener">github.com/pydantic/pydantic-ai</a>.</div>
+      <div class="source-link">Fonte oficial: <a href="https://pydantic.dev/docs/ai/overview/" target="_blank" rel="noopener">pydantic.dev/docs/ai</a> (overview, agents, tools, output, evals, Logfire, models) · versão confirmada no <a href="https://pypi.org/project/pydantic-ai/2.57.0/" target="_blank" rel="noopener">PyPI 2.57.0</a> em 2026-10-19; piso e limiter nas <a href="https://github.com/pydantic/pydantic-ai/releases/tag/v2.53.0" target="_blank" rel="noopener">notas da v2.53.0</a>. Repositório: <a href="https://github.com/pydantic/pydantic-ai" target="_blank" rel="noopener">github.com/pydantic/pydantic-ai</a>.</div>
     </section>
 
     <section class="chapter" id="parte-adapters">
@@ -705,7 +706,7 @@ class SpecialistOutput(BaseModel):
     </section>
 
     <section id="anthropic-adapter">
-      <h2>5. Anthropic adapter<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
+      <h2>5. Anthropic adapter<span class="rev-flag atu">Atualizado · 2026-10-19</span></h2>
       <p>No adapter Anthropic, trate tool use como blocos estruturados: o modelo emite <code>tool_use</code>,
       o cliente executa a tool e devolve <code>tool_result</code> (numa mensagem de role <code>user</code>),
       com <code>stop_reason: tool_use</code>. Tools de servidor são executadas pela Anthropic e podem ter
@@ -719,21 +720,22 @@ class SpecialistOutput(BaseModel):
           <tr><td>Roles</td><td><code>system</code> top-level + <code>messages</code> alternando user/assistant; adapte <code>developer</code>/<code>instructions</code> com cuidado.</td></tr>
           <tr><td>Tools</td><td>Schemas explícitos (<code>input_schema</code>); <code>tool_choice</code> específico quando a chamada é obrigatória.</td></tr>
           <tr><td>Client/server</td><td><code>tool_use</code>/<code>tool_result</code> client-side e <code>server_tool_use</code> server-side têm estados e pontos de controle diferentes; o scheduler só agenda o que o runtime executa.</td></tr>
-          <tr><td>Thinking</td><td>O controle muda por modelo (tabela abaixo). Em <code>claude-opus-5-5</code>, <code>claude-fable-5-1</code> e <code>claude-sonnet-5-5</code>, <code>tool_choice</code> <code>any</code>/<code>tool</code> retorna 400: adapter que force tool choice troca para <code>auto</code> + <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/strict-tool-use" target="_blank" rel="noopener">strict tool use</a> ou <a href="#structured-outputs">structured outputs</a>. Preserve blocos e assinaturas.</td></tr>
+          <tr><td>Thinking</td><td>O controle muda por modelo (tabela abaixo). Em <code>claude-opus-5-5</code>, <code>claude-fable-5-1</code> e <code>claude-sonnet-5-5</code>, <code>tool_choice</code> <code>any</code>/<code>tool</code> retorna 400: adapter que force tool choice troca para <code>auto</code> + <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/strict-tool-use" target="_blank" rel="noopener">strict tool use</a> ou <a href="#structured-outputs">structured outputs</a> (o <code>claude-haiku-5-5</code> aceita <code>tool_choice</code> forçado, mas a resposta não traz bloco <code>thinking</code>). Preserve blocos e assinaturas.</td></tr>
           <tr><td>Structured output</td><td><code>output_config.format</code> (json_schema) nativo — não use <code>response_format</code> (padrão OpenAI).</td></tr>
           <tr><td>Context</td><td>Meça thinking/contexto; compacte antes do overflow e declare o que não pode ser reidratado em outra rota.</td></tr>
           <tr><td>Agent SDK/Managed Agents</td><td>Use somente quando o contrato de sessão, eventos, retenção, sandbox e autorização do harness foi aceito; não projete como alias de Messages.</td></tr>
           <tr><td>Provider switch</td><td>Declare perdas quando carriers de reasoning da OpenAI ou thought signatures do Gemini não têm equivalente direto; bloquear é preferível a converter opaco em texto.</td></tr>
         </tbody>
       </table></div>
-      <h3>Modelos correntes e contrato (2026-09-30)</h3>
+      <h3>Modelos correntes e contrato (2026-10-19)</h3>
       <div class="table-wrap"><table>
         <thead><tr><th>Modelo (ID)</th><th>Thinking</th><th>Effort default</th><th>Preço in/out por MTok</th></tr></thead>
         <tbody>
           <tr><td><code>claude-fable-5-1</code></td><td>Adaptive sempre ligado; <code>disabled</code> ou <code>enabled</code> retornam 400.</td><td><code>high</code></td><td>$10 / $50</td></tr>
           <tr><td><code>claude-opus-5-5</code> (ponto de partida recomendado)</td><td>Adaptive sempre ligado; <code>disabled</code> ou <code>enabled</code> retornam 400. Controle só por <code>effort</code>.</td><td><code>medium</code></td><td>$4 / $20 (cache read 0,05x)</td></tr>
-          <tr><td><code>claude-sonnet-5-5</code> (2026-09-28)</td><td>Adaptive (default) ou <code>{"type":"between_tools"}</code> (effort até <code>high</code>; sem <code>display</code>, <code>budget_tokens</code> ou <code>block_binding</code>). <code>disabled</code> retorna 400 apontando para <code>between_tools</code>.</td><td><code>high</code></td><td>$2 / $10</td></tr>
-          <tr><td><code>claude-haiku-4-5</code></td><td>Só extended (<code>enabled</code> + <code>budget_tokens</code>); sem effort. Retirada não antes de 2026-10-15.</td><td>não suportado</td><td>$1 / $5</td></tr>
+          <tr><td><code>claude-sonnet-5-5</code> (2026-09-28)</td><td>Adaptive (default) ou <code>{"type":"between_tools"}</code> (effort até <code>high</code>; sem <code>display</code>, <code>budget_tokens</code> ou <code>block_binding</code>). <code>disabled</code> retorna 400 apontando para <code>between_tools</code>.</td><td><code>high</code></td><td>$2 / $10 (cache read 0,05x, $0,10, desde 2026-10-07)</td></tr>
+          <tr><td><code>claude-haiku-5-5</code> (2026-10-07)</td><td>Adaptive (default); <code>disabled</code> aceito com effort até <code>high</code>; <code>enabled</code> + <code>budget_tokens</code> retorna 400. Contexto 1M, saída 128k; retirada não antes de 2027-10-07.</td><td><code>medium</code></td><td>$0,10 / $0,50 até 100k tokens de prompt; $0,50 / $2,50 acima</td></tr>
+          <tr><td><code>claude-haiku-4-5</code> (legado)</td><td>Só extended (<code>enabled</code> + <code>budget_tokens</code>); sem effort. Segue Active; retirada não antes de 2026-10-15, sem aviso de depreciação em 2026-10-19.</td><td>não suportado</td><td>$1 / $5</td></tr>
         </tbody>
       </table></div>
       <ul>
@@ -741,19 +743,23 @@ class SpecialistOutput(BaseModel):
         <li><strong>Texto entre tool calls</strong> chega em blocos <code>thinking</code> (vazios no <code>display</code> <code>omitted</code>, o padrão): UI que exibe progresso fica muda sem erro; configure <code>thinking.display</code> ou use <code>between_tools</code> no Sonnet 5.5.</li>
         <li><strong>Blocos de thinking presos a modelo, conversa e conta.</strong> Bloco que o modelo alvo não lê é descartado (o request passa; não é faturado). O Sonnet 5.5 não lê blocos de Opus 5, Opus 5.5, Fable ou Mythos, e nenhum outro modelo lê os seus. Em contas criadas a partir de 2026-08-31, mudar prefixo depois de um bloco retorna 400 por padrão.</li>
         <li><strong>Sampling:</strong> <code>temperature</code>, <code>top_p</code> e <code>top_k</code> não-default retornam 400 a partir do Opus 4.7; o SDK Python 1.x levanta <code>TypeError</code>.</li>
+        <li><strong>Haiku 5.5:</strong> <code>temperature</code> só 1, <code>top_p</code> só 0,99 e qualquer <code>top_k</code> retornam 400; prefill retorna 400; <code>computer_20250124</code> retorna 400 (use <code>computer_toolset_20260801</code>); sem Priority Tier; sem fallback no servidor, então trate <code>stop_reason: "refusal"</code>. Usa o tokenizador do 4.7+ (~30% mais tokens que o Haiku 4.5): recontar antes de migrar caps e custo.</li>
         <li><strong>Computer use:</strong> <code>computer_20251124</code> é rejeitado (400) em Opus 5.5 e Sonnet 5.5 na Claude API e no Google Cloud; use <code>computer_toolset_20260801</code> (Bedrock ainda aceita a versão antiga).</li>
         <li><strong>Structured outputs</strong> (<code>output_config.format</code>) não combinam com <code>citations</code> (400).</li>
       </ul>
-      <div class="source-link">Fontes (lidas 2026-09-30): <a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener">models overview</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/thinking" target="_blank" rel="noopener">thinking</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/effort" target="_blank" rel="noopener">effort</a> · <a href="https://platform.claude.com/docs/en/models/opus-5-5/whats-new-opus-5-5" target="_blank" rel="noopener">What's new in Opus 5.5</a> · <a href="https://platform.claude.com/docs/en/models/sonnet-5-5/whats-new-sonnet-5-5" target="_blank" rel="noopener">What's new in Sonnet 5.5</a>. Issue aberta em <code>langchain-anthropic</code> (<a href="https://github.com/langchain-ai/langchain/issues/40777" target="_blank" rel="noopener">#40777</a>): <code>ChatAnthropic</code> envia <code>tool_choice</code>/thinking não suportados pelo Opus 5.5; não verificado para os demais adapters (<span class="pill partial">UNVERIFIED</span>).</div>
+      <div class="source-link">Fontes (lidas 2026-10-19): <a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener">models overview</a> · <a href="https://platform.claude.com/docs/en/about-claude/pricing" target="_blank" rel="noopener">pricing</a> · <a href="https://platform.claude.com/docs/en/models/haiku-5-5/whats-new-haiku-5-5" target="_blank" rel="noopener">What's new in Haiku 5.5</a> ·<a href="https://platform.claude.com/docs/en/build-with-claude/thinking" target="_blank" rel="noopener">thinking</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/effort" target="_blank" rel="noopener">effort</a> · <a href="https://platform.claude.com/docs/en/models/opus-5-5/whats-new-opus-5-5" target="_blank" rel="noopener">What's new in Opus 5.5</a> · <a href="https://platform.claude.com/docs/en/models/sonnet-5-5/whats-new-sonnet-5-5" target="_blank" rel="noopener">What's new in Sonnet 5.5</a>. Issue aberta em <code>langchain-anthropic</code> (<a href="https://github.com/langchain-ai/langchain/issues/40777" target="_blank" rel="noopener">#40777</a>): <code>ChatAnthropic</code> envia <code>tool_choice</code>/thinking não suportados pelo Opus 5.5; não verificado para os demais adapters (<span class="pill partial">UNVERIFIED</span>).</div>
     </section>
 
     <section id="google-adapter">
-      <h2>6. Google GenAI/Gemini adapter<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
+      <h2>6. Google GenAI/Gemini adapter<span class="rev-flag atu">Atualizado · 2026-10-19</span></h2>
       <p>No adapter Google, use o SDK oficial <code>google-genai</code> (2.3.0+ para Interactions) e a
       <a href="guia_gemini_interactions_api.html">Interactions API</a>, GA desde junho de 2026 e recomendação oficial
       para projetos novos: steps observáveis e estado stateful (<code>previous_interaction_id</code>) ou stateless
-      (<code>store=false</code>). Modelo de referência: <code>gemini-3.8-flash</code> (GA); o <code>gemini-3.1-pro-preview</code>
-      segue como único Pro 3.x e é preview. Em function calling com thought signatures, <strong>preserve os steps
+      (<code>store=false</code>). Modelos: <code>gemini-4-argon</code> (GA em 2026-10-13; só texto, sem Live API, só cache implícito, contexto de 1.048.576 tokens,
+      <code>thinking_level</code> <code>low</code>/<code>medium</code> (padrão)/<code>high</code>, SDK 2.31.0+); <code>gemini-3.8-flash</code> (GA)
+      como referência de custo e latência; o <code>gemini-3.1-pro-preview</code> segue como único Pro 3.x e é preview.
+      <code>gemini-3.7-flash</code> e <code>gemini-3.5-flash</code> (não-lite) foram roteados em 2026-10-08 para <code>gemini-3.8-flash</code>
+      e <code>gemini-3.6-flash</code>. Em function calling com thought signatures, <strong>preserve os steps
       exatamente como retornados</strong>. Recursos que só existem em <code>generateContent</code> estão em
       <a href="#legado">Legado e migração</a>.</p>
       <div class="table-wrap"><table>
@@ -764,14 +770,14 @@ class SpecialistOutput(BaseModel):
           <tr><td>Function calling</td><td>A resposta traz steps <code>function_call</code> (<code>id</code>, <code>name</code>, <code>arguments</code>); devolva <code>function_result</code> com o <code>call_id</code> do step, o <code>previous_interaction_id</code> e as <code>tools</code> de novo. Chamadas paralelas são vários steps, todos a responder. <code>generation_config.tool_choice</code>: <code>auto</code>, <code>any</code>, <code>none</code>, <code>validated</code>. O runtime ainda valida schema, autorização e fan-out.</td></tr>
           <tr><td>Thought signatures</td><td>Steps <code>thought</code> carregam <code>signature</code>. Stateful: o servidor as gerencia. Stateless: devolva os steps intactos, sem concatenar nem reordenar.</td></tr>
           <tr><td>Thinking</td><td><code>generation_config.thinking_level</code> (no <code>gemini-3.8-flash</code>: <code>low</code>, <code>medium</code> default, <code>high</code>; <code>minimal</code> retorna erro). <code>thinking_budget</code> numérico não é recomendado na série 3. Rejeite combinações não suportadas em vez de fallback silencioso.</td></tr>
-          <tr><td>Sampling</td><td><code>temperature</code>, <code>top_p</code> e <code>top_k</code> estão "deprecated / no longer recommended" no Gemini 3.x e <code>candidate_count</code> não é suportado; a documentação não diz se o efeito é 400 ou se são ignorados (<span class="pill partial">UNVERIFIED</span>).</td></tr>
+          <tr><td>Sampling</td><td><code>temperature</code>, <code>top_p</code> e <code>top_k</code> estão "deprecated / no longer recommended" no Gemini 3.x e <code>candidate_count</code> não é suportado; a documentação não diz se o efeito é 400 ou se são ignorados (<span class="pill partial">UNVERIFIED</span>). No <code>gemini-4-argon</code> a página do modelo diz que são ignorados.</td></tr>
           <tr><td>Structured output</td><td><code>response_format</code> com JSON Schema; combinar com tools built-in é preview e só no Gemini 3. Valide localmente.</td></tr>
           <tr><td>Streaming e background</td><td>SSE com eventos <code>interaction.*</code>/<code>step.*</code>; <code>background=True</code> + <code>interactions.get</code>. Detalhe e reconexão em <a href="guia_streaming_durabilidade_resume.html#anthropic-gemini">Streaming durável §13</a>.</td></tr>
           <tr><td>Documentos/files</td><td>Files API (arquivos expiram em 48 horas) e document processing; mantenha o asset registry próprio.</td></tr>
-          <tr><td>Remote MCP</td><td>Fontes oficiais divergem: a visão geral da Interactions diz que o Gemini 3 não suporta remote MCP ("coming soon", página atualizada em 2026-09-23), enquanto a página de function calling documenta uma tool <code>mcp_server</code>. Não anuncie a capability sem probe atual.</td></tr>
+          <tr><td>Remote MCP</td><td>Fontes oficiais divergem: a visão geral da Interactions diz que o Gemini 3 não suporta remote MCP ("coming soon", ainda listado em 2026-10-19), enquanto a página de function calling documenta uma tool <code>mcp_server</code>. Não anuncie a capability sem probe atual.</td></tr>
         </tbody>
       </table></div>
-      <div class="source-link">Fontes (lidas 2026-09-30): <a href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">Interactions overview</a> · <a href="https://ai.google.dev/gemini-api/docs/function-calling" target="_blank" rel="noopener">function calling</a> · <a href="https://ai.google.dev/gemini-api/docs/thinking" target="_blank" rel="noopener">thinking</a> · <a href="https://ai.google.dev/gemini-api/docs/models" target="_blank" rel="noopener">models</a>.</div>
+      <div class="source-link">Fontes (lidas 2026-10-19): <a href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">Interactions overview</a> · <a href="https://ai.google.dev/gemini-api/docs/function-calling" target="_blank" rel="noopener">function calling</a> · <a href="https://ai.google.dev/gemini-api/docs/thinking" target="_blank" rel="noopener">thinking</a> · <a href="https://ai.google.dev/gemini-api/docs/models" target="_blank" rel="noopener">models</a> · <a href="https://ai.google.dev/gemini-api/docs/models/gemini-4-argon" target="_blank" rel="noopener">gemini-4-argon</a> · <a href="https://ai.google.dev/gemini-api/docs/changelog" target="_blank" rel="noopener">changelog</a>.</div>
     </section>
 
     <section id="structured-outputs">
@@ -892,14 +898,14 @@ class SpecialistOutput(BaseModel):
     </section>
 
     <section id="matriz-parametros">
-      <h2>11. Matriz de parâmetros por intenção<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
+      <h2>11. Matriz de parâmetros por intenção<span class="rev-flag atu">Atualizado · 2026-10-19</span></h2>
       <p>A cola operacional: dada uma intenção de orquestração, quais controles usar em cada provider.</p>
       <div class="table-wrap"><table>
         <thead><tr><th>Intenção</th><th>Controles típicos</th></tr></thead>
         <tbody>
           <tr><td>Forçar nenhuma tool</td><td><code>tool_choice: none</code> ou sem tools; prompt de síntese final; guardrail de tool call vazio.</td></tr>
           <tr><td>Permitir várias consultas read-only</td><td><code>parallel_tool_calls</code> quando suportado; runtime executa com fan-out cap.</td></tr>
-          <tr><td>Obrigar tool específica</td><td><code>tool_choice</code> específico (OpenAI) / <code>any</code> ou <code>validated</code> em <code>generation_config.tool_choice</code> (Gemini). Anthropic: <code>any</code>/<code>tool</code> retornam 400 em Opus 5.5, Sonnet 5.5 e Fable 5.1 — use <code>auto</code> + strict tool use.</td></tr>
+          <tr><td>Obrigar tool específica</td><td><code>tool_choice</code> específico (OpenAI) / <code>any</code> ou <code>validated</code> em <code>generation_config.tool_choice</code> (Gemini). Anthropic: <code>any</code>/<code>tool</code> retornam 400 em Opus 5.5, Sonnet 5.5 e Fable 5.1 (o Haiku 5.5 os aceita, sem bloco <code>thinking</code>) — use <code>auto</code> + strict tool use.</td></tr>
           <tr><td>Controlar profundidade</td><td><code>reasoning.effort</code> (OpenAI; valores por modelo; <code>gpt-6-astra</code> e <code>gpt-6.1-sol</code> não aceitam <code>none</code>) / <code>output_config.effort</code> (Anthropic; default <code>medium</code> no Opus 5.5, <code>high</code> no Fable 5.1 e Sonnet 5.5) / <code>thinking_level</code> (Gemini); output cap ajustado. O <em>default</em> e os valores aceitos de effort não são portáveis entre providers: releia a doc do modelo alvo a cada troca.</td></tr>
           <tr><td>Evitar truncation perigosa</td><td>Medir tokens, compactar antes, <code>truncation: disabled</code> quando falha explícita é melhor.</td></tr>
           <tr><td>Delegar subagente</td><td>Envelope com <code>input_schema</code>/<code>output_schema</code>, deadline, cancelamento, max fan-out e provenance; não herdar histórico bruto.</td></tr>
@@ -907,7 +913,7 @@ class SpecialistOutput(BaseModel):
           <tr><td>Medir contexto</td><td>Registrar tamanho, compactações, fatos críticos retidos e fonte/hash; separar processo de contexto do outcome final.</td></tr>
           <tr><td>Reduzir custo</td><td>Modelo menor para triagem (mini/nano/flash-lite/haiku), caps, early exit e cache permitido pela política.</td></tr>
           <tr><td>Minimizar latência em loop longo de tools</td><td>OpenAI: <strong>WebSocket mode</strong> da Responses API (conexão persistente, só itens novos + <code>previous_response_id</code>). Anthropic/Gemini: HTTP+SSE com <code>stream</code>, preâmbulo curto e prompt/context caching; não há WebSocket de inferência nesses dois. Ver linha <em>Transporte</em> na §8.</td></tr>
-          <tr><td>Fallback cross-vendor por classe (aproximação editorial, 2026-09-30)</td><td>Pares por classe e custo (preços lidos em 2026-09-30), não equivalência de qualidade. Frontier: <code>gpt-6-astra</code> ↔ <code>claude-fable-5-1</code> (ponto de partida Anthropic: <code>claude-opus-5-5</code>) ↔ <code>gemini-3.1-pro-preview</code> (preview). Workhorse: <code>gpt-6.1-sol</code> ↔ <code>claude-sonnet-5-5</code> ↔ <code>gemini-3.8-flash</code>. Volume: <code>gpt-6-luna</code> ↔ <code>claude-haiku-4-5</code> ↔ <code>gemini-3.5-flash-lite</code>. <code>grok-4.7</code> como quarto ponto de comparação (ver <a href="#provedores-adicionais">§13</a>). Ressalvas: tokenizers diferentes (~±30% na contagem), reasoning/thinking não portável, tools built-in distintas, <code>tool_choice</code> forçado quebra nos modelos Anthropic atuais (ver <a href="#anthropic-adapter">§5</a>) — reveja caps e evals ao trocar, não só o preço.</td></tr>
+          <tr><td>Fallback cross-vendor por classe (aproximação editorial, 2026-10-19)</td><td>Pares por classe e custo (preços lidos em 2026-09-30; Haiku 5.5 em 2026-10-19), não equivalência de qualidade. Frontier: <code>gpt-6-astra</code> ↔ <code>claude-fable-5-1</code> (ponto de partida Anthropic: <code>claude-opus-5-5</code>) ↔ <code>gemini-3.1-pro-preview</code> (preview). Workhorse: <code>gpt-6.1-sol</code> ↔ <code>claude-sonnet-5-5</code> ↔ <code>gemini-3.8-flash</code>. Volume: <code>gpt-6-luna</code> ↔ <code>claude-haiku-5-5</code> ↔ <code>gemini-3.5-flash-lite</code> (o Haiku 5.5 muda preço e tokenizador em relação ao 4.5: recontar tokens). <code>grok-4.7</code> como quarto ponto de comparação (ver <a href="#provedores-adicionais">§13</a>). Ressalvas: tokenizers diferentes (~±30% na contagem), reasoning/thinking não portável, tools built-in distintas, <code>tool_choice</code> forçado quebra nos modelos Anthropic atuais (ver <a href="#anthropic-adapter">§5</a>) — reveja caps e evals ao trocar, não só o preço.</td></tr>
         </tbody>
       </table></div>
       <div class="source-link">Reasoning/thinking por provider: <a href="guia_openai_modelos.html">guia_openai_modelos</a> · <a href="guia_claude_api.html">guia_claude_api</a> · <a href="guia_gemini_interactions_api.html">guia_gemini_interactions_api</a>.</div>
@@ -1027,8 +1033,8 @@ print(interaction.output_text)</code></pre>
           <tr><td>Gemini Interactions com <code>outputs[]</code></td><td>Schema removido em 2026-06-08 (<code>steps</code> é o único)</td><td>Ler <code>steps[]</code>/<code>interaction.output_text</code>; <code>response_mime_type</code>/<code>image_config</code>/<code>response_modalities</code> → <code>response_format</code></td><td><a href="https://ai.google.dev/gemini-api/docs/interactions-breaking-changes-may-2026" target="_blank" rel="noopener">breaking changes</a></td></tr>
           <tr><td>SDK <code>google-generativeai</code></td><td>Deprecado desde 2025-11-30 ("not actively maintained")</td><td>Use <code>google-genai</code></td><td><a href="https://ai.google.dev/gemini-api/docs/libraries" target="_blank" rel="noopener">libraries</a></td></tr>
           <tr><td>Gemini 2.5 Pro/Flash/Flash-Lite</td><td>Acesso limitado desde 2026-09-18 a quem já os usava; sem shutdown anunciado</td><td>Projetos novos: <code>gemini-3.8-flash</code> ou <code>gemini-3.5-flash-lite</code></td><td><a href="https://ai.google.dev/gemini-api/docs/models" target="_blank" rel="noopener">models</a></td></tr>
-          <tr><td>Anthropic <code>thinking: {"type":"enabled","budget_tokens":N}</code> e sampling</td><td>Retorna 400 a partir do Opus 4.7, em Fable/Mythos e no Sonnet 5+; só Haiku 4.5, Opus 4.5 e Sonnet 4.5 o usam (deprecado em Opus 4.6 e Sonnet 4.6)</td><td>Adaptive + <code>output_config.effort</code>; no Sonnet 5.5, <code>disabled</code> → <code>{"type":"between_tools"}</code>; omitir <code>temperature</code>/<code>top_p</code>/<code>top_k</code>; <code>output_format</code> → <code>output_config.format</code>; <code>computer_20251124</code> → <code>computer_toolset_20260801</code></td><td><a href="https://platform.claude.com/docs/en/build-with-claude/thinking" target="_blank" rel="noopener">thinking</a> · <a href="https://platform.claude.com/docs/en/about-claude/model-deprecations" target="_blank" rel="noopener">model-deprecations</a></td></tr>
-          <tr><td>Pydantic AI 1.x</td><td>Série 2.x é a corrente (2.52.0)</td><td>O prefixo <code>openai:</code> passou a usar Responses; as demais quebras da 2.0 não foram relidas em 2026-09-30 (<span class="pill partial">UNVERIFIED</span>): leia o changelog</td><td><a href="https://pydantic.dev/docs/ai/models/openai/" target="_blank" rel="noopener">models/openai</a></td></tr>
+          <tr><td>Anthropic <code>thinking: {"type":"enabled","budget_tokens":N}</code> e sampling</td><td>Retorna 400 a partir do Opus 4.7, em Fable/Mythos, no Sonnet 5+ e no Haiku 5.5; só Haiku 4.5, Opus 4.5 e Sonnet 4.5 o usam (deprecado em Opus 4.6 e Sonnet 4.6). O Sonnet 4.5 está deprecado desde 2026-09-30, com retirada em 2026-11-30 (substituto <code>claude-sonnet-5-5</code>)</td><td>Adaptive + <code>output_config.effort</code>; no Sonnet 5.5, <code>disabled</code> → <code>{"type":"between_tools"}</code>; omitir <code>temperature</code>/<code>top_p</code>/<code>top_k</code>; <code>output_format</code> → <code>output_config.format</code>; <code>computer_20251124</code> → <code>computer_toolset_20260801</code></td><td><a href="https://platform.claude.com/docs/en/build-with-claude/thinking" target="_blank" rel="noopener">thinking</a> · <a href="https://platform.claude.com/docs/en/about-claude/model-deprecations" target="_blank" rel="noopener">model-deprecations</a></td></tr>
+          <tr><td>Pydantic AI 1.x</td><td>Série 2.x é a corrente (2.57.0)</td><td>O prefixo <code>openai:</code> passou a usar Responses; as demais quebras da 2.0 não foram relidas em 2026-09-30 (<span class="pill partial">UNVERIFIED</span>): leia o changelog</td><td><a href="https://pydantic.dev/docs/ai/models/openai/" target="_blank" rel="noopener">models/openai</a></td></tr>
         </tbody>
       </table></div>
     </section>

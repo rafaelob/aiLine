@@ -394,10 +394,10 @@
         <tbody>
           <tr><td>Skills pré-construídas (Anthropic)</td><td><code>pptx</code>, <code>xlsx</code>, <code>docx</code>, <code>pdf</code></td><td>GA</td><td><code>type: "anthropic"</code>; <code>version</code> por data (ex.: <code>"20251013"</code>) ou <code>"latest"</code>.</td></tr>
           <tr><td>Skill custom</td><td><code>skill_01...</code> / <code>skver_01...</code></td><td>GA</td><td><code>type: "custom"</code>; <code>version</code> é ID opaco <code>skver_...</code> ou <code>"latest"</code>, não epoch timestamp.</td></tr>
-          <tr><td>Code execution tool (exigido)</td><td><code>code_execution_20260521</code> (também <code>_20260120</code>, <code>_20250825</code>)</td><td>GA</td><td>Sem header. Modelos: <code>claude-fable-5-1</code>, <code>claude-opus-5-5</code>, <code>claude-sonnet-5-5</code>, <code>claude-haiku-4-5-20251001</code>.</td></tr>
+          <tr><td>Code execution tool (exigido)</td><td><code>code_execution_20260521</code> (também <code>_20260120</code>, <code>_20250825</code>)</td><td>GA</td><td>Sem header. Modelos: <code>claude-fable-5-1</code>, <code>claude-opus-5-5</code>, <code>claude-sonnet-5-5</code>, <code>claude-haiku-5-5</code>, <code>claude-haiku-4-5-20251001</code>.</td></tr>
           <tr><td>Agent Plugins (padrão aberto)</td><td><code>1.0.0</code></td><td>Published</td><td>Rascunho 1.1.0 no repositório da spec, sem release. Formato diferente do plugin do Claude Code.</td></tr>
           <tr><td>Extensão MCP de skills</td><td><code>io.modelcontextprotocol/skills</code></td><td>Final (SEP-2640)</td><td>Spec MCP corrente <code>2026-07-28</code>; máx. recomendado 512 arquivos / 16 MiB por skill.</td></tr>
-          <tr><td>SDKs</td><td><code>anthropic</code> 1.9.0, <code>@anthropic-ai/sdk</code> 0.129.0</td><td>2026-09-28</td><td>Sem header de skills/files desde Python 1.2.0 / TypeScript 0.122.0.</td></tr>
+          <tr><td>SDKs</td><td><code>anthropic</code> 1.15.0, <code>@anthropic-ai/sdk</code> 0.135.0</td><td>2026-10-15</td><td>Sem header de skills/files desde Python 1.2.0 / TypeScript 0.122.0.</td></tr>
         </tbody>
       </table></div>
 
@@ -1278,9 +1278,9 @@ MCP   = protocolo para expor tools, resources e prompts externos.</code></pre>
     ],
     "tools": [{"type": "code_execution_20260521", "name": "code_execution"}]
   }'</code></pre>
-      <p class="small">O code execution tool (GA) lista como suportados, em 2026-09-30, <code>claude-fable-5-1</code>,
-      <code>claude-opus-5-5</code>, <code>claude-sonnet-5-5</code> e <code>claude-haiku-4-5-20251001</code>, além de
-      modelos anteriores ainda servidos; no Haiku 4.5 o REPL persistente e o programmatic tool calling não existem.
+      <p class="small">O code execution tool (GA) lista como suportados, em 2026-10-19, <code>claude-fable-5-1</code>,
+      <code>claude-opus-5-5</code>, <code>claude-sonnet-5-5</code>, <code>claude-haiku-5-5</code> e <code>claude-haiku-4-5-20251001</code>, além de
+      modelos anteriores ainda servidos; só no Haiku 4.5 o REPL persistente e o programmatic tool calling não existem.
       Confira a lista na
       <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool" target="_blank" rel="noopener">referência do tool</a>
       antes de assumir suporte. Skills não são elegíveis a ZDR (abaixo).</p>
@@ -2199,7 +2199,7 @@ retention_value considers:
           <strong>não</strong> o Sonnet 5 (lá, use o campo <code>system</code> de nível superior).
           <span class="pill beta">Beta</span> O header <code>inline-tools-2026-09-15</code> (só Claude API) deixa um
           <code>tool_addition</code> carregar a definição completa da tool, nos mesmos modelos.</li>
-          <li><strong>Mínimo cacheável de 512 tokens</strong> em Opus 5.5, Sonnet 5.5, Fable 5.1 e Opus 5
+          <li><strong>Mínimo cacheável de 512 tokens</strong> em Opus 5.5, Sonnet 5.5, Haiku 5.5, Fable 5.1 e Opus 5
           (contra 1.024 em Sonnet 5 e Opus 4.8, e 4.096 em Haiku 4.5): corpos de <code>SKILL.md</code> pequenos — os
           que o <code>skill_body_soft_cap</code> desta seção incentiva — cabem num breakpoint próprio.</li>
         </ul>
@@ -2207,7 +2207,7 @@ retention_value considers:
         custo de <em>recarregar</em> uma skill, não autoriza manter um L2 resumido se passando por ativo.
         Como a cobertura varia por modelo, calibre <code>swap_margin</code> por modelo — um roteador que cai
         num modelo sem o beta continua pagando a invalidação cheia.
-        <div class="source-link">Fonte: <a href="https://platform.claude.com/docs/en/build-with-claude/mid-conversation-system-messages" target="_blank" rel="noopener">build-with-claude/mid-conversation-system-messages</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching" target="_blank" rel="noopener">build-with-claude/prompt-caching</a> — lidas em 2026-09-30</div>
+        <div class="source-link">Fonte: <a href="https://platform.claude.com/docs/en/build-with-claude/mid-conversation-system-messages" target="_blank" rel="noopener">build-with-claude/mid-conversation-system-messages</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching" target="_blank" rel="noopener">build-with-claude/prompt-caching</a> — lidas em 2026-09-30 (mínimo do Haiku 5.5: 2026-10-19)</div>
       </div>
 
       <h3>Single-session e limite de compressão</h3>

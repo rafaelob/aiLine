@@ -374,7 +374,7 @@
 
       <h3>Superfície atual</h3>
       <p>Modo A (estrito): arquivo vai inline no payload do turno (base64 ou signed URL efêmera) com <code>store=False</code>; sem Files API, <code>file_id</code>, vector store, background, cache de provider nem container hospedado. Modo B (code interpreter/shell/code execution) é opcional e <strong>não</strong> é ZDR estrito (<a href="#dois-modos">§1</a>). Gemini = <code>client.interactions</code>.</p>
-<pre><code class="language-bash">pip install "openai&gt;=3,&lt;4" "anthropic&gt;=1,&lt;2" "google-genai&gt;=2.3,&lt;3"   # atuais: 3.22.1 / 1.9.0 / 2.25.0</code></pre>
+<pre><code class="language-bash">pip install "openai&gt;=3,&lt;4" "anthropic&gt;=1,&lt;2" "google-genai&gt;=2.3,&lt;3"   # atuais: 3.35.1 / 1.15.0 / 2.31.0</code></pre>
 <pre><code class="language-python"># OpenAI Responses
 client.responses.create(model="gpt-6-astra", store=False, input=[{"role": "user", "content": [
     {"type": "input_text", "text": "Resuma"},
@@ -929,8 +929,8 @@ response = client.responses.create(
         sempre ligado e <code>tool_choice</code> forçado (<code>any</code>/<code>tool</code>) retorna 400 — o payload acima não usa
         nenhum dos dois; ajuste adapters que usem. A Files API é GA, mas este guia a proíbe no Modo A (§3). Custo de imagem:
         <code>ceil(W/28) × ceil(H/28)</code> tokens, com teto de 2576 px / 4784 tokens nos modelos 4.7 e posteriores (1568 px /
-        1568 tokens nos demais). SDKs no registro em 2026-09-28: <code>anthropic 1.9.0</code> (PyPI) e
-        <code>@anthropic-ai/sdk 0.129.0</code> (npm); o registro confirma publicação, não compatibilidade com o seu pin.
+        1568 tokens nos demais, como o Haiku 4.5; o Haiku 5.5 usa o teto alto). SDKs no registro em 2026-10-19: <code>anthropic 1.15.0</code> (PyPI) e
+        <code>@anthropic-ai/sdk 0.135.0</code> (npm); o registro confirma publicação, não compatibilidade com o seu pin.
         <div class="source-link">Fontes: <a href="https://platform.claude.com/docs/en/build-with-claude/vision" target="_blank" rel="noopener">Vision</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/pdf-support" target="_blank" rel="noopener">PDF support</a> · <a href="https://platform.claude.com/docs/en/models/opus-5-5/whats-new-opus-5-5" target="_blank" rel="noopener">whats-new-opus-5-5</a> · <a href="https://pypi.org/project/anthropic/" target="_blank" rel="noopener">PyPI · anthropic</a></div>
       </div>
       <div class="callout tip">
@@ -1119,7 +1119,7 @@ def spreadsheet_worker(source_id: str, operation: str) -&gt; dict:
       code_execution:
         languages: ["Python", "Bash"]
         preferred_version: "code_execution_20260521"
-        compat_versions: "code_execution_20260120, code_execution_20250825 -- all three GA on every current model incl. Haiku 4.5 (Haiku 4.5 accepts 20260120/20260521 but behaves like 20250825: no REPL persistence, no programmatic tool calling)"
+        compat_versions: "code_execution_20260120, code_execution_20250825 -- all three GA on every current model incl. Haiku 5.5 and legacy Haiku 4.5 (Haiku 4.5 accepts 20260120/20260521 but behaves like 20250825: no REPL persistence, no programmatic tool calling)"
         zdr: "NOT eligible for ZDR (container data retained up to 30 days)"
         strict_mode: "not allowed for PHI/ZDR strict path"
       files_api: { zdr: "not eligible for ZDR" }
@@ -1187,7 +1187,7 @@ interaction = client.interactions.create(
         <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/programmatic-tool-calling" target="_blank" rel="noopener">programmatic tool calling</a>),
         com o tool description agora avisando o limite de 90&nbsp;s por célula em programmatic tool calling.
         As <strong>três versões</strong> (<code>code_execution_20250825</code>/<code>_20260120</code>/<code>_20260521</code>)
-        estão <strong>GA em todos os modelos atuais, incluindo Claude Opus 5.5 e Haiku 4.5</strong> — mas em Haiku 4.5 as duas
+        estão <strong>GA em todos os modelos atuais, incluindo Claude Opus 5.5, Haiku 5.5 e Haiku 4.5</strong> — mas só em Haiku 4.5 as duas
         versões mais novas <em>aceitam</em> o tipo de tool e se comportam como a <code>_20250825</code> (sem
         persistência de REPL nem programmatic tool calling, que dependem dela).
       </p>
@@ -1206,7 +1206,7 @@ message = client.messages.create(
     }]
 )
 # For strict mode: use application-owned code execution and pass only computed EvidenceCards to Claude.</code></pre>
-      <div class="source-link">Fonte oficial: <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool" target="_blank" rel="noopener">Anthropic · code execution tool</a> — verificado em 2026-09-30 (versão preferida <code>code_execution_20260521</code>; <code>_20260120</code>/<code>_20250825</code> = compatibilidade, GA em todos os modelos incl. Haiku 4.5)</div>
+      <div class="source-link">Fonte oficial: <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool" target="_blank" rel="noopener">Anthropic · code execution tool</a> — verificado em 2026-09-30 (versão preferida <code>code_execution_20260521</code>; <code>_20260120</code>/<code>_20250825</code> = compatibilidade, GA em todos os modelos incl. Haiku 5.5 e Haiku 4.5)</div>
     </section>
 
     <section id="hosted-frameworks">
@@ -1309,7 +1309,7 @@ message = client.messages.create(
           <tr><td>Como o arquivo entra?</td><td>base64 inline / signed URL efêmera / chunk-render app-side.</td><td>container hospedado processa o arquivo.</td></tr>
           <tr><td>Excel / cálculo determinístico?</td><td>worker próprio → CSV/JSON/EvidenceCard.</td><td>code execution hospedado (se permitido).</td></tr>
           <tr><td>Estado retido no provider?</td><td>Nenhum (<code>store=false</code>, sem Files/vector/background).</td><td>Filesystem efêmero do container enquanto ativo.</td></tr>
-          <tr><td>Anthropic code execution?</td><td>Proibido (não ZDR elegível).</td><td><code>code_execution_20260521</code> (compat: <code>_20260120</code>/<code>_20250825</code>, GA incl. Haiku 4.5).</td></tr>
+          <tr><td>Anthropic code execution?</td><td>Proibido (não ZDR elegível).</td><td><code>code_execution_20260521</code> (compat: <code>_20260120</code>/<code>_20250825</code>, GA incl. Haiku 5.5 e Haiku 4.5).</td></tr>
           <tr><td><code>run_mode</code></td><td><code>strict_no_provider_storage</code></td><td><code>hosted_optional_non_strict</code></td></tr>
         </tbody>
       </table></div>
@@ -1351,8 +1351,8 @@ message = client.messages.create(
       <ul>
         <li><span class="pill ok">Verificado</span> <strong>OpenAI.</strong> <code>detail</code>: <code>low</code>/<code>high</code>/<code>original</code>/<code>auto</code>; <code>auto</code> = <code>original</code> em <code>gpt-6-astra</code>, <code>gpt-5.6</code> e <code>gpt-5.5</code>, e = <code>high</code> em <code>gpt-5.4</code>. Limites: 512 MB e 1.500 imagens por request; <code>input_file</code> &lt; 50 MB por arquivo e ≤ 50 MB somados. Planilha: até 1.000 linhas por sheet; Chat Completions só PDF. <code>memory_limit</code> do Code Interpreter: <code>1g</code> (default), <code>4g</code>, <code>16g</code>, <code>64g</code>; container expira após 20 minutos sem uso. Fontes: /images-vision, /file-inputs, /tools-code-interpreter.</li>
         <li><span class="pill ok">Verificado</span> <strong>Gemini.</strong> Inline 100 MB por request (PDF 50 MB); Files API 2 GB por arquivo, 20 GB por projeto, 48 h; registro de URI do Cloud Storage por até 30 dias; URL externa 100 MB por payload. A Interactions guarda estado por padrão (<code>store=true</code>); Google Search e Maps retêm prompts e saídas por 30 dias e isso não se desativa; a Files API e o <code>cached_content</code> persistem até expirar ou serem apagados. A incompatibilidade de <code>store=false</code> com <code>background=true</code> vem da referência da API (ver <a href="guia_gemini_interactions_api.html#s-store">Gemini · store</a>), não da página /zdr. Fontes: /file-input-methods, /media-resolution, /zdr.</li>
-        <li><span class="pill ok">Verificado</span> <strong>Anthropic.</strong> Request 32 MB; 600 páginas de PDF e 600 imagens (100 nos casos de janela menor que 1M/200k); imagem 10 MB em base64; GIF animado usa o 1º frame. PDF inline é ZDR elegível exceto nos Covered Models (Fable 5.1, Mythos 5.1, Fable 5, Mythos 5: retenção de 30 dias). Files API e code execution não são ZDR elegíveis (containers expiram 30 dias após a criação). Code execution: <code>code_execution_20250825</code>/<code>_20260120</code>/<code>_20260521</code> aceitas em todos os modelos suportados, incluindo Opus 5.5 e Haiku 4.5; em Haiku 4.5 as duas novas se comportam como a <code>_20250825</code>; nenhuma exige header beta. Fontes: /vision, /pdf-support, /api-and-data-retention, /code-execution-tool.</li>
-        <li><span class="pill ok">Verificado</span> <strong>Versões de SDK no registro.</strong> <code>anthropic 1.9.0</code> / <code>@anthropic-ai/sdk 0.129.0</code> (2026-09-28); <code>openai 3.22.1</code> / npm <code>7.25.0</code> (2026-09-29/30); <code>google-genai 2.25.0</code> / <code>@google/genai 2.24.0</code> (2026-09-22; a Interactions exige <code>google-genai</code> &gt;= 2.3.0). O registro confirma publicação, não compatibilidade com o seu pin.</li>
+        <li><span class="pill ok">Verificado</span> <strong>Anthropic.</strong> Request 32 MB; 600 páginas de PDF e 600 imagens (100 nos casos de janela menor que 1M/200k); imagem 10 MB em base64; GIF animado usa o 1º frame. PDF inline é ZDR elegível exceto nos Covered Models (Fable 5.1, Mythos 5.1, Fable 5, Mythos 5: retenção de 30 dias). Files API e code execution não são ZDR elegíveis (containers expiram 30 dias após a criação). Code execution: <code>code_execution_20250825</code>/<code>_20260120</code>/<code>_20260521</code> aceitas em todos os modelos suportados, incluindo Opus 5.5, Haiku 5.5 e Haiku 4.5; só em Haiku 4.5 as duas novas se comportam como a <code>_20250825</code>; nenhuma exige header beta. Fontes: /vision, /pdf-support, /api-and-data-retention, /code-execution-tool.</li>
+        <li><span class="pill ok">Verificado</span> <strong>Versões de SDK no registro.</strong> <code>anthropic 1.15.0</code> / <code>@anthropic-ai/sdk 0.135.0</code> (2026-10-15); <code>openai 3.35.1</code> / npm <code>7.39.0</code> (2026-10-19); <code>google-genai 2.31.0</code> / <code>@google/genai 2.30.0</code> (2026-10-19; a Interactions exige <code>google-genai</code> &gt;= 2.3.0). O registro confirma publicação, não compatibilidade com o seu pin.</li>
         <li><span class="pill partial">Divergência oficial</span> <strong>Limite inline do Gemini.</strong> A página de métodos de entrada diz 100 MB; as páginas de imagem e de áudio ainda dizem 20 MB no total. <strong>Sampling:</strong> a doc manda remover <code>temperature</code>/<code>top_p</code>/<code>top_k</code> em Gemini 3.x, mas não diz se a API devolve 400 ou ignora.</li>
         <li><span class="pill partial">UNVERIFIED</span> <code>generation_config.media_resolution</code> global na Interactions (não aparece nos exemplos atuais); retenção do Batch API do Gemini; <code>detail:"auto"</code> no <code>gpt-6.1-sol</code> (o modelo não é nomeado na página de imagens); detalhes de HIPAA por feature da Anthropic (não relidos); <code>model_dump_json()</code> como retorno de tool no Agents SDK (Pydantic v2 válido, mas padrão não documentado pelo SDK); elegibilidade ZDR de Agent Skills (não relida).</li>
         <li><span class="pill ok">Verificado</span> <strong>Âncoras de cross-link.</strong> Os destinos para outros guias da coleção são checados pelo script de validação da coleção (<code>scripts/validate_guides.py</code>), rodado em 2026-09-30.</li>

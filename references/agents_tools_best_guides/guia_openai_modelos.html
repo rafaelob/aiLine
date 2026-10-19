@@ -5,7 +5,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%9A%3C/text%3E%3C/svg%3E" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Guia OpenAI — Modelos mais recentes & API (Responses, Realtime, Imagem, Áudio)</title>
-<meta name="description" content="Guia técnico dos modelos OpenAI atuais em PT-BR: família gpt-6 (Astra, 6.1 Sol, Sol, Luna) e gpt-5.6 como geração anterior, Responses API, Agents API beta, GPT Image 2.5, áudio/realtime (gpt-transcribe, gpt-live), embeddings, moderation, preços, service tiers (incl. Ultrafast), caching explícito, reasoning, compaction, background, MCP, limites e operação. Legado condensado em uma seção. Corte oficial verificado em 2026-09-30." />
+<meta name="description" content="Guia técnico dos modelos OpenAI atuais em PT-BR: família gpt-6 (Astra, 6.1 Sol, Sol, Luna) e gpt-5.6 como geração anterior, Responses API, Decisions API beta, Agents API beta, GPT Image 2.5, áudio/realtime (gpt-transcribe, gpt-live), embeddings, moderation, preços, service tiers (incl. Ultrafast), caching explícito, reasoning, compaction, background, MCP, limites e operação. Legado condensado em uma seção. Corte oficial verificado em 2026-09-30; SDKs, deprecações, Ultrafast, tiers de uso e Decisions API revalidados em 2026-10-19." />
 <meta name="last-checked" content="2026-09-30" />
 <meta name="robots" content="index,follow" />
 <style>
@@ -403,10 +403,10 @@
     </div>
 
     <section id="para-agentes">
-      <h2>Resumo para agentes (verificado 2026-09-30)<span class="rev-flag novo">Novo · 2026-09-30</span></h2>
+      <h2>Resumo para agentes (verificado 2026-09-30; SDKs, Ultrafast e desligamentos em 2026-10-19)<span class="rev-flag novo">Novo · 2026-09-30</span></h2>
       <p><strong>Superfície atual:</strong> Responses API (<code>POST /v1/responses</code>) com o SDK <code>openai</code>. Não use Assistants API nem Chat Completions para trabalho novo.</p>
-<pre><code class="language-bash">pip install "openai&gt;=3.22,&lt;4"    # Python &gt;= 3.10 (PyPI 3.22.1, 2026-09-30)
-npm install openai@^7.25        # Node &gt;= 22 (npm 7.25.0, 2026-09-29)</code></pre>
+<pre><code class="language-bash">pip install "openai&gt;=3.22,&lt;4"    # Python &gt;= 3.10 (PyPI 3.35.1, 2026-10-18)
+npm install openai@^7.25        # Node &gt;= 22 (npm 7.39.0, 2026-10-19)</code></pre>
 <pre><code class="language-python">from openai import OpenAI
 client = OpenAI()  # lê OPENAI_API_KEY
 r = client.responses.create(model="gpt-6.1-sol", reasoning={"effort": "medium"}, input="Olá")
@@ -419,7 +419,7 @@ print(r.output_text)  # JS: client.responses.create({...}).output_text</code></p
             <tr><td><code>gpt-6-astra</code></td><td>flagship (03/09)</td><td><code>low</code>–<code>max</code>; <code>none</code> retorna HTTP 400</td><td>Default de effort não documentado (<span class="pill na">UNVERIFIED</span>); $10/$50 por 1M</td></tr>
             <tr><td><code>gpt-6.1-sol</code></td><td>novo (29/09)</td><td><code>low</code>–<code>max</code>, default <code>medium</code>; sem <code>none</code>/<code>minimal</code></td><td>$2/$10 por 1M; cache read 5% do input</td></tr>
             <tr><td><code>gpt-6-sol</code></td><td>anterior, sem deprecação</td><td><code>none</code>–<code>max</code>, default <code>medium</code></td><td>Não foi substituído pelo 6.1 Sol</td></tr>
-            <tr><td><code>gpt-6-luna</code></td><td>volume</td><td><code>none</code>–<code>max</code>, default <code>medium</code></td><td>$0,10/$0,50 por 1M</td></tr>
+            <tr><td><code>gpt-6-luna</code></td><td>volume</td><td><code>none</code>–<code>max</code>, default <code>medium</code></td><td>$0,10/$0,50 por 1M; único modelo da Decisions API beta (<a href="#s-decisions">§9.3</a>)</td></tr>
             <tr><td><code>gpt-5.6-sol</code> / <code>-terra</code> / <code>-luna</code></td><td>geração anterior, sem deprecação</td><td><code>none</code>–<code>max</code></td><td>Alias <code>gpt-5.6</code> = Sol</td></tr>
             <tr><td><code>gpt-image-2.5-sunburst</code> / <code>-flare</code></td><td>GA (08/09)</td><td>quality <code>low</code>–<code>max</code>, <code>auto</code></td><td>Sunburst: edição de precisão; Flare: rápido</td></tr>
             <tr><td><code>gpt-realtime-2.1</code>, <code>gpt-live-1</code></td><td>Realtime; GPT-Live GA (10/09)</td><td>—</td><td><code>gpt-live-1</code> usa <code>/v1/live/sessions</code></td></tr>
@@ -439,10 +439,11 @@ print(r.output_text)  # JS: client.responses.create({...}).output_text</code></p
         <li>Não coloque dois itens <code>configuration_update</code> adjacentes (a API rejeita) e não os use com <code>/responses/compact</code>.</li>
         <li>Não use <code>gpt-4o-transcribe</code>/<code>whisper-1</code>/<code>gpt-4o-transcribe-diarize</code> em código novo (shutdown 2027-02-26) → <code>gpt-transcribe</code>; timestamps/diarização só nos legados até lá.</li>
         <li>Não use <code>dall-e-*</code> (removidos 2026-05-12) nem <code>gpt-image-1</code> (2026-10-23) → <code>gpt-image-2.5-*</code>.</li>
+        <li>Não use em código novo os snapshots de <code>gpt-4o</code>, <code>gpt-4o-mini</code>, <code>gpt-4.1</code>, <code>gpt-4.1-mini</code> (shutdown 2027-01-14 → <code>gpt-6-luna</code>), <code>tts-1</code>, <code>tts-1-hd</code> e <code>gpt-4o-mini-tts</code> (2027-01-06 → <code>gpt-realtime-2.1-mini</code>) nem <code>gpt-5.3-codex</code>, <code>gpt-5.1</code> e <code>gpt-5.4-nano</code> (2027-04-01) — datas e substitutos em <a href="#legado-sunsets">Desligamentos agendados</a>.</li>
         <li>Não leia <code>output[0].content[0].text</code> → use <code>output_text</code>.</li>
         <li>Não use header <code>OpenAI-Beta: realtime=v1</code> nem <code>gpt-4o-realtime-preview</code> (removidos) → Realtime GA (<code>gpt-realtime-2.1</code>).</li>
         <li>Para contar tokens de entrada use <code>POST /v1/responses/input_tokens</code>; não estime por caracteres.</li>
-        <li><code>service_tier:"fast"</code> (antes <code>"priority"</code>, ainda aceito); <code>"ultrafast"</code> só Astra (GA), global/US, WebSocket recomendado. Trate <code>429 slow_down</code> e <code>503 server_is_overloaded</code> com <code>Retry-After</code>/backoff.</li>
+        <li><code>service_tier:"fast"</code> (antes <code>"priority"</code>, ainda aceito); <code>"ultrafast"</code> em Astra e 6.1 Sol (todos os usuários da API; Astra: US + global; 6.1 Sol: US, UE e global), WebSocket recomendado. Trate <code>429 slow_down</code> e <code>503 server_is_overloaded</code> com <code>Retry-After</code>/backoff.</li>
         <li>Agents API (beta, <code>OpenAI-Beta: agents=v1</code>) é produto hospedado, distinto do Agents SDK; sem ZDR.</li>
         <li>Nunca use o catálogo <code>/models</code> como prova de disponibilidade → <code>/deprecations</code> (resumo em <a href="#legado">Legado e migração</a>).</li>
       </ul>
@@ -458,7 +459,7 @@ print(r.output_text)  # JS: client.responses.create({...}).output_text</code></p
         <li><span class="pill na">UNVERIFIED</span> Default de <code>reasoning.effort</code> do <code>gpt-6-astra</code>: a OpenAI não documenta; não assuma <code>medium</code> (<a href="#s-reasoning-effort">§6.1</a>).</li>
         <li><span class="pill na">UNVERIFIED</span> Multi-agent (beta) na Responses API em Astra/6 Sol/6 Luna: o guia específico cita só <code>gpt-6.1-sol</code> e GPT-5.6; divergência com "Using GPT-6" (<a href="#s-catalogo">§1</a>).</li>
         <li><span class="pill na">UNVERIFIED</span> Substituto de timestamps, legendas, diarização e tradução → inglês após 2027-02-26 (<a href="#legado-sunsets">Desligamentos agendados</a>).</li>
-        <li>Preços e limites são perecíveis (2026-09-30); confirme em <a href="#s-pricing">§32</a> e na página oficial antes de faturar.</li>
+        <li>Preços e limites são perecíveis (2026-09-30; Ultrafast, tiers de uso e Decisions API em 2026-10-19); confirme em <a href="#s-pricing">§32</a> e na página oficial antes de faturar.</li>
       </ul>
     </section>
 
@@ -505,13 +506,14 @@ print(r.output_text)  # JS: client.responses.create({...}).output_text</code></p
             <tr><td>Preços</td><td><a href="https://platform.openai.com/docs/pricing" target="_blank" rel="noopener">platform.openai.com/docs/pricing</a></td></tr>
             <tr><td>Modelos, preços e changelog</td><td><a href="https://developers.openai.com/api/docs/models" target="_blank" rel="noopener">developers.openai.com/api/docs/models</a> · <a href="https://developers.openai.com/api/docs/pricing" target="_blank" rel="noopener">/pricing</a> · <a href="https://developers.openai.com/api/docs/changelog" target="_blank" rel="noopener">/changelog</a></td></tr>
             <tr><td>Deprecações</td><td><a href="https://developers.openai.com/api/docs/deprecations" target="_blank" rel="noopener">developers.openai.com/api/docs/deprecations</a> — resumo em <a href="#legado">Legado e migração</a></td></tr>
-            <tr><td>SDK Python / registry</td><td><a href="https://pypi.org/project/openai/3.22.1/" target="_blank" rel="noopener">PyPI openai 3.22.1</a> (2026-09-30; Python &ge; 3.10; helpers WebSocket: <code>pip install --upgrade "openai[realtime]"</code>)</td></tr>
-            <tr><td>SDK JavaScript / registry</td><td><a href="https://www.npmjs.com/package/openai" target="_blank" rel="noopener">npm openai 7.25.0</a> (2026-09-29; Node &ge; 22)</td></tr>
+            <tr><td>SDK Python / registry</td><td><a href="https://pypi.org/project/openai/3.35.1/" target="_blank" rel="noopener">PyPI openai 3.35.1</a> (2026-10-18; Python &ge; 3.10; helpers WebSocket: <code>pip install --upgrade "openai[realtime]"</code>)</td></tr>
+            <tr><td>SDK JavaScript / registry</td><td><a href="https://www.npmjs.com/package/openai" target="_blank" rel="noopener">npm openai 7.39.0</a> (2026-10-19; Node &ge; 22)</td></tr>
             <tr><td>Agents API (beta)</td><td><a href="https://developers.openai.com/api/docs/guides/agents-api/overview" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/agents-api/overview</a> — produto distinto do Agents SDK, ver <a href="#s-quickstart-agentsapi">§3.3</a></td></tr>
+            <tr><td>Decisions API (beta)</td><td><a href="https://developers.openai.com/api/docs/guides/decisions" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/decisions</a> — respostas tipadas com <code>gpt-6-luna</code>, ver <a href="#s-decisions">§9.3</a></td></tr>
           </tbody>
         </table>
       </div>
-      <p class="source-link"><strong>Fonte:</strong> <a href="https://developers.openai.com/api/docs/models" target="_blank" rel="noopener">developers.openai.com/api/docs/models</a> · <a href="https://developers.openai.com/api/docs/deprecations" target="_blank" rel="noopener">/deprecations</a> · <a href="https://developers.openai.com/api/docs/changelog" target="_blank" rel="noopener">/changelog</a> — verificado em 2026-09-30.</p>
+      <p class="source-link"><strong>Fonte:</strong> <a href="https://developers.openai.com/api/docs/models" target="_blank" rel="noopener">developers.openai.com/api/docs/models</a> · <a href="https://developers.openai.com/api/docs/deprecations" target="_blank" rel="noopener">/deprecations</a> · <a href="https://developers.openai.com/api/docs/changelog" target="_blank" rel="noopener">/changelog</a> — verificado em 2026-09-30; registries, deprecações e Decisions API em 2026-10-19.</p>
     </section>
 
 <section class="chapter" id="part-a-divider"><h2 style="border-bottom:3px solid var(--c-openai);padding:14px 0 10px;font-size:28px">Parte A — Modelos, Texto &amp; Responses API<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2><p style="color:var(--c-fg-muted)">A família <code>gpt-6</code> (Astra, 6.1 Sol, Sol, Luna) e a geração anterior <code>gpt-5.6</code> (Sol/Terra/Luna), usadas pela Responses API (e pela Agents API beta) para texto, reasoning, ferramentas, streaming, estado e caching.</p></section>
@@ -542,7 +544,7 @@ print(r.output_text)  # JS: client.responses.create({...}).output_text</code></p
   </table>
   </div>
 
-  <div class="callout info"><strong>Long context e tiers de processamento:</strong> acima de 272K de input, a <em>requisição inteira</em> é cobrada a <strong>2× no input/cache e 1,5× no output</strong>. Long context (input / cached / write / output): <code>gpt-6-astra</code> $20 / $2 / $25 / $75; <code>gpt-6.1-sol</code> $4 / $0,20 / $5 / $15; <code>gpt-6-sol</code> $4 / $0,40 / $5 / $15; <code>gpt-6-luna</code> $0,20 / $0,02 / $0,25 / $0,75; <code>gpt-5.6-sol</code> $8 / $0,80 / $10 / $30; <code>gpt-5.6-terra</code> $4 / $0,40 / $5 / $18; <code>gpt-5.6-luna</code> $0,40 / $0,04 / $0,50 / $1,80. O cache write custa 1,25× o input; a leitura de cache custa 10% do input (<strong>5% no <code>gpt-6.1-sol</code></strong>). <strong>Batch e Flex</strong> custam 50% do Standard. <strong>Fast</strong> é 2× do Standard: <code>gpt-6-astra</code> $20/$2/$25/$100 (long $40/$4/$50/$150), <code>gpt-6.1-sol</code> $4/$0,20/$5/$20, <code>gpt-6-sol</code> $4/$0,40/$5/$20, <code>gpt-6-luna</code> $0,20/$0,02/$0,25/$1 — <code>service_tier</code> <code>"fast"</code> (ou <code>"priority"</code>). <strong>Ultrafast</strong> (<code>gpt-6-astra</code>, GA desde 29/09): $60/$6/$75/$300 (long $120/$12/$150/$450), ver <a href="#s-processing-priority">§34.3</a>. <strong>Regional/data residency</strong>: +10% nos modelos elegíveis; em <code>gpt-6-sol</code>/<code>gpt-6-luna</code>, EU residency só em Standard. Fonte: <a href="https://developers.openai.com/api/docs/pricing" target="_blank" rel="noopener">/pricing</a> · <a href="https://developers.openai.com/api/docs/models/gpt-5.6-sol" target="_blank" rel="noopener">página do gpt-5.6-sol</a>.</div>
+  <div class="callout info"><strong>Long context e tiers de processamento:</strong> acima de 272K de input, a <em>requisição inteira</em> é cobrada a <strong>2× no input/cache e 1,5× no output</strong>. Long context (input / cached / write / output): <code>gpt-6-astra</code> $20 / $2 / $25 / $75; <code>gpt-6.1-sol</code> $4 / $0,20 / $5 / $15; <code>gpt-6-sol</code> $4 / $0,40 / $5 / $15; <code>gpt-6-luna</code> $0,20 / $0,02 / $0,25 / $0,75; <code>gpt-5.6-sol</code> $8 / $0,80 / $10 / $30; <code>gpt-5.6-terra</code> $4 / $0,40 / $5 / $18; <code>gpt-5.6-luna</code> $0,40 / $0,04 / $0,50 / $1,80. O cache write custa 1,25× o input; a leitura de cache custa 10% do input (<strong>5% no <code>gpt-6.1-sol</code></strong>). <strong>Batch e Flex</strong> custam 50% do Standard. <strong>Fast</strong> é 2× do Standard: <code>gpt-6-astra</code> $20/$2/$25/$100 (long $40/$4/$50/$150), <code>gpt-6.1-sol</code> $4/$0,20/$5/$20, <code>gpt-6-sol</code> $4/$0,40/$5/$20, <code>gpt-6-luna</code> $0,20/$0,02/$0,25/$1 — <code>service_tier</code> <code>"fast"</code> (ou <code>"priority"</code>). <strong>Ultrafast</strong>: <code>gpt-6-astra</code> (desde 29/09) $60/$6/$75/$300 (long $120/$12/$150/$450); <code>gpt-6.1-sol</code> (desde 08/10) $12/$0,60/$15/$60 (long $24/$1,20/$30/$90), ver <a href="#s-processing-priority">§34.3</a>. <strong>Regional/data residency</strong>: +10% nos modelos elegíveis; em <code>gpt-6-sol</code>/<code>gpt-6-luna</code>, EU residency só em Standard. Fonte: <a href="https://developers.openai.com/api/docs/pricing" target="_blank" rel="noopener">/pricing</a> · <a href="https://developers.openai.com/api/docs/models/gpt-5.6-sol" target="_blank" rel="noopener">página do gpt-5.6-sol</a>.</div>
 
   <div class="callout info"><strong>Nota:</strong> raciocínio mais alto não é automaticamente melhor. Com critérios de parada fracos ou acesso aberto a ferramentas, esforço alto pode levar a <em>overthinking</em>, buscas desnecessárias ou regressão de qualidade. Aumente o esforço só quando seus <em>evals</em> mostrarem ganho mensurável.</div>
 
@@ -581,7 +583,7 @@ print(r.output_text)  # JS: client.responses.create({...}).output_text</code></p
           <td>Modelo GPT-6 mais eficiente, para tarefas focadas e de alto volume.</td>
           <td>Texto + imagem &rarr; texto. Responses e Chat Completions (function calling só com <code>reasoning_effort:"none"</code>).</td>
           <td><code>reasoning.effort</code>: <code>none</code> · <code>low</code> · <code>medium</code> (padrão) · <code>high</code> · <code>xhigh</code> · <code>max</code></td>
-          <td>Triagem e volume; $0,10/$0,01/$0,125/$0,50 por 1M.</td>
+          <td>Triagem e volume; $0,10/$0,01/$0,125/$0,50 por 1M. Único modelo da Decisions API beta (<a href="#s-decisions">§9.3</a>).</td>
         </tr>
         <tr>
           <td><code>gpt-5.6-sol</code> <span class="pill old">anterior</span></td>
@@ -614,16 +616,16 @@ print(r.output_text)  # JS: client.responses.create({...}).output_text</code></p
     <table>
       <thead><tr><th>Família</th><th>Modelo atual</th><th>Para quê</th><th>Onde</th></tr></thead>
       <tbody>
-        <tr><td>Coding</td><td><code>gpt-5.3-codex</code></td><td>Modelo de geração anterior especializado em código (agentes de coding, Codex). Para a maioria dos fluxos, <code>gpt-6.1-sol</code> + <code>apply_patch</code>/<code>shell</code> já cobre; use o Codex quando o ferramental Codex for o alvo.</td><td>Parte A (<a href="#s-tools-applypatch">§11.6</a>)</td></tr>
+        <tr><td>Coding</td><td><code>gpt-5.3-codex</code> <span class="pill old">shutdown 2027-04-01</span></td><td>Modelo de geração anterior especializado em código (agentes de coding, Codex), deprecado em favor do <code>gpt-6-sol</code>. Para a maioria dos fluxos, <code>gpt-6.1-sol</code> + <code>apply_patch</code>/<code>shell</code> já cobre; use o Codex quando o ferramental Codex for o alvo.</td><td>Parte A (<a href="#s-tools-applypatch">§11.6</a>)</td></tr>
         <tr><td>Imagem</td><td><code>gpt-image-2.5-sunburst</code>, <code>gpt-image-2.5-flare</code> <span class="pill new">GA 08/09</span></td><td>Geração e edição de imagens via API e como ferramenta integrada. Sunburst para edição de precisão, Flare para geração rápida do dia a dia; quality até <code>xhigh</code>/<code>max</code>. O <code>gpt-image-2</code> segue disponível como modelo "anterior" (teto <code>high</code>).</td><td>Parte B (<a href="#s-image-gen-25">§17.5</a>)</td></tr>
         <tr><td>Realtime</td><td><code>gpt-realtime-2.1</code> (+ <code>-mini</code>), <code>gpt-realtime-translate</code>, <code>gpt-realtime-whisper</code>, <code>gpt-live-transcribe</code></td><td>Voz <em>speech-to-speech</em>, tradução e transcrição em streaming de baixa latência.</td><td>Parte C</td></tr>
         <tr><td>Voz full-duplex (delegação)</td><td><code>gpt-live-1</code> <span class="pill new">GA 10/09</span></td><td>Sessão de voz full-duplex (ouve e fala ao mesmo tempo) que delega raciocínio/tools a um backend via Responses ou ao seu próprio serviço; endpoint dedicado <code>/v1/live/sessions</code>, distinto da Realtime API.</td><td>Parte C (<a href="#s-voice-live">§28.5</a>)</td></tr>
         <tr><td>Vida científica <span class="pill partial">acesso restrito</span></td><td><code>gpt-rosalind-research</code></td><td>Modelo de raciocínio para biologia, descoberta de fármacos e medicina translacional. GA 08/09/2026, mas disponível só via <em>trusted-access program</em> interno aprovado — não é auto-serviço.</td><td><a href="#s-pricing-rosalind">§32.7</a></td></tr>
         <tr><td>Áudio nativo no chat <span class="pill partial">inventário; não adotado</span></td><td><code>gpt-audio-1.5</code></td><td>Capacidade do catálogo do provedor (Chat Completions); neste guia use Realtime, GPT-Live ou STT → Responses → TTS.</td><td>Parte C (<a href="#s-audio-chat">§27</a>)</td></tr>
         <tr><td>STT</td><td><code>gpt-transcribe</code> (arquivo), <code>gpt-live-transcribe</code> (streaming)</td><td>Transcrição de arquivos e em tempo real. Timestamps, diarização e tradução ainda dependem de modelos legados com sunset em 26/02/2027 (<a href="#s-stt">§25</a>, <a href="#legado">Legado</a>).</td><td>Parte C</td></tr>
-        <tr><td>TTS</td><td><code>gpt-4o-mini-tts</code></td><td>Síntese de fala (text-to-speech), 13 vozes.</td><td>Parte C (<a href="#s-tts">§26</a>)</td></tr>
+        <tr><td>TTS</td><td><code>gpt-4o-mini-tts</code> <span class="pill old">shutdown 2027-01-06</span></td><td>Síntese de fala (text-to-speech), 13 vozes.</td><td>Parte C (<a href="#s-tts">§26</a>)</td></tr>
         <tr><td>Embeddings / Moderation</td><td><code>text-embedding-3-small</code>, <code>text-embedding-3-large</code> · <code>omni-moderation-latest</code></td><td>Vetorização para busca semântica e classificação de conteúdo.</td><td>Parte D (<a href="#s-embeddings">§29</a>, <a href="#s-moderation">§30</a>)</td></tr>
-        <tr><td>Chat (alias flutuante)</td><td><code>chat-latest</code></td><td>Alias que aponta para o modelo "Instant" mais recente do ChatGPT; o snapshot subjacente é atualizado regularmente (desde 28/05/2026). Evite quando precisar de comportamento determinístico — fixe um snapshot datado.</td><td>—</td></tr>
+        <tr><td>Chat (alias flutuante)</td><td><code>chat-latest</code></td><td>Alias que aponta para o modelo "Instant" mais recente do ChatGPT; o snapshot subjacente é atualizado regularmente (desde 28/05/2026; último snapshot em 07/10/2026, e a documentação recomenda a família GPT-6 para produção). Evite quando precisar de comportamento determinístico — fixe um snapshot datado.</td><td>—</td></tr>
       </tbody>
     </table>
   </div>
@@ -736,7 +738,7 @@ console.log(response.output_text);</code></pre>
         <tr><td>Multi-agente</td><td><code>agent.multi_agent.enabled: true</code> — o harness cria, envia mensagem, espera e interrompe subagentes automaticamente (<code>max_concurrent_subagents</code>, default <strong>6</strong>); subagentes <strong>não</strong> suportam function tools.</td><td>Handoffs e <code>agent.as_tool()</code> explícitos no seu código — ver <a href="guia_agents_sdk_orquestracao.html">guia de orquestração</a>.</td></tr>
         <tr><td>Steering mid-turn</td><td>Suportado nativamente na sessão.</td><td>Depende do transporte (WebSocket da Responses API) que você integrar.</td></tr>
         <tr><td>Cobrança</td><td>Tarifa do modelo escolhido + tools nas taxas padrão + sandbox hospedado nas taxas de container.</td><td>Só as chamadas de API subjacentes (Responses); sem taxa adicional do SDK.</td></tr>
-        <tr><td>Maturidade</td><td><span class="pill beta">Beta pública</span> desde 10/09/2026; só residência de dados nos EUA; <strong>não elegível a Zero Data Retention (ZDR)</strong>, mesmo com sandbox self-hosted.</td><td>GA, <code>openai-agents</code> 0.22.3 / <code>@openai/agents</code> 0.18.0.</td></tr>
+        <tr><td>Maturidade</td><td><span class="pill beta">Beta pública</span> desde 10/09/2026; só residência de dados nos EUA; <strong>não elegível a Zero Data Retention (ZDR)</strong>, mesmo com sandbox self-hosted.</td><td>GA, <code>openai-agents</code> 0.24.0 / <code>@openai/agents</code> 0.20.0.</td></tr>
       </tbody>
     </table>
   </div>
@@ -1166,7 +1168,7 @@ importante sem suporte.</code></pre>
     <li><strong>Testes e verificação:</strong> em tarefas de coding, tende a ser mais minucioso em testes do que a mudança exige. Para mudanças pequenas e reversíveis, peça para não escrever testes que só espelham a implementação, e para rodar apenas os testes apropriados à mudança — ampliando só diante de falha ou mudança nova.</li>
   </ol>
   <div class="callout tip"><strong>Migração assistida:</strong> o skill oficial <a href="https://github.com/openai/codex/tree/main/codex-rs/skills/src/assets/samples/openai-docs" target="_blank" rel="noopener">OpenAI Docs</a> (usável no Codex ou baixado para outro agente de coding) aplica automaticamente as mudanças recomendadas desta seção e do <a href="#s-catalogo">quickstart de migração</a> a um projeto: <code>$openai-docs migrate this project to the GPT-6 model family</code>.</div>
-  <div class="callout warn"><strong>Limitações confirmadas na página oficial (2026-09-30):</strong> <code>gpt-6-astra</code> e <code>gpt-6.1-sol</code> não aceitam <code>reasoning.effort:"none"</code>; Fast mode não está disponível com EU data residency em Astra, Sol e Luna; Ultrafast suporta só US e processamento global.</div>
+  <div class="callout warn"><strong>Limitações confirmadas na página oficial (2026-09-30):</strong> <code>gpt-6-astra</code> e <code>gpt-6.1-sol</code> não aceitam <code>reasoning.effort:"none"</code>; Fast mode não está disponível com EU data residency em Astra, Sol e Luna; Ultrafast: Astra suporta só US e processamento global; 6.1 Sol suporta US, UE e processamento global (ultrafast-mode, lido em 2026-10-19).</div>
 
   <p class="source-link"><strong>Fonte:</strong> <a href="https://developers.openai.com/api/docs/guides/prompt-guidance" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/prompt-guidance</a> · <a href="https://developers.openai.com/api/docs/guides/latest-model" target="_blank" rel="noopener">guides/latest-model — "Using GPT-6"</a></p>
 </section>
@@ -1294,7 +1296,21 @@ for (const output of response.output) {
 
   <div class="callout warn"><strong>Atenção:</strong> existe ainda o <strong>JSON mode</strong> (<code>text.format = {"type": "json_object"}</code>), que garante JSON válido mas <em>não</em> adesão a schema. Prefira Structured Outputs sempre que possível; ao usar JSON mode, instrua explicitamente o modelo a gerar JSON.</div>
 
-  <p class="source-link"><strong>Fonte:</strong> <a href="https://developers.openai.com/api/docs/guides/structured-outputs" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/structured-outputs</a></p>
+  <h3 id="s-decisions">9.3 Decisions API <span class="pill beta">beta · 2026-10-06</span></h3>
+  <p>Para classificar texto ou imagens em <strong>respostas tipadas</strong> (probabilidade, escolha, nota) sem gerar texto livre, a OpenAI oferece <code>POST /v1/decisions</code>; o changelog a descreve como até 10× mais rápida que a Responses API para esse fim. Hoje o único modelo é <code>gpt-6-luna</code>. O corpo leva <code>model</code>, <code>input</code> e <code>questions[]</code>; a resposta traz <code>answers[]</code>, que pode incluir um item <code>type: "refusal"</code> — trate-o como em <a href="#s-structured-refusals">§9.2</a>.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Tipo de pergunta</th><th>Resposta</th></tr></thead>
+      <tbody>
+        <tr><td><code>predicate</code></td><td>probabilidade de a afirmação ser verdadeira</td></tr>
+        <tr><td><code>choice</code></td><td>opção escolhida, probabilidades por opção e confiança</td></tr>
+        <tr><td><code>score</code></td><td>nota = média ponderada dos índices dos níveis (base 0)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout warn"><strong>Limites (lidos em 2026-10-19):</strong> imagens só como data URL base64 inline; beta público, com GA esperado "nas próximas semanas" segundo a OpenAI; preço do <code>gpt-6-luna</code> nesta API: $0,10 por 1M de tokens de entrada, sem cache e sem cobrança de saída; ZDR e HIPAA para clientes elegíveis; residência de dados nos EUA e na Europa (EEA + Suíça). SDKs mínimos: Python 3.26.0 e JavaScript 7.30.0 (<code>pip install "openai&gt;=3.26,&lt;4"</code>; <code>npm install openai@^7.30</code>). A integração nativa com o GPT-Live está em <a href="#s-voice-live">§28.5</a>.</div>
+
+  <p class="source-link"><strong>Fonte:</strong> <a href="https://developers.openai.com/api/docs/guides/structured-outputs" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/structured-outputs</a> · <a href="https://developers.openai.com/api/docs/guides/decisions" target="_blank" rel="noopener">guides/decisions</a> · <a href="https://developers.openai.com/api/docs/changelog" target="_blank" rel="noopener">changelog 06/10</a> (lidos em 2026-10-19)</p>
 </section>
 
 <section id="s-function-calling">
@@ -3749,7 +3765,7 @@ console.log(response2.output_text);
         <tr><td>Transcrever áudio ao vivo em texto contínuo</td><td><code>gpt-live-transcribe</code> <span class="pill new">recomendado</span></td><td>Seção 24</td></tr>
         <tr><td>Transcrever arquivos / requisições delimitadas</td><td><code>gpt-transcribe</code> <span class="pill new">recomendado</span></td><td>Seção 25</td></tr>
         <tr><td>Diarização, timestamps/legendas srt·vtt, tradução → inglês</td><td><code>gpt-4o-transcribe-diarize</code>, <code>whisper-1</code> <span class="pill old">sunset 2027-02-26</span></td><td>Seções 25.2 e 25.3</td></tr>
-        <tr><td>Gerar fala a partir de texto</td><td><code>gpt-4o-mini-tts</code></td><td>Seção 26</td></tr>
+        <tr><td>Gerar fala a partir de texto</td><td><code>gpt-4o-mini-tts</code> <span class="pill old">sunset 2027-01-06</span></td><td>Seção 26</td></tr>
         <tr><td>Turnos falados, delimitados e auditáveis</td><td>STT → Responses → TTS</td><td>Seções 25–27</td></tr>
       </tbody>
     </table>
@@ -4636,10 +4652,10 @@ print(translation.text)
 
 <section id="s-tts">
   <h2>26. Text-to-speech (gpt-4o-mini-tts)<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
-  <p>O endpoint <code>/v1/audio/speech</code> transforma texto em áudio falado usando o modelo <code>gpt-4o-mini-tts</code>, o modelo de TTS recomendado da OpenAI. Os três insumos principais são: <strong>model</strong>, <strong>input</strong> (o texto, máximo de 4096 caracteres na referência da API; a ficha do modelo informa limite de 2.000 tokens de entrada) e <strong>voice</strong>. Um diferencial do <code>gpt-4o-mini-tts</code> é o parâmetro <code>instructions</code>, que controla <em>como</em> o modelo fala (sotaque, faixa emocional, entonação, velocidade, tom, sussurro).</p>
+  <p>O endpoint <code>/v1/audio/speech</code> transforma texto em áudio falado usando o modelo <code>gpt-4o-mini-tts</code>, o modelo de TTS atual do catálogo (com shutdown agendado, ver a nota abaixo). Os três insumos principais são: <strong>model</strong>, <strong>input</strong> (o texto, máximo de 4096 caracteres na referência da API; a ficha do modelo informa limite de 2.000 tokens de entrada) e <strong>voice</strong>. Um diferencial do <code>gpt-4o-mini-tts</code> é o parâmetro <code>instructions</code>, que controla <em>como</em> o modelo fala (sotaque, faixa emocional, entonação, velocidade, tom, sussurro).</p>
   <div class="callout warn"><strong>Atenção:</strong> as políticas de uso exigem que você informe claramente aos usuários finais que a voz TTS é gerada por IA e não é uma voz humana.</div>
 
-  <div class="callout info"><strong>Nota — modelo e snapshot (verificado em 2026-09-30):</strong> o alias <code>gpt-4o-mini-tts</code> aponta para o snapshot <code>gpt-4o-mini-tts-2025-12-15</code>; não há modelo TTS mais novo no catálogo. O snapshot <code>gpt-4o-mini-tts-2025-03-20</code> já foi desligado (2026-07-23). <code>tts-1</code> e <code>tts-1-hd</code> seguem disponíveis, com 9 vozes e sem <code>instructions</code>.</div>
+  <div class="callout warn"><strong>Nota — modelo, snapshot e desligamento (deprecações lidas em 2026-10-19):</strong> o alias <code>gpt-4o-mini-tts</code> aponta para o snapshot <code>gpt-4o-mini-tts-2025-12-15</code> (verificado em 2026-09-30). A página de deprecações lista <code>tts-1</code>, <code>tts-1-hd</code>, <code>gpt-4o-mini-tts-2025-03-20</code> e <code>gpt-4o-mini-tts-2025-12-15</code> com <strong>shutdown em 2027-01-06</strong> e indica <code>gpt-realtime-2.1-mini</code> como substituto; se o alias sai junto com o snapshot não foi conferido (<span class="pill na">UNVERIFIED</span>). <code>tts-1</code> e <code>tts-1-hd</code> têm 9 vozes e não aceitam <code>instructions</code>.</div>
 
   <h3 id="s-tts-quickstart">26.1 Gerar fala</h3>
   <div class="code-group">
@@ -5122,6 +5138,7 @@ await pc.setRemoteDescription({ type: "answer", sdp: await sdpResponse.text() })
     </table>
   </div>
   <p>O modo é escolhido na criação da sessão; para trocar de modo é preciso iniciar uma sessão nova. Conexões suportadas: <strong>WebRTC</strong> (voz em navegador), <strong>WebSockets</strong> (integrações server-side) e <strong>telefonia/SIP</strong> (chamadas). Um <em>sideband</em> — uma conexão WebSocket adicional a partir do backend — permite monitorar ou controlar uma sessão em andamento sem interromper o áudio principal. Há integrações de parceiros documentadas para LiveKit, Twilio, Telnyx e Daily/Pipecat.</p>
+  <p>Changelog de 2026-10-15: integração nativa da <a href="#s-decisions">Decisions API</a> no GPT-Live (a página <code>guides/decisions-voice</code> não foi lida; <span class="pill na">UNVERIFIED</span> quanto aos detalhes). Changelog de 2026-10-16: <em>prompt-to-voice</em> (voz personalizada criada a partir de uma descrição; criar é grátis e a geração entra na cobrança normal do GPT-Live) e nove vozes naturais novas — Nuri, Juni e Flitz (alemão), Brise e Sillage (francês), Nira (hindi), Harema e Shida (japonês) e Noeul (coreano).</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Snapshot</th><th>Modalidades</th><th>Endpoint</th><th>Preço</th></tr></thead>
@@ -5518,7 +5535,7 @@ for (const [lado, resultado] of [["input", resp.moderation.input], ["output", re
       </tbody>
     </table>
   </div>
-  <p><strong>Ultrafast</strong> (<code>service_tier: "ultrafast"</code>, GA para <code>gpt-6-astra</code> desde 29/09/2026; continua preview por solicitação para <code>gpt-5.6-sol</code>): <strong>$60,00</strong> entrada · <strong>$6,00</strong> cache · <strong>$75,00</strong> escrita de cache · <strong>$300,00</strong> saída por 1M tokens (contexto longo: $120 / $12 / $150 / $450). Só processamento global e US residency. Detalhes em <a href="#s-processing-priority">§34</a>.</p>
+  <p><strong>Ultrafast</strong> (<code>service_tier: "ultrafast"</code>, disponível a todos os usuários da API para <code>gpt-6-astra</code> desde 29/09/2026 e <code>gpt-6.1-sol</code> desde 08/10/2026): <code>gpt-6-astra</code> <strong>$60,00</strong> entrada · <strong>$6,00</strong> cache · <strong>$75,00</strong> escrita de cache · <strong>$300,00</strong> saída por 1M tokens (contexto longo: $120 / $12 / $150 / $450); <code>gpt-6.1-sol</code> <strong>$12,00</strong> · <strong>$0,60</strong> · <strong>$15,00</strong> · <strong>$60,00</strong> (contexto longo: $24 / $1,20 / $30 / $90). Astra: processamento global e US residency; 6.1 Sol: global, US e EU residency. Detalhes em <a href="#s-processing-priority">§34</a>.</p>
 
   <h3 id="s-pricing-multimodal">32.3 Imagem, realtime e áudio</h3>
   <p>Preços por <strong>1M tokens</strong>, salvo quando indicado por minuto. Modalidades cobradas separadamente por modelo realtime.</p>
@@ -5625,20 +5642,19 @@ for (const [lado, resultado] of [["input", resp.moderation.input], ["output", re
   <div class="callout info"><strong>Nota:</strong> algumas famílias compartilham limite (qualquer chamada conta para o mesmo pool). Modelos de contexto longo têm limite separado. A ingestão em vector store compartilha 300 RPM por <code>vector_store_id</code>.</div>
 
   <h3 id="s-rate-limits-tiers">33.2 Tiers de uso</h3>
-  <p>À medida que o gasto na API sobe, a organização é promovida automaticamente de tier, aumentando os limites na maioria dos modelos.</p>
+  <p>À medida que o gasto na API sobe, a organização é promovida automaticamente de tier, aumentando os limites na maioria dos modelos. Desde 06/10/2026 são três tiers pagos (Build, Launch e Grow), no lugar dos cinco anteriores.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Tier</th><th>Qualificação</th><th class="num">Limite de gasto</th></tr></thead>
       <tbody>
         <tr><td>Free</td><td>Geografia permitida</td><td class="num">$100 / mês</td></tr>
-        <tr><td>Tier 1</td><td>$5 pagos</td><td class="num">$100 / mês</td></tr>
-        <tr><td>Tier 2</td><td>$50 pagos</td><td class="num">$500 / mês</td></tr>
-        <tr><td>Tier 3</td><td>$100 pagos</td><td class="num">$1.000 / mês</td></tr>
-        <tr><td>Tier 4</td><td>$250 pagos</td><td class="num">$5.000 / mês</td></tr>
-        <tr><td>Tier 5</td><td>$1.000 pagos</td><td class="num">$200.000 / mês</td></tr>
+        <tr><td>Build</td><td>$5 em compras totais</td><td class="num">$500 / mês</td></tr>
+        <tr><td>Launch</td><td>$100 em compras totais</td><td class="num">$5.000 / mês</td></tr>
+        <tr><td>Grow</td><td>$500 em compras totais</td><td class="num">$200.000 / mês</td></tr>
       </tbody>
     </table>
   </div>
+  <p>Limites padrão dos modelos GPT-6 (Astra, Sol, Terra): Build 5.000 RPM e 1M TPM; Launch 10.000 RPM e 4M TPM; Grow 15.000 RPM e 40M TPM. Luna: Build 5.000 RPM e 2M TPM; Launch 10M TPM; Grow 30.000 RPM e 180M TPM. Fonte: <a href="https://developers.openai.com/api/docs/guides/rate-limits#usage-tiers" target="_blank" rel="noopener">rate-limits#usage-tiers</a> e changelog de 06/10/2026 (lidos em 2026-10-19).</p>
 
   <h3 id="s-rate-limits-headers">33.3 Headers de limite</h3>
   <p>Cada resposta HTTP traz o estado atual do seu limite, útil para implementar backoff proativo:</p>
@@ -5652,9 +5668,11 @@ for (const [lado, resultado] of [["input", resp.moderation.input], ["output", re
         <tr><td><code>x-ratelimit-remaining-tokens</code></td><td class="num">149984</td><td>Tokens restantes.</td></tr>
         <tr><td><code>x-ratelimit-reset-requests</code></td><td class="num">1s</td><td>Tempo até resetar o limite de requisições.</td></tr>
         <tr><td><code>x-ratelimit-reset-tokens</code></td><td class="num">6m0s</td><td>Tempo até resetar o limite de tokens.</td></tr>
+        <tr><td><code>Retry-After</code></td><td class="num">—</td><td>Tempo de espera sugerido em respostas <code>429</code>.</td></tr>
       </tbody>
     </table>
   </div>
+  <p>A página de rate limits (lida em 2026-10-19) também documenta headers <code>x-ratelimit-*-project-tokens</code> com o estado do limite por projeto; os nomes completos não foram conferidos aqui (<span class="pill na">UNVERIFIED</span>) — leia-os da resposta real.</p>
 
   <h3 id="s-rate-limits-backoff">33.4 Estratégia de backoff/retry</h3>
   <p>Para se recuperar de <code>429</code> sem falhas, faça retry com backoff exponencial e jitter aleatório (para evitar que retries colidam ao mesmo tempo). Lembre que requisições malsucedidas também contam para o limite, então reenviar em loop não resolve. Outras táticas: reduzir <code>max_tokens</code> para perto do tamanho esperado da resposta; juntar várias tarefas por requisição quando o gargalo é RPM (mas há TPM sobrando); e usar a <a href="#s-processing">Batch API</a> para cargas que não precisam de resposta imediata.</p>
@@ -5845,14 +5863,14 @@ console.log(resp.output_text);
 
   <h3 id="s-processing-priority">34.3 Fast mode e Ultrafast<span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
   <p>O Fast mode substituiu o Priority Processing em <strong>30/07/2026</strong>. Defina <code>service_tier="fast"</code> (ou <code>"priority"</code>, ainda aceito e mapeado automaticamente para Fast) para latência mais baixa e consistente, mantendo a flexibilidade pay-as-you-go. No Agents SDK: <code>ModelSettings(extra_args={"service_tier": "fast"})</code>. Ideal para aplicações de alto valor voltadas ao usuário com tráfego regular — <strong>não</strong> para processamento de dados, avaliações ou tráfego errático. Cobrado com prêmio sobre a padrão; descontos de cache continuam valendo. Pode ser ativado por requisição ou no nível de projeto. Na família <code>gpt-5.6</code>, a resposta ainda reporta <code>service_tier="priority"</code> mesmo quando o pedido envia <code>"fast"</code>. Fast não está disponível com EU data residency em Astra, 6.1 Sol, 6 Sol e 6 Luna.</p>
-  <div class="callout info"><strong>Ultrafast (GA para <code>gpt-6-astra</code> desde 29/09/2026):</strong> tier de latência ainda menor, pedido com <code>service_tier="ultrafast"</code> na Responses API, por HTTP ou WebSocket (WebSocket é o recomendado). Só processamento global e US data residency. Limites padrão: 500K TPM nos tiers 1–3, 1M no tier 4 e 5M no tier 5. Preço na <a href="#s-pricing-priority">§32.2</a>. Para <code>gpt-5.6-sol</code> continua <strong>preview</strong> por solicitação (<a href="https://openai.com/form/ultrafast/" target="_blank" rel="noopener">formulário</a>). Fonte: <a href="https://developers.openai.com/api/docs/guides/ultrafast-mode" target="_blank" rel="noopener">guides/ultrafast-mode</a> · <a href="https://developers.openai.com/api/docs/changelog" target="_blank" rel="noopener">changelog 29/09</a> (verificado em 2026-09-30).</div>
+  <div class="callout info"><strong>Ultrafast (disponível a todos os usuários da API para <code>gpt-6-astra</code> desde 29/09/2026 e <code>gpt-6.1-sol</code> desde 08/10/2026):</strong> tier de latência ainda menor, pedido com <code>service_tier="ultrafast"</code> na Responses API, por HTTP ou WebSocket (WebSocket é o recomendado). Astra: processamento global e US data residency; 6.1 Sol: global, US e EU. O Ultrafast tem limites próprios, separados dos de Standard e Fast. TPM padrão (Build / Launch / Grow): 6.1 Sol 1M / 4M / 40M; Astra 500K / 1M / 5M. Preço na <a href="#s-pricing-priority">§32.2</a>. Fonte: <a href="https://developers.openai.com/api/docs/guides/ultrafast-mode" target="_blank" rel="noopener">guides/ultrafast-mode</a> · <a href="https://developers.openai.com/api/docs/changelog" target="_blank" rel="noopener">changelog 29/09 e 08/10</a> (lidos em 2026-10-19).</div>
 <pre><code class="language-python">resp = client.responses.create(
     model="gpt-6-astra",
     input="Responda em uma frase: o que é prompt caching?",
     service_tier="ultrafast",
 )
 print(resp.output_text)</code></pre>
-  <div class="callout warn"><strong>Atenção:</strong> existe um <em>ramp rate limit</em>. Se o tráfego subir rápido demais (≥ 1M TPM e &gt;50% de aumento de TPM em 15 min), parte das requisições é rebaixada para Standard e cobrada como tal — a resposta mostrará <code>service_tier="default"</code>. Faça o ramp gradual e evite ETL/batch nesse tier. Fast mode <strong>não</strong> suporta modelos fine-tuned nem embeddings. Na família <code>gpt-5.6</code> (<code>sol</code>/<code>terra</code>/<code>luna</code>), contexto longo &gt;272K <strong>é</strong> suportado desde 05/08/2026 (até 2,5× o Standard).</div>
+  <div class="callout warn"><strong>Atenção:</strong> <span class="pill na">UNVERIFIED</span> <em>ramp rate limit</em>: o guia registrava que, se o tráfego subir rápido demais (≥ 1M TPM e &gt;50% de aumento de TPM em 15 min), parte das requisições é rebaixada para Standard e cobrada como tal (resposta com <code>service_tier="default"</code>), mas essa regra não consta em guides/ultrafast-mode (lido em 2026-10-19); confira <code>service_tier</code> na resposta. Faça o ramp gradual e evite ETL/batch nesse tier. Fast mode <strong>não</strong> suporta modelos fine-tuned nem embeddings. Na família <code>gpt-5.6</code> (<code>sol</code>/<code>terra</code>/<code>luna</code>), contexto longo &gt;272K <strong>é</strong> suportado desde 05/08/2026 (até 2,5× o Standard).</div>
 
   <p class="source-link"><strong>Fonte:</strong> <a href="https://developers.openai.com/api/docs/guides/batch" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/batch</a> · <a href="https://developers.openai.com/api/docs/guides/flex-processing" target="_blank" rel="noopener">flex-processing</a> · <a href="https://developers.openai.com/api/docs/guides/fast-mode" target="_blank" rel="noopener">fast-mode</a> · <a href="https://developers.openai.com/api/docs/guides/ultrafast-mode" target="_blank" rel="noopener">ultrafast-mode</a></p>
 </section>
@@ -6162,13 +6180,14 @@ console.log(resp.id, resp.status);
 
 <section class="ref" id="s-legado">
   <h2 id="legado">Legado e migração<span class="rev-flag novo">Novo · 2026-09-30</span></h2>
-  <p>Tudo o que foi desligado ou tem data de desligamento fica aqui, e só aqui: o restante do guia descreve apenas a superfície atual. Fonte única: <a href="https://developers.openai.com/api/docs/deprecations" target="_blank" rel="noopener">developers.openai.com/api/docs/deprecations</a>, verificada em <strong>2026-09-30</strong>. A OpenAI avisa com pelo menos 6 meses para modelos GA e ao menos 3 meses para variantes especializadas; previews podem ter 2 semanas. A página <code>/models</code> ainda lista modelos já desligados — use <code>/deprecations</code>, não o catálogo, para saber se algo está no ar.</p>
+  <p>Tudo o que foi desligado ou tem data de desligamento fica aqui, e só aqui: o restante do guia descreve apenas a superfície atual. Fonte única: <a href="https://developers.openai.com/api/docs/deprecations" target="_blank" rel="noopener">developers.openai.com/api/docs/deprecations</a>, verificada em <strong>2026-10-19</strong>. A OpenAI avisa com pelo menos 6 meses para modelos GA e ao menos 3 meses para variantes especializadas; previews podem ter 2 semanas. A página <code>/models</code> ainda lista modelos já desligados — use <code>/deprecations</code>, não o catálogo, para saber se algo está no ar.</p>
 
   <h3 id="legado-desligados">Já desligados</h3>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Sistema / modelo</th><th>Desligado em</th><th>Migração em uma linha</th></tr></thead>
       <tbody>
+        <tr><td><code>gpt-5.4-cyber</code></td><td>2026-10-01</td><td>A página oficial não nomeia mais um substituto (descreve só o "most capable cyber model available to you"); a tabela de preços lista <code>gpt-5.6-cyber</code> e <code>gpt-5.5-cyber</code>.</td></tr>
         <tr><td><strong>Assistants API</strong> (beta v2)</td><td>2026-08-26</td><td>Responses API + Conversations API: threads → <code>conversations</code>, runs → <code>responses.create</code>, assistants → <code>instructions</code> no seu código. <a href="https://developers.openai.com/api/docs/assistants/migration" target="_blank" rel="noopener">Guia oficial</a>.</td></tr>
         <tr><td><strong>Videos API</strong> e <code>sora-2</code> / <code>sora-2-pro</code></td><td>2026-09-24</td><td>Sem substituto indicado na página oficial; remova chamadas a <code>/v1/videos</code>.</td></tr>
         <tr><td><code>gpt-3.5-turbo-instruct</code>, <code>babbage-002</code>, <code>davinci-002</code>, <code>gpt-3.5-turbo-1106</code></td><td>2026-09-28</td><td>Responses API com o modelo indicado na página oficial (<code>gpt-5.6-terra</code>).</td></tr>
@@ -6186,19 +6205,21 @@ console.log(resp.id, resp.status);
     <table>
       <thead><tr><th>Data</th><th>O que sai</th><th>Substituto oficial</th></tr></thead>
       <tbody>
-        <tr><td>2026-10-01</td><td><code>gpt-5.4-cyber</code></td><td><code>gpt-5.6-cyber</code></td></tr>
         <tr><td>2026-10-23</td><td><code>gpt-3.5-turbo</code> (0125) e <code>-completions</code>, <code>gpt-4</code> (0613), <code>gpt-4-1106-preview</code>, <code>gpt-4-turbo</code>, <code>gpt-4.1-nano</code>, <code>gpt-4o-2024-05-13</code>, <code>o1</code>, <code>o1-pro</code>, <code>o3-mini</code>, <code>o4-mini</code>, <code>gpt-image-1</code> e fine-tunes <code>ft-*</code> dessas bases</td><td><code>gpt-5.6-terra</code>/<code>-sol</code>/<code>-luna</code>; <code>gpt-image-2.5-sunburst</code> ou <code>-flare</code></td></tr>
         <tr><td>2026-10-31</td><td>Evals: os existentes ficam somente leitura</td><td>Promptfoo</td></tr>
         <tr><td>2026-11-30</td><td>Evals (dashboard e API), <code>v1/prompts</code> (prompt objects reutilizáveis) e Agent Builder (ChatKit permanece)</td><td>Prompts no código; Agents SDK</td></tr>
         <tr><td>2026-12-01</td><td><code>gpt-image-1-mini</code>, <code>gpt-image-1.5</code>, <code>chatgpt-image-latest</code></td><td><code>gpt-image-2.5-sunburst</code> / <code>-flare</code></td></tr>
         <tr><td>2026-12-11</td><td>Snapshots <code>gpt-5-2025-08-07</code>, <code>gpt-5-mini-2025-08-07</code>, <code>gpt-5-nano-2025-08-07</code>, <code>gpt-5-pro-2025-10-06</code>, <code>o3-2025-04-16</code>, <code>o3-pro-2025-06-10</code></td><td><code>gpt-5.6-sol</code> / <code>-terra</code> / <code>-luna</code>; "pro" → <code>gpt-5.6-sol</code> com <code>reasoning.mode: "pro"</code></td></tr>
         <tr><td>2027-01-06</td><td>Fim da criação de novos jobs de fine-tuning (inferência dos fine-tunes segue até a base ser aposentada)</td><td>—</td></tr>
+        <tr><td>2027-01-06</td><td>TTS: <code>tts-1</code>, <code>tts-1-hd</code>, <code>gpt-4o-mini-tts-2025-03-20</code>, <code>gpt-4o-mini-tts-2025-12-15</code> (avisado em 2026-10-01)</td><td><code>gpt-realtime-2.1-mini</code></td></tr>
+        <tr><td>2027-01-14</td><td>Snapshots <code>gpt-4o-2024-08-06</code>, <code>gpt-4o-2024-11-20</code>, <code>gpt-4o-mini-2024-07-18</code>, <code>gpt-4.1-2025-04-14</code>, <code>gpt-4.1-mini-2025-04-14</code> e fine-tunes no mesmo calendário (avisado em 2026-10-14)</td><td><code>gpt-6-luna</code></td></tr>
         <tr><td>2027-01-20</td><td><code>gpt-realtime</code>, <code>gpt-realtime-mini</code>, <code>gpt-audio</code>, <code>gpt-audio-mini</code>, <code>gpt-4o-realtime</code>, <code>gpt-4o-mini-realtime</code>, <code>gpt-4o-audio</code>, <code>gpt-4o-mini-audio</code>, <code>gpt-4o-mini-transcribe-2025-03-20</code></td><td><code>gpt-realtime-2.1</code> (+ <code>-mini</code>); <code>gpt-audio-1.5</code>; <code>gpt-4o-mini-transcribe-2025-12-15</code></td></tr>
         <tr><td>2027-02-26</td><td><code>whisper-1</code>, <code>gpt-4o-transcribe</code>, <code>gpt-4o-mini-transcribe</code>, <code>gpt-4o-transcribe-diarize</code></td><td><code>gpt-transcribe</code> (arquivo) ou <code>gpt-live-transcribe</code> (ao vivo). Substituto para timestamps, legendas, diarização e tradução → inglês: <span class="pill" style="background:var(--c-na-bg);color:var(--c-na)">UNVERIFIED</span></td></tr>
+        <tr><td>2027-04-01</td><td><code>gpt-5.3-codex</code>, <code>gpt-5.1</code>, <code>gpt-5.4-nano</code> (avisado em 2026-10-01)</td><td><code>gpt-6-sol</code> (<code>gpt-5.3-codex</code> e <code>gpt-5.1</code>); <code>gpt-6-luna</code> (<code>gpt-5.4-nano</code>)</td></tr>
       </tbody>
     </table>
   </div>
-  <p>Continuam no ar, sem data de desligamento na página oficial: <code>gpt-4.1</code>, <code>gpt-4.1-mini</code>, <code>gpt-4o</code>, <code>gpt-4o-mini</code>, <code>gpt-image-2</code>, <code>gpt-4o-mini-tts</code>, <code>tts-1*</code>, embeddings e <code>omni-moderation-latest</code>; a família <code>gpt-5.6</code> e o <code>gpt-6-sol</code> são modelos "anteriores" (há sucessor), não deprecados.</p>
+  <p>A página oficial lista os desligamentos de <code>gpt-4o</code>, <code>gpt-4.1</code> e TTS por snapshot datado; se os aliases (<code>gpt-4o</code>, <code>gpt-4.1</code>, <code>gpt-4o-mini-tts</code>) saem junto não foi conferido (<span class="pill na">UNVERIFIED</span> — o campo <code>shutdown_date</code> de <code>GET /v1/models</code> responde). Continuam no ar, sem data de desligamento na página oficial: <code>gpt-image-2</code>, embeddings e <code>omni-moderation-latest</code>; a família <code>gpt-5.6</code> e o <code>gpt-6-sol</code> são modelos "anteriores" (há sucessor), não deprecados.</p>
 
   <h3 id="legado-codigo">Do legado para o atual, em uma linha</h3>
   <div class="table-wrap">
@@ -6216,7 +6237,7 @@ console.log(resp.id, resp.status);
       </tbody>
     </table>
   </div>
-  <p class="source-link"><strong>Fonte:</strong> <a href="https://developers.openai.com/api/docs/deprecations" target="_blank" rel="noopener">deprecations</a> · <a href="https://developers.openai.com/api/docs/guides/migrate-to-responses" target="_blank" rel="noopener">migrate-to-responses</a> · <a href="https://developers.openai.com/api/docs/changelog" target="_blank" rel="noopener">changelog</a> (verificados em 2026-09-30)</p>
+  <p class="source-link"><strong>Fonte:</strong> <a href="https://developers.openai.com/api/docs/deprecations" target="_blank" rel="noopener">deprecations</a> · <a href="https://developers.openai.com/api/docs/guides/migrate-to-responses" target="_blank" rel="noopener">migrate-to-responses</a> · <a href="https://developers.openai.com/api/docs/changelog" target="_blank" rel="noopener">changelog</a> (deprecations e changelog verificados em 2026-10-19; migrate-to-responses em 2026-09-30)</p>
 </section>
 
 <section class="ref" id="ref-endpoints">
@@ -6250,8 +6271,8 @@ console.log(resp.id, resp.status);
     <table>
       <thead><tr><th>ID</th><th>Tipo / uso</th><th>Endpoint(s)</th><th>Parte</th></tr></thead>
       <tbody>
-        <tr><td><code>gpt-6-astra</code> <span class="pill new">flagship</span></td><td>Modelo mais capaz p/ trabalho fim-a-fim (<code>effort</code>: low–max, sem <code>none</code>; sem default documentado; Ultrafast GA)</td><td><code>/v1/responses</code></td><td>A</td></tr>
-        <tr><td><code>gpt-6.1-sol</code> <span class="pill new">novo 29/09</span></td><td>Equilíbrio velocidade/custo/inteligência (<code>effort</code>: low–max, default <code>medium</code>; sem <code>none</code>)</td><td><code>/v1/responses</code></td><td>A</td></tr>
+        <tr><td><code>gpt-6-astra</code> <span class="pill new">flagship</span></td><td>Modelo mais capaz p/ trabalho fim-a-fim (<code>effort</code>: low–max, sem <code>none</code>; sem default documentado; Ultrafast para todos os usuários da API)</td><td><code>/v1/responses</code></td><td>A</td></tr>
+        <tr><td><code>gpt-6.1-sol</code> <span class="pill new">novo 29/09</span></td><td>Equilíbrio velocidade/custo/inteligência (<code>effort</code>: low–max, default <code>medium</code>; sem <code>none</code>; Ultrafast desde 08/10)</td><td><code>/v1/responses</code></td><td>A</td></tr>
         <tr><td><code>gpt-6-sol</code> <span class="pill old">anterior</span></td><td>Coding/agentic (<code>effort</code>: none–max, default <code>medium</code>)</td><td><code>/v1/responses</code></td><td>A</td></tr>
         <tr><td><code>gpt-6-luna</code></td><td>Volume/eficiência (<code>effort</code>: none–max, default <code>medium</code>)</td><td><code>/v1/responses</code></td><td>A</td></tr>
         <tr><td><code>gpt-5.6-sol</code> (alias <code>gpt-5.6</code>), <code>gpt-5.6-terra</code>, <code>gpt-5.6-luna</code> <span class="pill old">anterior</span></td><td>Família 5.6 (<code>effort</code>: none–max); vigente, não deprecada</td><td><code>/v1/responses</code></td><td>A</td></tr>
@@ -6292,7 +6313,7 @@ console.log(resp.id, resp.status);
         <tr><td>batch</td><td>Processamento assíncrono em lote com 50% de desconto e janela de 24h.</td></tr>
         <tr><td>flex</td><td><code>service_tier</code> de menor custo e maior latência, para cargas não produtivas.</td></tr>
         <tr><td>fast</td><td><code>service_tier</code> de latência baixa e consistente (ex-Priority, 30/07/2026); aceita também <code>"priority"</code>.</td></tr>
-        <tr><td>ultrafast</td><td><code>service_tier</code> de latência ainda menor, GA para <code>gpt-6-astra</code> desde 29/09/2026 (global e US residency; WebSocket recomendado).</td></tr>
+        <tr><td>ultrafast</td><td><code>service_tier</code> de latência ainda menor, para todos os usuários da API em <code>gpt-6-astra</code> (desde 29/09/2026; global e US residency) e <code>gpt-6.1-sol</code> (desde 08/10/2026; global, US e EU); WebSocket recomendado.</td></tr>
         <tr><td>service tier</td><td>Regime de processamento de uma requisição (<code>service_tier</code>): <code>auto</code>, <code>default</code>, <code>flex</code>, <code>fast</code> ou <code>ultrafast</code>; <code>"priority"</code> ainda é aceito e mapeia para Fast.</td></tr>
       </tbody>
     </table>
@@ -6504,14 +6525,14 @@ console.log(resp.output_text);
 
 <section class="ref" id="changelog">
   <h2>Histórico deste guia<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
-  <p>Revisão vigente: <strong>2026-09-30</strong> (anterior: 2026-09-23), verificada contra <a href="https://developers.openai.com/api/docs/changelog" target="_blank" rel="noopener">changelog</a>, <a href="https://developers.openai.com/api/docs/models" target="_blank" rel="noopener">catálogo de modelos</a>, <a href="https://developers.openai.com/api/docs/pricing" target="_blank" rel="noopener">preços</a> e <a href="https://developers.openai.com/api/docs/deprecations" target="_blank" rel="noopener">deprecações</a> oficiais. As seções novas e atualizadas estão marcadas com selos "Novo" e "Atualizado · 2026-09-30" e listadas no painel "O que há de novo" no topo; modelos e APIs desligados ou com sunset estão condensados em <a href="#legado">Legado e migração</a>. Fatos que a fonte oficial não resolve estão marcados UNVERIFIED no ponto de uso.</p>
+  <p>Revisão vigente: <strong>2026-09-30</strong> (anterior: 2026-09-23), verificada contra <a href="https://developers.openai.com/api/docs/changelog" target="_blank" rel="noopener">changelog</a>, <a href="https://developers.openai.com/api/docs/models" target="_blank" rel="noopener">catálogo de modelos</a>, <a href="https://developers.openai.com/api/docs/pricing" target="_blank" rel="noopener">preços</a> e <a href="https://developers.openai.com/api/docs/deprecations" target="_blank" rel="noopener">deprecações</a> oficiais; em 2026-10-19 foram revalidados SDKs, deprecações, Ultrafast, tiers de uso e Decisions API (§9.3), com a data no ponto de uso. As seções novas e atualizadas estão marcadas com selos "Novo" e "Atualizado · 2026-09-30" e listadas no painel "O que há de novo" no topo; modelos e APIs desligados ou com sunset estão condensados em <a href="#legado">Legado e migração</a>. Fatos que a fonte oficial não resolve estão marcados UNVERIFIED no ponto de uso.</p>
 </section>
 
 
   </main>
 </div>
 
-<section class="callout info" id="s-fontes-primarias-2026-09-30" style="margin-top:24px"><strong>Notas de verificação (2026-09-30) — fontes primárias deste guia.</strong><ul><li>OpenAI (developers.openai.com: <code>/api/docs/models</code>, <code>/changelog</code>, <code>/pricing</code>, <code>/deprecations</code> e os guias citados em cada seção, lidos em 2026-09-30): <code>gpt-6-astra</code> (flagship), <code>gpt-6.1-sol</code> (GA 2026-09-29), <code>gpt-6-sol</code> e <code>gpt-6-luna</code>; <code>gpt-5.6</code> e <code>gpt-6-sol</code> seguem ativos, sem deprecação. Ultrafast GA para <code>gpt-6-astra</code> e computer use na Agents API (beta), ambos de 2026-09-29; <code>gpt-transcribe</code>/<code>gpt-live-transcribe</code> como STT recomendado.</li><li>SDKs (PyPI/npm, 2026-09-30): <code>openai</code> 3.22.1 (Python, PyPI) e 7.25.0 (npm). <code>openai-agents</code> 0.22.3 (PyPI) e <code>@openai/agents</code> 0.18.0 (npm), sem release nova desde 2026-09-23.</li></ul></section>
+<section class="callout info" id="s-fontes-primarias-2026-09-30" style="margin-top:24px"><strong>Notas de verificação (2026-09-30) — fontes primárias deste guia.</strong><ul><li>OpenAI (developers.openai.com: <code>/api/docs/models</code>, <code>/changelog</code>, <code>/pricing</code>, <code>/deprecations</code> e os guias citados em cada seção, lidos em 2026-09-30): <code>gpt-6-astra</code> (flagship), <code>gpt-6.1-sol</code> (GA 2026-09-29), <code>gpt-6-sol</code> e <code>gpt-6-luna</code>; <code>gpt-5.6</code> e <code>gpt-6-sol</code> seguem ativos, sem deprecação. Ultrafast GA para <code>gpt-6-astra</code> e computer use na Agents API (beta), ambos de 2026-09-29; <code>gpt-transcribe</code>/<code>gpt-live-transcribe</code> como STT recomendado.</li><li>Relido em 2026-10-19 (<code>/changelog</code>, <code>/deprecations</code>, <code>guides/ultrafast-mode</code>, <code>guides/decisions</code>, <code>guides/rate-limits</code>, <code>/pricing</code>): Ultrafast também no <code>gpt-6.1-sol</code> (08/10), tiers Build/Launch/Grow (06/10), Decisions API beta (06/10) e os desligamentos de GPT-4o/4.1, TTS e <code>gpt-5.3-codex</code>/<code>gpt-5.1</code>/<code>gpt-5.4-nano</code>.</li><li>SDKs (PyPI/npm, 2026-10-19): <code>openai</code> 3.35.1 (Python, PyPI) e 7.39.0 (npm). <code>openai-agents</code> 0.24.0 (PyPI) e <code>@openai/agents</code> 0.20.0 (npm).</li></ul></section>
 <footer class="site" style="margin-top:48px;padding:32px 24px;border-top:1px solid var(--c-border);background:var(--c-bg-elev);">
   <div style="max-width:1400px;margin:0 auto;display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;justify-content:space-between;">
     <div style="max-width:520px">
