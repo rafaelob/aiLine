@@ -458,7 +458,7 @@
       <div class="hero-meta">
         <span class="badge ok">Endpoints oficiais</span>
         <span class="badge">Responses · Interactions · Messages</span>
-        <span class="badge">SDKs em 2026-09-30: <code>openai</code> 3.22.1 / 7.25.0 · <code>anthropic</code> 1.9.0 / 0.129.0 · <code>google-genai</code> 2.25.0 / 2.24.0</span>
+        <span class="badge">SDKs em 2026-10-19: <code>openai</code> 3.35.1 / 7.39.0 · <code>anthropic</code> 1.15.0 / 0.135.0 · <code>google-genai</code> 2.31.0 / 2.30.0</span>
         <span class="badge warn">Itens marcados <span class="unverified" style="margin-left:4px">UNVERIFIED</span> precisam re-verificação antes de citar publicamente</span>
       </div>
     </section>
@@ -468,7 +468,7 @@
 
       <h3>Superfície atual</h3>
       <p>Pré-flight = endpoint de contagem (gratuito, só entrada, não roda o modelo). Custo real = <code>usage</code> da chamada. Gemini = <code>client.interactions</code> para gerar; a contagem fica em <code>client.models.count_tokens</code> (não existe <code>interactions.count_tokens</code>). Nunca estime mídia ou tools com tokenizador local.</p>
-<pre><code class="language-bash">pip install "openai&gt;=3,&lt;4" "google-genai&gt;=2.3,&lt;3" "anthropic&gt;=1,&lt;2"   # atuais: 3.22.1 / 2.25.0 / 1.9.0 (2026-09-30)</code></pre>
+<pre><code class="language-bash">pip install "openai&gt;=3,&lt;4" "google-genai&gt;=2.3,&lt;3" "anthropic&gt;=1,&lt;2"   # atuais: 3.35.1 / 2.31.0 / 1.15.0 (2026-10-19)</code></pre>
 <pre><code class="language-python">n = openai_client.responses.input_tokens.count(model="gpt-6-astra", input=msgs).input_tokens      # mesmo body do create
 n = genai_client.models.count_tokens(model="gemini-3.8-flash", contents=prompt).total_tokens     # SDK &gt; 2.0.0
 n = anthropic_client.messages.count_tokens(model="claude-opus-5-5", messages=msgs).input_tokens   # base64 apenas
@@ -483,7 +483,8 @@ u = genai_client.interactions.create(model="gemini-3.8-flash", input=prompt).usa
             <tr><td><code>gpt-6.1-sol</code> (2026-09-29)</td><td>$2 / $10</td><td>0,05×</td><td>sem <code>none</code>/<code>minimal</code>; padrão <code>medium</code></td></tr>
             <tr><td><code>gemini-3.8-flash</code></td><td>$0,75 / $3,75 até 2026-12-31; depois $1,50 / $7,50</td><td>$0,075</td><td>só cache implícito na Interactions (mín. 4.096 tokens); <code>thinking_level</code> padrão <code>medium</code></td></tr>
             <tr><td><code>claude-opus-5-5</code></td><td>$4 / $20</td><td>0,05×</td><td>cache mín. 512 tokens; tokenizador 4.7+ gera ~30% mais tokens</td></tr>
-            <tr><td><code>claude-sonnet-5-5</code></td><td>$2 / $10</td><td>0,1×</td><td>mesmo preço e tokenizador do Sonnet 5</td></tr>
+            <tr><td><code>claude-sonnet-5-5</code></td><td>$2 / $10</td><td>0,05× ($0,10; desde 2026-10-07)</td><td>mesmo preço e tokenizador do Sonnet 5</td></tr>
+            <tr><td><code>claude-haiku-5-5</code> (2026-10-07)</td><td>$0,10 / $0,50 até 100k tokens de prompt; $0,50 / $2,50 acima</td><td>0,1× ($0,01; $0,05 acima de 100k)</td><td>cache mín. 512 tokens; tokenizador 4.7+ gera ~30% mais tokens que o Haiku 4.5</td></tr>
           </tbody>
         </table>
       </div>
@@ -629,7 +630,7 @@ u = genai_client.interactions.create(model="gemini-3.8-flash", input=prompt).usa
       <h3 id="cmp-text">Texto <a class="anchor" href="#cmp-text">¶</a></h3>
       <ul>
         <li>OpenAI conta também os tokens de formato (roles e separadores); por isso <code>tiktoken</code> sobre o texto puro subestima.</li>
-        <li>Anthropic: o tokenizador dos modelos 4.7+ gera cerca de <strong>30% mais</strong> tokens que o anterior (o Haiku 4.5 usa o anterior). Recontar para cada modelo-alvo antes de trocar de modelo.</li>
+        <li>Anthropic: o tokenizador dos modelos 4.7+ gera cerca de <strong>30% mais</strong> tokens que o anterior (o Haiku 4.5 usa o anterior; o Haiku 5.5 usa o 4.7+). Recontar para cada modelo-alvo antes de trocar de modelo.</li>
         <li>Gemini: use o mesmo modelo no <code>count_tokens</code> e na chamada; os modelos têm limite de 1.048.576 tokens de entrada e 65.536 de saída (verificado em 2026-09-30).</li>
       </ul>
 
@@ -675,7 +676,7 @@ u = genai_client.interactions.create(model="gemini-3.8-flash", input=prompt).usa
       </ul>
 
       <h3 id="cmp-thinking">Reasoning / thinking <a class="anchor" href="#cmp-thinking">¶</a></h3>
-      <p>O count <strong>não prevê</strong> reasoning: ele só aparece no <code>usage</code> da chamada. Deixe folga: na OpenAI, <code>max_output_tokens</code> limita visíveis <em>e</em> invisíveis. Na Anthropic, thinking de turnos anteriores conta apenas nos modelos que mantêm todos os turnos anteriores (Opus 4.5 e 4.6+ guardam e cobram como input; Sonnet 4.5, Haiku 4.5 e anteriores removem); o thinking do turno corrente sempre conta. <code>thinking_tokens</code> reflete o raciocínio bruto mesmo que a exibição seja resumida ou omitida.</p>
+      <p>O count <strong>não prevê</strong> reasoning: ele só aparece no <code>usage</code> da chamada. Deixe folga: na OpenAI, <code>max_output_tokens</code> limita visíveis <em>e</em> invisíveis. Na Anthropic, thinking de turnos anteriores conta apenas nos modelos que mantêm todos os turnos anteriores (Opus 4.5 e 4.6+ e Haiku 5.5 guardam e cobram como input; Sonnet 4.5, Haiku 4.5 e anteriores removem); o thinking do turno corrente sempre conta. <code>thinking_tokens</code> reflete o raciocínio bruto mesmo que a exibição seja resumida ou omitida.</p>
 
       <h3 id="cmp-cache">Cache de prompt <a class="anchor" href="#cmp-cache">¶</a></h3>
       <p>Resumo: OpenAI (GPT-5.6+) tem breakpoints implícitos/explícitos; Anthropic tem <code>cache_control</code> automático ou por bloco; Gemini na Interactions tem <strong>apenas cache implícito</strong>. Campos, descontos, mínimos, invalidação e diagnóstico estão em <a href="#caching-zdr">§10</a>.</p>
@@ -749,8 +750,8 @@ print("delta real - estimativa:", msg.usage.input_tokens - probe.input_tokens)</
         <li><strong>OpenAI:</strong> este guia cobre o endpoint da OpenAI; o comportamento do count em Azure não foi verificado.</li>
       </ul>
 
-      <h3 id="cmp-pricing">Preços e rate limits do count <a class="anchor" href="#cmp-pricing">¶</a><span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
-      <p>Preços por 1M de tokens (verificado em 2026-09-30; perecível). Os detalhes por modelo estão nos deep-dives.</p>
+      <h3 id="cmp-pricing">Preços e rate limits do count <a class="anchor" href="#cmp-pricing">¶</a><span class="rev-flag atu">Atualizado · 2026-10-19</span></h3>
+      <p>Preços por 1M de tokens (Anthropic e Gemini verificados em 2026-10-19, OpenAI em 2026-09-30; perecível). Os detalhes por modelo estão nos deep-dives.</p>
       <div class="table-wrap">
       <table>
         <thead><tr><th>Provider</th><th>Modelo</th><th>Input</th><th>Cache lido</th><th>Output</th></tr></thead>
@@ -761,8 +762,8 @@ print("delta real - estimativa:", msg.usage.input_tokens - probe.input_tokens)</
           <tr><td class="col-gemini">Gemini</td><td><code>gemini-3.8-flash</code></td><td>$0,75 (até 2026-12-31; depois $1,50)</td><td>$0,075</td><td>$3,75 (depois $7,50)</td></tr>
           <tr><td class="col-gemini">Gemini</td><td><code>gemini-3.5-flash-lite</code></td><td>$0,30</td><td>$0,03</td><td>$2,50</td></tr>
           <tr><td class="col-anthropic">Anthropic</td><td><code>claude-opus-5-5</code></td><td>$4</td><td>$0,20 (0,05×)</td><td>$20</td></tr>
-          <tr><td class="col-anthropic">Anthropic</td><td><code>claude-sonnet-5-5</code></td><td>$2</td><td>$0,20 (0,1×)</td><td>$10</td></tr>
-          <tr><td class="col-anthropic">Anthropic</td><td><code>claude-haiku-4-5-20251001</code></td><td>$1</td><td>$0,10</td><td>$5</td></tr>
+          <tr><td class="col-anthropic">Anthropic</td><td><code>claude-sonnet-5-5</code></td><td>$2</td><td>$0,10 (0,05×)</td><td>$10</td></tr>
+          <tr><td class="col-anthropic">Anthropic</td><td><code>claude-haiku-5-5</code></td><td>$0,10 (até 100k tokens de prompt; $0,50 acima)</td><td>$0,01 ($0,05 acima)</td><td>$0,50 ($2,50 acima)</td></tr>
         </tbody>
       </table>
       </div>
@@ -930,7 +931,7 @@ print(n.input_tokens)  # inclui os tokens de texto + os da imagem</code></pre>
   <div class="prov-chip gemini">Gemini · Interactions API</div>
   <h2 id="h-gemini-tc">Gemini deep-dive — token counting (Interactions API) <a class="anchor" href="#gemini-tc">¶</a><span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
   <p class="prov-intro">
-    Verificado em <strong>2026-09-30</strong>. A Interactions API é GA desde junho de 2026: <code>client.interactions.create(model="gemini-3.8-flash", input=...)</code>, SDK <code>google-genai</code> ≥ 2.3.0, resposta em <code>steps[]</code> (o campo <code>outputs[]</code> foi removido em 2026-06-08). A pré-contagem continua no endpoint do modelo. A migração desde <code>generate_content</code> está em <a href="#legado">Legado</a>.
+    Verificado em <strong>2026-09-30</strong> (GA reconfirmado na página HTML da Interactions em 2026-10-19). A Interactions API é GA desde junho de 2026: <code>client.interactions.create(model="gemini-3.8-flash", input=...)</code>, SDK <code>google-genai</code> ≥ 2.3.0, resposta em <code>steps[]</code> (o campo <code>outputs[]</code> foi removido em 2026-06-08). A pré-contagem continua no endpoint do modelo. A migração desde <code>generate_content</code> está em <a href="#legado">Legado</a>.
   </p>
 
   <h3 id="gemini-tc-overview">Pré-contagem e <code>usage</code> <a class="anchor" href="#gemini-tc-overview">¶</a><span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
@@ -1047,13 +1048,13 @@ for m in i.usage.input_tokens_by_modality or []:
   </ul>
 
   <h3 id="gemini-tc-thinking">Thinking <a class="anchor" href="#gemini-tc-thinking">¶</a><span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
-  <p>Padrões de <code>thinking_level</code>: <code>medium</code> nos 3.8 / 3.7 / 3.6 / 3.5 Flash; <code>minimal</code> no 3.5 Flash-Lite; <code>high</code> no 3.1 Pro e no 3 Flash Preview. <code>minimal</code> é erro nos 3.8 e 3.7 Flash. O padrão do 3.1 Flash-Lite é <span class="unverified">UNVERIFIED</span>. Os tokens de thinking vêm em <code>total_thought_tokens</code>, fora de <code>total_output_tokens</code>.</p>
+  <p>Padrões de <code>thinking_level</code>: <code>medium</code> nos 3.8 / 3.7 / 3.6 / 3.5 Flash e no <code>gemini-4-argon</code> (que aceita <code>low</code>/<code>medium</code>/<code>high</code>); <code>minimal</code> no 3.5 Flash-Lite; <code>high</code> no 3.1 Pro e no 3 Flash Preview. <code>minimal</code> é erro nos 3.8 e 3.7 Flash (o 3.7 é roteado para o 3.8 desde 2026-10-08). O padrão do 3.1 Flash-Lite é <span class="unverified">UNVERIFIED</span>. Os tokens de thinking vêm em <code>total_thought_tokens</code>, fora de <code>total_output_tokens</code>.</p>
 
   <h3 id="gemini-tc-cache">Cache implícito e retenção <a class="anchor" href="#gemini-tc-cache">¶</a></h3>
   <p>A Interactions suporta <strong>apenas cache implícito</strong> (padrão nos modelos 2.5+; mínimo de 4.096 tokens nos 3.8 / 3.7 / 3.6 / 3.5 Flash e no 3.1 Pro), reportado em <code>usage.total_cached_tokens</code> (tratado como subconjunto do input; confirme com uma chamada real). O que a Interactions ainda não cobre está em <a href="#gemini-tc-limits">Limites</a>. Retenção: <code>store=true</code> por padrão, por 55 dias (pago) ou 1 dia (gratuito); <code>store=false</code> é incompatível com <code>background</code> e <code>previous_interaction_id</code>. Detalhes em <a href="#caching-zdr-gemini">§10.3</a>.</p>
 
   <h3 id="gemini-tc-agents">Agentes (Deep Research) e tokens de tools <a class="anchor" href="#gemini-tc-agents">¶</a><span class="rev-flag novo">Novo · 2026-09-30</span></h3>
-  <p>Agentes só existem na Interactions API (não no <code>generateContent</code>) e exigem <code>background=True</code>. Os ids documentados são <code>deep-research-preview-04-2026</code> e <code>deep-research-max-preview-04-2026</code> (preview); o tipo do SDK 2.25.0 lista ainda <code>deep-research-pro-preview-12-2025</code> e <code>antigravity-preview-05-2026</code>, que a documentação consultada não descreve. <code>agent_config</code> aceita <code>{"type": "deep-research", "collaborative_planning", "thinking_summaries": "auto" | "none", "visualization": "off" | "auto", "enable_bigquery_tool"}</code>. Um agente roda um laço longo de busca e raciocínio: o consumo aparece em <code>usage</code> (em particular <code>total_tool_use_tokens</code> e <code>tool_use_tokens_by_modality</code>, <code>{modality, tokens}</code>), mas <strong>como o uso e a cobrança de agentes são calculados não está documentado</strong> nas páginas consultadas (<span class="unverified">UNVERIFIED</span>); não estime custo por agente com a tabela de modelos.</p>
+  <p>Agentes só existem na Interactions API (não no <code>generateContent</code>) e exigem <code>background=True</code>. Os ids documentados são <code>deep-research-preview-04-2026</code> e <code>deep-research-max-preview-04-2026</code> (preview); o tipo do SDK (2.25.0, e ainda o 2.31.0) lista também <code>deep-research-pro-preview-12-2025</code> (deprecado em 2026-10-08; desliga em 2026-10-23) e <code>antigravity-preview-05-2026</code> (desligado em 2026-10-05, substituído por <code>antigravity-preview-09-2026</code>), que a documentação não descreve. <code>agent_config</code> aceita <code>{"type": "deep-research", "collaborative_planning", "thinking_summaries": "auto" | "none", "visualization": "off" | "auto", "enable_bigquery_tool"}</code>. Um agente roda um laço longo de busca e raciocínio: o consumo aparece em <code>usage</code> (em particular <code>total_tool_use_tokens</code> e <code>tool_use_tokens_by_modality</code>, <code>{modality, tokens}</code>), mas <strong>como o uso e a cobrança de agentes são calculados não está documentado</strong> nas páginas consultadas (<span class="unverified">UNVERIFIED</span>); não estime custo por agente com a tabela de modelos.</p>
   <pre><code>import time
 
 from google import genai
@@ -1066,7 +1067,7 @@ i = client.interactions.create(
     background=True,
     agent_config={"type": "deep-research", "thinking_summaries": "auto"},
 )
-while i.status == "in_progress":  # depois: completed | failed | cancelled | requires_action
+while i.status in ("in_progress", "queued"):  # depois: completed | failed | cancelled | requires_action | incomplete
     time.sleep(10)
     i = client.interactions.get(i.id)  # ler o estado não dispara nova inferência
 
@@ -1113,13 +1114,14 @@ const n = (await ai.models.countTokens({ model, contents: "…seu prompt longo�
 if (info.inputTokenLimit &amp;&amp; n &gt; info.inputTokenLimit - 2000) throw new Error("prompt grande demais");</code></pre></div>
   </div>
 
-  <h3 id="gemini-tc-pricing">Modelos e preços <a class="anchor" href="#gemini-tc-pricing">¶</a><span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
+  <h3 id="gemini-tc-pricing">Modelos e preços <a class="anchor" href="#gemini-tc-pricing">¶</a><span class="rev-flag atu">Atualizado · 2026-10-19</span></h3>
   <div class="table-wrap">
   <table>
     <thead><tr><th>Modelo</th><th>Input / cache lido / output (por 1M)</th></tr></thead>
     <tbody>
-      <tr><td><code>gemini-3.8-flash</code>, 3.7, 3.6 Flash</td><td>$0,75 / $0,075 / $3,75 até 2026-12-31; depois $1,50 / $0,15 / $7,50</td></tr>
-      <tr><td>3.5 Flash</td><td>$1,50 / $0,15 / $9</td></tr>
+      <tr><td><code>gemini-4-argon</code> (GA 2026-10-13; saída só texto, só cache implícito)</td><td>$2 / $0,10 / $10 até 2026-11-30; depois $4 / $0,20 / $20</td></tr>
+      <tr><td><code>gemini-3.8-flash</code>, 3.6 Flash</td><td>$0,75 / $0,075 / $3,75 até 2026-12-31; depois $1,50 / $0,15 / $7,50</td></tr>
+      <tr><td>3.7 e 3.5 Flash</td><td>Roteados em 2026-10-08 para o 3.8 e o 3.6 Flash (preço do destino); fora da página de preços</td></tr>
       <tr><td>3.5 Flash-Lite</td><td>$0,30 / $0,03 / $2,50</td></tr>
       <tr><td>3.1 Pro (preview)</td><td>$2 / $0,20 / $12 (≤ 200k); acima de 200k: $4 / $0,40 / $18</td></tr>
     </tbody>
@@ -1141,7 +1143,7 @@ if (info.inputTokenLimit &amp;&amp; n &gt; info.inputTokenLimit - 2000) throw ne
     <li>O resultado é uma <strong>estimativa</strong>; <code>cache_control</code> é ignorado e <code>oversized_image: "error"</code> é respeitado.</li>
     <li>Retorna <code>invalid_request_error</code> para <strong>server tools</strong> (exceto a advisor tool, cuja contagem cobre só a primeira chamada do executor), para o <strong>conector MCP</strong> e para blocos <code>image</code>/<code>document</code> com fonte <code>url</code> ou <code>file</code>. Envie em base64.</li>
     <li>Rate limit do count: <strong>5.000 / 10.000 / 20.000 RPM</strong> (Start / Build / Scale), independente dos limites de <code>create</code>. Gratuito. ZDR elegível ("Excludes Covered Models"). Não há modo em lote: para milhares de requisições, conte uma a uma com concorrência limitada (<a href="#batch-code">Batch</a>).</li>
-    <li>Tokenizador 4.7+: cerca de 30% mais tokens que o anterior (Haiku 4.5 usa o anterior). Recontar para cada modelo-alvo.</li>
+    <li>Tokenizador 4.7+: cerca de 30% mais tokens que o anterior (Haiku 4.5 usa o anterior; Haiku 5.5 usa o 4.7+). Recontar para cada modelo-alvo.</li>
   </ul>
   <div class="code-group">
     <div class="code-tabs" role="tablist">
@@ -1206,7 +1208,7 @@ console.log(n.input_tokens);</code></pre></div>
   </div>
   <p>Exemplos da doc oficial com <code>claude-opus-5-5</code> (2026-09-30): 14 tokens (mensagem simples), 403 (com a tool <code>get_weather</code>), 1.028 (imagem), 88 (thinking <code>adaptive</code>), 2.188 (PDF). O system prompt de tool use do Opus 5.5 / Sonnet 5.5 soma 286 tokens (<code>tool_choice</code> auto/none).</p>
 
-  <h3 id="anthropic-tc-models">Modelos <a class="anchor" href="#anthropic-tc-models">¶</a><span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
+  <h3 id="anthropic-tc-models">Modelos <a class="anchor" href="#anthropic-tc-models">¶</a><span class="rev-flag atu">Atualizado · 2026-10-19</span></h3>
   <div class="table-wrap">
   <table>
     <thead><tr><th>Modelo</th><th>ID</th><th>Preço (1M in / out) e notas</th></tr></thead>
@@ -1214,7 +1216,8 @@ console.log(n.input_tokens);</code></pre></div>
       <tr><td>Fable 5.1</td><td><code>claude-fable-5-1</code></td><td>$10 / $50; leitura de cache 0,025×; "Covered Models" exigem retenção de 30 dias</td></tr>
       <tr><td>Opus 5.5</td><td><code>claude-opus-5-5</code></td><td>$4 / $20; recomendado; <code>effort</code> padrão <code>medium</code>; contexto 1M / saída 128K</td></tr>
       <tr><td>Sonnet 5.5</td><td><code>claude-sonnet-5-5</code></td><td>$2 / $10; lançado em 2026-09-28; <code>between_tools</code></td></tr>
-      <tr><td>Haiku 4.5</td><td><code>claude-haiku-4-5-20251001</code></td><td>$1 / $5; 200K / 64K; apenas thinking <code>enabled</code> + <code>budget_tokens</code>; aposentadoria não antes de 2026-10-15</td></tr>
+      <tr><td>Haiku 5.5</td><td><code>claude-haiku-5-5</code></td><td>$0,10 / $0,50 até 100k tokens de prompt; $0,50 / $2,50 acima; lançado em 2026-10-07; 1M / 128K; thinking adaptativo (<code>enabled</code> + <code>budget_tokens</code> dá 400); tokenizador 4.7+</td></tr>
+      <tr><td>Haiku 4.5 (legado)</td><td><code>claude-haiku-4-5-20251001</code></td><td>$1 / $5; 200K / 64K; apenas thinking <code>enabled</code> + <code>budget_tokens</code>; aposentadoria não antes de 2026-10-15 (data já passada; segue Active sem aviso de depreciação na página oficial lida em 2026-10-19)</td></tr>
       <tr><td>Mythos 5.1</td><td><code>claude-mythos-5-1</code></td><td>Apenas Glasswing</td></tr>
     </tbody>
   </table>
@@ -1440,7 +1443,7 @@ print(job.name)  # a criação NÃO é idempotente: não reenvie a mesma chamada
         <thead><tr><th></th><th class="openai">OpenAI (GPT-5.6+)</th><th class="gemini">Gemini (Interactions)</th><th class="anthropic">Anthropic</th></tr></thead>
         <tbody>
           <tr><td>Mecanismo</td><td class="col-openai">Breakpoint implícito (padrão) ou explícito</td><td class="col-gemini">Somente implícito</td><td class="col-anthropic"><code>cache_control</code> automático (topo) ou por bloco</td></tr>
-          <tr><td>Leitura</td><td class="col-openai">0,1× (0,05× no GPT-6.1 Sol)</td><td class="col-gemini">Desconto conforme a tabela de preços (ver <a href="#gemini-tc-pricing">preços</a>)</td><td class="col-anthropic">0,1× (0,05× Opus 5.5; 0,025× Fable 5.1 e Mythos 5.1)</td></tr>
+          <tr><td>Leitura</td><td class="col-openai">0,1× (0,05× no GPT-6.1 Sol)</td><td class="col-gemini">Desconto conforme a tabela de preços (ver <a href="#gemini-tc-pricing">preços</a>)</td><td class="col-anthropic">0,1× (0,05× Opus 5.5 e Sonnet 5.5; 0,025× Fable 5.1 e Mythos 5.1)</td></tr>
           <tr><td>Escrita</td><td class="col-openai">1,25×</td><td class="col-gemini">Não há campo de escrita no <code>usage</code></td><td class="col-anthropic">1,25× (5 min) / 2× (1 h)</td></tr>
           <tr><td>TTL</td><td class="col-openai"><code>ttl: "30m"</code> (único valor; tempo mínimo de vida)</td><td class="col-gemini">Sem parâmetro de TTL na Interactions</td><td class="col-anthropic">5 min (padrão); <code>ttl: "1h"</code> opcional</td></tr>
           <tr><td>Mínimo</td><td class="col-openai">1.024 tokens visíveis</td><td class="col-gemini">4.096 (3.8/3.7/3.6/3.5 Flash e 3.1 Pro)</td><td class="col-anthropic">512 a 4.096 conforme o modelo</td></tr>
@@ -1511,7 +1514,7 @@ if diag is not None and diag.type == "cache_miss":
       <h3 id="caching-zdr-anthropic">10.4 Anthropic <a class="anchor" href="#caching-zdr-anthropic">¶</a><span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
       <ul>
         <li>Automático: <code>cache_control: {"type": "ephemeral"}</code> no topo da requisição. Explícito: por bloco, com <code>ttl: "1h"</code> opcional. No máximo 4 breakpoints (o automático usa um). Lookback de 20 blocos. Ordem: tools, system, messages.</li>
-        <li>Mínimos: 512 tokens (Fable 5.1, Mythos 5.1, Opus 5.5, Opus 5, Sonnet 5.5, Fable 5, Mythos 5); 1.024 (Opus 4.8, Sonnet 5, Sonnet 4.6/4.5); 2.048 (Opus 4.7, Mythos Preview); 4.096 (Opus 4.6/4.5, Haiku 4.5).</li>
+        <li>Mínimos: 512 tokens (Fable 5.1, Mythos 5.1, Opus 5.5, Opus 5, Sonnet 5.5, Haiku 5.5, Fable 5, Mythos 5); 1.024 (Opus 4.8, Sonnet 5, Sonnet 4.6/4.5); 2.048 (Opus 4.7, Mythos Preview); 4.096 (Opus 4.6/4.5, Haiku 4.5).</li>
         <li><code>usage</code>: <code>input_tokens</code> (após o último breakpoint), <code>cache_read_input_tokens</code> e <code>cache_creation_input_tokens</code> (= <code>cache_creation.ephemeral_5m_input_tokens</code> + <code>ephemeral_1h_input_tokens</code>). <code>total_input = read + creation + input_tokens</code>.</li>
         <li>Invalidação: mudar as definições de tools invalida tudo; alternar web search, citations ou speed invalida o cache de tools; <code>tool_choice</code> e imagens invalidam o cache de system; thinking/effort dependem do modelo.</li>
         <li>Isolamento: por workspace na Claude API / AWS / Foundry; por organização em Bedrock / Google Cloud. Hits não contam para o ITPM. ZDR e HIPAA: sim.</li>
@@ -1573,7 +1576,7 @@ from decimal import Decimal as D
 
 ONE_M = D(1_000_000)
 
-# USD por 1M tokens, tier padrão, contexto curto (preços verificados em 2026-09-30; revalide).
+# USD por 1M tokens, tier padrão, contexto curto (preços verificados em 2026-09-30, Anthropic e Gemini em 2026-10-19; revalide).
 OPENAI = {  # in, cached (read), write (1,25x), out
     "gpt-6-astra": (D("10"), D("1"), D("12.5"), D("50")),
     "gpt-6.1-sol": (D("2"), D("0.10"), D("2.5"), D("10")),
@@ -1592,8 +1595,10 @@ GEMINI_FLASH_FROM_2027 = (D("1.50"), D("0.15"), D("7.50"))  # 3.8 / 3.7 / 3.6 Fl
 ANTHROPIC = {  # in, write 5m, write 1h, read, out
     "claude-fable-5-1": (D("10"), D("12.5"), D("20"), D("0.25"), D("50")),
     "claude-opus-5-5": (D("4"), D("5"), D("8"), D("0.20"), D("20")),  # read = 0,05x
-    "claude-sonnet-5-5": (D("2"), D("2.5"), D("4"), D("0.20"), D("10")),
+    "claude-sonnet-5-5": (D("2"), D("2.5"), D("4"), D("0.10"), D("10")),  # read = 0,05x desde 2026-10-07
     "claude-haiku-4-5-20251001": (D("1"), D("1.25"), D("2"), D("0.10"), D("5")),
+    # claude-haiku-5-5 fica fora da tabela: o preço muda por faixa de prompt (<= 100k: 0.10 / 0.125 / 0.20 / 0.01 / 0.50;
+    # > 100k: 0.50 / 0.625 / 1 / 0.05 / 2.50), então o cálculo não é linear. Acrescente a faixa antes de usar.
 }
 
 
@@ -1756,7 +1761,7 @@ def budget_gate(provider: str, model: str, payload: dict) -&gt; tuple[int, D, bo
     return tokens, cost, cost &lt;= LIMIT_USD</code></pre>
 
       <h3 id="recipes-router">R2 · Roteador por tamanho do prompt <a class="anchor" href="#recipes-router">¶</a></h3>
-      <p>Recontar <strong>para cada modelo candidato</strong>: o tokenizador da Anthropic 4.7+ rende ~30% mais tokens que o do Haiku 4.5, e as janelas diferem (Haiku 4.5: 200K; Sonnet 5.5 e Opus 5.5: 1M).</p>
+      <p>Recontar <strong>para cada modelo candidato</strong>: o tokenizador da Anthropic 4.7+ rende ~30% mais tokens que o do Haiku 4.5, e as janelas diferem (Haiku 4.5: 200K; Haiku 5.5, Sonnet 5.5 e Opus 5.5: 1M).</p>
       <pre><code>import anthropic
 
 client = anthropic.Anthropic()
@@ -1764,6 +1769,7 @@ client = anthropic.Anthropic()
 # janela de contexto por modelo, do mais barato ao mais caro (PCD/models/overview, 2026-09-30)
 CONTEXT = {
     "claude-haiku-4-5-20251001": 200_000,
+    "claude-haiku-5-5": 1_000_000,
     "claude-sonnet-5-5": 1_000_000,
     "claude-opus-5-5": 1_000_000,
 }
@@ -1890,12 +1896,13 @@ if __name__ == "__main__":
         <thead><tr><th>Antes</th><th>Agora</th><th>Status</th><th>Migração</th><th>Fonte oficial</th></tr></thead>
         <tbody>
           <tr><td class="col-gemini"><code>generate_content</code> + <code>usage_metadata</code></td><td><code>interactions.create</code> + <code>usage</code></td><td>Interactions GA (jun/2026); <code>outputs[]</code> removido em 2026-06-08. Batch, AFC, cache explícito e safety settings customizados não constam da Interactions (<a href="#gemini-tc-limits">Limites</a>; Batch em <a href="#batch">Batch</a>)</td><td><code>prompt_token_count</code> → <code>total_input_tokens</code>; <code>thoughts_token_count</code> → <code>total_thought_tokens</code>; ler <code>steps[]</code></td><td><a href="https://ai.google.dev/gemini-api/docs/interactions-overview">ai.google.dev/gemini-api/docs/interactions-overview</a></td></tr>
-          <tr><td class="col-gemini">SDK <code>google-generativeai</code></td><td><code>google-genai</code> 2.25.0</td><td>Substituído</td><td><code>import google.generativeai</code> → <code>from google import genai</code></td><td><a href="https://ai.google.dev/gemini-api/docs/libraries">ai.google.dev/gemini-api/docs/libraries</a></td></tr>
+          <tr><td class="col-gemini">SDK <code>google-generativeai</code></td><td><code>google-genai</code> 2.31.0</td><td>Substituído</td><td><code>import google.generativeai</code> → <code>from google import genai</code></td><td><a href="https://ai.google.dev/gemini-api/docs/libraries">ai.google.dev/gemini-api/docs/libraries</a></td></tr>
           <tr><td class="col-openai"><code>chat.completions</code> (Chat Completions)</td><td>Responses API</td><td>Não há endpoint de contagem separado</td><td><code>messages</code> → <code>input</code>; <code>usage.prompt_tokens</code> → <code>input_tokens</code></td><td><a href="https://developers.openai.com/api/docs/guides/migrate-to-responses">developers.openai.com/api/docs/guides/migrate-to-responses</a></td></tr>
           <tr><td class="col-openai">Imagens por tiles (gpt-5.1, gpt-5, gpt-4o, gpt-4.1, gpt-4o-mini, série o)</td><td>Patches de 32 px</td><td>Legado. Multiplicadores antigos: gpt-5-nano 1,5; gpt-4.1-mini 1,62; gpt-4.1-nano 2,46; o4-mini 1,72</td><td>Recontar com o endpoint ao trocar de modelo</td><td><a href="https://developers.openai.com/api/docs/guides/images-vision">developers.openai.com/api/docs/guides/images-vision</a></td></tr>
           <tr><td class="col-openai"><code>prompt_cache_retention</code> (<code>in_memory</code> | <code>24h</code>)</td><td><code>prompt_cache_options</code> (GPT-5.6+)</td><td>Obsoleto no tipo do SDK; o 5.5 aceita só <code>24h</code></td><td>Ver <a href="#caching-zdr-openai">§10.2</a></td><td><a href="https://developers.openai.com/api/docs/guides/prompt-caching">developers.openai.com/api/docs/guides/prompt-caching</a></td></tr>
           <tr><td class="col-anthropic">Header beta <code>cache-diagnosis-2026-04-07</code> e <code>files-api-2025-04-14</code></td><td>Cache diagnostics e Files API em GA</td><td>O valor do diagnostics ainda é aceito; Files API sem header</td><td>Remover o header; usar <code>client.messages.create(..., diagnostics=...)</code> e <code>client.files.upload</code></td><td><a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching">platform.claude.com/docs/en/build-with-claude/prompt-caching</a></td></tr>
-          <tr><td class="col-anthropic">Haiku 4.5 (<code>claude-haiku-4-5-20251001</code>)</td><td>Sonnet 5.5 / Opus 5.5</td><td>Ativo; aposentadoria não antes de 2026-10-15</td><td>Recontar tokens (tokenizador diferente)</td><td><a href="https://platform.claude.com/docs/en/about-claude/model-deprecations">platform.claude.com/docs/en/about-claude/model-deprecations</a></td></tr>
+          <tr><td class="col-anthropic">Haiku 4.5 (<code>claude-haiku-4-5-20251001</code>)</td><td>Haiku 5.5 (<code>claude-haiku-5-5</code>) / Sonnet 5.5 / Opus 5.5</td><td>Ativo; aposentadoria não antes de 2026-10-15 (data já passada; segue Active sem aviso de depreciação na página oficial lida em 2026-10-19)</td><td>Recontar tokens (tokenizador diferente)</td><td><a href="https://platform.claude.com/docs/en/about-claude/model-deprecations">platform.claude.com/docs/en/about-claude/model-deprecations</a></td></tr>
+          <tr><td class="col-anthropic">Sonnet 4.5</td><td>Sonnet 5.5</td><td>Deprecado; aposentadoria em 2026-11-30</td><td>Recontar tokens (tokenizador diferente)</td><td><a href="https://platform.claude.com/docs/en/about-claude/model-deprecations">platform.claude.com/docs/en/about-claude/model-deprecations</a></td></tr>
         </tbody>
       </table>
       </div>
@@ -1911,7 +1918,7 @@ u = i.usage  # total_input_tokens, total_output_tokens, total_thought_tokens</co
 
     <section id="sources" aria-labelledby="h-sources">
       <h2 id="h-sources">Fontes e notas de verificação <a class="anchor" href="#sources">¶</a><span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
-      <p>Páginas oficiais consultadas em <strong>2026-09-30</strong>. Itens <span class="unverified">UNVERIFIED</span> não foram confirmados na fonte oficial nessa data. Versões de SDK (PyPI / npm, 2026-09-30): <code>openai</code> 3.22.1 / 7.25.0; <code>anthropic</code> 1.9.0 / <code>@anthropic-ai/sdk</code> 0.129.0; <code>google-genai</code> 2.25.0 / <code>@google/genai</code> 2.24.0. Os snippets Python foram executados ou ligados às assinaturas reais dos SDKs; os snippets TypeScript <strong>não foram executados</strong>.</p>
+      <p>Páginas oficiais consultadas em <strong>2026-09-30</strong>. Itens <span class="unverified">UNVERIFIED</span> não foram confirmados na fonte oficial nessa data. Versões de SDK (PyPI / npm, 2026-10-19): <code>openai</code> 3.35.1 / 7.39.0; <code>anthropic</code> 1.15.0 / <code>@anthropic-ai/sdk</code> 0.135.0; <code>google-genai</code> 2.31.0 / <code>@google/genai</code> 2.30.0. Os snippets Python foram executados ou ligados às assinaturas reais dos SDKs; os snippets TypeScript <strong>não foram executados</strong>.</p>
       <div class="table-wrap">
       <table>
         <thead><tr><th>Provider</th><th>Recurso</th><th>URL</th></tr></thead>

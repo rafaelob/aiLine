@@ -5,7 +5,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%9A%3C/text%3E%3C/svg%3E" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Guia Deep Agents — Referência completa (Python)</title>
-<meta name="description" content="Guia técnico SOTA do Deep Agents 0.7.20 (LangChain OSS) em Python: create_deep_agent, middleware, backends pluggable, sandboxes, skills, memória, profiles, HITL, Managed Deep Agents, dcode CLI, ACP e legado da linha 0.6. Verificado em 2026-09-30." />
+<meta name="description" content="Guia técnico SOTA do Deep Agents 0.7.28 (LangChain OSS) em Python: create_deep_agent, middleware, backends pluggable, sandboxes, skills, memória, profiles, HITL, Managed Deep Agents, dcode CLI, ACP e legado da linha 0.6. Verificado em 2026-09-30." />
 <meta name="last-checked" content="2026-09-30" />
 <meta name="robots" content="index,follow" />
 <style>
@@ -365,19 +365,19 @@
         skills, memória persistente, profiles, HITL, dcode CLI e o ACP.
       </p>
       <div class="hero-meta">
-        <span class="badge da">deepagents 0.7.20</span>
+        <span class="badge da">deepagents 0.7.28</span>
         <span class="badge info">Python ≥ 3.11</span>
         <span class="badge ok">SOTA · verificado em 2026-09-30</span>
       </div>
     </div>
 
     <section id="para-agentes">
-      <h2>Resumo para agentes (verificado 2026-09-30)<span class="rev-flag novo">Novo · 2026-09-30</span></h2>
+      <h2>Resumo para agentes (verificado 2026-09-30; versões e pisos em 2026-10-19)<span class="rev-flag novo">Novo · 2026-09-30</span></h2>
       <p>Leia antes de escrever código Deep Agents (Python). Cada item aponta para a seção com a fonte.</p>
       <h3>1. Superfície atual</h3>
-      <pre><code class="language-bash">pip install "deepagents==0.7.20"                # Python &gt;=3.11,&lt;4; traz langchain&gt;=1.4.3 (create_agent + LangGraph)
-pip install "deepagents[quickjs]==0.7.20"        # + code interpreter (QuickJS); outros extras: aws, video
-npm install "deepagents@1.14.1"                  # JS/TS: versionamento independente do Python</code></pre>
+      <pre><code class="language-bash">pip install "deepagents==0.7.28"                # Python &gt;=3.11,&lt;4; traz langchain&gt;=1.4.6 (create_agent + LangGraph); piso de segurança &gt;=0.7.25 (GHSA-47w2-rfrr-wvq8)
+pip install "deepagents[quickjs]==0.7.28"        # + code interpreter (QuickJS); outros extras: aws, video
+npm install "deepagents@1.15.1"                  # JS/TS: versionamento independente do Python; piso de segurança &gt;=1.15.0 (GHSA-wcqq-jj54-gfgm)</code></pre>
       <pre><code class="language-python">from deepagents import create_deep_agent
 from langgraph.checkpoint.memory import MemorySaver
 
@@ -391,18 +391,18 @@ agent = create_deep_agent(
     interrupt_on={"get_weather": True}, checkpointer=MemorySaver(),   # HITL exige checkpointer
 )
 agent.invoke({"messages": [{"role": "user", "content": "weather in sf"}]}, config={"configurable": {"thread_id": "t1"}})</code></pre>
-      <h3>2. IDs e versões correntes (PyPI/npm, 2026-09-30)</h3>
+      <h3>2. IDs e versões correntes (PyPI/npm, 2026-10-19)</h3>
       <div class="table-wrap"><table>
         <thead><tr><th>Item</th><th>Versão / ID</th><th>Status</th><th>Nota</th></tr></thead>
         <tbody>
-          <tr><td><code>deepagents</code> (Py) / JS</td><td><code>0.7.20</code> (2026-09-29) / <code>1.14.1</code> (2026-09-24)</td><td>ativo</td><td>exige <code>langchain&gt;=1.4.3</code>, <code>langchain-core&gt;=1.6.6</code>, <code>langchain-anthropic&gt;=1.7.5</code></td></tr>
-          <tr><td><code>deepagents-code</code> (dcode)</td><td><code>0.1.79</code></td><td>ativo</td><td>CLI de coding; instalador <code>curl -LsSf https://langch.in/dcode | bash</code></td></tr>
-          <tr><td><code>managed-deepagents</code> (<code>mda</code>)</td><td><code>0.8.3</code></td><td>public beta</td><td>só LangSmith Cloud, região US; <code>define_deep_agent</code></td></tr>
+          <tr><td><code>deepagents</code> (Py) / JS</td><td><code>0.7.28</code> (2026-10-16) / <code>1.15.1</code> (2026-10-16)</td><td>ativo</td><td>exige <code>langchain&gt;=1.4.6</code>, <code>langchain-core&gt;=1.6.11</code>, <code>langchain-anthropic&gt;=1.7.6</code></td></tr>
+          <tr><td><code>deepagents-code</code> (dcode)</td><td><code>0.1.86</code></td><td>ativo</td><td>CLI de coding; instalador <code>curl -LsSf https://langch.in/dcode | bash</code></td></tr>
+          <tr><td><code>managed-deepagents</code> (<code>mda</code>)</td><td><code>0.9.3</code></td><td>public beta</td><td>só LangSmith Cloud, região US; <code>define_deep_agent</code></td></tr>
           <tr><td><code>deepagents-cli</code></td><td><code>0.3.0</code></td><td>DEPRECATED</td><td>não use para deploy novo (<a href="#s-deploy-cli">§26</a>)</td></tr>
-          <tr><td><code>deepagents-acp</code></td><td><code>0.0.12</code></td><td>ativo</td><td>integração IDE (ACP)</td></tr>
+          <tr><td><code>deepagents-acp</code></td><td><code>0.0.13</code></td><td>ativo</td><td>integração IDE (ACP); piso <code>&gt;=0.0.13</code> (GHSA-459r-276m-w72x: "Always allow" aprovava comandos encadeados)</td></tr>
           <tr><td>OpenAI (frontier / equilíbrio / baixo custo)</td><td><code>gpt-6-astra</code> / <code>gpt-6.1-sol</code> / <code>gpt-6-luna</code></td><td>GA</td><td><code>gpt-6.1-sol</code>: sem effort <code>none</code>/<code>minimal</code>; <code>gpt-6-astra</code>: <code>none</code> retorna 400</td></tr>
-          <tr><td>Google</td><td><code>gemini-3.1-pro-preview</code> / <code>gemini-3.8-flash</code> / <code>gemini-3.5-flash-lite</code></td><td>Preview / Stable / Stable</td><td>string <code>google_genai:gemini-3.8-flash</code></td></tr>
-          <tr><td>Anthropic</td><td><code>claude-opus-5-5</code> / <code>claude-sonnet-5-5</code> / <code>claude-haiku-4-5</code></td><td>Active</td><td>Haiku 4.5: retirada não antes de 2026-10-15; <code>tool_choice</code> forçado retorna 400 nos dois 5.5</td></tr>
+          <tr><td>Google</td><td><code>gemini-3.1-pro-preview</code> / <code>gemini-3.8-flash</code> / <code>gemini-3.5-flash-lite</code></td><td>Preview / Stable / Stable</td><td>string <code>google_genai:gemini-3.8-flash</code> (via <code>langchain-google-genai</code>, que usa <code>generateContent</code>, legado)</td></tr>
+          <tr><td>Anthropic</td><td><code>claude-opus-5-5</code> / <code>claude-sonnet-5-5</code> / <code>claude-haiku-5-5</code></td><td>Active</td><td><code>tool_choice</code> forçado retorna 400 em Opus 5.5 e Sonnet 5.5; o Haiku 5.5 (2026-10-07) o aceita. <code>claude-haiku-4-5</code> segue Active como legado, com retirada não antes de 2026-10-15 (data já passada; segue Active sem aviso de depreciação na página oficial lida em 2026-10-19)</td></tr>
         </tbody>
       </table></div>
       <h3>3. Faça / Não faça</h3>
@@ -412,7 +412,7 @@ agent.invoke({"messages": [{"role": "user", "content": "weather in sf"}]}, confi
         <li><code>FilesystemBackend</code>/<code>LocalShellBackend</code> têm <code>virtual_mode=True</code> por padrão (0.7.0+) e não servem para produção; <code>backend=</code> recebe instância concreta, não factory (<a href="#s-backends">§9</a>).</li>
         <li>A tool <code>task</code> rejeita chaves de argumento desconhecidas (0.7.18+); o modo de subagente <code>handoff</code> agora é <code>isolated</code> (0.7.13+). Não existe <code>async_create_deep_agent</code>: use <code>ainvoke</code>/<code>astream</code> (<a href="#s-subagents">§7</a>).</li>
         <li>Subagente: <code>system_prompt</code>, <code>middleware</code> e <code>skills</code> não herdam do pai; <code>tools</code> e <code>permissions</code> definidos substituem os herdados. <code>CompiledSubAgent.runnable</code> precisa de state key <code>messages</code>; em <code>create_agent</code> use <code>system_prompt=</code>, não <code>prompt=</code>.</li>
-        <li>OpenAI: a string <code>"openai:*"</code> já usa a Responses API no <code>create_deep_agent</code> (ProviderProfile); uma instância <code>ChatOpenAI</code> não: configure <code>use_responses_api=True</code>. Não existe integração com a Gemini Interactions API.</li>
+        <li>OpenAI: a string <code>"openai:*"</code> já usa a Responses API no <code>create_deep_agent</code> (ProviderProfile); uma instância <code>ChatOpenAI</code> não: configure <code>use_responses_api=True</code>. Gemini: a Interactions API (GA, caminho padrão) não tem integração aqui; use <code>google-genai</code> direto (<code>client.interactions</code>).</li>
         <li>HITL (<code>interrupt_on</code>) e threads duráveis exigem <code>checkpointer</code>; <code>StoreBackend</code> exige <code>store=</code> (<a href="#s-create">§4</a>, <a href="#s-hitl">§15</a>).</li>
         <li>MCP em Python: <code>langchain.mcp.MCPAdapter</code> (<code>pip install "langchain[mcp]"</code>), não <code>langchain-mcp-adapters</code> (arquivado); resources/prompts MCP só existem no pacote arquivado (<a href="#s-mcp">§28</a>).</li>
         <li>Não atribua resultados da eval suite oficial (<a href="#s-models">§22.2</a>) a GPT-6, Claude 5.5 ou Gemini 3.8: a tabela não os cobre. Para Gemini 3.x não fixe <code>temperature</code>/<code>top_p</code>/<code>top_k</code>.</li>
@@ -429,11 +429,11 @@ agent.invoke({"messages": [{"role": "user", "content": "weather in sf"}]}, confi
     <section id="sobre">
       <h2>Sobre este guia<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
       <div class="callout tip">
-        <strong>Versões estáveis (verificado em 2026-09-30).</strong> Python <code>deepagents==0.7.20</code> (2026-09-29, PyPI) e JS/TS <code>deepagents@1.14.1</code> (2026-09-24, npm); as duas linhas têm versionamento independente. Python <code>&gt;=3.11,&lt;4</code>. O wheel 0.7.20 declara <code>langchain&gt;=1.4.3,&lt;2</code>, <code>langchain-core&gt;=1.6.6,&lt;2</code>, <code>langchain-anthropic&gt;=1.7.5,&lt;2</code>, <code>langchain-google-genai&gt;=4.4.0,&lt;5</code>, <code>langsmith&gt;=0.14.1</code> e os extras <code>aws</code>, <code>quickjs</code> e <code>video</code> (lidos no <code>METADATA</code> do wheel). O modelo default resolve por <code>HarnessProfile</code>/<code>init_chat_model</code>: passe o ID explicitamente. A migração obrigatória da linha 0.6 para a 0.7 está em <a href="#legado">Legado e migração</a>.
-        <div class="source-link">Fontes: <a href="https://pypi.org/project/deepagents/" target="_blank" rel="noopener">PyPI · deepagents</a> · <a href="https://www.npmjs.com/package/deepagents" target="_blank" rel="noopener">npm · deepagents</a> · <a href="https://github.com/langchain-ai/deepagents/releases/tag/deepagents%3D%3D0.7.20" target="_blank" rel="noopener">release 0.7.20</a></div>
+        <strong>Versões estáveis (verificado em 2026-10-19).</strong> Python <code>deepagents==0.7.28</code> (2026-10-16, PyPI) e JS/TS <code>deepagents@1.15.1</code> (2026-10-16, npm); as duas linhas têm versionamento independente. Python <code>&gt;=3.11,&lt;4</code>. Pisos de segurança: <code>deepagents&gt;=0.7.25</code> (Python) e <code>deepagents&gt;=1.15.0</code> (npm) — veja o capítulo de <a href="#s-permissions">Permissões</a>. O wheel 0.7.28 declara <code>langchain&gt;=1.4.6,&lt;2</code>, <code>langchain-core&gt;=1.6.11,&lt;2</code>, <code>langchain-anthropic&gt;=1.7.6,&lt;2</code>, <code>langchain-google-genai&gt;=4.4.2,&lt;5</code>, <code>langsmith&gt;=0.14.11</code> e os extras <code>aws</code>, <code>quickjs</code> e <code>video</code> (lidos no <code>METADATA</code> do wheel). O modelo default resolve por <code>HarnessProfile</code>/<code>init_chat_model</code>: passe o ID explicitamente. A migração obrigatória da linha 0.6 para a 0.7 está em <a href="#legado">Legado e migração</a>.
+        <div class="source-link">Fontes: <a href="https://pypi.org/project/deepagents/" target="_blank" rel="noopener">PyPI · deepagents</a> · <a href="https://www.npmjs.com/package/deepagents" target="_blank" rel="noopener">npm · deepagents</a> · <a href="https://github.com/langchain-ai/deepagents/releases/tag/deepagents%3D%3D0.7.28" target="_blank" rel="noopener">release 0.7.28</a></div>
       </div>
       <div class="callout info">
-        <strong>Comportamentos da linha 0.7 que afetam código (0.7.11 a 0.7.20, lidos nos release notes oficiais).</strong>
+        <strong>Comportamentos da linha 0.7 que afetam código (0.7.11 a 0.7.28, lidos nos release notes oficiais).</strong>
         <ul style="margin:6px 0 0;padding-left:20px">
           <li><strong>0.7.11</strong> — hooks de integração do SDK para graders de rubric (<code>RubricMiddleware</code>).</li>
           <li><strong>0.7.12</strong> — fork de conversa de subagente no SDK.</li>
@@ -442,7 +442,13 @@ agent.invoke({"messages": [{"role": "user", "content": "weather in sf"}]}, confi
           <li><strong>0.7.16</strong> — reload de skills a meio de thread (<a href="#s-skills">§12.1</a>) e rejeição de edições paralelas ao mesmo arquivo (<a href="#s-builtin-tools">§5</a>).</li>
           <li><strong>0.7.18</strong> — a tool <code>task</code> <strong>rejeita chaves de argumento desconhecidas</strong> em vez de descartá-las em silêncio; truncagem de preview de resultados grandes reformulada.</li>
           <li><strong>0.7.19 e 0.7.20</strong> — correções: recuperação quando a mídia de <code>read_file</code> é rejeitada, filtro de conteúdo multimodal não suportado em middleware separado, paths de offload com limite, e conteúdo binário de <code>StateBackend.upload_files</code> que era marcado como base64 indevidamente.</li>
-          <li><strong>JS/TS 1.14.x</strong> — espelha o reload de skills (<code>skillsMetadata</code> resetado para <code>null</code> recarrega no próximo model call); 1.13.4 corrigiu os contadores de <code>modelCallLimitMiddleware</code>/<code>toolCallLimitMiddleware</code> na fronteira de subagente.</li>
+          <li><strong>0.7.22</strong> — as tools de uma skill só são carregadas quando a skill é lida (<a href="#s-skills">§12</a>).</li>
+          <li><strong>0.7.23</strong> — <code>pinned_skills</code> fixa skills por nome; cada subagente usa o próprio <code>SkillsMiddleware</code>.</li>
+          <li><strong>0.7.24</strong> — fork mode em async subagents, rubric do pai preservado em chamadas paralelas de subagentes e recuperação de overflow de contexto durante o resumo.</li>
+          <li><strong>0.7.25</strong> — regras de permissão de filesystem e aprovações de <code>interrupt_on</code> passam a checar o caminho pedido <em>e</em> o caminho resolvido por symlink (GHSA-47w2-rfrr-wvq8; <a href="#s-permissions">§10</a>).</li>
+          <li><strong>0.7.26 e 0.7.27</strong> — async subagents informam quando esperam por um humano, aparecem aninhados no trace do pai, mantêm o agente principal informado de status e recebem o nome do subagente; o <code>SummarizationMiddleware</code> expõe o <code>summarizer</code>.</li>
+          <li><strong>0.7.28</strong> — <code>ContextHubBackend.glob</code> passa a respeitar <code>path</code>.</li>
+          <li><strong>JS/TS 1.14.x e 1.15.x</strong> — a 1.14.x espelha o reload de skills (<code>skillsMetadata</code> resetado para <code>null</code> recarrega no próximo model call); 1.13.4 corrigiu os contadores de <code>modelCallLimitMiddleware</code>/<code>toolCallLimitMiddleware</code> na fronteira de subagente. A 1.15.0 acrescenta <code>pinnedSkills</code> e tools de skill carregadas só na leitura, faz o <code>CompositeBackend</code> deixar de capturar <code>/foobar.txt</code> pela rota <code>/foo</code>, checa permissões contra o caminho resolvido (GHSA-wcqq-jj54-gfgm) e devolve <code>ToolMessage</code> com <code>status: "error"</code> quando <code>read_file</code> falha; a 1.15.1 corrige o <code>glob</code> do <code>ContextHubBackend</code>.</li>
         </ul>
         <div class="source-link">Fontes: <a href="https://github.com/langchain-ai/deepagents/releases" target="_blank" rel="noopener">releases do deepagents (Python)</a> · <a href="https://github.com/langchain-ai/deepagentsjs/releases" target="_blank" rel="noopener">releases do deepagentsjs</a>.</div>
       </div>
@@ -467,10 +473,10 @@ agent.invoke({"messages": [{"role": "user", "content": "weather in sf"}]}, confi
       </div>
       <div class="callout info">
         <strong>Porta JS/TS.</strong> Este guia documenta a API Python. Para a
-        porta JS/TS, mantenha o pin independente <code>deepagents@1.14.1</code> e
+        porta JS/TS, mantenha o pin independente <code>deepagents@1.15.1</code> e
         consulte a documentação/repositório oficiais; não traduza nomes de
         parâmetros mecanicamente (<code>get_tools()</code> em Python, por exemplo,
-        vira <code>getTools()</code> no adapter JS).
+        vira <code>listTools()</code> no adapter JS 2.0; <code>getTools()</code> segue deprecated).
       </div>
     </section>
 
@@ -607,9 +613,9 @@ agent.invoke({
 
 <section id="s-install">
   <h2>3. Instalação<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
-  <pre><code class="language-bash">pip install "deepagents==0.7.20"               # core Python (estável em 2026-09-30)
-pip install -U "deepagents[quickjs]==0.7.20"    # + Code Interpreter (QuickJS)
-pip install deepagents-acp                    # + integração IDE (ACP)
+  <pre><code class="language-bash">pip install "deepagents==0.7.28"               # core Python (estável em 2026-10-19; piso de segurança &gt;=0.7.25)
+pip install -U "deepagents[quickjs]==0.7.28"    # + Code Interpreter (QuickJS)
+pip install "deepagents-acp&gt;=0.0.13"           # + integração IDE (ACP); piso de segurança (GHSA-459r-276m-w72x)
 # dcode (agente de coding em terminal) tem instalador próprio: ver capítulo 24.
 
 # Sandboxes (opcionais)
@@ -619,18 +625,18 @@ pip install langchain-runloop
 pip install "langsmith[sandbox]"
 
 # uv equivalente
-uv add "deepagents==0.7.20" tavily-python
+uv add "deepagents==0.7.28" tavily-python
 
-# Porta JavaScript/TypeScript
-npm install "deepagents@1.14.1"</code></pre>
+# Porta JavaScript/TypeScript (piso de segurança &gt;=1.15.0)
+npm install "deepagents@1.15.1"</code></pre>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Item</th><th>Valor</th></tr></thead>
       <tbody>
-        <tr><td>Versão atual</td><td>Python <code>deepagents == 0.7.20</code> · JS/TS <code>deepagents == 1.14.1</code> (medidas em 2026-09-30)</td></tr>
+        <tr><td>Versão atual</td><td>Python <code>deepagents == 0.7.28</code> · JS/TS <code>deepagents == 1.15.1</code> (medidas em 2026-10-19)</td></tr>
         <tr><td>Python</td><td><code>&gt;= 3.11, &lt; 4.0</code> (3.11 – 3.14)</td></tr>
         <tr><td>Licença</td><td>MIT</td></tr>
-        <tr><td>Dependências principais</td><td><code>langchain&gt;=1.4.3</code> (<code>create_agent</code> + middleware; traz <code>langgraph</code>), <code>langchain-core&gt;=1.6.6</code>, <code>langchain-anthropic&gt;=1.7.5</code>, <code>langchain-google-genai&gt;=4.4.0</code>, <code>langsmith&gt;=0.14.1</code></td></tr>
+        <tr><td>Dependências principais</td><td><code>langchain&gt;=1.4.6</code> (<code>create_agent</code> + middleware; traz <code>langgraph</code>), <code>langchain-core&gt;=1.6.11</code>, <code>langchain-anthropic&gt;=1.7.6</code>, <code>langchain-google-genai&gt;=4.4.2</code>, <code>langsmith&gt;=0.14.11</code></td></tr>
         <tr><td>Extras opcionais</td><td><code>quickjs</code>, <code>aws</code>, <code>video</code></td></tr>
       </tbody>
     </table>
@@ -706,7 +712,7 @@ create_deep_agent(
           <tr>
             <td>OpenAI</td>
             <td><code>langchain-openai</code> · <code>ChatOpenAI</code></td>
-            <td>No <code>create_deep_agent</code>, a string <code>"openai:gpt-6.1-sol"</code> <strong>já usa a Responses API</strong>: o <code>ProviderProfile</code> built-in de <code>openai</code> aplica <code>use_responses_api=True</code> a todo <code>openai:*</code> (lido em <code>deepagents/profiles/provider/_openai.py</code> do wheel 0.7.20). Uma <em>instância</em> de <code>ChatOpenAI</code> não passa pelo profile: configure
+            <td>No <code>create_deep_agent</code>, a string <code>"openai:gpt-6.1-sol"</code> <strong>já usa a Responses API</strong>: o <code>ProviderProfile</code> built-in de <code>openai</code> aplica <code>use_responses_api=True</code> a todo <code>openai:*</code> (lido em <code>deepagents/profiles/provider/_openai.py</code>, tag 0.7.28, em 2026-10-19). Uma <em>instância</em> de <code>ChatOpenAI</code> não passa pelo profile: configure
               <code>ChatOpenAI(model="gpt-6.1-sol", use_responses_api=True)</code> você mesmo. Fora do deepagents (<code>init_chat_model</code> puro), a string sozinha <em>não</em> força a Responses API; o roteamento automático ocorre ao usar
               built-in tools (<code>web_search</code>, <code>file_search</code>, etc.), o param
               <code>reasoning={"effort": ..., "summary": ...}</code> ou
@@ -716,7 +722,7 @@ create_deep_agent(
             <td>Anthropic</td>
             <td><code>langchain-anthropic</code> · <code>ChatAnthropic</code></td>
             <td>Fala direto com a Messages API nativa da Anthropic (SDK
-              <code>anthropic</code>). <code>ChatAnthropic(model="claude-sonnet-5-5")</code> (piso <code>langchain-anthropic&gt;=1.7.5</code> no deepagents 0.7.20; ver a nota de <code>tool_choice</code> no <a href="#s-models">capítulo 22</a>).
+              <code>anthropic</code>). <code>ChatAnthropic(model="claude-sonnet-5-5")</code> (piso <code>langchain-anthropic&gt;=1.7.6</code> no deepagents 0.7.28; ver a nota de <code>tool_choice</code> no <a href="#s-models">capítulo 22</a>).
               Bedrock/Vertex são classes separadas
               (<code>ChatBedrockConverse</code>, <code>ChatAnthropicVertex</code>).</td>
           </tr>
@@ -724,7 +730,7 @@ create_deep_agent(
             <td>Google</td>
             <td><code>langchain-google-genai</code> · <code>ChatGoogleGenerativeAI</code></td>
             <td>Desde a v4.0.0 usa o SDK consolidado <code>google-genai</code> (via
-              <code>generateContent</code>). Prefixo de string:
+              <code>generateContent</code>, legado; o caminho padrão do Gemini é a Interactions API, abaixo). Prefixo de string:
               <code>google_genai:gemini-3.8-flash</code>. <code>temperature</code>/<code>top_p</code>/<code>top_k</code>
               estão <strong>depreciados</strong> em Gemini 3.x (changelog de 2026-07-21); a doc não diz se a API ignora ou rejeita o valor
               (<strong>UNVERIFIED</strong>). Não fixe <code>temperature</code> para controlar determinismo;
@@ -750,7 +756,7 @@ agent = create_deep_agent(model=openai_llm, tools=[...])   # passe a instância 
   </div>
   <div class="callout warn">
     A <strong>Gemini Interactions API</strong> (endpoint <code>/interactions</code>,
-    histórico server-side, agentes gerenciados) <strong>não</strong> tem integração nativa em
+    histórico server-side, agentes gerenciados; GA e caminho padrão do Gemini) <strong>não</strong> tem integração nativa em
     <code>langchain-google-genai</code>, LangGraph ou deepagents (verificado em 2026-09-30 contra <code>langchain-google-genai</code> 4.4.0 e o wheel <code>deepagents</code> 0.7.20). O
     <code>ChatGoogleGenerativeAI</code> usa <code>generateContent</code>; features exclusivas da
     Interactions API (<code>previous_interaction_id</code>, agentes como
@@ -988,7 +994,10 @@ custom_subagent = CompiledSubAgent(
     <code>check_async_task</code>, <code>update_async_task</code>,
     <code>cancel_async_task</code>, <code>list_async_tasks</code>. Metadados das
     tasks vivem em um canal dedicado <code>async_tasks</code> do estado, que
-    sobrevive a compactação de histórico.
+    sobrevive a compactação de histórico. Desde a 0.7.24 há fork mode em async
+    subagents; desde a 0.7.26 eles informam quando estão esperando por um humano e,
+    desde a 0.7.27, o agente principal recebe as atualizações de status deles
+    (<a href="https://github.com/langchain-ai/deepagents/releases" target="_blank" rel="noopener">releases</a>, lidas em 2026-10-19).
   </p>
   <h3>Subagent <code>general-purpose</code> default</h3>
   <p>
@@ -1198,6 +1207,12 @@ agent = create_deep_agent(
     <code>CompositeBackend</code> + sandbox default, paths devem permanecer dentro
     dos prefixos conhecidos (sob pena de <code>NotImplementedError</code>).
     Requer <code>deepagents &gt;= 0.5.2</code>.
+    Desde a <strong>0.7.25</strong>, as regras de permissão e as aprovações de <code>interrupt_on</code> são avaliadas contra o
+    caminho pedido <em>e</em> o caminho resolvido por symlink; revise regras e aprovações para os alvos de symlink.
+    Em <code>deepagents&gt;=0.5.2,&lt;0.7.25</code> o <code>FilesystemBackend</code> seguia symlinks depois da checagem e as regras
+    <code>deny</code>/<code>interrupt</code> podiam ser contornadas por um caminho alternativo (GHSA-47w2-rfrr-wvq8): fixe <code>&gt;=0.7.25</code>
+    (npm <code>deepagents&gt;=1.15.0</code>, GHSA-wcqq-jj54-gfgm).
+    Fonte: <a href="https://github.com/langchain-ai/deepagents/releases" target="_blank" rel="noopener">releases do deepagents</a>, lidas em 2026-10-19.
   </p>
   <div class="callout tip">
     <strong>Validação customizada (alternativa às permissions):</strong> como as
@@ -1224,11 +1239,11 @@ agent = create_deep_agent(
         <tr><td><code>AsyncSubAgentMiddleware</code></td><td>injeta 5 tools async</td><td>Background subagents</td><td>auto-adicionado se há <code>AsyncSubAgent</code>; <code>system_prompt=None</code> por default</td></tr>
         <tr><td><code>SkillsMiddleware</code></td><td>injeta prompt</td><td>Progressive disclosure de skills</td><td><code>backend</code>, <code>sources: Sequence[SkillSource]</code>, <code>system_prompt=SKILLS_SYSTEM_PROMPT</code></td></tr>
         <tr><td><code>MemoryMiddleware</code></td><td>injeta prompt</td><td>Carregar AGENTS.md</td><td><code>backend</code>, <code>sources: list[str]</code>, <code>add_cache_control=False</code>, <code>system_prompt=MEMORY_SYSTEM_PROMPT</code></td></tr>
-        <tr><td><code>SummarizationMiddleware</code></td><td>auto-compaction</td><td>Trigger em 85% de <code>max_input_tokens</code>; mantém 10% recentes (fallback 170k / 6 msgs)</td><td><code>compute_summarization_defaults()</code>, <code>create_summarization_middleware()</code></td></tr>
+        <tr><td><code>SummarizationMiddleware</code></td><td>auto-compaction</td><td>Trigger em 85% de <code>max_input_tokens</code>; mantém 10% recentes (fallback 170k / 6 msgs). Expõe o <code>summarizer</code> (0.7.26; <code>langchain&gt;=1.4.5</code>) e se recupera de overflow de contexto na própria chamada de resumo (0.7.24)</td><td><code>compute_summarization_defaults()</code>, <code>create_summarization_middleware()</code></td></tr>
         <tr><td><code>SummarizationToolMiddleware</code></td><td>adiciona <code>compact_conversation</code></td><td>Summarization disparada pelo agente</td><td><code>summarization</code>, <code>system_prompt=None</code></td></tr>
         <tr><td><code>AnthropicPromptCachingMiddleware</code></td><td>model wrap</td><td>Cache de prompt no Anthropic; no-op fora</td><td>(auto no tail stack)</td></tr>
         <tr><td><code>PatchToolCallsMiddleware</code></td><td><code>before_agent</code></td><td>Repara tool calls "pendurados" depois de interrupts</td><td>—</td></tr>
-        <tr><td><code>HumanInTheLoopMiddleware</code></td><td>tool wrap</td><td>Pausa em tools de <code>interrupt_on</code></td><td>(auto quando <code>interrupt_on=</code>)</td></tr>
+        <tr><td><code>HumanInTheLoopMiddleware</code></td><td>tool wrap</td><td>Pausa em tools de <code>interrupt_on</code></td><td>(auto quando <code>interrupt_on=</code>); a classe do LangChain aceita <code>interrupt_mode="per_call"</code> (um interrupt por tool call, respondido por ID; <code>langchain&gt;=1.4.6</code>), default <code>"batched"</code></td></tr>
         <tr><td><code>CodeInterpreterMiddleware</code></td><td>adiciona <code>eval</code></td><td>Sandbox QuickJS para TS/JS</td><td><code>memory_limit=64MB</code>, <code>timeout=5.0</code>, <code>max_ptc_calls=256</code>, <code>tool_name="eval"</code>, <code>max_result_chars=4000</code>, <code>capture_console=True</code>, <code>ptc=None</code>, <code>skills_backend=None</code>, <code>snapshot_between_turns=True</code>, <code>max_snapshot_bytes=None</code> · instalar com <code>pip install -U "deepagents[quickjs]"</code></td></tr>
         <tr><td><code>ModelCallLimitMiddleware</code></td><td>model wrap</td><td>Limita LLM calls por run/thread</td><td><code>run_limit</code>, <code>thread_limit</code></td></tr>
         <tr><td><code>ToolCallLimitMiddleware</code></td><td>tool wrap</td><td>Limita tool calls</td><td><code>run_limit</code>, <code>thread_limit</code></td></tr>
@@ -1289,6 +1304,11 @@ agent.invoke(
     Tamanho máximo do <code>SKILL.md</code>: 10 MB. Skills com <code>module:</code>
     são importáveis no interpreter:
     <code>const { fn } = await import("@/skills/order-helpers");</code>.
+    Desde a 0.7.22, as tools de uma skill só são carregadas quando a skill é lida; a 0.7.23 acrescenta
+    <code>pinned_skills</code> (fixa skills por nome) e dá a cada subagente o próprio <code>SkillsMiddleware</code>.
+    Na porta JS/TS, a 1.15.0 traz <code>pinnedSkills</code> e o mesmo carregamento sob demanda
+    (<code>createSkillsMiddleware</code> com <code>tools</code>, que exige <code>@langchain/anthropic&gt;=1.5.12</code> ou <code>@langchain/openai&gt;=1.6.2</code>)
+    (<a href="https://github.com/langchain-ai/deepagents/releases" target="_blank" rel="noopener">releases</a>, lidas em 2026-10-19).
   </p>
   <h3>12.1 Reload de skills em meio de thread</h3>
   <p>
@@ -1385,7 +1405,7 @@ agent = create_deep_agent(
   </p>
   <p>
     Profiles built-in que vêm com o pacote (5, confirmados no wheel 0.7.20 em
-    2026-09-30): <code>_anthropic_opus_4_7</code>,
+    2026-09-30 e nos arquivos do tag 0.7.28 em 2026-10-19): <code>_anthropic_opus_4_7</code>,
     <code>_anthropic_sonnet_4_6</code>, <code>_anthropic_haiku_4_5</code>,
     <code>_nvidia_nemotron_3_ultra</code>, <code>_openai_codex</code>.
     <span class="source-link" style="display:inline-block;margin:4px 0 0">Fonte: <a href="https://github.com/langchain-ai/deepagents/blob/main/libs/deepagents/deepagents/profiles/_builtin_profiles.py" target="_blank" rel="noopener">deepagents/profiles/_builtin_profiles.py</a></span>
@@ -1442,8 +1462,8 @@ register_provider_profile("openai:gpt-6.1-sol",
     (<code>any</code>/tool específico) retornam erro <code>400</code>. Registre esses kwargs no <strong>nível de modelo</strong>
     (<code>"anthropic:claude-opus-5-5"</code>, que faz merge sobre o provider-level) em vez de no provider.
     O <code>effort</code> afeta todos os tokens e não é um budget rígido: não o use como substituto de <code>max_tokens</code>.
-    Com <code>langchain-anthropic</code> 1.7.5 a issue
-    <a href="https://github.com/langchain-ai/langchain/issues/40777" target="_blank" rel="noopener">#40777</a> segue aberta
+    Até a <code>langchain-anthropic</code> 1.7.6 a issue
+    <a href="https://github.com/langchain-ai/langchain/issues/40777" target="_blank" rel="noopener">#40777</a> segue aberta em 2026-10-19
     (<code>bind_tools</code> ainda envia <code>tool_choice</code> forçado); detalhes em
     <a href="guia_langgraph.html#s-install">guia_langgraph.html §2</a>.
     <div class="source-link">Fontes: <a href="https://platform.claude.com/docs/en/models/overview" target="_blank" rel="noopener">platform.claude.com · models overview</a> — lido em 2026-09-30</div>
@@ -1893,7 +1913,7 @@ agent = define_deep_agent(
   </p>
   <div class="callout info">
     Não li a referência completa da CLI <code>mda</code>; o que está acima vem das páginas overview, quickstart e Context Hub.
-    O <code>managed-deepagents</code> (PyPI 0.8.3, 2026-09-26) tem o status beta indicado na doc (quickstart); não encontrei anúncio de GA nas páginas lidas.
+    O <code>managed-deepagents</code> (PyPI 0.9.3, 2026-10-17) segue em public beta na doc (busca em docs.langchain.com, 2026-10-19); não encontrei anúncio de GA nas páginas lidas, e o comportamento das versões 0.8.3 a 0.9.3 é UNVERIFIED (o repositório do SDK não publica releases).
   </div>
 
   <h3>Managed Deep Agents vs. LangSmith Deployment vs. OSS Deep Agents</h3>
@@ -1949,12 +1969,12 @@ agent = define_deep_agent(
       <tbody>
         <tr><td>OpenAI</td><td><code>gpt-6-astra</code></td><td><code>gpt-6.1-sol</code></td><td><code>gpt-6-luna</code></td></tr>
         <tr><td>Google</td><td><code>gemini-3.1-pro-preview</code> (preview)</td><td><code>gemini-3.8-flash</code></td><td><code>gemini-3.5-flash-lite</code></td></tr>
-        <tr><td>Anthropic</td><td><code>claude-opus-5-5</code></td><td><code>claude-sonnet-5-5</code></td><td><code>claude-haiku-4-5</code></td></tr>
+        <tr><td>Anthropic</td><td><code>claude-opus-5-5</code></td><td><code>claude-sonnet-5-5</code></td><td><code>claude-haiku-5-5</code></td></tr>
       </tbody>
     </table>
   </div>
   <div class="callout tip">
-    <strong>Notas por provedor (verificado em 2026-09-30).</strong>
+    <strong>Notas por provedor (verificado em 2026-09-30; Anthropic em 2026-10-19).</strong>
     <ul style="margin:6px 0 0;padding-left:20px">
       <li><strong>OpenAI:</strong> <code>gpt-6-astra</code> (GA 2026-09-03) não aceita <code>reasoning.effort="none"</code> (HTTP 400);
         <code>gpt-6.1-sol</code> (2026-09-29, default <code>medium</code>) não aceita <code>none</code> nem <code>minimal</code>;
@@ -1964,14 +1984,16 @@ agent = define_deep_agent(
       <li><strong>Anthropic:</strong> <code>claude-opus-5-5</code> (2026-09-22; US$ 4 / US$ 20 por MTok in/out; 1M de contexto; effort default <code>medium</code>; thinking adaptativo sempre ligado);
         <code>claude-sonnet-5-5</code> (2026-09-28; US$ 2 / US$ 10; <code>disabled</code> retorna 400, use <code>between_tools</code>).
         Nos dois, <code>tool_choice</code> forçado retorna 400 — e a issue
-        <a href="https://github.com/langchain-ai/langchain/issues/40777" target="_blank" rel="noopener">#40777</a> do <code>langchain-anthropic</code> 1.7.5 segue aberta
+        <a href="https://github.com/langchain-ai/langchain/issues/40777" target="_blank" rel="noopener">#40777</a> do <code>langchain-anthropic</code> segue aberta até a 1.7.6
         (<a href="guia_langgraph.html#s-install">guia_langgraph.html §2</a>).
-        Não existe Haiku 5 nem sucessor publicado do <code>claude-haiku-4-5</code>, cuja retirada é <strong>não antes de 2026-10-15</strong>: planeje a troca.</li>
+        <code>claude-haiku-5-5</code> (2026-10-07; 1M de contexto e 128k de saída; US$ 0,10 / US$ 0,50 por MTok in/out até 100.000 tokens de prompt e US$ 0,50 / US$ 2,50 acima; aceita <code>tool_choice</code> forçado; retirada não antes de 2027-10-07)
+        substitui o <code>claude-haiku-4-5</code> no trio. O Haiku 4.5 segue Active como legado, com retirada <strong>não antes de 2026-10-15</strong> e sem aviso de depreciação em 2026-10-19; o Haiku 5.5 tem tokenizador mais novo (cerca de 30% mais tokens), então recontar custo na migração.
+        O <code>langchain-anthropic</code> 1.7.6 inclui perfil para o <code>claude-haiku-5-5</code>.</li>
       <li><strong>Google:</strong> <code>gemini-3.1-pro-preview</code> é o único Pro 3.x e está em <em>preview</em>; <code>gemini-3.8-flash</code> é o Flash Stable recomendado (2026-09-02).
         Em "Baixo custo" o trio usa <code>gemini-3.5-flash-lite</code> (US$ 0,30 / US$ 2,50 por MTok in/out) em vez do mais barato <code>gemini-3.1-flash-lite</code> (US$ 0,25 / US$ 1,50), porque este tem
         <strong>shutdown em 2027-05-07</strong> e a própria Google indica o 3.5 Flash-Lite como substituto: para carga de vida curta o 3.1 segue racional.</li>
     </ul>
-    <div class="source-link">Fontes: <a href="https://developers.openai.com/api/docs/guides/latest-model" target="_blank" rel="noopener">OpenAI · latest model</a> · <a href="https://platform.claude.com/docs/en/models/overview" target="_blank" rel="noopener">Claude · models overview</a> · <a href="https://platform.claude.com/docs/en/about-claude/model-deprecations" target="_blank" rel="noopener">Claude · deprecations</a> · <a href="https://ai.google.dev/gemini-api/docs/models" target="_blank" rel="noopener">Gemini · models</a> · <a href="https://ai.google.dev/gemini-api/docs/deprecations" target="_blank" rel="noopener">Gemini · deprecations</a> — lidas em 2026-09-30</div>
+    <div class="source-link">Fontes: <a href="https://developers.openai.com/api/docs/guides/latest-model" target="_blank" rel="noopener">OpenAI · latest model</a> · <a href="https://platform.claude.com/docs/en/models/overview" target="_blank" rel="noopener">Claude · models overview</a> · <a href="https://platform.claude.com/docs/en/about-claude/model-deprecations" target="_blank" rel="noopener">Claude · deprecations</a> · <a href="https://ai.google.dev/gemini-api/docs/models" target="_blank" rel="noopener">Gemini · models</a> · <a href="https://ai.google.dev/gemini-api/docs/deprecations" target="_blank" rel="noopener">Gemini · deprecations</a> — lidas em 2026-09-30 (Anthropic: 2026-10-19)</div>
   </div>
   <div class="callout info">
     A página oficial <a href="https://docs.langchain.com/oss/python/deepagents/models" target="_blank" rel="noopener">deepagents/models</a>
@@ -2021,7 +2043,7 @@ agent = define_deep_agent(
   <p>
     O <code>dcode</code> é o "Deep Agents Code", um agente de coding em terminal
     construído sobre o SDK. Open-source; o pacote PyPI é <code>deepagents-code</code>
-    (<strong>ativo</strong>: 0.1.79, 2026-09-29), distinto do SDK <code>deepagents</code> e da
+    (<strong>ativo</strong>: 0.1.86, 2026-10-16), distinto do SDK <code>deepagents</code> e da
     <code>deepagents-cli</code> de deploy, que está depreciada (capítulo 26).
   </p>
   <h3>Instalação</h3>
@@ -2040,7 +2062,7 @@ agent = define_deep_agent(
   </div>
   <p>Pular aprovação: <code>dcode -y</code> ou <code>--auto-approve</code>. Toggle in-session: <code>Shift+Tab</code>.</p>
   <h3>Flags principais</h3>
-  <p><code>-a/--agent</code>, <code>-M/--model</code>, <code>--model-params JSON</code>, <code>-r/--resume</code>, <code>-m TEXT</code>, <code>-n TEXT</code>, <code>--max-turns N</code>, <code>--timeout SECONDS</code>, <code>-S/--shell-allow-list</code>, <code>--no-stream</code>, <code>--sandbox {none,langsmith,modal,daytona,runloop,agentcore}</code>, <code>--sandbox-id</code>, <code>--sandbox-setup</code>, <code>--mcp-config</code>, <code>--no-mcp</code>, <code>--acp</code>, <code>--json</code>. Exit code <strong>124</strong> quando turn/time budget é excedido.</p>
+  <p><code>-a/--agent</code>, <code>-M/--model</code>, <code>--model-params JSON</code>, <code>-r/--resume</code>, <code>-m TEXT</code>, <code>-n TEXT</code>, <code>--max-turns N</code>, <code>--timeout SECONDS</code>, <code>-S/--shell-allow-list</code>, <code>--no-stream</code>, <code>--sandbox {none,langsmith,modal,daytona,runloop,agentcore}</code>, <code>--sandbox-id</code>, <code>--sandbox-setup</code>, <code>--mcp-config</code>, <code>--no-mcp</code>, <code>--acp</code>, <code>--json</code>. Exit code <strong>124</strong> quando turn/time budget é excedido. A 0.1.86 (2026-10-16) acrescenta NVIDIA OpenShell como provedor de sandbox; o valor literal de <code>--sandbox</code> é <span class="pill partial">UNVERIFIED</span> (confira com <code>dcode --help</code>).</p>
   <h3>Slash commands</h3>
   <p><code>/model</code>, <code>/agents</code>, <code>/auth</code>, <code>/remember</code>, <code>/skill:&lt;name&gt;</code>, <code>/offload</code>, <code>/compact</code>, <code>/tokens</code>, <code>/clear</code>, <code>/threads</code>, <code>/mcp</code>, <code>/reload</code>, <code>/theme</code>, <code>/update</code>, <code>/trace</code>, <code>/editor</code>, <code>/quit</code>.</p>
   <h3>Layout de config</h3>
@@ -2077,7 +2099,7 @@ agent = define_deep_agent(
     Padroniza a comunicação agente ↔ IDE (distinto do MCP). Transport via stdio.
   </p>
   <ul>
-    <li><strong>Instalação:</strong> <code>pip install deepagents-acp</code> (ou <code>uv add deepagents-acp</code>)</li>
+    <li><strong>Instalação:</strong> <code>pip install "deepagents-acp&gt;=0.0.13"</code> (ou <code>uv add "deepagents-acp&gt;=0.0.13"</code>). O piso é de segurança: até a 0.0.12 (a partir da 0.0.3), "Always allow" aprovava comandos encadeados (GHSA-459r-276m-w72x); desde a 0.0.13 as permissões de shell valem só para os comandos exatos autorizados.</li>
     <li><strong>Componentes:</strong> <code>AgentServerACP</code>, <code>create_deep_agent</code>, <code>run_agent</code></li>
     <li><strong>Clients suportados:</strong> Zed (nativo via <code>agent_servers</code>), JetBrains (AI Assistant), VS Code (<code>vscode-acp</code>), Neovim</li>
     <li><strong>Dev local:</strong> <code>toad acp "python path/to/your_server.py" .</code></li>
@@ -2618,7 +2640,7 @@ supervisor = create_deep_agent(
     Desde <code>langchain 1.4.0</code> (2026-09-03), Python ganhou o namespace
     embutido <code>langchain.mcp</code> — sem pacote separado, mas exige o extra
     FastMCP: <code>pip install "langchain[mcp]"</code> (puxa
-    <code>fastmcp&gt;=4.0.1,&lt;5.0.0</code>). A classe é <code>MCPAdapter</code>:
+    <code>fastmcp&gt;=4.0.11,&lt;5.0.0</code>). A classe é <code>MCPAdapter</code>:
     ela usa FastMCP para negociação/conexão e adapta as tools MCP descobertas em
     tools LangChain assíncronas.
   </p>
@@ -2645,22 +2667,39 @@ async with MCPAdapter("https://example.com/mcp") as adapter:
     <code>MCPConfig</code>. Elicitation (servidor pedindo input a meio da chamada) é
     resolvida por padrão via <code>interrupt()</code> do LangGraph — funciona dentro
     do fluxo HITL do <code>create_deep_agent</code> como qualquer outro interrupt.
-    O <code>MCPAdapter</code> do <code>langchain 1.4.3</code> expõe <code>list_tools()</code>; <em>resources</em> e <em>prompts</em> MCP não fazem parte dele (ver <a href="#legado">Legado</a>).
+    O <code>MCPAdapter</code> do <code>langchain 1.4.6</code> expõe <code>list_tools()</code>; <em>resources</em> e <em>prompts</em> MCP não fazem parte dele (ver <a href="#legado">Legado</a>).
     Detalhe completo em <a href="guia_langgraph.html#s-install">guia_langgraph.html §2</a>.
-    Fonte: <code>langchain/mcp/adapter.py</code> do wheel <code>langchain 1.4.3</code> · <a href="https://docs.langchain.com/oss/python/langchain/mcp" target="_blank" rel="noopener">docs · langchain/mcp</a> — lidos em 2026-09-30.
+    Fonte: <code>langchain/mcp/adapter.py</code> do tag <code>langchain==1.4.6</code> · <a href="https://docs.langchain.com/oss/python/langchain/mcp" target="_blank" rel="noopener">docs · langchain/mcp</a> — lidos em 2026-10-19.
   </div>
 
   <h3>28.2 Porta JavaScript/TypeScript</h3>
-  <pre><code class="language-typescript">import { MultiServerMCPClient } from "@langchain/mcp-adapters";
+  <pre><code class="language-typescript">import { MCPAdapter } from "@langchain/mcp-adapters";
 
-const client = new MultiServerMCPClient({
-  weather: { transport: "http", url: "http://localhost:8000/mcp" },
+const adapter = new MCPAdapter({
+  servers: {
+    weather: { url: "http://localhost:8000/mcp" },   // servidor http usa url; stdio usa command e args
+  },
 });
-const tools = await client.getTools();
-// Passe tools a createAgent/deepagents conforme a API JS instalada.</code></pre>
+try {
+  const tools = await adapter.listTools();
+  // Passe tools a createAgent/deepagents conforme a API JS instalada.
+} finally {
+  await adapter.close();
+}</code></pre>
   <p>
-    No adapter JS o <code>MultiServerMCPClient</code> é stateless por padrão: cada chamada abre uma
-    sessão nova. Se o servidor exigir estado entre chamadas, use a API explícita de sessão documentada. Fontes:
+    Exemplo para <code>@langchain/mcp-adapters</code> 2.0.1 (lido em 2026-10-19), no formato do exemplo oficial da doc
+    <em>Connections</em>. Os nomes de tool ganham o prefixo <code>servidor_tool</code> por padrão, com um só sublinhado desde a 2.0.1
+    (aqui, <code>weather_...</code>; o separador de <code>additionalToolNamePrefix</code> não mudou); <code>prefixToolNameWithServerName: false</code> mantém o nome cru, e regras
+    <code>interruptOn</code> precisam usar o nome prefixado. Peers: <code>@langchain/core ^1.2.6</code> e
+    <code>@langchain/langgraph ^1.4.18</code>. <code>MultiServerMCPClient</code> e <code>getTools()</code> seguem como
+    deprecated — <a href="https://docs.langchain.com/oss/javascript/migrate/langchain-mcp-adapters" target="_blank" rel="noopener">guia de migração</a>.
+  </p>
+  <p>
+    O <code>MCPAdapter</code> JS 2.0 mantém as conexões abertas para reuso entre chamadas e conecta na descoberta
+    (<code>listTools()</code>): mantenha o adapter aberto enquanto o agente usa as tools e chame
+    <code>close()</code> no fim, como no exemplo acima. O “stateless por padrão, sessão nova a cada chamada” do
+    <code>MultiServerMCPClient</code> vale só para a linha 1.x. Fontes:
+    <a href="https://docs.langchain.com/oss/javascript/langchain/mcp/connections" target="_blank" rel="noopener">docs Connections (lido em 2026-10-05)</a> ·
     <a href="https://docs.langchain.com/oss/python/langchain/mcp" target="_blank" rel="noopener">MCP Python</a> ·
     <a href="https://docs.langchain.com/oss/javascript/langchain/mcp" target="_blank" rel="noopener">MCP JS</a> ·
     <a href="https://github.com/langchain-ai/langchainjs/tree/main/libs/langchain-mcp-adapters" target="_blank" rel="noopener">adapter JS</a>.
@@ -2846,8 +2885,8 @@ agent = create_deep_agent(
     <strong>Variante <code>content-builder-agent</code>:</strong> o exemplo
     oficial de content-builder acrescenta uma tool de geração de imagem
     (<code>generate_image</code> usando o modelo de imagem atual
-    <code>gemini-3.1-flash-image</code> — o tutorial oficial original usa
-    <code>gemini-2.5-flash-image</code>)
+    <code>gemini-nano-banana-2.1</code>, GA em 2026-10-06; o <code>gemini-3.1-flash-image</code> foi deprecado nessa data —
+    o tutorial oficial original usa <code>gemini-2.5-flash-image</code>, com shutdown em 2027-03-15)
     que salva a arte gerada no filesystem virtual (ex.:
     <code>blogs/&lt;slug&gt;/hero.png</code>), de forma que cada post acompanha sua
     imagem de capa produzida pelo próprio agente.
@@ -2962,9 +3001,9 @@ agent = create_deep_agent(
     <table>
       <thead><tr><th>Antigo</th><th>Status</th><th>Migração</th></tr></thead>
       <tbody>
-        <tr><td><code>deepagents-cli</code>: <code>deepagents init/dev/deploy</code>, <code>deepagents.toml</code> (<code>[agent]</code>, <code>[sandbox]</code>, <code>[memories]</code>, <code>[auth]</code>, <code>[frontend]</code>), <code>mcp.json</code> na raiz</td><td>PyPI 0.3.0 (2026-08-24) <strong>DEPRECATED</strong>, classificador "Inactive"; <code>libs/cli</code> removido do repositório na <code>deepagents 0.7.9</code> (2026-08-25)</td><td><code>managed-deepagents</code> (<code>mda</code>, <code>define_deep_agent</code>, §21.1) ou LangSmith Deployment com <code>langgraph deploy</code> (§26). Mapeamento do <code>deepagents.toml</code>: <strong>UNVERIFIED</strong>. O <code>deepagents-code</code> (dcode) é outro pacote e segue ativo (0.1.79).</td></tr>
+        <tr><td><code>deepagents-cli</code>: <code>deepagents init/dev/deploy</code>, <code>deepagents.toml</code> (<code>[agent]</code>, <code>[sandbox]</code>, <code>[memories]</code>, <code>[auth]</code>, <code>[frontend]</code>), <code>mcp.json</code> na raiz</td><td>PyPI 0.3.0 (2026-08-24) <strong>DEPRECATED</strong>, classificador "Inactive"; <code>libs/cli</code> removido do repositório na <code>deepagents 0.7.9</code> (2026-08-25)</td><td><code>managed-deepagents</code> (<code>mda</code>, <code>define_deep_agent</code>, §21.1) ou LangSmith Deployment com <code>langgraph deploy</code> (§26). Mapeamento do <code>deepagents.toml</code>: <strong>UNVERIFIED</strong>. O <code>deepagents-code</code> (dcode) é outro pacote e segue ativo (0.1.86).</td></tr>
         <tr><td>Linha 0.6: <code>TodoListMiddleware</code>/<code>write_todos</code> por padrão, prompt-base longo, <code>BASE_AGENT_PROMPT</code>, <code>TASK_SYSTEM_PROMPT</code>, <code>ASYNC_TASK_SYSTEM_PROMPT</code>, <code>SUMMARIZATION_SYSTEM_PROMPT</code>, <code>FILESYSTEM_SYSTEM_PROMPT</code>, <code>EXECUTION_SYSTEM_PROMPT</code>, factories de backend, <code>ls_info</code>/<code>glob_info</code>/<code>grep_raw</code></td><td>Breaking na <code>0.7.0</code> (2026-07-29). <code>BASE_AGENT_PROMPT</code>: depreciado desde 0.7.0, remoção na <strong>0.9.0</strong> (<code>deepagents/graph.py</code>); as outras constantes foram removidas</td><td><code>middleware=[TodoListMiddleware()]</code> no agente e em cada subagente que planeja; <code>system_prompt=</code> próprio no lugar das constantes; backends como instâncias concretas de <code>BackendProtocol</code>. <code>FilesystemBackend</code>/<code>LocalShellBackend</code> têm <code>virtual_mode=True</code> por padrão (lido no wheel 0.7.20); <code>write_file</code> sobrescreve o arquivo inteiro e a tool <code>delete</code> é recursiva onde o backend a suporta. Revise allowlists antes do upgrade. <a href="https://github.com/langchain-ai/deepagents/releases/tag/deepagents%3D%3D0.7.0" target="_blank" rel="noopener">Release 0.7.0</a></td></tr>
-        <tr><td><code>langchain-mcp-adapters</code> (<code>MultiServerMCPClient</code>, <code>load_mcp_resources</code>, <code>load_mcp_prompt</code>)</td><td>Repositório <strong>arquivado</strong> (último push 2026-09-16); última release 0.3.2 (2026-08-06), <code>mcp&lt;2</code>; segue instalável</td><td><code>pip install "langchain[mcp]"</code> e <code>langchain.mcp.MCPAdapter</code> (§28). Para <em>resources</em> e <em>prompts</em> MCP, que o <code>MCPAdapter</code> 1.4.3 não expõe, só resta o pacote arquivado. Em JS continua <code>@langchain/mcp-adapters</code>.</td></tr>
+        <tr><td><code>langchain-mcp-adapters</code> (<code>MultiServerMCPClient</code>, <code>load_mcp_resources</code>, <code>load_mcp_prompt</code>)</td><td>Repositório <strong>arquivado</strong> (último push 2026-09-16); última release 0.3.2 (2026-08-06), <code>mcp&lt;2</code>; segue instalável</td><td><code>pip install "langchain[mcp]"</code> e <code>langchain.mcp.MCPAdapter</code> (§28). Para <em>resources</em> e <em>prompts</em> MCP, que o <code>MCPAdapter</code> 1.4.6 não expõe, só resta o pacote arquivado. Em JS continua <code>@langchain/mcp-adapters</code>.</td></tr>
         <tr><td>IDs dos exemplos anteriores: <code>gpt-5.5</code>, <code>gpt-5.6-sol</code>, <code>claude-sonnet-5</code>, <code>claude-opus-5</code>/<code>4-8</code>, <code>gemini-3.5-flash</code>/<code>3.6-flash</code></td><td>Substituídos nos exemplos desta revisão; não os trate como default</td><td>Trio do §22.1. Consulte as páginas de deprecações de cada provedor antes de fixar um ID: o status por modelo muda.</td></tr>
       </tbody>
     </table>

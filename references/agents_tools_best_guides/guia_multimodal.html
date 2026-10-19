@@ -447,7 +447,7 @@
 
       <h3>Superfície atual</h3>
       <p>OpenAI = Responses API (<code>input_image</code>/<code>input_file</code>). Gemini = <code>client.interactions</code> (itens <code>image</code>/<code>document</code>/<code>video</code>/<code>audio</code>; saída em <code>steps[]</code>, <code>generateContent</code> só para Batch, cache explícito, AFC Python e safety settings). Anthropic = Messages API (só imagem e PDF; sem áudio nem vídeo).</p>
-<pre><code class="language-bash">pip install "openai&gt;=3,&lt;4" "google-genai&gt;=2.3,&lt;3" "anthropic&gt;=1,&lt;2"   # atuais: 3.22.1 / 2.25.0 / 1.9.0 (2026-09-30)</code></pre>
+<pre><code class="language-bash">pip install "openai&gt;=3,&lt;4" "google-genai&gt;=2.3,&lt;3" "anthropic&gt;=1,&lt;2"   # atuais: 3.35.1 / 2.31.0 / 1.15.0 (2026-10-19)</code></pre>
 <pre><code class="language-python"># OpenAI
 client.responses.create(model="gpt-6-astra", input=[{"role": "user", "content": [
     {"type": "input_text", "text": "Descreva"},
@@ -469,7 +469,7 @@ client.messages.create(model="claude-opus-5-5", max_tokens=1500, messages=[{"rol
             <tr><td>OpenAI visão/PDF</td><td><code>gpt-6-astra</code> (<code>gpt-6.1-sol</code> desde 2026-09-29)</td><td>GA</td><td>1.500 imagens e 512 MB/request; <code>input_file</code> &lt; 50 MB; <code>detail</code> low/high/original/auto</td></tr>
             <tr><td>OpenAI STT / imagem</td><td><code>gpt-transcribe</code> · <code>gpt-image-2.5-sunburst</code>/<code>-flare</code></td><td>GA</td><td><code>gpt-transcribe</code>: arquivo ≤ 25 MB, sem timestamps nem diarização</td></tr>
             <tr><td>Gemini multimodal</td><td><code>gemini-3.8-flash</code></td><td>GA (2026-09-02)</td><td>3.600 imagens; PDF 50 MB/1.000 páginas; áudio até 9,5 h; vídeo static ou agentic</td></tr>
-            <tr><td>Gemini STT / TTS / imagem / vídeo</td><td><code>gemini-3.5-transcribe</code> · <code>gemini-3.8-flash-tts</code> · <code>gemini-3.1-flash-image</code> · <code>gemini-omni-1.1-flash</code></td><td>GA</td><td>STT com diarização; Omni gera vídeo de 3–10 s; <code>gemini-2.5-flash-image</code> desliga em 2026-10-02</td></tr>
+            <tr><td>Gemini STT / TTS / imagem / vídeo</td><td><code>gemini-3.5-transcribe</code> · <code>gemini-3.8-flash-tts</code> · <code>gemini-nano-banana-2.1</code> · <code>gemini-omni-1.1-flash</code></td><td>GA</td><td>STT com diarização; Omni gera vídeo de 3–10 s; <code>gemini-2.5-flash-image</code> desliga em 2027-03-15</td></tr>
             <tr><td>Gemini embeddings</td><td><code>gemini-embedding-2</code> (<code>client.models.embed_content</code>)</td><td>GA</td><td>Não aceita <code>task_type</code>: use prefixo de tarefa no texto</td></tr>
             <tr><td>Anthropic visão/PDF</td><td><code>claude-opus-5-5</code> · <code>claude-sonnet-5-5</code></td><td>GA</td><td>Request 32 MB; 600 imagens e 600 páginas (100 se janela &lt; 1M/200k); imagem 10 MB base64; até 2576 px</td></tr>
           </tbody>
@@ -500,7 +500,6 @@ client.messages.create(model="claude-opus-5-5", max_tokens=1500, messages=[{"rol
       <ul>
         <li>Limite inline do Gemini: 100 MB (métodos de entrada) × 20 MB (páginas de imagem/áudio); o destino atual do alias <code>gemini-flash-latest</code> também não é confirmado.</li>
         <li>Faixa de <code>fps</code> e unidade de <code>start_offset</code>/<code>end_offset</code> do vídeo static; sizing de imagem do <code>gpt-6.1-sol</code>; se <code>input_audio</code> funciona na Responses.</li>
-        <li>Status do Sonnet 4.5 e sucessor do Haiku 4.5 (retirada "não antes de 2026-10-15") — ver <a href="#legado">Legado</a> e <a href="#sources">Fontes</a>.</li>
       </ul>
     </section>
 
@@ -523,13 +522,14 @@ client.messages.create(model="claude-opus-5-5", max_tokens=1500, messages=[{"rol
             <li>Exemplos multimodais usam <code>client.interactions.create</code> com itens <code>image</code>/<code>document</code>/<code>video</code>/<code>audio</code> e <code>steps[]</code> na saída — <a href="#gemini-interactions">§6</a>.</li>
             <li><code>gemini-3.8-flash</code> GA (2026-09-02); <code>gemini-3.5-transcribe</code> GA (2026-08-26); <code>gemini-omni-1.1-flash</code> (vídeo 3–10 s) substitui <code>gemini-omni-flash-preview</code>.</li>
             <li>Só <code>generateContent</code>: Batch, cache explícito, AFC em Python e safety settings — <a href="#gemini-generatecontent-only">§5.2</a>.</li>
-            <li>Desligamentos próximos: <code>gemini-2.5-flash-image</code> em 2026-10-02 e Veo 3.1 em 2026-10-22.</li>
+            <li><code>gemini-nano-banana-2.1</code> (GA 2026-10-06) substitui <code>gemini-3.1-flash-image</code>; <code>gemini-4-argon</code> (GA 2026-10-13) tem saída só texto.</li>
+            <li>Desligamentos próximos: Veo 3.1 e <code>gemini-omni-flash-preview</code> em 2026-10-22; TTS e Live preview em 2026-11-17; <code>gemini-2.5-flash-image</code> em 2027-03-15.</li>
           </ul>
         </article>
         <article class="recipe">
-          <h4><span class="prov-chip anthropic">Anthropic</span> Opus 5.5, Sonnet 5.5, Fable 5.1, Haiku 4.5</h4>
+          <h4><span class="prov-chip anthropic">Anthropic</span> Opus 5.5, Sonnet 5.5, Fable 5.1, Haiku 5.5</h4>
           <ul>
-            <li>Modelos atuais: <code>claude-opus-5-5</code> (recomendado), <code>claude-sonnet-5-5</code>, <code>claude-fable-5-1</code> e <code>claude-haiku-4-5</code> — <a href="#anthropic-overview">§7.1</a>.</li>
+            <li>Modelos atuais: <code>claude-opus-5-5</code> (recomendado), <code>claude-sonnet-5-5</code>, <code>claude-fable-5-1</code> e <code>claude-haiku-5-5</code> — <a href="#anthropic-overview">§7.1</a>.</li>
             <li>Computer use GA via <code>computer_toolset_20260801</code>; <code>computer_20251124</code> é rejeitado nos modelos atuais.</li>
             <li>Files API e Skills sem beta header; code execution nas versões <code>20250825</code>, <code>20260120</code> e <code>20260521</code>.</li>
             <li>Modelos aposentados e datas: <a href="#legado">Legado e migração</a>.</li>
@@ -554,7 +554,7 @@ client.messages.create(model="claude-opus-5-5", max_tokens=1500, messages=[{"rol
         <strong>Convenções.</strong> <span class="pill ok">Suportado</span> = recurso nativo documentado. <span class="pill partial">Parcial</span> = funciona com workaround/conversão. <span class="pill bad">Não suporta</span> = ausente nas docs oficiais. <span class="pill na">N/D</span> = depende de tier/modelo, ver nota. Itens marcados <span class="unverified">UNVERIFIED</span> não foram confirmados na fonte oficial na data indicada (2026-09-30 nesta revisão); antes de citar publicamente, re-fetche a doc. O que foi aposentado fica só em <a href="#legado">Legado e migração</a>.
       </div>
       <div class="callout tip">
-        <strong>Stack dos exemplos (verificada em 2026-09-30):</strong> OpenAI <code>gpt-6-astra</code> via Responses API (<code>openai</code> 3.22.1 Python / 7.25.0 Node), Gemini <code>gemini-3.8-flash</code> via Interactions API (<code>google-genai</code> 2.25.0 / <code>@google/genai</code> 2.24.0) e Anthropic <code>claude-opus-5-5</code> via Messages API (<code>anthropic</code> 1.9.0 / <code>@anthropic-ai/sdk</code> 0.129.0). Outros modelos aparecem quando o comportamento diverge.
+        <strong>Stack dos exemplos (verificada em 2026-09-30; SDKs em 2026-10-19):</strong> OpenAI <code>gpt-6-astra</code> via Responses API (<code>openai</code> 3.35.1 Python / 7.39.0 Node), Gemini <code>gemini-3.8-flash</code> via Interactions API (<code>google-genai</code> 2.31.0 / <code>@google/genai</code> 2.30.0) e Anthropic <code>claude-opus-5-5</code> via Messages API (<code>anthropic</code> 1.15.0 / <code>@anthropic-ai/sdk</code> 0.135.0). Outros modelos aparecem quando o comportamento diverge.
       </div>
     </section>
 
@@ -579,7 +579,7 @@ client.messages.create(model="claude-opus-5-5", max_tokens=1500, messages=[{"rol
           <tr><td>Áudio + texto em um workflow</td><td>STT → Responses → TTS; Realtime para fala ao vivo</td><td>Inline/Files API · 32 tokens/seg</td><td>Não suportado nativamente</td><td>Anthropic: pré-transcrever.</td></tr>
           <tr><td>Conversa de voz em tempo real</td><td>Realtime API (<code>gpt-realtime-2.1</code>)</td><td>Live API (<code>gemini-3.8-live</code>)</td><td>Não suportado</td><td>WebSocket bidirecional nos dois primeiros.</td></tr>
           <tr><td>Diarização (quem falou)</td><td><code>gpt-transcribe</code> não diariza (<a href="#legado">legado</a>)</td><td><code>gemini-3.5-transcribe</code> com <code>diarization_mode: "speaker"</code> (até 8 falantes)</td><td>Não suportado</td><td>Só o Gemini tem diarização na API atual.</td></tr>
-          <tr><td>Gerar imagem</td><td><code>gpt-image-2.5-flare</code>/<code>-sunburst</code> (ou <code>gpt-image-2</code>, não descontinuado) via tool ou Images API</td><td><code>gemini-3.1-flash-image</code></td><td><span class="pill bad">Não suporta</span></td><td>Claude é só image-understanding.</td></tr>
+          <tr><td>Gerar imagem</td><td><code>gpt-image-2.5-flare</code>/<code>-sunburst</code> (ou <code>gpt-image-2</code>, não descontinuado) via tool ou Images API</td><td><code>gemini-nano-banana-2.1</code></td><td><span class="pill bad">Não suporta</span></td><td>Claude é só image-understanding.</td></tr>
           <tr><td>Gerar vídeo</td><td><span class="pill bad">Não suporta</span> (ver <a href="#legado">Legado</a>)</td><td><code>gemini-omni-1.1-flash</code> (3–10 s, Interactions API)</td><td><span class="pill bad">Não suporta</span></td><td>Veo 3.1 desliga em 2026-10-22 — ver <a href="#legado">Legado</a>.</td></tr>
           <tr><td>Cachear PDF/imagem para re-uso</td><td>Prompt caching automático (Responses)</td><td>Implícito (mín. 4.096 tokens) · explícito <code>caches.create</code> só no <code>generateContent</code></td><td><code>cache_control: ephemeral</code> 5m/1h</td><td>Estratégias bem diferentes — ver <a href="#cmp-cache">§3.10</a>.</td></tr>
           <tr><td>Batch offline multimodal</td><td>Batch API (JSONL)</td><td>Batch · 50% off (só <code>generateContent</code>)</td><td>Message Batches · 50% off</td><td>Desconto similar nos três.</td></tr>
@@ -610,7 +610,7 @@ client.messages.create(model="claude-opus-5-5", max_tokens=1500, messages=[{"rol
       </table>
       </div>
 
-      <h3 id="cmp-models">3.2 Modelos atuais com suporte multimodal (verificado em 2026-09-30) <a class="anchor" href="#cmp-models">¶</a><span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
+      <h3 id="cmp-models">3.2 Modelos atuais com suporte multimodal (verificado em 2026-09-30) <a class="anchor" href="#cmp-models">¶</a><span class="rev-flag atu">Atualizado · 2026-10-19</span></h3>
       <div class="table-wrap">
       <table>
         <thead><tr><th>Provider</th><th>Modelo</th><th>Context</th><th>Output</th><th>Imagem</th><th>PDF</th><th>Áudio in</th><th>Vídeo in</th><th>Code exec</th></tr></thead>
@@ -619,7 +619,7 @@ client.messages.create(model="claude-opus-5-5", max_tokens=1500, messages=[{"rol
           <tr><td><code>gpt-6.1-sol</code> <span class="pill new">2026-09-29</span></td><td>1.050.000</td><td>128.000</td><td>Patch 1,2× · sizing <span class="unverified">UNVERIFIED</span></td><td>50 MB</td><td>—</td><td>via frames</td><td>Sim</td></tr>
           <tr><td><code>gpt-6-sol</code> · <code>gpt-6-luna</code></td><td>1.050.000</td><td>128.000</td><td>Patch 1,2× · high 2.500 patches</td><td>50 MB</td><td>—</td><td>via frames</td><td>Sim</td></tr>
           <tr><td><code>gpt-5.5</code></td><td>—</td><td>—</td><td>Patch 1,2× · até 10k patches @<code>original</code></td><td>50 MB</td><td>—</td><td>via frames</td><td>Tool <code>code_interpreter</code></td></tr>
-          <tr><td><code>gpt-5.4-mini</code> · <code>gpt-5.4-nano</code></td><td>—</td><td>—</td><td>Patch 1,2×</td><td>50 MB</td><td>—</td><td>via frames</td><td>Sim</td></tr>
+          <tr><td><code>gpt-5.4-mini</code> · <code>gpt-5.4-nano</code> (nano desliga em 2027-04-01 → <code>gpt-6-luna</code>)</td><td>—</td><td>—</td><td>Patch 1,2×</td><td>50 MB</td><td>—</td><td>via frames</td><td>Sim</td></tr>
           <tr><td><code>gpt-transcribe</code></td><td>—</td><td>—</td><td>—</td><td>—</td><td>Audio API (arquivo ≤ 25 MB)</td><td>—</td><td>—</td></tr>
           <tr><td><code>gpt-live-transcribe</code></td><td>—</td><td>—</td><td>—</td><td>—</td><td>Realtime (PCM 24 kHz)</td><td>—</td><td>—</td></tr>
           <tr><td><code>gpt-realtime-2.1</code></td><td>—</td><td>—</td><td>—</td><td>—</td><td>Realtime (PCM16)</td><td>—</td><td>—</td></tr>
@@ -632,7 +632,7 @@ client.messages.create(model="claude-opus-5-5", max_tokens=1500, messages=[{"rol
           <tr class="col-anthropic"><td rowspan="4" class="col-anthropic"><strong>Anthropic</strong></td><td><code>claude-opus-5-5</code> <span class="pill new">recomendado</span></td><td>1M</td><td>128k</td><td>Hi-res 2576 px / 4784 tok</td><td>600 pgs · 32 MB</td><td><span class="pill bad">Não</span></td><td><span class="pill bad">Não</span></td><td>Sim (três versões; <code>computer_toolset_20260801</code> p/ computer use)</td></tr>
           <tr><td><code>claude-sonnet-5-5</code></td><td>1M</td><td>128k</td><td>Hi-res 2576 px / 4784 tok</td><td>600 pgs · 32 MB</td><td><span class="pill bad">Não</span></td><td><span class="pill bad">Não</span></td><td>Sim (três versões)</td></tr>
           <tr><td><code>claude-fable-5-1</code></td><td>1M</td><td>128k</td><td>Hi-res 2576 px / 4784 tok</td><td>600 pgs · 32 MB</td><td><span class="pill bad">Não</span></td><td><span class="pill bad">Não</span></td><td>Sim (três versões)</td></tr>
-          <tr><td><code>claude-haiku-4-5</code></td><td>200k</td><td>64k</td><td>Std 1568 tok</td><td>100 pgs · 32 MB</td><td><span class="pill bad">Não</span></td><td><span class="pill bad">Não</span></td><td>Sim, sem REPL/tool calling programático</td></tr>
+          <tr><td><code>claude-haiku-5-5</code> <span class="pill new">2026-10-07</span></td><td>1M</td><td>128k</td><td>Hi-res 2576 px / 4784 tok</td><td>600 pgs · 32 MB</td><td><span class="pill bad">Não</span></td><td><span class="pill bad">Não</span></td><td>Sim (três versões)</td></tr>
         </tbody>
       </table>
       </div>
@@ -788,7 +788,7 @@ senão:
           <tr>
             <td>Geração de imagem</td>
             <td><span class="pill ok">Sim</span> · <code>gpt-image-2.5-flare</code>/<code>-sunburst</code> (2026-09-08, mesmo preço/token) ou <code>gpt-image-2</code> (não depreciado) via tool <code>image_generation</code> em Responses ou Images API (<code>POST /v1/images/generations</code>, <code>/v1/images/edits</code>)</td>
-            <td><span class="pill ok">Sim</span> · <code>gemini-3.1-flash-image</code> (Nano Banana 2) via <code>response_format: {type: "image"}</code></td>
+            <td><span class="pill ok">Sim</span> · <code>gemini-nano-banana-2.1</code> (Nano Banana 2.1) via <code>response_format: {type: "image"}</code></td>
             <td><span class="pill bad">Não suporta</span>. Apenas image-understanding.</td>
           </tr>
           <tr>
@@ -1132,7 +1132,7 @@ senão:
           </tr>
           <tr>
             <td>Saída de áudio (TTS)</td>
-            <td><code>POST /v1/audio/speech</code> com <code>gpt-4o-mini-tts</code> (13 vozes; recomendadas <code>marin</code>, <code>cedar</code>) e a família <code>gpt-realtime-*</code> para áudio em tempo real.</td>
+            <td><code>POST /v1/audio/speech</code> com <code>gpt-4o-mini-tts</code> (13 vozes; recomendadas <code>marin</code>, <code>cedar</code>; snapshots desligam em 2027-01-06) e a família <code>gpt-realtime-*</code> para áudio em tempo real.</td>
             <td><code>gemini-3.8-flash-tts</code> / <code>gemini-3.8-flash-lite-tts</code> (GA 2026-09-22) via <code>response_format: {type: "audio"}</code>.</td>
             <td><span class="pill bad">Não suporta</span></td>
           </tr>
@@ -1378,7 +1378,7 @@ senão:
       </table>
       </div>
 
-      <h3 id="cmp-cache">3.10 Caching / Context caching <a class="anchor" href="#cmp-cache">¶</a><span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
+      <h3 id="cmp-cache">3.10 Caching / Context caching <a class="anchor" href="#cmp-cache">¶</a><span class="rev-flag atu">Atualizado · 2026-10-19</span></h3>
       <p>Cache de prefixo é uma alavanca de custo importante quando você reusa grandes contextos (PDFs, imagens, instruções). As três estratégias diferem: <strong>OpenAI</strong> faz caching automático na Responses (sem opt-in explícito); <strong>Gemini</strong> tem dois modelos (implícito na Interactions API + explícito via <code>caches.create</code>, só no <code>generateContent</code>); <strong>Anthropic</strong> exige opt-in explícito via <code>cache_control: ephemeral</code> em cada bloco cacheável.</p>
       <div class="table-wrap">
       <table>
@@ -1410,7 +1410,7 @@ senão:
               </ul>
               Explicit: sem mínimo, sem máximo.
             </td>
-            <td><strong>512 tokens</strong> em Fable 5.1, Opus 5.5 e Sonnet 5.5; <strong>4.096</strong> no Haiku 4.5 (página de prompt caching, lida em 2026-09-30). Modelos legados: <a href="#legado">Legado</a>.</td>
+            <td><strong>512 tokens</strong> em Fable 5.1, Opus 5.5, Sonnet 5.5 e Haiku 5.5; <strong>4.096</strong> no Haiku 4.5 (página de prompt caching, lida em 2026-09-30; Haiku 5.5: página do modelo, lida em 2026-10-19). Modelos legados: <a href="#legado">Legado</a>.</td>
           </tr>
           <tr>
             <td>TTL options</td>
@@ -1422,7 +1422,7 @@ senão:
             <td>Fator de custo (cache read)</td>
             <td>Tokens cacheados aparecem em <code>usage.input_tokens_details.cached_tokens</code> a taxa reduzida (ver a página de pricing).</td>
             <td>Explicit: <strong>~90% de desconto</strong> em cached input tokens + cobrança prorrateada de storage por TTL. Implicit: pass-through savings (até 75–90%).</td>
-            <td>Cache read é uma fração do preço de input, e essa fração <strong>varia por modelo</strong> (verificado em 2026-09-30): <strong>10%</strong> no Sonnet 5.5 e no Haiku 4.5 · <strong>5%</strong> no <code>claude-opus-5-5</code> · <strong>2,5%</strong> no Fable 5.1. Inspecione <code>usage.cache_creation_input_tokens</code> e <code>cache_read_input_tokens</code>. Ver preços exatos em §7.12.</td>
+            <td>Cache read é uma fração do preço de input, e essa fração <strong>varia por modelo</strong> (verificado em 2026-10-19): <strong>10%</strong> no Haiku 4.5 e no Haiku 5.5 · <strong>5%</strong> no Sonnet 5.5 (desde 2026-10-07) e no <code>claude-opus-5-5</code> · <strong>2,5%</strong> no Fable 5.1. Inspecione <code>usage.cache_creation_input_tokens</code> e <code>cache_read_input_tokens</code>. Ver preços exatos em §7.12.</td>
           </tr>
           <tr>
             <td>Modalidades suportadas no cache</td>
@@ -1807,7 +1807,7 @@ senão:
     Estado verificado em <strong>2026-09-30</strong>. A <strong>Responses API</strong> é a superfície multimodal adotada; áudio ao vivo usa <strong>Realtime</strong> (ou <strong>GPT-Live</strong>), e turnos delimitados usam STT → Responses → TTS.
     Modelos atuais: <code>gpt-6-astra</code> (flagship), <code>gpt-6.1-sol</code> (Sol mais novo, 2026-09-29) e <code>gpt-6-luna</code> (escala/custo); <code>gpt-6-sol</code>, <code>gpt-5.6-*</code>, <code>gpt-5.5</code> e <code>gpt-5.4-mini</code>/<code>-nano</code> seguem ativos como geração anterior.
     Imagem: <code>gpt-image-2.5-flare</code> (padrão) e <code>gpt-image-2.5-sunburst</code> (edição de precisão).
-    Transcrição de arquivo: <code>gpt-transcribe</code>; streaming ao vivo: <code>gpt-live-transcribe</code>. Voz: <code>gpt-realtime-2.1</code> (+ <code>-mini</code>), <code>gpt-live-1</code>, <code>gpt-4o-mini-tts</code>.
+    Transcrição de arquivo: <code>gpt-transcribe</code>; streaming ao vivo: <code>gpt-live-transcribe</code>. Voz: <code>gpt-realtime-2.1</code> (+ <code>-mini</code>), <code>gpt-live-1</code>, <code>gpt-4o-mini-tts</code> (desliga em 2027-01-06).
     <strong>Não existe geração de vídeo na OpenAI</strong>: a Videos API e o Sora 2 foram desligados em 2026-09-24, sem substituto anunciado.
   </p>
   <div class="callout ok">
@@ -1852,7 +1852,7 @@ senão:
           <td><code>POST /v1/audio/transcriptions</code>, <code>POST /v1/audio/translations</code>, <code>POST /v1/audio/speech</code></td>
           <td>Audio file upload (mp3/mp4/mpeg/mpga/m4a/wav/webm)</td>
           <td>Text (transcription) or audio (TTS)</td>
-          <td>25 MB upload limit. Current STT model: <code>gpt-transcribe</code>. TTS: <code>gpt-4o-mini-tts</code>. Timestamps, diarization and translation still depend on models that shut down on 2027-02-26 — see <a href="#legado">Legado</a>.</td>
+          <td>25 MB upload limit. Current STT model: <code>gpt-transcribe</code>. TTS: <code>gpt-4o-mini-tts</code> (shuts down 2027-01-06). Timestamps, diarization and translation still depend on models that shut down on 2027-02-26 — see <a href="#legado">Legado</a>.</td>
         </tr>
         <tr>
           <td>Images API</td>
@@ -1889,7 +1889,7 @@ senão:
   <h4>Pilha multimodal preferida (verificado 2026-09-30)</h4>
   <ul>
     <li>Texto + visão + PDF + planilhas: Responses API com <code>gpt-6-astra</code> (máxima capacidade) ou <code>gpt-6.1-sol</code> / <code>gpt-6-luna</code> (custo/latência). Os exemplos deste guia usam <code>gpt-6-astra</code>; a chamada é idêntica em qualquer modelo com visão — só troque <code>model</code>.</li>
-    <li>Áudio delimitado: STT (<code>gpt-transcribe</code>) → Responses → TTS (<code>gpt-4o-mini-tts</code>). Voz ao vivo: Realtime em <code>gpt-realtime-2.1</code> (ou <code>-mini</code> por custo) ou GPT-Live.</li>
+    <li>Áudio delimitado: STT (<code>gpt-transcribe</code>) → Responses → TTS (<code>gpt-4o-mini-tts</code>, desliga em 2027-01-06 — <a href="#legado">Legado</a>). Voz ao vivo: Realtime em <code>gpt-realtime-2.1</code> (ou <code>-mini</code> por custo) ou GPT-Live.</li>
     <li>Imagem: <code>gpt-image-2.5-flare</code> (cotidiano, mais rápido) ou <code>gpt-image-2.5-sunburst</code> (precisão de edição), pela tool <code>image_generation</code> da Responses ou pela Images API.</li>
     <li>Vídeo: apenas <em>entrada</em>, por extração de frames + transcrição (§4.6). Não há geração de vídeo OpenAI.</li>
   </ul>
@@ -2824,7 +2824,7 @@ print(resp.output_text)
         <tr>
           <td>Text-to-speech (<code>/v1/audio/speech</code>)</td>
           <td>Gera áudio a partir de texto.</td>
-          <td><code>gpt-4o-mini-tts</code> (13 vozes; recomendadas <code>marin</code> e <code>cedar</code>)</td>
+          <td><code>gpt-4o-mini-tts</code> (13 vozes; recomendadas <code>marin</code> e <code>cedar</code>; desliga em 2027-01-06)</td>
         </tr>
       </tbody>
     </table>
@@ -2920,7 +2920,7 @@ console.log(transcription.text);
   </ul>
 
   <h4>Text-to-speech</h4>
-  <p><code>POST /v1/audio/speech</code> com <code>gpt-4o-mini-tts</code>. O endpoint tem 13 vozes (<code>alloy, ash, ballad, coral, echo, fable, nova, onyx, sage, shimmer, verse, marin, cedar</code>); a OpenAI recomenda <code>marin</code> ou <code>cedar</code> e as vozes são otimizadas para inglês. Para fala em tempo real, a família <code>gpt-realtime-*</code> é o caminho canônico, com um conjunto de vozes ligeiramente diferente.</p>
+  <p><code>POST /v1/audio/speech</code> com <code>gpt-4o-mini-tts</code> (snapshots <code>2025-03-20</code> e <code>2025-12-15</code> desligam em 2027-01-06; a página de deprecations indica <code>gpt-realtime-2.1-mini</code> como substituto, <a href="#legado">Legado</a>). O endpoint tem 13 vozes (<code>alloy, ash, ballad, coral, echo, fable, nova, onyx, sage, shimmer, verse, marin, cedar</code>); a OpenAI recomenda <code>marin</code> ou <code>cedar</code> e as vozes são otimizadas para inglês. Para fala em tempo real, a família <code>gpt-realtime-*</code> é o caminho canônico, com um conjunto de vozes ligeiramente diferente.</p>
 
   <h3 id="openai-files">4.8 Files API <a class="anchor" href="#openai-files">¶</a><span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
 
@@ -3202,18 +3202,18 @@ await client.files.delete(uploaded.id);
 </section>
 <section class="provider provider-gemini" id="gemini" aria-labelledby="h-gemini">
   <div class="prov-chip gemini">Google Gemini</div>
-  <h2 id="h-gemini">Gemini — visão geral e exceções do <code>generateContent</code> <a class="anchor" href="#gemini">¶</a><span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
+  <h2 id="h-gemini">Gemini — visão geral e exceções do <code>generateContent</code> <a class="anchor" href="#gemini">¶</a><span class="rev-flag atu">Atualizado · 2026-10-19</span></h2>
   <p>Desde junho/2026 a <strong>Interactions API</strong> é GA e é a superfície recomendada para todo projeto novo com Gemini; o <code>generateContent</code> original é classificado pela documentação oficial como <em>legacy</em> (segue suportado), e todos os modelos, modalidades, tools e agentes novos chegam primeiro à Interactions. Por isso o deep dive de imagem, PDF, vídeo, áudio, arquivos, tools, streaming e agentes está no <a href="#gemini-interactions">§6</a>. Esta seção cobre apenas o que o §6 não cobre: a superfície e os SDKs atuais (5.1), os quatro usos que ainda só existem no <code>generateContent</code> (5.2) e embeddings (5.3). A migração de código antigo está em <a href="#legado">Legado e migração</a>.</p>
 
-  <h3 id="gemini-overview">5.1 Superfície e SDKs atuais <a class="anchor" href="#gemini-overview">¶</a><span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
+  <h3 id="gemini-overview">5.1 Superfície e SDKs atuais <a class="anchor" href="#gemini-overview">¶</a><span class="rev-flag atu">Atualizado · 2026-10-19</span></h3>
   <div class="table-wrap">
     <table>
-      <thead><tr><th>Item</th><th>Valor atual (verificado em 2026-09-30)</th><th>Fonte</th></tr></thead>
+      <thead><tr><th>Item</th><th>Valor atual (verificado em 2026-09-30; SDKs em 2026-10-19)</th><th>Fonte</th></tr></thead>
       <tbody>
         <tr><td>Endpoint</td><td><code>POST https://generativelanguage.googleapis.com/v1beta/interactions</code>; autenticação pelo header <code>x-goog-api-key</code>. Service tier, Live API, Agents, Webhooks, cache, Computer Use e MCP tool existem só em <code>v1beta</code>.</td><td><a href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">interactions-overview</a> · <a href="https://ai.google.dev/gemini-api/docs/apiv" target="_blank" rel="noopener">apiv</a></td></tr>
-        <tr><td>Python</td><td><code>google-genai</code> <strong>2.25.0</strong> (PyPI, 2026-09-22; Python ≥ 3.10)</td><td><a href="https://pypi.org/pypi/google-genai/json" target="_blank" rel="noopener">PyPI</a></td></tr>
-        <tr><td>JavaScript / TypeScript</td><td><code>@google/genai</code> <strong>2.24.0</strong> (npm, 2026-09-22; Node ≥ 20)</td><td><a href="https://registry.npmjs.org/@google/genai" target="_blank" rel="noopener">npm</a></td></tr>
-        <tr><td>Java · Go</td><td><code>com.google.genai:google-genai</code> <strong>1.73.0</strong> (2026-09-23) · <code>google.golang.org/genai</code> <strong>v1.71.0</strong> (2026-08-31)</td><td><a href="https://repo1.maven.org/maven2/com/google/genai/google-genai/maven-metadata.xml" target="_blank" rel="noopener">Maven Central</a> · <a href="https://proxy.golang.org/google.golang.org/genai/@latest" target="_blank" rel="noopener">proxy.golang.org</a></td></tr>
+        <tr><td>Python</td><td><code>google-genai</code> <strong>2.31.0</strong> (PyPI, 2026-10-14; Python ≥ 3.10)</td><td><a href="https://pypi.org/pypi/google-genai/json" target="_blank" rel="noopener">PyPI</a></td></tr>
+        <tr><td>JavaScript / TypeScript</td><td><code>@google/genai</code> <strong>2.30.0</strong> (npm, 2026-10-14; Node ≥ 20)</td><td><a href="https://registry.npmjs.org/@google/genai" target="_blank" rel="noopener">npm</a></td></tr>
+        <tr><td>Java · Go</td><td><code>com.google.genai:google-genai</code> <strong>1.78.0</strong> (Maven <code>lastUpdated</code> 2026-10-15) · <code>google.golang.org/genai</code> <strong>v1.75.0</strong> (2026-10-14)</td><td><a href="https://repo1.maven.org/maven2/com/google/genai/google-genai/maven-metadata.xml" target="_blank" rel="noopener">Maven Central</a> · <a href="https://proxy.golang.org/google.golang.org/genai/@latest" target="_blank" rel="noopener">proxy.golang.org</a></td></tr>
         <tr><td>Mínimo para o schema <code>steps[]</code></td><td>Python e JS <strong>≥ 2.3.0</strong> (<code>count_tokens</code> exige SDK &gt; 2.0.0)</td><td><a href="https://ai.google.dev/gemini-api/docs/interactions-overview#sdks" target="_blank" rel="noopener">interactions-overview#sdks</a></td></tr>
         <tr><td>Modelo dos exemplos</td><td><code>gemini-3.8-flash</code> (GA 2026-09-02; Flash atual). Lite atual: <code>gemini-3.5-flash-lite</code>. Modelos e preços: <a href="#gi-models">§6.17</a>.</td><td><a href="https://ai.google.dev/gemini-api/docs/models" target="_blank" rel="noopener">models</a></td></tr>
       </tbody>
@@ -3222,7 +3222,7 @@ await client.files.delete(uploaded.id);
   <p class="small">Aviso oficial do README do <code>python-genai</code>: na próxima versão major (3.0) a chamada automática de funções deixará de ser acionável por <code>Models.generate_content</code> (só por <code>Chats</code>); a recomendação é fixar <code>google-genai&lt;3.0.0</code> quem depende disso (<a href="https://github.com/googleapis/python-genai/blob/main/README.md" target="_blank" rel="noopener">README</a>, lido 2026-09-30).</p>
 
   <h3 id="gemini-generatecontent-only">5.2 O que ainda só existe no <code>generateContent</code> <a class="anchor" href="#gemini-generatecontent-only">¶</a><span class="rev-flag novo">Novo · 2026-09-30</span></h3>
-  <p>A overview oficial da Interactions API lista quatro recursos do <code>generateContent</code> que <strong>ainda não estão</strong> disponíveis nela. São os únicos casos em que este guia usa <code>generate_content</code> — e é uso legítimo, não legado a migrar:</p>
+  <p>A overview oficial da Interactions API lista quatro recursos do <code>generateContent</code> (legado) que <strong>ainda não estão</strong> disponíveis nela. Só para eles use <code>generate_content</code>; todo o resto do guia usa a Interactions API:</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Recurso</th><th>Situação na Interactions API</th><th>O que fazer</th></tr></thead>
@@ -3235,7 +3235,7 @@ await client.files.delete(uploaded.id);
     </table>
   </div>
 
-  <h4>Cache explícito de um PDF grande (Python)</h4>
+  <h4>Cache explícito de um PDF grande (Python, generateContent legado)</h4>
 <pre><code>from google import genai
 from google.genai import types
 
@@ -3244,11 +3244,7 @@ document = client.files.upload(file="relatorio.pdf")
 
 cache = client.caches.create(
     model="gemini-3.8-flash",
-    config=types.CreateCachedContentConfig(
-        system_instruction="Você analisa relatórios financeiros.",
-        contents=[document],
-        ttl="3600s",
-    ),
+    config=types.CreateCachedContentConfig(contents=[document], ttl="3600s"),
 )
 
 response = client.models.generate_content(
@@ -3322,16 +3318,16 @@ print(len(result.embeddings[0].values))  # 768 (renormalizado automaticamente)</
   <h4>SDKs</h4>
   <div class="table-wrap">
     <table>
-      <thead><tr><th>Linguagem</th><th>Pacote</th><th>Mínimo para Interactions</th><th>Última versão (2026-09-30)</th></tr></thead>
+      <thead><tr><th>Linguagem</th><th>Pacote</th><th>Mínimo para Interactions</th><th>Última versão (2026-10-19)</th></tr></thead>
       <tbody>
-        <tr><td>Python</td><td><code>google-genai</code></td><td><code>&gt;= 2.3.0</code></td><td><strong>2.25.0</strong> (PyPI, 2026-09-22)</td></tr>
-        <tr><td>JavaScript / TypeScript</td><td><code>@google/genai</code></td><td><code>&gt;= 2.3.0</code></td><td><strong>2.24.0</strong> (npm, 2026-09-22)</td></tr>
-        <tr><td>Java</td><td><code>com.google.genai:google-genai</code></td><td>—</td><td><strong>1.73.0</strong> (Maven Central, 2026-09-23)</td></tr>
-        <tr><td>Go</td><td><code>google.golang.org/genai</code></td><td>—</td><td><strong>v1.71.0</strong> (2026-08-31)</td></tr>
+        <tr><td>Python</td><td><code>google-genai</code></td><td><code>&gt;= 2.3.0</code></td><td><strong>2.31.0</strong> (PyPI, 2026-10-14)</td></tr>
+        <tr><td>JavaScript / TypeScript</td><td><code>@google/genai</code></td><td><code>&gt;= 2.3.0</code></td><td><strong>2.30.0</strong> (npm, 2026-10-14)</td></tr>
+        <tr><td>Java</td><td><code>com.google.genai:google-genai</code></td><td>—</td><td><strong>1.78.0</strong> (Maven Central, <code>lastUpdated</code> 2026-10-15)</td></tr>
+        <tr><td>Go</td><td><code>google.golang.org/genai</code></td><td>—</td><td><strong>v1.75.0</strong> (2026-10-14)</td></tr>
       </tbody>
     </table>
   </div>
-  <p class="small">Fontes: <a href="https://ai.google.dev/gemini-api/docs/interactions-overview#sdks" target="_blank" rel="noopener">interactions-overview#sdks</a>, PyPI, npm, Maven Central e proxy.golang.org, lidos em 2026-09-30. O mínimo de Java e Go para Interactions não é citado pela overview (UNVERIFIED).</p>
+  <p class="small">Fontes: <a href="https://ai.google.dev/gemini-api/docs/interactions-overview#sdks" target="_blank" rel="noopener">interactions-overview#sdks</a>, PyPI, npm, Maven Central e proxy.golang.org, lidos em 2026-10-19. O mínimo de Java e Go para Interactions não é citado pela overview (UNVERIFIED).</p>
 
   <h4>Construção do client (padrão atual)</h4>
   <div class="code-group" data-group="gi-client">
@@ -3534,11 +3530,11 @@ interaction = client.interactions.create(
 interaction = client.interactions.create(model=<span class="tok-s">"gemini-3.8-flash"</span>, input=input)</code></pre>
 
   <h4>Geração e edição de imagem (model output)</h4>
-  <p>Modelos de imagem (<code>gemini-3.1-flash-image</code> — Nano Banana 2, <code>gemini-3.1-flash-lite-image</code> — versão Lite e <code>gemini-3-pro-image</code> — Nano Banana Pro) devolvem blocos <code>image</code> dentro de <code>steps[]</code>. O formato de saída vai em <code>response_format</code> (<code>type: "image"</code>, <code>mime_type</code>, <code>aspect_ratio</code>, <code>image_size</code>); ele substitui os antigos <code>response_modalities</code> e <code>generation_config.image_config</code>. Leia o resultado em <code>interaction.output_image</code> e edite no turno seguinte apontando <code>previous_interaction_id</code>.</p>
+  <p>Modelos de imagem (<code>gemini-nano-banana-2.1</code> — Nano Banana 2.1, <code>gemini-3.1-flash-lite-image</code> — versão Lite e <code>gemini-3-pro-image</code> — Nano Banana Pro) devolvem blocos <code>image</code> dentro de <code>steps[]</code>. O formato de saída vai em <code>response_format</code> (<code>type: "image"</code>, <code>mime_type</code>, <code>aspect_ratio</code>, <code>image_size</code>); ele substitui os antigos <code>response_modalities</code> e <code>generation_config.image_config</code>. Leia o resultado em <code>interaction.output_image</code> e edite no turno seguinte apontando <code>previous_interaction_id</code>.</p>
 <pre><code><span class="tok-k">import</span> base64
 
 interaction = client.interactions.create(
-    model=<span class="tok-s">"gemini-3.1-flash-image"</span>,
+    model=<span class="tok-s">"gemini-nano-banana-2.1"</span>,
     input=<span class="tok-s">"Gere uma ilustração de uma cidade futurista ao pôr do sol."</span>,
     response_format={
         <span class="tok-s">"type"</span>: <span class="tok-s">"image"</span>,
@@ -3552,7 +3548,7 @@ interaction = client.interactions.create(
 
 <span class="tok-c"># Edição: mesmo modelo, turno seguinte encadeado</span>
 edit = client.interactions.create(
-    model=<span class="tok-s">"gemini-3.1-flash-image"</span>,
+    model=<span class="tok-s">"gemini-nano-banana-2.1"</span>,
     input=<span class="tok-s">"Troque o pôr do sol por amanhecer. Não mude mais nada."</span>,
     previous_interaction_id=interaction.id,
     response_format={<span class="tok-s">"type"</span>: <span class="tok-s">"image"</span>, <span class="tok-s">"mime_type"</span>: <span class="tok-s">"image/jpeg"</span>, <span class="tok-s">"aspect_ratio"</span>: <span class="tok-s">"16:9"</span>},
@@ -4497,8 +4493,8 @@ response_format = {
   <!-- =================================================================== -->
   <!-- 6.17 Modelos e agentes suportados                                    -->
   <!-- =================================================================== -->
-  <h3 id="gi-models">6.17 Modelos e agentes suportados <a class="anchor" href="#gi-models">¶</a><span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
-  <p class="small">Estado em <strong>2026-09-30</strong>, conforme <a href="https://ai.google.dev/gemini-api/docs/models" target="_blank" rel="noopener">models</a>, <a href="https://ai.google.dev/gemini-api/docs/deprecations" target="_blank" rel="noopener">deprecations</a> e <a href="https://ai.google.dev/gemini-api/docs/pricing" target="_blank" rel="noopener">pricing</a>. Preços em USD por 1M de tokens (tier pago). Modelos já desligados estão em <a href="#legado">Legado e migração</a>.</p>
+  <h3 id="gi-models">6.17 Modelos e agentes suportados <a class="anchor" href="#gi-models">¶</a><span class="rev-flag atu">Atualizado · 2026-10-19</span></h3>
+  <p class="small">Estado em <strong>2026-10-19</strong>, conforme <a href="https://ai.google.dev/gemini-api/docs/models" target="_blank" rel="noopener">models</a>, <a href="https://ai.google.dev/gemini-api/docs/deprecations" target="_blank" rel="noopener">deprecations</a> e <a href="https://ai.google.dev/gemini-api/docs/pricing" target="_blank" rel="noopener">pricing</a>. Preços em USD por 1M de tokens (tier pago). Modelos já desligados estão em <a href="#legado">Legado e migração</a>.</p>
 
   <h4>Modelos (<code>model</code>)</h4>
   <div class="table-wrap">
@@ -4506,15 +4502,16 @@ response_format = {
       <thead><tr><th>Model ID</th><th>Categoria</th><th>Status e notas</th></tr></thead>
       <tbody>
         <tr><td><code>gemini-3.8-flash</code> <span class="pill new">atual</span></td><td>Flash 1M, multimodal — <strong>default recomendado</strong></td><td>GA desde 2026-09-02; 1.048.576 tokens de entrada / 65.536 de saída; entrada texto/imagem/vídeo/áudio/PDF, saída texto. Thinking <code>low</code>/<code>medium</code> (default)/<code>high</code> (<code>minimal</code> retorna erro). Modelo default do Computer Use e do Antigravity; vídeo agentic. US$ 0,75/3,75 até 2026-12-31 (depois 1,50/7,50).</td></tr>
-        <tr><td><code>gemini-3.7-flash</code> · <code>gemini-3.6-flash</code></td><td>Flash, gerações anteriores</td><td>Estáveis (GA 2026-08-13 e 2026-07-21), mesmo preço do 3.8; o 3.6 aceita <code>thinking_level: minimal</code>. Sem shutdown anunciado.</td></tr>
-        <tr><td><code>gemini-3.5-flash</code></td><td>Flash, "legacy Flash"</td><td>Estável (GA 2026-05-19); US$ 1,50/9,00. Sem shutdown anunciado. O alias <code>gemini-flash-latest</code> foi apontado para ele em 2026-05-19; o destino atual <span class="unverified">UNVERIFIED&nbsp;(2026-09-30)</span> — fixe o ID.</td></tr>
+        <tr><td><code>gemini-4-argon</code> <span class="pill new">2026-10-13</span></td><td>Gemini 4, saída só texto</td><td>GA desde 2026-10-13; 1.048.576 tokens de entrada / 65.536 de saída (até 1.048.576 em <em>long decode</em>: exige <code>background=True</code> e <code>max_output_tokens</code> &gt; 65.536; retoma via <code>continuation_token</code>). Thinking <code>low</code>/<code>medium</code> (default)/<code>high</code>; <code>temperature</code>/<code>top_p</code>/<code>top_k</code> ignorados; só cache implícito; sem Live API; fora do tier gratuito. US$ 2,00/10,00 até 2026-11-30 (depois 4,00/20,00). Modalidades de entrada: <span class="unverified">UNVERIFIED&nbsp;(2026-10-19)</span>.</td></tr>
+        <tr><td><code>gemini-3.6-flash</code> · <code>gemini-3.7-flash</code></td><td>Flash, gerações anteriores</td><td>3.6: estável (GA 2026-07-21), mesmo preço do 3.8; aceita <code>thinking_level: minimal</code>; sem shutdown anunciado. 3.7: roteado automaticamente para <code>gemini-3.8-flash</code> em 2026-10-08 (deixa de ser selecionável no AI Studio; o endpoint não foi desligado).</td></tr>
+        <tr><td><code>gemini-3.5-flash</code></td><td>Flash, "legacy Flash"</td><td>Roteado automaticamente para <code>gemini-3.6-flash</code> em 2026-10-08 (some do AI Studio e da página de preços; endpoint não desligado). O destino atual do alias <code>gemini-flash-latest</code> é <span class="unverified">UNVERIFIED&nbsp;(2026-10-19)</span> — fixe o ID.</td></tr>
         <tr><td><code>gemini-3.5-flash-lite</code></td><td>Lite atual (alto volume, subagentes)</td><td>Estável (GA 2026-07-21); US$ 0,30/2,50; thinking default <code>minimal</code>; vídeo agentic.</td></tr>
         <tr><td><code>gemini-3.1-pro-preview</code></td><td>Raciocínio complexo, código</td><td><strong>Preview</strong> (único Pro 3.x); US$ 2,00/12,00 até 200k tokens (4,00/18,00 acima).</td></tr>
-        <tr><td><code>gemini-3.1-flash-image</code></td><td>Geração de imagem (Nano Banana 2)</td><td>GA (2026-05-28); 131.072 in / 32.768 out; 512, 1K, 2K e 4K; até 14 imagens de referência; saída texto+imagem.</td></tr>
+        <tr><td><code>gemini-nano-banana-2.1</code> <span class="pill new">2026-10-06</span></td><td>Geração de imagem (Nano Banana 2.1)</td><td>GA desde 2026-10-06; 131.072 in / 32.768 out; thinking <code>minimal</code>/<code>medium</code> (default)/<code>high</code>; sem caching, function calling nem structured outputs; Batch suportado. US$ 1,50 entrada / 7,50 saída de texto e thinking / 30,00 saída de imagem (≈ US$ 0,0336 a 1K, 0,0504 a 2K, 0,113 a 4K). <strong>Substitui</strong> <code>gemini-3.1-flash-image</code> (deprecado em 2026-10-06, sem data de desligamento).</td></tr>
         <tr><td><code>gemini-3.1-flash-lite-image</code></td><td>Geração de imagem barata (Nano Banana 2 Lite)</td><td>GA (2026-06-30); só 1K.</td></tr>
         <tr><td><code>gemini-3-pro-image</code></td><td>Imagem de alta fidelidade (Nano Banana Pro)</td><td>GA (2026-05-28); 4K, com raciocínio.</td></tr>
         <tr><td><code>gemini-omni-1.1-flash</code> <span class="pill new">atual</span></td><td>Geração/edição de vídeo conversacional</td><td>GA desde 2026-08-27; clipes de 3–10 s (360p/720p/1080p/4K, 24 fps), extensão e interpolação. <strong>Substitui</strong> <code>gemini-omni-flash-preview</code>, deprecado em 2026-09-30. Segundo a página do modelo, é Interactions-only; a lista de modelos da overview da Interactions não o cita (divergência oficial não resolvida). US$ 1,50 entrada / 17,50 saída de vídeo.</td></tr>
-        <tr><td><code>gemini-3.8-flash-tts</code> · <code>gemini-3.8-flash-lite-tts</code></td><td>Text-to-speech</td><td>GA desde 2026-09-22; substituem <code>gemini-3.1-flash-tts-preview</code>. US$ 0,50 entrada (texto) / 9,00 (áudio) até 2026-12-31 no Flash TTS.</td></tr>
+        <tr><td><code>gemini-3.8-flash-tts</code> · <code>gemini-3.8-flash-lite-tts</code></td><td>Text-to-speech</td><td>GA desde 2026-09-22; substituem <code>gemini-3.1-flash-tts-preview</code> (desliga em 2026-11-17). US$ 0,50 entrada (texto) / 9,00 (áudio) até 2026-12-31 no Flash TTS.</td></tr>
         <tr><td><code>gemini-3.5-transcribe</code> (+ <code>-live</code>)</td><td>Speech-to-text dedicado</td><td>GA desde 2026-08-26; 85+ idiomas, diarização, timestamps por palavra. US$ 2,00 entrada de áudio.</td></tr>
         <tr><td><code>gemini-embedding-2</code></td><td>Embeddings multimodais</td><td>GA desde 2026-04-22; não passa por <code>interactions.create</code> (§5.3).</td></tr>
         <tr><td><code>lyria-3.5</code></td><td>Música</td><td>GA desde 2026-09-03.</td></tr>
@@ -4522,7 +4519,7 @@ response_format = {
       </tbody>
     </table>
   </div>
-  <p><strong>Live API</strong> é uma superfície WebSocket separada: <code>gemini-3.8-live</code> (GA 2026-09-15), <code>gemini-3.8-live-extended-thinking</code> e <code>gemini-3.5-live-translate-preview</code> (Preview) não aparecem na lista de modelos suportados pela Interactions. <strong>Computer Use</strong> (Preview) usa a tool <code>computer_use</code> com <code>gemini-3.8-flash</code> (recomendado), 3.7 Flash, 3.5 Flash-Lite, 3.5 Flash ou 3 Flash Preview. Modelos da família 2.5 têm acesso limitado desde 2026-09-18 a quem já os usava.</p>
+  <p><strong>Live API</strong> é uma superfície WebSocket separada: <code>gemini-3.8-live</code> (GA 2026-09-15), <code>gemini-3.8-live-extended-thinking</code> e <code>gemini-3.5-live-translate-preview</code> (Preview) não aparecem na lista de modelos suportados pela Interactions. <strong>Computer Use</strong> (Preview) usa a tool <code>computer_use</code> com <code>gemini-3.8-flash</code> (recomendado), 3.7 Flash, 3.5 Flash-Lite, 3.5 Flash ou 3 Flash Preview (lista lida em 2026-09-30; 3.7 e 3.5 Flash são roteados para 3.8 e 3.6 desde 2026-10-08). Modelos da família 2.5 têm acesso limitado desde 2026-09-18 a quem já os usava.</p>
 
   <h4>Agentes (<code>agent</code>)</h4>
   <div class="table-wrap">
@@ -4593,7 +4590,7 @@ response_format = {
     <code>container_upload</code>.
   </p>
 
-  <h3 id="anthropic-overview">7.1 API surface <a class="anchor" href="#anthropic-overview">¶</a><span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
+  <h3 id="anthropic-overview">7.1 API surface <a class="anchor" href="#anthropic-overview">¶</a><span class="rev-flag atu">Atualizado · 2026-10-19</span></h3>
   <p>
     Todo o trabalho multimodal flui por um único endpoint síncrono:
   </p>
@@ -4637,7 +4634,7 @@ response_format = {
     <code>text_editor_code_execution_tool_result</code>, <code>code_execution_tool_result</code>) quando code execution, web search ou web fetch estão habilitados.
   </p>
 
-  <h4>Compatibilidade modelo × modalidade (verificado em 2026-09-30)</h4>
+  <h4>Compatibilidade modelo × modalidade (verificado em 2026-10-19)</h4>
   <p>Fonte: <a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener">models/overview</a>, visão, PDF e a página do code execution tool. Modelos legados que ainda estão ativos ficam em <a href="#legado">Legado e migração</a>.</p>
   <div class="table-wrap">
   <table>
@@ -4648,23 +4645,23 @@ response_format = {
       <tr><td>Claude Fable 5.1 <span class="pill new">topo</span></td><td><code>claude-fable-5-1</code></td><td>1M</td><td>128k</td><td>$10 / $50</td><td><span class="pill ok">Sim</span> (hi-res 2576 px)</td><td><span class="pill ok">Sim</span></td><td><span class="pill ok">Sim</span></td></tr>
       <tr><td>Claude Opus 5.5 <span class="pill new">recomendado</span></td><td><code>claude-opus-5-5</code></td><td>1M</td><td>128k</td><td>$4 / $20</td><td><span class="pill ok">Sim</span> (hi-res 2576 px)</td><td><span class="pill ok">Sim</span></td><td><span class="pill ok">Sim</span></td></tr>
       <tr><td>Claude Sonnet 5.5 <span class="pill new">2026-09-28</span></td><td><code>claude-sonnet-5-5</code></td><td>1M</td><td>128k</td><td>$2 / $10</td><td><span class="pill ok">Sim</span> (hi-res 2576 px)</td><td><span class="pill ok">Sim</span></td><td><span class="pill ok">Sim</span></td></tr>
-      <tr><td>Claude Haiku 4.5</td><td><code>claude-haiku-4-5-20251001</code> (alias <code>claude-haiku-4-5</code>)</td><td>200k</td><td>64k</td><td>$1 / $5</td><td><span class="pill ok">Sim</span></td><td><span class="pill ok">Sim</span></td><td><span class="pill partial">Sim, sem REPL/tool calling programático</span></td></tr>
+      <tr><td>Claude Haiku 5.5 <span class="pill new">2026-10-07</span></td><td><code>claude-haiku-5-5</code></td><td>1M</td><td>128k</td><td>$0,10 / $0,50 (até 100k tokens de prompt) · $0,50 / $2,50 (acima)</td><td><span class="pill ok">Sim</span> (hi-res 2576 px)</td><td><span class="pill ok">Sim</span></td><td><span class="pill ok">Sim</span></td></tr>
     </tbody>
   </table>
   </div>
   <div class="callout tip">
-    <strong>Modelos atuais (verificado 2026-09-30).</strong> Comece por <code>claude-opus-5-5</code> (recomendado para a maioria das cargas) ou <code>claude-sonnet-5-5</code> (velocidade × inteligência); use <code>claude-fable-5-1</code> para raciocínio difícil e agentes de longo horizonte e <code>claude-haiku-4-5</code> para baixo custo. Todos os exemplos deste guia usam <code>claude-opus-5-5</code> (ou <code>claude-sonnet-5-5</code> onde o custo importa). <strong>Haiku 4.5:</strong> retirada "não antes de 2026-10-15"; a doc não publica sucessor — <span class="unverified">UNVERIFIED</span>.
-    <span class="source-link">Fonte: <a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener">models/overview</a> — lida 2026-09-30.</span>
+    <strong>Modelos atuais (verificado 2026-10-19).</strong> Comece por <code>claude-opus-5-5</code> (recomendado para a maioria das cargas) ou <code>claude-sonnet-5-5</code> (velocidade × inteligência); use <code>claude-fable-5-1</code> para raciocínio difícil e agentes de longo horizonte e <code>claude-haiku-5-5</code> para baixo custo. Todos os exemplos deste guia usam <code>claude-opus-5-5</code> (ou <code>claude-sonnet-5-5</code> onde o custo importa). <strong>Haiku 4.5</strong> é legado ativo (retirada "não antes de 2026-10-15" (data já passada; segue Active sem aviso de depreciação na página oficial lida em 2026-10-19)); sucessor: Haiku 5.5.
+    <span class="source-link">Fonte: <a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener">models/overview</a> — lida 2026-10-19.</span>
   </div>
   <div class="callout warn">
-    <strong>Opus 5.5, Fable 5.1 e Sonnet 5.5 mudam o contrato de parâmetros</strong> (nada disso afeta os blocos <code>image</code>/<code>document</code>): thinking adaptativo sempre ligado em Opus 5.5 e Fable 5.1 (<code>thinking.type</code> <code>"disabled"</code> ou <code>"enabled"</code> devolve 400; controle por <code>effort</code>); no Sonnet 5.5, <code>"disabled"</code> devolve 400 e o substituto é <code>{"type":"between_tools"}</code>; <code>tool_choice</code> <code>any</code>/<code>tool</code> devolve 400 nos três; o toolset <code>computer_20251124</code> é rejeitado na Claude API e no Google Cloud (use <code>computer_toolset_20260801</code>). Migração completa em <a href="#legado">Legado</a>.
+    <strong>Opus 5.5, Fable 5.1 e Sonnet 5.5 mudam o contrato de parâmetros</strong> (nada disso afeta os blocos <code>image</code>/<code>document</code>): thinking adaptativo sempre ligado em Opus 5.5 e Fable 5.1 (<code>thinking.type</code> <code>"disabled"</code> ou <code>"enabled"</code> devolve 400; controle por <code>effort</code>); no Sonnet 5.5, <code>"disabled"</code> devolve 400 e o substituto é <code>{"type":"between_tools"}</code>; <code>tool_choice</code> <code>any</code>/<code>tool</code> devolve 400 nos três; o toolset <code>computer_20251124</code> é rejeitado na Claude API e no Google Cloud (use <code>computer_toolset_20260801</code>). No Haiku 5.5, <code>enabled</code> com <code>budget_tokens</code> devolve 400, <code>disabled</code> vale com <code>effort</code> até <code>high</code> e <code>tool_choice</code> forçado é aceito. Migração completa em <a href="#legado">Legado</a>.
   </div>
   <p>
     Visão e PDF são <strong>universais</strong> entre os modelos ativos — escolha por throughput/custo, não por modalidade. Code Execution
     <strong>não está disponível em Amazon Bedrock nem em Google Cloud</strong>; existe na Claude API, na Claude Platform on AWS e no Microsoft Foundry (hospedado pela Anthropic).
   </p>
 
-  <h3 id="anthropic-image">7.2 Imagem / visão <a class="anchor" href="#anthropic-image">¶</a><span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
+  <h3 id="anthropic-image">7.2 Imagem / visão <a class="anchor" href="#anthropic-image">¶</a><span class="rev-flag atu">Atualizado · 2026-10-19</span></h3>
 
   <h4>Source types (três, mais um caso especial)</h4>
   <p>
@@ -4698,7 +4695,7 @@ image/webp   (WebP lossy pode degradar OCR; teste antes de comprimir)</code></pr
     <tbody>
       <tr><td>Máx. imagens por turno no <code>claude.ai</code></td><td>20</td><td>Superfície UI, não API</td></tr>
       <tr><td>Máx. imagens por request em modelos de 200k ctx</td><td>100</td><td>Haiku 4.5 (contexto 200k)</td></tr>
-      <tr><td>Máx. imagens por request em modelos 1M ctx</td><td>600</td><td>Opus 5.5, Sonnet 5.5, Fable 5.1 (todos 1M)</td></tr>
+      <tr><td>Máx. imagens por request em modelos 1M ctx</td><td>600</td><td>Opus 5.5, Sonnet 5.5, Fable 5.1 (todos 1M); Haiku 5.5 (1M): limite de imagens <span class="unverified">UNVERIFIED&nbsp;(2026-10-19)</span></td></tr>
       <tr><td>Dimensões máximas</td><td><strong>8000 × 8000 px</strong> em geral</td><td>Se &gt;20 imagens/documentos no mesmo request, o teto cai — resida para ≤2000 px no lado maior</td></tr>
       <tr><td>Tamanho de arquivo via API direta</td><td><strong>10 MB por imagem</strong> (base64)</td><td>Claude API first-party; a Amazon Bedrock e o Google Cloud têm limite menor (linha abaixo).</td></tr>
       <tr><td>Tamanho de arquivo via Amazon Bedrock / Google Cloud</td><td>5 MB (base64)</td><td>Mais restritivo que a API direta</td></tr>
@@ -4710,11 +4707,11 @@ image/webp   (WebP lossy pode degradar OCR; teste antes de comprimir)</code></pr
 
   <h4>Resolução nativa e tokenização</h4>
   <div class="callout tip">
-    A página de vision expressa o tier hi-res por <strong>geração</strong> — "Claude 4.7 and later models" —, o que já cobre Fable 5.1, Opus 5.5 e Sonnet 5.5. A tokenização usa patches de <strong>28×28 px</strong> (visual tokens). <span class="source-link">Fonte: <a href="https://platform.claude.com/docs/en/build-with-claude/vision#image-limits-and-costs" target="_blank" rel="noopener">vision#image-limits-and-costs</a> — lida 2026-09-30.</span>
+    A página de vision expressa o tier hi-res por <strong>geração</strong> — "Claude 4.7 and later models" —, o que já cobre Fable 5.1, Opus 5.5, Sonnet 5.5 e Haiku 5.5. A tokenização usa patches de <strong>28×28 px</strong> (visual tokens). <span class="source-link">Fonte: <a href="https://platform.claude.com/docs/en/build-with-claude/vision#image-limits-and-costs" target="_blank" rel="noopener">vision#image-limits-and-costs</a> — lida 2026-09-30.</span>
   </div>
   <ul>
     <li><strong>Tier padrão (Haiku 4.5 e demais modelos fora do tier hi-res):</strong> nativo ≈ <strong>1568 tokens</strong> por imagem, no máximo 1568 px no lado longo.</li>
-    <li><strong>Tier hi-res ("Claude 4.7 e modelos posteriores" — inclui <strong>Opus 5.5</strong>, <strong>Sonnet 5.5</strong> e <strong>Fable 5.1</strong>):</strong> nativo ≈ <strong>4784 tokens</strong> por imagem, até 2576 px no lado longo. Automático — <strong>sem cabeçalho beta</strong> nem opt-in de cliente.</li>
+    <li><strong>Tier hi-res ("Claude 4.7 e modelos posteriores" — inclui <strong>Opus 5.5</strong>, <strong>Sonnet 5.5</strong>, <strong>Haiku 5.5</strong> e <strong>Fable 5.1</strong>):</strong> nativo ≈ <strong>4784 tokens</strong> por imagem, até 2576 px no lado longo. Automático — <strong>sem cabeçalho beta</strong> nem opt-in de cliente.</li>
   </ul>
   <p>
     Inputs maiores são <strong>downscaled</strong> preservando aspect ratio até o limite do tier. Coordenadas que o modelo retorna
@@ -4738,7 +4735,7 @@ image/webp   (WebP lossy pode degradar OCR; teste antes de comprimir)</code></pr
   </table>
   </div>
   <div class="callout tip">
-    <strong>Regra prática:</strong> em Haiku 4.5, imagens acima de ~1.19 MP são downscaled a 1568px no lado longo (sem ganho de fidelidade adicional). Em Opus 5.5, Sonnet 5.5 e Fable 5.1 (hi-res), dimensione conforme a fidelidade real necessária; hi-res pode custar até <strong>~3×</strong> mais visual tokens que o tier padrão para a mesma imagem em resoluções altas.
+    <strong>Regra prática:</strong> em Haiku 4.5, imagens acima de ~1.19 MP são downscaled a 1568px no lado longo (sem ganho de fidelidade adicional). Em Opus 5.5, Sonnet 5.5, Haiku 5.5 e Fable 5.1 (hi-res), dimensione conforme a fidelidade real necessária; hi-res pode custar até <strong>~3×</strong> mais visual tokens que o tier padrão para a mesma imagem em resoluções altas.
   </div>
   <p>Fonte: <a href="https://platform.claude.com/docs/en/build-with-claude/vision" target="_blank" rel="noopener">platform.claude.com/docs/en/build-with-claude/vision</a> — verificado em 2026-09-30 (os exemplos de código da página oficial usam <code>claude-opus-5-5</code>).</p>
 
@@ -4932,7 +4929,7 @@ const r = await client.messages.create({
     <li><strong>Saúde:</strong> pode analisar imagens médicas gerais, mas não é ferramenta de diagnóstico para CT/MRI; jamais substitua aconselhamento médico.</li>
     <li><strong>Metadados:</strong> Claude não lê EXIF nem metadados de imagem.</li>
     <li><strong>Persistência:</strong> uploads via base64/URL são <strong>efêmeros</strong>, descartados após a request; imagens via Files API persistem até serem deletadas.</li>
-    <li><strong>Geração/edição:</strong> Claude é <strong>image-understanding only</strong>. Não gera nem edita imagens — use OpenAI <code>gpt-image-2.5-flare</code>/<code>-sunburst</code>, Gemini <code>gemini-3.1-flash-image</code>, Stability etc.</li>
+    <li><strong>Geração/edição:</strong> Claude é <strong>image-understanding only</strong>. Não gera nem edita imagens — use OpenAI <code>gpt-image-2.5-flare</code>/<code>-sunburst</code>, Gemini <code>gemini-nano-banana-2.1</code>, Stability etc.</li>
   </ul>
 
   <h3 id="anthropic-pdf">7.3 PDF <a class="anchor" href="#anthropic-pdf">¶</a><span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
@@ -5258,7 +5255,7 @@ const resp = await client.messages.create({
     <strong>DOCX → PDF caveat:</strong> para apresentar um DOCX rico em imagens ao modelo com <em>visão</em>, converta para PDF antes (LibreOffice, Pandoc, ou no próprio sandbox via <code>python-docx</code> → <code>reportlab</code>) e use o caminho de <code>document</code>. Para extração tabular simples, ler o DOCX no sandbox e gerar CSV é mais barato.
   </div>
 
-  <h3 id="anthropic-code">7.5 Code Execution <a class="anchor" href="#anthropic-code">¶</a><span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
+  <h3 id="anthropic-code">7.5 Code Execution <a class="anchor" href="#anthropic-code">¶</a><span class="rev-flag atu">Atualizado · 2026-10-19</span></h3>
 
   <h4>O que é</h4>
   <p>
@@ -5283,7 +5280,7 @@ const resp = await client.messages.create({
         <td><code>code_execution_20260521</code></td>
         <td>Nenhum (GA)</td>
         <td>Mesmo runtime da <code>20260120</code>; a descrição da tool informa o limite de 90 s por célula Python no tool calling programático</td>
-        <td>Todos os modelos suportados: Fable 5.1, Opus 5.5, Sonnet 5.5, Haiku 4.5 e os modelos legados ativos (Haiku 4.5 sem REPL/tool calling programático)</td>
+        <td>Todos os modelos suportados: Fable 5.1, Opus 5.5, Sonnet 5.5, Haiku 5.5 e os modelos legados ativos (Haiku 4.5 sem REPL/tool calling programático)</td>
       </tr>
       <tr>
         <td><code>code_execution_20260120</code></td>
@@ -5960,7 +5957,7 @@ curl -X DELETE https://api.anthropic.com/v1/files/$FILE_ID \
     <li>O conteúdo de arquivo usado em <code>messages.create</code> é cobrado pelas tarifas padrão de input por modalidade (image tokens para imagens, image+text tokens para PDF, text tokens para <code>text/plain</code>).</li>
   </ul>
 
-  <h3 id="anthropic-cache">7.9 Prompt caching com imagens / PDFs <a class="anchor" href="#anthropic-cache">¶</a><span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
+  <h3 id="anthropic-cache">7.9 Prompt caching com imagens / PDFs <a class="anchor" href="#anthropic-cache">¶</a><span class="rev-flag atu">Atualizado · 2026-10-19</span></h3>
   <p>
     O prompt caching da Anthropic permite marcar conteúdo de prefixo caro (system prompt, imagens grandes, PDFs grandes) com <code>cache_control</code> para que requests
     subsequentes que <strong>baterem no mesmo prefixo</strong> paguem uma tarifa reduzida de cache-read.
@@ -6015,9 +6012,9 @@ curl -X DELETE https://api.anthropic.com/v1/files/$FILE_ID \
     <li>Até <strong>4 breakpoints</strong> <code>cache_control</code> por request.</li>
     <li>TTL: <code>"5m"</code> (default) ou <code>"1h"</code>.</li>
     <li>Cache é <strong>chaveado por prefixo</strong>: qualquer mudança mais cedo no prefixo invalida tudo o que vem depois.</li>
-    <li><strong>Tamanho mínimo cacheável (verificado em 2026-09-30):</strong> <strong>512 tokens</strong> em Fable 5.1, Opus 5.5 e Sonnet 5.5 (e em Mythos 5.1, Opus 5, Fable 5, Mythos 5); <strong>4.096 tokens</strong> em Haiku 4.5. Abaixo disso o cache não é criado, nenhum erro é retornado e você paga input cheio. Com 512 tokens, um screenshot único ou um PDF de 1–2 páginas já podem ser cacheados. Modelos legados têm mínimos de 1.024 a 4.096 (<a href="#legado">Legado</a>). Fonte: <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching#cache-limitations" target="_blank" rel="noopener">prompt-caching#cache-limitations</a>.</li>
-    <li><strong>Multiplicadores:</strong> write 5m = <strong>1,25×</strong> o input base; write 1h = <strong>2×</strong>; read = <strong>0,1×</strong>, exceto <strong>0,05× no Opus 5.5</strong> e <strong>0,025× no Fable 5.1</strong>. Opus 5.5 ($4/MTok): write 5m $5 · write 1h $8 · read $0,20. Sonnet 5.5 ($2/MTok): read $0,20. Fontes: <a href="https://platform.claude.com/docs/en/about-claude/pricing" target="_blank" rel="noopener">pricing</a> e <a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener">models/overview</a> — lidas 2026-09-30.</li>
-    <li>Image caching: bytes da imagem + representação tokenizada são cacheados — modelos hi-res (Opus 5.5, Sonnet 5.5, Fable 5.1) são quem mais ganha.</li>
+    <li><strong>Tamanho mínimo cacheável (verificado em 2026-10-19):</strong> <strong>512 tokens</strong> em Fable 5.1, Opus 5.5, Sonnet 5.5 e Haiku 5.5 (e em Mythos 5.1, Opus 5, Fable 5, Mythos 5); <strong>4.096 tokens</strong> em Haiku 4.5. Abaixo disso o cache não é criado, nenhum erro é retornado e você paga input cheio. Com 512 tokens, um screenshot único ou um PDF de 1–2 páginas já podem ser cacheados. Modelos legados têm mínimos de 1.024 a 4.096 (<a href="#legado">Legado</a>). Fonte: <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching#cache-limitations" target="_blank" rel="noopener">prompt-caching#cache-limitations</a>.</li>
+    <li><strong>Multiplicadores:</strong> write 5m = <strong>1,25×</strong> o input base; write 1h = <strong>2×</strong>; read = <strong>0,1×</strong>, exceto <strong>0,05× no Opus 5.5 e no Sonnet 5.5</strong> (desde 2026-10-07) e <strong>0,025× no Fable 5.1</strong>. Opus 5.5 ($4/MTok): write 5m $5 · write 1h $8 · read $0,20. Sonnet 5.5 ($2/MTok): read $0,10. Fontes: <a href="https://platform.claude.com/docs/en/about-claude/pricing" target="_blank" rel="noopener">pricing</a> e <a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener">models/overview</a> — lidas 2026-10-19.</li>
+    <li>Image caching: bytes da imagem + representação tokenizada são cacheados — modelos hi-res (Opus 5.5, Sonnet 5.5, Haiku 5.5, Fable 5.1) são quem mais ganha.</li>
     <li>PDF caching: cada página é cacheada como image + text tokens — economia escala linearmente com o doc.</li>
   </ul>
 
@@ -6102,13 +6099,13 @@ curl -X DELETE https://api.anthropic.com/v1/files/$FILE_ID \
       <tr><td><code>tools</code></td><td>array</td><td>Inclua <code>code_execution_*</code>, web search, etc.</td></tr>
       <tr><td><code>betas</code></td><td>array&lt;string&gt;</td><td>Somente features beta ainda não promovidas, por exemplo <code>["compact-2026-01-12"]</code>; Files/Skills/toolsets GA não exigem header</td></tr>
       <tr><td><code>container</code></td><td>string</td><td>Reuso de sandbox pelo container ID</td></tr>
-      <tr><td><code>thinking</code></td><td>object</td><td>Opus 5.5, Fable 5.1 e Mythos 5.1: thinking adaptativo <strong>sempre ligado</strong> — <code>{"type":"disabled"}</code> e <code>{"type":"enabled"}</code> devolvem <strong>HTTP 400</strong>; controle por <code>effort</code>. Sonnet 5.5: adaptativo por padrão; <code>{"type":"disabled"}</code> devolve 400 e o substituto é <code>{"type":"between_tools"}</code> (só com effort ≤ <code>high</code>). Haiku 4.5: só <code>{"type":"enabled","budget_tokens":N}</code>. <code>output_config.effort</code>: <code>low</code>, <code>medium</code>, <code>high</code>, <code>xhigh</code>, <code>max</code> (default: Opus 5.5 <code>medium</code>; Fable 5.1 e Sonnet 5.5 <code>high</code>).</td></tr>
+      <tr><td><code>thinking</code></td><td>object</td><td>Opus 5.5, Fable 5.1 e Mythos 5.1: thinking adaptativo <strong>sempre ligado</strong> — <code>{"type":"disabled"}</code> e <code>{"type":"enabled"}</code> devolvem <strong>HTTP 400</strong>; controle por <code>effort</code>. Sonnet 5.5: adaptativo por padrão; <code>{"type":"disabled"}</code> devolve 400 e o substituto é <code>{"type":"between_tools"}</code> (só com effort ≤ <code>high</code>). Haiku 5.5: adaptativo por padrão; <code>{"type":"enabled","budget_tokens":N}</code> devolve 400 e <code>{"type":"disabled"}</code> vale com effort ≤ <code>high</code>. Haiku 4.5 (legado): só <code>{"type":"enabled","budget_tokens":N}</code>. <code>output_config.effort</code>: <code>low</code>, <code>medium</code>, <code>high</code>, <code>xhigh</code>, <code>max</code> (default: Opus 5.5 e Haiku 5.5 <code>medium</code>; Fable 5.1 e Sonnet 5.5 <code>high</code>).</td></tr>
       <tr><td><code>output_config.format</code></td><td>object</td><td>Structured output nativo via JSON schema</td></tr>
     </tbody>
   </table>
   </div>
 
-  <h3 id="anthropic-limits">7.11 Limitações &amp; gotchas <a class="anchor" href="#anthropic-limits">¶</a><span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
+  <h3 id="anthropic-limits">7.11 Limitações &amp; gotchas <a class="anchor" href="#anthropic-limits">¶</a><span class="rev-flag atu">Atualizado · 2026-10-19</span></h3>
 
   <h4>Visão</h4>
   <ul>
@@ -6151,19 +6148,20 @@ curl -X DELETE https://api.anthropic.com/v1/files/$FILE_ID \
     <li>Blocos <code>image</code> e <code>document</code> só existem dentro de mensagens com <code>role: "user"</code>.</li>
     <li>O chain-of-thought do modelo (quando thinking está habilitado) <strong>não</strong> faz streaming da imagem. Não espere "ver" Claude olhando a imagem passo-a-passo em adaptive thinking.</li>
     <li>Bedrock e Vertex AI são subsets limitados — sources somente base64, sem Code Execution, Bedrock Converse exige citations para PDF visual.</li>
-    <li><strong><code>tool_choice</code> forçado:</strong> <code>any</code>/<code>tool</code> devolve 400 em Opus 5.5, Sonnet 5.5 e Fable 5.1; use <code>auto</code> com <code>strict: true</code> ou structured outputs. Nada disso afeta os blocos <code>image</code>/<code>document</code>.</li>
+    <li><strong><code>tool_choice</code> forçado:</strong> <code>any</code>/<code>tool</code> devolve 400 em Opus 5.5, Sonnet 5.5 e Fable 5.1; use <code>auto</code> com <code>strict: true</code> ou structured outputs. O Haiku 5.5 aceita <code>tool_choice</code> forçado (a resposta não traz bloco <code>thinking</code>). Nada disso afeta os blocos <code>image</code>/<code>document</code>.</li>
   </ul>
 
-  <h3 id="anthropic-pricing">7.12 Pricing &amp; token accounting <a class="anchor" href="#anthropic-pricing">¶</a><span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
-  <p>Referência verificada em 2026-09-30 — <a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener">models/overview</a>, <a href="https://platform.claude.com/docs/en/about-claude/pricing" target="_blank" rel="noopener">pricing</a> e a doc de code execution:</p>
+  <h3 id="anthropic-pricing">7.12 Pricing &amp; token accounting <a class="anchor" href="#anthropic-pricing">¶</a><span class="rev-flag atu">Atualizado · 2026-10-19</span></h3>
+  <p>Referência verificada em 2026-10-19 — <a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener">models/overview</a>, <a href="https://platform.claude.com/docs/en/about-claude/pricing" target="_blank" rel="noopener">pricing</a> e a doc de code execution:</p>
   <div class="table-wrap">
   <table>
     <thead><tr><th>Superfície</th><th>Custo</th></tr></thead>
     <tbody>
       <tr><td>Fable 5.1</td><td>$10 / 1M input · $50 / 1M output · cache read $0,25 (0,025×) · batch $5 / $25</td></tr>
       <tr><td>Opus 5.5</td><td>$4 / 1M input · $20 / 1M output · cache write 5m $5 · write 1h $8 · cache read $0,20 (0,05×) · batch $2 / $10</td></tr>
-      <tr><td>Sonnet 5.5</td><td>$2 / 1M input · $10 / 1M output · cache read $0,20 · batch $1 / $5</td></tr>
-      <tr><td>Haiku 4.5</td><td>$1 / 1M input · $5 / 1M output · batch $0,50 / $2,50</td></tr>
+      <tr><td>Sonnet 5.5</td><td>$2 / 1M input · $10 / 1M output · cache read $0,10 (0,05×) · batch $1 / $5</td></tr>
+      <tr><td>Haiku 5.5</td><td>Até 100k tokens de prompt: $0,10 / 1M input · $0,50 / 1M output · cache read $0,01 · batch $0,05 / $0,25. Acima de 100k: $0,50 / $2,50 · cache read $0,05 · batch $0,25 / $1,25</td></tr>
+      <tr><td>Haiku 4.5 (legado)</td><td>$1 / 1M input · $5 / 1M output · batch $0,50 / $2,50</td></tr>
       <tr><td>Image tokens</td><td><code>ceil(W/28) × ceil(H/28)</code> por imagem antes de eventual downscale do tier, cobrados como input</td></tr>
       <tr><td>PDF — texto</td><td>~1.500–3.000 tokens / página de input</td></tr>
       <tr><td>PDF — imagens</td><td>Pela fórmula de image tokens, por página, input</td></tr>
@@ -6191,7 +6189,7 @@ curl -X DELETE https://api.anthropic.com/v1/files/$FILE_ID \
   </p>
 
   <div class="callout tip">
-    <strong>Estado verificado em 2026-09-30.</strong> (1) As versões atuais de code execution são escolhidas pelo <code>type</code> e são GA, sem header beta. (2) <code>document.source.type</code> <code>"text"</code> e <code>"content"</code> estão documentados no fluxo oficial de citations. (3) Claude continua sem entrada nativa de áudio ou vídeo nas páginas lidas; frame extraction e transcrição externa são os caminhos (<span class="unverified">UNVERIFIED</span> por ausência). (4) O mínimo de prompt caching é por modelo: 512 tokens em Fable 5.1, Opus 5.5 e Sonnet 5.5; 4.096 no Haiku 4.5.
+    <strong>Estado verificado em 2026-10-19.</strong> (1) As versões atuais de code execution são escolhidas pelo <code>type</code> e são GA, sem header beta. (2) <code>document.source.type</code> <code>"text"</code> e <code>"content"</code> estão documentados no fluxo oficial de citations. (3) Claude continua sem entrada nativa de áudio ou vídeo nas páginas lidas; frame extraction e transcrição externa são os caminhos (<span class="unverified">UNVERIFIED</span> por ausência). (4) O mínimo de prompt caching é por modelo: 512 tokens em Fable 5.1, Opus 5.5, Sonnet 5.5 e Haiku 5.5; 4.096 no Haiku 4.5.
   </div>
 </section>
 
@@ -6199,7 +6197,7 @@ curl -X DELETE https://api.anthropic.com/v1/files/$FILE_ID \
          7. RECIPES
          ============================================================ -->
     <section id="recipes" aria-labelledby="h-recipes">
-      <h2 id="h-recipes">8. Receitas práticas <a class="anchor" href="#recipes">¶</a><span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
+      <h2 id="h-recipes">8. Receitas práticas <a class="anchor" href="#recipes">¶</a><span class="rev-flag atu">Atualizado · 2026-10-19</span></h2>
       <p class="lead" style="margin:0 0 14px;color:var(--c-fg-muted)">
         Padrões resolvidos lado a lado nos três providers (verificado em 2026-09-30). Cada cartão traz o
         problema e snippets compactos por API; os blocos extensos ficam em
@@ -6536,12 +6534,12 @@ r = c.responses.create(model="gpt-6-astra",
 )
 images = [o.result for o in r.output if o.type == "image_generation_call"]  # base64
 </code></pre>
-<pre><code class="language-python"># Gemini — gemini-3.1-flash-image (Nano Banana 2) via Interactions API
+<pre><code class="language-python"># Gemini — gemini-nano-banana-2.1 (Nano Banana 2.1) via Interactions API
 import base64
 from google import genai
 client = genai.Client()
 r = client.interactions.create(
-    model="gemini-3.1-flash-image",
+    model="gemini-nano-banana-2.1",
     input="Capa: paisagem futurista, neon ciano.",
     response_format={"type": "image", "mime_type": "image/jpeg"},
 )
@@ -6566,16 +6564,8 @@ r = c.responses.create(model="gpt-6-astra",
         {"type": "input_text", "text": "Q1: ..."}]}])
 # A 2ª chamada com o mesmo file_id e o mesmo prefixo reaproveita o cache.
 </code></pre>
-<pre><code class="language-python"># Gemini — cache explícito: um dos 4 usos que só existem no generateContent (§5.2)
-from google import genai
-from google.genai import types
-client = genai.Client()
-f = client.files.upload(file="manual.pdf")
-cache = client.caches.create(model="gemini-3.8-flash",
-    config=types.CreateCachedContentConfig(contents=[f], ttl="3600s"))
-r = client.models.generate_content(model="gemini-3.8-flash", contents="Q1: ...",
-    config=types.GenerateContentConfig(cached_content=cache.name))
-# Sem cache explícito: o cache implícito da Interactions API (§6.9) já cobre prefixos repetidos.
+<pre><code class="language-python"># Gemini — o cache implícito da Interactions API (§6.9) já cobre prefixos repetidos.
+# Cache explícito (client.caches) só existe no generateContent legado: exemplo em §5.2.
 </code></pre>
 <pre><code class="language-python"># Anthropic — cache_control: ephemeral no bloco pesado
 import anthropic, base64
@@ -6602,16 +6592,8 @@ m = client.messages.create(model="claude-opus-5-5", max_tokens=512,
 {"custom_id":"doc-002", ...}
 # client.batches.create(input_file_id=..., endpoint="/v1/responses", completion_window="24h")
 </code></pre>
-<pre><code class="language-python"># Gemini Batch — só existe no generateContent (§5.2); desconto de 50 %
-from google import genai
-client = genai.Client()
-batch = client.batches.create(
-    model="gemini-3.8-flash",
-    src=[{"contents": [{"parts": [
-            {"file_data": {"file_uri": f.uri, "mime_type": "application/pdf"}},
-            {"text": "Classifique..."}]}]} for f in lst],
-    config={"display_name": "classify-docs"},
-)
+<pre><code class="language-python"># Gemini Batch (50 % off): sem equivalente na Interactions API; só no generateContent legado (§5.2)
+# client.batches.create(model="gemini-3.8-flash", src=[...], config={"display_name": "classify-docs"})
 </code></pre>
 <pre><code class="language-python"># Anthropic Message Batches — até 100k requests, 24h, 50 % off
 import anthropic
@@ -6749,7 +6731,7 @@ batch = client.messages.batches.create(requests=requests)
             <tr>
               <td>Gerar imagem</td>
               <td><span class="pill ok">Sim</span> <code>gpt-image-2.5-flare</code> / <code>-sunburst</code></td>
-              <td><span class="pill ok">Sim</span> <code>gemini-3.1-flash-image</code> (Nano Banana 2)</td>
+              <td><span class="pill ok">Sim</span> <code>gemini-nano-banana-2.1</code> (Nano Banana 2.1)</td>
               <td><span class="pill bad">Não</span></td>
             </tr>
             <tr>
@@ -6829,7 +6811,7 @@ batch = client.messages.batches.create(requests=requests)
          ============================================================ -->
     <section id="legado-wrap" aria-labelledby="legado">
       <h2 id="legado">Legado e migração<span class="rev-flag novo">Novo · 2026-09-30</span></h2>
-      <p>Tudo o que saiu do caminho principal fica aqui, e só aqui; o restante do guia descreve a superfície atual. Estado verificado em <strong>2026-09-30</strong> nas páginas de deprecations e de migração de cada provider; em divergência, vale a documentação oficial. Guias irmãos com o mesmo tratamento: <a href="guia_openai_modelos.html#legado">Modelos OpenAI</a>, <a href="guia_claude_api.html#legado">Claude API</a>.</p>
+      <p>Tudo o que saiu do caminho principal fica aqui, e só aqui; o restante do guia descreve a superfície atual. Estado verificado em <strong>2026-09-30</strong> nas páginas de deprecations e de migração de cada provider (as linhas de Gemini e de Claude, em <strong>2026-10-19</strong>); em divergência, vale a documentação oficial. Guias irmãos com o mesmo tratamento: <a href="guia_openai_modelos.html#legado">Modelos OpenAI</a>, <a href="guia_claude_api.html#legado">Claude API</a>.</p>
 
       <h3 id="legado-gemini" class="gemini">Gemini</h3>
       <div class="table-wrap"><table>
@@ -6840,19 +6822,20 @@ batch = client.messages.batches.create(requests=requests)
           <tr><td>Interactions com <code>outputs[]</code>, eventos <code>content.*</code>, header <code>Api-Revision</code>, <code>response_mime_type</code>, <code>image_config</code>, <code>response_modalities</code></td><td>Removidos em 2026-06-08 (SDK ≥ 2.0.0)</td><td><code>steps[]</code>, eventos <code>step.*</code>, <code>response_format={"type": "text", "mime_type": "application/json", "schema": ...}</code> ou <code>{"type": "image"}</code>.</td></tr>
           <tr><td><code>thinking_budget</code>; <code>temperature</code>/<code>top_p</code>/<code>top_k</code>/<code>candidate_count</code></td><td>Não recomendados / deprecated em Gemini 3</td><td><code>generation_config.thinking_level</code>; remova os parâmetros de amostragem.</td></tr>
           <tr><td><code>gemini-2.0-*</code>, <code>gemini-1.5-*</code>, previews 2.5, <code>gemini-3-pro-preview</code></td><td>Desligados (2025-09 a 2026-06)</td><td><code>gemini-3.8-flash</code> · <code>gemini-3.5-flash-lite</code> · <code>gemini-3.1-pro-preview</code>.</td></tr>
-          <tr><td><code>gemini-3.1-flash-image-preview</code>, <code>gemini-3-pro-image-preview</code></td><td>Desligados em 2026-06-25</td><td><code>gemini-3.1-flash-image</code> · <code>gemini-3-pro-image</code>.</td></tr>
-          <tr><td><code>gemini-2.5-flash-image</code></td><td>Desliga em <strong>2026-10-02</strong></td><td><code>gemini-3.1-flash-image</code>.</td></tr>
-          <tr><td>Imagen 4 (<code>imagen-4.0-*</code>)</td><td>Desligado em 2026-08-17</td><td><code>gemini-3.1-flash-image</code>.</td></tr>
+          <tr><td><code>gemini-3.1-flash-image-preview</code>, <code>gemini-3-pro-image-preview</code></td><td>Desligados em 2026-06-25</td><td><code>gemini-nano-banana-2.1</code> · <code>gemini-3-pro-image</code>.</td></tr>
+          <tr><td><code>gemini-3.1-flash-image</code></td><td>Deprecado em 2026-10-06 (sem data de desligamento)</td><td><code>gemini-nano-banana-2.1</code>.</td></tr>
+          <tr><td><code>gemini-2.5-flash-image</code></td><td>Desliga em <strong>2027-03-15</strong></td><td><code>gemini-3.1-flash-lite-image</code>.</td></tr>
+          <tr><td>Imagen 4 (<code>imagen-4.0-*</code>)</td><td>Desligado em 2026-08-17</td><td><code>gemini-nano-banana-2.1</code>.</td></tr>
           <tr><td>Veo 2.0 e 3.0</td><td>Desligados em 2026-06-30</td><td><code>gemini-omni-1.1-flash</code>.</td></tr>
           <tr><td>Veo 3.1 (<code>veo-3.1-*-preview</code>)</td><td>Desliga em <strong>2026-10-22</strong></td><td><code>gemini-omni-1.1-flash</code> (Interactions API).</td></tr>
-          <tr><td><code>gemini-omni-flash-preview</code></td><td>Deprecado em 2026-09-30</td><td><code>gemini-omni-1.1-flash</code> (GA).</td></tr>
-          <tr><td><code>gemini-3.1-flash-tts-preview</code>, TTS 2.5; <code>gemini-3.1-flash-live-preview</code>, Live 2.5</td><td>Legados (sem data de desligamento lida)</td><td><code>gemini-3.8-flash-tts</code> / <code>-lite-tts</code>; <code>gemini-3.8-live</code>.</td></tr>
+          <tr><td><code>gemini-omni-flash-preview</code></td><td>Deprecado em 2026-09-30; desliga em <strong>2026-10-22</strong></td><td><code>gemini-omni-1.1-flash</code> (GA).</td></tr>
+          <tr><td><code>gemini-3.1-flash-tts-preview</code>, <code>gemini-2.5-flash-preview-tts</code>, <code>gemini-2.5-pro-preview-tts</code>; <code>gemini-3.1-flash-live-preview</code>, <code>gemini-2.5-flash-native-audio-preview-12-2025</code></td><td>Desligam em <strong>2026-11-17</strong></td><td><code>gemini-3.8-flash-tts</code> / <code>-lite-tts</code>; <code>gemini-3.8-live</code>.</td></tr>
           <tr><td><code>gemini-3.1-flash-lite</code></td><td>Desliga em 2027-05-07</td><td><code>gemini-3.5-flash-lite</code>.</td></tr>
           <tr><td><code>gemini-embedding-001</code>; <code>gemini-embedding-2-preview</code></td><td>Desliga em 2028-05-14; preview desligado em 2026-08-10</td><td><code>gemini-embedding-2</code>.</td></tr>
           <tr><td><code>gemini-2.5-computer-use-preview-10-2025</code></td><td>Legado</td><td><code>gemini-3.8-flash</code> com a tool <code>computer_use</code>.</td></tr>
         </tbody>
       </table></div>
-      <p class="source-link">Fontes: <a href="https://ai.google.dev/gemini-api/docs/deprecations" target="_blank" rel="noopener">deprecations</a> · <a href="https://ai.google.dev/gemini-api/docs/migrate-to-interactions" target="_blank" rel="noopener">migrate-to-interactions</a> · <a href="https://ai.google.dev/gemini-api/docs/changelog" target="_blank" rel="noopener">changelog</a> — verificadas em 2026-09-30.</p>
+      <p class="source-link">Fontes: <a href="https://ai.google.dev/gemini-api/docs/deprecations" target="_blank" rel="noopener">deprecations</a> · <a href="https://ai.google.dev/gemini-api/docs/migrate-to-interactions" target="_blank" rel="noopener">migrate-to-interactions</a> · <a href="https://ai.google.dev/gemini-api/docs/changelog" target="_blank" rel="noopener">changelog</a> — verificadas em 2026-10-19.</p>
 
       <h3 id="legado-openai" class="openai">OpenAI</h3>
       <div class="table-wrap"><table>
@@ -6866,7 +6849,8 @@ batch = client.messages.batches.create(requests=requests)
           <tr><td><code>whisper-1</code>, <code>gpt-4o-transcribe</code>, <code>gpt-4o-mini-transcribe</code>, <code>gpt-4o-transcribe-diarize</code></td><td>Desligam em <strong>2027-02-26</strong></td><td><code>gpt-transcribe</code> (arquivo) ou <code>gpt-live-transcribe</code> (ao vivo). Até lá, são o único caminho documentado para timestamps, diarização, legendas e tradução (exemplos abaixo); o substituto oficial desses recursos não foi nomeado: <span class="unverified">UNVERIFIED&nbsp;(2026-09-30)</span>.</td></tr>
           <tr><td><code>gpt-realtime</code>, <code>gpt-realtime-mini</code>, <code>gpt-audio</code>, <code>gpt-audio-mini</code>, <code>gpt-4o-*-realtime</code>/<code>-audio</code></td><td>Desligam em 2027-01-20</td><td><code>gpt-realtime-2.1</code> (+ <code>-mini</code>) ou <code>gpt-audio-1.5</code>; para turnos, STT → Responses → TTS.</td></tr>
           <tr><td>Chat Completions (<code>/v1/chat/completions</code>), inclusive <code>input_audio</code> e <code>image_url</code></td><td>Suportada, não recomendada para projetos novos</td><td>Responses API (<code>input_image</code>, <code>input_file</code>, itens no lugar de <code>messages</code>). <code>gpt-6-astra</code> e <code>gpt-6.1-sol</code> só aceitam Chat Completions sem tools. <a href="https://developers.openai.com/api/docs/guides/migrate-to-responses" target="_blank" rel="noopener">migrate-to-responses</a>.</td></tr>
-          <tr><td>Tokenização de imagem por tiles de 512 px (<code>gpt-4o</code>, <code>gpt-4.1</code>, <code>gpt-5.1</code>)</td><td>Método dos modelos anteriores ao GPT-5.x</td><td>Patches de 32 px com multiplicador 1,2 (<a href="#openai-image">§4.2</a>).</td></tr>
+          <tr><td><code>tts-1</code>, <code>tts-1-hd</code>, <code>gpt-4o-mini-tts</code> (snapshots 2025-03-20 e 2025-12-15)</td><td>Desligam em <strong>2027-01-06</strong> (deprecations, 2026-10-19); se o alias <code>gpt-4o-mini-tts</code> sai junto: <span class="unverified">UNVERIFIED&nbsp;(2026-10-19)</span></td><td><code>gpt-realtime-2.1-mini</code> (substituto indicado na página de deprecations).</td></tr>
+          <tr><td>Tokenização de imagem por tiles de 512 px (<code>gpt-4o</code>, <code>gpt-4.1</code>, <code>gpt-5.1</code>)</td><td>Método dos modelos anteriores ao GPT-5.x; snapshots datados de <code>gpt-4o</code>/<code>gpt-4.1</code> desligam em 2027-01-14 (→ <code>gpt-6-luna</code>) e <code>gpt-5.1</code> em 2027-04-01 (→ <code>gpt-6-sol</code>)</td><td>Patches de 32 px com multiplicador 1,2 (<a href="#openai-image">§4.2</a>).</td></tr>
         </tbody>
       </table></div>
       <p>Exemplos que só funcionam até 2027-02-26 (página de speech-to-text, lida em 2026-09-30):</p>
@@ -6887,7 +6871,7 @@ for s in tx.segments:
 en = client.audio.translations.create(model="whisper-1", file=open("german.wav", "rb"))
 print(en.text)
 </code></pre>
-      <p class="source-link">Fontes: <a href="https://developers.openai.com/api/docs/deprecations" target="_blank" rel="noopener">deprecations</a> · <a href="https://developers.openai.com/api/docs/guides/speech-to-text" target="_blank" rel="noopener">speech-to-text</a> · <a href="https://developers.openai.com/api/docs/guides/migrate-to-responses" target="_blank" rel="noopener">migrate-to-responses</a> — verificadas em 2026-09-30.</p>
+      <p class="source-link">Fontes: <a href="https://developers.openai.com/api/docs/deprecations" target="_blank" rel="noopener">deprecations</a> · <a href="https://developers.openai.com/api/docs/guides/speech-to-text" target="_blank" rel="noopener">speech-to-text</a> · <a href="https://developers.openai.com/api/docs/guides/migrate-to-responses" target="_blank" rel="noopener">migrate-to-responses</a> — verificadas em 2026-09-30; deprecations relida em 2026-10-19.</p>
 
       <h3 id="legado-anthropic" class="anthropic">Anthropic</h3>
       <div class="table-wrap"><table>
@@ -6896,21 +6880,21 @@ print(en.text)
           <tr><td>Claude Opus 4.1</td><td>Aposentado em 2026-08-05 (a chamada retorna erro)</td><td><code>claude-opus-5-5</code>.</td></tr>
           <tr><td>Claude Opus 4 e Sonnet 4</td><td>Aposentados em 2026-06-15</td><td><code>claude-opus-5-5</code> · <code>claude-sonnet-5-5</code>.</td></tr>
           <tr><td>Opus 5 · Opus 4.8 · 4.7 · 4.6 · 4.5</td><td>Legados ativos; retirada não antes de 2027-07-24 · 2027-05-28 · 2027-04-16 · 2027-02-05 · 2026-11-24</td><td><code>claude-opus-5-5</code>. Mesmo tier hi-res de visão; mínimo de cache de 1.024 tokens (Opus 4.8; Sonnet 5, 4.6 e 4.5), 2.048 (Opus 4.7) ou 4.096 (Opus 4.6 e 4.5) — ver <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching" target="_blank" rel="noopener">prompt-caching</a>.</td></tr>
-          <tr><td>Sonnet 5 · Sonnet 4.6 · Sonnet 4.5</td><td>Legados ativos; retirada não antes de 2027-06-30 · 2027-02-17 · status do 4.5 <span class="unverified">UNVERIFIED&nbsp;(2026-09-30)</span></td><td><code>claude-sonnet-5-5</code>.</td></tr>
+          <tr><td>Sonnet 5 · Sonnet 4.6 · Sonnet 4.5</td><td>Sonnet 5 e 4.6: legados ativos, retirada não antes de 2027-06-30 · 2027-02-17. Sonnet 4.5: deprecado em 2026-09-30, retirada em 2026-11-30</td><td><code>claude-sonnet-5-5</code>.</td></tr>
           <tr><td>Fable 5 · Mythos 5</td><td>Legados ativos; retirada não antes de 2027-06-09</td><td><code>claude-fable-5-1</code>.</td></tr>
           <tr><td><code>computer_20251124</code> e headers <code>computer-use-*</code></td><td>Rejeitados no Opus 5.5 e Sonnet 5.5 (Claude API e Google Cloud); o Bedrock ainda aceita</td><td><code>computer_toolset_20260801</code> (GA, sem header).</td></tr>
-          <tr><td>Thinking <code>{"type": "disabled"}</code> / <code>{"type": "enabled"}</code></td><td>400 no Opus 5.5, Fable 5.1 e (<code>disabled</code>) Sonnet 5.5</td><td>Thinking adaptativo sempre ligado; controle por <code>effort</code> (Sonnet 5.5: <code>{"type": "between_tools"}</code>). Só o Haiku 4.5 usa <code>enabled</code> + <code>budget_tokens</code>.</td></tr>
+          <tr><td>Thinking <code>{"type": "disabled"}</code> / <code>{"type": "enabled"}</code></td><td>400 no Opus 5.5, Fable 5.1 e (<code>disabled</code>) Sonnet 5.5</td><td>Thinking adaptativo sempre ligado; controle por <code>effort</code> (Sonnet 5.5: <code>{"type": "between_tools"}</code>). <code>enabled</code> + <code>budget_tokens</code> só nos modelos legados (ex.: Haiku 4.5); no Haiku 5.5 dá 400, e <code>disabled</code> é aceito com <code>effort</code> até <code>high</code>.</td></tr>
           <tr><td><code>tool_choice</code> <code>any</code> / <code>tool</code></td><td>400 no Opus 5.5, Sonnet 5.5 e Fable 5.1</td><td><code>auto</code> + <code>strict: true</code> na tool.</td></tr>
           <tr><td><code>code_execution_20250522</code>; headers beta <code>files-api-2025-04-14</code>, <code>skills-2025-10-02</code></td><td>Files API e Skills são GA sem header; code execution: três versões atuais</td><td>Use <code>code_execution_20260521</code> e remova os headers.</td></tr>
-          <tr><td>Claude Haiku 4.5 (atual)</td><td>Retirada prevista: "não antes de 2026-10-15"</td><td>Sucessor não publicado em 2026-09-30 (<span class="unverified">UNVERIFIED&nbsp;(2026-09-30)</span>).</td></tr>
+          <tr><td>Claude Haiku 4.5</td><td>Legado ativo; retirada "não antes de 2026-10-15" (sem aviso de depreciação em 2026-10-19)</td><td><code>claude-haiku-5-5</code> (2026-10-07).</td></tr>
         </tbody>
       </table></div>
-      <p class="source-link">Fontes: <a href="https://platform.claude.com/docs/en/about-claude/model-deprecations" target="_blank" rel="noopener">model-deprecations</a> · <a href="https://platform.claude.com/docs/en/models/overview" target="_blank" rel="noopener">models/overview</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching" target="_blank" rel="noopener">prompt-caching</a> — verificadas em 2026-09-30; detalhes em <a href="guia_claude_api.html#legado">Claude API · Legado</a>.</p>
+      <p class="source-link">Fontes: <a href="https://platform.claude.com/docs/en/about-claude/model-deprecations" target="_blank" rel="noopener">model-deprecations</a> · <a href="https://platform.claude.com/docs/en/models/overview" target="_blank" rel="noopener">models/overview</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching" target="_blank" rel="noopener">prompt-caching</a> — verificadas em 2026-10-19; detalhes em <a href="guia_claude_api.html#legado">Claude API · Legado</a>.</p>
     </section>
 
 
     <section id="sources" aria-labelledby="h-sources">
-      <h2 id="h-sources">10. Fontes &amp; verificação <a class="anchor" href="#sources">¶</a><span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
+      <h2 id="h-sources">10. Fontes &amp; verificação <a class="anchor" href="#sources">¶</a><span class="rev-flag atu">Atualizado · 2026-10-19</span></h2>
       <p style="margin:0 0 14px;color:var(--c-fg-muted)">
         As páginas abaixo foram lidas em <strong>2026-09-30</strong> (texto Markdown das docs oficiais). Itens marcados
         <span class="unverified">UNVERIFIED</span> nos deep-dives não foram confirmados nessa data: valem como notas de pesquisa até a fonte oficial os documentar.
@@ -6982,7 +6966,7 @@ print(en.text)
       </div>
 
       <div class="callout tip" style="margin-top:18px">
-        <strong>Verificação cruzada (2026-09-30).</strong> Divergências entre páginas oficiais ficam registradas no texto, não resolvidas: tokens por mídia no Gemini (258 por tile e 32 tokens/s contra 1.120 por imagem e 25 tokens/s), limite inline de 100 MB contra 20 MB, nomes de eventos SSE e suporte a MCP remoto no Gemini 3. Não confirmados: destino do alias <code>gemini-flash-latest</code>; teto de páginas de PDF na OpenAI; parâmetros <code>response_format</code>/<code>temperature</code> do <code>gpt-transcribe</code>; retenção ZDR de OpenAI e Gemini; sucessor do Haiku 4.5. SDKs na data: <code>openai</code> 3.22.1 / 7.25.0, <code>google-genai</code> 2.25.0 / <code>@google/genai</code> 2.24.0, <code>anthropic</code> 1.9.0 / <code>@anthropic-ai/sdk</code> 0.129.0.
+        <strong>Verificação cruzada (2026-09-30).</strong> Divergências entre páginas oficiais ficam registradas no texto, não resolvidas: tokens por mídia no Gemini (258 por tile e 32 tokens/s contra 1.120 por imagem e 25 tokens/s), limite inline de 100 MB contra 20 MB, nomes de eventos SSE e suporte a MCP remoto no Gemini 3. Não confirmados: destino do alias <code>gemini-flash-latest</code>; teto de páginas de PDF na OpenAI; parâmetros <code>response_format</code>/<code>temperature</code> do <code>gpt-transcribe</code>; retenção ZDR de OpenAI e Gemini. SDKs em 2026-10-19: <code>openai</code> 3.35.1 / 7.39.0, <code>google-genai</code> 2.31.0 / <code>@google/genai</code> 2.30.0, <code>anthropic</code> 1.15.0 / <code>@anthropic-ai/sdk</code> 0.135.0.
       </div>
     </section>
 
@@ -7065,7 +7049,7 @@ print(en.text)
       "@type": "PropertyValue",
       "propertyID": "openai.audio",
       "name": "OpenAI — Audio",
-      "value": "STT de arquivo: gpt-transcribe (GA 2026-07-28; 25 MB; sem timestamps/diarização). Streaming: gpt-live-transcribe. Voz: gpt-realtime-2.1 (sessão máx. 60 min). TTS: gpt-4o-mini-tts. whisper-1 e gpt-4o-*transcribe* desligam em 2027-02-26."
+      "value": "STT de arquivo: gpt-transcribe (GA 2026-07-28; 25 MB; sem timestamps/diarização). Streaming: gpt-live-transcribe. Voz: gpt-realtime-2.1 (sessão máx. 60 min). TTS: gpt-4o-mini-tts (desliga em 2027-01-06). whisper-1 e gpt-4o-*transcribe* desligam em 2027-02-26."
     },
     {
       "@type": "PropertyValue",
@@ -7077,7 +7061,7 @@ print(en.text)
       "@type": "PropertyValue",
       "propertyID": "gemini.api",
       "name": "Gemini — API",
-      "value": "Interactions API (client.interactions.create; steps[]; response_format) é GA e a superfície ensinada. generateContent só para Batch, cache explícito, AFC em Python e safety settings. google-genai 2.25.0; @google/genai 2.24.0."
+      "value": "Interactions API (client.interactions.create; steps[]; response_format) é GA e a superfície ensinada. generateContent só para Batch, cache explícito, AFC em Python e safety settings. google-genai 2.31.0; @google/genai 2.30.0."
     },
     {
       "@type": "PropertyValue",
@@ -7125,7 +7109,7 @@ print(en.text)
       "@type": "PropertyValue",
       "propertyID": "anthropic.models",
       "name": "Claude — Modelos atuais",
-      "value": "claude-opus-5-5 (recomendado; $4/$20), claude-sonnet-5-5 ($2/$10), claude-fable-5-1 ($10/$50), claude-haiku-4-5 ($1/$5; retirada não antes de 2026-10-15). Opus 4.1 aposentado em 2026-08-05."
+      "value": "claude-opus-5-5 (recomendado; $4/$20), claude-sonnet-5-5 ($2/$10), claude-fable-5-1 ($10/$50), claude-haiku-5-5 ($0,10/$0,50 até 100k tokens de prompt; $0,50/$2,50 acima). Opus 4.1 aposentado em 2026-08-05."
     },
     {
       "@type": "PropertyValue",
@@ -7167,13 +7151,13 @@ print(en.text)
       "@type": "PropertyValue",
       "propertyID": "anthropic.cache",
       "name": "Claude — Prompt caching",
-      "value": "cache_control ephemeral (5 min; 1 h opcional). Mínimo: 512 tokens em Fable 5.1, Opus 5.5 e Sonnet 5.5; 4.096 no Haiku 4.5. Leitura: 0,1x, 0,05x no Opus 5.5, 0,025x no Fable 5.1."
+      "value": "cache_control ephemeral (5 min; 1 h opcional). Mínimo: 512 tokens em Fable 5.1, Opus 5.5, Sonnet 5.5 e Haiku 5.5; 4.096 no Haiku 4.5. Leitura: 0,1x, 0,05x no Opus 5.5 e no Sonnet 5.5, 0,025x no Fable 5.1."
     },
     {
       "@type": "PropertyValue",
       "propertyID": "cross.image_generation",
       "name": "Cross — Image generation",
-      "value": "OpenAI: gpt-image-2.5-flare/-sunburst. Gemini: gemini-3.1-flash-image (Nano Banana 2). Anthropic: não gera imagens."
+      "value": "OpenAI: gpt-image-2.5-flare/-sunburst. Gemini: gemini-nano-banana-2.1 (Nano Banana 2.1). Anthropic: não gera imagens."
     },
     {
       "@type": "PropertyValue",

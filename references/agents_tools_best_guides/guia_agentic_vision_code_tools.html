@@ -412,7 +412,7 @@ anthropic.Anthropic().messages.create(model="claude-opus-5-5", max_tokens=4096, 
           <tr><td>OpenAI code tools</td><td><code>code_interpreter</code> · <code>shell</code> (<code>container_auto</code>/<code>container_reference</code>/local)</td><td><span class="pill ok">atual</span></td><td>Container auto expira em 20 min sem uso; cobrança por minuto (mín. 5) desde 2026-06-02.</td></tr>
           <tr><td>OpenAI Tool Search</td><td><code>{"type":"tool_search"}</code> + <code>defer_loading</code></td><td><span class="pill ok">atual</span></td><td>Responses: <code>gpt-5.4</code>+. Hosted (<code>execution:"server"</code>) ou client (<code>"client"</code>).</td></tr>
           <tr><td>Gemini</td><td><code>code_execution</code> · <code>computer_use</code></td><td><span class="pill ok">atual</span> · <span class="pill beta">Preview</span></td><td>Sem Tool Search nativo: mantenha 10–20 tools ativas. <code>computer_use</code> recomenda <code>gemini-3.8-flash</code>.</td></tr>
-          <tr><td>Anthropic code execution</td><td><code>code_execution_20250825</code> · <code>_20260120</code> · <code>_20260521</code></td><td><span class="pill ok">GA</span></td><td>Em Haiku 4.5 as duas últimas degradam para o comportamento da <code>20250825</code>.</td></tr>
+          <tr><td>Anthropic code execution</td><td><code>code_execution_20250825</code> · <code>_20260120</code> · <code>_20260521</code></td><td><span class="pill ok">GA</span></td><td>Haiku 5.5 (2026-10-07) roda o REPL e o programmatic tool calling; só no Haiku 4.5 as duas últimas degradam para o comportamento da <code>20250825</code>.</td></tr>
           <tr><td>Anthropic computer/browser</td><td><code>computer_toolset_20260801</code> · <code>browser_toolset_20260801</code></td><td><span class="pill ok">GA</span> (Claude API, Google Cloud)</td><td>Sem <code>name</code>, sem <code>display_*</code>, sem beta header; membros executados em ordem.</td></tr>
           <tr><td>Anthropic Tool Search</td><td><code>tool_search_tool_regex_20251119</code> · <code>tool_search_tool_bm25_20251119</code></td><td><span class="pill ok">GA</span></td><td>≥1 tool não-deferida; até 10.000 tools deferidas por request.</td></tr>
         </tbody>
@@ -423,7 +423,7 @@ anthropic.Anthropic().messages.create(model="claude-opus-5-5", max_tokens=4096, 
         <li>Faça: gating no runtime antes da request: sem necessidade de crop/zoom/rotação/execução, nenhuma code tool entra em <code>tools</code> (default = visão nativa).</li>
         <li>Faça: Tool Search só para catálogos grandes de custom functions/MCP (&gt;20–30 tools); não serve para ligar/desligar code tools.</li>
         <li>Faça: persista artefatos de container no artifact store a cada turno; trate o container como efêmero.</li>
-        <li>Faça: Claude atual: <code>tool_choice: auto</code> + <code>strict: true</code>; selecione blocos por <code>type</code>; em Haiku 4.5 declare <code>code_execution_20250825</code> explicitamente.</li>
+        <li>Faça: Claude atual: <code>tool_choice: auto</code> + <code>strict: true</code>; selecione blocos por <code>type</code>; em Haiku 4.5 (legado) declare <code>code_execution_20250825</code> explicitamente.</li>
         <li>Faça: Anthropic Tool Search: mantenha ≥1 tool não-deferida; <code>cache_control</code> só em tool não-deferida.</li>
         <li>Faça: Gemini stateless: preserve e reenvie <code>id</code> e <code>signature</code> dos steps.</li>
         <li>Faça: computer/browser: VM ou container isolado, confirmação imediatamente antes de ação consequencial, página/screenshot como input não confiável e approval vinculado ao hash de <code>tool@version + args + principal + tenant + policy</code>.</li>
@@ -801,19 +801,19 @@ runtime_db.persist_gemini_steps(
           <tr>
             <td><code>code_execution_20260120</code></td>
             <td>Tudo da versão anterior + <strong>REPL persistence</strong> (estado Python mantido entre execuções no mesmo container) + <strong>programmatic tool calling</strong> (o código pode invocar outras tools).</td>
-            <td><span class="pill ok">Todos os modelos</span> aceitam o tipo da tool, mas em <strong>Haiku 4.5</strong> REPL persistence e programmatic tool calling não funcionam — a versão degrada silenciosamente para o comportamento de <code>20250825</code> nesse modelo.</td>
+            <td><span class="pill ok">Todos os modelos</span> aceitam o tipo da tool, mas em <strong>Haiku 4.5</strong> REPL persistence e programmatic tool calling não funcionam — a versão degrada silenciosamente para o comportamento de <code>20250825</code> nesse modelo (o Haiku 5.5 não tem a ressalva).</td>
           </tr>
           <tr>
             <td><code>code_execution_20260521</code> <span class="pill beta">Mais recente</span></td>
             <td>Mesmo runtime da <code>20260120</code>; a diferença é que a tool description informa a Claude o limite de <strong>90s de wall-clock por célula Python</strong> em programmatic tool calling, para orçar células longas.</td>
-            <td><span class="pill ok">Todos os modelos</span> — mesma ressalva de Haiku 4.5 acima.</td>
+            <td><span class="pill ok">Todos os modelos</span> — mesma ressalva do Haiku 4.5 acima.</td>
           </tr>
         </tbody>
       </table></div>
       <div class="callout info">
-        <strong>Modelos atuais (verificado em 2026-09-30):</strong> <code>claude-fable-5-1</code>,
+        <strong>Modelos atuais (verificado em 2026-10-19):</strong> <code>claude-fable-5-1</code>,
         <code>claude-opus-5-5</code> (recomendado para a maioria das cargas), <code>claude-sonnet-5-5</code> e
-        <code>claude-haiku-4-5</code>. As três versões da tool (<code>20250825</code>, <code>20260120</code>,
+        <code>claude-haiku-5-5</code> (<code>claude-haiku-4-5</code> segue ativo como legado). As três versões da tool (<code>20250825</code>, <code>20260120</code>,
         <code>20260521</code>) são GA, não exigem <code>anthropic-beta</code> e são aceitas por todo modelo
         compatível; o que muda entre modelos é quanto da capacidade cada um exercita (Haiku 4.5 sem REPL
         persistence nem programmatic tool calling). Os exemplos deste guia usam <code>claude-opus-5-5</code>.
@@ -836,7 +836,7 @@ runtime_db.persist_gemini_steps(
 client = anthropic.Anthropic()
 
 response = client.messages.create(
-    model="claude-opus-5-5",   # Fable 5.1 / Sonnet 5.5 tambem suportam; em Haiku 4.5 a mesma tool roda sem REPL/programmatic
+    model="claude-opus-5-5",   # Fable 5.1 / Sonnet 5.5 / Haiku 5.5 tambem suportam; em Haiku 4.5 a mesma tool roda sem REPL/programmatic
     max_tokens=4096,
     messages=runtime_adapter.to_anthropic_messages(thread_id="thr_123"),
     tools=[
@@ -868,7 +868,7 @@ runtime_db.persist_anthropic_response(thread_id="thr_123", response=response)</c
         <code>20260120</code>) por padrão — REPL persistente reduz re-renderizações de página em fluxos
         de visão com múltiplos crops, e programmatic tool calling permite que o código consulte outras
         tools sem round-trip. Essas duas versões são aceitas por <strong>todos os modelos</strong>, mas o
-        ganho real (REPL + programmatic tool calling) só se realiza fora de Haiku 4.5 — nesse modelo elas
+        ganho real (REPL + programmatic tool calling) só se realiza fora do Haiku 4.5 (legado; o Haiku 5.5 o tem) — nesse modelo elas
         se comportam como <code>code_execution_20250825</code>, então prefira declarar
         <code>code_execution_20250825</code> explicitamente quando o roteador puder cair em Haiku 4.5,
         para deixar o comportamento esperado claro no código.
@@ -877,7 +877,7 @@ runtime_db.persist_anthropic_response(thread_id="thr_123", response=response)</c
         Client tools continuam rodando no seu runtime e server tools na infraestrutura da Anthropic —
         em ambos os casos o runtime persiste <code>tool_use</code>/<code>tool_result</code> e artefatos.
         Server tools não substituem o DB do orquestrador. Visão/PDF nativos (tier de resolução alta —
-        2576px/4784 tokens visuais — nos modelos Claude 4.7 e posteriores; os demais, incl. Haiku 4.5,
+        2576px/4784 tokens visuais — nos modelos Claude 4.7 e posteriores, incl. Haiku 5.5; os demais, incl. Haiku 4.5,
         ficam no tier standard de 1568px/1568 tokens; custo em tokens) estão
         detalhados em <a href="guia_multimodal.html">Multimodal</a>.
       </p>
@@ -1183,7 +1183,7 @@ for call in model_calls:
         <tbody>
           <tr><td>Mecanismo nativo</td><td><code>{"type":"tool_search"}</code></td><td><code>tool_search_tool_regex_20251119</code> / <code>tool_search_tool_bm25_20251119</code></td><td><span class="pill na">N/D</span> — runtime decide</td></tr>
           <tr><td>Flag de deferimento</td><td><code>defer_loading: true</code> (functions, MCP, funções de namespace)</td><td><code>defer_loading: true</code></td><td>—</td></tr>
-          <tr><td>Modelos</td><td>Responses API: <code>gpt-5.4</code>+ (exemplos oficiais usam <code>gpt-6-astra</code>); Agents API: <code>tool_search</code> em <code>agent.tools</code></td><td>Fable 5.1/Mythos 5.1, Fable 5/Mythos 5, Opus 5.5, Opus 5, Sonnet 5.5, Opus 4.5–4.8, Sonnet 4.5/4.6, Haiku 4.5 (tabela oficial de compatibilidade de 2026-09-30; <strong>não lista Sonnet 5</strong>)</td><td>—</td></tr>
+          <tr><td>Modelos</td><td>Responses API: <code>gpt-5.4</code>+ (exemplos oficiais usam <code>gpt-6-astra</code>); Agents API: <code>tool_search</code> em <code>agent.tools</code></td><td>Fable 5.1/Mythos 5.1, Fable 5/Mythos 5, Opus 5.5, Opus 5, Sonnet 5.5, Haiku 5.5, Opus 4.5–4.8, Sonnet 4.5/4.6, Haiku 4.5 (tabela oficial de compatibilidade de 2026-09-30; Haiku 5.5 conforme a página de modelos de 2026-10-19; <strong>não lista Sonnet 5</strong>)</td><td>—</td></tr>
           <tr><td>Modos</td><td>Hosted (<code>execution:"server"</code>): OpenAI busca nas tools deferidas declaradas. Client-executed (<code>execution:"client"</code>): a aplicação recebe <code>tool_search_call</code> e devolve <code>tool_search_output</code> com <code>tools</code> em nova request.</td><td>Server tool (busca na Anthropic); implementação client-side possível via <code>tool_reference</code> em <code>tool_result</code> (ex.: embeddings)</td><td>Pré-seleção no runtime ou loop de duas fases</td></tr>
           <tr><td>Restrições/escala</td><td>Namespaces &lt;10 functions (melhor prática)</td><td>≥1 tool não-deferida; até 5 tools por busca por padrão (<code>limit</code> 1–10.000); até 10k tools deferidas/request; sem <code>cache_control</code> em tool deferida</td><td>10–20 tools ativas (melhor prática oficial)</td></tr>
         </tbody>

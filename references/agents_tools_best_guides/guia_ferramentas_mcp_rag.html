@@ -373,8 +373,8 @@
           <tr><td>Structured output OpenAI</td><td>Responses <code>text.format</code> (<code>type: "json_schema"</code>, <code>strict</code>, <code>schema</code>)</td><td><span class="pill ok">atual</span></td><td>Built-in tools não entram em lote paralelo de function calls.</td></tr>
           <tr><td>Structured output Anthropic</td><td><code>output_config.format</code></td><td><span class="pill ok">GA, sem header beta</span></td><td>Subconjunto de JSON Schema; valide contra ele.</td></tr>
           <tr><td>Structured output Gemini</td><td>Interactions <code>response_format</code> (<code>type</code>, <code>mime_type: "application/json"</code>, <code>schema</code>)</td><td><span class="pill ok">atual</span></td><td>Não é o parâmetro do <code>generateContent</code> (legado).</td></tr>
-          <tr><td>SDK Python MCP</td><td><code>mcp</code> <code>2.2.0</code> · 1.x <code>1.30.0</code></td><td><span class="pill ok">atual</span></td><td>Classe <code>MCPServer</code>; <code>FastMCP</code> era a classe do 1.x.</td></tr>
-          <tr><td>FastMCP (Prefect)</td><td><code>fastmcp</code> <code>4.0.10</code></td><td><span class="pill ok">GA</span></td><td>O <code>fastmcp</code> do npm (<code>4.22.1</code>) é outro projeto.</td></tr>
+          <tr><td>SDK Python MCP</td><td><code>mcp</code> <code>2.3.0</code> · 1.x <code>1.30.0</code></td><td><span class="pill ok">atual</span></td><td>Classe <code>MCPServer</code>; <code>FastMCP</code> era a classe do 1.x.</td></tr>
+          <tr><td>FastMCP (Prefect)</td><td><code>fastmcp</code> <code>4.1.1</code> (piso <code>&gt;=4.1.1</code>)</td><td><span class="pill ok">GA</span></td><td>O <code>fastmcp</code> do npm (<code>4.23.2</code>) é outro projeto.</td></tr>
           <tr><td>Conectores MCP hospedados</td><td>Anthropic <code>mcp-client-2026-09-15</code> · OpenAI tool <code>mcp</code> remota · Gemini 3: sem remote MCP</td><td><span class="pill beta">beta</span> só Anthropic</td><td>Você herda a revisão do provider (Anthropic documenta <code>2025-11-25</code>).</td></tr>
         </tbody>
       </table></div>
@@ -606,21 +606,27 @@
         <span class="source-link">Fontes: <a href="https://modelcontextprotocol.io/community/governance" target="_blank" rel="noopener">governança</a> · <a href="https://modelcontextprotocol.io/community/sep-guidelines" target="_blank" rel="noopener">SEP guidelines</a> — lidas em 2026-09-30.</span>
       </div>
       <div class="callout info">
-        <strong>Estado atual — verificado em 2026-09-30.</strong> Separe fio, SDK e framework; nenhum número
+        <strong>Estado atual — verificado em 2026-09-30</strong> (pacotes e SDKs: 2026-10-19). Separe fio, SDK e framework; nenhum número
         de pacote, isoladamente, prova interoperabilidade.
         <ul style="margin:8px 0 0;padding-left:20px">
           <li><strong>Fio:</strong> a revisão <code>2026-07-28</code> é a corrente (sem revisão datada mais nova);
             <code>2025-11-25</code> é Legacy.</li>
-          <li><strong>SDK Python oficial:</strong> <code>mcp 2.2.0</code> (07/09). A linha 1.x (<code>1.30.0</code>)
+          <li><strong>SDK Python oficial:</strong> <code>mcp 2.3.0</code> (02/10). Na 2.3.0, uma tool com anotação
+            <code>x-mcp-header</code> inválida falha no registro (<code>InvalidSignature</code>) e o pacote exige
+            <code>httpx2&gt;=2.10.0</code> (<a href="https://github.com/modelcontextprotocol/python-sdk/releases/tag/v2.3.0" target="_blank" rel="noopener">release v2.3.0</a>, lido em 2026-10-04). A linha 1.x (<code>1.30.0</code>)
             só recebe correções críticas e de segurança. Piso de segurança: <code>&gt;=2.2.0</code> (ou
             <code>&gt;=1.30.0</code>) — ver <a href="#hardening-de-mcp-server">§11</a>.</li>
           <li><strong>SDK TypeScript oficial:</strong> a v2 são pacotes separados
-            (<code>@modelcontextprotocol/server</code> e <code>/client</code>, <code>2.2.0</code> em 28/09). O
-            pacote monolítico <code>@modelcontextprotocol/sdk</code> (v1, <code>1.31.0</code>) segue mantido, com
-            correções de bug e segurança por ao menos 6 meses após o lançamento da v2.</li>
-          <li><strong>FastMCP (Prefect):</strong> <code>fastmcp 4.0.10</code> no PyPI (25/09); a série 4.x é GA desde
-            <code>4.0.0</code> (31/08) e depende de <code>mcp&gt;=2.0.0,&lt;3</code>. O <code>fastmcp</code> do npm
-            (<code>4.22.1</code>) é um projeto homônimo e independente.</li>
+            (<code>@modelcontextprotocol/server</code> e <code>/client</code>, <code>2.3.1</code> em 05/10). O
+            pacote monolítico <code>@modelcontextprotocol/sdk</code> (v1, <code>1.32.1</code>) segue mantido, com
+            correções de bug e segurança por ao menos 6 meses após o lançamento da v2. Pisos de segurança:
+            <code>sdk&gt;=1.32.0</code> e <code>server</code>/<code>client&gt;=2.3.0</code> (advisories do repositório,
+            <a href="guia_protocolo_mcp.html#bibliotecas">Protocolo MCP §3</a>)
+            (<a href="https://www.npmjs.com/package/@modelcontextprotocol/server" target="_blank" rel="noopener">npm</a>, lido em 2026-10-19).</li>
+          <li><strong>FastMCP (Prefect):</strong> <code>fastmcp 4.1.1</code> no PyPI (18/10); a série 4.x é GA desde
+            <code>4.0.0</code> (31/08) e depende de <code>mcp&gt;=2.0.0,&lt;3</code>. Instale <code>fastmcp&gt;=4.1.1</code>:
+            a 4.1.1 e a 3.4.9 corrigem os 8 advisories publicados em 2026-10-16 e o GHSA-cg3c-5x66-h9cc (high, 2026-10-18; na 4.x só a 4.1.1) (a 3.x é legado; <code>&gt;=3.4.9</code> só para quem ainda não migrou). O <code>fastmcp</code> do npm
+            (<code>4.23.2</code>) é um projeto homônimo e independente.</li>
           <li><strong>Frameworks:</strong> o teto <code>mcp&lt;2</code> persiste só em
             <code>langchain-mcp-adapters</code>, <code>crewai</code>, <code>semantic-kernel</code> e
             <code>mcp-use</code>; detalhe em <a href="guia_protocolo_mcp.html#bibliotecas">Protocolo MCP §3</a>.</li>
@@ -643,7 +649,7 @@
             se trata.</li>
           <li><strong><code>fastmcp</code>, o pacote</strong> — projeto <strong>de terceiros</strong>
             (<a href="https://github.com/PrefectHQ/fastmcp" target="_blank" rel="noopener">PrefectHQ/fastmcp</a>), instalado
-            com <code>pip install fastmcp</code> e com versionamento próprio (<code>4.0.10</code>). <strong>Não foi
+            com <code>pip install fastmcp</code> e com versionamento próprio (<code>4.1.1</code>). <strong>Não foi
             renomeado</strong> e não segue a numeração do SDK oficial.</li>
         </ul>
         <p style="margin:8px 0 0">Ao ler changelog, issue ou resposta de IA sobre "FastMCP", confirme primeiro
@@ -1131,7 +1137,7 @@ if tool_errors_consecutive &gt;= threshold:
           <tr><td><code>initialize</code>/<code>initialized</code> e <code>Mcp-Session-Id</code></td><td>Removidos do core na 2026-07-28 (servidor <strong>DEVE ignorar</strong> o header)</td><td>Versão, identidade e capabilities vão em <code>_meta</code>; estado entre chamadas vira handle explícito (ver <a href="guia_protocolo_mcp.html#fim-das-sessoes">Protocolo MCP §7</a>).</td><td><a href="https://modelcontextprotocol.io/specification/2026-07-28/changelog" target="_blank" rel="noopener">changelog</a></td></tr>
           <tr><td>Códigos de erro <code>-32001</code>, <code>-32003</code>, <code>-32004</code> e recurso ausente <code>-32002</code></td><td>Renumerados na 2026-07-28</td><td>Use as constantes nomeadas do SDK: <code>-32020</code>, <code>-32021</code>, <code>-32022</code> e <code>-32602</code>.</td><td><a href="https://modelcontextprotocol.io/specification/2026-07-28/changelog" target="_blank" rel="noopener">changelog</a></td></tr>
           <tr><td>Classe <code>FastMCP</code> do SDK <code>mcp</code> 1.x</td><td>Renomeada na 2.x</td><td>Troque por <code>MCPServer</code> ao subir para <code>mcp&gt;=2.2.0</code>.</td><td><a href="https://github.com/modelcontextprotocol/python-sdk/releases" target="_blank" rel="noopener">python-sdk releases</a></td></tr>
-          <tr><td>Pacote <code>fastmcp</code> 3.x (última <code>3.4.7</code>, 2026-08-10)</td><td>Superado pela 4.x GA</td><td>Suba para <code>fastmcp&gt;=4</code>; não o confunda com o SDK oficial nem com o <code>fastmcp</code> do npm.</td><td><a href="https://github.com/PrefectHQ/fastmcp/releases" target="_blank" rel="noopener">fastmcp releases</a></td></tr>
+          <tr><td>Pacote <code>fastmcp</code> 3.x (última <code>3.4.9</code>, 2026-10-16)</td><td>Superado pela 4.x GA</td><td>Suba para <code>fastmcp&gt;=4.1.1</code> (piso 3.x para quem ainda não migrou: <code>&gt;=3.4.9</code>); não o confunda com o SDK oficial nem com o <code>fastmcp</code> do npm.</td><td><a href="https://github.com/PrefectHQ/fastmcp/releases" target="_blank" rel="noopener">fastmcp releases</a></td></tr>
           <tr><td>Adapters com teto <code>mcp&lt;2</code> (<code>langchain-mcp-adapters</code>, <code>crewai</code>, <code>semantic-kernel</code>, <code>mcp-use</code>)</td><td>Ainda em 1.x em 2026-09-30</td><td>Isole o adapter ou espere a versão compatível; não conclua que o protocolo atual é a linha 1.x. Ver <a href="guia_protocolo_mcp.html#bibliotecas">Protocolo MCP §3</a>.</td><td><a href="https://pypi.org/pypi/mcp/json" target="_blank" rel="noopener">requires_dist no PyPI</a></td></tr>
         </tbody>
       </table></div>
