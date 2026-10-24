@@ -2185,7 +2185,7 @@ edit = client.interactions.create(
         <span class="tok-k">for</span> c <span class="tok-k">in</span> step.content:
             <span class="tok-k">if</span> c.type == <span class="tok-s">"image"</span>:
                 <span class="tok-n">print</span>(<span class="tok-s">"mime:"</span>, c.mime_type, <span class="tok-s">"bytes:"</span>, <span class="tok-n">len</span>(c.data))</code></pre>
-  <p>Valores aceitos em <code>response_format</code> de imagem (página oficial de geração de imagem): <code>aspect_ratio</code> <code>1:1</code>, <code>2:3</code>, <code>3:2</code>, <code>3:4</code>, <code>4:3</code>, <code>4:5</code>, <code>5:4</code>, <code>9:16</code>, <code>16:9</code>, <code>21:9</code> (e <code>1:8</code>, <code>8:1</code>, <code>1:4</code>, <code>4:1</code>); <code>image_size</code> <code>512</code>, <code>1K</code>, <code>2K</code>, <code>4K</code>. Preço por imagem: tabela de <a href="https://ai.google.dev/gemini-api/docs/pricing" target="_blank" rel="noopener">pricing</a> (US$ 30 por 1M de tokens de imagem).</p>
+  <p>Valores aceitos em <code>response_format</code> de imagem (página oficial de geração de imagem): <code>aspect_ratio</code> <code>1:1</code>, <code>2:3</code>, <code>3:2</code>, <code>3:4</code>, <code>4:3</code>, <code>4:5</code>, <code>5:4</code>, <code>9:16</code>, <code>16:9</code>, <code>21:9</code> (e <code>1:8</code>, <code>8:1</code>, <code>1:4</code>, <code>4:1</code>); <code>image_size</code> <code>1K</code>, <code>2K</code>, <code>4K</code> (o 2.1 não tem o tamanho <code>512</code>). Preço por imagem: tabela de <a href="https://ai.google.dev/gemini-api/docs/pricing" target="_blank" rel="noopener">pricing</a> (US$ 30 por 1M de tokens de imagem).</p>
 
   <h4>Coordenadas de detecção de objetos</h4>
   <p>Quando se pede bounding boxes ou segmentação, o Gemini devolve <code>box_2d</code> como <code>[ymin, xmin, ymax, xmax]</code> normalizado em <code>[0, 1000]</code>. Sempre desescale para a resolução real da imagem antes de plotar ou de usar como input em outro pipeline.</p>
@@ -2611,7 +2611,8 @@ i2 = client.interactions.create(
   <h4><code>response_format.{type:"image"}</code> — valores válidos</h4>
   <ul>
     <li><code>aspect_ratio</code>: <code>1:1</code>, <code>2:3</code>, <code>3:2</code>, <code>3:4</code>, <code>4:3</code>, <code>4:5</code>, <code>5:4</code>, <code>9:16</code>, <code>16:9</code>, <code>21:9</code>, <code>1:8</code>, <code>8:1</code>, <code>1:4</code>, <code>4:1</code>.</li>
-    <li><code>image_size</code>: <code>512</code>, <code>1K</code>, <code>2K</code>, <code>4K</code>.</li>
+    <li><code>image_size</code>: <code>1K</code>, <code>2K</code>, <code>4K</code> no <code>gemini-nano-banana-2.1</code> (o schema genérico também lista <code>512</code>, que o 2.1 não suporta).</li>
+    <li><code>generation_config.thinking_level</code> na geração de imagem com o <code>gemini-nano-banana-2.1</code>: <code>minimal</code>, <code>medium</code> (padrão) ou <code>high</code>. Fonte: <a href="https://ai.google.dev/gemini-api/docs/image-generation" target="_blank" rel="noopener">image-generation</a>, lido em 2026-10-24.</li>
   </ul>
 
   <h4><code>response_format</code> polimórfico (schema novo)</h4>
