@@ -5,8 +5,8 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%9A%3C/text%3E%3C/svg%3E" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>File Inputs sem Provider Storage + Hosted Execution — Núcleo</title>
-<meta name="description" content="Padrão para ingestão de arquivos em agentes sob ZDR/PHI sem deixar estado retido no provider: Modo A estrito (base64 inline, signed URL efêmera, chunks/render app-side) vs Modo B hosted opcional (Code Interpreter, Hosted Shell, code execution). SourceRecord/EvidenceCard, regra de payload por turno, pipeline de imagem web e integração em OpenAI Responses, Gemini Interactions, Anthropic Messages, Agents SDK, LangGraph, Deep Agents e Google ADK. Verificado em 2026-09-30." />
-<meta name="last-checked" content="2026-09-30" />
+<meta name="description" content="Padrão para ingestão de arquivos em agentes sob ZDR/PHI sem deixar estado retido no provider: Modo A estrito (base64 inline, signed URL efêmera, chunks/render app-side) vs Modo B hosted opcional (Code Interpreter, Hosted Shell, code execution). SourceRecord/EvidenceCard, regra de payload por turno, pipeline de imagem web e integração em OpenAI Responses, Gemini Interactions, Anthropic Messages, Agents SDK, LangGraph, Deep Agents e Google ADK. Verificado em 2026-10-24." />
+<meta name="last-checked" content="2026-10-24" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -269,7 +269,7 @@
     details > summary { display: none; }
   }
 </style>
-<style id="rev-flag-css">main :not(pre) > code,main a{overflow-wrap:anywhere}.rev-flag{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:999px;font-size:.62em;font-weight:600;vertical-align:middle;letter-spacing:.02em;white-space:nowrap}.rev-flag.novo{background:#dcfce7;color:#14532d;border:1px solid #86efac}.rev-flag.atu{background:#e0f2fe;color:#0c4a6e;border:1px solid #7dd3fc}.rev-news{margin:16px 0;padding:12px 16px;border-left:4px solid #22c55e;border-radius:8px;background:rgba(34,197,94,.08)}.rev-news ul{margin:6px 0 0;padding-left:20px}.rev-news li{margin:2px 0}:root[data-theme="dark"] .rev-flag.novo{background:#14532d;color:#dcfce7;border-color:#166534}:root[data-theme="dark"] .rev-flag.atu{background:#0c4a6e;color:#e0f2fe;border-color:#075985}@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .rev-flag.novo{background:#14532d;color:#dcfce7;border-color:#166534}:root:not([data-theme="light"]) .rev-flag.atu{background:#0c4a6e;color:#e0f2fe;border-color:#075985}}</style>
+<style id="wrap-css">main :not(pre) > code,main a{overflow-wrap:anywhere}</style>
 </head>
 <body>
 <a class="skip" href="#main">Pular para o conteúdo</a>
@@ -278,7 +278,7 @@
   <div class="header-row">
     <div class="brand">File Inputs sem Provider Storage <small>Núcleo agnóstico · super-guia de agentes</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-09-30</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-10-24</strong></span>
       <span class="badge da">Núcleo · v1</span>
       <span class="badge ok">Modo A estrito</span>
       <span class="badge warn">Modo B hosted</span>
@@ -293,7 +293,6 @@
     <ol>
       <li><a href="#para-agentes">Resumo para agentes</a></li>
       <li><a href="#sobre-guia">Sobre este guia</a></li>
-      <li><a href="#fontes-oficiais">Fontes &amp; verificação</a></li>
     </ol>
 
     <div class="toc-section">Parte 1 — A política</div>
@@ -342,13 +341,11 @@
     <div class="toc-section">Referência</div>
     <ol>
       <li><a href="#cheatsheet">Cheat sheet</a></li>
-      <li><a href="#legado">Legado e migração</a></li>
-      <li><a href="#verificacao">Notas de verificação</a></li>
+      <li><a href="#fontes-oficiais">Fontes oficiais</a></li>
     </ol>
   </nav>
 
   <main id="main">
-<aside class="rev-news" id="rev-news-2026-09-30" aria-label="Novidades desta revisão"><strong>O que há de novo nesta revisão (2026-09-30)</strong> — 2 seções novas e 6 atualizadas desde a revisão de 2026-09-23. Procure os selos Novo e Atualizado nos títulos.<details><summary>Ver lista</summary><ul><li>Novo: <a href="#para-agentes">Resumo para agentes (verificado 2026-09-30)</a></li><li>Novo: <a href="#legado">Legado e migração</a></li><li>Atualizado: <a href="#fontes-oficiais">Fontes &amp; verificação</a></li><li>Atualizado: <a href="#openai-modo-a">8. OpenAI Responses — Modo A</a></li><li>Atualizado: <a href="#gemini-modo-a">9. Gemini Interactions — Modo A</a></li><li>Atualizado: <a href="#anthropic-modo-a">10. Anthropic Messages — Modo A</a></li><li>Atualizado: <a href="#hosted-por-provider">14. Hosted execution por provider</a></li><li>Atualizado: <a href="#verificacao">Notas de verificação</a></li><li>Legado condensado: o histórico empilhado de revisões anteriores virou um estado único verificado em 2026-09-30 e os itens antigos, uma única seção, <a href="#legado">Legado e migração</a>.</li></ul></details></aside>
 
     <div class="hero">
       <h1>File Inputs sem Provider Storage + Hosted Execution</h1>
@@ -365,66 +362,68 @@
       <div class="hero-meta">
         <span class="badge da">Núcleo · v1</span>
         <span class="badge info">OpenAI · Gemini · Anthropic</span>
-        <span class="badge ok">SOTA · verificado 2026-09-30</span>
+        <span class="badge ok">SOTA · verificado 2026-10-24</span>
       </div>
     </div>
 
     <section id="para-agentes">
-      <h2>Resumo para agentes (verificado 2026-09-30)<span class="rev-flag novo">Novo · 2026-09-30</span></h2>
+      <h2>Resumo para agentes (verificado 2026-10-24)</h2>
 
-      <h3>Superfície atual</h3>
-      <p>Modo A (estrito): arquivo vai inline no payload do turno (base64 ou signed URL efêmera) com <code>store=False</code>; sem Files API, <code>file_id</code>, vector store, background, cache de provider nem container hospedado. Modo B (code interpreter/shell/code execution) é opcional e <strong>não</strong> é ZDR estrito (<a href="#dois-modos">§1</a>). Gemini = <code>client.interactions</code>.</p>
-<pre><code class="language-bash">pip install "openai&gt;=3,&lt;4" "anthropic&gt;=1,&lt;2" "google-genai&gt;=2.3,&lt;3"   # atuais: 3.35.1 / 1.15.0 / 2.31.0</code></pre>
-<pre><code class="language-python"># OpenAI Responses
-client.responses.create(model="gpt-6-astra", store=False, input=[{"role": "user", "content": [
-    {"type": "input_text", "text": "Resuma"},
-    {"type": "input_file", "filename": "a.pdf", "file_data": f"data:application/pdf;base64,{b64}"}]}])
-# Gemini Interactions
-client.interactions.create(model="gemini-3.8-flash", store=False, background=False, input=[
-    {"type": "text", "text": "Resuma"},
-    {"type": "document", "data": b64, "mime_type": "application/pdf", "resolution": "medium"}])
-# Anthropic Messages
-client.messages.create(model="claude-opus-5-5", max_tokens=2000, messages=[{"role": "user", "content": [
-    {"type": "text", "text": "Resuma"},
-    {"type": "document", "source": {"type": "base64", "media_type": "application/pdf", "data": b64}}]}])</code></pre>
+      <h3>Use este guia quando</h3>
+      <ul>
+        <li>precisar enviar imagem, PDF ou arquivo ao modelo sem deixar cópia no storage do provider (Modo A);</li>
+        <li>precisar decidir se execução hospedada (Hosted Shell, Code Interpreter, Code Execution) é aceitável sob ZDR (Modo B);</li>
+        <li>precisar registrar a proveniência do arquivo (SourceRecord, caption, regra de payload por turno).</li>
+      </ul>
 
-      <h3>IDs e limites correntes</h3>
+      <h3>Não é aqui</h3>
+      <ul>
+        <li>Limites e formatos de mídia por provider: <a href="guia_multimodal.html#para-agentes">guia_multimodal.html</a>.</li>
+        <li>Contar tokens e custo: <a href="guia_token_counting.html#para-agentes">guia_token_counting.html</a>.</li>
+        <li>Code tools, shell, computer/browser use: <a href="guia_agentic_vision_code_tools.html#para-agentes">guia_agentic_vision_code_tools.html</a>.</li>
+      </ul>
+
+      <h3>Padrões vigentes</h3>
+      <ul>
+        <li>Modo A = bytes no request (base64 ou URL), sem Files API, <code>store=false</code> (OpenAI e Gemini) e sem cache explícito; reinjete a fonte do seu <code>SourceRegistry</code> a cada turno (<a href="#politica-modo-a">§3</a>).</li>
+        <li>OpenAI Responses: <code>input_file</code> / <code>input_image</code> inline, <code>store=false</code>; <code>/v1/files</code> e <code>/v1/conversations</code> não são elegíveis a ZDR. <code>gpt-6-astra</code> e <code>gpt-6.1-sol</code> rejeitam <code>reasoning.effort:"none"</code> (HTTP 400).</li>
+        <li>Gemini Interactions (<code>client.interactions</code>): bloco inline <code>{type, data|uri, mime_type}</code>, <code>store=false</code> (incompatível com <code>background</code> e <code>previous_interaction_id</code>); <code>resolution</code> é por item; inline até 100 MB (PDF 50 MB), URL externa só até 15 MB por arquivo; para imagem e áudio fique abaixo de 20 MB.</li>
+        <li>Anthropic Messages: bloco <code>image</code> / <code>document</code> em base64; a Files API não é elegível a ZDR.</li>
+        <li>Modo B (execução hospedada) não é ZDR estrito: containers OpenAI guardam estado efêmero até expirar; Anthropic code execution não é elegível; faça o cálculo no seu backend se ZDR estrito for requisito.</li>
+        <li>Imagens e arquivos podem passar por varredura de CSAM e ser retidos mesmo sob ZDR (OpenAI).</li>
+        <li>Não envie <code>temperature</code>, <code>top_p</code> nem <code>top_k</code> ao Gemini (ignorados hoje; HTTP 400 em gerações futuras).</li>
+        <li>Após o turno, guarde <code>EvidenceCard</code> com <code>source_id</code>, não o arquivo bruto (<a href="#output-schema">§16</a>); o limite de páginas por tier (<a href="#payload-turno">§7</a>) é política ilustrativa, não limite de API.</li>
+      </ul>
+
+      <h3>Versões e modelos correntes</h3>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Provider</th><th>Modelo (exemplo)</th><th>Limite inline / por request</th><th>ZDR e nota</th></tr></thead>
+          <thead><tr><th>Item</th><th>Valor</th><th>Fonte (2026-10-24)</th></tr></thead>
           <tbody>
-            <tr><td>OpenAI</td><td><code>gpt-6-astra</code> (GA)</td><td>512 MB e 1.500 imagens; <code>input_file</code> &lt; 50 MB cada, soma ≤ 50 MB; planilha 1.000 linhas/sheet</td><td>Responses é ZDR elegível; Chat Completions aceita só PDF como <code>file</code>; <code>reasoning.effort:"none"</code> dá 400 em Astra</td></tr>
-            <tr><td>Gemini</td><td><code>gemini-3.8-flash</code> (GA)</td><td>Inline 100 MB (PDF 50 MB); URL externa 100 MB; Files API 2 GB/48 h fora do Modo A</td><td><code>store=False</code> incompatível com <code>background=True</code>; Google Search/Maps retêm 30 dias</td></tr>
-            <tr><td>Anthropic</td><td><code>claude-opus-5-5</code> (GA)</td><td>Request 32 MB; 600 páginas PDF e 600 imagens (100 se janela &lt; 1M/200k); imagem 10 MB base64</td><td>PDF inline é ZDR elegível, exceto Fable 5.1/Mythos 5.1 (30 dias); Files API e code execution não são</td></tr>
+            <tr><td>OpenAI file inputs</td><td>&lt; 50 MB por arquivo, 50 MB combinados; Files API 512 MB (fora do Modo A)</td><td><a href="https://developers.openai.com/api/docs/guides/file-inputs" target="_blank" rel="noopener">file-inputs</a></td></tr>
+            <tr><td>Gemini entrada de arquivo</td><td>inline 100 MB · File API 2 GB / 48 h · GCS 2 GB / 30 dias · URL externa 15 MB</td><td><a href="https://ai.google.dev/gemini-api/docs/file-input-methods" target="_blank" rel="noopener">file-input-methods</a></td></tr>
+            <tr><td>Anthropic Files API</td><td>GA, sem header beta; não elegível a ZDR</td><td><a href="https://platform.claude.com/docs/en/build-with-claude/zero-data-retention" target="_blank" rel="noopener">ZDR</a></td></tr>
+            <tr><td>Modelos dos exemplos</td><td>gpt-6-astra · gemini-3.8-flash · claude-opus-5-5</td><td><a href="https://developers.openai.com/api/docs/pricing" target="_blank" rel="noopener">pricing</a></td></tr>
+            <tr><td>SDKs</td><td>openai 3.37.0 · google-genai 2.33.0 · anthropic 2.3.0</td><td>PyPI</td></tr>
+            <tr><td>Frameworks</td><td>openai-agents 0.24.0 · langgraph 1.2.17 · deepagents 0.7.32 · google-adk 2.13.0</td><td>PyPI</td></tr>
           </tbody>
         </table>
       </div>
 
-      <h3>Faça / Não faça</h3>
-      <ul>
-        <li>Não use Files API, <code>file_id</code>, vector store, <code>background</code>, <code>previous_response_id</code>/<code>previous_interaction_id</code> como fonte da verdade no Modo A → use base64/signed URL e reinjete do seu <code>SourceRegistry</code> (<a href="#politica-modo-a">§3</a>).</li>
-        <li>Não trate <code>store=False</code> como "sem estado no provider" quando há container hospedado → registre <code>run_mode=hosted_optional_non_strict</code> (<a href="#hosted-modo-b">§13</a>).</li>
-        <li>Não use <code>generateContent</code>/<code>inline_data</code> em código novo → use <code>interactions.create</code> com blocos <code>{type, data|uri, mime_type}</code> (<a href="#legado">#legado</a>).</li>
-        <li>Gemini: resolução de mídia é por item (<code>"resolution": "low|medium|high"</code>; <code>ultra_high</code> só imagem, só Gemini 3) → não use <code>generation_config.media_resolution</code>.</li>
-        <li>Gemini 3.x: não envie <code>temperature</code>/<code>top_p</code>/<code>top_k</code> (depreciados).</li>
-        <li>Anthropic: não use <code>tool_choice</code> <code>any</code>/<code>tool</code> nem <code>thinking:{"type":"disabled"}</code> em <code>claude-opus-5-5</code> (400); não envie o header <code>files-api-2025-04-14</code> (Files API é GA, mas proibida no Modo A).</li>
-        <li>OpenAI: não use Assistants API (desligada em 2026-08-26) nem Chat Completions para arquivos que não sejam PDF → use Responses.</li>
-        <li>Limite de páginas por tier (<a href="#payload-turno">§7</a>) é política ilustrativa, não limite de API.</li>
-        <li>Após o turno, guarde <code>EvidenceCard</code> com <code>source_id</code>, não o arquivo bruto (<a href="#output-schema">§16</a>).</li>
-      </ul>
+      <h3>Não use</h3>
+      <p>Files API, File API e File Search não são "sem storage" (todos guardam o arquivo). Modelo fora da tabela acima: confira as páginas de deprecations (<a href="https://developers.openai.com/api/docs/deprecations" target="_blank" rel="noopener">OpenAI</a>, <a href="https://ai.google.dev/gemini-api/docs/deprecations" target="_blank" rel="noopener">Gemini</a>, <a href="https://platform.claude.com/docs/en/about-claude/model-deprecations" target="_blank" rel="noopener">Anthropic</a>).</p>
 
-      <h3>Onde está cada coisa</h3>
+      <h3>Mapa de seções</h3>
       <ul>
-        <li><a href="#dois-modos">1. Dois modos</a> · <a href="#politica-modo-a">3. Política Modo A</a> · <a href="#caminhos">4. Caminhos permitidos</a> · <a href="#source-record">5. SourceRecord</a> · <a href="#payload-turno">7. Payload por turno</a></li>
-        <li><a href="#openai-modo-a">8. OpenAI</a> · <a href="#gemini-modo-a">9. Gemini</a> · <a href="#anthropic-modo-a">10. Anthropic</a> · <a href="#hosted-modo-b">13. Modo B</a> · <a href="#hosted-por-provider">14. Hosted por provider</a></li>
-        <li><a href="#output-schema">16. Output schema</a> · <a href="#evals">17. Evals</a> · <a href="#checklist">19. Checklist</a> · <a href="#cheatsheet">Cheat sheet</a> · <a href="#legado">Legado</a> · <a href="#verificacao">Verificação</a></li>
-      </ul>
-
-      <h3>Incertezas (UNVERIFIED)</h3>
-      <ul>
-        <li>Limite inline do Gemini: a página de métodos diz 100 MB, as páginas de imagem/áudio dizem 20 MB; para imagens fique abaixo de 20 MB ou teste.</li>
-        <li><code>generation_config.media_resolution</code> global na Interactions e retenção do Batch API do Gemini: não confirmados.</li>
-        <li><code>detail:"auto"</code> no <code>gpt-6.1-sol</code> e elegibilidade ZDR de Agent Skills (Anthropic): não confirmados (<a href="#verificacao">Notas de verificação</a>).</li>
+        <li><a href="#sobre-guia">#sobre-guia</a> — escopo do guia.</li>
+        <li><a href="#parte-politica">#parte-politica</a> — Parte 1, a política: <a href="#dois-modos">#dois-modos</a> (Modo A estrito vs Modo B hosted), <a href="#escopo-garantias">#escopo-garantias</a>, <a href="#politica-modo-a">#politica-modo-a</a> (política sem storage do provider), <a href="#caminhos">#caminhos</a> (caminhos permitidos).</li>
+        <li><a href="#parte-proveniencia">#parte-proveniencia</a> — Parte 2, proveniência: <a href="#source-record">#source-record</a>, <a href="#caption">#caption</a>, <a href="#payload-turno">#payload-turno</a> (o que reenviar a cada turno).</li>
+        <li><a href="#parte-modo-a-providers">#parte-modo-a-providers</a> — Parte 3, Modo A por provider: <a href="#openai-modo-a">#openai-modo-a</a>, <a href="#gemini-modo-a">#gemini-modo-a</a>, <a href="#anthropic-modo-a">#anthropic-modo-a</a>.</li>
+        <li><a href="#frameworks-modo-a">#frameworks-modo-a</a> — Parte 4, adapters de framework no Modo A (Agents SDK, LangGraph, Deep Agents, Google ADK).</li>
+        <li><a href="#parte-web-hosted">#parte-web-hosted</a> — Parte 5, web e execução hospedada: <a href="#web-images">#web-images</a>, <a href="#hosted-modo-b">#hosted-modo-b</a>, <a href="#hosted-por-provider">#hosted-por-provider</a>, <a href="#hosted-frameworks">#hosted-frameworks</a>.</li>
+        <li><a href="#parte-controle">#parte-controle</a> — Parte 6, controle: <a href="#output-schema">#output-schema</a> (EvidenceCard), <a href="#evals">#evals</a>, <a href="#riscos">#riscos</a>, <a href="#checklist">#checklist</a>.</li>
+        <li><a href="#cheatsheet">#cheatsheet</a> — Modo A vs Modo B em uma tabela.</li>
+        <li><a href="#fontes-oficiais">#fontes-oficiais</a> — fontes oficiais e data de verificação.</li>
       </ul>
     </section>
 
@@ -458,36 +457,6 @@ client.messages.create(model="claude-opus-5-5", max_tokens=2000, messages=[{"rol
         ZDR e por que o event store local também não é "ZDR de graça") em
         <a href="guia_streaming_durabilidade_resume.html">Streaming Durável &amp; Resumível</a>.
       </div>
-    </section>
-
-    <section id="fontes-oficiais">
-      <h2>Fontes &amp; verificação<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
-      <p>
-        Todo fato perecível (limites, parâmetros, strings de versão, elegibilidade ZDR) foi conferido contra a
-        documentação oficial e os registros dos pacotes em <strong>2026-09-30</strong>, ou anotado como
-        <span class="pill partial">UNVERIFIED</span> nas <a href="#verificacao">notas de verificação</a>. Os exemplos usam
-        <strong>modelos atuais</strong>: <code>gpt-6-astra</code>, <code>gemini-3.8-flash</code> e <code>claude-opus-5-5</code>.
-      </p>
-      <div class="table-wrap"><table>
-        <thead><tr><th>Tema</th><th>Recurso oficial</th></tr></thead>
-        <tbody>
-          <tr><td>OpenAI — file inputs</td><td><a href="https://developers.openai.com/api/docs/guides/file-inputs" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/file-inputs</a></td></tr>
-          <tr><td>OpenAI — images &amp; vision</td><td><a href="https://developers.openai.com/api/docs/guides/images-vision" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/images-vision</a></td></tr>
-          <tr><td>OpenAI — data controls / ZDR</td><td><a href="https://developers.openai.com/api/docs/guides/your-data" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/your-data</a></td></tr>
-          <tr><td>OpenAI — Code Interpreter / Hosted Shell</td><td><a href="https://developers.openai.com/api/docs/guides/tools-code-interpreter" target="_blank" rel="noopener">tools-code-interpreter</a> · <a href="https://developers.openai.com/api/docs/guides/tools-shell" target="_blank" rel="noopener">tools-shell</a></td></tr>
-          <tr><td>Gemini — Interactions API</td><td><a href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/interactions-overview</a></td></tr>
-          <tr><td>Gemini — file input methods / media resolution</td><td><a href="https://ai.google.dev/gemini-api/docs/file-input-methods" target="_blank" rel="noopener">file-input-methods</a> · <a href="https://ai.google.dev/gemini-api/docs/media-resolution" target="_blank" rel="noopener">media-resolution</a></td></tr>
-          <tr><td>Gemini — Zero Data Retention</td><td><a href="https://ai.google.dev/gemini-api/docs/zdr" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/zdr</a></td></tr>
-          <tr><td>Anthropic — Vision / PDF</td><td><a href="https://platform.claude.com/docs/en/build-with-claude/vision" target="_blank" rel="noopener">vision</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/pdf-support" target="_blank" rel="noopener">pdf-support</a></td></tr>
-          <tr><td>Anthropic — data retention / Code execution</td><td><a href="https://platform.claude.com/docs/en/manage-claude/api-and-data-retention" target="_blank" rel="noopener">api-and-data-retention</a> · <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool" target="_blank" rel="noopener">code-execution-tool</a></td></tr>
-        </tbody>
-      </table></div>
-      <p style="font-size:13px;color:var(--c-fg-muted)">
-        Legenda dos selos: <span class="pill ok">Verificado</span> confirmado na doc oficial em 2026-09-30 ·
-        <span class="pill beta">Novo</span> recurso/versão recente ·
-        <span class="pill partial">UNVERIFIED</span> não confirmado em URL oficial direta (fonte/lacuna anotada) ·
-        <span class="pill bad">Evitar</span> proibido no Modo A / antipadrão.
-      </p>
     </section>
 
     <!-- ===================== PARTE 1 ===================== -->
@@ -578,8 +547,8 @@ client.messages.create(model="claude-opus-5-5", max_tokens=2000, messages=[{"rol
       - prompt caching if policy forbids provider-side retained cache</code></pre>
       <div class="callout tip">
         <strong>Por que cada item:</strong> a maioria dos recursos da lista <code>forbidden_provider_side</code> cria ou
-        depende de estado retido no provider — confirmado nas feature-eligibility tables de cada provider (ver §13 e as
-        <a href="#verificacao">notas de verificação</a>). Exceção a registrar: o <em>prompt caching</em> da Anthropic é,
+        depende de estado retido no provider — confirmado nas feature-eligibility tables de cada provider (ver §13 e
+        <a href="#fontes-oficiais">fontes oficiais</a>). Exceção a registrar: o <em>prompt caching</em> da Anthropic é,
         por padrão, <strong>ZDR elegível</strong> (cache em memória deletado ao fim do TTL); incluí-lo aqui é uma decisão
         de política mais estrita, não uma inelegibilidade ZDR.
       </div>
@@ -765,14 +734,15 @@ Rules:
     </section>
 
     <section id="openai-modo-a">
-      <h2>8. OpenAI Responses — Modo A<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
+      <h2>8. OpenAI Responses — Modo A</h2>
       <p>
         Use <code>input_image</code> e <code>input_file</code> <strong>sem</strong> <code>file_id</code>: para arquivos,
         <code>file_data</code> base64 (com prefixo data URI) ou <code>file_url</code>/signed URL. Use
         <code>store=False</code>. <code>detail</code> aceita <code>low</code>, <code>high</code>, <code>original</code> e
         <code>auto</code> (default); <code>original</code> é indicado para imagem grande/densa/espacial. Em
-        <code>gpt-6-astra</code>, nos modelos <code>gpt-5.6</code> e no <code>gpt-5.5</code>, <code>auto</code> usa o mesmo
-        dimensionamento de <code>original</code>; na família <code>gpt-5.4</code>, o de <code>high</code>.
+        <code>gpt-6-astra</code>, <code>auto</code> usa o mesmo dimensionamento de <code>original</code>.
+        <code>detail:"auto"</code> no <code>gpt-6.1-sol</code>: a página de imagens não lista o modelo
+        (<span class="pill partial">UNVERIFIED</span>); meça com <code>responses.input_tokens.count</code>.
       </p>
       <pre><code class="language-python">content = [
     {"type": "input_text", "text": caption(IMG_ORIG_001)},
@@ -809,25 +779,29 @@ response = client.responses.create(
     text={"format": {"type": "json_schema", "name": "EvidenceCard", "schema": EVIDENCE_SCHEMA}}
 )</code></pre>
       <div class="callout info">
-        <strong>Limites (verificados em 2026-09-30):</strong> até <strong>512 MB</strong> de payload e <strong>1.500 imagens</strong>
+        <strong>Limites:</strong> até <strong>512 MB</strong> de payload e <strong>1.500 imagens</strong>
         por request (PNG, JPEG, WEBP e GIF não animado); cada arquivo <code>input_file</code> tem menos de <strong>50 MB</strong> e a
-        soma dos arquivos na request é de no máximo 50 MB. Detalhe completo em
+        soma dos arquivos na request é de no máximo 50 MB; a página de file inputs não documenta teto de páginas. Detalhe completo em
         <a href="guia_multimodal.html#h-openai">Multimodal · OpenAI</a>.
       </div>
       <div class="callout beta">
         <strong><code>input_file</code> além de PDF.</strong> A Responses API aceita PDF, texto e código, documentos
         (<code>.docx</code>), apresentações (<code>.pptx</code>) e planilhas (<code>.csv</code>, <code>.xlsx</code>, <code>.tsv</code>),
-        entre outros; a <strong>Chat Completions aceita só PDF</strong> como parte <code>file</code>. O processamento muda por
-        tipo: <strong>PDF</strong> extrai texto e imagem de página; documento/texto não-PDF extrai <strong>só texto</strong> (se o
+        entre outros. O processamento muda por
+        tipo: <strong>PDF</strong> extrai texto e imagem de página (<code>detail</code> <code>auto</code> = high nos modelos atuais); documento/texto não-PDF extrai <strong>só texto</strong> (se o
         gráfico importa, converta para PDF); <strong>planilha</strong> é parseada até as <strong>1.000 primeiras linhas por sheet</strong>,
         com resumo e cabeçalho gerados pelo modelo. Essa augmentation é leitura via modelo: não substitui o worker próprio de
         planilha (§3, §4) quando o número precisa ser exato e auditável, como em PHI/ZDR estrito.
       </div>
-      <div class="source-link">Fonte oficial: <a href="https://developers.openai.com/api/docs/guides/file-inputs" target="_blank" rel="noopener">OpenAI · file inputs</a> · <a href="https://developers.openai.com/api/docs/guides/images-vision" target="_blank" rel="noopener">images &amp; vision</a> · <a href="https://developers.openai.com/api/docs/guides/your-data" target="_blank" rel="noopener">data controls / ZDR</a> — verificado em 2026-09-30</div>
+      <div class="callout warn">
+        <strong>Retenção mesmo sob ZDR:</strong> imagens e arquivos passam por varredura de CSAM e podem ser retidos mesmo com ZDR;
+        <code>/v1/files</code> e <code>/v1/conversations</code> não são elegíveis.
+      </div>
+      <div class="source-link">Fonte oficial: <a href="https://developers.openai.com/api/docs/guides/file-inputs" target="_blank" rel="noopener">OpenAI · file inputs</a> · <a href="https://developers.openai.com/api/docs/guides/images-vision" target="_blank" rel="noopener">images &amp; vision</a> · <a href="https://developers.openai.com/api/docs/guides/your-data" target="_blank" rel="noopener">data controls / ZDR</a></div>
     </section>
 
     <section id="gemini-modo-a">
-      <h2>9. Gemini Interactions — Modo A<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
+      <h2>9. Gemini Interactions — Modo A</h2>
       <p>
         Use <code>store=False</code>, <code>background=False</code> e blocos <code>image</code>/<code>document</code> com
         <code>data</code> base64 ou <code>uri</code>/signed URL. Se houver combinação de tools em modo stateless,
@@ -858,30 +832,29 @@ response = client.responses.create(
     }]
 )</code></pre>
       <div class="callout info">
-        <strong>Limites (verificados em 2026-09-30).</strong> Inline base64: <strong>100 MB</strong> por request/payload, sendo
-        <strong>50 MB</strong> para PDF, sem persistência. URL externa ou assinada em <code>uri</code>: até 100 MB por payload,
+        <strong>Limites.</strong> Inline base64: <strong>100 MB</strong> por request/payload, sendo
+        <strong>50 MB</strong> para PDF, sem persistência. URL externa ou assinada em <code>uri</code>: até <strong>15 MB por arquivo</strong>,
         buscada a cada request. O bloco <code>{type, data|uri, mime_type}</code> é o documentado para a Interactions API.
-        <strong>Divergência oficial:</strong> as páginas de imagem e áudio ainda citam 20 MB no total; para imagens, fique abaixo
-        de 20 MB ou valide com uma chamada real. Files API (2 GB por arquivo, 20 GB por projeto, 48 h) e registro de URI do
-        Cloud Storage (vale por até 30 dias) mantêm estado no provider e ficam fora do Modo A (§3).
+        Regra operacional: para imagem e áudio, fique abaixo de 20 MB por request (as páginas de imagem e áudio citam 20 MB no total).
+        Files API (2 GB por arquivo, 20 GB por projeto, 48 h) e registro de URI do
+        Cloud Storage (até 2 GB, vale por até 30 dias) mantêm estado no provider e ficam fora do Modo A (§3).
       </div>
       <div class="callout info">
         <strong>Resolução de mídia.</strong> Na Interactions, configure o teto de tokens <em>por item</em> com o campo
         <code>resolution</code> (minúsculas: <code>low</code>, <code>medium</code>, <code>high</code>; <code>ultra_high</code> só para
         imagem, <em>somente Gemini 3</em>). A doc recomenda <code>high</code> para imagem e <code>medium</code> para PDF.
-        <span class="pill partial">UNVERIFIED</span> Uma forma global <code>generation_config.media_resolution</code> não aparece
-        nos exemplos atuais da Interactions; não a use. Detalhe em <a href="guia_multimodal.html#h-gemini">Multimodal · Gemini</a>.
+        Só <code>resolution</code> por item é documentado na Interactions; não use <code>generation_config.media_resolution</code>.
+        Detalhe em <a href="guia_multimodal.html#h-gemini">Multimodal · Gemini</a>.
       </div>
       <div class="callout warn">
-        <strong>Não envie <code>temperature</code>, <code>top_p</code> nem <code>top_k</code> em Gemini 3.x</strong> (depreciados;
-        use <code>system_instruction</code>). A documentação só manda remover: se a API devolve HTTP 400 ou ignora o campo,
-        as páginas oficiais divergem (<span class="pill partial">UNVERIFIED</span>).
+        <strong>Não envie <code>temperature</code>, <code>top_p</code> nem <code>top_k</code> ao Gemini</strong>: são ignorados hoje
+        e gerações futuras retornam HTTP 400 (use <code>system_instruction</code>).
       </div>
-      <div class="source-link">Fonte oficial: <a href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">Gemini · Interactions</a> · <a href="https://ai.google.dev/gemini-api/docs/file-input-methods" target="_blank" rel="noopener">file input methods</a> · <a href="https://ai.google.dev/gemini-api/docs/media-resolution" target="_blank" rel="noopener">media resolution</a> · <a href="https://ai.google.dev/gemini-api/docs/zdr" target="_blank" rel="noopener">Zero Data Retention</a> — verificado em 2026-09-30</div>
+      <div class="source-link">Fonte oficial: <a href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">Gemini · Interactions</a> · <a href="https://ai.google.dev/gemini-api/docs/file-input-methods" target="_blank" rel="noopener">file input methods</a> · <a href="https://ai.google.dev/gemini-api/docs/media-resolution" target="_blank" rel="noopener">media resolution</a> · <a href="https://ai.google.dev/gemini-api/docs/zdr" target="_blank" rel="noopener">Zero Data Retention</a></div>
     </section>
 
     <section id="anthropic-modo-a">
-      <h2>10. Anthropic Messages — Modo A<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
+      <h2>10. Anthropic Messages — Modo A</h2>
       <p>
         Use <code>image</code> com base64/URL e <code>document</code> (PDF) com base64/URL. Não use <code>file_id</code>
         se o run exige Modo A. O <code>document</code> aceita <code>title</code>, <code>context</code> e
@@ -916,31 +889,29 @@ response = client.responses.create(
     }]
 )</code></pre>
       <div class="callout info">
-        <strong>Limites (verificados em 2026-09-30):</strong> request máximo <strong>32 MB</strong>; até <strong>600 páginas</strong> de PDF
-        (100 quando a janela de contexto da request é menor que 1M tokens) e até <strong>600 imagens</strong> por request (100 para
-        modelos com janela de 200k). Imagem: até 8000x8000 px e <strong>10 MB</strong> em base64 na Claude API; acima de 20 imagens
+        <strong>Limites:</strong> request máximo <strong>32 MB</strong>; até <strong>600 páginas</strong> de PDF
+        (100 quando a janela de contexto da request é menor que 1M tokens) e até <strong>600 imagens</strong> por request
+        (todos os modelos vigentes têm janela de 1M). Imagem: até 8000x8000 px e <strong>10 MB</strong> em base64 na Claude API; acima de 20 imagens
         vale um limite de dimensão mais estrito por imagem (redimensione para no máximo 2000 px). GIF animado usa só o primeiro
         frame. PDF vision = texto extraído + imagem por página. Detalhe em
         <a href="guia_multimodal.html#h-anthropic">Multimodal · Anthropic</a> e
         <a href="guia_claude_api.html#b-pdf">Claude API · PDF</a>.
       </div>
       <div class="callout ok" id="anthropic-estado-corrente">
-        <strong>Estado corrente (verificado em 2026-09-30).</strong> O exemplo usa <code>claude-opus-5-5</code>: nele o thinking é
+        <strong>Estado corrente.</strong> O exemplo usa <code>claude-opus-5-5</code>: nele o thinking é
         sempre ligado e <code>tool_choice</code> forçado (<code>any</code>/<code>tool</code>) retorna 400 — o payload acima não usa
         nenhum dos dois; ajuste adapters que usem. A Files API é GA, mas este guia a proíbe no Modo A (§3). Custo de imagem:
-        <code>ceil(W/28) × ceil(H/28)</code> tokens, com teto de 2576 px / 4784 tokens nos modelos 4.7 e posteriores (1568 px /
-        1568 tokens nos demais, como o Haiku 4.5; o Haiku 5.5 usa o teto alto). SDKs no registro em 2026-10-19: <code>anthropic 1.15.0</code> (PyPI) e
-        <code>@anthropic-ai/sdk 0.135.0</code> (npm); o registro confirma publicação, não compatibilidade com o seu pin.
-        <div class="source-link">Fontes: <a href="https://platform.claude.com/docs/en/build-with-claude/vision" target="_blank" rel="noopener">Vision</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/pdf-support" target="_blank" rel="noopener">PDF support</a> · <a href="https://platform.claude.com/docs/en/models/opus-5-5/whats-new-opus-5-5" target="_blank" rel="noopener">whats-new-opus-5-5</a> · <a href="https://pypi.org/project/anthropic/" target="_blank" rel="noopener">PyPI · anthropic</a></div>
+        <code>ceil(W/28) × ceil(H/28)</code> tokens, com padrão de 1568 px e hi-res de 2576 px / 4784 tokens.
+        <div class="source-link">Fontes: <a href="https://platform.claude.com/docs/en/build-with-claude/vision" target="_blank" rel="noopener">Vision</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/pdf-support" target="_blank" rel="noopener">PDF support</a> · <a href="https://platform.claude.com/docs/en/models/opus-5-5/whats-new-opus-5-5" target="_blank" rel="noopener">whats-new-opus-5-5</a></div>
       </div>
       <div class="callout tip">
         <strong>ZDR:</strong> PDF inline via Messages API é <strong>ZDR elegível</strong>, <em>exceto</em> nos Covered Models
-        (<code>claude-fable-5-1</code>, <code>claude-mythos-5-1</code>, Fable 5 e Mythos 5), que exigem retenção de 30 dias e não
+        (<code>claude-fable-5-1</code> e <code>claude-mythos-5-1</code>), que exigem retenção de 30 dias e não
         estão disponíveis sob ZDR sem autorização da Anthropic. Files API e code execution não são ZDR elegíveis. HIPAA readiness via
         BAA é um arranjo separado; veja a tabela de elegibilidade na página de retenção e
         <a href="guia_claude_api.html#b-files">Claude API · Files</a>.
       </div>
-      <div class="source-link">Fonte oficial: <a href="https://platform.claude.com/docs/en/build-with-claude/vision" target="_blank" rel="noopener">Anthropic · Vision</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/pdf-support" target="_blank" rel="noopener">PDF support</a> · <a href="https://platform.claude.com/docs/en/manage-claude/api-and-data-retention" target="_blank" rel="noopener">data retention</a> — verificado em 2026-09-30</div>
+      <div class="source-link">Fonte oficial: <a href="https://platform.claude.com/docs/en/build-with-claude/vision" target="_blank" rel="noopener">Anthropic · Vision</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/pdf-support" target="_blank" rel="noopener">PDF support</a> · <a href="https://platform.claude.com/docs/en/manage-claude/api-and-data-retention" target="_blank" rel="noopener">data retention</a></div>
     </section>
 
     <!-- ===================== PARTE 4 ===================== -->
@@ -1027,8 +998,8 @@ tools = [
         <a href="guia_deepagents.html#s-backends">Deep Agents · backends</a>.
       </div>
 
-      <h3>11.4. Google ADK (v1/v2)</h3>
-      <pre><code class="language-python"># ADK v1/v2: provider tools/nodes use strict adapters.
+      <h3>11.4. Google ADK</h3>
+      <pre><code class="language-python"># ADK: provider tools/nodes use strict adapters.
 session.state["app:source_registry"] = source_registry
 session.state["app:turn_ledger"] = []
 
@@ -1119,7 +1090,6 @@ def spreadsheet_worker(source_id: str, operation: str) -&gt; dict:
       code_execution:
         languages: ["Python", "Bash"]
         preferred_version: "code_execution_20260521"
-        compat_versions: "code_execution_20260120, code_execution_20250825 -- all three GA on every current model incl. Haiku 5.5 and legacy Haiku 4.5 (Haiku 4.5 accepts 20260120/20260521 but behaves like 20250825: no REPL persistence, no programmatic tool calling)"
         zdr: "NOT eligible for ZDR (container data retained up to 30 days)"
         strict_mode: "not allowed for PHI/ZDR strict path"
       files_api: { zdr: "not eligible for ZDR" }
@@ -1127,8 +1097,8 @@ def spreadsheet_worker(source_id: str, operation: str) -&gt; dict:
       <div class="table-wrap"><table>
         <thead><tr><th>Provider</th><th>Ferramenta</th><th>ZDR / <code>store=false</code> / compatibilidade</th></tr></thead>
         <tbody>
-          <tr><td>OpenAI</td><td>Code Interpreter / Hosted Shell</td><td>Responses é ZDR elegível e ZDR força <code>store=false</code>, mas containers podem escrever estado temporário enquanto ativos. Use só se a política aceitar container efêmero do provider.</td></tr>
-          <tr><td>Gemini</td><td>Code execution</td><td><code>store=false</code> para Interactions; se stateless com tools, reenviar <code>id</code>/<code>signature</code>. ZDR absoluto exige evitar <code>store=true</code>, File API, <code>cached_content</code> e Google Search/Maps.</td></tr>
+          <tr><td>OpenAI</td><td>Code Interpreter / Hosted Shell</td><td>Responses é ZDR elegível e ZDR força <code>store=false</code>, mas containers hospedados (Shell e Code Interpreter) escrevem estado temporário em storage efêmero, apagado no vencimento; <code>/v1/files</code> não é elegível. Use só se a política aceitar container efêmero do provider.</td></tr>
+          <tr><td>Gemini</td><td>Code execution</td><td><code>store=false</code> para Interactions; se stateless com tools, reenviar <code>id</code>/<code>signature</code>. ZDR absoluto exige evitar <code>store=true</code>, File API, <code>cached_content</code> e Google Search/Maps. O code execution não é declarado como ZDR: consulte a página <a href="https://ai.google.dev/gemini-api/docs/zdr" target="_blank" rel="noopener">zdr</a>.</td></tr>
           <tr><td>Gemini</td><td>Deep Research / background</td><td><span class="pill bad">Incompatível com Modo A:</span> <code>background=true</code> e estado fazem parte do fluxo.</td></tr>
           <tr><td>Anthropic</td><td>Code Execution</td><td><span class="pill bad">Não é ZDR elegível;</span> container retém dados até 30 dias. Evitar para PHI/ZDR estrito.</td></tr>
           <tr><td>Anthropic</td><td>Files API / Skills</td><td><span class="pill bad">Não ZDR elegíveis;</span> evitar em Modo A.</td></tr>
@@ -1138,7 +1108,7 @@ def spreadsheet_worker(source_id: str, operation: str) -&gt; dict:
     </section>
 
     <section id="hosted-por-provider">
-      <h2>14. Hosted execution por provider<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
+      <h2>14. Hosted execution por provider</h2>
       <p>Exemplos do Modo B. Use somente se a computação hospedada for permitida pela política; para PHI/ZDR estrito, substitua por um worker próprio.</p>
 
       <h3>14.1. OpenAI — Code Interpreter / Hosted Shell</h3>
@@ -1182,14 +1152,11 @@ interaction = client.interactions.create(
       <h3>14.3. Anthropic — Code execution</h3>
       <p>
         Roda Python/Bash em sandbox e <strong>não é ZDR elegível</strong> (container retém dados até 30 dias).
-        A versão mais nova é <code>code_execution_20260521</code> — mesmo runtime da
-        <code>code_execution_20260120</code> (que adicionou persistência de REPL e
-        <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/programmatic-tool-calling" target="_blank" rel="noopener">programmatic tool calling</a>),
-        com o tool description agora avisando o limite de 90&nbsp;s por célula em programmatic tool calling.
-        As <strong>três versões</strong> (<code>code_execution_20250825</code>/<code>_20260120</code>/<code>_20260521</code>)
-        estão <strong>GA em todos os modelos atuais, incluindo Claude Opus 5.5, Haiku 5.5 e Haiku 4.5</strong> — mas só em Haiku 4.5 as duas
-        versões mais novas <em>aceitam</em> o tipo de tool e se comportam como a <code>_20250825</code> (sem
-        persistência de REPL nem programmatic tool calling, que dependem dela).
+        A versão vigente é <code>code_execution_20260521</code>, GA sem header beta (a
+        <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/programmatic-tool-calling" target="_blank" rel="noopener">programmatic tool calling</a>
+        tem limite de 90&nbsp;s por célula, declarado na descrição do tool). Plataformas: GA na Claude API; Platform on AWS e Foundry
+        (Hosted on Anthropic apenas); não disponível em Bedrock nem Google Cloud. Container Linux (5 GiB de RAM e de disco, 1 CPU,
+        sem internet) que expira 30 dias após a criação; <code>$OUTPUT_DIR</code> devolve arquivos.
       </p>
       <pre><code class="language-python"># Optional Mode B: Anthropic code_execution. NOT ZDR eligible per Anthropic docs.
 
@@ -1206,7 +1173,7 @@ message = client.messages.create(
     }]
 )
 # For strict mode: use application-owned code execution and pass only computed EvidenceCards to Claude.</code></pre>
-      <div class="source-link">Fonte oficial: <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool" target="_blank" rel="noopener">Anthropic · code execution tool</a> — verificado em 2026-09-30 (versão preferida <code>code_execution_20260521</code>; <code>_20260120</code>/<code>_20250825</code> = compatibilidade, GA em todos os modelos incl. Haiku 5.5 e Haiku 4.5)</div>
+      <div class="source-link">Fonte oficial: <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool" target="_blank" rel="noopener">Anthropic · code execution tool</a> (versão vigente <code>code_execution_20260521</code>)</div>
     </section>
 
     <section id="hosted-frameworks">
@@ -1217,7 +1184,7 @@ message = client.messages.create(
           <tr><td>Agents SDK</td><td>Function tools chamam workers próprios e adapters strict.</td><td>Function tool pode chamar Code Interpreter/Hosted Shell, Gemini code_execution ou Anthropic code_execution — mas marque o run como non-strict.</td></tr>
           <tr><td>LangGraph</td><td>Nós strict chamam provider payload ou app worker.</td><td>Nó <code>hosted_exec</code> separado; o checkpoint registra que houve provider container/tool.</td></tr>
           <tr><td>Deep Agents</td><td>Filesystem/backend app-side + tools strict.</td><td>Subagent/tool hosted só com gating, aprovação e sem PHI/ZDR.</td></tr>
-          <tr><td>ADK v1/v2</td><td>FunctionTool/nó chama app worker.</td><td>FunctionTool/nó chama provider code tool; <code>session.state</code> marca non-strict.</td></tr>
+          <tr><td>Google ADK</td><td>FunctionTool/nó chama app worker.</td><td>FunctionTool/nó chama provider code tool; <code>session.state</code> marca non-strict.</td></tr>
         </tbody>
       </table></div>
     </section>
@@ -1272,12 +1239,9 @@ message = client.messages.create(
       <div class="table-wrap"><table>
         <thead><tr><th>Risco</th><th>Mitigação</th></tr></thead>
         <tbody>
-          <tr><td>Confundir <code>store=false</code> com zero container state</td><td>Separar Modo A e Modo B; registrar <code>run_mode</code>.</td></tr>
-          <tr><td>Provider hosted tool em PHI</td><td>Policy gate bloqueia hosted tools para PHI.</td></tr>
           <tr><td>URL assinada com PHI</td><td>Preferir base64 inline; TTL curto e domínio controlado se necessário.</td></tr>
           <tr><td>Imagem web sem licença</td><td><code>ImageHarvester</code> exige <code>license_note</code>/<code>trust_tier</code>.</td></tr>
           <tr><td>PDF grande estoura contexto</td><td>Chunking/render/crop app-side.</td></tr>
-          <tr><td>Excel errado</td><td>Worker próprio; hosted só como Modo B.</td></tr>
           <tr><td>Subagente sem fonte</td><td><code>SubagentInputPacket</code> e <code>EvidenceCard</code> obrigatórios.</td></tr>
           <tr><td>String de versão de tool desatualizada</td><td>Tratar versões (ex.: <code>code_execution_*</code>) como perecíveis; preferir a mais recente suportada pelo modelo.</td></tr>
         </tbody>
@@ -1306,10 +1270,8 @@ message = client.messages.create(
         <thead><tr><th>Pergunta</th><th>Modo A (estrito)</th><th>Modo B (hosted)</th></tr></thead>
         <tbody>
           <tr><td>PHI/ZDR estrito?</td><td>Sim — este é o caminho.</td><td>Não — exige análise de retenção/contrato.</td></tr>
-          <tr><td>Como o arquivo entra?</td><td>base64 inline / signed URL efêmera / chunk-render app-side.</td><td>container hospedado processa o arquivo.</td></tr>
           <tr><td>Excel / cálculo determinístico?</td><td>worker próprio → CSV/JSON/EvidenceCard.</td><td>code execution hospedado (se permitido).</td></tr>
-          <tr><td>Estado retido no provider?</td><td>Nenhum (<code>store=false</code>, sem Files/vector/background).</td><td>Filesystem efêmero do container enquanto ativo.</td></tr>
-          <tr><td>Anthropic code execution?</td><td>Proibido (não ZDR elegível).</td><td><code>code_execution_20260521</code> (compat: <code>_20260120</code>/<code>_20250825</code>, GA incl. Haiku 5.5 e Haiku 4.5).</td></tr>
+          <tr><td>Anthropic code execution?</td><td>Proibido (não ZDR elegível).</td><td><code>code_execution_20260521</code>.</td></tr>
           <tr><td><code>run_mode</code></td><td><code>strict_no_provider_storage</code></td><td><code>hosted_optional_non_strict</code></td></tr>
         </tbody>
       </table></div>
@@ -1326,37 +1288,29 @@ message = client.messages.create(
       </table></div>
     </section>
 
-    <section class="ref" id="legado-sec">
-      <h2 id="legado">Legado e migração<span class="rev-flag novo">Novo · 2026-09-30</span></h2>
-      <p>Este guia ensina só as superfícies atuais. O que ainda aparece em código antigo, e o que fazer (verificado em 2026-09-30):</p>
+    <section class="ref" id="fontes-oficiais">
+      <h2>Fontes oficiais</h2>
+      <p>
+        Estado conferido em <strong>2026-10-24</strong> contra developers.openai.com, ai.google.dev, platform.claude.com e os
+        registros PyPI/npm. Os exemplos usam <code>gpt-6-astra</code>, <code>gemini-3.8-flash</code> e <code>claude-opus-5-5</code>.
+        O registro confirma publicação, não compatibilidade com o seu pin.
+      </p>
       <div class="table-wrap"><table>
-        <thead><tr><th>Legado</th><th>Status</th><th>Migração</th><th>Fonte</th></tr></thead>
+        <thead><tr><th>Tema</th><th>Recurso oficial</th></tr></thead>
         <tbody>
-          <tr><td>Gemini <code>generateContent</code> com <code>inline_data</code>/<code>file_data</code></td><td>Legado; a Interactions é o padrão</td><td><code>client.interactions.create</code> com blocos <code>{type, data|uri, mime_type}</code> (§9). Só <code>generateContent</code> tem Batch API, cache explícito, AFC em Python e safety settings: o cache explícito já é proibido no Modo A (§3); a retenção do Batch não foi avaliada (<span class="pill partial">UNVERIFIED</span>), não o use no Modo A sem validar.</td><td><a href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">interactions-overview</a></td></tr>
-          <tr><td>Gemini <code>media_resolution</code> global ou por part</td><td>Substituído na Interactions</td><td><code>resolution</code> por item (§9).</td><td><a href="https://ai.google.dev/gemini-api/docs/media-resolution" target="_blank" rel="noopener">media-resolution</a></td></tr>
-          <tr><td>Gemini <code>temperature</code>/<code>top_p</code>/<code>top_k</code></td><td>Depreciados em Gemini 3.x</td><td>Remover; usar <code>system_instruction</code>.</td><td><a href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">interactions-overview</a></td></tr>
-          <tr><td>OpenAI Chat Completions com arquivo</td><td>Só PDF como parte <code>file</code></td><td>Responses API (§8) para os demais tipos e para o Modo A.</td><td><a href="https://developers.openai.com/api/docs/guides/file-inputs" target="_blank" rel="noopener">file-inputs</a></td></tr>
-          <tr><td>OpenAI Assistants API (file_search, vector stores de threads)</td><td>Desligada em 2026-08-26</td><td>Responses + Conversations; no Modo A não há vector store de qualquer forma.</td><td><a href="https://developers.openai.com/api/docs/guides/migrate-to-responses" target="_blank" rel="noopener">migrate-to-responses</a></td></tr>
-          <tr><td>OpenAI <code>gpt-5.6-*</code> como modelo do exemplo</td><td>Geração anterior, ativa, sem deprecação</td><td><code>gpt-6-astra</code>.</td><td><a href="https://developers.openai.com/api/docs/models" target="_blank" rel="noopener">models</a></td></tr>
-          <tr><td>Anthropic header <code>files-api-2025-04-14</code></td><td>Files API é GA desde 2026-08-19</td><td>Remover o header; no Modo A, nem usar a Files API (§3).</td><td><a href="https://platform.claude.com/docs/en/build-with-claude/files" target="_blank" rel="noopener">files</a></td></tr>
-          <tr><td>Anthropic <code>claude-opus-4-8</code> e demais modelos Legacy</td><td>Legacy, ainda ativos</td><td><code>claude-opus-5-5</code> (§10).</td><td><a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener">models overview</a></td></tr>
-          <tr><td>Anthropic tool <code>computer_20251124</code></td><td>Rejeitada pelo Opus 5.5 na Claude API e no Google Cloud</td><td><code>computer_toolset_20260801</code>; fora do escopo deste guia (nem o Modo A nem o Modo B usam computer use).</td><td><a href="https://platform.claude.com/docs/en/models/opus-5-5/whats-new-opus-5-5" target="_blank" rel="noopener">whats-new-opus-5-5</a></td></tr>
+          <tr><td>OpenAI — file inputs</td><td><a href="https://developers.openai.com/api/docs/guides/file-inputs" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/file-inputs</a></td></tr>
+          <tr><td>OpenAI — images &amp; vision</td><td><a href="https://developers.openai.com/api/docs/guides/images-vision" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/images-vision</a></td></tr>
+          <tr><td>OpenAI — data controls / ZDR</td><td><a href="https://developers.openai.com/api/docs/guides/your-data" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/your-data</a></td></tr>
+          <tr><td>OpenAI — Code Interpreter / Hosted Shell</td><td><a href="https://developers.openai.com/api/docs/guides/tools-code-interpreter" target="_blank" rel="noopener">tools-code-interpreter</a> · <a href="https://developers.openai.com/api/docs/guides/tools-shell" target="_blank" rel="noopener">tools-shell</a></td></tr>
+          <tr><td>Gemini — Interactions API</td><td><a href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/interactions-overview</a></td></tr>
+          <tr><td>Gemini — file input methods / media resolution</td><td><a href="https://ai.google.dev/gemini-api/docs/file-input-methods" target="_blank" rel="noopener">file-input-methods</a> · <a href="https://ai.google.dev/gemini-api/docs/media-resolution" target="_blank" rel="noopener">media-resolution</a></td></tr>
+          <tr><td>Gemini — Zero Data Retention</td><td><a href="https://ai.google.dev/gemini-api/docs/zdr" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/zdr</a></td></tr>
+          <tr><td>Anthropic — Vision / PDF</td><td><a href="https://platform.claude.com/docs/en/build-with-claude/vision" target="_blank" rel="noopener">vision</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/pdf-support" target="_blank" rel="noopener">pdf-support</a></td></tr>
+          <tr><td>Anthropic — data retention / ZDR / Code execution</td><td><a href="https://platform.claude.com/docs/en/manage-claude/api-and-data-retention" target="_blank" rel="noopener">api-and-data-retention</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/zero-data-retention" target="_blank" rel="noopener">zero-data-retention</a> · <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool" target="_blank" rel="noopener">code-execution-tool</a></td></tr>
+          <tr><td>Pacotes e frameworks (versões)</td><td><a href="https://pypi.org/project/openai/" target="_blank" rel="noopener">PyPI · openai</a> · <a href="https://pypi.org/project/google-genai/" target="_blank" rel="noopener">google-genai</a> · <a href="https://pypi.org/project/anthropic/" target="_blank" rel="noopener">anthropic</a> · <a href="https://pypi.org/project/google-adk/" target="_blank" rel="noopener">google-adk</a></td></tr>
+          <tr><td>Deprecations</td><td><a href="https://developers.openai.com/api/docs/deprecations" target="_blank" rel="noopener">OpenAI</a> · <a href="https://ai.google.dev/gemini-api/docs/deprecations" target="_blank" rel="noopener">Gemini</a> · <a href="https://platform.claude.com/docs/en/about-claude/model-deprecations" target="_blank" rel="noopener">Anthropic</a></td></tr>
         </tbody>
       </table></div>
-    </section>
-
-    <section class="ref" id="verificacao">
-      <h2>Notas de verificação<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
-      <p>Estado único conferido em <strong>2026-09-30</strong> contra developers.openai.com, ai.google.dev, platform.claude.com e os registros PyPI/npm; o que não pôde ser confirmado está marcado.</p>
-      <ul>
-        <li><span class="pill ok">Verificado</span> <strong>OpenAI.</strong> <code>detail</code>: <code>low</code>/<code>high</code>/<code>original</code>/<code>auto</code>; <code>auto</code> = <code>original</code> em <code>gpt-6-astra</code>, <code>gpt-5.6</code> e <code>gpt-5.5</code>, e = <code>high</code> em <code>gpt-5.4</code>. Limites: 512 MB e 1.500 imagens por request; <code>input_file</code> &lt; 50 MB por arquivo e ≤ 50 MB somados. Planilha: até 1.000 linhas por sheet; Chat Completions só PDF. <code>memory_limit</code> do Code Interpreter: <code>1g</code> (default), <code>4g</code>, <code>16g</code>, <code>64g</code>; container expira após 20 minutos sem uso. Fontes: /images-vision, /file-inputs, /tools-code-interpreter.</li>
-        <li><span class="pill ok">Verificado</span> <strong>Gemini.</strong> Inline 100 MB por request (PDF 50 MB); Files API 2 GB por arquivo, 20 GB por projeto, 48 h; registro de URI do Cloud Storage por até 30 dias; URL externa 100 MB por payload. A Interactions guarda estado por padrão (<code>store=true</code>); Google Search e Maps retêm prompts e saídas por 30 dias e isso não se desativa; a Files API e o <code>cached_content</code> persistem até expirar ou serem apagados. A incompatibilidade de <code>store=false</code> com <code>background=true</code> vem da referência da API (ver <a href="guia_gemini_interactions_api.html#s-store">Gemini · store</a>), não da página /zdr. Fontes: /file-input-methods, /media-resolution, /zdr.</li>
-        <li><span class="pill ok">Verificado</span> <strong>Anthropic.</strong> Request 32 MB; 600 páginas de PDF e 600 imagens (100 nos casos de janela menor que 1M/200k); imagem 10 MB em base64; GIF animado usa o 1º frame. PDF inline é ZDR elegível exceto nos Covered Models (Fable 5.1, Mythos 5.1, Fable 5, Mythos 5: retenção de 30 dias). Files API e code execution não são ZDR elegíveis (containers expiram 30 dias após a criação). Code execution: <code>code_execution_20250825</code>/<code>_20260120</code>/<code>_20260521</code> aceitas em todos os modelos suportados, incluindo Opus 5.5, Haiku 5.5 e Haiku 4.5; só em Haiku 4.5 as duas novas se comportam como a <code>_20250825</code>; nenhuma exige header beta. Fontes: /vision, /pdf-support, /api-and-data-retention, /code-execution-tool.</li>
-        <li><span class="pill ok">Verificado</span> <strong>Versões de SDK no registro.</strong> <code>anthropic 1.15.0</code> / <code>@anthropic-ai/sdk 0.135.0</code> (2026-10-15); <code>openai 3.35.1</code> / npm <code>7.39.0</code> (2026-10-19); <code>google-genai 2.31.0</code> / <code>@google/genai 2.30.0</code> (2026-10-19; a Interactions exige <code>google-genai</code> &gt;= 2.3.0). O registro confirma publicação, não compatibilidade com o seu pin.</li>
-        <li><span class="pill partial">Divergência oficial</span> <strong>Limite inline do Gemini.</strong> A página de métodos de entrada diz 100 MB; as páginas de imagem e de áudio ainda dizem 20 MB no total. <strong>Sampling:</strong> a doc manda remover <code>temperature</code>/<code>top_p</code>/<code>top_k</code> em Gemini 3.x, mas não diz se a API devolve 400 ou ignora.</li>
-        <li><span class="pill partial">UNVERIFIED</span> <code>generation_config.media_resolution</code> global na Interactions (não aparece nos exemplos atuais); retenção do Batch API do Gemini; <code>detail:"auto"</code> no <code>gpt-6.1-sol</code> (o modelo não é nomeado na página de imagens); detalhes de HIPAA por feature da Anthropic (não relidos); <code>model_dump_json()</code> como retorno de tool no Agents SDK (Pydantic v2 válido, mas padrão não documentado pelo SDK); elegibilidade ZDR de Agent Skills (não relida).</li>
-        <li><span class="pill ok">Verificado</span> <strong>Âncoras de cross-link.</strong> Os destinos para outros guias da coleção são checados pelo script de validação da coleção (<code>scripts/validate_guides.py</code>), rodado em 2026-09-30.</li>
-      </ul>
     </section>
 
   </main>
@@ -1367,7 +1321,7 @@ message = client.messages.create(
     <div style="max-width:540px">
       <div class="brand" style="font-size:15px">File Inputs sem Provider Storage <small>Núcleo agnóstico · super-guia de agentes</small></div>
       <p style="margin:8px 0 0;color:var(--c-fg-muted);font-size:13.5px;line-height:1.55">
-        Referência técnica verificada contra a documentação oficial pública em <strong>2026-09-30</strong>.
+        Referência técnica verificada contra a documentação oficial pública.
         Modo A estrito sem provider storage; Modo B hosted opcional com retenção/ZDR claramente separado. Para
         informação sempre atualizada, consulte as <a href="#fontes-oficiais">fontes oficiais</a>.
       </p>
@@ -1375,7 +1329,7 @@ message = client.messages.create(
     <div style="font-size:13.5px;color:var(--c-fg-muted);line-height:1.7">
       <div><strong>Crédito de produção</strong></div>
       <div>Pesquisa, reconciliação e revisão técnica</div>
-      <div>Fontes oficiais e padrão Modo A/Modo B · 2026-09-30</div>
+      <div>Fontes oficiais e padrão Modo A/Modo B</div>
       <div style="margin-top:6px">
         <span class="badge da">Núcleo · v1</span>
         <span class="badge ok">Modo A estrito</span>
@@ -1384,7 +1338,7 @@ message = client.messages.create(
     <div style="font-size:12.5px;color:var(--c-fg-soft)">
       <div><strong>Navegação rápida</strong></div>
       <div><a href="#dois-modos">Dois modos</a> · <a href="#source-record">SourceRecord</a> · <a href="#hosted-modo-b">Hosted</a></div>
-      <div><a href="#cheatsheet">Cheat sheet</a> · <a href="#legado">Legado</a> · <a href="#verificacao">Verificação</a></div>
+      <div><a href="#cheatsheet">Cheat sheet</a> · <a href="#fontes-oficiais">Fontes</a></div>
     </div>
   </div>
 </footer>
