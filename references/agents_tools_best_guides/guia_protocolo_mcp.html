@@ -4,9 +4,9 @@
 <meta charset="utf-8" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%9A%3C/text%3E%3C/svg%3E" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Protocolo MCP — Revisão 2026-07-28, compatibilidade e migração</title>
-<meta name="description" content="Ciclo de vida do protocolo MCP: a revisão atual 2026-07-28 (core stateless, fim do initialize e das sessões, server/discover, MRTR e extensões versionadas), a matriz Modern/Legacy/dual-era, SDKs e adapters, e como manter 2025-11-25 somente como compatibilidade legado quando um teto de dependência comprovadamente exigir." />
-<meta name="last-checked" content="2026-09-30" />
+<title>Protocolo MCP — Revisão 2026-07-28, SDKs, extensões e A2A</title>
+<meta name="description" content="Ciclo de vida do protocolo MCP: a revisão corrente 2026-07-28 (core stateless, estado por handle, server/discover, MRTR, extensões versionadas e auth), SDKs, frameworks e conectores hospedados, deprecações com prazo e A2A entre agentes." />
+<meta name="last-checked" content="2026-10-24" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -278,16 +278,16 @@
     details > summary { display: none; }
   }
 </style>
-<style id="rev-flag-css">main :not(pre) > code,main a{overflow-wrap:anywhere}.rev-flag{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:999px;font-size:.62em;font-weight:600;vertical-align:middle;letter-spacing:.02em;white-space:nowrap}.rev-flag.novo{background:#dcfce7;color:#14532d;border:1px solid #86efac}.rev-flag.atu{background:#e0f2fe;color:#0c4a6e;border:1px solid #7dd3fc}.rev-news{margin:16px 0;padding:12px 16px;border-left:4px solid #22c55e;border-radius:8px;background:rgba(34,197,94,.08)}.rev-news ul{margin:6px 0 0;padding-left:20px}.rev-news li{margin:2px 0}:root[data-theme="dark"] .rev-flag.novo{background:#14532d;color:#dcfce7;border-color:#166534}:root[data-theme="dark"] .rev-flag.atu{background:#0c4a6e;color:#e0f2fe;border-color:#075985}@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .rev-flag.novo{background:#14532d;color:#dcfce7;border-color:#166534}:root:not([data-theme="light"]) .rev-flag.atu{background:#0c4a6e;color:#e0f2fe;border-color:#075985}}</style>
+<style>main :not(pre) > code,main a{overflow-wrap:anywhere}</style>
 </head>
 <body>
 <a class="skip" href="#main">Pular para o conteúdo</a>
 
 <header class="site">
   <div class="header-row">
-    <div class="brand">Protocolo MCP <small>Revisão, compatibilidade e migração</small></div>
+    <div class="brand">Protocolo MCP <small>Revisão 2026-07-28, SDKs e A2A</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-09-30</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-10-24</strong></span>
       <span class="badge da">Núcleo · agnóstico de provider</span>
       <span class="badge info">Referência de ciclo de vida</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
@@ -304,82 +304,251 @@
       <li><a href="#fontes-oficiais">Fontes &amp; verificação</a></li>
     </ol>
 
-    <div class="toc-section">Parte 1 — O regime dual-era</div>
+    <div class="toc-section">Parte 1 — Estado e bibliotecas</div>
     <ol>
-      <li><a href="#publicada-nao-operante">1. Publicada ≠ operante</a></li>
-      <li><a href="#matriz-compatibilidade">2. Modern, Legacy e dual-era</a></li>
-      <li><a href="#bibliotecas">3. Bibliotecas: quem fala o quê</a></li>
-      <li><a href="#postura">4. Postura recomendada</a></li>
-      <li><a href="#gatilhos">5. Gatilhos de migração</a></li>
+      <li><a href="#publicada-nao-operante">1. Estado e compatibilidade</a></li>
+      <li><a href="#bibliotecas">2. Bibliotecas: quem fala o quê</a></li>
     </ol>
 
     <div class="toc-section">Parte 2 — A revisão 2026-07-28</div>
     <ol>
-      <li><a href="#core-stateless">6. Core stateless</a></li>
-      <li><a href="#fim-das-sessoes">7. O fim das sessões</a></li>
-      <li><a href="#assinaturas">8. Assinaturas e notificações</a></li>
-      <li><a href="#mrtr">9. MRTR</a></li>
-      <li><a href="#resultados-transporte">10. Resultados, transporte e schemas</a></li>
-      <li><a href="#codigos-de-erro">11. Códigos de erro</a></li>
-      <li><a href="#depreciacoes">12. Legado e migração</a></li>
+      <li><a href="#core-stateless">3. Core stateless</a></li>
+      <li><a href="#fim-das-sessoes">4. O fim das sessões</a></li>
+      <li><a href="#assinaturas">5. Assinaturas e notificações</a></li>
+      <li><a href="#mrtr">6. MRTR</a></li>
+      <li><a href="#resultados-transporte">7. Resultados, transporte e schemas</a></li>
+      <li><a href="#codigos-de-erro">8. Códigos de erro</a></li>
+      <li><a href="#depreciacoes">9. Deprecações com prazo</a></li>
     </ol>
 
     <div class="toc-section">Parte 3 — Extensões &amp; auth</div>
     <ol>
-      <li><a href="#extensoes">13. Framework de extensões</a></li>
-      <li><a href="#auth">14. O que mudou em auth</a></li>
+      <li><a href="#extensoes">10. Framework de extensões</a></li>
+      <li><a href="#auth">11. Auth</a></li>
     </ol>
 
-    <div class="toc-section">Parte 4 — Projetar migrável</div>
+    <div class="toc-section">Parte 4 — A2A</div>
     <ol>
-      <li><a href="#contratos-que-sobrevivem">15. Contratos que sobrevivem</a></li>
-      <li><a href="#a2a">16. A2A: ciclo de vida entre agentes</a></li>
-      <li><a href="#anti-padroes">17. Anti-padrões da transição</a></li>
+      <li><a href="#a2a">12. A2A: ciclo de vida entre agentes</a></li>
     </ol>
 
     <div class="toc-section">Referência</div>
     <ol>
       <li><a href="#checklist">Checklist</a></li>
-      <li><a href="#verificacao">Notas de verificação</a></li>
+      <li><a href="#verificacao">Fontes e verificação</a></li>
     </ol>
   </nav>
 
   <main id="main">
-<aside class="rev-news" id="rev-news-2026-09-30" aria-label="Novidades desta revisão"><strong>O que há de novo nesta revisão (2026-09-30)</strong> — 2 seções novas e 10 atualizadas desde a revisão de 2026-09-23. Procure os selos <span class="rev-flag novo">Novo</span> e <span class="rev-flag atu">Atualizado</span> nos títulos. O legado (revisões anteriores, HTTP+SSE, Roots/Sampling/Logging/DCR, SDKs e pacotes antigos) foi condensado em <a href="#legado">Legado e migração</a>, e as varreduras datadas empilhadas de §3 viraram uma única afirmação corrente por tema.<details><summary>Ver lista</summary><ul><li><span class="rev-flag novo">Novo</span> <a href="#para-agentes">Resumo para agentes</a> — superfície atual, IDs, Faça/Não faça e incertezas</li><li><span class="rev-flag atu">Atualizado</span> <a href="#fontes-oficiais">Fontes &amp; verificação</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#publicada-nao-operante">1. Publicada ≠ operante</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#bibliotecas">3. Bibliotecas: quem fala o quê</a> — <code>mcp</code> 2.3.0, TypeScript v2 2.3.1, FastMCP 4.1.1 GA; só 4 adapters ainda em <code>mcp&lt;2</code></li><li><span class="rev-flag atu">Atualizado</span> <a href="#postura">4. Postura para stacks com adapter Legacy</a> — piso <code>mcp&gt;=2.2.0</code> (GHSA-qx49-fqc8-xw99, GHSA-rwrf-2pqf-9j8j)</li><li><span class="rev-flag atu">Atualizado</span> <a href="#gatilhos">5. Gatilhos de migração</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#resultados-transporte">10.1 JSON Schema — duas regras novas, ambas de segurança</a></li><li><span class="rev-flag novo">Novo</span> <a href="#legado">12. Legado e migração</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#extensoes">13. Framework de extensões</a> — Skills sobre MCP é extensão Final; Tasks fora do SDK Python</li><li><span class="rev-flag atu">Atualizado</span> <a href="#a2a">16. A2A: ciclo de vida entre agentes</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#checklist">Checklist</a></li><li><span class="rev-flag atu">Atualizado</span> <a href="#verificacao">Notas de verificação</a></li></ul></details></aside>
 
     <div class="hero">
       <h1>Protocolo MCP</h1>
       <p class="lead">
-        A revisão <strong>2026-07-28</strong> foi publicada e é a maior ruptura desde o lançamento do MCP:
-        o protocolo virou <em>stateless</em>, o handshake <code>initialize</code> deixou de existir e as
-        sessões saíram do protocolo. Este guia trata o <strong>ciclo de vida</strong> do protocolo —
-        o que mudou, quem já fala a revisão atual, e como manter compatibilidade legado apenas onde o adapter
-        realmente a exigir.
+        A revisão <strong>2026-07-28</strong> é a corrente do MCP: o protocolo é <em>stateless</em>,
+        não tem handshake nem sessões de protocolo e descobre capabilities por <code>server/discover</code>.
+        Este guia trata o <strong>ciclo de vida</strong> do protocolo — o que a revisão define,
+        quem a implementa (SDKs, frameworks, conectores hospedados) e quais recursos têm prazo de remoção.
       </p>
       <p class="lead" style="margin-top:10px">
-        A mecânica <strong>Legacy</strong> de <code>2025-11-25</code>, necessária apenas para clientes ou
-        adapters com teto de dependência, e o conceito de MCP como fronteira de capability continuam em
+        O conceito de MCP como fronteira de capability continua em
         <a href="guia_ferramentas_mcp_rag.html#mcp-como-fronteira">Ferramentas, MCP &amp; RAG §3</a>;
         o hardening operacional de servidor, em
         <a href="guia_ferramentas_mcp_rag.html#hardening-de-mcp-server">§11 do mesmo guia</a>.
       </p>
-      <div class="callout info">
-        <strong>Estado verificado em 2026-09-30</strong> (pacotes, SDKs e a revisão de fio corrente: lidos em 2026-10-19). A revisão de fio corrente é <code>2026-07-28</code>
-        (página de versionamento; sem data anunciada para a próxima). SDK Python oficial: <code>mcp</code>
-        <strong>2.3.0</strong> (02/10); a linha 1.x (<code>1.30.0</code>) só recebe manutenção de segurança.
-        TypeScript: família v2 (<code>@modelcontextprotocol/server</code>, <code>client</code>, <code>core</code>)
-        em <code>2.3.1</code> (05/10); o monólito <code>@modelcontextprotocol/sdk</code> <code>1.32.1</code> (05/10)
-        continua mantido. FastMCP Python (Prefect): <code>4.1.1</code> (18/10), GA desde 31/08, sobre <code>mcp</code> 2.x;
-        o <code>fastmcp</code> do npm é outro projeto. <strong>MCP Registry</strong>: <strong>preview</strong>, sem
-        data de GA. A2A: wire <code>1.0</code>, <code>a2a-sdk 1.2.3</code>. Detalhes em
-        <a href="#bibliotecas">§3</a> e <a href="#a2a">§16</a>.
-      </div>
     </div>
 
     <section id="para-agentes">
-      <h2>Resumo para agentes (verificado 2026-09-30)<span class="rev-flag novo">Novo · 2026-09-30</span></h2>
-      <h3>Superfície atual</h3>
-      <p>Revisão de fio corrente: <code>2026-07-28</code> (stateless, sem <code>initialize</code>). SDK Python oficial: <code>pip install "mcp[cli]&gt;=2.2.0,&lt;3"</code>. Servidor (classe <code>MCPServer</code>, não mais <code>FastMCP</code>) e cliente:</p>
+      <h2>Resumo para agentes (verificado 2026-10-24)</h2>
+
+      <h3>Use este guia quando</h3>
+      <ul>
+        <li>Precisar saber qual revisão do MCP vale hoje, quem a implementa (SDKs, frameworks, conectores hospedados) e quais recursos têm prazo de remoção.</li>
+        <li>Escolher pisos e tetos de dependência MCP (Python <code>mcp</code>, TypeScript, <code>fastmcp</code>) e saber o que um adapter ou conector hospedado ainda limita.</li>
+        <li>Implementar ou revisar estado por handle, MRTR, <code>subscriptions/listen</code>, códigos de erro, extensões (Tasks, Skills, Apps) e autenticação MCP.</li>
+        <li>Operar A2A entre agentes (versão por request, Task, Agent Card).</li>
+      </ul>
+
+      <h3>Não é aqui</h3>
+      <ul>
+        <li>Contrato de tool, envelope de resultado, RAG e hardening de servidor MCP: <a href="guia_ferramentas_mcp_rag.html">Ferramentas, MCP &amp; RAG</a>.</li>
+        <li>Pisos por advisory de todo o ecossistema (mcp, fastmcp, langgraph, SDKs não-Python): <a href="guia_operacao_seguranca_evals.html">Operação, Segurança &amp; Evals</a>.</li>
+        <li>Conector MCP de cada provider em detalhe: guias de provider (Claude API, OpenAI, Gemini Interactions).</li>
+      </ul>
+
+      <h3>Padrões vigentes</h3>
+      <ul>
+        <li>Revisão corrente: <code>2026-07-28</code> (stateless, versão por request em <code>_meta</code>, descoberta por <code>server/discover</code>, estado por handle explícito).</li>
+        <li>Implementação direta: <code>pip install "mcp[cli]&gt;=2.2.0,&lt;3"</code>; servidor com a classe <code>MCPServer</code>. Adapter que limita <code>mcp&lt;2</code> (langchain-mcp-adapters, crewai, semantic-kernel, mcp-use): fixe <code>mcp&gt;=1.30.0,&lt;2</code> (piso de segurança).</li>
+        <li>Pacote <code>fastmcp</code> (Prefect): <code>&gt;=4.1.2</code>; é outro projeto que o npm <code>fastmcp</code>.</li>
+        <li>Em cada POST Streamable HTTP, enviar <code>MCP-Protocol-Version</code> igual a <code>_meta.io.modelcontextprotocol/protocolVersion</code>, <code>Mcp-Method</code> sempre e <code>Mcp-Name</code> em <code>tools/call</code>, <code>resources/read</code>, <code>prompts/get</code>; divergência dá 400 <code>HeaderMismatch</code>.</li>
+        <li>Estado entre chamadas é handle explícito, escopado ao principal autenticado; input do usuário no meio da chamada vai por MRTR (<code>resultType: "input_required"</code>); notificações duráveis por <code>subscriptions/listen</code>.</li>
+        <li>OAuth: Protected Resource Metadata (RFC 9728), validação literal de <code>iss</code>, PKCE S256, registro na ordem pré-registrado, CIMD, DCR (deprecado).</li>
+        <li>Compare erros por constante nomeada: <code>-32020</code> (header), <code>-32021</code> (capability ausente), <code>-32022</code> (versão); recurso inexistente é <code>-32602</code>.</li>
+        <li>Providers hospedados: você herda a revisão do provider (OpenAI não declara revisão; Gemini 3 não tem remote MCP).</li>
+      </ul>
+
+      <h3>Versões e modelos correntes</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Item</th><th>Valor</th><th>Fonte (lido 2026-10-24)</th></tr></thead>
+        <tbody>
+          <tr><td>Revisão MCP corrente</td><td>2026-07-28</td><td><a href="https://modelcontextprotocol.io/specification/versioning" target="_blank" rel="noopener">versionamento</a></td></tr>
+          <tr><td>Python <code>mcp</code></td><td>2.3.0 · piso <code>&gt;=2.2.0</code> (adapters com teto <code>&lt;2</code>: <code>&gt;=1.30.0</code>)</td><td><a href="https://pypi.org/pypi/mcp/json" target="_blank" rel="noopener">PyPI</a></td></tr>
+          <tr><td>TypeScript</td><td><code>@modelcontextprotocol/server</code>, <code>client</code> 2.4.0 (piso <code>&gt;=2.3.0</code>)</td><td><a href="https://registry.npmjs.org/@modelcontextprotocol/server" target="_blank" rel="noopener">npm</a></td></tr>
+          <tr><td><code>fastmcp</code> (PyPI)</td><td>4.1.3 · piso <code>&gt;=4.1.2</code></td><td><a href="https://pypi.org/pypi/fastmcp/json" target="_blank" rel="noopener">PyPI</a></td></tr>
+          <tr><td>Deprecados com prazo</td><td>Roots, Sampling, Logging, DCR: remoção elegível em revisão publicada em/após 2027-07-28</td><td><a href="https://modelcontextprotocol.io/specification/2026-07-28/deprecated" target="_blank" rel="noopener">registro de deprecados</a></td></tr>
+          <tr><td>Outros SDKs oficiais</td><td>C# 2.3.0 · Go 1.8.0 · Ruby 1.8.1 · rmcp 3.7.0 · PHP 0.9.0 · Java 2.1.0 · Kotlin 0.15.0 · Swift 0.12.1 (nenhuma release estável de Java, Kotlin e Swift declara a 2026-07-28)</td><td><a href="https://github.com/modelcontextprotocol" target="_blank" rel="noopener">repositórios dos SDKs</a></td></tr>
+          <tr><td>Frameworks ainda em <code>mcp&lt;2</code></td><td>langchain-mcp-adapters 0.3.2 · crewai 1.15.30 (<code>&gt;=1.30.0,&lt;2</code>) · semantic-kernel 1.45.0 · mcp-use 1.7.1</td><td><a href="https://pypi.org/pypi/crewai/json" target="_blank" rel="noopener">PyPI requires_dist</a></td></tr>
+          <tr><td>A2A</td><td>spec 1.0.0 · repo v1.0.1 (patch) · a2a-sdk 1.2.3</td><td><a href="https://a2a-protocol.org/latest/specification/" target="_blank" rel="noopener">especificação A2A</a></td></tr>
+          <tr><td>MCP Registry</td><td>preview, sem data de GA</td><td><a href="https://modelcontextprotocol.io/registry/about" target="_blank" rel="noopener">registry/about</a></td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Não use</h3>
+      <ul>
+        <li>Recursos removidos ou deprecados do MCP: ver o <a href="https://modelcontextprotocol.io/specification/2026-07-28/deprecated" target="_blank" rel="noopener">registro oficial de deprecados</a> e o <a href="https://modelcontextprotocol.io/specification/2026-07-28/changelog" target="_blank" rel="noopener">changelog da revisão</a>.</li>
+      </ul>
+
+      <h3>Mapa de seções</h3>
+      <ul>
+        <li><a href="#sobre-guia">Sobre este guia</a>: escopo e fronteira com os outros guias.</li>
+        <li><a href="#fontes-oficiais">Fontes &amp; verificação</a>: URLs oficiais.</li>
+        <li>Partes: <a href="#parte-estado">Parte 1 (estado e bibliotecas)</a>; <a href="#parte-revisao">Parte 2 (a revisão 2026-07-28)</a>; <a href="#parte-extensoes-auth">Parte 3 (extensões e auth)</a>; <a href="#parte-a2a">Parte 4 (A2A)</a>.</li>
+        <li><a href="#publicada-nao-operante">1. Estado e compatibilidade</a>: o que é atual, o que ainda limita (adapters, conectores) e a negociação de versão.</li>
+        <li><a href="#bibliotecas">2. Bibliotecas</a>: SDKs, frameworks, providers hospedados, Registry e roadmap.</li>
+        <li><a href="#core-stateless">3. Core stateless</a>: <code>_meta</code> por request e <code>server/discover</code>.</li>
+        <li><a href="#fim-das-sessoes">4. O fim das sessões</a>: estado por handle.</li>
+        <li><a href="#assinaturas">5. Assinaturas e notificações</a>: <code>subscriptions/listen</code>, cancelamento e progresso.</li>
+        <li><a href="#mrtr">6. MRTR</a>: requests de múltiplas rodadas.</li>
+        <li><a href="#resultados-transporte">7. Resultados, transporte e schemas</a>: headers, <code>$ref</code>, cache.</li>
+        <li><a href="#codigos-de-erro">8. Códigos de erro</a>: faixas e constantes.</li>
+        <li><a href="#depreciacoes">9. Deprecações com prazo</a>: Roots, Sampling, Logging e DCR, com a data de remoção elegível.</li>
+        <li><a href="#extensoes">10. Extensões</a>: Apps, Tasks, Skills, Server Cards.</li>
+        <li><a href="#auth">11. Auth</a>: requisitos OAuth e step-up de escopo.</li>
+        <li><a href="#a2a">12. A2A</a>: versão, Task, Agent Card.</li>
+        <li><a href="#checklist">Checklist</a> e <a href="#verificacao">Fontes e verificação</a>: gate e fontes.</li>
+      </ul>
+    </section>
+
+    <section id="sobre-guia">
+      <h2>Sobre este guia</h2>
+      <p>
+        Este guia é dono do <em>ciclo de vida do protocolo</em>: o que a revisão corrente
+        (<code>2026-07-28</code>) define, quem a implementa e quais recursos têm prazo de remoção.
+        Um teto de dependência num adapter limita aquele ambiente; ele não redefine a revisão corrente.
+      </p>
+      <div class="callout info">
+        <strong>Fronteira com os outros guias.</strong> MCP como conceito e o hardening de servidor ficam em
+        <a href="guia_ferramentas_mcp_rag.html#mcp-como-fronteira">Ferramentas, MCP &amp; RAG</a>;
+        prática de segurança e pisos de dependência, em
+        <a href="guia_operacao_seguranca_evals.html">Operação, Segurança &amp; Evals</a>;
+        Agent Skills, em <a href="guia_skills.html">Skills</a>.
+      </div>
+      <div class="callout warn">
+        <strong>Este guia não é um cookbook de SDK.</strong> Os exemplos permanecem nas <em>formas de wire</em>
+        normativas: cada framework ou provider precisa de validação própria antes que um exemplo de adapter
+        seja apresentado como caminho executável.
+      </div>
+    </section>
+
+    <section id="fontes-oficiais">
+      <h2>Fontes &amp; verificação</h2>
+      <p>
+        Estado do protocolo, dos SDKs e do mapa de adapters verificado nas fontes primárias em
+        <strong>2026-10-24</strong>. As tabelas de versão mostram só o estado corrente.
+        Números de versão mudam todo dia: leia-os como "medido em 2026-10-24", nunca como piso.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Fonte</th><th>Para quê</th></tr></thead>
+        <tbody>
+          <tr><td><a href="https://modelcontextprotocol.io/specification/versioning" target="_blank" rel="noopener">/specification/versioning</a></td><td>Qual revisão é a corrente (2026-07-28).</td></tr>
+          <tr><td><a href="https://modelcontextprotocol.io/specification/2026-07-28" target="_blank" rel="noopener">/specification/2026-07-28</a></td><td>Texto normativo da revisão vigente.</td></tr>
+          <tr><td><a href="https://modelcontextprotocol.io/specification/2026-07-28/changelog" target="_blank" rel="noopener">/specification/2026-07-28/changelog</a></td><td>Changelog oficial da revisão.</td></tr>
+          <tr><td><a href="https://modelcontextprotocol.io/specification/2026-07-28/basic/transports/streamable-http" target="_blank" rel="noopener">Streamable HTTP 2026-07-28</a></td><td>Endpoint POST único, headers e resposta request-scoped.</td></tr>
+          <tr><td><a href="https://modelcontextprotocol.io/specification/2026-07-28/deprecated" target="_blank" rel="noopener">Registro de deprecados 2026-07-28</a></td><td>Roots, Sampling, Logging e DCR; datas e janelas de remoção.</td></tr>
+          <tr><td><a href="https://modelcontextprotocol.io/extensions/overview" target="_blank" rel="noopener">Extensões oficiais</a> · <a href="https://modelcontextprotocol.io/extensions/client-matrix" target="_blank" rel="noopener">matriz de clientes</a></td><td>Apps, Tasks, OAuth client credentials, autorização gerenciada e Skills; quem as suporta.</td></tr>
+          <tr><td><a href="https://modelcontextprotocol.io/development/roadmap" target="_blank" rel="noopener">Roadmap</a> · <a href="https://modelcontextprotocol.io/registry/about" target="_blank" rel="noopener">MCP Registry</a></td><td>Direção declarada (sem datas) e status do Registry (<strong>preview</strong>).</td></tr>
+          <tr><td><a href="https://modelcontextprotocol.io/docs/sdk" target="_blank" rel="noopener">SDKs oficiais</a> · <a href="https://github.com/modelcontextprotocol/python-sdk/releases" target="_blank" rel="noopener">python-sdk releases</a></td><td>Tiers por linguagem e notas de release (o que cada SDK declara).</td></tr>
+          <tr><td><a href="https://pypi.org/pypi/mcp/json" target="_blank" rel="noopener">PyPI · API JSON</a> · <a href="https://registry.npmjs.org/" target="_blank" rel="noopener">registry.npmjs.org</a></td><td>Versões e <code>requires_dist</code>/<code>dependencies</code> (tetos reais, não prosa de changelog).</td></tr>
+          <tr><td><a href="https://a2a-protocol.org/latest/specification/" target="_blank" rel="noopener">A2A Specification 1.0</a> · <a href="https://github.com/a2aproject/A2A/releases" target="_blank" rel="noopener">releases do repositório</a></td><td>Versionamento, Task/Message, autenticação por request e Agent Card; patch <code>v1.0.1</code>.</td></tr>
+          <tr><td><a href="https://pypi.org/project/a2a-sdk/" target="_blank" rel="noopener">A2A Python SDK</a></td><td>Release instalável (<code>1.2.3</code>); versão do SDK separada da specification wire <code>1.0</code>.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout tip">
+        <strong>Como ler as tabelas de status deste guia.</strong> Cada tabela com versões mostra o estado
+        medido em 2026-10-24 e nada mais. Se a data está velha, assuma que os números mudaram e confira a
+        fonte primária na tabela acima.
+      </div>
+    </section>
+
+    <h2 class="part-title" id="parte-estado">Parte 1 — Estado e bibliotecas</h2>
+
+    <section id="publicada-nao-operante">
+      <h2>1. Estado e compatibilidade</h2>
+      <p>
+        A revisão <code>2026-07-28</code> está publicada e é a corrente (página de versionamento, sem data
+        anunciada para a próxima). Compatibilidade de framework ou provider é evidência de integração, não uma
+        segunda definição do estado do protocolo.
+      </p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Camada</th><th>Estado em 2026-10-24</th><th>Consequência</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Spec</strong></td><td><span class="pill ok">corrente</span> normativa, final</td><td>Projete contra ela.</td></tr>
+          <tr><td><strong>SDKs oficiais</strong></td><td><span class="pill ok">sete linguagens</span> Python, TypeScript, C#, Go, Rust, Ruby e PHP citam a revisão nas release notes; nenhuma release estável de Java, Kotlin e Swift a declara (§2.1)</td><td>Dá para implementar servidor e cliente na revisão corrente nessas sete linguagens.</td></tr>
+          <tr><td><strong>Frameworks e adapters</strong></td><td><span class="pill partial">quase todos</span> aceitam <code>mcp&lt;3</code>; langchain-mcp-adapters, crewai, semantic-kernel e mcp-use (Python) ainda limitam a <code>mcp&lt;2</code> (§2.2)</td><td>Nesses ambientes fixe <code>mcp&gt;=1.30.0,&lt;2</code> (piso de segurança).</td></tr>
+          <tr><td><strong>Providers hospedados</strong></td><td>Você herda a revisão do provider: OpenAI não declara revisão; Gemini 3 não oferece remote MCP (§2.3)</td><td>O conector do provider, não o seu código, negocia o protocolo.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout warn">
+        <strong>Piso e teto resolvem problemas opostos.</strong> O <strong>teto</strong> (<code>&lt;2</code>)
+        preserva um adapter que não aceita a major nova; o <strong>piso</strong> protege de vulnerabilidade
+        conhecida e é independente da revisão. Uma dependência sem teto resolve para <code>mcp</code> 2.x, o que é
+        correto para implementação direta: adicione <code>&lt;2</code> somente quando o metadado do adapter
+        exigir, e valide em runtime antes de fixar um teto manual.
+      </div>
+      <p>
+        <strong>Negociação de versão.</strong> A revisão corrente é <code>2026-07-28</code>. Um servidor que
+        implementa só essa revisão não negocia com um cliente que ofereça outra revisão; para atender esse
+        cliente, o servidor precisa aceitar a revisão oferecida no mesmo processo.
+      </p>
+    </section>
+
+    <section id="bibliotecas">
+      <h2>2. Bibliotecas: quem fala o quê</h2>
+<div class="callout tip"><strong>Veja também:</strong> para integrar um plugin (skills + MCP), só uma skill ou só um servidor MCP <em>self-hosted</em> neste e nos demais frameworks (Google ADK, OpenAI Agents SDK, LangChain, LangGraph, Deep Agents, Claude Agent SDK), com matriz de suporte nativo e receitas, consulte <a href="guia_plugins_skills_mcp_frameworks.html">Plugins, Skills &amp; MCP em frameworks</a>.</div>
+      <p>
+        Esta é a seção que decide o que você pode atualizar hoje. Tudo abaixo foi medido em
+        <strong>2026-10-24</strong> direto no PyPI, no npm, nas releases oficiais do GitHub e na documentação de
+        cada provider: o número de hoje substitui o de ontem.
+      </p>
+
+      <h3>2.1 SDKs oficiais</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>SDK</th><th>Tier</th><th>Versão corrente</th><th>Declara <code>2026-07-28</code> (release estável)?</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Python</strong> <code>mcp</code></td><td>1</td><td><strong>2.3.0</strong> (02/10)</td><td><span class="pill ok">sim</span></td></tr>
+          <tr><td><strong>TypeScript</strong> <code>@modelcontextprotocol/server</code>, <code>client</code>, <code>core</code></td><td>1</td><td><strong>2.4.0</strong> (23/10)</td><td><span class="pill ok">sim</span> família v2</td></tr>
+          <tr><td><strong>C#</strong> <code>ModelContextProtocol</code></td><td>1</td><td>2.3.0 (20/10)</td><td><span class="pill ok">sim</span> release notes da 2.0.0+</td></tr>
+          <tr><td><strong>Go</strong> <code>go-sdk</code></td><td>1</td><td>v1.8.0 (14/09)</td><td><span class="pill ok">sim</span> release notes da v1.7.0+</td></tr>
+          <tr><td><strong>Rust</strong> <code>rmcp</code></td><td>1</td><td>3.7.0 (22/10)</td><td><span class="pill ok">sim</span> a 3.0.0 "adiciona suporte a MCP 2026-07-28"</td></tr>
+          <tr><td><strong>Ruby</strong> <code>mcp</code></td><td>1</td><td>1.8.1 (21/10)</td><td><span class="pill ok">sim</span> ciclo de vida stateless completo</td></tr>
+          <tr><td><strong>PHP</strong></td><td>3</td><td>0.9.0 (18/10)</td><td><span class="pill ok">sim</span> release notes da 0.8.0; badges de conformidade 2026-07-28</td></tr>
+          <tr><td><strong>Java</strong></td><td>2</td><td>2.1.0 (estável)</td><td><span class="pill old">não declara</span> a 2.2.0-M1 (16/10) adiciona servidor stateless moderno</td></tr>
+          <tr><td><strong>Kotlin</strong></td><td>3</td><td>0.15.0 (28/07)</td><td><span class="pill old">não declara</span></td></tr>
+          <tr><td><strong>Swift</strong></td><td>3</td><td>0.12.1 (07/05)</td><td><span class="pill old">não declara</span></td></tr>
+        </tbody>
+      </table></div>
+      <p class="small">
+        "Declara" significa: as release notes oficiais recentes citam a revisão; nenhuma release estável de
+        Java, Kotlin e Swift a cita (release notes). Tiers: <a href="https://modelcontextprotocol.io/docs/sdk" target="_blank" rel="noopener">modelcontextprotocol.io/docs/sdk</a>.
+        Pisos de segurança dos SDKs não-Python, pelos advisories dos repositórios: Rust <code>rmcp&gt;=3.7.0</code> (GHSA-5p52-q7pq-9fq2, GHSA-4432-vg92-fqh6), Ruby <code>mcp&gt;=1.2.0</code> (GHSA-4m5j-jjfc-97gx), Kotlin <code>&gt;=0.14.0</code> (GHSA-f47c-p7wj-q7gx, GHSA-4x39-xh35-w96w), PHP <code>mcp/sdk&gt;=0.7.1</code> (GHSA-7m52-jw36-44r3), Java <code>&gt;=2.1.0</code> (GHSA-hp8w-r5wh-cw9q, GHSA-w83x-jw8h-w4rj, GHSA-2hm9-qff2-hrpj); Go <code>&gt;=1.4.1</code> (GHSA-89xv-2j6f-qhc8, GHSA-q382-vc8q-7jhj); Swift: nenhum advisory publicado (consulta ao repositório em 2026-10-24).
+      </p>
+      <div class="callout danger">
+        <strong>Número de versão do SDK não é revisão de protocolo.</strong> Versões
+        <strong>não são comparáveis entre ecossistemas</strong>: cada SDK numera por conta própria. A única
+        pergunta que vale é qual revisão o SDK declara suportar — nunca qual é o número dele.
+      </div>
+      <h4>Exemplo mínimo (Python <code>mcp</code> 2.x)</h4>
+      <p>Servidor com a classe <code>MCPServer</code> e cliente por URL Streamable HTTP:</p>
       <pre><code class="language-python">from mcp.server import MCPServer
 mcp = MCPServer("Demo")
 
@@ -392,519 +561,141 @@ def add(a: int, b: int) -> int:
 async with Client("http://localhost:8000/mcp") as client:   # URL = Streamable HTTP
     result = await client.call_tool("add", {"a": 1, "b": 2})
     print(result.structured_content)</code></pre>
-
-      <h3>IDs e versões correntes (medido em 2026-09-30; pacotes e SDKs: lidos em 2026-10-19)</h3>
-      <div class="table-wrap"><table>
-        <thead><tr><th>Item</th><th>ID / versão</th><th>Status</th><th>Nota</th></tr></thead>
-        <tbody>
-          <tr><td>Revisão do protocolo</td><td><code>2026-07-28</code></td><td><span class="pill ok">atual</span></td><td><code>2025-11-25</code> é Legacy (compatibilidade, não alvo).</td></tr>
-          <tr><td>Python <code>mcp</code></td><td><code>2.3.0</code> · 1.x: <code>1.30.0</code></td><td><span class="pill ok">atual</span></td><td>1.x só segurança; 2.x depende de <code>httpx2</code> e <code>mcp-types==2.3.0</code>.</td></tr>
-          <tr><td>TypeScript v2</td><td><code>@modelcontextprotocol/server</code> · <code>client</code> · <code>core</code> <code>2.3.1</code></td><td><span class="pill ok">atual</span></td><td>Família nova; <code>@modelcontextprotocol/sdk</code> <code>1.32.1</code> segue mantido (mín. 6 meses após a v2).</td></tr>
-          <tr><td><code>fastmcp</code> (PyPI, Prefect)</td><td><code>4.1.1</code></td><td><span class="pill ok">GA desde 2026-08-31</span></td><td>Sobre <code>mcp</code> 2.x. O <code>fastmcp</code> do npm (<code>4.23.2</code>) é outro projeto.</td></tr>
-          <tr><td>Adapters ainda em <code>mcp&lt;2</code></td><td><code>langchain-mcp-adapters</code> · <code>crewai</code> (<code>mcp~=1.28.1</code>) · <code>semantic-kernel</code> · <code>mcp-use</code></td><td><span class="pill old">teto 1.x</span></td><td>Os demais da §3.2 aceitam 2.x; <code>strands-agents</code> só 2.0/2.1 ou 1.x.</td></tr>
-          <tr><td>MCP Registry</td><td>—</td><td><span class="pill beta">preview</span></td><td>Sem data de GA; não é fonte de versão de protocolo.</td></tr>
-        </tbody>
-      </table></div>
-
-      <h3>Faça / Não faça</h3>
-      <ul>
-        <li>Faça: implementação direta com <code>mcp&gt;=2.2.0,&lt;3</code> (piso de segurança: GHSA-qx49-fqc8-xw99 e GHSA-rwrf-2pqf-9j8j; na linha 1.x, <code>mcp&gt;=1.30.0</code>).</li>
-        <li>Faça: com adapter em 1.x, fixe o que ele aceita (<code>mcp&gt;=1.30.0</code> quando o pin permitir). <code>crewai</code> com <code>mcp~=1.28.1</code> não alcança a correção: fale só com servidores confiáveis.</li>
-        <li>Faça: com o pacote <code>fastmcp</code> (Prefect), instale <code>fastmcp&gt;=4.1.1</code> (a atual); a linha 3.x é legado (<code>&gt;=3.4.9</code>, só para quem ainda não migrou). TypeScript: <code>@modelcontextprotocol/sdk&gt;=1.32.0</code> ou <code>server</code>/<code>client&gt;=2.3.0</code>.</li>
-        <li>Faça: envie <code>MCP-Protocol-Version</code> igual a <code>_meta.io.modelcontextprotocol/protocolVersion</code>, <code>Mcp-Method</code> em toda request e <code>Mcp-Name</code> em <code>tools/call</code>, <code>resources/read</code>, <code>prompts/get</code>; divergência dá <code>400 HeaderMismatch</code>.</li>
-        <li>Faça: use constantes nomeadas para erros. Novos: <code>-32020</code> (header), <code>-32021</code> (capability ausente), <code>-32022</code> (versão); recurso inexistente agora é <code>-32602</code>.</li>
-        <li>Faça: rejeite schema com <code>$ref</code> de rede não resolvido; nunca dereferencie <code>$ref</code> de rede por padrão (<a href="#resultados-transporte">§10.1</a>).</li>
-        <li>Faça: OAuth com Protected Resource Metadata (RFC 9728), validação literal de <code>iss</code>, PKCE <code>S256</code> e recusa se <code>code_challenge_methods_supported</code> faltar. Registro: pré-registrado &gt; CIMD &gt; DCR.</li>
-        <li>Faça: notificações duráveis por <code>subscriptions/listen</code>; input do usuário no meio da chamada por MRTR (<code>resultType: "input_required"</code>).</li>
-        <li>Não use <code>initialize</code>, <code>Mcp-Session-Id</code>, <code>Last-Event-ID</code>, <code>resources/subscribe</code>, <code>logging/setLevel</code>, <code>ping</code> (removidos na 2026-07-28) → <code>_meta</code> por request + <code>server/discover</code>.</li>
-        <li>Não use Roots, Sampling, Logging, DCR (deprecados; nada removido ainda) nem HTTP+SSE → Streamable HTTP. Detalhes em <a href="#legado">Legado e migração</a>.</li>
-        <li>Não passe um <code>httpx.AsyncClient</code> ao <code>mcp</code> 2.x: ele usa <code>httpx2</code> (instala sem erro, falha na chamada).</li>
-        <li>Não confunda a classe <code>FastMCP</code> (SDK 1.x, hoje <code>MCPServer</code>) com o pacote <code>fastmcp</code> (Prefect) nem com o npm <code>fastmcp</code>.</li>
-        <li>Não compare códigos de erro por literal numérico; não compare número de versão entre SDKs (Java <code>2.0.x</code> não declara a revisão atual).</li>
-        <li>Não espere Tasks, DPoP ou <code>jwt-bearer</code> no SDK Python 2.3.0; Tasks é a extensão <code>io.modelcontextprotocol/tasks</code> (<a href="#extensoes">§13</a>).</li>
-        <li>Não migre só o servidor: cliente Legacy não negocia com servidor só-Modern; use servidor dual-era.</li>
-      </ul>
-
-      <h3>Onde está cada coisa</h3>
-      <p>
-        <a href="#bibliotecas">§3 SDKs e bibliotecas</a> ·
-        <a href="#postura">§4 pisos e tetos</a> ·
-        <a href="#gatilhos">§5 gatilhos de migração</a> ·
-        <a href="#matriz-compatibilidade">§2 dual-era</a> ·
-        <a href="#core-stateless">§6 core stateless</a> ·
-        <a href="#assinaturas">§8 subscriptions/listen</a> ·
-        <a href="#mrtr">§9 MRTR</a> ·
-        <a href="#resultados-transporte">§10 transporte e schemas</a> ·
-        <a href="#codigos-de-erro">§11 códigos de erro</a> ·
-        <a href="#legado">§12 legado</a> ·
-        <a href="#extensoes">§13 extensões</a> ·
-        <a href="#auth">§14 auth</a> ·
-        <a href="#a2a">§16 A2A</a> ·
-        <a href="#checklist">checklist</a>
-      </p>
-
-      <h3>Incertezas (não trate como fato)</h3>
-      <ul>
-        <li><span class="pill partial">UNVERIFIED</span> Java, Kotlin e Swift e a revisão <code>2026-07-28</code>: só release notes lidas, código não inspecionado.</li>
-        <li><span class="pill partial">UNVERIFIED</span> Runtime de <code>mcpo</code>, <code>smolagents</code>, <code>dspy</code> (sem teto): só o metadado foi lido.</li>
-        <li><span class="pill partial">UNVERIFIED</span> Suporte a Tasks/Skills por SDK além do Python 2.3.0; datas da próxima revisão, do GA do Registry e da remoção do HTTP+SSE não foram publicadas. Ver <a href="#verificacao">Notas de verificação</a>.</li>
-      </ul>
-    </section>
-
-    <section id="sobre-guia">
-      <h2>Sobre este guia</h2>
-      <p>
-        Existem duas <strong>eras de compatibilidade</strong>, mas uma só revisão atual: <code>2026-07-28</code>.
-        A linha <code>2025-11-25</code> é Legacy e continua útil para compatibilidade retroativa ou para o
-        ambiente específico cujo adapter ainda declara <code>mcp&lt;2</code>. Um teto de adapter limita aquele
-        ambiente; ele não redefine a revisão atual do protocolo.
-      </p>
-      <div class="callout danger">
-        <strong>Estado do protocolo ≠ compatibilidade de um adapter.</strong> A revisão <code>2026-07-28</code>
-        é normativa e atual; o Python <code>mcp</code> 2.3.0 declara suporte a ela. Compatibilidade com clientes
-        de eras anteriores depende do modo/servidor efetivamente configurado. Frameworks, conectores hospedados e bibliotecas intermediárias podem continuar Legacy em
-        ritmos diferentes. Não conclua que o protocolo é antigo só porque um adapter exige <code>mcp&lt;2</code>.
-      </div>
-      <p>
-        A revisão <code>2025-11-25</code> é anterior e Legacy. Não a remova de um stack que ainda depende dela:
-        use-a como alvo de compatibilidade, não como estado canônico do MCP. O que existe só por compatibilidade
-        está reunido em <a href="#legado">Legado e migração</a>.
-      </p>
       <div class="callout info">
-        <strong>Fronteira com os outros guias.</strong> Este guia é dono do <em>ciclo de vida do protocolo</em>:
-        o que a revisão nova mudou, quem a implementa, e quando migrar. Ele <strong>não</strong> reescreve o que
-        já está documentado: MCP como conceito e a mecânica da linha Legacy ficam em
-        <a href="guia_ferramentas_mcp_rag.html#mcp-como-fronteira">Ferramentas, MCP &amp; RAG</a>;
-        prática de segurança e pisos de dependência, em
-        <a href="guia_operacao_seguranca_evals.html">Operação, Segurança &amp; Evals</a>;
-        Agent Skills, em <a href="guia_skills.html">Skills</a>.
-      </div>
-      <div class="callout warn">
-        <strong>Este guia não é um cookbook de SDK.</strong> O Python <code>mcp</code> 2.3.0 já implementa a
-        revisão atual, e a v2 TypeScript usa pacotes separados de cliente e servidor. Ainda assim, os exemplos
-        aqui permanecem nas <em>formas de wire</em> normativas: cada framework ou provider precisa de validação
-        própria antes que um exemplo de adapter seja apresentado como caminho executável.
-      </div>
-    </section>
-
-    <section id="fontes-oficiais">
-      <h2>Fontes &amp; verificação<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
-      <p>
-        Estado do protocolo, dos SDKs e do mapa de adapters verificado nas fontes primárias em
-        <strong>2026-09-30</strong>. As tabelas de versão mostram só o estado corrente; o histórico está no git.
-        Números de versão mudam todo dia: leia-os como "medido em 2026-09-30", nunca como piso.
-      </p>
-      <div class="table-wrap"><table>
-        <thead><tr><th>Fonte</th><th>Para quê</th></tr></thead>
-        <tbody>
-          <tr><td><a href="https://modelcontextprotocol.io/specification/versioning" target="_blank" rel="noopener">/specification/versioning</a></td><td>Qual revisão é a corrente (2026-07-28) e quais são Legacy/Final.</td></tr>
-          <tr><td><a href="https://modelcontextprotocol.io/specification/2026-07-28" target="_blank" rel="noopener">/specification/2026-07-28</a></td><td>Texto normativo da revisão vigente.</td></tr>
-          <tr><td><a href="https://modelcontextprotocol.io/specification/2026-07-28/changelog" target="_blank" rel="noopener">/specification/2026-07-28/changelog</a></td><td>Diff oficial contra a 2025-11-25.</td></tr>
-          <tr><td><a href="https://modelcontextprotocol.io/specification/2026-07-28/basic/transports/streamable-http" target="_blank" rel="noopener">Streamable HTTP 2026-07-28</a></td><td>Endpoint POST único, headers, resposta request-scoped e ausência de retomada por <code>Last-Event-ID</code>.</td></tr>
-          <tr><td><a href="https://modelcontextprotocol.io/specification/2026-07-28/deprecated" target="_blank" rel="noopener">Registro de deprecados 2026-07-28</a></td><td>Roots, Sampling, Logging, DCR e HTTP+SSE; datas e janelas de remoção.</td></tr>
-          <tr><td><a href="https://modelcontextprotocol.io/extensions/overview" target="_blank" rel="noopener">Extensões oficiais</a> · <a href="https://modelcontextprotocol.io/extensions/client-matrix" target="_blank" rel="noopener">matriz de clientes</a></td><td>Apps, Tasks, OAuth client credentials, autorização gerenciada e Skills; quem as suporta.</td></tr>
-          <tr><td><a href="https://modelcontextprotocol.io/development/roadmap" target="_blank" rel="noopener">Roadmap</a> · <a href="https://modelcontextprotocol.io/registry/about" target="_blank" rel="noopener">MCP Registry</a></td><td>Direção declarada (sem datas) e status do Registry (<strong>preview</strong>).</td></tr>
-          <tr><td><a href="https://modelcontextprotocol.io/docs/sdk" target="_blank" rel="noopener">SDKs oficiais</a> · <a href="https://github.com/modelcontextprotocol/python-sdk/releases" target="_blank" rel="noopener">python-sdk releases</a></td><td>Tiers por linguagem e notas de release (o que cada SDK declara).</td></tr>
-          <tr><td><a href="https://pypi.org/pypi/mcp/json" target="_blank" rel="noopener">PyPI · API JSON</a> · <a href="https://registry.npmjs.org/" target="_blank" rel="noopener">registry.npmjs.org</a></td><td>Versões e <code>requires_dist</code>/<code>dependencies</code> (tetos reais, não prosa de changelog).</td></tr>
-          <tr><td><a href="https://a2a-protocol.org/latest/specification/" target="_blank" rel="noopener">A2A Specification 1.0</a> · <a href="https://github.com/a2aproject/A2A/releases" target="_blank" rel="noopener">releases do repositório</a></td><td>Versionamento, Task/Message, autenticação por request e Agent Card; patch <code>v1.0.1</code>.</td></tr>
-          <tr><td><a href="https://pypi.org/project/a2a-sdk/" target="_blank" rel="noopener">A2A Python SDK</a></td><td>Release instalável (<code>1.2.3</code>); versão do SDK separada da specification wire <code>1.0</code>.</td></tr>
-        </tbody>
-      </table></div>
-      <div class="callout tip">
-        <strong>Como ler as tabelas de status deste guia.</strong> Cada tabela com versões mostra o estado
-        medido em 2026-09-30 e nada mais. Se a data está velha, assuma que os números mudaram — a seção
-        <a href="#gatilhos">Gatilhos de migração</a> diz exatamente o que procurar.
-      </div>
-    </section>
-
-    <h2 class="part-title">Parte 1 — O regime dual-era</h2>
-
-    <section id="publicada-nao-operante">
-      <h2>1. Publicada ≠ operante<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
-      <p>
-        A revisão <code>2026-07-28</code> foi publicada como <em>stable release</em> no repositório canônico
-        da spec e é a revisão atual. A distância entre "a spec existe" e "este adapter específico a fala"
-        continua sendo de várias camadas; compatibilidade de framework ou provider é evidência de integração,
-        não uma segunda definição do estado do protocolo.
-      </p>
-      <div class="table-wrap"><table>
-        <thead><tr><th>Camada</th><th>Estado em 2026-09-30</th><th>Consequência</th></tr></thead>
-        <tbody>
-          <tr><td><strong>Spec</strong></td><td><span class="pill new">publicada</span> normativa, final</td><td>Pode-se projetar contra ela com segurança.</td></tr>
-          <tr><td><strong>SDKs de referência</strong></td><td><span class="pill ok">prontos</span> Python, TypeScript, C#, Go, Rust, Ruby e PHP citam a revisão nas release notes; Java, Kotlin e Swift não a declaram (§3.1)</td><td>Dá para implementar servidor e cliente na linha nova nessas linguagens.</td></tr>
-          <tr><td><strong>Bibliotecas intermediárias e frameworks</strong></td><td><span class="pill partial">maioria atualizada</span> quase todos já aceitam <code>mcp&lt;3</code>; langchain-mcp-adapters, crewai, semantic-kernel e mcp-use (Python) ainda limitam a 1.x (§3.2)</td><td>Só esses quatro permanecem Legacy até atualizar ou ser substituídos.</td></tr>
-          <tr><td><strong>Providers hospedados</strong></td><td><span class="pill old">linha antiga</span> a doc do conector da Anthropic linka a spec 2025-11-25; OpenAI não declara revisão; Google não oferece remote MCP no Gemini 3 (§3.3)</td><td>O conector do provider permanece na revisão anterior.</td></tr>
-        </tbody>
-      </table></div>
-      <p>
-        A leitura correta é <strong>de baixo para cima</strong>: a atualização precisa subir do SDK para as
-        bibliotecas intermediárias e só então para os frameworks. Enquanto uma camada intermediária declarar
-        teto, as camadas acima dela não têm como adotar a linha nova <em>naquele ambiente</em>; o teto não
-        transforma a spec atual em Legacy.
-      </p>
-      <div class="callout warn">
-        <strong>O risco concreto é aplicar a regra errada ao ambiente errado.</strong> Uma dependência sem teto
-        resolve para <code>mcp</code> 2.x, o que é correto para implementação direta já pronta para a revisão
-        atual. Adicione <code>&lt;2</code> somente quando o metadado ou a validação do adapter demonstrar que ele
-        permanece Legacy; nesse caso, o pin evita uma troca acidental no próximo <code>install</code>. Veja
-        <a href="#postura">Postura para stacks com adapter Legacy</a>.
-      </div>
-    </section>
-
-    <section id="matriz-compatibilidade">
-      <h2>2. Modern, Legacy e dual-era</h2>
-      <p>
-        A spec define uma terminologia própria para o período de convivência. Vale adotá-la, porque ela
-        deixa explícito o caso que falha:
-      </p>
-      <div class="table-wrap"><table>
-        <thead><tr><th>Termo</th><th>Significado</th></tr></thead>
-        <tbody>
-          <tr><td><strong>Modern</strong></td><td>Implementação que fala <code>2026-07-28</code> ou posterior: stateless, sem handshake, com <code>server/discover</code>.</td></tr>
-          <tr><td><strong>Legacy</strong></td><td>Implementação que fala <code>2025-11-25</code> ou anterior: com <code>initialize</code>, sessões e capabilities negociadas uma vez.</td></tr>
-          <tr><td><strong>Dual-era</strong></td><td>Implementação que atende <em>as duas</em> — tipicamente um servidor que serve todas as revisões a partir do mesmo processo.</td></tr>
-        </tbody>
-      </table></div>
-      <p>
-        Note que <em>dual-era</em> não é atributo só de servidor: <strong>cliente também pode ser dual-era</strong>,
-        e é isso que separa o caso que funciona do que quebra.
-      </p>
-
-      <h3>2.1 A matriz de compatibilidade</h3>
-      <p>
-        A spec publica o resultado esperado de <strong>todas</strong> as combinações. Vale ler como tabela de
-        decisão, porque a intuição erra em pelo menos duas linhas:
-      </p>
-      <div class="table-wrap"><table>
-        <thead><tr><th>Cliente</th><th>Servidor</th><th>Resultado</th></tr></thead>
-        <tbody>
-          <tr><td>Modern</td><td>Modern</td><td><span class="pill ok">funciona</span> <code>server/discover</code> é opcional; divergência de versão vira erro de versão não suportada e o cliente repete com uma versão comum.</td></tr>
-          <tr><td><strong>Modern</strong></td><td><strong>Legacy</strong></td><td><span class="pill bad">falha</span> O servidor pode rejeitar com erro próprio, ficar em silêncio, ou — pior — <strong>processar um método ambíguo com semântica antiga</strong>. Em stdio, o cliente <strong>DEVERIA</strong> mandar <code>server/discover</code> primeiro para falhar de forma determinística.</td></tr>
-          <tr><td>Dual-era</td><td>Modern</td><td><span class="pill ok">funciona</span> A sonda responde e o cliente permanece em modo Modern.</td></tr>
-          <tr><td><strong>Dual-era</strong></td><td><strong>Legacy</strong></td><td><span class="pill ok">funciona</span> A sonda falha de um jeito não-reconhecível como erro Modern, e o cliente <strong>cai para <code>initialize</code></strong> — e, se preciso, até para o transporte HTTP+SSE deprecado.</td></tr>
-          <tr><td>Legacy</td><td>Modern</td><td><span class="pill bad">falha</span> <code>initialize</code> é método desconhecido e faltam os campos obrigatórios de <code>_meta</code>. <strong>Cliente Legacy não tem mecanismo de avanço.</strong></td></tr>
-          <tr><td>Legacy</td><td>Dual-era</td><td><span class="pill ok">funciona</span> O servidor atende o <code>initialize</code> na revisão antiga negociada.</td></tr>
-          <tr><td>Legacy</td><td>Legacy</td><td><span class="pill ok">funciona</span> Fora do escopo da revisão nova.</td></tr>
-        </tbody>
-      </table></div>
-
-      <h3>2.2 Como um cliente descobre a era do servidor</h3>
-      <p>
-        Ao contrário do que a remoção do handshake sugere, <strong>a spec define detecção de era pelo
-        cliente</strong> — com mecânica específica por transporte:
-      </p>
-      <div class="table-wrap"><table>
-        <thead><tr><th>Transporte</th><th>Sonda</th><th>Como ler a resposta</th></tr></thead>
-        <tbody>
-          <tr><td><strong>stdio</strong></td><td>Chamar <code>server/discover</code></td><td>Erro Modern reconhecível ⇒ servidor Modern (repetir com versão suportada). Qualquer outra coisa, ou timeout ⇒ servidor Legacy.</td></tr>
-          <tr><td><strong>Streamable HTTP</strong></td><td>Emitir uma request Modern normal</td><td><strong>Inspecionar o corpo do <code>400 Bad Request</code></strong>: com erro Modern reconhecível ⇒ servidor Modern; <code>4xx</code> sem esse corpo ⇒ Legacy.</td></tr>
-        </tbody>
-      </table></div>
-      <div class="callout tip">
-        <strong>A era é propriedade do servidor, não da request.</strong> A spec manda o cliente
-        <strong>cachear</strong> o resultado da sonda pelo tempo de vida do processo (stdio) ou da origem (HTTP),
-        e permite persistir entre reinícios da mesma configuração, re-sondando se a suposição falhar depois.
-        Ou seja: sondar não é custo por chamada.
-      </div>
-      <div class="callout danger">
-        <strong>O caso genuinamente perigoso não é a falha — é o silêncio.</strong> Na linha
-        Modern → Legacy, a spec admite que o servidor pode <em>processar um método ambíguo entre eras sob
-        semântica antiga</em>. Isso é pior que erro: a chamada "funciona" e faz outra coisa. É exatamente por
-        isso que a sonda explícita em stdio é recomendada — <strong>falhar de forma determinística vale mais
-        que dar sorte</strong>.
-      </div>
-      <div class="callout warn">
-        <strong>Cliente Legacy não tem como avançar.</strong> Não existe caminho para um cliente antigo falar
-        com servidor novo: falta o <code>initialize</code> do lado do servidor e faltam os campos obrigatórios
-        do lado da request. Por isso a spec recomenda que servidor só-Modern <strong>nomeie as versões que
-        suporta</strong> no erro devolvido a um <code>initialize</code> — para o cliente antigo ao menos ter o
-        que mostrar ao usuário. Se você opera clientes antigos, <strong>o servidor tem que ser dual-era</strong>.
-      </div>
-      <p>
-        Continua valendo que <strong>não há handshake de negociação</strong>: cada request é aceita ou rejeitada
-        por si, e a versão viaja em toda chamada. O que existe é uma sonda opcional e um erro de versão não
-        suportada que <em>lista as versões aceitas</em> — o que permite ao cliente repetir com uma versão comum.
-      </p>
-    </section>
-
-    <section id="bibliotecas">
-      <h2>3. Bibliotecas: quem fala o quê<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
-<div class="callout tip"><strong>Veja também:</strong> para integrar um plugin (skills + MCP), só uma skill ou só um servidor MCP <em>self-hosted</em> neste e nos demais frameworks (Google ADK, OpenAI Agents SDK, LangChain, LangGraph, Deep Agents, Claude Agent SDK), com matriz de suporte nativo e receitas, consulte <a href="guia_plugins_skills_mcp_frameworks.html">Plugins, Skills &amp; MCP em frameworks</a>.</div>
-      <p>
-        Esta é a seção que decide o que você pode atualizar hoje. Tudo abaixo foi medido em
-        <strong>2026-09-30</strong> (versões e advisories relidos em <strong>2026-10-19</strong>) direto no PyPI, no npm, nas releases oficiais do GitHub e na documentação de
-        cada provider. Não há histórico aqui: o número de hoje substitui o de ontem (o git guarda o resto).
-      </p>
-
-      <h3>3.1 SDKs oficiais</h3>
-      <div class="table-wrap"><table>
-        <thead><tr><th>SDK</th><th>Tier</th><th>Versão corrente</th><th>Declara <code>2026-07-28</code>?</th></tr></thead>
-        <tbody>
-          <tr><td><strong>Python</strong> <code>mcp</code></td><td>1</td><td><strong>2.3.0</strong> (02/10); linha 1.x: <code>1.30.0</code> (07/09)</td><td><span class="pill ok">sim</span> a 1.x é só manutenção de segurança</td></tr>
-          <tr><td><strong>TypeScript</strong> <code>@modelcontextprotocol/server</code>, <code>client</code>, <code>core</code></td><td>1</td><td><strong>2.3.1</strong> (05/10)</td><td><span class="pill ok">sim</span> família v2</td></tr>
-          <tr><td><strong>C#</strong> <code>ModelContextProtocol</code></td><td>1</td><td>2.2.0 (13/08)</td><td><span class="pill ok">sim</span> release notes da 2.0.0+</td></tr>
-          <tr><td><strong>Go</strong> <code>go-sdk</code></td><td>1</td><td>v1.8.0 (14/09)</td><td><span class="pill ok">sim</span> release notes da v1.7.0+</td></tr>
-          <tr><td><strong>Rust</strong> <code>rmcp</code></td><td>1</td><td>3.5.1 (05/10)</td><td><span class="pill ok">sim</span> a 3.0.0 "adiciona suporte a MCP 2026-07-28"</td></tr>
-          <tr><td><strong>Ruby</strong> <code>mcp</code></td><td>1</td><td>1.8.0 (16/10)</td><td><span class="pill ok">sim</span> a 1.1.0 passou a tê-la como versão mais recente; a 1.2.0 completa o ciclo de vida stateless</td></tr>
-          <tr><td><strong>PHP</strong></td><td>3</td><td>0.9.0 (18/10)</td><td><span class="pill ok">sim</span> release notes da 0.8.0; badges de conformidade 2026-07-28</td></tr>
-          <tr><td><strong>Java</strong></td><td>2</td><td>2.1.0 (16/10)</td><td><span class="pill old">não declara</span> as release notes citam <code>2025-11-25</code></td></tr>
-          <tr><td><strong>Kotlin</strong></td><td>3</td><td>0.15.0 (28/07)</td><td><span class="pill old">não declara</span></td></tr>
-          <tr><td><strong>Swift</strong></td><td>3</td><td>0.12.1 (07/05)</td><td><span class="pill old">não declara</span></td></tr>
-        </tbody>
-      </table></div>
-      <p class="small">
-        "Declara" significa: as release notes oficiais recentes citam a revisão. Para Java, Kotlin e Swift a
-        ausência da citação foi lida nas notas; o código não foi inspecionado
-        (<span class="pill partial">UNVERIFIED</span>). Tiers: <a href="https://modelcontextprotocol.io/docs/sdk" target="_blank" rel="noopener">modelcontextprotocol.io/docs/sdk</a>.
-        Pisos de segurança dos SDKs não-Python, pelos advisories dos repositórios (lidos em 2026-10-19): Rust <code>rmcp&gt;=2.1.0</code> (GHSA-9g45-5xwm-f3wc), Ruby <code>mcp&gt;=1.2.0</code> (GHSA-4m5j-jjfc-97gx), Kotlin <code>&gt;=0.14.0</code> (GHSA-f47c-p7wj-q7gx), PHP <code>mcp/sdk&gt;=0.7.1</code> (GHSA-7m52-jw36-44r3), Java <code>&gt;=0.18.4</code> / <code>1.1.4</code> / <code>2.0.1</code> por linha (GHSA-4x8c-5vv7-973f); Go <code>&gt;=1.4.1</code>; para Swift não há advisory encontrado.
-      </p>
-      <div class="callout danger">
-        <strong>Número de versão do SDK não é revisão de protocolo.</strong> O Java está em <code>2.0.x</code> e
-        não declara a revisão atual; o Python está em <code>2.x</code> e declara a <code>2026-07-28</code>. Versões
-        <strong>não são comparáveis entre ecossistemas</strong>: cada SDK numera por conta própria. A única
-        pergunta que vale é qual revisão o SDK declara suportar — nunca qual é o número dele.
-      </div>
-      <div class="callout info">
-        <strong>Python <code>mcp</code> 2.x — o que mudou na superfície.</strong> A classe <code>FastMCP</code> do
-        SDK virou <code>MCPServer</code>; <code>Client</code> passou a ser de primeira classe; <code>Resolve(fn)</code>
+        <strong>Python <code>mcp</code> 2.x.</strong> <code>Client</code> é de primeira classe; <code>Resolve(fn)</code>
         cobre o fluxo MRTR; MCP Apps vem embutido e há OpenTelemetry por padrão. O pacote depende de
-        <code>mcp-types==2.3.0</code> e de <code>httpx2</code> — uma <strong>distribuição separada</strong> de
+        <code>mcp-types==2.3.0</code> e de <code>httpx2&gt;=2.10.0</code> — uma <strong>distribuição separada</strong> de
         <code>httpx</code>: código que constrói um <code>httpx.AsyncClient</code> e o entrega ao SDK instala sem
-        erro e falha na chamada. Na 2.2.0, redirecionamentos só são seguidos dentro da mesma origem, sessões
-        ociosas (era legada) expiram em 30 min (máx. 10.000) e existe <code>AuthSettings.validate_token_resource</code>.
-        Na 2.3.0 (2026-10-02), o pacote exige <code>httpx2&gt;=2.10.0</code>; uma tool com anotação <code>x-mcp-header</code> inválida falha no registro (<code>InvalidSignature</code>; só parâmetros <code>str</code>, <code>int</code> ou <code>bool</code> simples valem como header); em conexões 2025-11-25 e anteriores, <code>_meta</code> e <code>params</code> vazios deixam de ser enviados (<code>ctx.meta</code> pode ser <code>None</code>); e o login OAuth interativo não conta mais no timeout da requisição (<a href="https://github.com/modelcontextprotocol/python-sdk/releases/tag/v2.3.0" target="_blank" rel="noopener">release v2.3.0</a>, lido em 2026-10-04).
-        <strong>Não implementados</strong> no SDK Python: Tasks (SEP-2663), DPoP (SEP-1932) e <code>jwt-bearer</code>.
-        Piso de segurança: <code>mcp&gt;=2.2.0</code> (ou <code>&gt;=1.30.0</code> na linha 1.x) —
-        <a href="#postura">§4</a>.
+        erro e falha na chamada. Uma tool com anotação <code>x-mcp-header</code> inválida falha no registro
+        (<code>InvalidSignature</code>; só parâmetros <code>str</code>, <code>int</code> ou <code>bool</code> simples valem como header);
+        redirecionamentos só são seguidos dentro da mesma origem e <code>AuthSettings.validate_token_resource</code> existe.
+        <strong>Não implementados</strong> no SDK Python 2.3.0: Tasks (SEP-2663), DPoP (SEP-1932) e <code>jwt-bearer</code>.
+        <strong>Piso de segurança:</strong> <code>mcp&gt;=2.2.0</code> (GHSA-qx49-fqc8-xw99, high: o cliente OAuth
+        envia credenciais a um authorization server escolhido pelo servidor; GHSA-rwrf-2pqf-9j8j, medium: o cliente busca um
+        <code>$ref</code> escolhido pelo servidor ao validar <code>outputSchema</code>, <a href="#resultados-transporte">§7.1</a>;
+        GHSA-84m7-p3x7-pcfv / CVE-2026-59951). Em adapters que limitam <code>mcp&lt;2</code>: <code>mcp&gt;=1.30.0</code>.
       </div>
       <div class="callout info">
-        <strong>TypeScript: o pacote não subiu de versão — ele foi substituído.</strong> A v2 é uma família
-        (<code>server</code>, <code>client</code>, <code>core</code>, <code>codemod</code>, <code>server-legacy</code> e
-        middlewares <code>node</code>, <code>express</code>, <code>fastify</code>, <code>hono</code>;
-        <a href="https://ts.sdk.modelcontextprotocol.io/v2/" target="_blank" rel="noopener">docs v2</a>). O monólito
-        <code>@modelcontextprotocol/sdk</code> (<code>1.32.1</code>, 05/10) <strong>continua mantido</strong>: o README
-        oficial promete correções de bug e de segurança por pelo menos 6 meses após o lançamento da v2. Migrar é
-        trocar de pacote (imports), não fazer bump; o <code>@modelcontextprotocol/codemod</code> automatiza parte.
-        <strong>Upgrade notes da família v2 <code>2.3.0</code></strong> (02/10; lido em 2026-10-05:
-        <a href="https://github.com/modelcontextprotocol/typescript-sdk/releases/tag/v2.3.0" target="_blank" rel="noopener">release v2.3.0</a> ·
-        <a href="https://www.npmjs.com/package/@modelcontextprotocol/server" target="_blank" rel="noopener">npm @modelcontextprotocol/server</a>):
-        um servidor por request (<code>Server.connect()</code> rejeita instância já conectada com
+        <strong>TypeScript: família v2.</strong> Pacotes <code>server</code>, <code>client</code>, <code>core</code>,
+        <code>codemod</code>, <code>server-legacy</code> e middlewares <code>node</code>, <code>express</code>,
+        <code>fastify</code>, <code>hono</code>
+        (<a href="https://ts.sdk.modelcontextprotocol.io/v2/" target="_blank" rel="noopener">docs v2</a>).
+        A <code>2.4.0</code> (23/10) traz Skills (SEP-2640) e passa a rejeitar <code>x-mcp-header</code> com número
+        (<a href="https://github.com/modelcontextprotocol/typescript-sdk/releases/tag/v2.4.0" target="_blank" rel="noopener">release v2.4.0</a>).
+        Um servidor por request: <code>Server.connect()</code> rejeita instância já conectada com
         <code>SdkError</code> <code>ALREADY_CONNECTED</code>; crie o <code>McpServer</code> e o transporte dentro do handler
-        ou use a factory de <code>createMcpHandler</code>); redirects só na mesma origem
-        (<code>redirectPolicy: 'follow'</code> para seguir outro host); e duas opções opt-in, desligadas por padrão:
+        ou use a factory de <code>createMcpHandler</code>; redirects só na mesma origem
+        (<code>redirectPolicy: 'follow'</code> para seguir outro host); opções opt-in, desligadas por padrão:
         <code>maxToolInputElements</code> (<code>McpServer</code>) e <code>expectedResource</code>
-        (<code>requireBearerAuth</code>/<code>verifyBearerToken</code>). O <code>1.32.0</code> do monólito
-        (<a href="https://github.com/modelcontextprotocol/typescript-sdk/releases/tag/1.32.0" target="_blank" rel="noopener">release 1.32.0</a> ·
-        <a href="https://www.npmjs.com/package/@modelcontextprotocol/sdk" target="_blank" rel="noopener">npm @modelcontextprotocol/sdk</a>)
-        traz os mesmos redirects só na mesma origem (<code>redirectPolicy: 'follow'</code> em
-        <code>StreamableHTTPClientTransport</code>/<code>SSEClientTransport</code>) e as opções opt-in
-        <code>maxToolInputElements</code> (<code>McpServer</code>) e <code>expectedResource</code> (<code>requireBearerAuth</code>).
-        A <code>2.3.1</code> só acrescenta <code>expectedResource</code> ao <code>server-legacy</code>; a <code>1.32.1</code> só muda documentação.
-        <strong>Piso de segurança:</strong> <code>@modelcontextprotocol/sdk&gt;=1.32.0</code> e <code>server</code>/<code>client&gt;=2.3.0</code>
+        (<code>requireBearerAuth</code>/<code>verifyBearerToken</code>).
+        <strong>Piso de segurança:</strong> <code>server</code>/<code>client&gt;=2.3.0</code>
         (<code>server-legacy&gt;=2.3.1</code>, <code>express&gt;=2.0.2</code>, <code>node&gt;=2.1.0</code>, <code>hono&gt;=2.0.1</code>). Abaixo disso há advisories
         do repositório: GHSA-6qxp-vccf-f47h (OAuth envia credenciais ao servidor de autorização escolhido pelo servidor MCP),
         GHSA-22jm-h49p-29qw (tasks sem vínculo de sessão), GHSA-6prh-2h8m-c8cw (redirect cross-origin),
         GHSA-rvq5-wwqv-78pq (bearer aceita token de outro serviço), GHSA-46jr-4wx8-v453 (uma request esgota memória),
-        GHSA-f897-62hf-6gxq (corpo sem limite) e, só na v2, GHSA-jm63-cq47-j5jp (instância compartilhada entrega mensagens de um cliente a outro)
-        (<a href="https://github.com/modelcontextprotocol/typescript-sdk/security/advisories" target="_blank" rel="noopener">advisories do repositório</a>, lidos em 2026-10-19).
+        GHSA-f897-62hf-6gxq (corpo sem limite) e GHSA-jm63-cq47-j5jp (instância compartilhada entrega mensagens de um cliente a outro)
+        (<a href="https://github.com/modelcontextprotocol/typescript-sdk/security/advisories" target="_blank" rel="noopener">advisories do repositório</a>).
       </div>
       <div class="callout tip">
-        <strong>Dois "FastMCP" continuam sendo coisas diferentes.</strong> A <em>classe</em> <code>FastMCP</code>
-        vivia no SDK oficial 1.x e virou <code>MCPServer</code> no <code>mcp</code> 2.x. O <em>pacote</em>
-        <code>fastmcp</code> (Prefect) é projeto de terceiros: <strong>4.1.1</strong> (18/10), GA desde
-        <strong>2026-08-31</strong>, construído sobre <code>mcp</code> 2.x (<code>fastmcp-slim</code> exige
-        <code>mcp&lt;3,&gt;=2.0.0</code>). Na 4.x: sampling e roots iniciados pelo servidor foram removidos,
-        <code>ctx.elicit()</code> só existe no protocolo antigo, tasks foram para o pacote <code>fastmcp-tasks</code>
-        e os campos passaram a snake_case; entraram tools MRTR interativas, <code>add_extension()</code> e
-        <code>ClientGroup</code>. A 4.1.0 aperta entradas antes aceitas: sessões HTTP expiram após 30 min ociosas (o padrão do SDK MCP),
-        o <code>MultiAuth</code> qualifica client IDs por origem (sessões e tasks existentes ganham novo escopo de dono; termine as pendentes antes de atualizar),
-        a busca de tools por regex usa o motor do Pydantic (sem lookaround nem backreference; a 4.1.1 rejeita padrões acima de 1.000 caracteres),
-        arquivos de skill precisam resolver dentro dos diretórios configurados, parâmetros de path do OpenAPI rejeitam <code>.</code> e <code>..</code>,
-        e o CodeMode exige Monty 1.1 (<code>max_duration_secs</code> virou <code>max_feed_duration_secs</code>)
-        (<a href="https://github.com/PrefectHQ/fastmcp/releases/tag/v4.1.0" target="_blank" rel="noopener">release v4.1.0</a>,
-        <a href="https://github.com/PrefectHQ/fastmcp/releases/tag/v4.1.1" target="_blank" rel="noopener">v4.1.1</a>, lidas em 2026-10-19).
-        <strong>Piso de segurança:</strong> <code>fastmcp&gt;=4.1.1</code> (3.x: <code>&gt;=3.4.9</code>) — em 2026-10-16 o repositório publicou 8 advisories,
-        entre eles GHSA-gpgx-58w2-xwwf (crítica: o cliente avalia como código Python o <code>title</code> autorreferente de um <code>outputSchema</code> fornecido pelo servidor),
-        e em 2026-10-18 o GHSA-cg3c-5x66-h9cc (high: regex controlada pelo atacante no <code>RegexSearchTransform</code>), corrigido na 4.x só na 4.1.1.
-        O npm <code>fastmcp</code> (<code>4.23.2</code>) é um terceiro projeto
-        homônimo e independente. Tratamento completo da armadilha em
+        <strong>Dois "FastMCP" são coisas diferentes.</strong> O pacote
+        <code>fastmcp</code> (Prefect) é projeto de terceiros: <strong>4.1.3</strong> (20/10), construído sobre
+        <code>mcp</code> 2.x (<code>fastmcp-slim</code> exige <code>mcp&gt;=2.2.0,&lt;3</code>, o que fixa o piso do SDK).
+        O npm <code>fastmcp</code> (<code>4.23.7</code>) é um terceiro projeto homônimo e independente. O que ainda morde
+        na 4.x: <code>ctx.elicit()</code> só existe no protocolo antigo; tasks vivem no pacote <code>fastmcp-tasks</code>;
+        sessões HTTP expiram após 30 min ociosas (o padrão do SDK MCP); a busca de tools por regex usa o motor do Pydantic
+        (sem lookaround nem backreference; rejeita padrões acima de 1.000 caracteres); arquivos de skill precisam resolver
+        dentro dos diretórios configurados.
+        <strong>Piso de segurança:</strong> <code>fastmcp&gt;=4.1.2</code> — o repositório publicou 16 advisories entre
+        2026-10-16 e 2026-10-20, entre eles GHSA-gpgx-58w2-xwwf (crítica: o cliente avalia como código Python o
+        <code>title</code> autorreferente de um <code>outputSchema</code> fornecido pelo servidor), GHSA-cg3c-5x66-h9cc
+        (high: regex controlada pelo atacante no <code>RegexSearchTransform</code>) e GHSA-vqqp-x5qm-5qp4 (medium: wrappers de
+        cliente criam provedores OAuth M2M sem issuer binding; corrigido na 4.1.2)
+        (<a href="https://github.com/PrefectHQ/fastmcp/security/advisories" target="_blank" rel="noopener">advisories do repositório</a>).
+        Tratamento completo da armadilha em
         <a href="guia_ferramentas_mcp_rag.html#mcp-como-fronteira">Ferramentas, MCP &amp; RAG §3</a>.
       </div>
 
-      <h3>3.2 Bibliotecas e frameworks que consomem MCP</h3>
+      <h3>2.2 Bibliotecas e frameworks que consomem MCP</h3>
       <p>
-        O teto <code>mcp&lt;2</code> <strong>deixou de ser a regra</strong>. Lido do metadado publicado
-        (<code>requires_dist</code>), a maioria já aceita a linha 2.x e só quatro pacotes ainda limitam a 1.x.
+        Lido do metadado publicado (<code>requires_dist</code>), a maioria aceita a linha 2.x do SDK e só quatro
+        pacotes ainda limitam a <code>mcp&lt;2</code>.
       </p>
       <div class="table-wrap"><table>
         <thead><tr><th>Biblioteca</th><th>Versão</th><th>Requisito MCP declarado</th><th>Aceita <code>mcp</code> 2.x?</th></tr></thead>
         <tbody>
-          <tr><td><code>openai-agents</code></td><td>0.24.0 (15/10)</td><td><code>mcp&lt;3,&gt;=1.19.0</code></td><td><span class="pill ok">sim</span> duas linhas. A 0.24.0 copia as <code>annotations</code> MCP para a <code>FunctionTool</code> como dicas de descoberta não confiáveis: não autorizam execução (<a href="https://github.com/openai/openai-agents-python/releases/tag/v0.24.0" target="_blank" rel="noopener">release v0.24.0</a>, lida em 2026-10-19)</td></tr>
-          <tr><td><code>google-adk</code></td><td>2.12.0 (13/10)</td><td>extra: <code>mcp&lt;3,&gt;=1.24</code></td><td><span class="pill ok">sim</span> duas linhas</td></tr>
-          <tr><td><code>claude-agent-sdk</code></td><td>0.2.168 (15/10)</td><td><code>mcp&lt;3.0.0,&gt;=1.23.0</code></td><td><span class="pill ok">sim</span> duas linhas</td></tr>
-          <tr><td><code>anthropic</code></td><td>1.15.0 (15/10)</td><td>extra: <code>mcp&lt;3,&gt;=1.0</code></td><td><span class="pill ok">sim</span></td></tr>
-          <tr><td><code>litellm</code></td><td>1.106.0 (18/10)</td><td>extra: <code>mcp&lt;3,&gt;=2.2.0</code></td><td><span class="pill ok">sim</span> exige 2.x. Servidores MCP <code>stdio</code> ficam <strong>desligados por padrão</strong>: o proxy só os inicia com <code>LITELLM_ENABLE_MCP_STDIO=true</code> no ambiente do processo (config.yaml e banco são ignorados); a 1.103.1 ainda não trazia a mudança, a primeira release com ela é <span class="pill partial">UNVERIFIED</span> (<a href="https://github.com/BerriAI/litellm/pull/44066" target="_blank" rel="noopener">PR #44066</a>, lido em 2026-10-19)</td></tr>
-          <tr><td><code>ag2</code></td><td>1.1.2 (03/10)</td><td>extra: <code>mcp&lt;3,&gt;=2.2.0</code></td><td><span class="pill ok">sim</span> exige 2.x</td></tr>
-          <tr><td><code>agno</code></td><td>3.1.6 (19/10)</td><td>extra: <code>mcp&lt;3,&gt;=2.1.0</code> + <code>fastmcp&lt;5,&gt;=4.0.0</code></td><td><span class="pill ok">sim</span> exige 2.x. Desde a 3.1.0, <code>MCPConfig(tools=[...])</code> publica exatamente as tools listadas: <code>default_tools</code> e <code>lifecycle_tools</code> são opt-in (<code>False</code>) (<a href="https://github.com/agno-agi/agno/releases/tag/v3.1.0" target="_blank" rel="noopener">release v3.1.0</a>, lida em 2026-10-19)</td></tr>
+          <tr><td><code>openai-agents</code></td><td>0.24.0</td><td><code>mcp&lt;3,&gt;=1.19.0</code></td><td><span class="pill ok">sim</span> A 0.24.0 copia as <code>annotations</code> MCP para a <code>FunctionTool</code> como dicas de descoberta não confiáveis: não autorizam execução (<a href="https://github.com/openai/openai-agents-python/releases/tag/v0.24.0" target="_blank" rel="noopener">release v0.24.0</a>)</td></tr>
+          <tr><td><code>google-adk</code></td><td>2.13.0</td><td>extra: <code>mcp&lt;3,&gt;=1.24</code></td><td><span class="pill ok">sim</span></td></tr>
+          <tr><td><code>claude-agent-sdk</code></td><td>0.2.174</td><td><code>mcp&lt;3.0.0,&gt;=1.23.0</code></td><td><span class="pill ok">sim</span></td></tr>
+          <tr><td><code>anthropic</code></td><td>2.3.0</td><td>extra: <code>mcp&lt;3,&gt;=1.0</code></td><td><span class="pill ok">sim</span></td></tr>
+          <tr><td><code>litellm</code></td><td>1.106.3</td><td>extra: <code>mcp&lt;3,&gt;=2.2.0</code></td><td><span class="pill ok">sim</span> exige 2.x</td></tr>
+          <tr><td><code>ag2</code></td><td>1.2.1</td><td>extra: <code>mcp&lt;3,&gt;=2.2.0</code></td><td><span class="pill ok">sim</span> exige 2.x</td></tr>
+          <tr><td><code>agno</code></td><td>3.1.10</td><td>extra: <code>mcp&lt;3,&gt;=2.1.0</code> + <code>fastmcp&lt;5,&gt;=4.0.0</code></td><td><span class="pill ok">sim</span> exige 2.x. Desde a 3.1.0, <code>MCPConfig(tools=[...])</code> publica exatamente as tools listadas: <code>default_tools</code> e <code>lifecycle_tools</code> são opt-in (<code>False</code>) (<a href="https://github.com/agno-agi/agno/releases/tag/v3.1.0" target="_blank" rel="noopener">release v3.1.0</a>)</td></tr>
           <tr><td><code>llama-index-tools-mcp</code></td><td>0.6.0</td><td><code>mcp&lt;3,&gt;=2.0.0</code></td><td><span class="pill ok">sim</span> exige 2.x</td></tr>
-          <tr><td><code>deepagents-code</code></td><td>0.1.86</td><td><code>mcp&lt;3,&gt;=2.0.0</code> + <code>fastmcp&lt;5,&gt;=4.0.0b4</code></td><td><span class="pill ok">sim</span> exige 2.x</td></tr>
-          <tr><td><code>langchain</code></td><td>1.4.6 (14/10)</td><td>extra <code>mcp</code> → <code>fastmcp&lt;5,&gt;=4.0.11</code></td><td><span class="pill ok">sim</span> via FastMCP 4</td></tr>
-          <tr><td><code>pydantic-ai-slim</code></td><td>2.57.0 (16/10)</td><td>extra <code>mcp</code>: <code>fastmcp-slim[client]&lt;5,&gt;=3.3.0</code></td><td><span class="pill ok">sim</span> via FastMCP</td></tr>
-          <tr><td><code>strands-agents</code></td><td>1.61.1 (15/10)</td><td><code>mcp&lt;2.2,&gt;=1.23.0</code></td><td><span class="pill partial">parcial</span> só 2.0/2.1 (exclui a 2.2.0 corrigida) ou 1.x</td></tr>
-          <tr><td><strong><code>langchain-mcp-adapters</code></strong></td><td>0.3.2 (06/08)</td><td><code>mcp&lt;2.0.0,&gt;=1.24.0</code></td><td><span class="pill old">não</span> ainda 1.x</td></tr>
-          <tr><td><strong><code>crewai</code></strong></td><td>1.15.28 (14/10)</td><td><code>mcp~=1.28.1</code> (<code>crewai-tools</code>: <code>mcp&lt;2,&gt;=1.28.1</code>)</td><td><span class="pill old">não</span> ainda 1.28.x</td></tr>
-          <tr><td><strong><code>semantic-kernel</code></strong></td><td>1.45.0 (06/10)</td><td><code>mcp&lt;2.0,&gt;=1.26.0</code></td><td><span class="pill old">não</span> ainda 1.x</td></tr>
-          <tr><td><strong><code>mcp-use</code></strong> (Python)</td><td>1.7.1</td><td><code>mcp&lt;2.0.0,&gt;=1.24.0</code></td><td><span class="pill old">não</span> ainda 1.x</td></tr>
-          <tr><td><code>mcp-agent</code></td><td>0.2.6 (05/12/2025)</td><td><code>mcp&gt;=1.20.0</code></td><td><span class="pill na">inativo</span> sem release há 9 meses</td></tr>
-          <tr><td><code>autogen-ext</code></td><td>0.7.5 (autogen-agentchat: 30/09/2025)</td><td>extra: <code>mcp&gt;=1.11.0</code></td><td><span class="pill na">inativo</span> projeto parado</td></tr>
-          <tr><td><code>mcpo</code> · <code>smolagents</code> 1.26.0 · <code>dspy</code> 3.4.1</td><td>0.0.20 · 05/2026 · 3.4.1</td><td><code>mcp&gt;=1.17.0</code> · <code>mcp</code> sem pin · <code>mcp</code> sem pin</td><td><span class="pill partial">sem teto</span> valide em runtime</td></tr>
+          <tr><td><code>deepagents-code</code></td><td>0.2.1</td><td><code>mcp&gt;=2.0.0</code> + <code>fastmcp&gt;=4.0.0b4</code></td><td><span class="pill ok">sim</span> exige 2.x</td></tr>
+          <tr><td><code>langchain</code></td><td>1.4.7</td><td>extra <code>mcp</code> → <code>fastmcp&lt;5,&gt;=4.0.11</code></td><td><span class="pill ok">sim</span> via FastMCP 4</td></tr>
+          <tr><td><code>pydantic-ai-slim</code></td><td>2.61.0</td><td>extra <code>mcp</code>: <code>fastmcp-slim[client]&lt;5,&gt;=3.3.0</code></td><td><span class="pill ok">sim</span> via FastMCP</td></tr>
+          <tr><td><code>strands-agents</code></td><td>1.62.0</td><td><code>mcp&lt;2.2,&gt;=1.23.0</code></td><td><span class="pill partial">parcial</span> o teto <code>&lt;2.2</code> exclui o piso de segurança 2.2.0</td></tr>
+          <tr><td><strong><code>langchain-mcp-adapters</code></strong></td><td>0.3.2</td><td><code>mcp&lt;2.0.0,&gt;=1.24.0</code></td><td><span class="pill old">não</span> teto <code>mcp&lt;2</code></td></tr>
+          <tr><td><strong><code>crewai</code></strong></td><td>1.15.30</td><td><code>mcp&lt;2,&gt;=1.30.0</code> (<code>crewai-tools</code>: igual)</td><td><span class="pill old">não</span> teto <code>mcp&lt;2</code>; alcança o piso 1.30.0. O extra <code>a2a</code> fica em <code>a2a-sdk~=0.3.10</code></td></tr>
+          <tr><td><strong><code>semantic-kernel</code></strong></td><td>1.45.0</td><td><code>mcp&lt;2.0,&gt;=1.26.0</code></td><td><span class="pill old">não</span> teto <code>mcp&lt;2</code></td></tr>
+          <tr><td><strong><code>mcp-use</code></strong> (Python)</td><td>1.7.1</td><td><code>mcp&lt;2.0.0,&gt;=1.24.0</code></td><td><span class="pill old">não</span> teto <code>mcp&lt;2</code></td></tr>
         </tbody>
       </table></div>
-      <div class="callout tip">
-        <strong><code>~=1.28.1</code> é teto, mesmo sem <code>&lt;</code>.</strong> O operador de
-        <em>release compatível</em> equivale a <code>&gt;=1.28.1, &lt;1.29.0</code>. Ao auditar pins com grep,
-        procurar só por <code>&lt;</code> classifica errado. No caso do <code>crewai</code> isso tem consequência
-        de segurança: o pin não admite a <code>1.30.0</code>, a versão 1.x que corrige os advisories de cliente
-        OAuth e de <code>$ref</code> (<a href="#postura">§4</a>).
-      </div>
-      <div class="callout warn">
-        <strong>Sem teto e sem dono é o pior caso.</strong> <code>mcp-agent</code> e <code>autogen-ext</code> não
-        publicam há meses ou anos e nunca foram testados contra o SDK 2.x; ausência de teto neles não é decisão de
-        compatibilidade, é ausência de manutenção. Piso sem teto (<code>mcpo</code>, <code>smolagents</code>,
-        <code>dspy</code>) instala com o SDK 2.x e pode degradar em silêncio — o sintoma aparece em runtime,
-        longe da causa. O comportamento real em execução dessas bibliotecas não foi medido
-        (<span class="pill partial">UNVERIFIED</span>).
-      </div>
 
-      <h3>3.3 Providers hospedados</h3>
+      <h3>2.3 Providers hospedados</h3>
       <div class="table-wrap"><table>
-        <thead><tr><th>Provider</th><th>Superfície MCP</th><th>Revisão que fala</th></tr></thead>
+        <thead><tr><th>Provider</th><th>Superfície MCP</th></tr></thead>
         <tbody>
-          <tr><td><strong>Anthropic</strong></td><td>Conector MCP da Messages API (<span class="pill beta">beta</span>): header <code>mcp-client-2025-11-20</code>; <code>mcp-client-2026-09-15</code> é um superconjunto que substitui o anterior, registra a lista de tools em blocos <code>mcp_tool_listing</code> e permite fixá-la. Servidor remoto público por HTTP (Streamable HTTP ou SSE); sem STDIO local; chamadas de tool</td><td><span class="pill old">2025-11-25</span> — a doc linka a spec de autorização dessa revisão; não anuncia a nova</td></tr>
-          <tr><td><strong>OpenAI</strong></td><td>Tool <code>mcp</code> remota na Responses API e conectores; servidores com Streamable HTTP ou HTTP/SSE</td><td><span class="pill old">não declara revisão</span> — o único link datado (<code>2025-03-26</code>) aparece num exemplo de prompt</td></tr>
-          <tr><td><strong>Google</strong></td><td>Interactions API: remote MCP <strong>ainda não suportado</strong> para Gemini 3 ("this is coming soon"; doc atualizada em 2026-09-23)</td><td><span class="pill old">não se aplica</span></td></tr>
+          <tr><td><strong>Anthropic</strong></td><td>Conector MCP da Claude API (<span class="pill beta">beta</span>): header <code>mcp-client-2026-09-15</code>, que registra a lista de tools em blocos <code>mcp_tool_listing</code> e permite fixá-la num <code>MCPToolset</code>. Servidor remoto público por Streamable HTTP; sem STDIO local; sem ZDR.</td></tr>
+          <tr><td><strong>OpenAI</strong></td><td>Tool <code>mcp</code> remota na Responses API: <code>server_url</code> ou <code>tunnel_id</code> (Secure MCP Tunnel), <code>require_approval</code>, <code>allowed_tools</code>, <code>authorization</code> e <code>defer_loading</code> (tool search). Streamable HTTP. <code>connector_id</code> está deprecado para modelos lançados depois de 2026-09-01. A doc não declara revisão de spec.</td></tr>
+          <tr><td><strong>Google</strong></td><td>Interactions API: tool <code>mcp_server</code> (<code>name</code>, <code>url</code>, <code>headers</code>, <code>allowed_tools</code>), só Streamable HTTP. <strong>Remote MCP não funciona com Gemini 3</strong> ("Support for Gemini 3 is coming soon"); Gemini 4 não é declarado.</td></tr>
         </tbody>
       </table></div>
       <div class="callout info">
         <strong>Por que os providers importam mesmo se você não usa conector hospedado.</strong> Se o seu
         agente fala com um servidor MCP <em>através</em> do provider, quem negocia o protocolo é o provider,
-        não o seu código. Você herda a revisão dele. Migrar seu servidor para a linha nova enquanto o provider
-        fala a antiga produz exatamente o caso que falha sem fallback.
+        não o seu código. Você herda a revisão dele.
       </div>
 
-      <h3>3.4 Registry e roadmap</h3>
+      <h3>2.4 Registry e roadmap</h3>
       <div class="callout info">
-        <strong><span class="pill beta">preview</span> MCP Registry.</strong> Segue em <em>preview</em>, sem data de
+        <strong><span class="pill beta">preview</span> MCP Registry.</strong> Segue em <em>preview</em> ("Breaking changes or data resets may occur before general availability"), sem data de
         GA. É um repositório de <em>metadados</em> de servidores publicamente acessíveis, consumido por agregadores
         (marketplaces); não é canal de instalação, não aceita servidor privado e não prova compatibilidade de
         protocolo. Não o cite como fonte de versão do fio.
-        <span class="source-link">Fonte: <a href="https://modelcontextprotocol.io/registry/about" target="_blank" rel="noopener">modelcontextprotocol.io/registry/about</a>, lida em 2026-09-30.</span>
+        <span class="source-link">Fonte: <a href="https://modelcontextprotocol.io/registry/about" target="_blank" rel="noopener">modelcontextprotocol.io/registry/about</a>.</span>
       </div>
       <div class="callout tip">
         <strong><span class="pill new">roadmap, não spec</span> Direção declarada, sem data comprometida.</strong>
         O roadmap (atualizado em 2026-08-22) não fixa data para a próxima revisão. Prioridades: mensageria agêntica
-        (Tasks e eventos iniciados pelo servidor, ver <a href="#extensoes">§13</a>), transporte HTTP-nativo,
-        identidade de agente (DPoP, workload identity, ID-JAG), primitivos melhores e ergonomia de SDK. Nada aqui é
+        (Tasks, SEP-2663, e eventos iniciados pelo servidor, ver <a href="#extensoes">§10</a>), transporte HTTP-nativo,
+        identidade de agente (DPoP, SEP-1933, ID-JAG, RFC 8693), primitivos melhores e ergonomia de SDK. Nada aqui é
         normativo até virar SEP aceito e entrar numa revisão datada.
-        <span class="source-link">Fonte: <a href="https://modelcontextprotocol.io/development/roadmap" target="_blank" rel="noopener">modelcontextprotocol.io/development/roadmap</a>, lida em 2026-09-30.</span>
+        <span class="source-link">Fonte: <a href="https://modelcontextprotocol.io/development/roadmap" target="_blank" rel="noopener">modelcontextprotocol.io/development/roadmap</a>.</span>
       </div>
-      <span class="source-link">Fontes de §3: <a href="https://pypi.org/pypi/mcp/json" target="_blank" rel="noopener">PyPI · mcp</a> (e <code>requires_dist</code> de cada pacote citado) · <a href="https://registry.npmjs.org/@modelcontextprotocol/server" target="_blank" rel="noopener">npm · @modelcontextprotocol/server</a> · <a href="https://github.com/modelcontextprotocol/typescript-sdk" target="_blank" rel="noopener">typescript-sdk (README)</a> · releases oficiais de cada SDK em <a href="https://github.com/modelcontextprotocol" target="_blank" rel="noopener">github.com/modelcontextprotocol</a> · <a href="https://github.com/PrefectHQ/fastmcp/releases" target="_blank" rel="noopener">PrefectHQ/fastmcp</a> · <a href="https://platform.claude.com/docs/en/agents-and-tools/mcp-connector" target="_blank" rel="noopener">Claude MCP connector</a> · <a href="https://developers.openai.com/api/docs/guides/tools-remote-mcp" target="_blank" rel="noopener">OpenAI remote MCP</a> · <a href="https://ai.google.dev/gemini-api/docs/interactions" target="_blank" rel="noopener">Gemini Interactions API</a> — todas lidas em <strong>2026-09-30</strong>.</span>
+      <span class="source-link">Fontes de §2:<a href="https://pypi.org/pypi/mcp/json" target="_blank" rel="noopener">PyPI · mcp</a> (e <code>requires_dist</code> de cada pacote citado) · <a href="https://registry.npmjs.org/@modelcontextprotocol/server" target="_blank" rel="noopener">npm · @modelcontextprotocol/server</a> · <a href="https://github.com/modelcontextprotocol/typescript-sdk" target="_blank" rel="noopener">typescript-sdk (README)</a> · releases oficiais de cada SDK em <a href="https://github.com/modelcontextprotocol" target="_blank" rel="noopener">github.com/modelcontextprotocol</a> · <a href="https://github.com/PrefectHQ/fastmcp/releases" target="_blank" rel="noopener">PrefectHQ/fastmcp</a> · <a href="https://platform.claude.com/docs/en/agents-and-tools/mcp-connector" target="_blank" rel="noopener">Claude MCP connector</a> · <a href="https://developers.openai.com/api/docs/guides/tools-connectors-mcp" target="_blank" rel="noopener">OpenAI remote MCP</a> · <a href="https://ai.google.dev/gemini-api/docs/interactions" target="_blank" rel="noopener">Gemini Interactions API</a>.</span>
     </section>
 
-    <section id="postura">
-      <h2>4. Postura para stacks com adapter Legacy<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
-      <div class="callout danger">
-        <strong>Regra atual: MCP 2026-07-28 é o protocolo atual; <code>mcp&lt;2</code> é uma compatibilidade
-        de adapter, não um alvo global.</strong> Use o teto apenas se o framework, conector ou adapter que
-        participa daquele ambiente o exigir em metadado ou validação. Concretamente:
-        <ul style="margin:8px 0 0;padding-left:20px">
-          <li><strong>Implementação direta:</strong> use <code>mcp&gt;=2.2.0,&lt;3</code> e a revisão
-            <code>2026-07-28</code>; compatibilidade com clientes de eras anteriores depende do modo dual-era
-            configurado, não do número do SDK.</li>
-          <li><strong>Adapter ainda em 1.x</strong> (hoje: langchain-mcp-adapters, crewai, semantic-kernel e
-            mcp-use em Python): fixe o que ele aceita, preferindo <code>mcp&gt;=1.30.0</code> quando o pin do
-            pacote permitir, e trate <code>2025-11-25</code> como compatibilidade local.</li>
-          <li><strong>Audite as dependências <em>transitivas</em></strong> antes de adicionar um teto manual:
-            um piso sem teto não prova incompatibilidade; ele exige teste ou declaração oficial do adapter.</li>
-          <li><strong>Não misture cliente Legacy com servidor só-Modern.</strong> Quando os dois lados não
-            virarem juntos, mantenha servidor dual-era ou a compatibilidade que o cliente exige.</li>
-        </ul>
-      </div>
-      <div class="callout warn">
-        <strong>Piso e teto resolvem problemas opostos.</strong> O <strong>teto</strong> (<code>&lt;2</code>)
-        preserva a compatibilidade de um adapter Legacy; ele não altera a revisão atual do protocolo. O
-        <strong>piso</strong> protege de vulnerabilidade conhecida e é independente da revisão. Para o cliente
-        Python oficial, o piso de hoje é <strong><code>mcp&gt;=2.2.0</code></strong> (ou
-        <code>&gt;=1.30.0</code> na linha 1.x), por dois advisories de 2026-09-28:
-        <ul style="margin:8px 0 0;padding-left:20px">
-          <li><strong>GHSA-qx49-fqc8-xw99</strong> (high, CVSS 7.5): o cliente OAuth pode enviar credenciais a um
-            authorization server escolhido pelo servidor MCP.</li>
-          <li><strong>GHSA-rwrf-2pqf-9j8j</strong> (medium, CVSS 6.5): o cliente busca um <code>$ref</code>
-            escolhido pelo servidor ao validar <code>outputSchema</code> (ver <a href="#resultados-transporte">§10.1</a>).</li>
-        </ul>
-        Um <code>crewai</code> com <code>mcp~=1.28.1</code> não alcança nenhuma das duas correções: nesse ambiente,
-        fale só com servidores confiáveis até o pacote subir o pin. A justificativa advisory a advisory de todos
-        os pisos da família MCP fica em
-        <a href="guia_operacao_seguranca_evals.html#threat-model">Operação, Segurança &amp; Evals §8</a>, a casa
-        dos pisos; este guia não os duplica.
-      </div>
-      <div class="callout info">
-        <strong>Vale notar de onde veio um desses pisos.</strong> O <code>mcp&gt;=1.27.2</code> fecha uma falha
-        descrita como "transportes HTTP servem request de sessão sem verificar o principal autenticado" — a
-        mesma classe de problema que a revisão 2026-07-28 resolve <em>eliminando sessões</em>. A mudança de
-        protocolo e o piso de segurança apontam para a mesma causa, por caminhos diferentes.
-      </div>
-      <div class="callout tip">
-        <strong>Detecção em CI.</strong> Um <code>install</code> em modo simulação contra a linha major nova
-        avisa quando o teto do seu stack deixar de segurar — que é exatamente o gatilho da próxima seção.
-        Vale mais como sinal do que como portão: o objetivo é você descobrir a virada antes que ela aconteça
-        num deploy.
-      </div>
-    </section>
 
-    <section id="gatilhos">
-      <h2>5. Gatilhos de migração<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
-      <p>
-        A adoção em um stack com adapter Legacy não é uma decisão de calendário — é uma decisão de
-        <em>evidência</em>. A revisão e o SDK Python já são atuais; reavalie o adapter quando o gatilho relevante
-        virar verdade. Estado de cada um em 2026-09-30:
-      </p>
-      <div class="table-wrap"><table>
-        <thead><tr><th>Gatilho</th><th>Como verificar</th><th>Estado hoje</th></tr></thead>
-        <tbody>
-          <tr><td>Um framework do seu stack solta o teto <code>mcp&lt;2</code></td><td>Metadado de dependência do pacote, não o changelog</td><td><span class="pill partial">disparou para a maioria</span> openai-agents, google-adk e claude-agent-sdk aceitam <code>mcp&lt;3</code>; pendentes: langchain-mcp-adapters, crewai, semantic-kernel e mcp-use (Python)</td></tr>
-          <tr><td>A linha 4.x do <code>fastmcp</code> é estável</td><td>Versão estável no registry</td><td><span class="pill ok">disparou</span> 4.0.0 GA em 2026-08-31 (hoje 4.1.1); pydantic-ai e langchain já aceitam <code>fastmcp&lt;5</code></td></tr>
-          <tr><td>Um provider anuncia a revisão nova</td><td>Header de versão e links de spec do conector na doc oficial</td><td><span class="pill old">não disparou</span> Anthropic documenta 2025-11-25; OpenAI não declara; Google sem remote MCP no Gemini 3</td></tr>
-          <tr><td>Existe cliente e servidor Modern conversando</td><td>Teste ponta a ponta real</td><td><span class="pill ok">disparou</span> SDKs oficiais de sete linguagens declaram a revisão; exemplos de ponta a ponta são verificáveis</td></tr>
-          <tr><td>Um framework publica suporte simultâneo às duas linhas</td><td>Faixa <code>mcp&gt;=1.x,&lt;3</code> no metadado</td><td><span class="pill ok">disparou</span> openai-agents, google-adk e claude-agent-sdk; no openai-agents, cliente HTTP ou auth customizados devem casar com a major instalada — senão fixe <code>mcp&lt;2</code></td></tr>
-        </tbody>
-      </table></div>
-      <div class="callout warn">
-        <strong>O SDK novo está estável, mas isso não prova o adapter.</strong> A estabilidade do SDK de
-        referência prova que a implementação direta pode usar a revisão atual; ela não prova que um framework
-        com teto <code>mcp&lt;2</code> possa fazê-lo. Não confunda as duas evidências.
-      </div>
-    </section>
-
-    <h2 class="part-title">Parte 2 — A revisão 2026-07-28</h2>
+    <h2 class="part-title" id="parte-revisao">Parte 2 — A revisão 2026-07-28</h2>
 
     <section id="core-stateless">
-      <h2>6. Core stateless</h2>
+      <h2>3. Core stateless</h2>
       <p>
-        A mudança estruturante, da qual quase todas as outras decorrem: <strong>o protocolo deixou de ter
-        estado</strong>. Não existe mais um momento de abertura de conexão em que cliente e servidor se
-        apresentam e negociam capabilities para o resto da vida da sessão.
+        A decisão estruturante, da qual quase todas as outras decorrem: <strong>o protocolo não tem
+        estado</strong>. Não existe um momento de abertura de conexão em que cliente e servidor se
+        apresentam e negociam capabilities para o resto da vida da conexão.
       </p>
       <div class="table-wrap"><table>
-        <thead><tr><th>Antes (Legacy)</th><th>Agora (Modern)</th></tr></thead>
+        <thead><tr><th>Aspecto</th><th>Revisão 2026-07-28</th></tr></thead>
         <tbody>
-          <tr><td><code>initialize</code> + <code>notifications/initialized</code> abrem a conexão</td><td><strong>Removidos.</strong> Não há handshake.</td></tr>
-          <tr><td>Capabilities negociadas uma vez, valem para a sessão</td><td>Cada request carrega as suas, em <code>_meta</code></td></tr>
-          <tr><td>Versão do protocolo acordada na abertura</td><td>Versão declarada <strong>em toda request</strong></td></tr>
-          <tr><td>Descoberta implícita no resultado do <code>initialize</code></td><td>Método próprio: <code>server/discover</code>, que o servidor <strong>DEVE</strong> implementar</td></tr>
+          <tr><td>Abertura de conexão</td><td><strong>Não há handshake.</strong> Cada request é autocontida.</td></tr>
+          <tr><td>Capabilities</td><td>Cada request carrega as suas, em <code>_meta</code></td></tr>
+          <tr><td>Versão do protocolo</td><td>Declarada <strong>em toda request</strong></td></tr>
+          <tr><td>Descoberta</td><td>Método próprio: <code>server/discover</code>, que o servidor <strong>DEVE</strong> implementar</td></tr>
         </tbody>
       </table></div>
-      <h3>6.1 As chaves de <code>_meta</code></h3>
+      <h3>3.1 As chaves de <code>_meta</code></h3>
       <p>
         As chaves reservadas usam prefixo reverse-DNS do protocolo. Qualquer prefixo cujo segundo rótulo seja
         <code>modelcontextprotocol</code> ou <code>mcp</code> é reservado.
@@ -915,7 +706,7 @@ async with Client("http://localhost:8000/mcp") as client:   # URL = Streamable H
           <tr><td><code>io.modelcontextprotocol/protocolVersion</code></td><td><code>string</code></td><td><span class="pill bad">obrigatória</span></td><td>Versão desta request, ex.: <code>"2026-07-28"</code></td></tr>
           <tr><td><code>io.modelcontextprotocol/clientCapabilities</code></td><td><code>ClientCapabilities</code></td><td><span class="pill bad">obrigatória</span></td><td>Capabilities do cliente relevantes a esta request</td></tr>
           <tr><td><code>io.modelcontextprotocol/clientInfo</code></td><td><code>Implementation</code></td><td><span class="pill beta">DEVERIA</span></td><td>Nome e versão do cliente — <strong>não é "opcional"</strong>: a spec diz que o cliente <strong>DEVERIA</strong> incluir em toda request, salvo configuração explícita em contrário</td></tr>
-          <tr><td><code>io.modelcontextprotocol/logLevel</code></td><td><code>LoggingLevel</code></td><td><span class="pill na">opcional</span></td><td>Nível mínimo de log para esta request (substitui <code>logging/setLevel</code>)</td></tr>
+          <tr><td><code>io.modelcontextprotocol/logLevel</code></td><td><code>LoggingLevel</code></td><td><span class="pill na">opcional</span></td><td>Nível mínimo de log para esta request</td></tr>
           <tr><td><code>io.modelcontextprotocol/subscriptionId</code></td><td><code>string</code></td><td>—</td><td>Correlaciona notificação com a assinatura de origem</td></tr>
           <tr><td><code>io.modelcontextprotocol/serverInfo</code></td><td><code>Implementation</code></td><td><span class="pill beta">DEVERIA</span></td><td>No <code>_meta</code> do <em>resultado</em>: identifica o servidor</td></tr>
           <tr><td><code>traceparent</code>, <code>tracestate</code>, <code>baggage</code></td><td>W3C</td><td><span class="pill na">opcional</span></td><td><strong>Exceção à regra de prefixo</strong> — contexto de trace OpenTelemetry</td></tr>
@@ -937,7 +728,7 @@ async with Client("http://localhost:8000/mcp") as client:   # URL = Streamable H
         tratar identificação declarada pelo par como se fosse autenticação.
       </div>
 
-      <h3>6.2 Estado explícito não é sugestão — é norma</h3>
+      <h3>3.2 Estado explícito não é sugestão — é norma</h3>
       <div class="callout danger">
         <strong>A spec normatiza o handle explícito.</strong> Nas palavras dela: estado que precisa atravessar
         múltiplas requests <strong>DEVE</strong> ser referenciado por um <em>identificador explícito que o
@@ -956,24 +747,23 @@ async with Client("http://localhost:8000/mcp") as client:   # URL = Streamable H
     </section>
 
     <section id="fim-das-sessoes">
-      <h2>7. O fim das sessões</h2>
+      <h2>4. O fim das sessões</h2>
       <p>
-        Sessões saíram do protocolo. O header de identificação de sessão foi <strong>removido</strong>, e a
-        spec é explícita: servidor na linha nova <strong>DEVE ignorá-lo</strong> se um cliente antigo o enviar.
+        O protocolo não tem sessões: nenhuma request depende de identificador de sessão e a autenticação é
+        <strong>por request</strong>.
       </p>
       <div class="callout danger">
-        <strong>Isso não é só limpeza — é correção de uma classe de vulnerabilidade.</strong> A identificação
-        de sessão por header vinha sendo usada, na prática, como se fosse credencial: quem tivesse o
-        identificador era tratado como o dono da sessão. Implementações reais do SDK já foram corrigidas por
-        exatamente esse problema — servir requests de sessão sem verificar o principal autenticado. A revisão
-        nova elimina o mecanismo em vez de tentar blindá-lo, e passa a exigir <strong>autenticação por
-        request</strong>. Quando um padrão gera a mesma falha em várias implementações, o padrão é o defeito.
+        <strong>Identificador de estado nunca é credencial.</strong> Tratar quem apresenta um identificador como
+        dono da sessão é uma classe de vulnerabilidade: implementações reais do SDK já foram corrigidas por
+        servir requests de estado sem verificar o principal autenticado. Sem sessão no protocolo, o servidor
+        <strong>autentica cada request</strong> e escopa todo estado ao principal. Quando um padrão gera a
+        mesma falha em várias implementações, o padrão é o defeito.
       </div>
       <p>
         Se o seu servidor precisa de continuidade entre chamadas — um carrinho, um rascunho, um cursor de
-        paginação —, o estado passa a ser <strong>explícito</strong>: um handle devolvido por uma tool e
-        passado de volta como argumento de outra. Isso é melhor design mesmo na linha antiga, e é o conselho
-        mais durável deste guia: <em>handle explícito sobrevive às duas eras; sessão implícita não</em>.
+        paginação —, o estado é <strong>explícito</strong>: um handle devolvido por uma tool e
+        passado de volta como argumento de outra. É o conselho mais durável deste guia:
+        <em>handle explícito, assinado e escopado ao principal</em>.
       </p>
       <div class="callout warn">
         <strong>Handle explícito é dado que vem de fora — trate como tal.</strong> A spec diz o mesmo sobre o
@@ -984,19 +774,18 @@ async with Client("http://localhost:8000/mcp") as client:   # URL = Streamable H
     </section>
 
     <section id="assinaturas">
-      <h2>8. Assinaturas e notificações</h2>
+      <h2>5. Assinaturas e notificações</h2>
       <div class="table-wrap"><table>
-        <thead><tr><th>O quê</th><th>Estado</th><th>Substituto</th></tr></thead>
+        <thead><tr><th>Necessidade</th><th>Mecanismo</th></tr></thead>
         <tbody>
-          <tr><td><code>resources/subscribe</code> / <code>unsubscribe</code> + endpoint GET</td><td><span class="pill old">removidos</span></td><td><code>subscriptions/listen</code>, um stream unificado</td></tr>
-          <tr><td>Retomada de stream por identificador de último evento</td><td><span class="pill old">removida</span></td><td>Nenhum — reconecte e re-sincronize pelo estado da aplicação</td></tr>
-          <tr><td><code>ping</code></td><td><span class="pill old">removido</span></td><td>Nenhum — liveness é do transporte</td></tr>
-          <tr><td><code>logging/setLevel</code></td><td><span class="pill old">removido</span></td><td>Nível de log viaja em <code>_meta</code> por request</td></tr>
-          <tr><td><code>notifications/roots/list_changed</code></td><td><span class="pill old">removido</span></td><td>Nenhum — Roots está deprecado por inteiro</td></tr>
+          <tr><td>Notificações duráveis (mudança de recurso, lista de tools)</td><td><code>subscriptions/listen</code>, um stream unificado</td></tr>
+          <tr><td>Nível de log</td><td>Viaja em <code>_meta</code> por request</td></tr>
+          <tr><td>Liveness</td><td>É do transporte; o protocolo não tem método para isso</td></tr>
+          <tr><td>Reconexão após queda</td><td>Reconecte e re-sincronize pelo estado da aplicação; o protocolo não retoma stream</td></tr>
         </tbody>
       </table></div>
       <div class="callout warn">
-        <strong>A perda da retomada de stream tem consequência de design.</strong> Não existe "retomar":
+        <strong>A ausência de retomada de stream tem consequência de design.</strong> Não existe "retomar":
         quando um stream cai, o cliente <strong>emite uma request nova, com <code>id</code> novo</strong> —
         é outra request, não a continuação da anterior. Nada do que passou é reentregue. Quem construiu
         entrega confiável de eventos apoiado na resumability do transporte precisa mover essa garantia para a
@@ -1010,24 +799,23 @@ async with Client("http://localhost:8000/mcp") as client:   # URL = Streamable H
         com a assinatura de origem.
       </div>
 
-      <h3>8.1 Cancelamento e progresso sobrevivem ao fim das sessões — com uma regra nova</h3>
+      <h3>5.1 Cancelamento e progresso</h3>
       <p>
-        Nenhum dos dois é novo, mas a mecânica stateless muda o que "cancelar" significa: como não há sessão,
-        cancelar é sempre cancelar <em>uma request específica</em>, correlacionada pelo <code>id</code> JSON-RPC
+        Sem sessão, cancelar é sempre cancelar <em>uma request específica</em>, correlacionada pelo <code>id</code> JSON-RPC
         (ou pelo <code>progressToken</code> em <code>_meta</code>, para progresso).
       </p>
       <div class="table-wrap"><table>
-        <thead><tr><th>Mecanismo</th><th>Como funciona por transporte</th><th>Regra que mudou</th></tr></thead>
+        <thead><tr><th>Mecanismo</th><th>Como funciona por transporte</th><th>Regra do servidor</th></tr></thead>
         <tbody>
           <tr><td><strong>Cancelamento</strong></td><td>Streamable HTTP: fechar o stream SSE da request <strong>é</strong> o sinal de cancelamento — o servidor <strong>DEVE</strong> tratar a desconexão do cliente como cancelamento daquela request, sem mensagem extra. Stdio: não há stream por request, então o cliente <strong>DEVE</strong> enviar <code>notifications/cancelled</code> referenciando o <code>id</code>.</td><td>O servidor <strong>NÃO PODE</strong> enviar <code>notifications/cancelled</code> para nada além de encerrar um stream de <code>subscriptions/listen</code> que ele mesmo está fechando — cancelamento de request do cliente para o servidor continua existindo, mas o servidor não usa mais essa notificação para avisar o cliente de outras coisas.</td></tr>
-          <tr><td><strong>Progresso</strong></td><td>Cliente inclui <code>progressToken</code> (string ou inteiro, único entre requests ativas) no <code>_meta</code> da request. O servidor <strong>PODE</strong> emitir <code>notifications/progress</code> — o valor <code>progress</code> <strong>DEVE</strong> crescer a cada notificação, mesmo com total desconhecido.</td><td>Sem sessão, a notificação de progresso só pode viajar dentro do SSE <em>daquela request</em> (ver <a href="#resultados-transporte">§10</a>) — não existe mais canal de servidor para cliente fora do escopo de uma request em aberto.</td></tr>
+          <tr><td><strong>Progresso</strong></td><td>Cliente inclui <code>progressToken</code> (string ou inteiro, único entre requests ativas) no <code>_meta</code> da request. O servidor <strong>PODE</strong> emitir <code>notifications/progress</code> — o valor <code>progress</code> <strong>DEVE</strong> crescer a cada notificação, mesmo com total desconhecido.</td><td>Sem sessão, a notificação de progresso só pode viajar dentro do SSE <em>daquela request</em> (ver <a href="#resultados-transporte">§7</a>) — não existe mais canal de servidor para cliente fora do escopo de uma request em aberto.</td></tr>
         </tbody>
       </table></div>
-      <div class="source-link">Fontes oficiais: <a href="https://modelcontextprotocol.io/specification/2026-07-28/basic/utilities/cancellation" target="_blank" rel="noopener">Cancellation</a> · <a href="https://modelcontextprotocol.io/specification/2026-07-28/basic/patterns/progress" target="_blank" rel="noopener">Progress</a> — lidas em 2026-09-30.</div>
+      <div class="source-link">Fontes oficiais: <a href="https://modelcontextprotocol.io/specification/2026-07-28/basic/utilities/cancellation" target="_blank" rel="noopener">Cancellation</a> · <a href="https://modelcontextprotocol.io/specification/2026-07-28/basic/patterns/progress" target="_blank" rel="noopener">Progress</a>.</div>
     </section>
 
     <section id="mrtr">
-      <h2>9. MRTR — requests de múltiplas rodadas</h2>
+      <h2>6. MRTR — requests de múltiplas rodadas</h2>
       <p>
         Num protocolo sem estado, o servidor não pode iniciar uma request para o cliente no meio de uma
         operação — não há canal aberto para isso. Tudo que dependia disso (pedir uma completação ao cliente,
@@ -1049,7 +837,7 @@ async with Client("http://localhost:8000/mcp") as client:   # URL = Streamable H
         vai simplesmente falhar em toda tool que precise de interação.
       </div>
 
-      <h3>9.1 Onde MRTR vale — e onde não vale</h3>
+      <h3>6.1 Onde MRTR vale — e onde não vale</h3>
       <p>
         MRTR <strong>não é exclusivo de chamada de tool</strong>. O servidor pode devolver
         <em>input requerido</em> em exatamente três requests do cliente, e a spec fecha a lista com um
@@ -1065,7 +853,7 @@ async with Client("http://localhost:8000/mcp") as client:   # URL = Streamable H
         </tbody>
       </table></div>
 
-      <h3>9.2 As formas de wire</h3>
+      <h3>6.2 As formas de wire</h3>
       <div class="table-wrap"><table>
         <thead><tr><th>Campo</th><th>Onde</th><th>O que carrega</th></tr></thead>
         <tbody>
@@ -1095,7 +883,7 @@ async with Client("http://localhost:8000/mcp") as client:   # URL = Streamable H
         <code>requestState</code> em toda resposta de input requerido.
       </div>
 
-      <h3>9.3 Proteção do <code>requestState</code></h3>
+      <h3>6.3 Proteção do <code>requestState</code></h3>
       <div class="callout danger">
         <strong>Este é o ponto de segurança da revisão.</strong> O estado trafega pelo cliente, então a spec
         obriga: o servidor <strong>DEVE</strong> tratá-lo como <em>input controlado por atacante</em>. Se ele
@@ -1122,14 +910,14 @@ async with Client("http://localhost:8000/mcp") as client:   # URL = Streamable H
     </section>
 
     <section id="resultados-transporte">
-      <h2>10. Resultados, transporte e schemas</h2>
+      <h2>7. Resultados, transporte e schemas</h2>
       <div class="table-wrap"><table>
         <thead><tr><th>Contrato</th><th>O que a revisão 2026-07-28 define</th><th>Efeito prático</th></tr></thead>
         <tbody>
           <tr><td><strong>Stdio</strong></td><td>Mensagens JSON-RPC delimitadas por newline; a mesma mensagem é a fonte de verdade do corpo.</td><td>Não introduza headers HTTP ou framing próprio no transporte stdio.</td></tr>
-          <tr><td><strong>Streamable HTTP</strong></td><td>Um único endpoint <code>POST</code>; cada request recebe JSON ou um SSE com escopo daquela request. O endpoint <code>GET</code> independente e as sessões de protocolo foram removidos nesta revisão.</td><td>Use <code>subscriptions/listen</code> para o fluxo durável de notificações; não projete o caminho novo em torno de GET ou sessão implícita.</td></tr>
+          <tr><td><strong>Streamable HTTP</strong></td><td>Um único endpoint <code>POST</code>; cada request recebe JSON ou um SSE com escopo daquela request. Não há sessões de protocolo.</td><td>Use <code>subscriptions/listen</code> para o fluxo durável de notificações; não projete em torno de GET ou de sessão implícita.</td></tr>
           <tr><td><strong>Headers de versão e roteamento</strong></td><td>Cada <code>POST</code> leva <code>MCP-Protocol-Version</code>, igual a <code>_meta.io.modelcontextprotocol/protocolVersion</code>; <code>Mcp-Method</code> é obrigatório em toda request e <code>Mcp-Name</code> em <code>tools/call</code>, <code>resources/read</code> e <code>prompts/get</code>.</td><td>Divergência header/corpo resulta em <code>400 HeaderMismatch</code>; gateways podem rotear por método/nome sem inventar uma semântica de headers de parâmetros.</td></tr>
-          <tr><td><strong>Notificações e retomada</strong></td><td>Notificação aceita responde <code>202</code> sem corpo; o SSE é request-scoped. A revisão atual não suporta retomada de stream por <code>Last-Event-ID</code>.</td><td>Trate ausência de corpo e encerramento do stream como estados normais; não transforme um header de retomada legado em garantia de entrega.</td></tr>
+          <tr><td><strong>Notificações e retomada</strong></td><td>Notificação aceita responde <code>202</code> sem corpo; o SSE é request-scoped e a revisão não suporta retomada de stream.</td><td>Trate ausência de corpo e encerramento do stream como estados normais; entrega confiável é responsabilidade da aplicação.</td></tr>
           <tr><td><strong>Resultado cacheável</strong></td><td><code>ttlMs</code> e <code>cacheScope</code> podem acompanhar resultados de listagem e leitura, conforme o contrato.</td><td>Cache só dentro do escopo e TTL declarados; ausência de dica não autoriza cachear.</td></tr>
           <tr><td><strong>MRTR</strong></td><td>Resultados podem pedir <code>input_required</code> e indicar <code>inputRequests</code> para uma rodada posterior.</td><td>O cliente faz a nova rodada sob a política do host; não use sessão implícita nem request iniciada pelo servidor.</td></tr>
         </tbody>
@@ -1141,11 +929,11 @@ async with Client("http://localhost:8000/mcp") as client:   # URL = Streamable H
         não escolher silenciosamente um dos valores.
       </div>
 
-      <h3>10.1 JSON Schema — duas regras novas, ambas de segurança<span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
+      <h3>7.1 JSON Schema — duas regras de segurança</h3>
       <p>
-        O dialeto padrão passa a ser <strong>JSON Schema 2020-12</strong> quando o schema não declara
+        O dialeto padrão é <strong>JSON Schema 2020-12</strong> quando o schema não declara
         <code>$schema</code>, e implementações <strong>DEVEM</strong> suportar ao menos esse dialeto. Junto
-        vieram duas restrições que não são detalhe de tipagem — são defesa:
+        vêm duas restrições que não são detalhe de tipagem — são defesa:
       </p>
       <div class="callout danger">
         <strong>1. Não resolva <code>$ref</code> de rede automaticamente.</strong> JSON Schema permite
@@ -1173,50 +961,43 @@ async with Client("http://localhost:8000/mcp") as client:   # URL = Streamable H
         de servidores MCP, registro público) precisa disso.
       </div>
       <div class="callout info">
-        <strong>O que ficou mais permissivo:</strong> <code>inputSchema</code> e <code>outputSchema</code>
+        <strong>O que o dialeto permite:</strong> <code>inputSchema</code> e <code>outputSchema</code>
         aceitam qualquer palavra-chave do 2020-12, e <code>structuredContent</code> aceita qualquer valor JSON —
         não só objeto. Mais liberdade de modelagem, com as duas travas acima como contrapartida.
       </div>
     </section>
 
     <section id="codigos-de-erro">
-      <h2>11. Códigos de erro</h2>
+      <h2>8. Códigos de erro</h2>
       <p>
-        A faixa de códigos foi reorganizada, com política explícita de alocação: uma faixa reservada ao
+        Os códigos têm política explícita de alocação: uma faixa reservada ao
         protocolo e outra livre para implementações.
       </p>
       <div class="table-wrap"><table>
-        <thead><tr><th>Erro</th><th>Antes</th><th>Agora</th></tr></thead>
+        <thead><tr><th>Erro</th><th>Código</th></tr></thead>
         <tbody>
-          <tr><td>Incompatibilidade de header</td><td><code>-32001</code></td><td><code>-32020</code></td></tr>
-          <tr><td>Capability de cliente obrigatória ausente</td><td><code>-32003</code></td><td><code>-32021</code></td></tr>
-          <tr><td>Versão de protocolo não suportada</td><td><code>-32004</code></td><td><code>-32022</code></td></tr>
-          <tr><td>Recurso não encontrado</td><td><code>-32002</code></td><td><code>-32602</code> (padrão JSON-RPC)</td></tr>
+          <tr><td>Incompatibilidade de header</td><td><code>-32020</code></td></tr>
+          <tr><td>Capability de cliente obrigatória ausente</td><td><code>-32021</code></td></tr>
+          <tr><td>Versão de protocolo não suportada</td><td><code>-32022</code></td></tr>
+          <tr><td>Recurso não encontrado</td><td><code>-32602</code> (padrão JSON-RPC)</td></tr>
         </tbody>
       </table></div>
       <div class="callout danger">
-        <strong>Não faça comparação com literais numéricos.</strong> Código que testa <code>-32002</code>
-        diretamente quebra na virada, e quebra silenciosamente — o número passa a significar outra coisa em vez
-        de sumir. Use as constantes nomeadas do SDK. Este é o tipo de defeito que só aparece no dia da migração,
-        quando já é tarde para descobrir onde estava.
+        <strong>Não faça comparação com literais numéricos.</strong> Use as constantes nomeadas do SDK: o
+        significado de um número pertence à revisão do protocolo, e código que testa o literal passa a
+        significar outra coisa em silêncio quando a faixa muda. Este é o tipo de defeito que só aparece
+        no dia da mudança, quando já é tarde para descobrir onde estava.
       </div>
 
-      <h3>11.1 Política de faixas — onde <em>você</em> pode alocar código</h3>
+      <h3>8.1 Política de faixas — onde <em>você</em> pode alocar código</h3>
       <div class="table-wrap"><table>
         <thead><tr><th>Faixa</th><th>Regra</th></tr></thead>
         <tbody>
-          <tr><td><code>-32000</code> a <code>-32019</code></td><td><span class="pill old">legado</span> Alocada por implementações antes da política existir. Códigos novos <strong>NÃO PODEM</strong> ser alocados aqui, e implementações novas <strong>NÃO DEVERIAM</strong> usar essa faixa. Fora do <code>-32002</code>, o receptor <strong>NÃO PODE</strong> supor significado nenhum.</td></tr>
+          <tr><td><code>-32000</code> a <code>-32019</code></td><td>Códigos novos <strong>NÃO PODEM</strong> ser alocados aqui, e implementações novas <strong>NÃO DEVERIAM</strong> usar essa faixa. O receptor <strong>NÃO PODE</strong> supor significado nenhum para códigos dela.</td></tr>
           <tr><td><code>-32020</code> a <code>-32099</code></td><td><span class="pill bad">reservada ao MCP</span> Definida exclusivamente pela spec. Implementações <strong>NÃO PODEM</strong> emitir código dessa faixa que a spec não defina.</td></tr>
           <tr><td>Fora de <code>-32768…-32000</code></td><td><span class="pill ok">livre</span> É aqui que códigos novos de aplicação <strong>DEVERIAM</strong> ser alocados.</td></tr>
         </tbody>
       </table></div>
-      <div class="callout warn">
-        <strong>A assimetria que importa na transição:</strong> um cliente da revisão nova
-        <strong>DEVERIA continuar aceitando</strong> <code>-32002</code> vindo de servidor de revisão anterior —
-        emitir, não; aceitar, sim. E <code>-32042</code> (elicitation por URL, que só existiu na
-        <code>2025-11-25</code>) <strong>NÃO PODE</strong> mais ser emitido. Códigos de revisões antigas ficam
-        reservados e não serão reaproveitados.
-      </div>
       <div class="callout info">
         <strong>Erro local não é erro de protocolo.</strong> A spec não atribui código a falhas puramente
         locais — um timeout levantado dentro do SDK, por exemplo. Se você embrulha erro local em estrutura
@@ -1226,66 +1007,40 @@ async with Client("http://localhost:8000/mcp") as client:   # URL = Streamable H
     </section>
 
     <section id="depreciacoes">
-      <h2 id="legado">12. Legado e migração<span class="rev-flag novo">Novo · 2026-09-30</span></h2>
+      <h2>9. Deprecações com prazo</h2>
       <p>
-        Tudo o que é antigo neste guia cabe aqui: o que a spec deprecou (com relógio), e a correspondência
-        antigo → atual para protocolo, SDKs e pacotes. A revisão traz uma política formal de ciclo de vida, com
+        A revisão traz uma política formal de ciclo de vida (SEP-2596), com
         estados <em>ativo → deprecado → removido</em> e <strong>janela mínima de 12 meses</strong> entre
-        depreciar e remover (com exceção curta apenas para segurança).
+        depreciar e remover (90 dias na via expedita, para segurança). Deprecados em 2026-07-28; nada foi removido, e a
+        remoção só é elegível na primeira revisão publicada em ou depois de 2027-07-28.
       </p>
 
-      <h3>12.1 Deprecado na spec — nada removido ainda</h3>
       <div class="table-wrap"><table>
         <thead><tr><th>Recurso</th><th>Deprecado em</th><th>Caminho de migração</th><th>Remoção elegível</th></tr></thead>
         <tbody>
           <tr><td><strong>Roots</strong></td><td><code>2026-07-28</code></td><td>Passar diretórios/arquivos por <strong>parâmetro de tool</strong>, URI de recurso, ou configuração do servidor</td><td rowspan="4">Primeira revisão publicada em <strong>2027-07-28</strong> ou depois</td></tr>
-          <tr><td><strong>Sampling</strong></td><td><code>2026-07-28</code></td><td>Integrar <strong>direto com a API do provider de LLM</strong></td></tr>
+          <tr><td><strong>Sampling</strong> (inclui <code>includeContext</code> com <code>"thisServer"</code>/<code>"allServers"</code>)</td><td><code>2026-07-28</code></td><td>Integrar <strong>direto com a API do provider de LLM</strong>; omitir <code>includeContext</code> ou usar <code>"none"</code></td></tr>
           <tr><td><strong>Logging</strong></td><td><code>2026-07-28</code></td><td><code>stderr</code> em stdio; <strong>OpenTelemetry</strong> para observabilidade</td></tr>
           <tr><td><strong>Registro dinâmico de cliente (DCR)</strong></td><td><code>2026-07-28</code></td><td>Client ID Metadata Documents (CIMD)</td></tr>
-          <tr><td><code>includeContext</code> com <code>"thisServer"</code>/<code>"allServers"</code></td><td><code>2025-11-25</code></td><td>Omitir o campo ou usar <code>"none"</code></td><td>Acompanha Sampling</td></tr>
-          <tr><td><strong>Transporte HTTP+SSE</strong></td><td><code>2025-03-26</code></td><td>Streamable HTTP</td><td><span class="pill bad">mais curto</span> <strong>três meses</strong> depois de <code>SEP-2596</code> alcançar o estado Final</td></tr>
         </tbody>
       </table></div>
-      <div class="callout danger">
-        <strong>O transporte HTTP+SSE não tem o mesmo prazo dos outros — tem um bem menor.</strong> HTTP+SSE e os
-        valores de <code>includeContext</code> <strong>já eram descritos como deprecados antes de existir política
-        de ciclo de vida</strong>; a política nova apenas os reclassificou. Eles <strong>não ganham</strong> o
-        relógio de 12 meses zerado. Quem ainda está em HTTP+SSE tem a migração mais urgente da lista.
-      </div>
       <div class="callout info">
         <strong>Deprecado ainda funciona — e "elegível" não é "removido".</strong> A data marca quando o recurso
         fica <em>elegível</em> para remoção; a remoção em si é decisão dos mantenedores na preparação de uma
         release e <strong>pode acontecer depois</strong>. Implementações novas <strong>NÃO DEVERIAM</strong>
         adotar esses recursos; as existentes <strong>DEVERIAM</strong> migrar antes da data de elegibilidade.
-        O registro oficial, que não lista nenhuma remoção até 2026-09-30, é a fonte viva:
+        O registro oficial, que não lista nenhuma remoção em 2026-10-24, é a fonte viva:
         <a href="https://modelcontextprotocol.io/specification/2026-07-28/deprecated" target="_blank" rel="noopener">/specification/2026-07-28/deprecated</a>.
       </div>
-
-      <h3>12.2 Antigo → atual</h3>
-      <div class="table-wrap"><table>
-        <thead><tr><th>Antigo</th><th>Atual</th><th>Estado</th></tr></thead>
-        <tbody>
-          <tr><td>Revisões <code>2025-11-25</code> e anteriores: <code>initialize</code>, <code>Mcp-Session-Id</code>, capabilities negociadas uma vez</td><td><code>2026-07-28</code>: <code>_meta</code> por request + <code>server/discover</code> (<a href="#core-stateless">§6</a>, <a href="#fim-das-sessoes">§7</a>)</td><td>Legacy/Final. Cliente Legacy não fala com servidor Modern: só servidor dual-era resolve (<a href="#matriz-compatibilidade">§2</a>)</td></tr>
-          <tr><td>Roots, <code>sampling/createMessage</code> e <code>elicitation/create</code> iniciados pelo servidor</td><td>MRTR: <code>resultType: "input_required"</code> (<a href="#mrtr">§9</a>)</td><td>Roots e Sampling deprecados (12.1)</td></tr>
-          <tr><td><code>logging/setLevel</code>, <code>ping</code>, retomada por <code>Last-Event-ID</code>, <code>resources/subscribe</code></td><td><code>logLevel</code> em <code>_meta</code>; <code>subscriptions/listen</code> (<a href="#assinaturas">§8</a>)</td><td>Removidos na 2026-07-28</td></tr>
-          <tr><td>Tasks no core (<code>tasks/list</code>, <code>tasks/result</code>)</td><td>Extensão <code>io.modelcontextprotocol/tasks</code>: <code>tasks/get</code>, <code>tasks/update</code>, <code>tasks/cancel</code> (<a href="#extensoes">§13</a>)</td><td>Saíram do core</td></tr>
-          <tr><td>DCR</td><td>Pré-registrado &gt; CIMD &gt; DCR (fallback) (<a href="#auth">§14</a>)</td><td>DCR deprecado</td></tr>
-          <tr><td>HTTP+SSE (<code>MCPServerSse</code> e equivalentes)</td><td>Streamable HTTP</td><td>Deprecado desde 2025-03-26</td></tr>
-          <tr><td><code>FastMCP</code> (classe do SDK Python 1.x)</td><td><code>MCPServer</code> (<code>mcp</code> 2.x)</td><td>Renomeada no 2.x</td></tr>
-          <tr><td><code>mcp</code> 1.x (<code>1.30.0</code>)</td><td><code>mcp</code> 2.3.0</td><td>1.x só segurança/crítico</td></tr>
-          <tr><td><code>fastmcp</code> 3.x (última <code>3.4.9</code>, 16/10)</td><td><code>fastmcp</code> 4.x (<code>4.1.1</code>)</td><td>3.x só recebe backports de segurança (<a href="https://github.com/PrefectHQ/fastmcp/releases/tag/v3.4.9" target="_blank" rel="noopener">release v3.4.9</a>, lido em 2026-10-19); o alvo é a 4.x</td></tr>
-          <tr><td><code>@modelcontextprotocol/sdk</code> (TypeScript v1)</td><td><code>@modelcontextprotocol/server</code> e <code>client</code> (+ <code>codemod</code>)</td><td>v1 mantido por pelo menos 6 meses após a v2</td></tr>
-        </tbody>
-      </table></div>
     </section>
 
-    <h2 class="part-title">Parte 3 — Extensões &amp; auth</h2>
+    <h2 class="part-title" id="parte-extensoes-auth">Parte 3 — Extensões &amp; auth</h2>
 
     <section id="extensoes">
-      <h2>13. Framework de extensões<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
+      <h2>10. Framework de extensões</h2>
       <p>
-        A revisão formaliza o que antes era zona cinzenta: recursos que não são núcleo do protocolo passam a
-        ser <strong>extensões versionadas independentemente</strong>, declaradas nas capabilities e
+        Recursos que não são núcleo do protocolo são
+        <strong>extensões versionadas independentemente</strong>, declaradas nas capabilities e
         identificadas por um esquema de nome com prefixo de domínio reverso. Isso permite que o núcleo fique
         pequeno e estável enquanto funcionalidades opcionais evoluem no próprio ritmo.
       </p>
@@ -1293,11 +1048,11 @@ async with Client("http://localhost:8000/mcp") as client:   # URL = Streamable H
         <thead><tr><th>Extensão</th><th>Repositório</th><th>Estado</th><th>O que traz</th></tr></thead>
         <tbody>
           <tr><td><strong>MCP Apps</strong><br><code>io.modelcontextprotocol/ui</code></td><td><code>ext-apps</code></td><td><span class="pill new">oficial</span></td><td>Elementos de UI interativos (gráficos, formulários, player) embutidos na conversa.</td></tr>
-          <tr><td><strong>MCP Tasks</strong><br><code>io.modelcontextprotocol/tasks</code></td><td><code>ext-tasks</code></td><td><span class="pill new">oficial</span></td><td>Execução assíncrona de operações longas: <em>polling</em>, input no meio do voo e <strong>handles duráveis</strong> (<code>resultType: "task"</code>; <code>tasks/get</code>, <code>tasks/update</code>, <code>tasks/cancel</code>). <code>tasks/list</code> e <code>tasks/result</code> foram removidos ao sair do core. <strong>Não implementada</strong> no SDK Python <code>mcp</code> 2.3.0; no FastMCP 4 vive no pacote <code>fastmcp-tasks</code>.</td></tr>
+          <tr><td><strong>MCP Tasks</strong><br><code>io.modelcontextprotocol/tasks</code></td><td><code>ext-tasks</code></td><td><span class="pill new">oficial</span></td><td>Execução assíncrona de operações longas: <em>polling</em>, input no meio do voo e <strong>handles duráveis</strong> (<code>resultType: "task"</code>; <code>tasks/get</code>, <code>tasks/update</code>, <code>tasks/cancel</code>). Extensão SEP-2663, fora do core. <strong>Não implementada</strong> no SDK Python <code>mcp</code> 2.3.0; no FastMCP 4 vive no pacote <code>fastmcp-tasks</code>.</td></tr>
           <tr><td><strong>OAuth Client Credentials</strong><br><code>io.modelcontextprotocol/oauth-client-credentials</code></td><td rowspan="2"><code>ext-auth</code></td><td><span class="pill new">oficial</span></td><td>Fluxo <em>client credentials</em> do OAuth 2.0 para autenticação máquina-a-máquina.</td></tr>
           <tr><td><strong>Autorização gerenciada por empresa</strong></td><td><span class="pill new">oficial</span></td><td>Controle de acesso centralizado para ambientes corporativos. <strong>É extensão oficial com requisitos normativos próprios</strong> — o que ela não é, é parte do núcleo do protocolo.</td></tr>
-          <tr><td><strong>MCP Server Cards</strong><br><code>io.modelcontextprotocol/server-card</code></td><td><code>ext-server-card</code></td><td><span class="pill new">oficial · Final</span></td><td>SEP-2127 Final (mergeado em 2026-10-06; <a href="https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/seps/2127-mcp-server-cards.md" target="_blank" rel="noopener">SEP</a>, lido em 2026-10-19). Formato de descoberta antes da conexão: transportes, versões e orientação de conexão do servidor. A página <code>/extensions/overview</code> ainda não a lista, e o suporte por SDK e cliente não foi verificado (<span class="pill partial">UNVERIFIED</span>).</td></tr>
-          <tr><td><strong>Skills over MCP</strong><br><code>io.modelcontextprotocol/skills</code></td><td><code>ext-skills</code></td><td><span class="pill new">oficial · Final</span></td><td>SEP-2640 Final. Métodos <code>skills/list</code> e <code>skills/get</code>; os arquivos vêm por <code>resources/read</code> sob URI <code>skill://</code>, com manifesto de digests SHA-256; limite de 512 arquivos ou 16 MiB por skill; o host deve tratar o conteúdo como não confiável. Suporte de clientes na <a href="https://modelcontextprotocol.io/extensions/client-matrix" target="_blank" rel="noopener">matriz oficial</a>: parcial em ChatGPT, fast-agent e Inspector; completo em mcpc. Não substitui o formato de diretório <code>SKILL.md</code>, que continua na especificação de Agent Skills — ver <a href="guia_skills.html">Skills</a>.</td></tr>
+          <tr><td><strong>MCP Server Cards</strong><br><code>io.modelcontextprotocol/server-card</code></td><td><code>ext-server-card</code></td><td><span class="pill new">oficial · Final</span></td><td>SEP-2127 Final (<a href="https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/seps/2127-mcp-server-cards.md" target="_blank" rel="noopener">SEP</a>). Formato de descoberta antes da conexão: transportes, versões e orientação de conexão do servidor.</td></tr>
+          <tr><td><strong>Skills over MCP</strong><br><code>io.modelcontextprotocol/skills</code></td><td><code>ext-skills</code></td><td><span class="pill new">oficial · Final</span></td><td>SEP-2640 Final; o TypeScript SDK 2.4.0 a implementa. Métodos <code>skills/list</code> e <code>skills/get</code>; os arquivos vêm por <code>resources/read</code> sob URI <code>skill://</code>, com manifesto de digests SHA-256; limite de 512 arquivos ou 16 MiB por skill; o host deve tratar o conteúdo como não confiável. Suporte de clientes na <a href="https://modelcontextprotocol.io/extensions/client-matrix" target="_blank" rel="noopener">matriz oficial</a>: parcial em ChatGPT, fast-agent e Inspector; completo em mcpc. Não substitui o formato de diretório <code>SKILL.md</code>, que continua na especificação de Agent Skills — ver <a href="guia_skills.html">Skills</a>.</td></tr>
         </tbody>
       </table></div>
       <div class="callout warn">
@@ -1328,13 +1083,7 @@ async with Client("http://localhost:8000/mcp") as client:   # URL = Streamable H
     </section>
 
     <section id="auth">
-      <h2>14. O que mudou em auth</h2>
-      <div class="callout info">
-        <strong>Menos do que o barulho sugere.</strong> A autorização não sofreu ruptura equivalente à do
-        núcleo. Ela foi reorganizada em documentos versionados e ganhou alguns requisitos novos de
-        <em>hardening</em>, quase todos endereçando ataques conhecidos de OAuth. Quem já seguia boa prática
-        tem pouco a mudar.
-      </div>
+      <h2>11. Auth</h2>
       <div class="callout tip">
         <strong>Os subconjuntos de spec que a autorização MCP realmente implementa.</strong>
         A página normativa <code>/basic/authorization</code> lista as fontes externas de que é subconjunto:
@@ -1346,7 +1095,7 @@ async with Client("http://localhost:8000/mcp") as client:   # URL = Streamable H
         para uma implementação MCP; quando suportada em transporte HTTP, <strong>DEVERIA</strong> seguir esta
         spec — stdio <strong>NÃO DEVERIA</strong> segui-la (credenciais vêm do ambiente).
       </div>
-      <h3>14.1 Requisitos novos</h3>
+      <h3>11.1 Requisitos</h3>
       <div class="table-wrap"><table>
         <thead><tr><th>Requisito</th><th>Por quê</th></tr></thead>
         <tbody>
@@ -1359,44 +1108,14 @@ async with Client("http://localhost:8000/mcp") as client:   # URL = Streamable H
           <tr><td><strong>Descoberta do AS: ao menos um mecanismo, cliente aceita os dois</strong></td><td>O authorization server <strong>DEVE</strong> prover RFC 8414 (AS Metadata) <em>ou</em> OIDC Discovery 1.0; o cliente MCP <strong>DEVE</strong> suportar <em>ambos</em> os mecanismos de descoberta, já que não sabe de antemão qual o AS oferece.</td></tr>
         </tbody>
       </table></div>
-      <h3>14.2 Atribuição precisa — o que <em>não</em> é novidade</h3>
-      <div class="callout tip">
-        <strong>Dois pontos frequentemente contados errado:</strong>
-        <ul style="margin:8px 0 0;padding-left:20px">
-          <li><strong>A preferência por documento de metadados de cliente sobre registro dinâmico já existia</strong>
-            desde a revisão 2025-11-25, como recomendação. A revisão nova não a introduziu — apenas moveu o
-            registro dinâmico para o estado <em>deprecado</em>.</li>
-          <li><strong>O registro dinâmico nunca foi obrigatório.</strong> Sempre foi opcional; agora é opcional
-            e deprecado.</li>
-        </ul>
-        Errar essa atribuição faz parecer que há trabalho de migração onde não há.
-      </div>
       <div class="callout info">
-        <strong>Ordem de registro no fluxo atual.</strong> Use cliente pré-registrado quando houver; caso
-        contrário, use Client ID Metadata Documents (CIMD) quando o authorization server anunciar
-        <code>client_id_metadata_document_supported</code>; só então use registro dinâmico (DCR) como
-        fallback de compatibilidade. O DCR foi formalmente marcado como <em>deprecado</em> em
-        <code>2026-07-28</code>, mas continua funcionando durante a janela de migração. Credenciais
-        pré-registradas e de DCR devem permanecer vinculadas ao <code>iss</code> que as emitiu; CIMD não é
-        autorização por si só. Fonte: <a href="https://blog.modelcontextprotocol.io/posts/2026-07-28/" target="_blank" rel="noopener">mudanças oficiais de 2026-07-28</a>.
+        <strong>Para citações:</strong> a especificação mantém requisitos normativos (MUST/SHOULD) em
+        <code>/basic/authorization/security-considerations</code> (audience, mix-up, PKCE, CIMD) e moveu o
+        material operacional (State Handle Hijacking, SSRF, Local Server Compromise) para o tutorial
+        <code>security_best_practices</code> (tratado em
+        <a href="guia_ferramentas_mcp_rag.html#hardening-de-mcp-server">Ferramentas, MCP &amp; RAG §11</a>).
       </div>
-      <div class="callout warn">
-        <strong>Mudança de status que afeta citações — e ela é mais fina do que "virou tutorial".</strong>
-        O documento antigo de boas práticas de segurança <strong>saiu do espaço normativo por inteiro</strong>
-        e passou a ser material de tutorial (<code>/docs/2026-07-28/tutorials/security/security_best_practices</code>),
-        sem linguagem DEVE/DEVERIA vinculante. <strong>Mas parte do conteúdo foi promovida</strong>, não só
-        removida: existe agora uma página <strong>normativa</strong> própria dentro da spec de autorização —
-        <code>/basic/authorization/security-considerations</code> — que usa MUST/SHOULD de verdade e cobre
-        token audience binding, token theft, segurança de transporte (TLS obrigatório), proteção do código de
-        autorização (PKCE), mix-up attacks, open redirection, segurança de CIMD, confused deputy (no sentido
-        estreito de proxy OAuth) e restrição de privilégio do access token. O que ficou <em>só</em> tutorial —
-        sem MUST vinculante, mas com valor prático alto — é o material mais novo e mais operacional: State
-        Handle Hijacking, o detalhamento de SSRF (faixas de IP, DNS rebinding), Local MCP Server Compromise,
-        validação de URL de autorização (XSS/RCE) e Scope Minimization — tratados em
-        <a href="guia_ferramentas_mcp_rag.html#hardening-de-mcp-server">Ferramentas, MCP &amp; RAG §11</a>.
-        Ao citar, confira qual das duas páginas você está apontando: a normativa ou a tutorial.
-      </div>
-      <h3>14.3 Seleção e <em>step-up</em> de escopo <span class="pill new">2026-07-28</span></h3>
+      <h3>11.2 Seleção e <em>step-up</em> de escopo</h3>
       <p>
         Escopo ganhou um fluxo formal de negociação, para o cliente pedir só o necessário e escalar sob
         demanda em vez de pedir tudo de uma vez.
@@ -1418,60 +1137,28 @@ async with Client("http://localhost:8000/mcp") as client:   # URL = Streamable H
         não duplicar a mesma tabela nos dois guias.
       </div>
       <p>
-        A terminologia também acompanhou o fim das sessões: o que se chamava sequestro de sessão passou a ser
-        descrito em termos do <strong>handle de estado</strong> (<em>State Handle Hijacking</em>), coerente com
-        o modelo novo — ver o controle operacional completo em
+        Sem sessões de protocolo, a ameaça equivalente ao sequestro de sessão é o roubo do
+        <strong>handle de estado</strong> (<em>State Handle Hijacking</em>) — ver o controle operacional completo em
         <a href="guia_ferramentas_mcp_rag.html#hardening-de-mcp-server">Ferramentas, MCP &amp; RAG §11</a>.
       </p>
-      <div class="source-link">Fontes oficiais: <a href="https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization" target="_blank" rel="noopener">Authorization</a> · <a href="https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization/security-considerations" target="_blank" rel="noopener">Authorization Security Considerations</a> · <a href="https://modelcontextprotocol.io/docs/2026-07-28/tutorials/security/security_best_practices" target="_blank" rel="noopener">Security Best Practices (tutorial)</a> — lidas em 2026-09-30.</div>
+      <div class="source-link">Fontes oficiais: <a href="https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization" target="_blank" rel="noopener">Authorization</a> · <a href="https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization/security-considerations" target="_blank" rel="noopener">Authorization Security Considerations</a> · <a href="https://modelcontextprotocol.io/docs/2026-07-28/tutorials/security/security_best_practices" target="_blank" rel="noopener">Security Best Practices (tutorial)</a>.</div>
     </section>
 
-    <h2 class="part-title">Parte 4 — Projetar migrável</h2>
-
-    <section id="contratos-que-sobrevivem">
-      <h2>15. Contratos que sobrevivem</h2>
-      <p>
-        Esta é a parte mais durável do guia: prescrições válidas <strong>nas duas linhas</strong>. Seguir isto
-        hoje não custa nada em uma integração Legacy e elimina retrabalho quando esse adapter puder usar a
-        revisão atual.
-      </p>
-      <div class="table-wrap"><table>
-        <thead><tr><th>Faça</th><th>Por quê</th></tr></thead>
-        <tbody>
-          <tr><td><strong>Estado como handle explícito</strong>, devolvido por uma tool e passado como argumento a outra</td><td>Funciona nas duas linhas. Sessão implícita não existe mais na nova.</td></tr>
-          <tr><td><strong>Assine e escope o handle</strong> ao principal autenticado</td><td>A spec nova exige tratar estado que passa pelo cliente como adulterável. A antiga já se beneficiava disso.</td></tr>
-          <tr><td><strong>Autentique cada request</strong>, nunca a "sessão"</td><td>Já era a orientação correta; agora é a única possível.</td></tr>
-          <tr><td><strong>Use constantes nomeadas</strong> para códigos de erro</td><td>A renumeração quebra comparação literal em silêncio.</td></tr>
-          <tr><td><strong>Não construa sobre Roots, Sampling, Logging ou retomada de stream</strong></td><td>Deprecados ou removidos; têm relógio contando.</td></tr>
-          <tr><td><strong>Operações longas por extensão oficial de tasks</strong>, com handle durável</td><td>É o caminho suportado; improviso com sessão não sobrevive.</td></tr>
-          <tr><td><strong>Servidor que ignora identificador de sessão recebido</strong></td><td>Já é comportamento obrigatório na linha nova; inofensivo na antiga.</td></tr>
-        </tbody>
-      </table></div>
-      <div class="callout info">
-        <strong>O que é um servidor dual-era.</strong> Um servidor que atende as duas linhas a partir do mesmo
-        processo: aceita requests no formato antigo (com handshake) e no novo (stateless por request). É o
-        único ponto onde a compatibilidade pode existir, porque o cliente novo não tem como se adaptar.
-        Os SDKs de referência que já falam a revisão nova oferecem esse modo — servir todas as revisões a
-        partir do mesmo servidor.
-      </div>
-    </section>
+    <h2 class="part-title" id="parte-a2a">Parte 4 — A2A</h2>
 
     <section id="a2a">
-      <h2>16. A2A: ciclo de vida entre agentes<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
+      <h2>12. A2A: ciclo de vida entre agentes</h2>
       <p>
         MCP padroniza capabilities expostas a um host; A2A padroniza a interação entre um cliente e um agente
         remoto. Na fonte oficial atual, a specification wire é <strong>1.0</strong>; o release
-        <strong>v1.0.1</strong> do repositório (28/05, "Latest" em 2026-09-30) é um patch —
+        <strong>v1.0.1</strong> do repositório (28/05, release estável recente) é um patch —
         três correções de binding HTTP (prioriza <code>application/a2a+json</code>), erros de transcodificação
         e valores de <code>TaskStatus</code> — e não muda a versão wire <code>Major.Minor</code>.
       </p>
-      <div class="callout info">
-        <strong>SDK não é specification.</strong> O pacote Python instalável
-        <code>a2a-sdk 1.2.3</code> foi publicado em 19/10 (a 1.2.0, em 29/09); esse número identifica o SDK e não altera a
-        specification wire <code>1.0</code> nem o patch do repositório <code>v1.0.1</code>. Confirme no
-        binding e na suíte do seu cliente quais capacidades foram implementadas antes de afirmar
-        interoperabilidade.
-      </div>
+      <p>
+        Três numerações distintas identificam as camadas: specification wire <strong>1.0</strong>, patch do
+        repositório <strong>v1.0.1</strong> e pacote <strong><code>a2a-sdk 1.2.3</code></strong> (PyPI, 2026-10-19).
+      </p>
       <div class="table-wrap"><table>
         <thead><tr><th>Contrato ao operar A2A</th><th>Aplicação</th></tr></thead>
         <tbody>
@@ -1487,35 +1174,18 @@ async with Client("http://localhost:8000/mcp") as client:   # URL = Streamable H
         segurança; ele não concede privilégio. Proteja a versão estendida, não coloque segredos no card público
         e preserve autenticação/autorização em cada operação, inclusive nas etapas internas de uma Task.
       </div>
-      <p class="source-link">Fontes oficiais: <a href="https://a2a-protocol.org/latest/specification/" target="_blank" rel="noopener">A2A Protocol Specification 1.0</a> · <a href="https://github.com/a2aproject/A2A/releases/tag/v1.0.1" target="_blank" rel="noopener">A2A repository release v1.0.1</a> · <a href="https://pypi.org/project/a2a-sdk/" target="_blank" rel="noopener">PyPI a2a-sdk</a> — lidos em 2026-09-30.</p>
-    </section>
-
-    <section id="anti-padroes">
-      <h2>17. Anti-padrões da transição</h2>
-      <div class="table-wrap"><table>
-        <thead><tr><th>Anti-padrão</th><th>O que acontece</th></tr></thead>
-        <tbody>
-          <tr><td>Instalar o SDK 2.x ao lado de adapter que declara <code>mcp&lt;2</code> (hoje: langchain-mcp-adapters, crewai, semantic-kernel, mcp-use)</td><td>Falha na resolução de dependência. Atualize ou isole o adapter; não conclua que o protocolo atual é a linha 1.x.</td></tr>
-          <tr><td>Depender de biblioteca de adaptação sem teto declarado</td><td>A resolução pode levar a v2; valide o suporte em runtime antes de adicionar um teto manual.</td></tr>
-          <tr><td>Migrar o servidor antes do cliente</td><td>Cliente Legacy contra servidor Modern não negocia. Só um servidor dual-era resolve.</td></tr>
-          <tr><td>Tratar "SDK estável" como "ecossistema pronto"</td><td>São coisas diferentes por várias camadas.</td></tr>
-          <tr><td>Comparar códigos de erro por literal</td><td>Quebra silenciosa na virada.</td></tr>
-          <tr><td>Construir sobre proposta em revisão</td><td>Superfície pode mudar inteira antes de virar normativa.</td></tr>
-          <tr><td>Tratar a revisão 2025-11-25 como atual ou removê-la sem avaliar adapters</td><td>Ela é Legacy: mantenha-a apenas como compatibilidade quando um cliente ou adapter ainda a exigir.</td></tr>
-        </tbody>
-      </table></div>
+      <p class="source-link">Fontes oficiais: <a href="https://a2a-protocol.org/latest/specification/" target="_blank" rel="noopener">A2A Protocol Specification 1.0</a> · <a href="https://github.com/a2aproject/A2A/releases/tag/v1.0.1" target="_blank" rel="noopener">A2A repository release v1.0.1</a> · <a href="https://pypi.org/project/a2a-sdk/" target="_blank" rel="noopener">PyPI a2a-sdk</a>.</p>
     </section>
 
     <section id="checklist">
-      <h2>Checklist<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
+      <h2>Checklist</h2>
       <div class="callout tip">
         <strong>Hoje (compatibilidade e proteção):</strong>
         <ul style="margin:8px 0 0;padding-left:20px">
           <li>Implementação direta usa a revisão atual <code>2026-07-28</code> e <code>mcp&gt;=2.2.0,&lt;3</code>.</li>
-          <li>Somente adapters comprovadamente em 1.x (hoje: langchain-mcp-adapters, crewai, semantic-kernel, mcp-use em Python) recebem teto explícito — e, nesse caso, <code>mcp&gt;=1.30.0</code> quando o pin permitir.</li>
+          <li>Somente adapters comprovadamente em 1.x (hoje: langchain-mcp-adapters, crewai, semantic-kernel, mcp-use em Python) recebem teto explícito — e, nesse caso, <code>mcp&gt;=1.30.0,&lt;2</code> quando o pin permitir.</li>
           <li>Bibliotecas sem teto são validadas antes de receber pin manual.</li>
           <li>Código não compara códigos de erro por literal numérico.</li>
-          <li>Nenhum servidor novo em HTTP+SSE; quem ainda o usa migra para Streamable HTTP.</li>
         </ul>
       </div>
       <div class="callout info">
@@ -1527,51 +1197,20 @@ async with Client("http://localhost:8000/mcp") as client:   # URL = Streamable H
           <li>Operação longa usa a extensão oficial de tasks (não implementada no SDK Python <code>mcp</code> 2.3.0).</li>
         </ul>
       </div>
-      <div class="callout warn">
-        <strong>Antes de manter compatibilidade Legacy (evidência):</strong>
-        <ul style="margin:8px 0 0;padding-left:20px">
-          <li>Algum framework do stack soltou o teto? (verificar no metadado, não no changelog)</li>
-          <li>Algum provider anuncia a revisão nova no header do conector?</li>
-          <li>Existe cliente e servidor Modern conversando de verdade?</li>
-          <li>O servidor vai ser dual-era ou os dois lados viram juntos?</li>
-        </ul>
-      </div>
     </section>
 
     <section id="verificacao">
-      <h2>Notas de verificação<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
+      <h2>Fontes e verificação</h2>
+      <p>
+        Estado do ecossistema e fontes normativas lidos e verificados em <strong>2026-10-24</strong>:
+      </p>
       <ul>
-        <li><span class="pill ok">Verificado</span> <strong>2026-09-30 — protocolo.</strong> Lidos nas páginas oficiais:
-          <code>/specification/versioning</code> (revisão corrente <code>2026-07-28</code>; nenhuma revisão mais
-          nova), o changelog da revisão, o registro de deprecados (<code>/specification/2026-07-28/deprecated</code>:
-          nada removido), <code>/basic/authorization</code> e
-          <code>/basic/authorization/security-considerations</code> (página normativa, MUST/SHOULD),
-          o tutorial <code>security_best_practices</code> (State Handle Hijacking, SSRF, Scope Minimization),
-          <code>/basic/utilities/cancellation</code> e <code>/basic/patterns/progress</code>,
-          <code>/extensions/overview</code> e a matriz de clientes, <code>/registry/about</code> (preview) e o roadmap.</li>
-        <li><span class="pill ok">Verificado</span> <strong>2026-09-30 — pacotes.</strong> Versões e tetos vieram da API
-          JSON do PyPI (<code>requires_dist</code>), do registry do npm e das releases oficiais do GitHub de cada SDK,
-          nunca de changelog em prosa. Os números de versão são <code>dist-tag latest</code> do dia e mudam
-          diariamente: use como "medido em 2026-09-30" (pacotes e SDKs: 2026-10-19), não como piso.</li>
-        <li><span class="pill ok">Verificado</span> <strong>2026-09-30 — providers.</strong> Conector MCP da
-          Anthropic (headers <code>mcp-client-2025-11-20</code> e <code>mcp-client-2026-09-15</code>; doc linka a
-          spec de autorização <code>2025-11-25</code>), tool MCP remota da OpenAI (sem revisão declarada) e
-          Interactions API do Gemini (remote MCP "coming soon" para Gemini 3).</li>
-        <li><span class="pill ok">Verificado</span> <strong>2026-09-30 — A2A.</strong> Specification wire
-          <code>1.0</code>, patch do repositório <code>v1.0.1</code>, <code>a2a-sdk 1.2.3</code> (2026-10-19).</li>
-        <li><span class="pill partial">UNVERIFIED</span> <strong>Java, Kotlin e Swift e a revisão 2026-07-28.</strong>
-          As release notes lidas não a citam; o código desses SDKs não foi inspecionado.</li>
-        <li><span class="pill partial">UNVERIFIED</span> <strong>Comportamento em execução das bibliotecas sem teto</strong>
-          (<code>mcpo</code>, <code>smolagents</code>, <code>dspy</code>): foi lido o metadado, não o runtime.</li>
-        <li><span class="pill partial">UNVERIFIED</span> <strong>Suporte às extensões Tasks e Skills por SDK.</strong> Só
-          foi confirmado que o SDK Python <code>mcp</code> 2.3.0 não implementa Tasks, DPoP nem <code>jwt-bearer</code>;
-          consulte a matriz de clientes e o README do seu SDK antes de depender de uma extensão.</li>
-        <li><span class="pill partial">UNVERIFIED</span> <strong>Datas não publicadas:</strong> próxima revisão da spec,
-          GA do Registry e a remoção do HTTP+SSE (depende de o SEP-2596 chegar a Final).</li>
-        <li><span class="pill ok">Resolvido</span> <strong>Sem duplicação.</strong> A mecânica da linha
-          Legacy e o conceito de MCP ficam em Ferramentas, MCP &amp; RAG; pisos prescritivos de dependência
-          ficam em Operação, Segurança &amp; Evals; Skills fica no guia de Skills. Aqui só o ciclo de vida do
-          protocolo e a compatibilidade.</li>
+        <li><strong>Protocolo MCP:</strong> <a href="https://modelcontextprotocol.io/specification/versioning" target="_blank" rel="noopener">versioning</a> (revisão corrente <code>2026-07-28</code>), <a href="https://modelcontextprotocol.io/specification/2026-07-28/changelog" target="_blank" rel="noopener">changelog</a>, <a href="https://modelcontextprotocol.io/specification/2026-07-28/deprecated" target="_blank" rel="noopener">deprecated</a> (Roots, Sampling, Logging e DCR com prazo elegível de remoção em 2027-07-28), <a href="https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization" target="_blank" rel="noopener">authorization</a> e <a href="https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization/security-considerations" target="_blank" rel="noopener">security considerations</a> (normativa).</li>
+        <li><strong>SDKs oficiais e registros:</strong> PyPI <code>mcp</code> 2.3.0 e <code>fastmcp</code> 4.1.3; npm <code>@modelcontextprotocol/server</code> e <code>client</code> 2.4.0, e npm <code>fastmcp</code> 4.23.7; releases dos SDKs em C# (2.3.0), Go (v1.8.0), Rust (rmcp 3.7.0), Ruby (1.8.1), PHP (0.9.0), Java (2.1.0 estável; 2.2.0-M1 adiciona servidor stateless), Kotlin (0.15.0) e Swift (0.12.1). Nenhuma release estável de Java, Kotlin ou Swift declara a revisão 2026-07-28.</li>
+        <li><strong>Advisories e pisos de segurança:</strong> Python <code>mcp&gt;=2.2.0</code> (GHSA-qx49-fqc8-xw99, GHSA-rwrf-2pqf-9j8j, GHSA-84m7-p3x7-pcfv); TS <code>server</code>/<code>client&gt;=2.3.0</code>; FastMCP <code>fastmcp&gt;=4.1.2</code> (16 advisories entre 2026-10-16 e 2026-10-20); Rust <code>rmcp&gt;=3.7.0</code>; Ruby <code>mcp&gt;=1.2.0</code>; Kotlin <code>&gt;=0.14.0</code>; PHP <code>&gt;=0.7.1</code>; Go <code>&gt;=1.4.1</code>; Java <code>&gt;=2.1.0</code>; Swift sem advisories publicados.</li>
+        <li><strong>Providers hospedados:</strong> Anthropic Claude API (<a href="https://platform.claude.com/docs/en/agents-and-tools/mcp-connector" target="_blank" rel="noopener">mcp-connector</a>, header <code>mcp-client-2026-09-15</code>); OpenAI Responses (<a href="https://developers.openai.com/api/docs/guides/tools-connectors-mcp" target="_blank" rel="noopener">tools-connectors-mcp</a>, <code>tunnel_id</code>, <code>connector_id</code> deprecado após 2026-09-01); Google Gemini (<a href="https://ai.google.dev/gemini-api/docs/interactions" target="_blank" rel="noopener">Interactions API</a>, remote MCP não suporta Gemini 3).</li>
+        <li><strong>A2A:</strong> <a href="https://a2a-protocol.org/latest/specification/" target="_blank" rel="noopener">A2A Specification 1.0</a>, release do repositório <a href="https://github.com/a2aproject/A2A/releases/tag/v1.0.1" target="_blank" rel="noopener">v1.0.1</a> (patch) e pacote <code>a2a-sdk 1.2.3</code> no PyPI.</li>
+        <li><strong>Extensões, Registry e Roadmap:</strong> <a href="https://modelcontextprotocol.io/extensions/overview" target="_blank" rel="noopener">extensions/overview</a> (Tasks SEP-2663; Skills SEP-2640 Final; Server Cards SEP-2127 Final); <a href="https://modelcontextprotocol.io/registry/about" target="_blank" rel="noopener">registry/about</a> (preview); <a href="https://modelcontextprotocol.io/development/roadmap" target="_blank" rel="noopener">roadmap</a> (atualizado 2026-08-22, sem data publicada para próxima revisão).</li>
       </ul>
     </section>
 
@@ -1581,12 +1220,11 @@ async with Client("http://localhost:8000/mcp") as client:   # URL = Streamable H
 <footer class="site">
   <div style="max-width:1440px;margin:0 auto;padding:0 24px;display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;justify-content:space-between;">
     <div style="max-width:540px">
-      <div class="brand" style="font-size:15px">Protocolo MCP <small>Revisão, compatibilidade e migração</small></div>
+      <div class="brand" style="font-size:15px">Protocolo MCP <small>Revisão 2026-07-28, SDKs e A2A</small></div>
       <p style="margin:8px 0 0;color:var(--c-fg-muted);font-size:13.5px;line-height:1.55">
-        Guia de ciclo de vida do protocolo, escrito no dia da publicação da revisão
-        <strong>2026-07-28</strong> e com o estado do ecossistema verificado em <strong>2026-09-30</strong> a partir
-        do texto normativo e de medição direta nos registries de pacote. Estado de ecossistema é fato perecível:
-        confira a data antes de agir sobre ele.
+        Guia de ciclo de vida do protocolo MCP (revisão <strong>2026-07-28</strong>), com o estado do ecossistema
+        verificado em <strong>2026-10-24</strong> a partir do texto normativo e de medição direta nos registries de pacote.
+        Estado de ecossistema é fato perecível: confira a data antes de agir sobre ele.
       </p>
     </div>
     <div style="font-size:13.5px;color:var(--c-fg-muted);line-height:1.7">
@@ -1600,7 +1238,7 @@ async with Client("http://localhost:8000/mcp") as client:   # URL = Streamable H
     </div>
     <div style="font-size:12.5px;color:var(--c-fg-soft)">
       <div><strong>Navegação rápida</strong></div>
-      <div><a href="#bibliotecas">Bibliotecas</a> · <a href="#matriz-compatibilidade">Compatibilidade</a> · <a href="#postura">Postura</a></div>
+      <div><a href="#bibliotecas">Bibliotecas</a> · <a href="#publicada-nao-operante">Estado e compatibilidade</a></div>
       <div><a href="#core-stateless">Stateless</a> · <a href="#checklist">Checklist</a></div>
     </div>
   </div>

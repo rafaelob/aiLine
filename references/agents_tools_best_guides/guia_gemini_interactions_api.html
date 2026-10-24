@@ -5,8 +5,8 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%9A%3C/text%3E%3C/svg%3E" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Guia Gemini Interactions API — Referência completa</title>
-<meta name="description" content="Guia técnico da Google Gemini Interactions API em PT-BR: visão geral, texto, streaming, multimodal (imagem, áudio, vídeo, documentos), function calling, structured output, thinking, caching, Deep Research, Antigravity, ferramentas server-side, referência REST e uma seção curta de legado e migração. Interactions API em GA desde junho/2026. Verificado em 2026-09-30." />
-<meta name="last-checked" content="2026-09-30" />
+<meta name="description" content="Guia técnico da Google Gemini Interactions API em PT-BR: visão geral, texto, streaming, multimodal (imagem, áudio, vídeo, documentos), function calling, structured output, thinking, caching, Deep Research, Antigravity, ferramentas server-side, referência REST e quando ainda usar generateContent. Interactions API em GA desde junho/2026; SDK google-genai 2.33.0. Verificado em 2026-10-24." />
+<meta name="last-checked" content="2026-10-24" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -319,7 +319,7 @@
 .callout.ok { border-left-color: #2f7a3a; background: #e8f5ea; color: #1d4a25; }
 [data-theme="dark"] .callout.ok { background: #0d2517; color: #a7d8b1; }
 </style>
-<style id="rev-flag-css">main :not(pre) > code,main a{overflow-wrap:anywhere}.rev-flag{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:999px;font-size:.62em;font-weight:600;vertical-align:middle;letter-spacing:.02em;white-space:nowrap}.rev-flag.novo{background:#dcfce7;color:#14532d;border:1px solid #86efac}.rev-flag.atu{background:#e0f2fe;color:#0c4a6e;border:1px solid #7dd3fc}.rev-news{margin:16px 0;padding:12px 16px;border-left:4px solid #22c55e;border-radius:8px;background:rgba(34,197,94,.08)}.rev-news ul{margin:6px 0 0;padding-left:20px}.rev-news li{margin:2px 0}:root[data-theme="dark"] .rev-flag.novo{background:#14532d;color:#dcfce7;border-color:#166534}:root[data-theme="dark"] .rev-flag.atu{background:#0c4a6e;color:#e0f2fe;border-color:#075985}@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .rev-flag.novo{background:#14532d;color:#dcfce7;border-color:#166534}:root:not([data-theme="light"]) .rev-flag.atu{background:#0c4a6e;color:#e0f2fe;border-color:#075985}}</style>
+<style id="overflow-css">main :not(pre) > code,main a{overflow-wrap:anywhere}</style>
 </head>
 <body>
 <a class="skip" href="#main">Pular para o conteúdo</a>
@@ -328,7 +328,7 @@
   <div class="header-row">
     <div class="brand">Guia Gemini Interactions API <small>PT-BR · Referência completa</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-09-30</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-10-24</strong></span>
       <span class="badge gemini">google-genai</span>
       <span class="badge ok">GA</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
@@ -406,128 +406,186 @@
       <li><a href="#ref-errors">Códigos de erro</a></li>
     </ol>
 
-    <div class="toc-section">Legado</div>
+    <div class="toc-section">generateContent</div>
     <ol>
-      <li><a href="#legado">Legado e migração</a></li>
-      <li><a href="#legado-quando-usar">Quando ainda usar generateContent</a></li>
+      <li><a href="#legado">Quando ainda usar generateContent</a></li>
     </ol>
 
     <div class="toc-section">Apêndice</div>
     <ol>
       <li><a href="#cookbook">Cookbook (notebooks)</a></li>
       <li><a href="#glossario">Glossário</a></li>
-      <li><a href="#verificacao">Notas de verificação</a></li>
+      <li><a href="#verificacao">Fontes e verificação</a></li>
     </ol>
   </nav>
 
   <main id="main">
-<aside class="rev-news" id="rev-news-2026-09-30" aria-label="Novidades desta revisão"><strong>O que há de novo nesta revisão (2026-09-30)</strong> — 4 seções novas e 20 atualizadas desde a revisão de 2026-09-23. Procure os selos Novo e Atualizado nos títulos.<details><summary>Ver lista</summary><ul><li>Novo: <a href="#para-agentes">Resumo para agentes (verificado 2026-09-30)</a></li><li>Novo: <a href="#s-audio">9.5b Transcrição dedicada (<code>gemini-3.5-transcribe</code>)</a></li><li>Novo: <a href="#s-video">10.3b Modos de processamento: <code>static</code> e <code>agentic</code></a></li><li>Novo: <a href="#legado">Legado e migração</a></li><li>Atualizado: <a href="#sobre">Sobre este guia</a></li><li>Atualizado: <a href="#s-visao-geral">1. Visão geral da Interactions API</a></li><li>Atualizado: <a href="#s-quickstart-instalar">2.2 Instalação</a></li><li>Atualizado: <a href="#s-image-gen">7.1 Modelos disponíveis</a></li><li>Atualizado: <a href="#s-image-understanding">8.1 Métodos de envio</a></li><li>Atualizado: <a href="#s-audio">9.1 Capacidades</a></li><li>Atualizado: <a href="#s-audio">9.7 Geração de áudio (TTS)</a></li><li>Atualizado: <a href="#s-thinking">15.1 Modelos &amp; níveis de thinking</a></li><li>Atualizado: <a href="#s-caching">16.2 Limites mínimos por modelo</a></li><li>Atualizado: <a href="#s-google-maps">17.2 Google Maps (grounding)</a></li><li>Atualizado: <a href="#s-computer-use">17.5 Computer Use (preview)</a></li><li>Atualizado: <a href="#s-file-search">17.6 File Search (RAG)</a></li><li>Atualizado: <a href="#s-agentic-vision">17.9 Agentic Vision (Code Execution + imagem)</a></li><li>Atualizado: <a href="#s-antigravity">18.9 Antigravity agent (preview) — agente gerenciado de propósito geral</a></li><li>Atualizado: <a href="#s-background">19.4 Eventos suportados</a></li><li>Atualizado: <a href="#s-limites-safety">22.1 Configurações de segurança</a></li><li>Atualizado: <a href="#ref-endpoints">B1. Endpoints</a></li><li>Atualizado: <a href="#ref-generation-config">B10. <code>GenerationConfig</code></a></li><li>Atualizado: <a href="#ref-models">B19. <code>ModelOption</code></a></li><li>Atualizado: <a href="#verificacao">Ap3. Notas de verificação</a></li><li>Legado condensado: o conteúdo antigo de <code>generateContent</code> virou uma única seção, <a href="#legado">Legado e migração</a>, com a tabela de mapeamento e os quatro usos que ainda exigem a API antiga.</li></ul></details></aside>
 
     <div class="hero">
       <h1>Guia Gemini Interactions API — Referência completa</h1>
       <p class="lead">
         Documentação técnica da <strong>Gemini Interactions API</strong>
-        (<strong>GA</strong> desde junho/2026 — a interface recomendada para todo projeto novo; a própria
-        documentação oficial chama <code>generateContent</code> de legado).
+        (<strong>GA</strong> desde junho/2026 — a interface padrão do Gemini para projetos novos).
         Cobre a anatomia da <code>Interaction</code> (timeline de <code>steps</code>),
         texto, streaming SSE, multimodal (imagem/áudio/vídeo/PDF),
         function calling, structured output, thinking, cache implícito, Deep Research e Antigravity,
         ferramentas server-side (Google Search, Maps, Code Execution, URL Context,
         File Search, Computer Use, MCP), background, webhooks
-        e a referência REST, além de uma seção curta de
-        <a href="#legado">legado e migração</a> (mapeamento <em>antes/depois</em> e os quatro usos que
-        ainda exigem a API antiga).
+        e a referência REST, além de <a href="#legado">quando ainda usar <code>generateContent</code></a>
+        (Batch API, AFC em Python e cache explícito).
       </p>
       <p style="margin:4px 0 14px;padding:11px 15px;background:var(--c-ok-bg);border-left:4px solid var(--c-ok);border-radius:0 8px 8px 0;font-size:14.5px;color:var(--c-ok)">
-        ⭐ <strong>Destaque:</strong> modelo recomendado <code>gemini-3.8-flash</code> (Flash estável, GA 2026-09-02)
-        e <code>gemini-3.1-pro-preview</code> para raciocínio/multimodal avançado. SDK <code>google-genai</code> ≥ 2.3.0
-        (atual <strong>2.31.0</strong> no Python, <strong>2.30.0</strong> no JS/TS, ambos de 2026-10-14; fixe
-        <code>&lt; 3.0.0</code>). O schema <code>steps[]</code> é o único aceito desde 2026-06-08.
+        ⭐ <strong>Destaque:</strong> modelo de fronteira <code>gemini-4-argon</code> (GA 2026-10-13) e modelo rápido
+        <code>gemini-3.8-flash</code> (GA 2026-09-02). SDK <code>google-genai</code> ≥ 2.3.0
+        (atual <strong>2.33.0</strong> no Python, <strong>2.31.0</strong> no JS/TS; fixe
+        <code>&lt; 3.0.0</code>).
       </p>
       <div class="hero-meta">
-        <span class="badge gemini">google-genai · Python ≥ 2.3.0 (atual 2.31.0)</span>
-        <span class="badge gemini">@google/genai · JS ≥ 2.3.0 (atual 2.30.0)</span>
+        <span class="badge gemini">google-genai · Python ≥ 2.3.0 (atual 2.33.0)</span>
+        <span class="badge gemini">@google/genai · JS ≥ 2.3.0 (atual 2.31.0)</span>
         <span class="badge ok">GA · jun/2026</span>
-        <span class="badge ok">Verificado · 2026-09-30</span>
+        <span class="badge ok">Verificado · 2026-10-24</span>
         <span class="badge info">Schema steps</span>
       </div>
     </div>
 
     <section id="para-agentes">
-      <h2>Resumo para agentes (verificado 2026-09-30)<span class="rev-flag novo">Novo · 2026-09-30</span></h2>
+      <h2>Resumo para agentes (verificado 2026-10-24)</h2>
 
-      <h3>Superfície atual</h3>
-      <p><strong>Default: Gemini = <code>client.interactions</code></strong> (GA desde junho/2026; a documentação oficial chama <code>generateContent</code> de legado). <code>generateContent</code> só nos 4 usos exclusivos: Batch API, cache explícito, AFC Python e safety settings (<a href="#legado-quando-usar">detalhes</a>).</p>
-<pre><code class="language-bash">pip install "google-genai&gt;=2.3.0,&lt;3.0.0"      # atual 2.31.0 (2026-10-14)
-npm install "@google/genai@&gt;=2.3.0 &lt;3.0.0"    # atual 2.30.0 (2026-10-14)</code></pre>
-<pre><code class="language-python">from google import genai
-client = genai.Client()   # lê GEMINI_API_KEY
-i = client.interactions.create(model="gemini-3.8-flash", input="Olá",
-                               generation_config={"thinking_level": "low"})
-print(i.output_text)      # steps[] em i.steps; continuar: previous_interaction_id=i.id
-# JS: await ai.interactions.create({model, input}) -> interaction.output_text</code></pre>
+      <h3>Use este guia quando</h3>
+      <ul>
+        <li>criar ou consumir interações com <code>client.interactions.create</code> (texto, multimodal, ferramentas, agentes gerenciados) na Gemini API;</li>
+        <li>precisar do contrato REST (Parte B: endpoints, <code>Interaction</code>, <code>Step</code>, SSE, erros);</li>
+        <li>escolher modelo, nível de thinking, cache, Flex/Priority ou retenção de dados;</li>
+        <li>decidir quando <code>generateContent</code> ainda é necessário (<a href="#legado">Batch API, AFC em Python, cache explícito</a>).</li>
+      </ul>
 
-      <h3>IDs e versões correntes</h3>
+      <h3>Não é aqui</h3>
+      <ul>
+        <li>Agentes e workflows com o ADK: <a href="guia_google_adk.html">guia_google_adk.html</a> e <a href="guia_google_adk_orquestracao.html">guia_google_adk_orquestracao.html</a>.</li>
+        <li>Entrada de arquivos sem armazenamento: <a href="guia_file_inputs_no_storage.html">guia_file_inputs_no_storage.html</a>.</li>
+        <li>Imagem, áudio e vídeo em profundidade entre provedores: <a href="guia_multimodal.html">guia_multimodal.html</a>.</li>
+        <li>Segurança, evals e operação: <a href="guia_operacao_seguranca_evals.html">guia_operacao_seguranca_evals.html</a>.</li>
+      </ul>
+
+      <h3>Padrões vigentes</h3>
+      <ul>
+        <li>SDK <code>google-genai</code>, versão &gt;=2.3.0 para Interactions e pin <code>&lt;3.0.0</code>; chamada base <code>client.interactions.create(model=..., input=...)</code>; texto da resposta em <code>interaction.output_text</code>, timeline em <code>interaction.steps</code>.</li>
+        <li>Interactions é GA na Gemini API desde junho de 2026; <code>generateContent</code> é legado e segue suportado. Lacunas restantes da Interactions: Batch API, AFC (Python) e cache explícito. <code>safety_settings</code> são aceitos em <code>interactions.create</code>.</li>
+        <li>Estado no servidor: <code>store</code> (retenção 55 dias no pago, 1 dia no gratuito) e <code>previous_interaction_id</code>; <code>store=false</code> não combina com <code>background=true</code> nem com <code>previous_interaction_id</code>.</li>
+        <li><code>tools</code>, <code>system_instruction</code> e <code>generation_config</code> valem por interação: reenvie a cada turno.</li>
+        <li>Saída estruturada e modalidades por <code>response_format</code>; raciocínio por <code>generation_config.thinking_level</code>; níveis e padrão variam por modelo (<code>minimal</code> dá erro no <code>gemini-3.8-flash</code>). <code>gemini-4-argon</code> ignora <code>temperature</code>, <code>top_p</code> e <code>top_k</code>.</li>
+        <li>Responda todo step <code>function_call</code> com <code>function_result</code> (<code>call_id</code> = <code>step.id</code>) e <code>previous_interaction_id</code>; no streaming, acumule <code>arguments_delta</code> até <code>step.stop</code> e trate eventos SSE desconhecidos com log + skip.</li>
+        <li>Agentes gerenciados (Deep Research, Antigravity) rodam em segundo plano: use <code>background=true</code> e webhooks.</li>
+        <li>MCP remoto com Gemini 3: as páginas oficiais divergem — UNVERIFIED; valide por teste funcional (<a href="#s-visao-geral-limites">1.5</a>).</li>
+        <li>No Vertex / Gemini Enterprise Agent Platform a Interactions API é Preview (<code>v1beta1</code>).</li>
+        <li>Docs oficiais legíveis por agente: espelho <code>.md.txt</code> de cada página, <code>https://ai.google.dev/gemini-api/docs/llms.txt</code> e Gemini Docs MCP (<code>https://gemini-api-docs-mcp.dev</code>).</li>
+      </ul>
+
+      <h3>Versões e modelos correntes</h3>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Item</th><th>ID exato</th><th>Status</th><th>Nota</th></tr></thead>
+          <thead><tr><th>Item</th><th>Valor (2026-10-24)</th><th>Fonte</th></tr></thead>
           <tbody>
-            <tr><td>Flash recomendado</td><td><code>gemini-3.8-flash</code></td><td>GA (2026-09-02)</td><td>thinking <code>low</code>/<code>medium</code> (padrão)/<code>high</code>; <code>minimal</code> devolve erro</td></tr>
-            <tr><td>Gemini 4</td><td><code>gemini-4-argon</code></td><td>GA (2026-10-13)</td><td>só texto, sem Live API, só cache implícito; thinking <code>low</code>/<code>medium</code> (padrão)/<code>high</code>; US$ 2 / US$ 10 por 1M tokens até 2026-11-30, depois US$ 4 / US$ 20 (<a href="#ref-models">B19</a>)</td></tr>
-            <tr><td>Lite atual</td><td><code>gemini-3.5-flash-lite</code></td><td>GA</td><td>thinking padrão <code>minimal</code>; substitui <code>gemini-3.1-flash-lite</code> (shutdown 2027-05-07)</td></tr>
-            <tr><td>Pro</td><td><code>gemini-3.1-pro-preview</code></td><td>Preview</td><td>único Pro 3.x; thinking padrão <code>high</code></td></tr>
-            <tr><td>TTS / Live</td><td><code>gemini-3.8-flash-tts</code> / <code>gemini-3.8-live</code></td><td>GA</td><td>Live é WebSocket (não roda em <code>interactions</code>)</td></tr>
-            <tr><td>Agentes</td><td><code>deep-research-preview-04-2026</code>, <code>antigravity-preview-09-2026</code></td><td>Preview</td><td>só Interactions, <code>background=True</code>; <code>antigravity-preview-05-2026</code> foi desligado em 2026-10-05</td></tr>
-            <tr><td>Embeddings</td><td><code>gemini-embedding-2</code></td><td>GA</td><td><code>client.models.embed_content</code> (não é Interactions, não é legado)</td></tr>
+            <tr><td>google-genai (Python)</td><td>2.33.0</td><td><a href="https://pypi.org/project/google-genai/">PyPI</a></td></tr>
+            <tr><td>@google/genai (JS)</td><td>2.31.0</td><td><a href="https://www.npmjs.com/package/@google/genai">npm</a></td></tr>
+            <tr><td>Go / Java / C#</td><td>v1.76.0 / 1.79.0 / 1.27.0</td><td><a href="https://pkg.go.dev/google.golang.org/genai">pkg.go.dev</a>, <a href="https://central.sonatype.com/artifact/com.google.genai/google-genai">Maven</a>, <a href="https://www.nuget.org/packages/Google.GenAI">NuGet</a></td></tr>
+            <tr><td>Modelo de fronteira</td><td><code>gemini-4-argon</code> (GA 2026-10-13); US$2/US$10 por 1M até 2026-11-30, depois US$4/US$20</td><td><a href="https://ai.google.dev/gemini-api/docs/models">models</a>, <a href="https://ai.google.dev/gemini-api/docs/pricing">pricing</a></td></tr>
+            <tr><td>Modelo rápido</td><td><code>gemini-3.8-flash</code> (GA 2026-09-02); US$0,75/US$3,75 até 2026-12-31, depois US$1,50/US$7,50</td><td><a href="https://ai.google.dev/gemini-api/docs/pricing">pricing</a></td></tr>
+            <tr><td>Modelo econômico</td><td><code>gemini-3.5-flash-lite</code>; US$0,30/US$2,50 por 1M</td><td><a href="https://ai.google.dev/gemini-api/docs/pricing">pricing</a></td></tr>
+            <tr><td>Imagem</td><td><code>gemini-nano-banana-2.1</code> (GA 2026-10-06)</td><td><a href="https://ai.google.dev/gemini-api/docs/models/gemini-nano-banana-2.1">modelo</a></td></tr>
+            <tr><td>Agentes gerenciados</td><td><code>deep-research-preview-04-2026</code>, <code>deep-research-max-preview-04-2026</code>, <code>antigravity-preview-09-2026</code></td><td><a href="https://ai.google.dev/gemini-api/docs/interactions-overview">interactions</a></td></tr>
+            <tr><td>Áudio</td><td><code>gemini-3.8-flash-tts</code>, <code>gemini-3.8-flash-lite-tts</code>, <code>gemini-3.8-live</code>, <code>gemini-3.8-live-extended-thinking</code>, <code>gemini-3.5-transcribe</code></td><td><a href="https://ai.google.dev/gemini-api/docs/models">models</a></td></tr>
+            <tr><td>Embeddings</td><td><code>gemini-embedding-2</code> (<code>client.models.embed_content</code>; não é Interactions)</td><td><a href="https://ai.google.dev/gemini-api/docs/embeddings">embeddings</a></td></tr>
+            <tr><td>Desligamentos anunciados</td><td>nenhum para os modelos e agentes acima</td><td><a href="https://ai.google.dev/gemini-api/docs/deprecations">deprecations</a></td></tr>
           </tbody>
         </table>
       </div>
 
-      <h3>Faça / Não faça</h3>
+      <h3>Não use</h3>
       <ul>
-        <li>Não use <code>generate_content</code>/<code>contents</code>/<code>candidates</code> → use <code>interactions.create</code>, <code>input</code>, <code>interaction.output_text</code> ou <code>steps</code>.</li>
-        <li>Não use <code>google-generativeai</code>, <code>@google/generative-ai</code> ou <code>google-cloud-aiplatform</code> → use <code>google-genai</code>/<code>@google/genai</code> (Vertex: <code>Client(vertexai=True, ...)</code>).</li>
-        <li>Não leia <code>outputs[]</code> nem eventos <code>content.*</code>; não envie <code>Api-Revision</code> → o único schema aceito é <code>steps[]</code> (desde 2026-06-08). SDK 1.x falha.</li>
-        <li>Não use <code>response_mime_type</code>, <code>image_config</code>, <code>response_modalities</code> → use <code>response_format</code> (<code>{"type":"text","mime_type":"application/json","schema":...}</code>).</li>
-        <li>Não use <code>thinking_budget</code> → use <code>generation_config.thinking_level</code>; não passe <code>minimal</code> ao 3.8 Flash.</li>
-        <li>Não envie <code>temperature</code>/<code>top_p</code>/<code>top_k</code>/<code>candidate_count</code> em Gemini 3.x (depreciados; o código de erro exato é UNVERIFIED).</li>
-        <li>Reenvie <code>tools</code>, <code>system_instruction</code> e <code>generation_config</code> a cada turno: são por interação, não herdados de <code>previous_interaction_id</code>.</li>
-        <li>Responda TODO step <code>function_call</code> com <code>function_result</code> (<code>call_id</code> = <code>step.id</code>, <code>name</code> igual) e <code>previous_interaction_id</code>.</li>
-        <li><code>store=False</code> é incompatível com <code>background=True</code> e com <code>previous_interaction_id</code>; retenção padrão 55 dias (pago) / 1 dia (free).</li>
-        <li>Fixe <code>google-genai&lt;3.0.0</code>: a 3.0 remove a AFC por <code>generate_content</code> direto e <code>Live.send</code>.</li>
-        <li>Streaming: trate eventos SSE desconhecidos com log + skip (<a href="#ref-sse">B18</a>).</li>
+        <li>Modelos, parâmetros e APIs descontinuados: consulte <a href="https://ai.google.dev/gemini-api/docs/deprecations">a página oficial de depreciações</a>; este guia só descreve o catálogo vigente.</li>
       </ul>
 
-      <h3>Onde está cada coisa</h3>
+      <h3>Mapa de seções</h3>
       <ul>
-        <li><a href="#s-quickstart-instalar">2.2 Instalação</a> · <a href="#s-visao-geral-sdks">1.4 SDKs e versões</a> · <a href="#s-anatomia-steps">3.2 Tipos de step</a> · <a href="#s-multiturno">5. Multiturno</a> · <a href="#s-streaming">6. Streaming</a></li>
-        <li><a href="#s-function-calling">13. Function calling</a> · <a href="#s-structured-output">14. Saída estruturada</a> · <a href="#s-thinking">15. Thinking</a> · <a href="#s-caching">16. Caching</a> · <a href="#s-files">12. Files API</a></li>
-        <li><a href="#s-deep-research">18. Deep Research e Antigravity</a> · <a href="#s-background">19. Background e webhooks</a> · <a href="#s-store">21. Retenção</a> · <a href="#ref-generation-config">B10 GenerationConfig</a> · <a href="#ref-errors">Códigos de erro</a></li>
-        <li><a href="#legado">Legado e migração</a> · <a href="#verificacao">Notas de verificação</a></li>
+        <li><a href="#sobre">#sobre</a> — escopo do guia, superfície Developer API vs Vertex e docs legíveis por agente.</li>
+        <li><a href="#fontes-oficiais">#fontes-oficiais</a> — URLs oficiais por tema.</li>
+        <li><a href="#part-a-divider">#part-a-divider</a> — Parte A, capítulos 1–23:</li>
+      </ul>
+      <ul>
+        <li><a href="#s-visao-geral">#s-visao-geral</a> — o que é a Interactions API, quando usar cada API, SDKs e lacunas vs <code>generateContent</code> (<a href="#s-visao-geral-limites">#s-visao-geral-limites</a>).</li>
+        <li><a href="#s-quickstart">#s-quickstart</a> — chave de API, instalação (<a href="#s-quickstart-instalar">#s-quickstart-instalar</a>) e primeira chamada.</li>
+        <li><a href="#s-anatomia">#s-anatomia</a> — anatomia de uma Interaction: campos, tipos de step (<a href="#s-anatomia-steps">#s-anatomia-steps</a>), blocos de conteúdo.</li>
+        <li><a href="#s-text">#s-text</a> — geração de texto, system instruction e parâmetros.</li>
+        <li><a href="#s-multiturno">#s-multiturno</a> — conversas com <code>previous_interaction_id</code> e modo sem estado.</li>
+        <li><a href="#s-streaming">#s-streaming</a> — streaming SSE, eventos e deltas.</li>
+        <li><a href="#s-image-gen">#s-image-gen</a> — geração de imagens (<code>gemini-nano-banana-2.1</code>).</li>
+        <li><a href="#s-image-understanding">#s-image-understanding</a> — compreensão de imagens.</li>
+        <li><a href="#s-audio">#s-audio</a> — áudio, transcrição e TTS.</li>
+        <li><a href="#s-video">#s-video</a> — compreensão de vídeo.</li>
+        <li><a href="#s-docs">#s-docs</a> — documentos e PDF; <code>media_resolution</code>.</li>
+        <li><a href="#s-files">#s-files</a> — Files API e métodos de entrada.</li>
+        <li><a href="#s-function-calling">#s-function-calling</a> — function calling.</li>
+        <li><a href="#s-structured-output">#s-structured-output</a> — saída estruturada (<code>response_format</code>).</li>
+        <li><a href="#s-thinking">#s-thinking</a> — thinking e assinaturas.</li>
+        <li><a href="#s-caching">#s-caching</a> — cache implícito.</li>
+        <li><a href="#s-tools-server">#s-tools-server</a> — ferramentas server-side: <a href="#s-google-search">Search</a>, <a href="#s-google-maps">Maps</a>, <a href="#s-code-execution">code execution</a>, <a href="#s-url-context">URL context</a>, <a href="#s-computer-use">computer use</a>, <a href="#s-file-search">File Search</a>, <a href="#s-mcp">MCP</a>, <a href="#s-tool-combination">combinação</a>, <a href="#s-agentic-vision">agentic vision</a>.</li>
+        <li><a href="#s-deep-research">#s-deep-research</a> — Deep Research e Antigravity (<a href="#s-antigravity">#s-antigravity</a>).</li>
+        <li><a href="#s-background">#s-background</a> — background e webhooks.</li>
+        <li><a href="#s-flex-priority">#s-flex-priority</a> — Flex e Priority.</li>
+        <li><a href="#s-store">#s-store</a> — armazenamento e retenção.</li>
+        <li><a href="#s-limites">#s-limites</a> — limitações e <code>safety_settings</code>.</li>
+        <li><a href="#s-best-practices">#s-best-practices</a> — práticas recomendadas e prompt design.</li>
+      </ul>
+      <ul>
+        <li><a href="#parte-b">#parte-b</a> — Parte B, referência REST:</li>
+      </ul>
+      <ul>
+        <li><a href="#ref-endpoints">#ref-endpoints</a> — endpoints e versões da API.</li>
+        <li><a href="#ref-auth-headers">#ref-auth-headers</a> — autenticação e headers.</li>
+        <li><a href="#ref-create">#ref-create</a> — <code>POST /interactions</code>.</li>
+        <li><a href="#ref-get">#ref-get</a> — <code>GET /interactions/{id}</code>.</li>
+        <li><a href="#ref-delete">#ref-delete</a> — <code>DELETE /interactions/{id}</code>.</li>
+        <li><a href="#ref-cancel">#ref-cancel</a> — <code>POST /interactions/{id}/cancel</code>.</li>
+        <li><a href="#ref-interaction">#ref-interaction</a> — recurso <code>Interaction</code>.</li>
+        <li><a href="#ref-status">#ref-status</a> — <code>InteractionStatus</code>.</li>
+        <li><a href="#ref-usage">#ref-usage</a> — <code>Usage</code> e modalidades.</li>
+        <li><a href="#ref-generation-config">#ref-generation-config</a> — <code>GenerationConfig</code>.</li>
+        <li><a href="#ref-agent-config">#ref-agent-config</a> — <code>AgentConfig</code> e <code>EnvironmentConfig</code>.</li>
+        <li><a href="#ref-webhook">#ref-webhook</a> — <code>WebhookConfig</code>.</li>
+        <li><a href="#ref-modalities">#ref-modalities</a> — <code>ResponseFormat</code>, <code>ServiceTier</code> e enums.</li>
+        <li><a href="#ref-content">#ref-content</a> — blocos <code>Content</code>.</li>
+        <li><a href="#ref-steps">#ref-steps</a> — tipos de <code>Step</code>.</li>
+        <li><a href="#ref-annotations">#ref-annotations</a> — <code>Annotation</code> (citações).</li>
+        <li><a href="#ref-tools">#ref-tools</a> — schemas de <code>Tool</code>.</li>
+        <li><a href="#ref-sse">#ref-sse</a> — <code>InteractionSseEvent</code>.</li>
+        <li><a href="#ref-models">#ref-models</a> — <code>ModelOption</code>, modelos vigentes.</li>
+        <li><a href="#ref-agents">#ref-agents</a> — <code>AgentOption</code>, agentes vigentes.</li>
+        <li><a href="#ref-errors">#ref-errors</a> — códigos de erro.</li>
+      </ul>
+      <ul>
+        <li><a href="#legado">#legado</a> — quando ainda usar <code>generateContent</code> (lacunas restantes e diferenças ao migrar).</li>
+        <li><a href="#apendice">#apendice</a> — apêndice:</li>
+        <li><a href="#cookbook">#cookbook</a> — notebooks oficiais.</li>
+        <li><a href="#glossario">#glossario</a> — glossário.</li>
+        <li><a href="#verificacao">#verificacao</a> — fontes e verificação, itens UNVERIFIED.</li>
       </ul>
 
-      <h3>Incertezas (UNVERIFIED)</h3>
-      <ul>
-        <li>Destino atual do alias <code>gemini-flash-latest</code>; não o use onde o modelo exato importa.</li>
-        <li>MCP remoto com Gemini 3: a visão geral diz "não suporta", a página de Function Calling documenta <code>mcp_server</code>; teste antes de depender.</li>
-        <li><code>generation_config.media_resolution</code> global e o default de <code>thinking_level</code> do <code>gemini-3.1-flash-lite</code>: não confirmados.</li>
-        <li>Páginas oficiais divergem em limite inline (100 MB × 20 MB) e tokens por mídia; para cobrança use <code>interaction.usage</code> (<a href="#verificacao">Ap3</a>).</li>
-      </ul>
     </section>
 
     <section id="sobre">
-      <h2>Sobre este guia<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
+      <h2>Sobre este guia</h2>
       <p>
         Guia técnico, em português brasileiro, da <strong>Google Gemini Interactions API</strong> — a interface
         padrão para projetos novos, conversas multiturno com estado no servidor, agentes e fluxos com ferramentas.
         Modelos, ferramentas e recursos agênticos novos chegam primeiro (ou só) nela.
       </p>
-      <p>O guia é organizado em três blocos e um apêndice:</p>
       <ul>
         <li><strong>Parte A — Conceitos &amp; Guias</strong>: cada capacidade da API com exemplos em Python, JavaScript e REST.</li>
         <li><strong>Parte B — Referência REST</strong>: endpoints, schemas, enums, tipos de step, content, tool e eventos SSE.</li>
-        <li><strong><a href="#legado">Legado e migração</a></strong>: <code>generateContent</code> → Interactions, quando a API antiga ainda é necessária e o que foi removido.</li>
-        <li><strong>Apêndice</strong>: notebooks do cookbook, glossário e notas de verificação.</li>
+        <li><strong><a href="#legado">generateContent</a></strong>: quando a API anterior ainda é necessária e o que muda ao migrar o código.</li>
+        <li><strong>Apêndice</strong>: notebooks do cookbook, glossário e fontes.</li>
       </ul>
       <div class="callout tip">
         <strong>Como ler:</strong> cada capítulo expõe Python, JS e REST em paralelo. Se um detalhe divergir do
@@ -535,32 +593,24 @@ print(i.output_text)      # steps[] em i.steps; continuar: previous_interaction_
         páginas oficiais divergem entre si, o guia registra a divergência em vez de escolher um lado.
       </div>
       <div class="callout info">
-        <strong>Estado corrente — verificado em 2026-10-19</strong>
-        (<a href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">interactions-overview</a> ·
-        <a href="https://ai.google.dev/gemini-api/docs/models" target="_blank" rel="noopener">models</a> ·
-        <a href="https://ai.google.dev/gemini-api/docs/latest-model" target="_blank" rel="noopener">latest-model</a> ·
-        <a href="https://ai.google.dev/gemini-api/docs/pricing" target="_blank" rel="noopener">pricing</a>).
-        <ul>
-          <li><strong>Status:</strong> a Interactions API é GA desde junho/2026 e está em <code>/v1</code> e <code>/v1beta</code>; a overview diz que <code>generateContent</code> é "now considered legacy" mas segue totalmente suportado. A página HTML <a href="https://ai.google.dev/gemini-api/docs/interactions" target="_blank" rel="noopener">docs/interactions</a> diz "As of June 2026, it is Generally Available" (lida em 2026-10-19); só o espelho <code>.md.txt</code> dela está defasado e ainda diz "Beta" — não o use como fonte.</li>
-          <li><strong>Modelos:</strong> <code>gemini-3.8-flash</code> (1.048.576 tokens de entrada / 65.536 de saída; thinking <code>low|medium|high</code>, default <code>medium</code>; <code>minimal</code> devolve erro), <code>gemini-3.5-flash-lite</code> (Lite atual; thinking default <code>minimal</code>), <code>gemini-3.1-pro-preview</code> (Pro, preview) e <code>gemini-4-argon</code> (GA em 2026-10-13; só texto). Tabela completa em <a href="#ref-models">B19</a>.</li>
-          <li><strong>Preço do Flash:</strong> 3.8/3.6 Flash a US$ 0,75 / US$ 3,75 por 1M tokens (entrada/saída) até 2026-12-31 e US$ 1,50 / US$ 7,50 a partir de 2027-01-01; 3.5 Flash-Lite a US$ 0,30 / US$ 2,50. Desde 2026-10-08 <code>gemini-3.7-flash</code> é roteado para <code>gemini-3.8-flash</code> e <code>gemini-3.5-flash</code> para <code>gemini-3.6-flash</code> (os endpoints não foram desligados).</li>
-          <li><strong>Parâmetros de sampling:</strong> <code>temperature</code>, <code>top_p</code> e <code>top_k</code> estão depreciados para Gemini 3.x (<a href="https://ai.google.dev/gemini-api/docs/latest-model" target="_blank" rel="noopener">latest-model</a>: "Strip <code>temperature</code>, <code>top_p</code>, and <code>top_k</code>"); <code>candidate_count</code> não é suportado. <strong>Divergência registrada:</strong> a documentação só manda removê-los e não diz se o envio gera erro ou é ignorado (a página do agente Antigravity diz que gera <code>400</code>) — UNVERIFIED para o modelo em geral; remova-os.</li>
-          <li><strong>Estado e retenção:</strong> <code>store=true</code> por padrão (55 dias no pago, 1 dia no free); <code>tools</code>, <code>system_instruction</code> e <code>generation_config</code> valem só para a interação atual e precisam ser reenviados a cada turno.</li>
-        </ul>
+        <strong>Docs oficiais legíveis por agente:</strong> cada página de <code>ai.google.dev/gemini-api/docs</code>
+        tem um espelho <code>.md.txt</code>; o índice está em
+        <a href="https://ai.google.dev/gemini-api/docs/llms.txt" target="_blank" rel="noopener">docs/llms.txt</a> e há um servidor
+        <a href="https://gemini-api-docs-mcp.dev" target="_blank" rel="noopener">Gemini Docs MCP</a>.
       </div>
       <div class="callout warn">
         <strong>Superfície: Developer API vs Vertex / Gemini Enterprise Agent Platform.</strong>
         Os exemplos REST deste guia usam a <strong>Gemini Developer API</strong> (AI Studio): endpoint
         <code>generativelanguage.googleapis.com/v1beta/interactions</code> e header <code>x-goog-api-key</code>.
-        Na Vertex (rebatizada <em>Gemini Enterprise Agent Platform</em>) a referência REST lista a Interactions só em <code>v1beta1</code>
-        (lida em 2026-09-30). O status e a paridade de ferramentas nessa superfície (por exemplo, <code>code_execution</code>)
-        registrados em 2026-06-29 <strong>não foram reverificados nesta revisão — UNVERIFIED</strong>; valide cada recurso antes de depender dele na Vertex.
+        Na Gemini Enterprise Agent Platform a Interactions API é <strong>Preview</strong> em <code>v1beta1</code>
+        (<code>https://aiplatform.googleapis.com/v1beta1/projects/{project}/locations/global/interactions</code>);
+        valide cada recurso antes de depender dele nessa superfície.
       </div>
     </section>
 
     <section id="fontes-oficiais">
       <h2>Fontes oficiais</h2>
-      <p>Base: <code>https://ai.google.dev/gemini-api/docs/</code>. URLs conferidas no índice oficial (<code>docs/llms.txt</code>) e nas páginas lidas em 2026-09-30.</p>
+      <p>Base: <code>https://ai.google.dev/gemini-api/docs/</code>. Verificação em 2026-10-24 (itens sem resolução oficial estão em <a href="#verificacao">Fontes e verificação</a>).</p>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Recurso</th><th>URL</th></tr></thead>
@@ -584,13 +634,11 @@ print(i.output_text)      # steps[] em i.steps; continuar: previous_interaction_
             <tr><td>Modelos · Ficha <code>gemini-3.8-flash</code> · Latest model</td><td><a href="https://ai.google.dev/gemini-api/docs/models" target="_blank" rel="noopener">.../docs/models</a> · <a href="https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash" target="_blank" rel="noopener">.../docs/models/gemini-3.8-flash</a> · <a href="https://ai.google.dev/gemini-api/docs/latest-model" target="_blank" rel="noopener">.../docs/latest-model</a></td></tr>
             <tr><td>Preços · Deprecações · Changelog</td><td><a href="https://ai.google.dev/gemini-api/docs/pricing" target="_blank" rel="noopener">.../docs/pricing</a> · <a href="https://ai.google.dev/gemini-api/docs/deprecations" target="_blank" rel="noopener">.../docs/deprecations</a> · <a href="https://ai.google.dev/gemini-api/docs/changelog" target="_blank" rel="noopener">.../docs/changelog</a></td></tr>
             <tr><td>Prompt design (Gemini 3)</td><td><a href="https://ai.google.dev/gemini-api/docs/prompting-strategies" target="_blank" rel="noopener">.../docs/prompting-strategies</a></td></tr>
-            <tr><td>Migração para Interactions (legado)</td><td><a href="https://ai.google.dev/gemini-api/docs/migrate-to-interactions" target="_blank" rel="noopener">.../docs/migrate-to-interactions</a> · <a href="https://ai.google.dev/gemini-api/docs/interactions-breaking-changes-may-2026" target="_blank" rel="noopener">.../docs/interactions-breaking-changes-may-2026</a></td></tr>
             <tr><td>Cookbook (notebooks)</td><td><a href="https://github.com/google-gemini/cookbook" target="_blank" rel="noopener">github.com/google-gemini/cookbook</a></td></tr>
           </tbody>
         </table>
       </div>
       <p>
-        Última verificação contra estas fontes: <strong>2026-09-30</strong>.
         Sempre que houver divergência entre este guia e a documentação oficial em produção, a documentação oficial é a fonte autoritativa.
       </p>
     </section>
@@ -602,9 +650,9 @@ print(i.output_text)      # steps[] em i.steps; continuar: previous_interaction_
 </section>
 
 <section id="s-visao-geral">
-  <h2>1. Visão geral da Interactions API<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
+  <h2>1. Visão geral da Interactions API</h2>
 
-  <p>A <strong>API Interactions</strong> é a interface padrão do Gemini para fluxos agênticos, conversas multiturno com estado server-side e operações longas. É <span class="pill ok">GA (desde junho/2026)</span> e a documentação oficial a recomenda para todo projeto novo; novos modelos, capacidades multimodais, ferramentas e recursos agênticos são lançados nela. O método <code>generateContent</code> é descrito como legado, mas segue totalmente suportado — ver <a href="#legado">Legado e migração</a>.</p>
+  <p>A <strong>API Interactions</strong> é a interface padrão do Gemini para fluxos agênticos, conversas multiturno com estado server-side e operações longas. É <span class="pill ok">GA (desde junho/2026)</span> e a documentação oficial a recomenda para todo projeto novo; novos modelos, capacidades multimodais, ferramentas e recursos agênticos são lançados nela. O método <code>generateContent</code> é descrito como legado, mas segue totalmente suportado — ver <a href="#legado">quando ainda usar <code>generateContent</code></a>.</p>
 
   <h3 id="s-visao-geral-por-que">1.1 Por que usar a Interactions API</h3>
   <ul>
@@ -621,8 +669,8 @@ print(i.output_text)      # steps[] em i.steps; continuar: previous_interaction_
       <thead><tr><th>Situação</th><th>API recomendada</th></tr></thead>
       <tbody>
         <tr><td>Projeto novo, aplicação agêntica, Deep Research, agentes gerenciados, background</td><td><strong>Interactions API</strong></td></tr>
-        <tr><td>Integração existente funcionando em produção</td><td>Mantenha e migre quando houver motivo — ver <a href="#legado">Legado e migração</a></td></tr>
-        <tr><td>Batch API, cache explícito, chamada automática de função (Python), safety settings customizados</td><td>Só existem na API legada — ver <a href="#legado-quando-usar">quando ainda usar <code>generateContent</code></a></td></tr>
+        <tr><td>Integração existente funcionando em produção</td><td>Mantenha e migre quando houver motivo — ver <a href="#legado">generateContent: quando ainda usar</a></td></tr>
+        <tr><td>Batch API, cache explícito, chamada automática de função (Python)</td><td>Só existem em <code>generateContent</code> — ver <a href="#legado-quando-usar">quando ainda usar <code>generateContent</code></a></td></tr>
       </tbody>
     </table>
   </div>
@@ -632,7 +680,7 @@ print(i.output_text)      # steps[] em i.steps; continuar: previous_interaction_
     <table>
       <thead><tr><th>Propriedade</th><th>Tipo</th><th>Descrição</th></tr></thead>
       <tbody>
-        <tr><td><code>interaction.output_text</code></td><td>string</td><td>Últimos blocos <code>TextContent</code> consecutivos dos steps <code>model_output</code> finais, unidos automaticamente; steps <code>thought</code> no meio são ignorados (SDK 2.31.0). Não captura texto separado por imagens, áudio ou tool calls.</td></tr>
+        <tr><td><code>interaction.output_text</code></td><td>string</td><td>Últimos blocos <code>TextContent</code> consecutivos dos steps <code>model_output</code> finais, unidos automaticamente; steps <code>thought</code> no meio são ignorados. Não captura texto separado por imagens, áudio ou tool calls.</td></tr>
         <tr><td><code>interaction.output_image</code></td><td><code>ImageContent</code> ou <code>None</code></td><td>Último bloco de imagem gerado pelo modelo.</td></tr>
         <tr><td><code>interaction.output_audio</code></td><td><code>AudioContent</code> ou <code>None</code></td><td>Último bloco de áudio gerado pelo modelo.</td></tr>
         <tr><td><code>interaction.output_video</code></td><td><code>VideoContent</code> ou <code>None</code></td><td>Vídeo gerado pelo modelo Omni (só no SDK; na REST leia os <code>steps</code>).</td></tr>
@@ -648,30 +696,31 @@ print(i.output_text)      # steps[] em i.steps; continuar: previous_interaction_
     <table>
       <thead><tr><th>Linguagem</th><th>Pacote</th><th>Mínimo para Interactions · versão atual</th><th>Instalação</th></tr></thead>
       <tbody>
-        <tr><td>Python (≥ 3.10)</td><td><code>google-genai</code></td><td><strong>2.3.0</strong> (overview) · atual <strong>2.31.0</strong> (PyPI, 2026-10-14)</td><td><code>pip install "google-genai&gt;=2.3.0,&lt;3.0.0"</code></td></tr>
-        <tr><td>JavaScript / TypeScript (Node ≥ 20)</td><td><code>@google/genai</code></td><td><strong>2.3.0</strong> (overview) · atual <strong>2.30.0</strong> (npm, 2026-10-14)</td><td><code>npm install "@google/genai@&gt;=2.3.0 &lt;3.0.0"</code></td></tr>
-        <tr><td>Go</td><td><code>google.golang.org/genai</code></td><td>atual v1.75.0 (2026-10-14)</td><td><code>go get google.golang.org/genai</code></td></tr>
-        <tr><td>Java</td><td><code>com.google.genai:google-genai</code></td><td>atual 1.78.0 (Maven Central, metadados de 2026-10-15); o snippet <code>1.0.0</code> da página de libraries está desatualizado</td><td>Maven artifact</td></tr>
-        <tr><td>C#</td><td><code>Google.GenAI</code></td><td>versão não medida — UNVERIFIED</td><td><code>dotnet add package Google.GenAI</code></td></tr>
+        <tr><td>Python (≥ 3.10)</td><td><code>google-genai</code></td><td><strong>2.3.0</strong> (overview) · atual <strong>2.33.0</strong> (PyPI)</td><td><code>pip install "google-genai&gt;=2.3.0,&lt;3.0.0"</code></td></tr>
+        <tr><td>JavaScript / TypeScript (Node ≥ 20)</td><td><code>@google/genai</code></td><td><strong>2.3.0</strong> (overview) · atual <strong>2.31.0</strong> (npm)</td><td><code>npm install "@google/genai@&gt;=2.3.0 &lt;3.0.0"</code></td></tr>
+        <tr><td>Go</td><td><code>google.golang.org/genai</code></td><td>atual v1.76.0</td><td><code>go get google.golang.org/genai</code></td></tr>
+        <tr><td>Java</td><td><code>com.google.genai:google-genai</code></td><td>atual 1.79.0 (Maven Central)</td><td>Maven artifact</td></tr>
+        <tr><td>C#</td><td><code>Google.GenAI</code></td><td>atual 1.27.0 (NuGet)</td><td><code>dotnet add package Google.GenAI</code></td></tr>
       </tbody>
     </table>
   </div>
   <div class="callout warn">
-    <strong>Fixe <code>&lt; 3.0.0</code>.</strong> O README do python-genai avisa que a próxima major (3.0) vai remover, entre outros, a chamada automática de função (AFC) por chamadas diretas à API legada (só por <code>Chats</code>), <code>Live.send</code>, <code>Live.start_stream</code> e <code>GenerationConfigThinkingConfig</code>, e recomenda fixar o teto. Versões 1.x do SDK não falam o schema atual de Interactions.
-    <span class="source-link">Fontes: <a href="https://github.com/googleapis/python-genai" target="_blank" rel="noopener">README python-genai</a> · PyPI / npm / Maven Central — lidos em 2026-09-30.</span>
+    <strong>Fixe <code>&lt; 3.0.0</code>.</strong> O README do python-genai avisa que a próxima major (3.0) vai remover, entre outros, a chamada automática de função (AFC) por chamadas diretas à API <code>generateContent</code> (só por <code>Chats</code>), <code>Live.send</code>, <code>Live.start_stream</code> e <code>GenerationConfigThinkingConfig</code>, e recomenda fixar o teto.
+    <span class="source-link">Fontes: <a href="https://github.com/googleapis/python-genai" target="_blank" rel="noopener">README python-genai</a> · PyPI / npm / Maven Central / NuGet / proxy.golang.org.</span>
   </div>
 
   <h3 id="s-visao-geral-limites">1.5 Lacunas conhecidas da Interactions API</h3>
-  <p>Segundo a <a href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">visão geral</a>, continuam <strong>ausentes</strong> (presentes só na API legada — ver <a href="#legado-quando-usar">Legado e migração</a>):</p>
+  <p>Segundo a <a href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">visão geral</a>, continuam <strong>ausentes</strong> (presentes só em <code>generateContent</code> — ver <a href="#legado-quando-usar">quando ainda usar <code>generateContent</code></a>):</p>
   <ul>
     <li><strong>Batch API</strong>.</li>
     <li><strong>Chamada automática de função</strong> (Python).</li>
     <li><strong>Cache explícito</strong> — o cache implícito via <code>previous_interaction_id</code> funciona (<a href="#s-caching">§16</a>).</li>
-    <li><strong>Safety settings customizados</strong> ("Custom safety settings are not supported in the Interactions API").</li>
     <li><strong>MCP remoto com Gemini 3 — conflito oficial:</strong> a overview diz que Gemini 3 não suporta MCP remoto ("coming soon"), enquanto a página de Function Calling documenta a tool <code>mcp_server</code> (Streamable HTTP). UNVERIFIED: valide modelo, endpoint e SDK com uma chamada real antes de depender dele.</li>
+    <li><strong>Compatibilidade multi-turn entre modelos:</strong> ao misturar modelos na mesma conversa (com ou sem estado), o modelo seguinte precisa aceitar como entrada as modalidades de saída dos anteriores (por exemplo, não continue com um modelo só de texto uma conversa que gerou imagem).</li>
   </ul>
+  <p><code>safety_settings</code> são aceitos em <code>interactions.create</code> (<a href="#s-limites-safety">§22.1</a>).</p>
 
-  <p class="source-link"><strong>Fonte:</strong> <a href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/interactions-overview</a> — lida em 2026-09-30.</p>
+  <p class="source-link"><strong>Fonte:</strong> <a href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/interactions-overview</a>.</p>
 </section>
 
 <section id="s-quickstart">
@@ -688,24 +737,13 @@ $env:GEMINI_API_KEY = "sk-..."
 # Windows CMD
 set "GEMINI_API_KEY=sk-..."</code></pre>
 
-  <h3 id="s-quickstart-instalar">2.2 Instalação<span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
-<pre><code class="language-bash"># Linha 2.x com teto explícito (Interactions exige &gt;= 2.3.0):
-pip install "google-genai&gt;=2.3.0,&lt;3.0.0"      # Python; atual 2.31.0 (2026-10-14)
-npm install "@google/genai@&gt;=2.3.0 &lt;3.0.0"    # Node / TypeScript; atual 2.30.0 (2026-10-14)
+  <h3 id="s-quickstart-instalar">2.2 Instalação</h3>
+<pre><code class="language-bash"># Teto explícito (Interactions exige &gt;= 2.3.0):
+pip install "google-genai&gt;=2.3.0,&lt;3.0.0"      # Python; atual 2.33.0
+npm install "@google/genai@&gt;=2.3.0 &lt;3.0.0"    # Node / TypeScript; atual 2.31.0
 
-# Reprodutível (snapshot de 2026-10-19):
-# pip install "google-genai==2.31.0"   ·   npm install "@google/genai@2.30.0"</code></pre>
-  <div class="callout tip">
-    <strong>Releases recentes que mudam o código (2026-08-31 → 2026-10-14).</strong>
-    <ul style="margin:6px 0 0">
-      <li><code>gemini-3.8-flash</code> disponível nos SDKs desde 2.22.0 (Py) / 2.21.0 (JS); <code>gemini-4-argon</code> no enum de modelos de Interactions em 2.31.0 (Py) / 2.30.0 (JS).</li>
-      <li>Py 2.28.0–2.31.0: <code>continuation_token</code> no objeto <code>Interaction</code> e nos eventos <code>interaction.status_update</code> (retomar um <em>long decode</em> com status <code>incomplete</code>), campos de uso faturável em <code>usage</code>, timeouts HTTP padrão maiores (2.30.0) e <code>output_text</code> unindo texto entre respostas multi-step (2.30.1).</li>
-      <li>Video Understanding na Interactions (Py 2.21.0) e <code>client.files.download(..., destination=...)</code> para baixar direto ao disco.</li>
-      <li>Steps de recuperação (<code>RetrievalCallStep</code>/<code>RetrievalResultStep</code>) no schema dos SDKs (Py 2.24.0 / JS 2.23.0); a referência REST ainda não os descreve em prosa — não escreva código sobre eles.</li>
-      <li>Upload/download de arquivos em <em>environments</em> de agentes gerenciados (Py 2.24.0 / JS 2.23.0) e Voices API (Py 2.25.0 / JS 2.24.0).</li>
-    </ul>
-    <span class="source-link">Fontes: <a href="https://github.com/googleapis/python-genai/releases" target="_blank" rel="noopener">releases python-genai</a> · <a href="https://github.com/googleapis/js-genai/releases" target="_blank" rel="noopener">releases js-genai</a> — lidas em 2026-10-19.</span>
-  </div>
+# Reprodutível:
+# pip install "google-genai==2.33.0"   ·   npm install "@google/genai@2.31.0"</code></pre>
 
 <h3 id="s-quickstart-hello">2.3 Primeira interação (Hello world)</h3>
   <h4>Python</h4>
@@ -746,7 +784,7 @@ console.log(interaction.output_text);</code></pre>
   <h2>3. Anatomia de uma Interaction</h2>
 
   <p>O recurso central da API é o objeto <code>Interaction</code>. Ele encapsula uma rodada completa de execução: as entradas do usuário, qualquer raciocínio (thoughts), chamadas de ferramentas, resultados e a resposta final do modelo — tudo organizado em uma <strong>timeline ordenada</strong> chamada <code>steps</code>.</p>
-  <div class="callout info"><strong>Forma da resposta:</strong> a criação síncrona/streaming entrega o resultado final e eventos dos steps; não presuma que o objeto de resposta inicial contenha a timeline completa. Para auditar/reidratar uma interação armazenada, use <code>GET /interactions/{id}</code> (com <code>include_input=true</code> quando necessário). Essa distinção é importante para state/chaining e foi reconfirmada na overview oficial em 2026-08-27.</div>
+  <div class="callout info"><strong>Forma da resposta:</strong> a criação síncrona/streaming entrega o resultado final e eventos dos steps; não presuma que o objeto de resposta inicial contenha a timeline completa. Para auditar/reidratar uma interação armazenada, use <code>GET /interactions/{id}</code> (com <code>include_input=true</code> quando necessário). Essa distinção é importante para state/chaining.</div>
 
   <h3 id="s-anatomia-campos">3.1 Campos principais</h3>
   <div class="table-wrap">
@@ -895,12 +933,11 @@ print(interaction.output_text)</code></pre>
 )</code></pre>
   <div class="callout warn" style="margin-top:10px">
     <strong>Não passe <code>temperature</code>, <code>top_p</code> nem <code>top_k</code> em Gemini 3.x.</strong>
-    Estão depreciados (changelog 2026-07-21) e o checklist de migração da
+    O <code>gemini-4-argon</code> os ignora; no agente Antigravity retornam <code>400</code>; nos demais modelos Gemini 3.x o checklist de
     <a href="https://ai.google.dev/gemini-api/docs/latest-model" target="_blank" rel="noopener">latest-model</a>
-    manda removê-los; <code>candidate_count</code> não é suportado. <strong>Divergência:</strong> a documentação não diz se o envio causa erro
-    ou é ignorado (a página do Antigravity afirma <code>400</code> para o agente) — UNVERIFIED para os modelos em geral.
+    manda removê-los e o comportamento do servidor não está documentado (UNVERIFIED). <code>candidate_count</code> não é suportado.
     Para ganhar determinismo, use <code>system_instruction</code> com regras explícitas.
-    <span class="source-link">Fonte: latest-model, migration checklist — lida em 2026-09-30.</span>
+    <span class="source-link">Fonte: latest-model, migration checklist.</span>
   </div>
 
 <h3>4.4 Pensando com o Gemini (<code>thinking_level</code>)</h3>
@@ -941,7 +978,7 @@ print(interaction.output_text)</code></pre>
         <tr><td><code>stream</code></td><td>boolean</td><td>SSE incremental.</td></tr>
         <tr><td><code>previous_interaction_id</code></td><td>string</td><td>Continua histórico server-side.</td></tr>
         <tr><td><code>store</code></td><td>boolean</td><td>Padrão <code>true</code> (servidor mantém estado).</td></tr>
-        <tr><td><code>background</code></td><td>boolean</td><td>Execução assíncrona (Deep Research, Deep Think).</td></tr>
+        <tr><td><code>background</code></td><td>boolean</td><td>Execução assíncrona (Deep Research, Antigravity).</td></tr>
         <tr><td><code>service_tier</code></td><td>string</td><td><code>flex</code> · <code>standard</code> · <code>priority</code>.</td></tr>
       </tbody>
     </table>
@@ -953,7 +990,7 @@ print(interaction.output_text)</code></pre>
 <section id="s-multiturno">
   <h2>5. Conversas multiturno</h2>
 
-  <p>A Interactions API gerencia o histórico no servidor por padrão. Para continuar uma conversa, basta passar o <code>id</code> da interação anterior em <code>previous_interaction_id</code>. Não é mais necessário reenviar o array <code>contents</code> inteiro como no <code>generateContent</code>.</p>
+  <p>A Interactions API gerencia o histórico no servidor por padrão. Para continuar uma conversa, basta passar o <code>id</code> da interação anterior em <code>previous_interaction_id</code>; não é preciso reenviar o histórico.</p>
 
   <h3>5.1 Padrão server-side (recomendado)</h3>
   <h4>Python</h4>
@@ -1046,7 +1083,7 @@ print(interaction2.steps[-1].content[0].text)</code></pre>
 <section id="s-streaming">
   <h2>6. Streaming (SSE)</h2>
 
-  <p>O streaming usa o mesmo endpoint <code>POST /v1beta/interactions</code>, apenas adicionando <code>"stream": true</code> no body. A resposta é um fluxo Server-Sent Events com eventos tipados por step. Não há mais o endpoint dedicado <code>:streamGenerateContent</code>.</p>
+  <p>O streaming usa o mesmo endpoint <code>POST /v1beta/interactions</code>, apenas adicionando <code>"stream": true</code> no body. A resposta é um fluxo Server-Sent Events com eventos tipados por step.</p>
 
   <div class="callout info"><strong>Transporte:</strong> a Interactions API é <strong>HTTP request-response</strong> (com estado no servidor via <code>previous_interaction_id</code>) e o streaming é <strong>SSE sobre HTTP</strong> — não há WebSocket nesse caminho. Interação bidirecional em tempo real (voz/vídeo, áudio-para-áudio) é a <strong>Live API</strong> sobre WebSocket (WSS; modelos <code>gemini-3.8-live</code> e <code>gemini-3.8-live-extended-thinking</code>) — uma superfície separada da Interactions API.</div>
 
@@ -1204,7 +1241,7 @@ for event in stream:
 
   <h3>6.7 Streaming de geração de imagem</h3>
 <pre><code class="language-python">stream = client.interactions.create(
-    model="gemini-3.1-flash-image",
+    model="gemini-nano-banana-2.1",
     input="Search the history of the Colosseum and write a short illustrated story.",
     tools=[{"type": "google_search", "search_types": ["web_search", "image_search"]}],
     response_format=[{"type": "text"}, {"type": "image"}],
@@ -1229,25 +1266,23 @@ for event in stream:
 
   <p>Modelos da família Nano Banana geram imagens nativamente como parte do fluxo Interactions. A imagem retorna como bloco <code>image</code> dentro de <code>steps[].content[]</code> e pode ser acessada via <code>interaction.output_image</code>.</p>
 
-  <h3>7.1 Modelos disponíveis<span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
+  <h3>7.1 Modelo disponível</h3>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Nome comercial</th><th>Model ID</th><th>Foco</th></tr></thead>
       <tbody>
-        <tr><td>Nano Banana 2.1</td><td><code>gemini-nano-banana-2.1</code></td><td><strong>GA (2026-10-06)</strong>. Substitui o <code>gemini-3.1-flash-image</code>. 131.072 tokens de entrada / 32.768 de saída; <code>thinking_level</code> <code>minimal</code>/<code>medium</code> (padrão)/<code>high</code>; sem caching, function calling nem structured outputs; Batch suportado. US$ 1,50 por 1M tokens de entrada, US$ 7,50 de saída texto/thinking, US$ 30 por 1M de saída de imagem (≈ US$ 0,0336 em 1K, US$ 0,0504 em 2K, US$ 0,113 em 4K)</td></tr>
-        <tr><td>Nano Banana 2</td><td><code>gemini-3.1-flash-image</code></td><td><strong>Deprecado em 2026-10-06</strong> (sem data de shutdown; substituto <code>gemini-nano-banana-2.1</code>). GA em 2026-05-28. Geração/edição de imagem de alta eficiência e alto volume; 512px/1K/2K/4K; suporta <code>thinking_level</code>, saída intercalada texto+imagem, Image Search e vídeo→imagem</td></tr>
-        <tr><td>Nano Banana 2 Lite</td><td><code>gemini-3.1-flash-lite-image</code></td><td><strong>GA (2026-06-30)</strong>. O mais rápido e barato; <strong>só 1K</strong>; até 14 imagens de referência; sem grounding com Google Search</td></tr>
-        <tr><td>Nano Banana Pro</td><td><code>gemini-3-pro-image</code></td><td><strong>GA (2026-05-28)</strong>. Qualidade máxima (estúdio): tipografia/texto precisos, composições complexas, até <code>4K</code>; mais imagens de estilo/personagem por prompt</td></tr>
+        <tr><td>Nano Banana 2.1</td><td><code>gemini-nano-banana-2.1</code></td><td><strong>GA (2026-10-06)</strong>. 131.072 tokens de entrada / 32.768 de saída; <code>thinking_level</code> <code>minimal</code>/<code>medium</code> (padrão)/<code>high</code>; sem caching, function calling, code execution nem File Search; Batch suportado; Flex e Priority não. US$ 1,50 por 1M tokens de entrada, US$ 7,50 de saída texto/thinking, US$ 30 por 1M de saída de imagem (≈ US$ 0,0336 em 1K, US$ 0,0504 em 2K, US$ 0,113 em 4K)</td></tr>
       </tbody>
     </table>
   </div>
-  <p>Todas as imagens geradas incluem marca d'água <strong>SynthID</strong>. Fonte: <a href="https://ai.google.dev/gemini-api/docs/image-generation" target="_blank" rel="noopener">image-generation</a>, lida em 2026-09-30; Nano Banana 2.1: <a href="https://ai.google.dev/gemini-api/docs/models/gemini-nano-banana-2.1" target="_blank" rel="noopener">ficha do modelo</a>, <a href="https://ai.google.dev/gemini-api/docs/changelog" target="_blank" rel="noopener">changelog</a> e <a href="https://ai.google.dev/gemini-api/docs/deprecations" target="_blank" rel="noopener">deprecations</a>, lidos em 2026-10-19. Os limites de 7.2 e o Image Search de 7.9 foram medidos no <code>gemini-3.1-flash-image</code>; para o 2.1 eles não foram reverificados — UNVERIFIED.</p>
+  <p>Todas as imagens geradas incluem marca d'água <strong>SynthID</strong>. Fontes: <a href="https://ai.google.dev/gemini-api/docs/image-generation" target="_blank" rel="noopener">image-generation</a>, <a href="https://ai.google.dev/gemini-api/docs/models/gemini-nano-banana-2.1" target="_blank" rel="noopener">ficha do modelo</a>, <a href="https://ai.google.dev/gemini-api/docs/pricing" target="_blank" rel="noopener">pricing</a>.</p>
 
   <h3>7.2 Limites técnicos</h3>
   <ul>
-    <li><strong>Aspect ratios:</strong> <code>1:1</code>, <code>2:3</code>, <code>3:2</code>, <code>3:4</code>, <code>4:3</code>, <code>4:5</code>, <code>5:4</code>, <code>9:16</code>, <code>16:9</code>, <code>21:9</code>. Apenas <code>gemini-3.1-flash-image</code>: <code>1:4</code>, <code>4:1</code>, <code>1:8</code>, <code>8:1</code>.</li>
-    <li><strong>Resoluções:</strong> <code>0.5K</code> (512px; só Nano Banana 2), <code>1K</code> (padrão), <code>2K</code>, <code>4K</code>. O <code>image_size</code> exige <strong>K maiúsculo</strong> (ex.: <code>"2K"</code>). O Lite suporta só <code>1K</code>.</li>
-    <li><strong>Imagens de referência (até 14 no total):</strong> Nano Banana 2 — 10 objetos / 4 personagens; Nano Banana 2 Lite — 14 objetos; Nano Banana Pro — 6 objetos / 5 personagens / 3 de estilo.</li>
+    <li><strong>Aspect ratios:</strong> <code>1:1</code>, <code>2:3</code>, <code>3:2</code>, <code>3:4</code>, <code>4:3</code>, <code>4:5</code>, <code>5:4</code>, <code>9:16</code>, <code>16:9</code>, <code>21:9</code>; proporções largas <code>1:4</code>, <code>4:1</code>, <code>1:8</code>, <code>8:1</code> em 1K, 2K e 4K.</li>
+    <li><strong>Resoluções:</strong> <code>1K</code> (padrão), <code>2K</code>, <code>4K</code>. O <code>image_size</code> exige <strong>K maiúsculo</strong> (ex.: <code>"2K"</code>).</li>
+    <li><strong>Imagens de referência:</strong> até 14.</li>
+    <li><strong>Grounding:</strong> Google Web Search e Image Search; 5.000 consultas/mês gratuitas, compartilhadas entre os modelos Gemini 3+, depois US$ 14 por 1.000.</li>
     <li><strong>MIME types:</strong> <code>image/png</code>, <code>image/jpeg</code>.</li>
   </ul>
 
@@ -1318,13 +1353,13 @@ interaction = client.interactions.create(
 
   <h3>7.6 Edição multi-turn (conversacional)</h3>
 <pre><code class="language-python">interaction = client.interactions.create(
-    model="gemini-3.1-flash-image",
+    model="gemini-nano-banana-2.1",
     input="Create a vibrant infographic that explains photosynthesis.",
     tools=[{"type": "google_search"}],
 )
 
 interaction_2 = client.interactions.create(
-    model="gemini-3.1-flash-image",
+    model="gemini-nano-banana-2.1",
     input="Update this infographic to be in Spanish. Do not change other elements.",
     previous_interaction_id=interaction.id,
     response_format={
@@ -1336,9 +1371,9 @@ interaction_2 = client.interactions.create(
 )</code></pre>
 
   <h3>7.7 Saída intercalada (texto + imagens)</h3>
-  <p>Modelos como <code>gemini-3.1-flash-image</code> podem gerar conteúdo intercalado. Você precisa iterar <code>steps[].content[]</code> em vez de usar <code>output_image</code>:</p>
+  <p>UNVERIFIED: a fonte oficial não confirma conteúdo intercalado (texto + imagens) para o <code>gemini-nano-banana-2.1</code>; teste antes de depender. Se a resposta trouxer texto e imagem, você precisa iterar <code>steps[].content[]</code> em vez de usar <code>output_image</code>:</p>
 <pre><code class="language-python">interaction = client.interactions.create(
-    model="gemini-3.1-flash-image",
+    model="gemini-nano-banana-2.1",
     input="Write the story of the lifecycle of a monarch butterfly, interleave illustrations",
 )
 
@@ -1354,9 +1389,9 @@ for step in interaction.steps:
                 image_counter += 1</code></pre>
 
   <h3>7.8 Thinking durante geração de imagem</h3>
-  <p>Thinking é ativado por padrão em modelos de imagem; <strong>não pode ser desativado</strong>. O modelo gera até dois "thought images" intermediários antes da imagem final. Em Nano Banana 2 / Lite o <code>thinking_level</code> aceita <code>minimal</code> (padrão) e <code>high</code>. Tokens de thinking são cobrados normalmente.</p>
+  <p>Thinking é ativado por padrão em modelos de imagem; <strong>não pode ser desativado</strong>. O modelo gera até dois "thought images" intermediários antes da imagem final. No <code>gemini-nano-banana-2.1</code> o <code>thinking_level</code> aceita <code>minimal</code>, <code>medium</code> (padrão) e <code>high</code>. Tokens de thinking são cobrados normalmente.</p>
 <pre><code class="language-python">interaction = client.interactions.create(
-    model="gemini-3.1-flash-image",
+    model="gemini-nano-banana-2.1",
     input="A futuristic city built inside a giant glass bottle floating in space",
     generation_config={"thinking_level": "high"},
 )
@@ -1371,7 +1406,7 @@ for step in interaction.steps:
 
   <h3>7.9 Grounding com Google Search (web + image search)</h3>
 <pre><code class="language-python">interaction = client.interactions.create(
-    model="gemini-3.1-flash-image",
+    model="gemini-nano-banana-2.1",
     input="A detailed painting of a Timareta butterfly resting on a flower",
     tools=[{
       "type": "google_search",
@@ -1380,7 +1415,7 @@ for step in interaction.steps:
     response_format={"type": "image", "mime_type": "image/jpeg", "aspect_ratio": "16:9"}
 )</code></pre>
   <div class="callout warn">
-    Image Search só existe em <code>gemini-3.1-flash-image</code>; o Lite não suporta grounding com Google Search. Ao usar Image Search é <strong>obrigatório</strong> exibir <code>search_suggestions</code> do step <code>google_search_result</code> na UI.
+    Ao usar Image Search é <strong>obrigatório</strong> exibir <code>search_suggestions</code> do step <code>google_search_result</code> na UI.
   </div>
 
   <p class="source-link"><strong>Fonte:</strong> <a href="https://ai.google.dev/gemini-api/docs/image-generation" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/image-generation</a></p>
@@ -1389,7 +1424,7 @@ for step in interaction.steps:
 <section id="s-image-understanding">
   <h2>8. Compreensão de imagens</h2>
 
-  <h3>8.1 Métodos de envio<span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
+  <h3>8.1 Métodos de envio</h3>
   <ul>
     <li><strong>Files API</strong> (recomendado para reuso e arquivos grandes; 2 GB por arquivo, 48 h).</li>
     <li><strong>Inline Base64</strong> — <strong>limite divergente entre páginas oficiais:</strong> a página de <a href="https://ai.google.dev/gemini-api/docs/file-input-methods" target="_blank" rel="noopener">métodos de entrada</a> diz <strong>100 MB</strong> por request (desde 2026-01-08; PDF 50 MB), enquanto a página de compreensão de imagens ainda diz <strong>20 MB</strong> no total. Para imagens, fique abaixo de 20 MB ou valide com uma chamada real.</li>
@@ -1483,7 +1518,7 @@ detected = BoundingBoxes.model_validate_json(interaction.output_text)</code></pr
 <section id="s-audio">
   <h2>9. Áudio — compreensão &amp; geração (TTS)</h2>
 
-  <h3>9.1 Capacidades<span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
+  <h3>9.1 Capacidades</h3>
   <p>Descrição, resumo, transcrição, tradução voz-texto, diarização de locutor, detecção de emoções, análise por timestamp (formato <code>MM:SS</code>).</p>
 
   <div class="callout tip"><strong>Qual modelo usar:</strong> para <strong>transcrição</strong> use o modelo dedicado <code>gemini-3.5-transcribe</code> (GA; ver §9.5b). Para compreensão de áudio em geral (resumo, perguntas, emoção) use <code>gemini-3.8-flash</code>, ou <code>gemini-3.5-flash-lite</code> para volume. Para transcrição em <strong>tempo real</strong>, use a Live API com <code>gemini-3.5-transcribe-live</code> (superfície separada, WebSocket).</div>
@@ -1555,7 +1590,7 @@ interaction = client.interactions.create(
 )
 print(interaction.output_text)</code></pre>
 
-  <h3>9.5b Transcrição dedicada (<code>gemini-3.5-transcribe</code>)<span class="rev-flag novo">Novo · 2026-09-30</span></h3>
+  <h3>9.5b Transcrição dedicada (<code>gemini-3.5-transcribe</code>)</h3>
   <p>Modelo de STT dedicado (GA desde 2026-08-26): 85+ idiomas, diarização (até 8 locutores; acima de 3 é experimental), timestamps por palavra e vocabulário customizado (até 1.000 termos; melhor resultado com até ~100). Áudio de até 1 hora por requisição; <strong>30 minutos</strong> quando diarização ou timestamps estão ligados. Para streaming de microfone use <code>gemini-3.5-transcribe-live</code> na Live API.</p>
 <pre><code class="language-python">audio_file = client.files.upload(file="path/to/sample.mp3")
 
@@ -1573,7 +1608,7 @@ interaction = client.interactions.create(
     },
 )
 print(interaction.output_text)</code></pre>
-  <p class="source-link"><strong>Fonte:</strong> <a href="https://ai.google.dev/gemini-api/docs/transcribe" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/transcribe</a> — lida em 2026-09-30.</p>
+  <p class="source-link"><strong>Fonte:</strong> <a href="https://ai.google.dev/gemini-api/docs/transcribe" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/transcribe</a></p>
 
   <h3>9.6 Consulta por timestamps</h3>
 <pre><code class="language-python">interaction = client.interactions.create(
@@ -1586,7 +1621,7 @@ print(interaction.output_text)</code></pre>
 
   <p class="source-link"><strong>Fonte:</strong> <a href="https://ai.google.dev/gemini-api/docs/audio" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/audio</a></p>
 
-  <h3>9.7 Geração de áudio (TTS)<span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
+  <h3>9.7 Geração de áudio (TTS)</h3>
   <p>A Interactions API também <strong>gera</strong> áudio a partir de texto. Use <code>response_format={"type": "audio"}</code> e <code>generation_config.speech_config</code>; os modelos TTS atuais são <code>gemini-3.8-flash-tts</code> e <code>gemini-3.8-flash-lite-tts</code> (GA desde 2026-09-22). Estilo, emoção e ritmo vão em uma anotação <code>speech_metadata</code> do turno. No modo unário o áudio sai em <code>interaction.output_audio.data</code> (base64; WAV com cabeçalho RIFF, PCM 24 kHz, 16-bit, mono por padrão).</p>
   <h4>Single-speaker — Python</h4>
 <pre><code class="language-python">from google import genai
@@ -1653,8 +1688,8 @@ with open("out.wav", "wb") as f:
     <li><strong>30 vozes</strong> pré-construídas no campo <code>voice</code> — ex.: <code>Zephyr</code> (bright), <code>Puck</code> (upbeat), <code>Charon</code> (informative), <code>Kore</code> (firm), <code>Fenrir</code> (excitable), <code>Leda</code> (youthful), <code>Aoede</code> (breezy), <code>Achird</code> (friendly), <code>Sulafat</code> (warm)… (lista completa na doc oficial). Vozes customizadas (Voices API: <em>voice design</em> e replicação) persistem até 200 por projeto, com TTL de 1 ano (stateful) ou 7 dias (chaves stateless).</li>
     <li><strong>Idioma automático:</strong> o modelo detecta o idioma do texto de entrada (cobertura varia por modelo — ver a seção de idiomas da doc).</li>
   </ul>
-  <div class="callout warn"><strong>Limitações do TTS:</strong> entrada <strong>somente texto</strong>, saída <strong>somente áudio</strong>; multi-speaker limitado a 2 vozes pré-construídas (para vozes customizadas, sintetize cada turno separadamente e concatene removendo os cabeçalhos WAV). A doc não publica limite de tokens de entrada — UNVERIFIED; divida transcrições longas e implemente retry em falhas do servidor.</div>
-  <p class="source-link"><strong>Fonte:</strong> <a href="https://ai.google.dev/gemini-api/docs/speech-generation" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/speech-generation</a> — lida em 2026-09-30.</p>
+  <div class="callout warn"><strong>Limitações do TTS:</strong> entrada <strong>somente texto</strong>, saída <strong>somente áudio</strong>; multi-speaker limitado a 2 vozes pré-construídas (para vozes customizadas, sintetize cada turno separadamente e concatene removendo os cabeçalhos WAV). Divida transcrições longas e implemente retry em falhas do servidor.</div>
+  <p class="source-link"><strong>Fonte:</strong> <a href="https://ai.google.dev/gemini-api/docs/speech-generation" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/speech-generation</a></p>
 </section>
 
 <section id="s-video">
@@ -1690,8 +1725,8 @@ with open("out.wav", "wb") as f:
     </table>
   </div>
 
-  <h3>10.3b Modos de processamento: <code>static</code> e <code>agentic</code><span class="rev-flag novo">Novo · 2026-09-30</span></h3>
-  <p>O item de vídeo aceita <code>processing</code>. <code>"static"</code> (padrão) amostra quadros em 1 FPS. <code>"agentic"</code> deixa o modelo navegar o vídeo sob demanda e usa até 88% menos tokens em conteúdo longo (suportado em <code>gemini-3.8-flash</code>, <code>3.6-flash</code> e <code>3.5-flash-lite</code>); use <code>static</code> em clipes curtos (&lt; 5 min) ou quando precisar de precisão por frame. Em <code>agentic</code> os tokens de navegação contam em <code>total_thought_tokens</code> e o conteúdo carregado em <code>total_tool_use_tokens</code>.</p>
+  <h3>10.3b Modos de processamento: <code>static</code> e <code>agentic</code></h3>
+  <p>O item de vídeo aceita <code>processing</code>. <code>"static"</code> (padrão) amostra quadros em 1 FPS. <code>"agentic"</code> deixa o modelo navegar o vídeo sob demanda e usa até 88% menos tokens em conteúdo longo (suportado em <code>gemini-3.8-flash</code> e <code>gemini-3.5-flash-lite</code>); use <code>static</code> em clipes curtos (&lt; 5 min) ou quando precisar de precisão por frame. Em <code>agentic</code> os tokens de navegação contam em <code>total_thought_tokens</code> e o conteúdo carregado em <code>total_tool_use_tokens</code>.</p>
 <pre><code class="language-python">interaction = client.interactions.create(
     model="gemini-3.8-flash",
     input=[
@@ -1830,7 +1865,7 @@ interaction = client.interactions.create(
     <li><strong>Por item de conteúdo (só Gemini 3):</strong> defina <code>resolution</code> dentro de cada bloco <code>image</code>/<code>video</code>/<code>document</code> para misturar resoluções no mesmo request.</li>
   </ul>
 
-  <p>Tokens por valor de <code>media_resolution</code> (modelos Gemini 3) — fonte: <a href="https://ai.google.dev/gemini-api/docs/media-resolution" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/media-resolution</a> (lida em 2026-09-30). Áudio: 25 tokens/s fixos em qualquer valor. A forma global <code>generation_config.media_resolution</code> não aparece nessa página — UNVERIFIED:</p>
+  <p>Tokens por valor de <code>media_resolution</code> (modelos Gemini 3) — fonte: <a href="https://ai.google.dev/gemini-api/docs/media-resolution" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/media-resolution</a>. Áudio: 25 tokens/s fixos em qualquer valor.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>MediaResolution</th><th>Imagem</th><th>Vídeo</th><th>PDF</th></tr></thead>
@@ -2219,21 +2254,19 @@ for event in stream:
 
   <p>Os modelos Gemini 3.x usam raciocínio em múltiplas etapas, expostos como steps <code>thought</code> em <code>interaction.steps</code>. Cada step contém <code>signature</code> (representação criptografada do estado interno) e opcionalmente <code>summary</code> (resumo em texto/imagem).</p>
 
-  <h3>15.1 Modelos &amp; níveis de thinking<span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
+  <h3>15.1 Modelos &amp; níveis de thinking</h3>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Modelo</th><th>Thinking padrão</th><th>Níveis</th></tr></thead>
       <tbody>
         <tr><td><code>gemini-3.8-flash</code></td><td><code>medium</code> (padrão)</td><td>low, medium, high (<code>minimal</code> não suportado — devolve erro)</td></tr>
         <tr><td><code>gemini-4-argon</code></td><td><code>medium</code> (padrão)</td><td>low, medium, high; <code>temperature</code>/<code>top_p</code>/<code>top_k</code> são ignorados</td></tr>
-        <tr><td><code>gemini-3.6-flash</code></td><td><code>medium</code> (padrão)</td><td>minimal, low, medium, high</td></tr>
-        <tr><td><code>gemini-3.7-flash</code>, <code>gemini-3.5-flash</code></td><td>—</td><td>roteados desde 2026-10-08 para <code>gemini-3.8-flash</code> e <code>gemini-3.6-flash</code>; use os níveis do destino</td></tr>
         <tr><td><code>gemini-3.5-flash-lite</code></td><td><code>minimal</code> (padrão)</td><td>minimal, low, medium, high</td></tr>
-        <tr><td><code>gemini-3.1-pro-preview</code>, <code>gemini-3-flash-preview</code></td><td><code>high</code> (padrão)</td><td>3.1 Pro: low, medium, high (<code>minimal</code> não suportado) · 3 Flash Preview: minimal, low, medium, high</td></tr>
+        <tr><td><code>gemini-nano-banana-2.1</code></td><td><code>medium</code> (padrão)</td><td>minimal, medium, high</td></tr>
       </tbody>
     </table>
   </div>
-  <p class="small"><code>minimal</code> <strong>não garante</strong> thinking desligado nos modelos que o aceitam. O default do <code>gemini-3.1-flash-lite</code> (shutdown anunciado para 2027-05-07) não consta na tabela oficial de thinking: <strong>UNVERIFIED</strong>. <span class="source-link" style="display:inline;margin:0;padding:2px 6px"><strong>Fonte:</strong> <a href="https://ai.google.dev/gemini-api/docs/thinking" target="_blank" rel="noopener">thinking</a> — verificado em 2026-09-30; linhas do Argon e dos roteamentos: changelog e ficha do modelo, lidos em 2026-10-19.</span></p>
+  <p class="small"><code>minimal</code> <strong>não garante</strong> thinking desligado nos modelos que o aceitam. <span class="source-link" style="display:inline;margin:0;padding:2px 6px"><strong>Fonte:</strong> <a href="https://ai.google.dev/gemini-api/docs/thinking" target="_blank" rel="noopener">thinking</a>, <a href="https://ai.google.dev/gemini-api/docs/models" target="_blank" rel="noopener">models</a>.</span></p>
 
   <h3>15.2 Controlar nível</h3>
 <pre><code class="language-python">interaction = client.interactions.create(
@@ -2318,7 +2351,7 @@ for event in stream:
 <section id="s-caching">
   <h2>16. Caching (implícito)</h2>
 
-  <p>A Interactions API suporta <strong>apenas cache implícito</strong>. Cache explícito (criação manual de objetos de cache) não está disponível na Interactions; esse é um dos <a href="#legado-quando-usar">quatro usos que ainda exigem <code>generateContent</code></a> (<code>client.caches.create(...)</code>).</p>
+  <p>A Interactions API suporta <strong>apenas cache implícito</strong>. Cache explícito (criação manual de objetos de cache) não está disponível na Interactions; esse é um dos <a href="#legado-quando-usar">usos que ainda exigem <code>generateContent</code></a> (<code>client.caches.create(...)</code>).</p>
 
   <h3>16.1 Como funciona</h3>
   <ul>
@@ -2327,19 +2360,17 @@ for event in stream:
     <li>Reutilização via <code>previous_interaction_id</code> dispara o cache.</li>
   </ul>
 
-  <h3>16.2 Limites mínimos por modelo<span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
+  <h3>16.2 Limites mínimos por modelo</h3>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Modelo</th><th>Tokens mínimos para cache</th></tr></thead>
       <tbody>
-        <tr><td>Gemini 3.8 / 3.6 Flash (3.7 e 3.5 Flash, roteados para eles desde 2026-10-08)</td><td>4096</td></tr>
-        <tr><td>Gemini 4 Argon</td><td>só cache implícito; não aceita <code>cached_content</code> explícito</td></tr>
-        <tr><td>Gemini 3.1 Pro Preview</td><td>4096</td></tr>
-        <tr><td>Gemini 2.5 Flash / Pro</td><td>2048</td></tr>
-        <tr><td>Gemini 3.5 Flash-Lite, 3.1 Flash-Lite</td><td><em>não publicado</em> (UNVERIFIED)</td></tr>
+        <tr><td>Gemini 3.8 Flash</td><td>4096</td></tr>
+        <tr><td>Gemini 4 Argon</td><td>só cache implícito, mínimo de 4096 tokens; em multi-turn o request anterior inteiro só é cacheado se pelo menos 2050 tokens foram adicionados; sem cache explícito</td></tr>
+        <tr><td>Gemini 3.5 Flash-Lite</td><td><em>não listado</em> na página de caching</td></tr>
       </tbody>
     </table>
-    <p class="small"><strong>Fonte oficial (caching, verificado em 2026-09-30):</strong> a tabela lista os modelos acima; os Lite não têm linha própria, sem inferência por analogia.</p>
+    <p class="small"><strong>Fonte oficial:</strong> <a href="https://ai.google.dev/gemini-api/docs/caching" target="_blank" rel="noopener">caching</a>, <a href="https://ai.google.dev/gemini-api/docs/models" target="_blank" rel="noopener">models</a>; os Lite não têm linha própria na tabela de caching, sem inferência por analogia.</p>
   </div>
 
   <h3>16.3 Maximizar cache hits</h3>
@@ -2418,14 +2449,14 @@ for step in interaction.steps:
 
   <h4>Preços</h4>
   <ul>
-    <li><strong>Gemini 3.x:</strong> cobrança por consulta de pesquisa executada. Página de preços em 2026-09-30: 5.000 consultas/mês gratuitas (compartilhadas entre os modelos Gemini 3.x), depois US$ 14 por 1.000.</li>
+    <li><strong>Gemini 3+:</strong> cobrança por consulta de pesquisa executada; 5.000 consultas/mês gratuitas (compartilhadas entre os modelos Gemini 3+), depois US$ 14 por 1.000.</li>
   </ul>
 
   <p class="source-link"><strong>Fonte:</strong> <a href="https://ai.google.dev/gemini-api/docs/google-search" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/google-search</a></p>
 </section>
 
 <section id="s-google-maps">
-  <h3>17.2 Google Maps (grounding)<span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
+  <h3>17.2 Google Maps (grounding)</h3>
 
 <pre><code class="language-python">interaction = client.interactions.create(
     model="gemini-3.8-flash",
@@ -2443,8 +2474,7 @@ for step in interaction.steps:
 
   <h4>Preços &amp; cota</h4>
   <ul>
-    <li><strong>Preço:</strong> cobrança por consulta de mapas; a página de preços lista US$ 14 por 1.000 em 2026-09-30. Cota gratuita específica do Maps: <strong>UNVERIFIED</strong> (a página de preços detalha só os 5.000/mês do Search).</li>
-    <li>O widget contextual (<code>enable_widget</code>, <code>widget_context_token</code>) não consta na página atual de Maps grounding, e a ferramenta experimental "GMP Contextual View" foi desligada em 2026-06-15; este guia não o usa.</li>
+    <li><strong>Preço:</strong> cobrança por consulta de mapas; 5.000 consultas/mês gratuitas (compartilhadas entre os modelos Gemini 3+), depois US$ 14 por 1.000 (<a href="https://ai.google.dev/gemini-api/docs/pricing" target="_blank" rel="noopener">pricing</a>).</li>
   </ul>
 
   <p class="source-link"><strong>Fonte:</strong> <a href="https://ai.google.dev/gemini-api/docs/maps-grounding" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/maps-grounding</a></p>
@@ -2477,7 +2507,6 @@ for step in interaction.steps:
   <h4>Bibliotecas disponíveis (extrato)</h4>
   <p><code>matplotlib</code>, <code>numpy</code>, <code>pandas</code>, <code>scipy</code>, <code>scikit-learn</code>, <code>tensorflow</code>, <code>sympy</code>, <code>pillow</code>, <code>opencv-python</code>, <code>geopandas</code>, <code>pyPDF2</code>, <code>python-docx</code>, <code>python-pptx</code>, <code>openpyxl</code>, <code>xlrd</code>, <code>reportlab</code>, <code>fpdf</code>, <code>pylatex</code>, <code>jinja2</code>, <code>seaborn</code>, <code>chess</code>, <code>imageio</code>, <code>tabulate</code>, <code>jsonschema</code>, ...</p>
 
-  <div class="callout warn"><strong>Superfície (Developer API vs Vertex):</strong> este <code>code_execution</code> é documentado e exemplificado na <strong>Developer API</strong>. Paridade na Vertex / Gemini Enterprise Agent Platform: <strong>UNVERIFIED</strong> (um teste de 2026-06-19 não funcionou sob auth Vertex; não repetido). Detalhes no <a href="guia_agentic_vision_code_tools.html">guia de code tools</a>.</div>
 
   <p class="source-link"><strong>Fonte:</strong> <a href="https://ai.google.dev/gemini-api/docs/code-execution" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/code-execution</a></p>
 </section>
@@ -2509,13 +2538,13 @@ for step in interaction.steps:
 </section>
 
 <section id="s-computer-use">
-  <h3>17.5 Computer Use (preview)<span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
+  <h3>17.5 Computer Use (preview)</h3>
 
   <p>Agentes que "veem" tela via screenshots e "agem" via ações de UI (cliques, digitação, scroll). <strong>Modelos suportados</strong> (usar outro modelo gera erro):</p>
   <ul>
     <li><code>gemini-3.8-flash</code> — recomendado pela documentação.</li>
-    <li><code>gemini-3.5-flash-lite</code> — listado na página de Computer Use (Preview em 2026-09-30). <code>gemini-3.7-flash</code> e <code>gemini-3.5-flash</code>, também listados então, são roteados para <code>gemini-3.8-flash</code> e <code>gemini-3.6-flash</code> desde 2026-10-08; a lista atual da página não foi relida — UNVERIFIED.</li>
-    <li><code>gemini-3-flash-preview</code> — suporte nativo. <code>gemini-2.5-computer-use-preview-10-2025</code> é legado.</li>
+    <li><code>gemini-4-argon</code> — Preview.</li>
+    <li><code>gemini-3.5-flash-lite</code> — listado na página de Computer Use.</li>
   </ul>
   <div class="callout info">A documentação recomenda resolução <code>ultra_high</code> para Computer Use. A ferramenta aceita <code>enable_prompt_injection_detection</code>.</div>
 
@@ -2547,7 +2576,7 @@ for step in interaction.steps:
 </section>
 
 <section id="s-file-search">
-  <h3>17.6 File Search (RAG)<span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
+  <h3>17.6 File Search (RAG)</h3>
 
   <p>RAG nativo: importa, divide e indexa documentos usando embeddings e responde com citações. Use <code>gemini-embedding-2</code> (GA).</p>
 
@@ -2582,8 +2611,7 @@ interaction = client.interactions.create(
     <li>Storage por tier: 1 GB (free), 10 GB / 100 GB / 1 TB; a documentação recomenda stores abaixo de 20 GB.</li>
     <li>Tamanho efetivo no backend: ~3× o tamanho dos dados (inclui embeddings).</li>
     <li>Não funciona com Live API e não combina com Google Search nem URL Context no mesmo pedido.</li>
-    <li>A documentação atual de File Search não descreve <code>top_k</code> (UNVERIFIED); por isso não aparece no exemplo.</li>
-    <li>A ficha do <code>gemini-3.1-pro-preview</code> marca File Search como disponível apenas no AI Studio.</li>
+    <li>O campo opcional <code>top_k</code> da tool define o número de chunks de recuperação semântica a retornar (referência REST).</li>
     <li>Aceita texto/HTML/JSON/Markdown/PDF/DOCX/PPTX/CSV/XML/etc; <strong>não</strong> aceita áudio/vídeo.</li>
   </ul>
 
@@ -2634,7 +2662,7 @@ interaction = client.interactions.create(
 # Execute os steps function_call e devolva function_result com o mesmo call_id,
 # encadeando por previous_interaction_id.</code></pre>
 
-  <div class="callout info">Para o caso vision-grounded (Code Execution + imagem), veja <a href="#s-agentic-vision">17.9 Agentic Vision</a>. Endpoint dedicado para <em>bash + custom tools</em>: <code>gemini-3.1-pro-preview-customtools</code>.</div>
+  <div class="callout info">Para o caso vision-grounded (Code Execution + imagem), veja <a href="#s-agentic-vision">17.9 Agentic Vision</a>.</div>
 
   <h4>Matriz de compatibilidade</h4>
   <div class="table-wrap">
@@ -2656,14 +2684,14 @@ interaction = client.interactions.create(
 </section>
 
 <section id="s-agentic-vision">
-  <h3>17.9 Agentic Vision (Code Execution + imagem)<span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
+  <h3>17.9 Agentic Vision (Code Execution + imagem)</h3>
 
   <div class="callout ok">
     <p>O modelo <strong>escreve e executa Python sobre a própria imagem</strong> (crop, zoom, threshold, contagem, anotação) em vez de "chutar olhando o thumbnail". A documentação oficial de Code Execution chama isso de <em>Code Execution with images</em> e lista três usos: <strong>zoom &amp; inspect</strong>, <strong>visual math</strong> e <strong>image annotation</strong>; ativa-se com <strong>Code Execution + Thinking</strong>. <a class="ref" href="https://ai.google.dev/gemini-api/docs/code-execution" target="_blank" rel="noopener">[doc]</a></p>
   </div>
 
   <div class="callout warn">
-    <p><strong>Escopo e evidência.</strong> É um recurso da família Flash, não dos modelos Pro. O contrato abaixo foi <strong>testado em produção em 2026-05 com <code>gemini-3.5-flash</code></strong> via <code>client.interactions.create</code> (multi-turn inclusive; benchmark interno n=198, derma 128 px). Com <code>gemini-3.8-flash</code> (usado nos exemplos) ele <strong>não foi reexecutado</strong>; a lista atual de modelos com suporte oficial a Code Execution with images não foi lida em 2026-09-30 (<strong>UNVERIFIED</strong>).</p>
+    <p><strong>Escopo e evidência.</strong> É um recurso da família Flash, não dos modelos Pro. Na documentação oficial, o suporte a Code Execution with images cita a linha Gemini Flash; a confirmação explícita para <code>gemini-3.8-flash</code> não consta na página oficial consultada (<strong>UNVERIFIED</strong>; teste no seu ambiente antes de depender em produção).</p>
   </div>
 
   <p>A ideia central: <em>Code Execution é o instrumento de medição do modelo</em>, e a Interactions API dá memória multi-turn (raciocínio, traços de tool e <code>thought_signature</code>) por <code>previous_interaction_id</code>.</p>
@@ -2796,7 +2824,7 @@ def consult_flash(*, png_bytes, expected_hash, prompt, prior_id=None,
     <thead><tr><th><code>thinking_level</code></th><th>Quando</th></tr></thead>
     <tbody>
       <tr><td><code>low</code> (<code>minimal</code> nos modelos que o aceitam)</td><td>Triagem em volume, passes de sanidade, consultas de rotina.</td></tr>
-      <tr><td><code>medium</code></td><td><strong>Default</strong> para vision diagnóstico. <code>medium → high</code> não deu ganho de acurácia detectável no benchmark, mas ~80% mais caro.</td></tr>
+      <tr><td><code>medium</code></td><td><strong>Default</strong> para vision diagnóstico. <code>medium → high</code> tem custo ~80% maior e só se justifica em casos de alta complexidade.</td></tr>
       <tr><td><code>high</code></td><td>Casos difíceis (lesão pequena, camadas OCT ambíguas); raramente necessário.</td></tr>
     </tbody>
   </table></div>
@@ -2814,18 +2842,18 @@ def consult_flash(*, png_bytes, expected_hash, prompt, prior_id=None,
 
   <h4>Anti-padrões (não faça)</h4>
   <ul>
-    <li><strong>Adicionar <code>google_search</code> ao turno de vision.</strong> Misturar busca introduz confound (regressão de ~10 pp medida internamente com <code>gemini-3.5-flash</code> em derma). Mantenha o turno de visão <em>só visão</em>; busca é outra tool, orquestrada à parte.</li>
+    <li><strong>Adicionar <code>google_search</code> ao turno de vision.</strong> Misturar busca introduz ruído. Mantenha o turno de visão <em>só visão</em>; busca é outra tool, orquestrada à parte.</li>
     <li><strong>Re-renderizar as boxes</strong> quando <code>output_image</code> existe — o PNG anotado pelo próprio modelo é melhor que o render por coordenadas (ele "viu" as medidas do código).</li>
     <li><strong>Pedir veredito diagnóstico final ao flash.</strong> Ele é instrumento de visão; o diagnóstico é do agente principal. Misturar os papéis infla a confiança dele nas próprias caixas.</li>
-    <li><strong>Usar <code>gemini-nano-banana-2.1</code> (ou o <code>gemini-3.1-flash-image</code> deprecado)</strong> para isto — são modelos de <em>geração</em> de imagem, não de raciocínio vision-grounded. Use um Flash de raciocínio (ex.: <code>gemini-3.8-flash</code>).</li>
+    <li><strong>Usar <code>gemini-nano-banana-2.1</code></strong> para isto — é um modelo de <em>geração</em> de imagem, não de raciocínio vision-grounded. Use um Flash de raciocínio (ex.: <code>gemini-3.8-flash</code>).</li>
     <li><strong>Reaproveitar <code>previous_interaction_id</code> entre imagens diferentes</strong> "para economizar tokens" — o flash conflaciona os casos. Imagem nova = interaction nova.</li>
   </ul>
 
   <div class="callout warn">
-    <p><strong>Leitura honesta do ganho.</strong> No benchmark de referência (n=198, derma 128px), o ganho marginal de agentic vision <em>em cima do trust framing</em> é quase-zero: a melhora observada vem do <em>framing</em>, não da tool. Trate agentic vision como <strong>instrumento de explicabilidade/auditoria</strong> (caixas + medidas que mostram <em>por que</em> o modelo decidiu), não como alavanca de acurácia por si só. Detecte "tool-dodge": <code>n_code_calls == 0</code> + <code>boxes == []</code> + <code>measurements == "none"</code> ⇒ rebaixe a contribuição do flash, não trate como negativo confiante.</p>
+    <p><strong>Explicabilidade e auditoria.</strong> Trate agentic vision como <strong>instrumento de explicabilidade e auditoria</strong> (caixas + medidas que mostram <em>por que</em> o modelo tomou a decisão), não como alavanca automática de acurácia. Detecte "tool-dodge": <code>n_code_calls == 0</code> + <code>boxes == []</code> + <code>measurements == "none"</code> ⇒ rebaixe a confiança da leitura, não trate como negativo confiante.</p>
   </div>
 
-  <p class="source-link"><strong>Fontes:</strong> <a href="https://ai.google.dev/gemini-api/docs/code-execution" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/code-execution</a> (<em>Code Execution with images</em>) · <a href="https://ai.google.dev/gemini-api/docs/media-resolution" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/media-resolution</a>. Contrato operacional interno: 2026-05-26.</p>
+  <p class="source-link"><strong>Fontes:</strong> <a href="https://ai.google.dev/gemini-api/docs/code-execution" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/code-execution</a> (<em>Code Execution with images</em>) · <a href="https://ai.google.dev/gemini-api/docs/media-resolution" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/media-resolution</a>.</p>
 </section>
 
 <section id="s-deep-research">
@@ -2892,8 +2920,8 @@ stream = client.interactions.get(
   <h3>18.7 Custos &amp; limites</h3>
   <ul>
     <li>Agentes exigem <code>background=True</code>, que por sua vez exige <code>store=true</code> (o padrão).</li>
-    <li>Tarefas levam vários minutos; a conexão de stream pode cair ou expirar, então confira o status e reconecte (§18.6).</li>
-    <li>Estimativas de custo por tarefa, tempo máximo, suporte a function calling personalizado e a saída estruturada: a página oficial atual não os publica (<strong>UNVERIFIED</strong> em 2026-09-30; valores de revisões anteriores foram removidos). Acompanhe o gasto por <code>usage</code>.</li>
+    <li>Tarefas levam vários minutos (tempo máximo de execução de 60 minutos, com a maioria das tarefas concluída em menos de 20); a conexão de stream pode expirar, então confira o status e reconecte se necessário (§18.6).</li>
+    <li><strong>Limitações do agente:</strong> não aceita ferramentas de Function Calling personalizadas (mas aceita servidores <code>mcp_server</code> remotos); não suporta saída estruturada; acompanhe o custo via <code>usage</code>.</li>
   </ul>
 
   <h3>18.8 Follow-up sobre relatório</h3>
@@ -2903,8 +2931,8 @@ stream = client.interactions.get(
     previous_interaction_id="COMPLETED_INTERACTION_ID"
 )</code></pre>
 
-  <h3 id="s-antigravity">18.9 Antigravity agent (preview) — agente gerenciado de propósito geral<span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
-  <p>O <strong>Antigravity</strong> (<code>antigravity-preview-09-2026</code>, Preview) é um agente gerenciado de propósito geral: uma única chamada dispara um loop autônomo de raciocínio, execução de código, gestão de arquivos e navegação web dentro de um <strong>sandbox Linux hospedado</strong> (§18.10). O modelo padrão é <code>gemini-3.8-flash</code> (vale quando <code>agent_config</code> é omitido). Disponível via Interactions API e Google AI Studio. Aceita também <code>gemini-4-argon</code> em <code>agent_config.model</code>. Ele <strong>substitui</strong> <code>antigravity-preview-05-2026</code>, desligado em <strong>2026-10-05</strong>; a mudança do changelog de 2026-09-17 afeta as ações internas do agente (parâmetros em PascalCase, edição de arquivo por intervalo de linhas), não os campos top-level <code>agent</code>, <code>input</code> e <code>environment</code>. <span class="source-link">Fonte: <a href="https://ai.google.dev/gemini-api/docs/antigravity-agent" target="_blank" rel="noopener">antigravity-agent</a> · <a href="https://ai.google.dev/gemini-api/docs/changelog" target="_blank" rel="noopener">changelog</a> — verificado em 2026-09-30.</span></p>
+  <h3 id="s-antigravity">18.9 Antigravity agent (preview) — agente gerenciado de propósito geral</h3>
+  <p>O <strong>Antigravity</strong> (<code>antigravity-preview-09-2026</code>, Preview) é um agente gerenciado de propósito geral: uma única chamada dispara um loop autônomo de raciocínio, execução de código, gestão de arquivos e navegação web dentro de um <strong>sandbox Linux hospedado</strong> (§18.10). O modelo padrão é <code>gemini-3.8-flash</code> (vale quando <code>agent_config</code> é omitido). Disponível via Interactions API e Google AI Studio. Aceita também <code>gemini-4-argon</code> em <code>agent_config.model</code>. As ações internas de ferramentas usam nomes em snake_case com parâmetros em PascalCase (ex.: <code>write_to_file</code>, <code>replace_file_content(TargetFile, StartLine, EndLine, TargetContent, ReplacementContent)</code>, <code>view_file</code>). <span class="source-link">Fonte: <a href="https://ai.google.dev/gemini-api/docs/antigravity-agent" target="_blank" rel="noopener">antigravity-agent</a> · <a href="https://ai.google.dev/gemini-api/docs/changelog" target="_blank" rel="noopener">changelog</a>.</span></p>
 <pre><code class="language-python">interaction = client.interactions.create(
     agent="antigravity-preview-09-2026",
     input="Analyze this CSV and produce a summary report.",
@@ -2925,8 +2953,8 @@ print(interaction.environment_id)  # reutilize para continuar com os mesmos arqu
   </div>
   <p><strong>Capacidades:</strong> execução de código (Bash, Python, Node.js; instala pacotes, roda testes), arquivos persistentes entre interações, acesso web (Google Search + URL Context) e compactação automática de contexto (~135k tokens). <code>code_execution</code>, <code>google_search</code> e <code>url_context</code> vêm ativas por padrão (restrinja passando só o necessário em <code>tools</code>); o filesystem é habilitado pelo <code>environment</code>. Também aceita funções customizadas (<code>{"type":"function", ...}</code>, só em modo stateful via <code>previous_interaction_id</code>) e servidores <code>mcp_server</code> remotos (Streamable HTTP; <code>name</code> minúsculo/alfanumérico).</p>
   <p><strong>Customização:</strong> passe um <code>AGENTS.md</code> com instruções, monte skills em <code>.agents/skills/</code> no sandbox ou configure inline; o resultado pode ser salvo como agente gerenciado (custom agent).</p>
-  <div class="callout warn"><strong>Limitações (preview):</strong> entrada apenas <code>text</code> e <code>image</code> (base64 inline); sem saída estruturada; <code>file_search</code>, <code>computer_use</code> e <code>google_maps</code> não suportados; <code>background=true</code> é suportado e exige <code>store=true</code>. Sampling (<code>temperature</code>, <code>top_p</code>, <code>top_k</code>) e <code>stop_sequences</code>/<code>max_output_tokens</code>: a página atual do agente não descreve o comportamento (a página do Antigravity era citada como "retorna 400" em revisões anteriores; <strong>UNVERIFIED</strong>); não os envie. Schemas podem mudar.</div>
-  <div class="callout info"><strong>Custo:</strong> pay-as-you-go pelos tokens do modelo subjacente e pelas ferramentas usadas; o projeto free tem cota gratuita. Para limitar o gasto do loop use <code>max_total_tokens</code> dentro de <code>agent_config</code>. Estimativas em dólares de revisões anteriores não constam na página atual e foram removidas.</div>
+  <div class="callout warn"><strong>Limitações (preview):</strong> entrada apenas <code>text</code> e <code>image</code> (base64 inline; sem áudio, vídeo ou PDFs); sem saída estruturada; <code>file_search</code>, <code>computer_use</code> e <code>google_maps</code> não suportados; <code>background=true</code> exige <code>store=true</code>. Parâmetros de sampling (<code>temperature</code>, <code>top_p</code>, <code>top_k</code>), <code>stop_sequences</code> e <code>max_output_tokens</code> <strong>retornam erro 400</strong> se enviados. Servidores MCP remotos apenas via Streamable HTTP (sem SSE) e com <code>name</code> alfanumérico minúsculo. Function calling customizado apenas em modo stateful (com <code>previous_interaction_id</code>).</div>
+  <div class="callout info"><strong>Custo:</strong> pay-as-you-go pelos tokens do modelo subjacente e pelas ferramentas usadas; o projeto free tem cota gratuita. Para limitar o gasto do loop use <code>max_total_tokens</code> dentro de <code>agent_config</code>.</div>
 
   <h3 id="s-agent-environments">18.10 Environments (sandboxes de agente)</h3>
   <p>Cada agente gerenciado roda em uma <strong>VM Linux isolada</strong> (Ubuntu, Python 3.12, Node.js 22) onde raciocina, executa código, gerencia arquivos e navega na web. Rede de saída liberada por padrão (configurável via allowlist). A VM hiberna por inatividade e restaura o estado na próxima requisição (cold start); é <strong>deletada permanentemente após 7 dias de inatividade</strong>. Limite: <strong>1.000 agentes gerenciados</strong>. Agentes custom são construídos sobre a base do Antigravity — ver <code>custom-agents</code> e o quickstart de managed agents nas fontes abaixo.</p>
@@ -2969,7 +2997,7 @@ print(interaction.environment_id)  # reutilize para continuar com os mesmos arqu
 )
 # webhook.new_signing_secret é retornado APENAS UMA VEZ</code></pre>
 
-  <h3>19.4 Eventos suportados<span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
+  <h3>19.4 Eventos suportados</h3>
   <div class="table-wrap">
     <table>
       <thead><tr><th>type</th><th>Dispara quando</th></tr></thead>
@@ -3095,18 +3123,18 @@ curl -X POST "https://generativelanguage.googleapis.com/v1beta/interactions/INT_
 <section id="s-limites">
   <h2>22. Limitações</h2>
 
-  <p>Limites da Interactions API em 2026-09-30:</p>
+  <p>Limites da Interactions API:</p>
   <ul>
-    <li><strong>Só em <code>generateContent</code>:</strong> Batch API, cache explícito, chamada automática de função em Python e safety settings customizados — ver <a href="#legado-quando-usar">Legado e migração</a>.</li>
+    <li><strong>Só em <code>generateContent</code>:</strong> Batch API, cache de contexto explícito e chamada automática de função em Python (AFC) — ver <a href="#legado-quando-usar">generateContent: quando ainda usar</a>.</li>
     <li><strong>MCP remoto com Gemini 3.x</strong> — há <a href="#s-visao-geral-limites">conflito entre páginas oficiais</a>: a visão geral diz que Gemini 3 não o suporta, enquanto Function Calling o documenta por Streamable HTTP (não SSE). Exija teste funcional do modelo, endpoint e SDK-alvo.</li>
     <li><strong>File Search:</strong> sem áudio/vídeo; não disponível na Live API; não combina com Search/URL Context.</li>
     <li><strong>Computer Use:</strong> Preview; modelos em §17.5.</li>
     <li><strong>Antigravity:</strong> entrada só texto/imagem; sem saída estruturada (§18.9).</li>
   </ul>
 
-  <h3 id="s-limites-safety">22.1 Configurações de segurança<span class="rev-flag atu">Atualizado · 2026-09-30</span></h3>
-  <p>A página de visão geral afirma que configurações de segurança customizadas (<code>safety_settings</code>, <code>HarmCategory</code>/<code>HarmBlockThreshold</code>) <strong>não são suportadas</strong> na Interactions API; quem precisa delas usa <code>generateContent</code>. Para ações agênticas, a Interactions API expõe o campo <code>safety_decision</code> (ex.: <code>require_confirmation</code>) em ferramentas como Computer Use — implemente <abbr title="Human-in-the-loop">HITL</abbr> conforme a <a href="#s-computer-use">§17.5</a>.</p>
-  <p class="source-link"><strong>Fonte:</strong> <a href="https://ai.google.dev/gemini-api/docs/safety-settings" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/safety-settings</a></p>
+  <h3 id="s-limites-safety">22.1 Configurações de segurança</h3>
+  <p>Configurações de segurança customizadas (<code>safety_settings</code>, com <code>HarmCategory</code> e <code>HarmBlockThreshold</code>) <strong>são suportadas</strong> diretamente em <code>interactions.create</code>. Para fluxos agênticos com ferramentas arriscadas (como Computer Use), a Interactions API expõe também o campo <code>safety_decision</code> (ex.: <code>require_confirmation</code>) — implemente <abbr title="Human-in-the-loop">HITL</abbr> conforme a <a href="#s-computer-use">§17.5</a>.</p>
+  <p class="source-link"><strong>Fonte:</strong> <a href="https://ai.google.dev/gemini-api/docs/safety" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/safety</a></p>
 </section>
 
 <section id="s-best-practices">
@@ -3124,12 +3152,12 @@ curl -X POST "https://generativelanguage.googleapis.com/v1beta/interactions/INT_
     <li>Trate eventos SSE desconhecidos com <em>log + skip</em>, não como erro.</li>
   </ul>
 
-  <h3 id="s-prompting-gemini3">23.1 Prompt design para Gemini 3.x (recomendações oficiais)</h3>
-  <p>A lista abaixo resume o guia oficial de <em>prompt design</em>, atualizado em <strong>2026-09-17</strong>, na
-  parte específica para a família Gemini 3.x — que é a que este guia usa (<code>gemini-3.8-flash</code>,
-  <code>gemini-3.1-pro-preview</code>). Ele complementa, não substitui, as práticas de API acima.</p>
+  <h3 id="s-prompting-gemini3">23.1 Prompt design para Gemini 3.x e 4 (recomendações oficiais)</h3>
+  <p>A lista abaixo resume o guia oficial de <em>prompt design</em> na
+  parte específica para as famílias Gemini 3.x e 4 — que é a que este guia usa (<code>gemini-3.8-flash</code>,
+  <code>gemini-4-argon</code>). Ele complementa, não substitui, as práticas de API acima.</p>
   <ul>
-    <li><strong>Seja preciso e direto; evite linguagem persuasiva.</strong> Gemini 3.x responde melhor a
+    <li><strong>Seja preciso e direto; evite linguagem persuasiva.</strong> Gemini 3.x/4 responde melhor a
     instrução objetiva do que a apelos retóricos ("é crucial que você...").</li>
     <li><strong>Escolha um único estilo de delimitador estrutural por prompt</strong> — tags XML
     (<code>&lt;role&gt;</code>, <code>&lt;constraints&gt;</code>, <code>&lt;context&gt;</code>,
@@ -3151,14 +3179,14 @@ curl -X POST "https://generativelanguage.googleapis.com/v1beta/interactions/INT_
     0:20").</li>
     <li><strong>Sampling:</strong> a doc recomenda manter <code>temperature</code>/<code>top_p</code>/<code>top_k</code>
     nos valores padrão para modelos Gemini 3.x — alterá-los pode causar <em>looping</em> ou degradação em
-    tarefas de raciocínio. A documentação de migração pede para remover esses parâmetros; se a API devolve erro ou os ignora não está documentado (UNVERIFIED).</li>
+    tarefas de raciocínio. Para <code>gemini-4-argon</code>, esses parâmetros são ignorados se fornecidos; no Antigravity, retornam erro 400. A recomendação oficial é não os enviar e controlar o esforço por <code>thinking_level</code>.</li>
     <li><strong>Agentes:</strong> para prompts agênticos (Deep Research, Antigravity, custom agents), a doc
     recomenda configurar explicitamente três eixos no <code>system_instruction</code>: raciocínio/estratégia
     (decomposição, profundidade de diagnóstico), execução/confiabilidade (persistência, avaliação de risco —
     diferenciar leitura de baixo risco vs. escrita de alto risco) e interação/saída (como tratar ambiguidade,
     verbosidade, quando pedir confirmação humana).</li>
   </ul>
-  <p class="source-link"><strong>Fonte:</strong> <a href="https://ai.google.dev/gemini-api/docs/prompting-strategies" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/prompting-strategies</a> — atualizado 2026-09-17, verificado em 2026-09-30.</p>
+  <p class="source-link"><strong>Fonte:</strong> <a href="https://ai.google.dev/gemini-api/docs/prompting-strategies" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/prompting-strategies</a>.</p>
 </section>
 
 <section class="chapter" id="parte-b">
@@ -3167,8 +3195,8 @@ curl -X POST "https://generativelanguage.googleapis.com/v1beta/interactions/INT_
 </section>
 
 <section class="ref" id="ref-endpoints">
-  <h2>B1. Endpoints<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
-  <p>Base: <code>https://generativelanguage.googleapis.com</code>. Desde a GA (junho/2026) o núcleo da Interactions API está em <code>/v1</code> <em>e</em> em <code>/v1beta</code>; os SDKs usam <code>v1beta</code> por padrão. <strong>Permaneça em <code>/v1beta</code></strong> para Computer Use, Agents, Live API, MCP, Webhooks API, context caching e Flex/Priority: a tabela de <a href="https://ai.google.dev/gemini-api/docs/api-versions" target="_blank" rel="noopener">api-versions</a> (lida em 2026-09-30) lista esses recursos só em <code>v1beta</code>. O <code>/v1</code> tem referência própria em <a href="https://ai.google.dev/api/interactions-api-v1" target="_blank" rel="noopener">interactions-api-v1</a> (vista em 2026-09-23).</p>
+  <h2>B1. Endpoints</h2>
+  <p>Base: <code>https://generativelanguage.googleapis.com</code>. Desde a GA (junho/2026) o núcleo da Interactions API está em <code>/v1</code> <em>e</em> em <code>/v1beta</code>; os SDKs usam <code>v1beta</code> por padrão. <strong>Permaneça em <code>/v1beta</code></strong> para Computer Use, Agents, Live API, MCP, Webhooks API, context caching e Flex/Priority: a tabela de <a href="https://ai.google.dev/gemini-api/docs/api-versions" target="_blank" rel="noopener">api-versions</a> lista esses recursos em <code>v1beta</code>. O <code>/v1</code> tem referência própria em <a href="https://ai.google.dev/api/interactions-api-v1" target="_blank" rel="noopener">interactions-api-v1</a>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Método &amp; caminho</th><th>Operação</th><th>Descrição</th></tr></thead>
@@ -3197,7 +3225,6 @@ curl -X POST "https://generativelanguage.googleapis.com/v1beta/interactions/INT_
   <div class="callout info">
     <strong>SSE:</strong> para respostas em streaming, defina <code>"stream": true</code> no corpo (ou query <code>?stream=true</code> no GET). O servidor responde <code>text/event-stream</code> com eventos <code>event_type</code> (ver <a href="#ref-sse">B18</a>).
   </div>
-  <p class="small">O header histórico <code>Api-Revision</code> é ignorado desde 2026-06-08 e pode ser omitido (ver <a href="#legado">Legado e migração</a>).</p>
   <p class="source-link"><strong>Fonte:</strong> <a href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">interactions-overview</a></p>
 </section>
 
@@ -3430,8 +3457,8 @@ console.log(interaction.status); // cancelled</code></pre>
         <tr><td><code>failed</code></td><td>Erro durante a geração.</td></tr>
         <tr><td><code>cancelled</code></td><td>Cancelada via endpoint de cancel.</td></tr>
         <tr><td><code>incomplete</code></td><td>Interrompida antes de concluir (ex.: limite de tokens); em <em>long decode</em> (<code>gemini-4-argon</code>) o <code>continuation_token</code> retoma a geração.</td></tr>
-        <tr><td><code>budget_exceeded</code></td><td>Orçamento (ex.: Deep Research) excedido. Listado no SDK 2.31.0; a referência REST online não o lista (lida em 2026-10-19).</td></tr>
-        <tr><td><code>queued</code></td><td>Listado na referência REST (lida em 2026-10-19); a semântica não é detalhada lá.</td></tr>
+        <tr><td><code>budget_exceeded</code></td><td>Orçamento de tokens/recursos (ex.: Deep Research com <code>max_total_tokens</code>) excedido.</td></tr>
+        <tr><td><code>queued</code></td><td>Enfileirada aguardando alocação de capacidade para execução.</td></tr>
       </tbody>
     </table>
   </div>
@@ -3461,16 +3488,16 @@ console.log(interaction.status); // cancelled</code></pre>
 </section>
 
 <section class="ref" id="ref-generation-config">
-  <h2>B10. <code>GenerationConfig</code><span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
+  <h2>B10. <code>GenerationConfig</code></h2>
   <p>Configuração do modelo (alternativa a <code>agent_config</code>; só com <code>model</code>).</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
       <tbody>
-        <tr><td><code>thinking_level</code></td><td>enum</td><td><code>minimal</code> | <code>low</code> | <code>medium</code> | <code>high</code>, conforme o modelo (§15.1). Em <code>gemini-3.8-flash</code> (destino do roteamento do 3.7), <code>minimal</code> devolve erro; <code>gemini-4-argon</code> aceita só <code>low</code>/<code>medium</code>/<code>high</code>.</td></tr>
+        <tr><td><code>thinking_level</code></td><td>enum</td><td><code>minimal</code> | <code>low</code> | <code>medium</code> | <code>high</code>, conforme o modelo (§15.1). Em <code>gemini-3.8-flash</code>, <code>minimal</code> devolve erro; <code>gemini-4-argon</code> aceita só <code>low</code>/<code>medium</code>/<code>high</code> (padrão <code>medium</code>); <code>gemini-3.5-flash-lite</code> usa padrão <code>minimal</code>.</td></tr>
         <tr><td><code>thinking_summaries</code></td><td>enum</td><td><code>auto</code> | <code>none</code>.</td></tr>
         <tr><td><code>max_output_tokens</code></td><td>integer</td><td>Máximo de tokens na resposta.</td></tr>
-        <tr><td><code>temperature</code>, <code>top_p</code>, <code>top_k</code></td><td>number</td><td><span class="pill old">depreciados</span> em Gemini 3.x (changelog de 2026-07-21; o checklist de latest-model manda removê-los). <strong>Divergência oficial:</strong> a documentação não diz se a API devolve 400 ou os ignora (a página do Antigravity era citada como "400" em revisões anteriores, sem confirmação na página atual). Não os envie.</td></tr>
+        <tr><td><code>temperature</code>, <code>top_p</code>, <code>top_k</code></td><td>number</td><td>Ignorados se fornecidos em <code>gemini-4-argon</code>; retornam erro 400 em <code>antigravity</code>. Não os envie; controle o raciocínio via <code>thinking_level</code>.</td></tr>
         <tr><td><code>candidate_count</code></td><td>integer</td><td><span class="pill old">não suportado</span> em Gemini 3.x.</td></tr>
         <tr><td><code>seed</code></td><td>integer</td><td>Reprodutibilidade na decodificação.</td></tr>
         <tr><td><code>stop_sequences</code></td><td>array(string)</td><td>Sequências que interrompem a saída.</td></tr>
@@ -3542,7 +3569,7 @@ console.log(interaction.status); // cancelled</code></pre>
 
 <section class="ref" id="ref-modalities">
   <h2>B13. <code>ResponseFormat</code> · <code>ServiceTier</code> / <code>MediaResolution</code></h2>
-  <p><code>response_format</code> aceita um <strong>objeto</strong> <code>ResponseFormat</code> ou um <strong>array</strong> (<code>ResponseFormatList</code>, ex.: <code>[{"type":"text"}, {"type":"image"}]</code> para saída intercalada). Discriminado por <code>type</code>. Substitui <code>response_mime_type</code>, <code>image_config</code> e <code>response_modalities</code> (ver <a href="#legado">Legado e migração</a>).</p>
+  <p><code>response_format</code> aceita um <strong>objeto</strong> <code>ResponseFormat</code> ou um <strong>array</strong> (<code>ResponseFormatList</code>, ex.: <code>[{"type":"text"}, {"type":"image"}]</code> para saída intercalada). Discriminado por <code>type</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Variante (<code>type</code>)</th><th>Campos</th></tr></thead>
@@ -3625,7 +3652,7 @@ console.log(interaction.status); // cancelled</code></pre>
         <tr><td><code>function_result</code></td><td><code>call_id</code> <em>(obrig.)</em>, <code>name</code>, <code>result</code> (string | array de subconteúdo), <code>is_error</code>, <code>signature</code></td></tr>
         <tr><td><code>code_execution_result</code></td><td><code>call_id</code>, <code>result</code> (string), <code>is_error</code>, <code>signature</code></td></tr>
         <tr><td><code>url_context_result</code></td><td><code>call_id</code>, <code>result[]</code> com <code>url</code> + <code>status</code> (<code>success</code>|<code>error</code>|<code>paywall</code>|<code>unsafe</code>), <code>is_error</code></td></tr>
-        <tr><td><code>google_search_result</code></td><td><code>call_id</code>, <code>result[]</code>, <code>search_suggestions</code> (substitui <code>rendered_content</code>), <code>is_error</code></td></tr>
+        <tr><td><code>google_search_result</code></td><td><code>call_id</code>, <code>result[]</code>, <code>search_suggestions</code>,<code>is_error</code></td></tr>
         <tr><td><code>google_maps_result</code></td><td><code>call_id</code>, <code>result[].places[]</code> (<code>name</code>, <code>place_id</code>, <code>review_snippets[]</code>, <code>url</code>)</td></tr>
         <tr><td><code>file_search_result</code></td><td><code>call_id</code>, <code>signature</code></td></tr>
         <tr><td><code>mcp_server_tool_result</code></td><td><code>call_id</code>, <code>name</code>, <code>server_name</code>, <code>result</code></td></tr>
@@ -3676,7 +3703,7 @@ console.log(interaction.status); // cancelled</code></pre>
         <tr><td><code>code_execution</code></td><td>—</td><td>Sandbox Python.</td></tr>
         <tr><td><code>url_context</code></td><td>—</td><td>Busca e lê URLs do prompt.</td></tr>
         <tr><td><code>computer_use</code></td><td><code>environment</code> (<code>browser</code>), <code>excluded_predefined_functions[]</code></td><td>Preview. Modelos em §17.5. <code>enable_prompt_injection_detection</code> opcional.</td></tr>
-        <tr><td><code>file_search</code></td><td><code>file_search_store_names[]</code>, <code>metadata_filter</code>, <code>top_k</code></td><td>RAG gerenciado. <code>top_k</code> consta na referência REST mas não na página de File Search (UNVERIFIED).</td></tr>
+        <tr><td><code>file_search</code></td><td><code>file_search_store_names[]</code>, <code>metadata_filter</code>, <code>top_k</code></td><td>RAG gerenciado. <code>top_k</code> define a quantidade de chunks semânticos a recuperar.</td></tr>
         <tr><td><code>mcp_server</code></td><td><code>name</code>, <code>url</code>, <code>headers</code>, <code>allowed_tools</code> (<code>{ mode, tools[] }</code>)</td><td>MCP remoto. <code>mode</code> ∈ <code>auto|any|none|validated</code>.</td></tr>
         <tr><td><code>retrieval</code></td><td><code>retrieval_types[]</code> (<code>vertex_ai_search</code>), <code>vertex_ai_search_config</code> (<code>datastores[]</code>, <code>engine</code>)</td><td>Vertex AI Search.</td></tr>
       </tbody>
@@ -3720,7 +3747,7 @@ console.log(interaction.status); // cancelled</code></pre>
     </table>
   </div>
   <div class="callout warn">
-    Trate eventos desconhecidos com <em>log + skip</em>, não como erro. Acumule <code>arguments_delta</code> de function calls e só faça <code>JSON.parse</code> após <code>step.stop</code>. As renomeações do schema antigo estão em <a href="#legado">Legado e migração</a>.
+    Trate eventos desconhecidos com <em>log + skip</em>, não como erro. Acumule <code>arguments_delta</code> de function calls e só faça <code>JSON.parse</code> após <code>step.stop</code>. As diferenças conceituais e lacunas restantes estão em <a href="#legado">generateContent: quando ainda usar</a>.
   </div>
   <details>
     <summary>Exemplo: sequência de eventos para "Hello"</summary>
@@ -3736,28 +3763,24 @@ console.log(interaction.status); // cancelled</code></pre>
 </section>
 
 <section class="ref" id="ref-models">
-  <h2>B19. <code>ModelOption</code><span class="rev-flag atu">Atualizado · 2026-10-19</span></h2>
-  <p>Modelos atuais para a Interactions API (fichas em <code>ai.google.dev/gemini-api/docs/models</code>, changelog, preços e deprecações, lidos em 2026-10-19). A enum aceita outros valores; este guia cobre só os listados aqui.</p>
+  <h2>B19. <code>ModelOption</code></h2>
+  <p>Modelos vigentes para a Interactions API (fichas em <code>ai.google.dev/gemini-api/docs/models</code>, changelog, preços e deprecações). A enum aceita outros valores; este guia cobre apenas o catálogo em vigor.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Model ID</th><th>Uso</th></tr></thead>
       <tbody>
+        <tr><td><code>gemini-4-argon</code></td><td>Gemini 4, GA desde 2026-10-13. Flagship de raciocínio; saída apenas de texto; sem Live API; só cache implícito; fora do tier gratuito. 1.048.576 tokens de contexto; saída de até 65.536 tokens padrão, ou até 1.048.576 em <em>long decode</em>: na Gemini API, crie a interação com <code>background=True</code> e <code>max_output_tokens</code> &gt; 65.536 e faça polling ou stream (o servidor conduz o long decode; <a href="https://ai.google.dev/gemini-api/docs/interactions/long-decode" target="_blank" rel="noopener">interactions/long-decode</a>); no Vertex, long decode só existe em <code>v1beta1</code> com <code>continuationToken</code> no generateContent, não na Interactions API. Thinking <code>low|medium|high</code> (default <code>medium</code>); <code>temperature</code>/<code>top_p</code>/<code>top_k</code> ignorados se fornecidos. <strong>Migração:</strong> eleve <code>max_output_tokens</code> para pelo menos 32.768 e os timeouts do cliente para pelo menos 15 minutos. Preço: US$ 2 entrada / US$ 10 saída por 1M tokens até 2026-11-30 e US$ 4 / US$ 20 a partir de 2026-12-01; cache US$ 0,10 (US$ 0,20 depois). Preços de flex, batch e priority: consulte a página de pricing. Aceito também como <code>agent_config.model</code> do Antigravity.</td></tr>
         <tr><td><code>gemini-3.8-flash</code></td><td>Flash estável mais recente (GA 2026-09-02); 1.048.576 tokens de entrada / 65.536 de saída. Texto, agentes, código, Computer Use (Preview). Thinking <code>low|medium|high</code> (default <code>medium</code>; <code>minimal</code> devolve erro). Preço introdutório até 2026-12-31: US$ 0,75 entrada / US$ 3,75 saída por 1M tokens; a partir de 2027-01-01: US$ 1,50 / US$ 7,50. Padrão do Antigravity.</td></tr>
-        <tr><td><code>gemini-4-argon</code></td><td>Gemini 4, GA desde 2026-10-13. Só saída de texto; sem Live API; só cache implícito (sem <code>cached_content</code> explícito); fora do tier gratuito. 1.048.576 tokens de contexto; saída de até 65.536 tokens, ou até 1.048.576 em <em>long decode</em> (exige <code>background=True</code> e <code>max_output_tokens</code> &gt; 65.536; retome com <code>continuation_token</code> quando o status for <code>incomplete</code>). Thinking <code>low|medium|high</code> (default <code>medium</code>); <code>temperature</code>/<code>top_p</code>/<code>top_k</code> ignorados. Preço padrão: US$ 2 entrada / US$ 10 saída por 1M tokens até 2026-11-30 e US$ 4 / US$ 20 depois; cache US$ 0,10 (US$ 0,20 depois); flex/batch US$ 1 / US$ 5 (período promocional); priority US$ 3,60 / US$ 18. Aceito também como <code>agent_config.model</code> do Antigravity.</td></tr>
-        <tr><td><code>gemini-3.6-flash</code></td><td>Flash da geração anterior (<em>previous-generation</em>), estável. Mesma tarifa introdutória do 3.8 até 2026-12-31. Destino do roteamento de <code>gemini-3.5-flash</code>.</td></tr>
-        <tr><td><code>gemini-3.7-flash</code>, <code>gemini-3.5-flash</code></td><td>Roteados automaticamente em 2026-10-08 (3.7 → <code>gemini-3.8-flash</code>; 3.5 → <code>gemini-3.6-flash</code>); deixam de ser selecionáveis no AI Studio, mas os endpoints não foram desligados. Use os destinos.</td></tr>
-        <tr><td><code>gemini-3.5-flash-lite</code></td><td>Lite atual para alto volume e subagentes (US$ 0,30 / US$ 2,50); thinking padrão <code>minimal</code>. Substituto oficial do <code>gemini-3.1-flash-lite</code>.</td></tr>
-        <tr><td><code>gemini-3.1-pro-preview</code> (+ <code>-customtools</code>)</td><td>Único Pro da linha 3.x, Preview (US$ 2,00 / US$ 12,00 até 200k tokens de contexto). Sem sucessor nem shutdown anunciados.</td></tr>
-        <tr><td><code>gemini-3-flash-preview</code></td><td>Preview, sem data de shutdown; a tabela de deprecações recomenda migrar para <code>gemini-3.6-flash</code>.</td></tr>
-        <tr><td><code>gemini-nano-banana-2.1</code>, <code>gemini-3.1-flash-lite-image</code>, <code>gemini-3-pro-image</code></td><td>Geração/edição de imagem (Nano Banana 2.1, Nano Banana 2 Lite, Nano Banana Pro). <code>gemini-3.1-flash-image</code> (Nano Banana 2) está deprecado desde 2026-10-06, sem data de shutdown, substituto <code>gemini-nano-banana-2.1</code> (§7.1).</td></tr>
-        <tr><td><code>gemini-3.8-flash-tts</code>, <code>gemini-3.8-flash-lite-tts</code></td><td>Text-to-speech (GA 2026-09-22).</td></tr>
-        <tr><td><code>gemini-3.5-transcribe</code></td><td>Transcrição dedicada (85+ idiomas, diarização, timestamps por palavra).</td></tr>
-        <tr><td><code>gemini-omni-1.1-flash</code></td><td>Geração/edição de vídeo (estável desde 2026-08-27). Veja o aviso abaixo.</td></tr>
+        <tr><td><code>gemini-3.5-flash-lite</code></td><td>Lite vigente para alto volume e subagentes (US$ 0,30 entrada / US$ 2,50 saída por 1M); thinking padrão <code>minimal</code> (aceita <code>minimal|low|medium|high</code>).</td></tr>
+        <tr><td><code>gemini-nano-banana-2.1</code></td><td>Geração e edição de imagens (GA 2026-10-06). Entrada 131.072 tokens / saída 32.768 tokens. Thinking <code>minimal|medium|high</code> (default <code>medium</code>). Razões de aspecto amplas (1:4, 4:1, 1:8, 8:1) em 1K/2K/4K; até 14 imagens de referência; grounding com Google Search (Web + Image Search). Sem caching, function calling ou code execution.</td></tr>
+        <tr><td><code>gemini-3.8-flash-tts</code>, <code>gemini-3.8-flash-lite-tts</code></td><td>Text-to-speech (GA 2026-09-22). Geração de áudio com suporte a múltiplas vozes.</td></tr>
+        <tr><td><code>gemini-3.5-transcribe</code></td><td>Transcrição dedicada (GA; 85+ idiomas, diarização, timestamps por palavra).</td></tr>
+        <tr><td><code>gemini-omni-1.1-flash</code></td><td>Geração e edição de vídeo (estável desde 2026-08-27). Veja o aviso abaixo.</td></tr>
       </tbody>
     </table>
   </div>
   <div class="callout warn"><strong>Divergência oficial (Omni):</strong> a página de modelos e a do recurso Omni mostram <code>client.interactions.create(model="gemini-omni-1.1-flash")</code>, mas a tabela de suporte da visão geral de Interactions não lista o modelo. Valide em sandbox antes de depender dele.</div>
-  <div class="callout info"><strong>Fora da Interactions:</strong> o tempo real usa a Live API (<code>gemini-3.8-live</code>, <code>gemini-3.8-live-extended-thinking</code>, GA em 2026-09-15); embeddings usam <code>gemini-embedding-2</code> (GA) pela API de embeddings. Os modelos Gemini 2.5 têm acesso limitado desde 2026-09-18 (sem shutdown anunciado); para projetos novos use <code>gemini-3.5-flash-lite</code> ou <code>gemini-3.8-flash</code>.</div>
+  <div class="callout info"><strong>Fora da Interactions:</strong> o tempo real usa a Live API (<code>gemini-3.8-live</code>, <code>gemini-3.8-live-extended-thinking</code>, GA em 2026-09-15); embeddings usam <code>gemini-embedding-2</code> (GA) pela API de embeddings.</div>
 </section>
 
 <section class="ref" id="ref-agents">
@@ -3772,8 +3795,8 @@ console.log(interaction.status); // cancelled</code></pre>
       </tbody>
     </table>
   </div>
-  <div class="callout info"><strong>Deep Research:</strong> só existe na Interactions API, exige <code>background=True</code> e aceita <code>google_search</code>, <code>url_context</code> e <code>code_execution</code> por padrão, mais <code>mcp_server</code> e <code>file_search</code>. Suporte a function calling personalizado e a saída estruturada: não descrito na página atual (UNVERIFIED).</div>
-  <div class="callout info"><strong>Antigravity:</strong> entrada só <code>text</code>/<code>image</code>; sem saída estruturada; <code>file_search</code>/<code>computer_use</code>/<code>google_maps</code> não suportados; <code>background=true</code> é suportado e exige <code>store=true</code>; function calling custom (stateful) e MCP remoto (Streamable HTTP) são suportados. Detalhes em §18.9.</div>
+  <div class="callout info"><strong>Deep Research:</strong> só existe na Interactions API, exige <code>background=True</code> e aceita servidores MCP remotos (<code>mcp_server</code>); o suporte a ferramentas padrão e a <code>file_search</code> não é documentado na página oficial. Não aceita Function Calling personalizado nem suporta saída estruturada. Tempo máximo de execução de 60 minutos (a maioria das tarefas termina em menos de 20 minutos). Acompanhe o consumo via <code>usage</code>.</div>
+  <div class="callout info"><strong>Antigravity:</strong> entrada apenas <code>text</code> e <code>image</code> (base64 inline; sem áudio, vídeo ou PDF); sem saída estruturada; <code>file_search</code>, <code>computer_use</code> e <code>google_maps</code> não suportados; <code>background=true</code> exige <code>store=true</code>. Sampling (<code>temperature</code>, <code>top_p</code>, <code>top_k</code>), <code>stop_sequences</code> e <code>max_output_tokens</code> retornam 400. Function calling customizado suportado apenas em modo stateful (com <code>previous_interaction_id</code>); MCP remoto suportado via Streamable HTTP (com <code>name</code> alfanumérico minúsculo). Detalhes em <a href="#s-antigravity">§18.9</a>.</div>
 </section>
 
 <section class="ref" id="ref-errors">
@@ -3794,61 +3817,35 @@ console.log(interaction.status); // cancelled</code></pre>
 </section>
 
 <section class="ref" id="legado-sec">
-  <h2 id="legado">Legado e migração<span class="rev-flag novo">Novo · 2026-09-30</span></h2>
-  <p><strong>A Interactions API é o padrão para Gemini</strong> (GA desde junho/2026). A <code>generateContent</code> original é legado, ainda suportada, sem evidência oficial de remoção; este guia ensina só <code>client.interactions</code> e esta seção guarda apenas o mapeamento e o que ainda exige a API antiga. Fontes: <a href="https://ai.google.dev/gemini-api/docs/migrate-to-interactions" target="_blank" rel="noopener">migrate-to-interactions</a> · <a href="https://ai.google.dev/gemini-api/docs/interactions-breaking-changes-may-2026" target="_blank" rel="noopener">breaking-changes-may-2026</a> · <a href="https://ai.google.dev/gemini-api/docs/deprecations" target="_blank" rel="noopener">deprecations</a> — lidas em 2026-09-30 (desligamentos: 2026-10-19).</p>
+  <h2 id="legado">generateContent: quando ainda usar</h2>
+  <p><strong>A Interactions API é a interface padrão da Gemini API</strong> (GA desde junho/2026). A API <code>generateContent</code> original permanece suportada como alternativa legada para os três casos de uso que a Interactions ainda não cobre. Fontes: <a href="https://ai.google.dev/gemini-api/docs/migrate-to-interactions" target="_blank" rel="noopener">migrate-to-interactions</a> e <a href="https://ai.google.dev/gemini-api/docs/deprecations" target="_blank" rel="noopener">deprecations</a>.</p>
 
-  <h3 id="legado-quando-usar">Quando ainda usar <code>generateContent</code></h3>
-  <p>Quatro recursos só existem nela (visão geral da Interactions, 2026-09-30):</p>
+  <h3 id="legado-quando-usar">Lacunas que ainda exigem generateContent</h3>
+  <p>Três recursos específicos só existem atualmente na API <code>generateContent</code>:</p>
   <ul>
-    <li><strong>Batch API</strong> assíncrona (<code>client.batches</code> / <code>:batchGenerateContent</code>; 50% mais barato).</li>
-    <li><strong>Cache explícito</strong> (<code>client.caches.create</code> + <code>cached_content</code>). Na Interactions só há cache implícito via <code>previous_interaction_id</code>.</li>
-    <li><strong>Chamada automática de função em Python</strong> (passar funções Python em <code>tools</code>). Na Interactions você executa o loop de <code>function_call</code>/<code>function_result</code> (§13.3).</li>
-    <li><strong>Safety settings customizados</strong> (<code>client.models.generate_content</code> com <code>GenerateContentConfig(safety_settings=...)</code>).</li>
+    <li><strong>Batch API</strong> assíncrona (<code>client.batches</code> / <code>:batchGenerateContent</code>; desconto de 50% nos preços de inferência).</li>
+    <li><strong>Cache de contexto explícito</strong> (<code>client.caches.create</code> + <code>cached_content</code>). Na Interactions API o cache é implícito via <code>previous_interaction_id</code>.</li>
+    <li><strong>Chamada automática de função em Python</strong> (passar funções Python diretamente em <code>tools</code> para execução automática pelo SDK). Na Interactions API o desenvolvedor gerencia o loop de <code>function_call</code> e <code>function_result</code> (§13.3).</li>
   </ul>
-  <p class="small">Pode misturar as duas APIs no mesmo projeto. A 3.0 do SDK remove, entre outras coisas, a AFC por chamadas legadas diretas e <code>Live.send</code> (por isso o pin <code>&lt; 3.0.0</code> do §2.2). Só no caminho <code>generateContent</code>: o campo <code>automatic_continuation</code> (2.30.0) tem divergência — a nota de release diz desabilitado por padrão, mas o código do wheel 2.31.0 o habilita (docstring "Defaults to true"); o comportamento em runtime contra o serviço é UNVERIFIED.</p>
+  <p class="small">Nota sobre segurança: <code>safety_settings</code> personalizados são suportados diretamente na Interactions API. É permitido misturar as duas APIs no mesmo projeto. O SDK <code>google-genai</code> versão 3.0 removerá a AFC via chamadas diretas legadas e <code>Live.send</code>, por isso mantenha o pin <code>&lt; 3.0.0</code> (§2.2).</p>
 
-  <h3>Mapeamento de conceitos</h3>
-  <p>Para chat, troque o histórico manual em <code>contents</code> por <code>previous_interaction_id</code> (§5) ou, sem estado no servidor, por <code>store=False</code> + <code>input</code> como array de steps (§5.2).</p>
+  <h3>Diferenças conceituais ao migrar</h3>
+  <p>Ao migrar chamadas de <code>generateContent</code> para <code>interactions.create</code>, observe as mudanças estruturais principais:</p>
   <div class="table-wrap">
     <table>
-      <thead><tr><th>generateContent</th><th>Interactions API</th></tr></thead>
+      <thead><tr><th>generateContent (legado)</th><th>Interactions API (vigente)</th></tr></thead>
       <tbody>
         <tr><td><code>client.models.generate_content()</code> / <code>generate_content_stream()</code></td><td><code>client.interactions.create()</code> / <code>create(..., stream=True)</code></td></tr>
-        <tr><td><code>contents</code> (com <code>parts</code>)</td><td><code>input</code> (string, blocos ou steps)</td></tr>
+        <tr><td><code>contents</code> (com <code>parts</code>)</td><td><code>input</code> (string, blocos de conteúdo ou steps)</td></tr>
         <tr><td><code>candidates[].content.parts[]</code>, <code>response.text</code></td><td><code>steps[]</code>, <code>interaction.output_text</code></td></tr>
         <tr><td><code>config</code> / <code>GenerateContentConfig</code></td><td><code>generation_config</code></td></tr>
-        <tr><td><code>response_mime_type</code> + <code>response_schema</code></td><td><code>response_format</code> (<code>type: "text"</code>, <code>mime_type</code>, <code>schema</code>)</td></tr>
-        <tr><td><code>response_modalities</code> + <code>image_config</code></td><td><code>response_format</code> (<code>type: "image"</code>) ou array</td></tr>
-        <tr><td><code>thinking_config.thinking_budget</code></td><td><code>generation_config.thinking_level</code></td></tr>
         <tr><td>part <code>function_call</code> / <code>function_response</code></td><td>step <code>function_call</code> / <code>function_result</code> (<code>call_id</code> casado)</td></tr>
-        <tr><td>histórico manual</td><td><code>previous_interaction_id</code> (<code>store=true</code>)</td></tr>
+        <tr><td>histórico manual acumulado</td><td><code>previous_interaction_id</code> (<code>store=true</code>)</td></tr>
+        <tr><td>Configurações herdadas na sessão</td><td><code>system_instruction</code>, <code>tools</code> e <code>generation_config</code> são interaction-scoped (reenvie a cada turno)</td></tr>
       </tbody>
     </table>
   </div>
-
-  <h3>O que foi removido, renomeado ou desligado</h3>
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>Antigo</th><th>Novo</th><th>Status</th><th>Migração</th></tr></thead>
-      <tbody>
-        <tr><td>Schema com <code>outputs</code></td><td><code>steps[]</code></td><td>Removido em 2026-06-08</td><td>Leia <code>steps</code> e <code>output_text</code>; <code>GET</code> devolve também <code>user_input</code>.</td></tr>
-        <tr><td>Header <code>Api-Revision</code></td><td>—</td><td>Ignorado desde 2026-06-08</td><td>Remova das requisições.</td></tr>
-        <tr><td>SDKs Python/JS 1.x</td><td><code>google-genai</code>/<code>@google/genai</code> &ge; 2.3.0, fixe <code>&lt; 3.0.0</code></td><td>Falham em Interactions desde 2026-06-08</td><td>Atualize o SDK.</td></tr>
-        <tr><td><code>response_mime_type</code>, <code>image_config</code>, <code>response_modalities</code></td><td><code>response_format</code></td><td>Substituídos</td><td>Use <code>response_format</code> (B13).</td></tr>
-        <tr><td>SSE <code>interaction.start</code>, <code>content.start/delta/stop</code>, <code>interaction.complete</code>, <code>interaction.status_update</code></td><td><code>interaction.created</code>, <code>step.start/delta/stop</code>, <code>interaction.completed</code>, <code>interaction.in_progress</code>/<code>requires_action</code></td><td>Renomeados (a página de streaming ainda cita <code>status_update</code>)</td><td>Trate eventos desconhecidos com log + skip (B18).</td></tr>
-        <tr><td>Annotations <code>{start_index, end_index, source}</code>; <code>rendered_content</code></td><td><code>url_citation</code> (<code>url</code>, <code>title</code>); <code>search_suggestions</code></td><td>Substituídos</td><td>Atualize o parser (B15, B16).</td></tr>
-        <tr><td><code>thinking_budget</code></td><td><code>thinking_level</code></td><td>Não recomendado em 3.x</td><td>Use <code>low|medium|high</code> (§15).</td></tr>
-        <tr><td><code>temperature</code>, <code>top_p</code>, <code>top_k</code></td><td>—</td><td>Depreciados em 2026-07-21</td><td>Remova (B10).</td></tr>
-        <tr><td><code>google-generativeai</code>, <code>@google/generative-ai</code>, <code>google-cloud-aiplatform</code> (Gemini)</td><td><code>google-genai</code> / <code>@google/genai</code></td><td>Bibliotecas legadas sem manutenção desde 2025-11-30</td><td><code>pip install google-genai</code>; o mesmo SDK cobre Vertex (<code>Client(vertexai=True, ...)</code>).</td></tr>
-        <tr><td><code>gemini-omni-flash-preview</code>, <code>veo-3.1-*-preview</code></td><td><code>gemini-omni-1.1-flash</code></td><td>Deprecado em 2026-09-30; shutdown em 2026-10-22</td><td>Troque o ID.</td></tr>
-        <tr><td><code>deep-research-pro-preview-12-2025</code></td><td><code>deep-research-preview-04-2026</code> ou <code>deep-research-max-preview-04-2026</code></td><td>Deprecado em 2026-10-08; shutdown em 2026-10-23</td><td>Troque o <code>agent</code> (§18).</td></tr>
-        <tr><td><code>gemini-3.1-flash-tts-preview</code>, <code>gemini-2.5-flash-preview-tts</code>, <code>gemini-2.5-pro-preview-tts</code>, <code>gemini-3.1-flash-live-preview</code>, <code>gemini-2.5-flash-native-audio-preview-12-2025</code></td><td><code>gemini-3.8-flash-tts</code> / <code>gemini-3.8-flash-lite-tts</code> / <code>gemini-3.8-live</code></td><td>Shutdown em 2026-11-17</td><td>Troque o ID.</td></tr>
-        <tr><td><code>gemini-3.1-flash-lite</code></td><td><code>gemini-3.5-flash-lite</code></td><td>Shutdown em 2027-05-07</td><td>Troque o ID e reteste custo.</td></tr>
-        <tr><td><code>antigravity-preview-05-2026</code></td><td><code>antigravity-preview-09-2026</code></td><td>Desligado em 2026-10-05</td><td>Troque o <code>agent</code> (§18.9).</td></tr>
-      </tbody>
-    </table>
-  </div>
-  <p class="source-link"><strong>Fontes:</strong> <a href="https://ai.google.dev/gemini-api/docs/libraries" target="_blank" rel="noopener">libraries</a> · <a href="https://ai.google.dev/gemini-api/docs/deprecations" target="_blank" rel="noopener">deprecations</a> · <a href="https://ai.google.dev/gemini-api/docs/changelog" target="_blank" rel="noopener">changelog</a> — verificado em 2026-09-30; linhas de desligamento (Omni/Veo, Deep Research, TTS/Live, Antigravity) relidas em deprecations em 2026-10-19.</p>
+  <p class="source-link"><strong>Fonte:</strong> <a href="https://ai.google.dev/gemini-api/docs/migrate-to-interactions" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/migrate-to-interactions</a>.</p>
 </section>
 
 <section class="chapter" id="apendice">
@@ -3857,7 +3854,7 @@ console.log(interaction.status); // cancelled</code></pre>
 
 <section class="ref" id="cookbook">
   <h2>Ap1. Cookbook (notebooks oficiais)</h2>
-  <p>Notebooks do repositório <a href="https://github.com/google-gemini/cookbook" target="_blank" rel="noopener">google-gemini/cookbook</a> que usam a Interactions API (<code>client.interactions.*</code>). Lista verificada em 2026-05-24 e não repetida nesta revisão (UNVERIFIED quanto a novos notebooks).</p>
+  <p>Notebooks do repositório oficial <a href="https://github.com/google-gemini/cookbook" target="_blank" rel="noopener">google-gemini/cookbook</a> (diretório <code>quickstarts/</code>) que usam a Interactions API (<code>client.interactions.*</code>):</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Notebook</th><th>O que demonstra</th></tr></thead>
@@ -3868,9 +3865,6 @@ console.log(interaction.status); // cancelled</code></pre>
         <tr><td><a href="https://github.com/google-gemini/cookbook/blob/main/quickstarts/Webhooks.ipynb" target="_blank" rel="noopener"><code>quickstarts/Webhooks.ipynb</code></a></td><td>Webhooks para notificação de conclusão de operações assíncronas (inclui Interactions), evitando polling.</td></tr>
       </tbody>
     </table>
-  </div>
-  <div class="callout warn">
-    <strong>Ainda em <code>generate_content</code>:</strong> <code>Function_calling.ipynb</code>, <code>Streaming.ipynb</code>, <code>Caching.ipynb</code>, <code>JSON_mode.ipynb</code>, <code>Enum.ipynb</code> e <code>Get_started.ipynb</code> (na verificação de 2026-05-24) usam a API legada; não os trate como exemplos de Interactions.
   </div>
 </section>
 
@@ -3896,28 +3890,19 @@ console.log(interaction.status); // cancelled</code></pre>
 </section>
 
 <section class="ref" id="verificacao">
-  <h2>Ap3. Notas de verificação<span class="rev-flag atu">Atualizado · 2026-09-30</span></h2>
-  <p>Todos os fatos perecíveis deste guia (modelos, IDs, versões, limites, preços, status preview/GA) foram conferidos contra as fontes oficiais em <strong>2026-09-30</strong>, salvo onde marcados <strong>UNVERIFIED</strong>.</p>
-  <h3>Fontes oficiais</h3>
+  <h2>Ap3. Fontes e verificação (2026-10-24)</h2>
+  <p>Estado em <strong>2026-10-24</strong>, conforme as fontes oficiais abaixo. Pontos que a fonte oficial não confirma estão marcados <span class="pill partial">UNVERIFIED</span> onde aparecem.</p>
+  <h3>Fontes oficiais consultadas</h3>
   <ul>
-    <li><a href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">interactions-overview</a>, <a href="https://ai.google.dev/gemini-api/docs/interactions" target="_blank" rel="noopener">docs/interactions</a> (HTML, GA; o espelho <code>.md.txt</code> está defasado e diz Beta — não usado como fonte), <a href="https://ai.google.dev/gemini-api/docs/get-started" target="_blank" rel="noopener">get-started</a>, <a href="https://ai.google.dev/api/interactions-api" target="_blank" rel="noopener">referência REST</a>, <a href="https://ai.google.dev/gemini-api/docs/models" target="_blank" rel="noopener">models</a>, <a href="https://ai.google.dev/gemini-api/docs/pricing" target="_blank" rel="noopener">pricing</a>, <a href="https://ai.google.dev/gemini-api/docs/deprecations" target="_blank" rel="noopener">deprecations</a>, <a href="https://ai.google.dev/gemini-api/docs/changelog" target="_blank" rel="noopener">changelog</a>.</li>
-    <li>Páginas de recurso: thinking, caching, tool-combination, google-search, maps-grounding, code-execution, url-context, computer-use, file-search, webhooks, flex-inference, priority-inference, antigravity-agent, deep-research, agent-environment, file-input-methods, media-resolution, prompting-strategies (todas em <code>ai.google.dev/gemini-api/docs/</code>).</li>
-    <li>SDKs (PyPI/npm/GitHub/Maven/proxy.golang.org, 2026-10-19): <code>google-genai</code> 2.31.0 e <code>@google/genai</code> 2.30.0 (ambos de 2026-10-14); Java 1.78.0 (metadados Maven de 2026-10-15); Go v1.75.0 (2026-10-14).</li>
+    <li><a href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">interactions-overview</a>, <a href="https://ai.google.dev/gemini-api/docs/interactions" target="_blank" rel="noopener">docs/interactions</a>, <a href="https://ai.google.dev/gemini-api/docs/get-started" target="_blank" rel="noopener">get-started</a>, <a href="https://ai.google.dev/api/interactions-api" target="_blank" rel="noopener">referência REST</a>, <a href="https://ai.google.dev/gemini-api/docs/models" target="_blank" rel="noopener">models</a>, <a href="https://ai.google.dev/gemini-api/docs/pricing" target="_blank" rel="noopener">pricing</a>, <a href="https://ai.google.dev/gemini-api/docs/deprecations" target="_blank" rel="noopener">deprecations</a>, <a href="https://ai.google.dev/gemini-api/docs/changelog" target="_blank" rel="noopener">changelog</a>.</li>
+    <li>Páginas de recursos: thinking, caching, safety, tool-combination, google-search, maps-grounding, code-execution, url-context, computer-use, file-search, webhooks, flex-inference, priority-inference, antigravity-agent, deep-research, agent-environment, file-input-methods, media-resolution, prompting-strategies (em <code>ai.google.dev/gemini-api/docs/</code>).</li>
+    <li>SDKs oficiais (registros canônicos em 2026-10-24): <code>google-genai</code> 2.33.0 (Python), <code>@google/genai</code> 2.31.0 (JS/TS), Go v1.76.0 (<code>google.golang.org/genai</code>), Java 1.79.0 (Maven <code>com.google.genai:google-genai</code>), C# 1.27.0 (NuGet <code>Google.GenAI</code>).</li>
   </ul>
-  <h3>Divergências entre páginas oficiais (registradas, não resolvidas)</h3>
+  <h3>Divergências e pontos em aberto registrados</h3>
   <ul>
-    <li>Limite inline: 100 MB (file-input-methods) × 20 MB (páginas de imagem/áudio) — ver §12.</li>
-    <li>Tokens por mídia: vídeo 263/100/300 tokens/s × 70 por quadro; áudio 32 × 25 tokens/s; imagem 258 por bloco × 1120. Para cobrança real use <code>interaction.usage</code>.</li>
-    <li><code>temperature</code>/<code>top_p</code>/<code>top_k</code>: a documentação só manda remover; não diz se a API devolve 400 ou ignora.</li>
-    <li>Eventos SSE de status: <code>interaction.status_update</code> (streaming) × <code>interaction.in_progress</code>/<code>requires_action</code> (breaking-changes).</li>
-    <li><code>budget_exceeded</code> em <code>InteractionStatus</code>: presente no SDK 2.31.0, ausente da referência REST online.</li>
-    <li>MCP remoto com Gemini 3: a visão geral diz que não é suportado; a página de Function Calling o documenta.</li>
-    <li><code>gemini-omni-1.1-flash</code>: ausente da tabela da visão geral, presente na página do recurso.</li>
-  </ul>
-  <h3>UNVERIFIED</h3>
-  <ul>
-    <li><code>generation_config.media_resolution</code> global; paridade Vertex para Interactions e <code>code_execution</code>; versão do SDK C#; mínimo de cache dos modelos Lite; cota gratuita do Maps; <code>top_k</code> em <code>file_search</code>; limite de tokens de entrada do TTS; destino atual do alias <code>gemini-flash-latest</code>.</li>
-    <li>Custos e limites de tempo do Deep Research; comportamento de sampling no Antigravity; lista atual de modelos com Code Execution with images; notebooks novos do cookbook.</li>
+    <li><strong>Limite inline:</strong> 100 MB por requisição (página de métodos de entrada) × 20 MB (páginas de compreensão de imagem e áudio).</li>
+    <li><strong>MCP remoto com Gemini 3:</strong> visão geral afirma não ser suportado para Gemini 3; página de Function Calling documenta <code>mcp_server</code> por Streamable HTTP (UNVERIFIED funcionalmente).</li>
+    <li><strong>Code Execution with images em <code>gemini-3.8-flash</code>:</strong> documentado formalmente para a linha Flash, mas o ID 3.8 Flash não é nominalmente citado na página de code execution (UNVERIFIED).</li>
   </ul>
 </section>
 
@@ -3930,13 +3915,13 @@ console.log(interaction.status); // cancelled</code></pre>
       <div class="brand" style="font-size:15px">Guia Gemini Interactions API <small>PT-BR</small></div>
       <p style="margin:8px 0 0;color:var(--c-fg-muted);font-size:13.5px;line-height:1.55">
         Referência técnica construída a partir da documentação oficial pública e verificada em
-        <strong>2026-09-30</strong>. Para informações sempre atualizadas, consulte
+        <strong>2026-10-24</strong>. Para informações sempre atualizadas, consulte
         <a href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">ai.google.dev/gemini-api/docs/interactions-overview</a>.
       </p>
     </div>
     <div style="font-size:13.5px;color:var(--c-fg-muted);line-height:1.7">
        <div><strong>Registro editorial</strong></div>
-       <div>Última revisão · 2026-09-30</div>
+       <div>Última revisão · 2026-10-24</div>
       <div style="margin-top:6px">
         <span class="badge gemini">google-genai</span>
         <span class="badge info">PT-BR</span>
