@@ -3,7 +3,7 @@ name: frontend-agent-chat-shell
 description: "Use to build the AI chat shell (\"barra lateral\", \"retomar stream\"): sessions/search/projects, composer attachments/drafts, artifact placement, stream resume, multi-agent panel. Messages -> frontend-ai-generative-ui."
 license: Apache-2.0
 metadata:
-  version: "1.0.3"
+  version: "1.1.1"
 ---
 
 # Agent Chat Shell
@@ -236,6 +236,12 @@ is a fork point, not a snapshot**, **revocation is not deletion**, and **show wh
 instructions and memory scope, listed in the dialog. That last one is the leak that actually happens.
 
 ## Framework menu
+
+For a project's visual adaptation, read `references/contextual-surface-design.md` before choosing
+shell density, reading width, composer treatment or the narrow-screen panel fallback. Use
+`assets/surface-contract.template.md` only if that project's design record lacks these decisions.
+Existing tokens and user tasks outrank the exemplar's colors, widths and sidebar arrangement;
+historical vendor observations are options, not a universal product specification.
 
 The anatomy is framework-neutral by construction and has to be: this portfolio's chat surfaces
 include React/Next.js (majority), SvelteKit and plain JavaScript `[portfolio requirement]`.

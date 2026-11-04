@@ -10,6 +10,7 @@ Quick-reference for project structure, dependency injection, Pydantic v2, and as
 # src/app/main.py
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from sqlalchemy.ext.asyncio import async_sessionmaker
 from app.routers import orders, health
 from app.config import get_settings
 from app.dependencies.db import init_db, close_db
@@ -18,6 +19,7 @@ from app.dependencies.db import init_db, close_db
 async def lifespan(app: FastAPI):
     settings = get_settings()
     app.state.db_engine = await init_db(settings.database_url)
+    app.state.session_factory = async_sessionmaker(app.state.db_engine, expire_on_commit=False)
     yield
     await close_db(app.state.db_engine)
 
@@ -38,10 +40,10 @@ def create_app() -> FastAPI:
 
 ```python
 async def get_db(request: Request) -> AsyncGenerator[AsyncSession, None]:
+    # Rollback only, never commit here: see "Commit before returning" below.
     async with request.app.state.session_factory() as session:
         try:
             yield session
-            await session.commit()
         except Exception:
             await session.rollback()
             raise
@@ -61,11 +63,29 @@ async def get_current_user(
 @router.post("/orders", status_code=201)
 async def create_order(
     body: OrderCreate,
+    db: AsyncSession = Depends(get_db),
     service: OrderService = Depends(get_order_service),
     user: User = Depends(get_current_user),
 ) -> OrderResponse:
-    return OrderResponse.model_validate(await service.create(body, user_id=user.id))
+    order = await service.create(body, user_id=user.id)  # flushes, does not commit
+    response = OrderResponse.model_validate(order)
+    await db.commit()
+    return response
 ```
+
+### Commit before returning
+
+The status code claims the write is durable, so the commit must finish before the response starts. Code after `yield` runs after the response is sent by default, since FastAPI 0.118.0 ([advanced dependencies](https://fastapi.tiangolo.com/advanced/advanced-dependencies/), read 2026-11-03). A commit there can fail after the client already holds a 201 with no row behind it, and nothing reports it to the client. Measured 2026-11-03 on PostgreSQL 18.6, with a deferred foreign key that fails only at `COMMIT`:
+
+| FastAPI | Commit after `yield`, default scope | Commit after `yield`, `scope="function"` | Commit in the route (above) |
+|---|---|---|---|
+| 0.117.1 | 500, no row | not available | 500, no row |
+| 0.118.0, 0.120.4 | **201, no row** | not available | 500, no row |
+| 0.121.0, 0.141.1, 0.162.0 | **201, no row** | 500, no row | 500, no row |
+
+Commit in the route or use case, as above, because it does not depend on the FastAPI version. Build the response first, so nothing that can fail runs between the commit and the return. The dependency keeps the rollback, and the session's close discards a write nobody committed: a route that forgets the commit also returns 201 with no row, so a test for a write reads the row back through a new session on the real database.
+
+`Depends(get_db, scope="function")` moves the exit code before the response, from 0.121.0. Check the project's lockfile first, not the installed package. It does not suit a shared session: the session is closed when the response is built, and a plain `Depends(get_db)` elsewhere in the same request gets a second session, because the scope is part of the dependency cache.
 
 ## Pydantic v2 Patterns
 
@@ -135,11 +155,15 @@ async def enrich_order(order: Order) -> EnrichedOrder:
 @router.post("/orders", status_code=201)
 async def create_order(
     body: OrderCreate, background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
     service: OrderService = Depends(get_order_service),
 ) -> OrderResponse:
     order = await service.create(body)
-    background_tasks.add_task(send_order_confirmation_email, order)
-    return OrderResponse.model_validate(order)
+    response = OrderResponse.model_validate(order)
+    await db.commit()  # the task must never announce an order that was not stored
+    # Pass plain data; a task opens its own session if it needs one.
+    background_tasks.add_task(send_order_confirmation_email, response.id)
+    return response
 ```
 
 ## Error Handling

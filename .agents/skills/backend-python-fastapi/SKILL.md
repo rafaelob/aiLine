@@ -3,7 +3,7 @@ name: backend-python-fastapi
 description: "Use when creating a FastAPI service, wiring async SQLAlchemy 2.x, adding OAuth2/JWT auth or pytest-asyncio tests. Gives app-factory and Pydantic v2 schema patterns. Not Django. Schema DDL -> postgres-schema-migrations."
 license: Apache-2.0
 metadata:
-  version: "1.1.5"
+  version: "1.1.6"
 ---
 
 # Backend Python (FastAPI) -- Production Playbook

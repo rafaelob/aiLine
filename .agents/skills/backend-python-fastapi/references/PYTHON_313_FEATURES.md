@@ -106,36 +106,9 @@ class PostgresOrderRepository(OrderRepository):
 | Compact dict | Lower memory usage | Large datasets in memory (automatic) |
 | Faster `json` module | Reduced serialization overhead | JSON-heavy APIs (automatic) |
 
-## Deployment Considerations
-
-### Docker
-```dockerfile
-FROM python:3.13-slim AS runtime
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-# For free-threaded mode (if needed):
-# ENV PYTHON_GIL=0
-```
-
-### uv Package Manager
-```bash
-# Install uv
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Create project
-uv init --python 3.13
-
-# Add dependencies
-uv add fastapi uvicorn sqlalchemy[asyncio] alembic
-
-# Run
-uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
-```
-
 ## References
 
 - What's New in Python 3.13: https://docs.python.org/3/whatsnew/3.13.html
 - PEP 703 (Free-threaded CPython): https://peps.python.org/pep-0703/
 - PEP 744 (JIT Compilation): https://peps.python.org/pep-0744/
 - PEP 695 (Type Parameter Syntax): https://peps.python.org/pep-0695/
-- uv documentation: https://docs.astral.sh/uv/

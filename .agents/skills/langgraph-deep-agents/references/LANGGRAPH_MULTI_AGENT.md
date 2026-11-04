@@ -179,7 +179,7 @@ from langchain.agents.middleware import TodoListMiddleware  # 0.7.0: no longer d
 from langchain.chat_models import init_chat_model
 
 # Basic usage -- returns compiled LangGraph graph
-# 0.7.0 through current 0.7.10: NO planning tool, EMPTY authored base prompt
+# 0.7.0 through current 0.7.32: NO planning tool, EMPTY authored base prompt
 agent = create_deep_agent()
 result = agent.invoke({"messages": [{"role": "user", "content": "Research and write a summary"}]})
 
@@ -199,7 +199,7 @@ async for part in agent.astream(input, config, stream_mode="updates", version="v
 
 ### Middleware Architecture
 
-Two middleware auto-attached by default on `deepagents 0.7.0` (still true on **0.7.10**); the planning one became opt-in.
+Two middleware auto-attached by default on `deepagents 0.7.0`; the planning one became opt-in (still opt-in at **0.7.32**: `graph.py` read 2026-10-24; the rest of this list was last checked on 0.7.10).
 
 1. **`TodoListMiddleware`** (`write_todos` tool + instructions): explicit planning with task decomposition, progress tracking, and dynamic plan revision. **Auto-attached through `0.6.x` only.** On `0.7.0+` you must pass `middleware=[TodoListMiddleware()]` (from `langchain.agents.middleware`) — and repeat it in each `SubAgent`'s middleware. If you skip it, the agent simply plans less; nothing errors.
 
@@ -220,7 +220,7 @@ Also includes: shell access (`execute` tool), MCP support, auto-summarization, l
 | `create_agent` + subagents | Centralized | Medium | Task routing, clear specializations | **Current** (replaces langgraph-supervisor) |
 | LangChain handoffs | State-driven | Low-Medium | Conversational stage changes, peer routing | **Current** (replaces langgraph-swarm) |
 | Hierarchical StateGraph | Layered | High | Large teams, domain hierarchy | Current |
-| Deep Agents | Plan-driven | High | Complex decomposition, isolated execution | Current (`deepagents 0.7.10`) |
+| Deep Agents | Plan-driven | High | Complex decomposition, isolated execution | Current (`deepagents 0.7.32`) |
 | `langgraph-supervisor` | Centralized | Medium | Existing graphs only | **Legacy** — unmaintained |
 | `langgraph-swarm` | Decentralized | Low-Medium | Existing graphs only | **Legacy** — last 0.1.0 2025-12-04; sunset UNVERIFIED |
 
