@@ -81,7 +81,7 @@ for snapshot in app.get_state_history(config):
 
 DynamoDBSaver: small checkpoints (<350 KB) in DynamoDB; large payloads to S3 with reference pointer. Agent Server/API: checkpointers and stores handled automatically.
 
-**Security (re-checked 2026-08-28):** `langgraph-checkpoint`, `langgraph-checkpoint-sqlite`, `langgraph-checkpoint-postgres`, and the npm `@langchain/langgraph-checkpoint-redis` package have CVEs below stated floor versions (including CVE-2026-71433 namespace prefix matching, floor 3.1.1). CVE-2026-28277 (msgpack) is patched in `langgraph>=1.0.10` / `langgraph-checkpoint>=4.0.1`. See the advisory table in `references/VERSIONING_FRESHNESS.md` before pinning any of these backends.
+**Security (re-checked 2026-10-24):** pin `langgraph-checkpoint>=4.1.1`, `langgraph-checkpoint-postgres>=3.1.3`, `langgraph-checkpoint-sqlite>=3.1.2`, `langgraph>=1.2.14` and the npm `@langchain/langgraph-checkpoint-redis>=1.0.12`; each has advisories below those versions. See the advisory table in `references/VERSIONING_FRESHNESS.md` before pinning any of these backends.
 
 ## Streaming (7 Modes)
 

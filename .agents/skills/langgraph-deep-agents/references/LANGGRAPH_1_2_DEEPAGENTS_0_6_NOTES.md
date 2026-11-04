@@ -34,9 +34,9 @@
 
 > Verified against `guia_completo_agentes/guia_langgraph.html` and `guia_completo_agentes/guia_deepagents.html`.
 
-- **Versions:** current line is `langgraph == 1.2.9`. `deepagents == 0.7.0b2` (2026-07-24) has **left alpha for beta** -- the wider 0.7.x line is no longer alpha-only, but the **stable line remains `0.6.12`**; do not switch production to 0.7.x. 0.7.0 carries a **breaking change in `read_file`** and adds `grep` / `delete` tools to the filesystem middleware toolset described above.
+- **Versions:** the line then was `langgraph == 1.2.9` (current pins: `references/VERSIONING_FRESHNESS.md`). `deepagents == 0.7.0b2` (2026-07-24) has **left alpha for beta** -- the wider 0.7.x line is no longer alpha-only, but the **stable line remains `0.6.12`**; do not switch production to 0.7.x. 0.7.0 carries a **breaking change in `read_file`** and adds `grep` / `delete` tools to the filesystem middleware toolset described above.
 - **Connector versions feeding compatibility:** `langchain 1.3.14`, `langchain-core 1.5.1`, `langchain-anthropic 1.5.2` (requires `anthropic>=0.120.0`; brings Claude Opus 5 support), `langchain-google-genai 4.3.2` (both connectors now floor on `langchain-core>=1.5.1`, tighter than the `>=1.4,<2` compatibility range recorded above for `deepagents 0.6.12` -- re-check the Deep Agents compatibility pins before bumping connectors independently).
-- **Security note:** `langgraph-checkpoint` (RCE via pickle, CVE-2026-27794, floor `>=4.0.0`), `langgraph-checkpoint-sqlite` (SQL injection, CVE-2025-67644, floor `3.0.1`), the npm `@langchain/langgraph-checkpoint-redis` (RediSearch injection, CVE-2026-27022, floor `1.0.2`), and `langchain-core` (serialization injection, CVE-2025-68664, floor `1.2.5`/`0.3.81`) all have advisories against the checkpoint backends this library runs on. See `references/VERSIONING_FRESHNESS.md` for the full table -- no pin in this file needed raising, the versions above were already compliant.
+- **Security note:** `langgraph-checkpoint`, `langgraph-checkpoint-sqlite`, the npm `@langchain/langgraph-checkpoint-redis` and `langchain-core` all have advisories against the checkpoint backends this library runs on. The current floors are in the table of `references/VERSIONING_FRESHNESS.md` (re-checked 2026-10-24); the floors this section recorded on 2026-07-27 are superseded.
 
 ## 2026-07-30 update — this file's title is now historical
 
@@ -47,9 +47,9 @@
 above under "SOTA delta" and "2026-07-27 update" describes the 0.6 line, which
 ended at `0.6.12` — development cut over to 0.7 on `main` and there is no 0.6.13.
 
-Read `references/VERSIONING_FRESHNESS.md` § "Current pins (as-of 2026-08-28)" for
+Read `references/VERSIONING_FRESHNESS.md` § "Current pins (as-of 2026-10-24)" for
 live pins and § "Freshness (as-of 2026-07-30)" for the 0.6.12 → 0.7.0 12-item
-breaking-change migration checklist (still in force through 0.7.10). The three
+breaking-change migration checklist (still in force through 0.7.32). The three
 highest-risk items, because they are silent rather than raising:
 
 1. `create_deep_agent` no longer wires `TodoListMiddleware` — no `write_todos` tool, no `todos` channel, no planning prompt. Pass `middleware=[TodoListMiddleware()]` (from `langchain.agents.middleware`) on the main agent **and** on each `SubAgent`.
@@ -60,8 +60,8 @@ highest-risk items, because they are silent rather than raising:
 
 > Verified against PyPI JSON and official docs (not the local 2026-08-27 `guia_deepagents.html`, which still said `deepagents 0.7.9`).
 
-- **Versions:** `langgraph == 1.2.11` (PyPI `2026-08-11T14:00:35Z`), `deepagents == 0.7.10` (PyPI `2026-08-28T00:45:15Z`). Pin `0.7.10` for new work; walk the 0.7.0 checklist before upgrading existing agents.
+- **Versions** (2026-08-28; current pins are `langgraph 1.2.17` and `deepagents 0.7.32` as of 2026-10-24): `langgraph == 1.2.11` (PyPI `2026-08-11T14:00:35Z`), `deepagents == 0.7.10` (PyPI `2026-08-28T00:45:15Z`). Pin the current `deepagents` for new work; walk the 0.7.0 checklist before upgrading existing agents.
 - **`langgraph-supervisor`:** no longer actively maintained. Replacement: `create_agent` + tool-wrapped subagents (https://docs.langchain.com/oss/python/migrate/langgraph-supervisor).
 - **`langgraph-swarm`:** last PyPI `0.1.0` (2025-12-04). Replacement: LangChain handoffs. Formal sunset **UNVERIFIED** (no official migrate page).
 - **Streaming:** new apps use `stream_events(version="v3")`; `invoke`/`stream` use `version="v2"`. Stream-mode name is `checkpoints` (plural).
-- **CLI:** 0.7.9 commit `da67c86` removed in-tree `libs/cli`. `deepagents-code` 0.1.64 and `deepagents-cli` 0.3.0 remain separate packages.
+- **CLI:** 0.7.9 commit `da67c86` removed in-tree `libs/cli`. `deepagents-code` (0.1.64 then, 0.2.1 on 2026-10-24) and `deepagents-cli` 0.3.0 remain separate packages.

@@ -50,7 +50,7 @@ from langgraph.checkpoint.memory import InMemorySaver
 # from langgraph.checkpoint.sqlite import SqliteSaver
 # from langgraph.checkpoint.postgres import PostgresSaver
 # Also: DynamoDBSaver (AWS), MongoDB, Redis checkpointers
-# Security (re-checked 2026-08-28): langgraph-checkpoint, langgraph-checkpoint-sqlite,
+# Security (re-checked 2026-10-24): langgraph-checkpoint, langgraph-checkpoint-sqlite,
 # langgraph-checkpoint-postgres, and the npm @langchain/langgraph-checkpoint-redis package
 # carry CVEs below stated floors -- see references/VERSIONING_FRESHNESS.md before pinning.
 
