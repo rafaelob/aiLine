@@ -3,7 +3,7 @@ name: embedding-lifecycle
 description: "Use when re-embedding a live corpus after a model, dimension, preprocessing or prefix change: shadow columns, blue-green backfill, cutover. Not ANN indexes or chunking."
 license: Apache-2.0
 metadata:
-  version: "1.0.2"
+  version: "1.0.3"
 ---
 
 # Embedding Lifecycle
@@ -98,7 +98,7 @@ Current embedding APIs expose this directly (both checked at the vendor's own do
 | Provider | Parameter | Documented note |
 |---|---|---|
 | OpenAI embeddings (`developers.openai.com/api/docs/guides/embeddings`) | `dimensions` | Using the parameter is "the suggested approach"; if you slice manually instead, "you need to be sure to normalize the dimensions of the embedding". |
-| Gemini embeddings (`ai.google.dev/gemini-api/docs/embeddings`) | `output_dimensionality` | Default output 3072. `gemini-embedding-2` "introduces automatic renormalization for non-default dimensions"; with `gemini-embedding-001` "you must manually normalize non-3072 dimensions". |
+| Gemini embeddings (`aistudio.google.com/docs/embeddings`) | `output_dimensionality` | Default output 3072. `gemini-embedding-2` "introduces automatic renormalization for non-default dimensions"; with `gemini-embedding-001` "you must manually normalize non-3072 dimensions". |
 
 Two rules follow:
 
