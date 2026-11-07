@@ -3,7 +3,7 @@ name: frontend-ai-generative-ui
 description: "Use to stream model output, render tool results or let the LLM pick UI (\"UI generativa\", \"chat com streaming\"): provider adapters, SSE/Fetch, stop/regenerate, typed tool calls. Session shell -> frontend-agent-chat-shell."
 license: Apache-2.0
 metadata:
-  version: "1.1.4"
+  version: "1.1.5"
 ---
 
 # AI and Generative UI
@@ -205,4 +205,4 @@ Use the frontend-ai-generative-ui skill to [describe your AI UI need].
 
 ## Sources
 
-https://ai-sdk.dev/docs | https://ai-sdk.dev/elements | https://react.dev | https://platform.openai.com/docs/api-reference/responses | https://docs.anthropic.com/en/api/messages-streaming | https://ai.google.dev/gemini-api/docs | https://js.langchain.com/docs
+https://ai-sdk.dev/docs | https://ai-sdk.dev/elements | https://react.dev | https://platform.openai.com/docs/api-reference/responses | https://docs.anthropic.com/en/api/messages-streaming | https://aistudio.google.com/docs | https://js.langchain.com/docs
