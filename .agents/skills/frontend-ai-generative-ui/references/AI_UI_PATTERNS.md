@@ -1,98 +1,93 @@
-<!-- FRESHNESS: Always verify against official docs. Links may change. Last structured: 2026-06-04 (AI SDK 5+/6) -->
+<!-- written-against: ai@7.0, @ai-sdk/react@4.0 (2026-11-11). Verify against the installed version and the pages in SKILL.md Sources. -->
 
-# AI UI Patterns Guide
+# AI UI patterns: snippets that encode house decisions
 
-## Vercel AI SDK Architecture
+Only what the official docs do not decide for you. Hook options, chunk types and part fields: read the
+installed types, then the Sources pages in `SKILL.md`.
 
-Three layers: **Core** (`ai`) -- provider-agnostic functions (`streamText`, `streamObject`, `generateText`, `convertToModelMessages`); **UI** (`@ai-sdk/react`) -- hooks (`useChat`, `useCompletion`, `useObject`); **RSC** (`ai/rsc`) -- Server Components (`streamUI`, `createStreamableUI`), legacy but still available.
+## 1. The `useChat` component
 
-Docs: https://ai-sdk.dev/docs (AI SDK 6 stable; v7 in public beta)
-
-## useChat Pattern (React)
+Default transport, input state owned by the component, a status region separate from the streaming
+message, and a stop control that is only offered while a response is in flight.
 
 ```tsx
-// AI SDK 5+/6 -- verify current API at ai-sdk.dev/docs
 'use client';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useState } from 'react';
 
-function ChatUI() {
+export function ChatUI() {
   const [input, setInput] = useState('');
-  // useChat no longer owns input state; manage it locally.
-  const { messages, sendMessage, status, stop, regenerate, error } = useChat({
+  const { messages, sendMessage, status, stop, regenerate, error, addToolApprovalResponse } = useChat({
     transport: new DefaultChatTransport({ api: '/api/chat' }),
-    onToolCall: async ({ toolCall }) => { /* client-side tool execution */ },
   });
-  const isStreaming = status === 'streaming' || status === 'submitted';
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    sendMessage({ text: input });
-    setInput('');
-  };
+  const busy = status === 'submitted' || status === 'streaming';
+  const statusText =
+    status === 'streaming' ? 'Generating' : error ? 'Interrupted' : status === 'ready' && messages.length ? 'Response complete' : '';
 
   return (
-    <div role="log" aria-label="Chat messages">
-      {messages.map(m => <MessageBubble key={m.id} message={m} />)}
-      {isStreaming && <TypingIndicator />}
-      <form onSubmit={handleSubmit}>
-        <ChatInput value={input} onChange={e => setInput(e.target.value)}
-          isLoading={isStreaming} onStop={stop} />
+    <section aria-label="Conversation">
+      <div role="status" className="sr-only">{statusText}</div>
+      {messages.map((m) => (
+        <MessageBubble key={m.id} message={m} onApproval={addToolApprovalResponse} />
+      ))}
+      {error && <InterruptedNotice onRetry={() => regenerate()} />}
+      <form onSubmit={(e) => { e.preventDefault(); sendMessage({ text: input }); setInput(''); }}>
+        <Composer value={input} onChange={setInput} busy={busy} onStop={stop} />
       </form>
-    </div>
+    </section>
   );
 }
 ```
 
-## Server-Side Streaming (Route Handler)
+The `role="status"` region is the only live region; the message list is not one (`accessibility`).
+`Composer`, the Esc rule and the real stop endpoint belong to `frontend-agent-chat-shell`.
+
+## 2. Route handler (AI SDK 7)
 
 ```ts
-// AI SDK 5+/6 -- verify current API at ai-sdk.dev/docs
-import { streamText, convertToModelMessages, tool, stepCountIs, type UIMessage } from 'ai';
-import { z } from 'zod';
+import { streamText, convertToModelMessages, createUIMessageStreamResponse, toUIMessageStream,
+         isStepCount, type UIMessage } from 'ai';
 
 export async function POST(req: Request) {
   const { messages }: { messages: UIMessage[] } = await req.json();
   const result = streamText({
-    model: yourProvider('model-name'),
-    messages: convertToModelMessages(messages),
-    tools: {
-      getWeather: tool({
-        description: 'Get weather for a location',
-        inputSchema: z.object({ location: z.string() }),
-        execute: async ({ location }) => ({ temperature: 72, condition: 'sunny' }),
-      }),
-    },
-    stopWhen: stepCountIs(5),
+    model: getModel(),                                 // resolved from config; never a literal id here
+    instructions: SYSTEM_PROMPT,
+    messages: await convertToModelMessages(messages),
+    tools,                                             // typed tools, see the tool-usage page
+    stopWhen: isStepCount(5),
   });
-  return result.toUIMessageStreamResponse();
+  return createUIMessageStreamResponse({
+    stream: toUIMessageStream({ stream: result.stream, originalMessages: messages, sendSources: true }),
+  });
 }
 ```
 
-## Generative UI (recommended: UIMessage parts)
+Why `originalMessages`: without it every turn gets a new message id and the client shows a duplicate
+assistant message. Whether `sendSources` is an option of `toUIMessageStream` in the installed 7.x is
+UNVERIFIED (the chatbot page names it for the helper; the 7.0 migration page does not list it): check the
+installed types. On a Python backend the same contract is the UI message stream protocol (Sources: stream
+protocol), emitted by `sse-starlette`.
 
-In AI SDK 5+/6 the preferred pattern renders components by switching on `part.type`
-(`tool-<name>`) inside `message.parts.map(...)`. The server defines tools with typed
-`inputSchema`/`outputSchema` (see the route handler above); the client maps each tool
-part to a component.
+## 3. Part renderer
 
 ```tsx
-// AI SDK 5+/6 client -- verify current API at ai-sdk.dev/docs
-function MessageBubble({ message }: { message: UIMessage }) {
+function MessageBubble({ message, onApproval }: { message: UIMessage; onApproval: Approve }) {
   return (
-    <div role="article">
+    <div>
       {message.parts.map((part, i) => {
         switch (part.type) {
           case 'text':
-            return <MarkdownRenderer key={i} content={part.text} />;
+            return <Markdown key={i} text={part.text} />;              // tolerant of unclosed fences
+          case 'data-citation':
+            return <CitationMarker key={i} {...part.data} />;           // { sourceId, page, excerpt }
           case 'tool-showWeather':
-            // part.state: 'input-streaming' | 'input-available' | 'output-available' | 'output-error'
-            return part.state === 'output-available'
-              ? <WeatherCard key={i} data={part.output} />
-              : <WeatherSkeleton key={i} />;
+            return <ToolPart key={i} part={part} onApproval={onApproval} render={WeatherCard} />;
           default:
-            return null; // fallback for unknown part types
+            return part.type.startsWith('tool-') || part.type === 'dynamic-tool'
+              ? <ToolRow key={i} part={part} />                         // compact row, collapsed Details
+              : null;                                                   // unknown part: render nothing
         }
       })}
     </div>
@@ -100,73 +95,38 @@ function MessageBubble({ message }: { message: UIMessage }) {
 }
 ```
 
-### Legacy: streamUI (AI SDK RSC)
+`ToolPart` switches on every `part.state`: `input-streaming` and `input-available` show the step
+status text, `output-available` renders the component, `output-error` renders an inline error,
+`approval-requested` renders Approve/Deny (none when `part.approval.isAutomatic`), `approval-responded`
+shows the decision, `output-denied` shows the reason.
 
-Still available under `ai/rsc` for server-streamed React components, but the
-message-parts approach above is preferred for new apps.
+## 4. Custom citation part (server side)
 
-```tsx
-// Legacy AI SDK RSC -- verify streamUI API at ai-sdk.dev/docs
-import { streamUI } from 'ai/rsc';
-
-async function submitMessage(input: string) {
-  'use server';
-  const result = await streamUI({
-    model: yourProvider('model-name'),
-    messages: [{ role: 'user', content: input }],
-    text: ({ content, done }) => <MarkdownRenderer content={content} isStreaming={!done} />,
-    tools: {
-      showWeather: {
-        description: 'Display weather for a location',
-        inputSchema: z.object({ location: z.string() }),
-        generate: async function* ({ location }) {
-          yield <WeatherSkeleton />;
-          return <WeatherCard data={await fetchWeather(location)} />;
-        },
-      },
-    },
-  });
-  return result.value;
-}
+```ts
+writer.write({
+  type: 'data-citation',
+  id: `cit-${n}`,                                       // same id updates the same part
+  data: { sourceId, page, excerpt },
+});
 ```
 
-## Streaming Markdown
+`source-url` and `source-document` carry the source; page and excerpt do not exist on them, hence the
+custom part. A citation click sets the active source id; the panel scrolls to and highlights that item.
 
-Challenges: incomplete formatting (`**bold` unclosed), partial code blocks, broken links. Strategies: buffer until formatting boundary completes, use a tolerant parser (remark with recovery), or post-process to close open tags for display only.
+## 5. Failure table
 
-## Chat Accessibility
+| Failure | UX |
+|---|---|
+| Network failure | Retry, keep the input, keep the last state |
+| Rate limit (429) | Cooldown shown, send queued or disabled with the reason |
+| Context too long | Suggest a new conversation or a summary |
+| Tool failure | Inline error in the tool row; the model may retry |
+| Stream interrupted | Partial answer plus an "interrupted" marker and Retry |
+| Provider outage | Say which; fall back only if configured, and say so |
 
-```html
-<div role="log" aria-live="polite" aria-label="Conversation"><!-- messages --></div>
-<div aria-live="assertive" class="sr-only" role="status"><!-- status announcements --></div>
-```
+## 6. Cost of a token
 
-| Key | Action |
-|-----|--------|
-| Enter | Send | Shift+Enter | New line | Escape | Stop/close |
-| Ctrl+Shift+C | Copy last response | Up Arrow (empty) | Edit last message |
-
-Screen readers: announce role before content, tool call status, message count, arrow-key navigation.
-
-## Tool Call Rendering
-
-Lifecycle: LLM decides to call -> show indicator -> args streaming -> spinner/skeleton -> result component -> resume text. Map tools to components: weather -> `<WeatherCard />`, code -> `<CodeBlock />`, search -> `<SearchResults />`, unknown -> `<GenericToolResult />` with JSON.
-
-## Error Handling
-
-| Error | UX |
-|-------|-----|
-| Network failure | Retry button, preserve input, show last state |
-| Rate limit (429) | Cooldown timer, queue request |
-| Context too long | Suggest new conversation or summarize |
-| Tool failure | Inline error, allow LLM retry |
-| Stream interrupted | Partial response + "interrupted" indicator |
-| Provider outage | Fallback provider if configured |
-
-## Performance
-
-- **Virtualize** message list for > 100 messages
-- **Memoize** messages -- only streaming message re-renders per token
-- **Debounce** markdown parsing (every N tokens or on idle)
-- **Lazy-load** artifacts (charts, code editors, images) within bubbles
-- **Backpressure**: buffer tokens, flush on `requestAnimationFrame`
+- Memoize messages; only the streaming one re-renders per token.
+- Parse markdown on a boundary or on idle, not per token; close open fences for display only.
+- Lazy-load heavy artifact renderers (charts, editors) inside the bubble.
+- Flush buffered tokens once per animation frame.

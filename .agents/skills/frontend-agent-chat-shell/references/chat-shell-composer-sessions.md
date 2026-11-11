@@ -1,8 +1,18 @@
 # Chat shell, composer, and sessions — implementation contract
 
-Load this when building the sidebar, the composer, or the sessions/search layer. Provenance classes
-are the same as SKILL.md: `[observed N/4]` from the 2026-07-29 four-product teardown,
-`[verified: source, date]`, `[portfolio requirement]`, `[optional pattern]`.
+Load this when building the sidebar, the composer, or the sessions/search layer.
+
+Every claim in the references carries its evidence class; an invariant you can lean on is not the same
+object as a pattern one vendor ships:
+
+- `[observed N/4]`: counted across four 2026-07-29 teardowns (ChatGPT Pro, Onyx v4.4.0, Claude, Gemini
+  Ultra). N=1 or 2 is a menu option, not a rule. Not re-checked on 2026-11-11.
+- `[verified: source, date]`: external primary source, named and dated.
+- `[portfolio requirement]`: our own products need it; not a market claim.
+- `[optional pattern]`: defensible, deliberately not universal.
+
+The dark-theme default seen in all four teardowns is an `[optional pattern]`: build both themes from tokens
+(`frontend-design`).
 
 Nothing in this file describes what a message bubble renders. That is `frontend-ai-generative-ui`.
 
@@ -59,46 +69,52 @@ wireframes rot visibly instead.
    URL: /c/<session>?panel=artifact&a=<artifact-id>     ← addressable, restorable
 ```
 
-### 1.3 Mobile (≤ 640px)
+### 1.3 Mobile
 
 ```text
 ┌──────────────────────────┐   sidebar → off-canvas drawer, focus-trapped
 │ ☰   Session title    ⋯   │   while open, Escape closes, restores focus
 ├──────────────────────────┤
-│                          │   artifact panel → full-screen sheet or its own
-│        thread            │   route with an explicit "back to chat"
+│                          │   artifact and source panels → full-screen sheet
+│        thread            │   or their own route with an explicit "back to chat"
 │                          │
-├──────────────────────────┤   composer pinned; use dvh units, not vh, or the
-│ [+] [Model ⌄]  [🎤] [↑]  │   mobile keyboard covers it
+├──────────────────────────┤   composer pinned above the on-screen keyboard
+│ [+] [Model ⌄]  [🎤] [↑]  │   (`pwa-engineering`, `frontend-design`)
 └──────────────────────────┘   effort chip and voice control collapse into [⋯]
 ```
 
-### 1.4 Empty state `[observed 4/4]`
+### 1.4 Empty state (owner decision, 2026-11-11)
 
 ```text
-              (no cards, no feature tour, no grid)
-
                   Localized greeting, one line
             ┌──────────────────────────────────────┐
             │ Message…                             │
             │ [+] [Model ⌄]        [🎤] [◍] [↑]    │
             └──────────────────────────────────────┘
+        [ suggested prompt 1 ]  [ suggested prompt 2 ]
+        [ suggested prompt 3 ]  [ suggested prompt 4 ]
+        one sentence: what this assistant can and cannot do
              optional: ONE onboarding banner [observed 1/4]
 ```
+
+Three or four suggestions, each a button that fills the composer (the user still presses send). One
+sentence on capabilities and limits. No tour and no feature grid. The earlier teardown reading (greeting
+and composer only, `[observed 4/4]`) is superseded by the owner's choice of suggestions.
 
 ---
 
 ## 2. Sidebar responsive collapse order
 
 Declare the order once; do not let it emerge from CSS accident. Collapse from the bottom of the
-value stack upward `[portfolio requirement]`:
+value stack upward `[portfolio requirement]`. The breakpoints that trigger each step come from
+`frontend-design`; the order does not change:
 
-| Width | Sidebar | What is shed |
+| Step | Sidebar | What is shed |
 |---|---|---|
-| ≥ 1280px | full, ~260-300px | nothing |
-| 1024-1280px | full, narrower; labels truncate with tooltips | recents page size reduced |
-| 768-1024px | icon rail (~56-64px); labels on hover/focus | section headers, plan badge text |
-| ≤ 768px | off-canvas drawer behind `☰` | nothing shed — the drawer holds the full stack |
+| 1 (widest) | full | nothing |
+| 2 | full, narrower; labels truncate with tooltips | recents page size reduced |
+| 3 | icon rail; labels on hover/focus | section headers, plan badge text |
+| 4 (narrowest) | off-canvas drawer behind `☰` | nothing shed — the drawer holds the full stack |
 
 Rail rules: every rail icon keeps an accessible name; the new-chat control stays visually distinct
 in the rail (it is the one action users hit blind); collapsed/expanded is a **persisted user
@@ -115,7 +131,7 @@ The IME row is the one that ships broken `[portfolio requirement]`.
 | Enter | send | only when not composing and no popover has focus |
 | Shift+Enter | newline | never sends |
 | Enter **during IME composition** | commit the candidate, **do not send** | gate on the composition flag: set true on `compositionstart`, false on `compositionend`; check it inside the keydown handler. `keyCode 229`/`isComposing` are the two signals; test with a real IME, not a US layout |
-| Escape | close popover; if none, blur | must not clear the draft |
+| Escape | closes whatever is open (popover, panel, menu); with nothing open and a response streaming, stops the generation through the stop endpoint; with nothing open and no stream, blurs | owner decision 2026-11-11; never clears the draft |
 | Up-arrow on empty draft | recall previous message into draft | `[optional pattern]`; power-user affordance |
 | `/` at position 0 | open command/skills popover | Arrow keys navigate it; Enter selects, does not send |
 | `@` | open mention popover | only where the product has multiple agents |
@@ -217,10 +233,10 @@ Role-gated entries (admin console, workspace settings) sit immediately above the
 
 | State | Requirement |
 |---|---|
-| Empty (new user) | greeting + composer only; at most one onboarding banner |
+| Empty (new user) | greeting, composer, 3-4 suggested prompts that fill the composer, one sentence on what it can and cannot do; at most one onboarding banner |
 | Empty (returning, no recents) | say the archive is empty; do not show a skeleton forever |
 | Loading history | skeleton rows in the sidebar, composer already usable — never block input on history |
-| Offline / reconnecting | persistent, non-modal banner; composer accepts input and queues it; never silently drop a send |
+| Offline / reconnecting | never silently drop a send; banner and queue mechanics: `pwa-engineering` |
 | Interrupted response | explicit "response interrupted" affordance with retry, distinct from a completed answer |
 | Session not found / no access | explicit; never an empty thread that looks like a new chat |
 | Degraded search | say search is unavailable; do not render "no results" |
@@ -229,23 +245,13 @@ Role-gated entries (admin console, workspace settings) sit immediately above the
 
 ## 7. Accessibility for the shell
 
-The thread's `aria-live`/`role=log` wiring belongs to `frontend-ai-generative-ui`. The shell owns:
+Landmarks, focus, contrast, motion and labels belong to `accessibility`; the thread's status region to
+`frontend-ai-generative-ui`. Shell-specific facts that skill cannot know:
 
-- **Landmarks:** the sidebar is `<nav>` with an accessible name; the thread region and composer are
-  distinguishable landmarks.
-- **Drawer/panel:** correct role, labelled by its heading, focus moved in on open and returned to
-  the invoking control on close, Escape closes. A modal drawer traps focus; a non-modal panel must
-  not.
-- **Rail icons:** every collapsed item keeps a name (visible label, `aria-label`, or tooltip that is
-  also the accessible name).
-- **Recents status:** never colour-only. A status dot needs text or an icon shape beside it.
-- **Composer:** the field has a real label (visually hidden is fine); the send/stop control's
-  accessible name changes with its function; the popovers are keyboard-navigable and announce their
-  option count.
-- **Reduced motion:** `prefers-reduced-motion` disables drawer slide, panel transitions, and status
-  pulsing.
-- **Focus visible** on every control in the rail and drawer — icon-only controls are where focus
-  rings get removed for aesthetics.
+- The send/stop control's accessible name changes with its function.
+- A modal drawer traps focus; a non-modal panel (artifact, source) must not, and both return focus to the
+  invoker on close.
+- A recents status dot needs text or an icon shape beside it.
 
 ---
 

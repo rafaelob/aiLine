@@ -1,208 +1,145 @@
 ---
 name: frontend-ai-generative-ui
-description: "Use to stream model output, render tool results or let the LLM pick UI (\"UI generativa\", \"chat com streaming\"): provider adapters, SSE/Fetch, stop/regenerate, typed tool calls. Session shell -> frontend-agent-chat-shell."
+description: "Use when changing Vercel AI SDK chat UIs (ai, @ai-sdk/react): useChat, SSE streaming, tool and data parts, citations, generative UI where the LLM picks components. Not the session shell -> frontend-agent-chat-shell."
 license: Apache-2.0
 metadata:
-  version: "1.1.5"
+  version: "2.0.0"
 ---
 
 # AI and Generative UI
 
-Design and implementation playbook for building frontend interfaces that consume LLM output in real time, render streaming content, display tool call results, and dynamically generate UI components from AI responses. Covers multiple approaches: Vercel AI SDK, LangChain.js, raw SSE/Fetch streaming, and framework-agnostic patterns. Includes chat interfaces, streaming patterns, generative UI, and accessibility for AI-driven UIs.
+Everything inside the message bubble: how model output streams in, how tool results and structured parts
+render, and what the reader can do with a finished answer. The session shell around it belongs to
+`frontend-agent-chat-shell`.
 
-## Scope
+Written against `ai` 7.0 and `@ai-sdk/react` 4.0 (npm latest 7.0.169 and 4.0.173 on 2026-11-11), with the
+AI SDK docs read on that date. The v5, v6 and v7 breaking changes that still appear in code are the dated traps.
 
-- Building chat interfaces that stream LLM responses in real time
-- Implementing tool call rendering (function results, artifacts, code blocks)
-- Using Vercel AI SDK (useChat, useCompletion, streamUI) for React/Next.js
-- Designing generative UI where the LLM selects which components to render
-- Building prompt-to-UI workflows (v0/Bolt-style iterative refinement)
-- Handling optimistic rendering, skeleton states, and progressive content reveal
-- Ensuring AI UIs are accessible (screen readers, keyboard navigation, focus management)
+## Procedure
 
-## Inputs to Collect
+1. Resolve API facts locally: lockfile version (package.json is only the constraint), installed types and
+   source (`node_modules/ai`, `@ai-sdk/react`, the provider package), repo call sites. Open a Sources URL
+   only if a contract stays uncertain and network exists; check the installed major against the
+   written-against line. On v5 or v6, run the official codemods before hand-editing.
+2. Fix the transport and the stream contract (Decisions: Transport) before any component.
+3. Model the message as `UIMessage` parts and write one renderer that is exhaustive over part types and states.
+4. Add the message states that are not text: interrupted, low confidence, step status, citations.
+5. Prove it with the checks in Verify.
 
-1. **LLM provider** -- OpenAI, Anthropic, Google, local model, or multi-provider?
-2. **Streaming mode** -- text streaming, tool call streaming, or component streaming (streamUI)?
-3. **UI framework** -- React/Next.js, Vue/Nuxt, Svelte, or other?
-4. **Chat features** -- message threading, branching, editing, regeneration, artifact display?
-5. **Tool calls** -- which tools does the LLM invoke, and how should results render?
-6. **Auth model** -- per-user API keys, server-side proxy, or shared quota?
-7. **Accessibility requirements** -- WCAG level, screen reader testing scope?
+## Decisions
 
-## Execution Playbook
+**Server proxy.** Every model call goes through your server; a provider key never reaches a client bundle.
+Uploads (images, PDFs, audio) are proxied through your server too; size and type limits are provider
+facts that change, so take them from `openai-docs`, `gemini-api-dev` or `claude-api`, not from this skill.
+OpenAI is called through the Responses API, never Chat Completions; Gemini through the `google-genai` SDK.
+Never hardcode a model id in UI code or in a rule here.
 
-### Step 1: Architecture for AI UI
+**Transport.** Default: `useChat` with `DefaultChatTransport`. A Python backend emits the AI SDK UI message
+stream protocol over SSE (`sse-starlette`): the `x-vercel-ai-ui-message-stream: v1` header, typed chunks,
+`data: [DONE]` at the end. Raw `fetch` plus `ReadableStream` only when the backend cannot speak that
+protocol; LangChain.js only where the project already uses it. A WebSocket transport exists; choose it only
+when the client streams upward too (`realtime-websockets`).
 
-Design the data flow between client, server, and LLM:
+**One truth: `UIMessage` parts.** The client holds `UIMessage` (typed `parts`); the model sees `ModelMessage`,
+converted on the server with `await convertToModelMessages`. Persist `UIMessage`, give assistant messages
+stable server ids, pass `originalMessages` to the stream helper so a continued turn updates one message
+instead of adding a duplicate, and validate stored messages with `validateUIMessages` on load.
 
-```
-User Input -> Server Route/Action -> LLM API (streaming) -> Client (progressive render)
-                                  -> Tool Calls -> Tool Execution -> Result Render
-```
+**One renderer, exhaustive.** Switch on `part.type` (`text`, `reasoning`, `source-url`, `source-document`,
+`tool-<name>`, `dynamic-tool`, `data-<name>`) and on every `part.state` of a tool part, including the
+approval states, even for tools that do not use approval. A tool name maps to one component through a
+registry; components get their data from the part only. An unknown tool renders as a compact row (status
+icon, tool label, collapsed); JSON appears only inside an expanded Details. An unknown part type renders
+nothing and does not crash.
 
-Key decisions:
-- **Server-side streaming**: always proxy LLM calls through your server (never expose API keys to client)
-- **Protocol**: use Server-Sent Events (SSE) or the AI SDK's streaming protocol for delivering chunks
-- **State management**: messages array with streaming append, tool call state tracking, error/retry state
+**Approval.** Where a tool needs approval, render Approve and Deny on `approval-requested` (skip them when
+`part.approval.isAutomatic`) and call `addToolApprovalResponse` only for manual approvals; render
+`output-denied` with its reason. Approval is a decision commit: `frontend-decision-support-surfaces`.
 
-### Step 2: Streaming Approaches (Framework-Agnostic First)
+**Structured output and custom parts.** Structured object streaming is `streamText` with `Output.object`,
+read through `partialOutputStream` on the server or `useObject` on the client. Push your own payloads as
+`data-<name>` parts with an `id` (a repeated id updates the same part); mark ephemeral ones `transient` so
+they stay out of history. Generative UI means the model picks a registered component through a typed tool;
+the RSC route (`@ai-sdk/rsc`) is experimental and not for new apps.
 
-Before choosing an SDK, understand the fundamental streaming patterns:
+**Message states are text, not decoration.** Besides streaming and complete, a message can be:
+interrupted (visible marker plus Retry; wiring lives in `frontend-agent-chat-shell`), low confidence or
+not found (its own labelled state, never styled as an error and never as a confident answer), and failed.
+While working, show the specific step ("Reading Aditivo_01.pdf") instead of typing dots. Retry, Edit and
+Copy sit next to a finished answer.
 
-- **Raw SSE/Fetch streaming**: use the Fetch API with `ReadableStream` to consume Server-Sent Events from any LLM provider. Framework-agnostic; works with any backend. This is the lowest-level approach and gives full control.
-- **LangChain.js**: provides streaming abstractions (`streamEvents`, `streamLog`) that work with multiple LLM providers. Good for complex chains and agent workflows. Can be used with any frontend framework.
-- **Vercel AI SDK**: provides React/Vue/Svelte hooks and server utilities for streaming. Most integrated experience for Next.js/React projects.
+**Citations.** Numbered markers `[n]` in the text; a click highlights the cited item in the source panel
+(its placement and mobile sheet: `frontend-agent-chat-shell`). Forward sources with `sendSources` and read
+`source-url` and `source-document` parts. Page and quoted excerpt are not fields of those parts: carry
+them in a custom `data-citation` part `{ sourceId, page, excerpt }`. After a scoped edit of cited text, mark
+the citation stale (`frontend-canvas-doc-editor`).
 
-**Decision framework**: Use raw SSE/Fetch for maximum control and no dependencies. Use LangChain.js when you need agent orchestration and multi-provider support. Use Vercel AI SDK when you want the fastest path to a polished React/Next.js chat UI.
+**Rendering under load.** Only the streaming message re-renders per token; memoize the rest. Use a markdown
+parser that tolerates unclosed fences and emphasis. Follow the stream only while the reader is at the
+bottom; otherwise show jump-to-latest. Virtualize on a measured problem, not at an invented message count.
 
-### Step 2b: Vercel AI SDK Integration (Option)
+**Stop.** `stop()` closes the HTTP connection; it does not prove the model stopped. With stream resume the
+server keeps generating, so a real stop needs the endpoint in `frontend-agent-chat-shell`. Esc follows the
+shell rule: it closes whatever is open, and with nothing open it stops generation; it never clears the draft.
 
-The AI SDK provides framework-level primitives for streaming AI responses. AI SDK 7 is the current stable major (released 2026-06-25); AI SDK 6 is the prior stable line. AI SDK 5 remains a maintained older line. All use the transport-based architecture introduced in v5. Key v7 breaking changes: Node.js 22+ required; ESM-only (no CommonJS `require()`); `system` option renamed to `instructions`; `onFinish` renamed to `onEnd`; OpenTelemetry moved to `@ai-sdk/otel`. Use codemods for migration.
+**Announcements.** One polite status region says Generating, Response complete or Interrupted. The
+streaming message itself is not a live region. Everything else (focus, keyboard, motion, contrast):
+`accessibility`.
 
-**Client hooks** (`@ai-sdk/react`):
-- `useChat` -- transport-based chat with message history, streaming, and tool call support. In v5: no longer owns input state; `sendMessage({ role, parts: [...] })` replaces the old `input`/`handleSubmit` couple; messages are `UIMessage` objects with a typed `parts` array (text / reasoning / tool-call / file / data parts).
-- `useCompletion` -- single-prompt completion with streaming
-- `useObject` -- stream structured JSON objects from LLM (schema-validated)
+**Errors.** Show a generic message; the server decides what reaches the client through the stream helper's
+error option (the default masks it). Keep the user's input on failure. Rate-limit and outage copy:
+`frontend-design`; retry and backoff policy: `error-handling`.
 
-**Server-side** (`ai`):
-- `streamText` -- stream text responses from any supported provider
-- `streamObject` -- stream structured data with Zod/Valibot/Effect schema validation
-- `generateText` / `generateObject` -- non-streaming equivalents
-- `tool({ description, inputSchema, execute })` -- define typed tools; inputs/outputs are type-safe end-to-end
-- `createUIMessageStream` / `createUIMessageStreamResponse` -- custom UIMessage parts (replaces the removed `writeMessageAnnotation`/`writeData` from v4)
-- `DefaultChatTransport` -- swap the fetch transport for WebSockets, SSE, or direct provider connections
+Read `references/AI_UI_PATTERNS.md` before wiring the `useChat` component, the route handler or the
+citation part: it holds the current-major snippets and the error table.
 
-**Key v5/v6 changes to be aware of**:
-- `UIMessage` vs `ModelMessage`: UIMessage is the UI state source of truth (includes rendering/status metadata); ModelMessage is optimized for provider calls. Convert via `convertToModelMessages(messages)` on the server.
-- `maxSteps` -- cap multi-step tool call chains.
-- Tool approval flow (shipped in v6 stable): gate execute with `addToolApprovalResponse`; per-tool strict mode.
-- **AI Elements**: the official prebuilt composable UI building blocks (replaces the older ChatSDK examples). Install via `npx ai-elements`.
-- Provider packages: `@ai-sdk/openai`, `@ai-sdk/anthropic`, `@ai-sdk/google`, `@ai-sdk/azure`, etc. -- use the provider-specific package instead of the deprecated monolithic imports.
-- SSE is the default streaming protocol (the old `streamProtocol: 'text' | 'data'` options are unified under transport implementations).
+## Verify
 
-**Alternatives**: LangChain.js (for agent orchestration), Mastra (agent framework), or raw `fetch` + `ReadableStream` for full control. Provider SDK streaming endpoints all emit SSE and are usable directly from any framework: OpenAI's Responses API (`stream: true`) is preferred over legacy Chat Completions streaming for new apps; Anthropic's Messages API emits typed SSE events (`message_start`, `content_block_delta`, `content_block_stop`, `message_delta`, `message_stop`, with tool use streaming `input_json_delta`); Gemini uses the `google-genai` SDK (`generate_content_stream`/`generateContentStream`) -- never the deprecated `google-generative-ai`.
+- The key is absent from the client bundle and the network panel; uploads go to your own endpoint.
+- Reloading mid-conversation shows no duplicated assistant message.
+- A tool in each state, including `approval-requested`, `output-denied` and an unknown tool name, renders
+  without raw JSON in the thread and without a crash.
+- A cut stream shows an interrupted marker with Retry, not a short answer that reads as complete.
+- A citation click highlights the matching source; a low-confidence answer is labelled in text.
+- A screen reader hears the status changes once and does not read every token.
 
-AI SDKs evolve rapidly; always check the installed version (`package.json`) before applying hook signatures and server utilities.
+## Dated traps
 
-**React 19 server-action patterns**: `useActionState` + `useFormStatus` + `useOptimistic` pair naturally with streaming server actions; combine with AI Elements or your own component registry for a fully server-first chat UI.
-
-Read `references/AI_UI_PATTERNS.md` when wiring the client `useChat` hook or the server-side route handler: it has the working `useChat` component (transport, tool-call handling, stop/regenerate), the `streamText` route handler with typed tools, and the legacy `streamUI` (RSC) pattern.
-
-### Step 2c: Multimodal Input Handling (File/Image Upload)
-
-When users upload images, PDFs, or audio to the AI, **never relay raw files through client code** (API key exposure). Always proxy through your server:
-
-1. Client uploads file to your server endpoint (multipart/form-data).
-2. Server validates MIME type and file size against provider limits.
-3. Server converts to base64 or uploads to the provider Files API, then passes to the LLM.
-
-**Provider limits and paths (verified 2026-06-29):**
-
-| Provider | Max per image | Max total payload | Notes |
-|---|---|---|---|
-| OpenAI Chat Completions | 8 MB | 512 MB | Images >8 MB are **silently dropped** (no error) — use Responses API or file_id for larger |
-| OpenAI Responses API | 50 MB via file_id | 512 MB | Upload via Files API (purpose=`'vision'`), pass `input_image.file_id` |
-| Anthropic | 5 MB per image | 32 MB total request | Pass as base64 `image` source or `document` for PDFs |
-| Gemini | 20 MB recommended inline | 100 MB payload | Larger files: use File API (`client.files.upload`) → pass `fileData.fileUri` |
-
-**Accepted source forms (OpenAI):** `input_image.image_url` (HTTPS URL), `input_image.image_url` (base64 data URL), `input_image.file_id` (Files API). For large or repeated images, upload once to Files API and reuse `file_id`.
-
-### Step 3: Streaming Rendering
-
-Render LLM output progressively as tokens arrive:
-
-- **Text streaming**: append tokens to a growing string; use CSS `white-space: pre-wrap` for formatting
-- **Markdown streaming**: use a streaming-aware markdown renderer (e.g., react-markdown with streaming input); handle partial markdown gracefully (unclosed bold, incomplete code blocks)
-- **Code block streaming**: detect code fence opening, render with syntax highlighting, update as tokens arrive
-- **Tool call streaming**: show a loading indicator when a tool call starts; render the result when complete; handle partial argument streaming for long tool calls
-- **Skeleton states**: show typing indicators or skeleton placeholders before first token arrives; transition smoothly to real content
-
-### Step 4: Generative UI (Component Streaming)
-
-In generative UI, the LLM decides which UI components to render. Two modern approaches:
-
-1. **AI SDK 5+ UIMessage parts**: define tools with typed `inputSchema`/`outputSchema`; on the client, switch on `part.type` (`tool-<name>`) inside `message.parts.map(...)` and render the matching component. This is the current recommended pattern and works with React Server Components.
-2. **Custom data parts**: use `createUIMessageStream` + `writer.write({ type: 'data-<name>', id, data })` to push arbitrary structured payloads the UI can render progressively.
-3. **Legacy `streamUI` / React Server Components streaming** (AI SDK RSC): still available under `ai/rsc` for server-rendered React components streamed to the client, but the message-parts approach is preferred for new apps.
-
-Design considerations:
-- Each tool name maps to one component; keep a registry.
-- Components handle their own loading/error/partial states (`part.state` can be `input-streaming`, `input-available`, `output-available`, `output-error`).
-- Keep components stateless where possible (data comes from tool input/output).
-- Implement a fallback renderer for unknown part types.
-
-**Code Interpreter artifact pipeline:** When the LLM uses Code Interpreter (OpenAI containers), binary artifacts (charts, processed images, CSVs, PDFs) are stored ephemerally in the container — **idle containers expire after 20 minutes**. The server must:
-1. Detect Code Interpreter tool call completion.
-2. Download each output file: `GET /v1/containers/{container_id}/files/{file_id}/content` before the container expires.
-3. Store the file (blob storage, DB, or disk) and generate a stable URL.
-4. Return the URL in the tool result so the frontend can render it.
-
-The frontend renders the artifact via the secure URL/blob — never rely on direct container file access from the browser. Handle binary output types: charts as PNG, DataFrames as CSV, reports as PDF.
-
-**Design considerations**:
-- Define a component registry mapping tool names to React components
-- Each component handles its own loading/error states
-- Keep components stateless where possible (data comes from tool call args/results)
-- Implement fallback rendering for unknown tool types
-
-### Step 5: Chat Interface UX Patterns
-
-- **Message list**: virtualized list for long conversations; auto-scroll to bottom on new messages; scroll-to-bottom button when user scrolls up
-- **Composer chrome** is not this skill's: the input area contract (autosize, Enter vs Shift+Enter, IME safety, drafts, attachments, model/effort chip, dictation vs voice session, send-morphs-to-stop) belongs to `frontend-agent-chat-shell`, along with the sidebar, sessions and stream resume. This skill stops at the message bubble.
-- **Message actions**: copy, regenerate, edit-and-resubmit, branch conversation
-- **Artifact display**: render code, charts, tables, images inline or in side panels; support copy/download
-- **Error handling**: show retry button on API failures; preserve user input on error; show rate limit feedback
-- **Multi-turn context**: display system message / context indicators; show token count / context window usage if relevant
-
-### Step 6: Accessibility for AI UIs
-
-AI interfaces have unique accessibility challenges:
-
-- **Live regions**: use `aria-live="polite"` on the streaming message area so screen readers announce new content without interrupting
-- **Status announcements**: announce "generating response", "response complete", "error occurred" via visually-hidden live region
-- **Focus management**: keep focus on the input after sending; do not move focus to the streaming response unless user navigates there
-- **Keyboard navigation**: Tab through messages, Enter to interact with artifacts, Escape to stop generation
-- **Reduced motion**: respect `prefers-reduced-motion` for typing indicators and streaming animations
-- **Semantic markup**: use `role="log"` for message lists, `role="status"` for generation indicators; mark user vs assistant messages with clear labels
-
-## Deliverables / Definition of Done
-
-- [ ] LLM streaming integrated via server-side proxy (no client-side API key exposure)
-- [ ] Chat UI renders streaming text progressively with proper markdown handling
-- [ ] Tool calls display loading state and render results in appropriate components
-- [ ] Generative UI components render from LLM tool calls (if applicable)
-- [ ] Error handling covers API failures, rate limits, and network issues
-- [ ] Keyboard navigation works for all chat interactions
-- [ ] Screen reader announces streaming status and new messages
-- [ ] Stop generation button works during streaming
-- [ ] Performance: first token renders <100ms after receipt; no jank during streaming
-
-## Common Pitfalls / Gotchas
-
-1. **Exposing API keys client-side** -- always proxy through your server; never embed provider keys in client bundles.
-2. **Re-rendering entire message list on each token** -- use memoization; only re-render the streaming message.
-3. **Breaking markdown mid-stream** -- partial markdown (unclosed `**`, incomplete ` ``` `) causes rendering glitches; use a parser that handles incomplete input.
-4. **No abort/stop mechanism** -- always implement AbortController; users must be able to stop generation.
-5. **Ignoring screen readers** -- streaming text without aria-live means blind users get no feedback during generation.
-6. **Blocking UI on tool calls** -- tool calls can be slow; show intermediate state and keep the UI responsive.
-7. **Hardcoding provider assumptions** -- use provider abstraction (AI SDK, LangChain.js, or your own) so you can swap providers without UI changes.
-8. **Locking to one SDK** -- the streaming UI patterns (progressive rendering, tool call lifecycle, error handling) are universal; choose your SDK based on project needs, not habit.
-
-## Example Prompts
-
-- "Build a streaming chat interface using Vercel AI SDK with Next.js App Router."
-- "Implement generative UI where the LLM can render weather cards, stock charts, and code editors."
-- "Add tool call rendering to my existing chat: show loading spinners and display results inline."
-- "Make my AI chat accessible: add aria-live regions, keyboard nav, and screen reader announcements."
-- "Design a prompt-to-UI workflow where users iteratively refine generated components."
-
-## Invocation
-
-```
-Use the frontend-ai-generative-ui skill to [describe your AI UI need].
-```
+- `[ai@7.0, 2026-11-11]` Type errors or deprecation warnings on `system` and `onFinish` -> renamed `instructions` and `onEnd` (old names are deprecated aliases; `onEnd` usage covers all steps) -> rename; system messages inside `messages` are rejected unless `allowSystemInMessages` is set, so audit persisted histories.
+- `[ai@7.0, 2026-11-11]` `stepCountIs` no longer found -> renamed `isStepCount`; `maxSteps` was already removed in 5.0 -> `stopWhen: isStepCount(n)`.
+- `[ai@7.0, 2026-11-11]` `result.toUIMessageStreamResponse()` warns -> deprecated, removed in the next major -> `createUIMessageStreamResponse({ stream: toUIMessageStream({ stream: result.stream, originalMessages }) })`; `fullStream` is now `stream`.
+- `[ai@7.0, 2026-11-11]` `require('ai')` fails -> ESM-only and Node 22 or later; telemetry moved to `@ai-sdk/otel`.
+- `[ai@6.0, 2026-11-11]` The model receives a Promise or the build fails -> `convertToModelMessages` is async -> `await` it (codemod `add-await-converttomodelmessages`, run with `npx @ai-sdk/codemod v6`).
+- `[ai@6.0, 2026-11-11]` `streamObject` and `generateObject` warn -> deprecated -> `streamText` or `generateText` with `output: Output.object({ schema })`.
+- `[ai@5.0, 2026-11-11]` `import from 'ai/rsc'` fails -> the package is `@ai-sdk/rsc`, and the docs call it experimental.
+- `[ai@7.0 docs, 2026-11-11]` Tool `needsApproval` is marked deprecated in the latest tool-usage page -> approval is configured with `toolApproval` on `streamText`; read the installed types before using either.
+- `[ai-elements, 2026-11-11]` Its home page says it is moving to shadcn/ui and will be deprecated at the end of November 2026 -> check that page before adding it to a project.
+- `[@ai-sdk/react@4.0, 2026-11-11]` A part renderer breaks on new content -> 7.0 adds `reasoning-file` parts and deprecates `{ type: 'image' }` message parts -> keep the renderer exhaustive with a safe default.
 
 ## Sources
 
-https://ai-sdk.dev/docs | https://ai-sdk.dev/elements | https://react.dev | https://platform.openai.com/docs/api-reference/responses | https://docs.anthropic.com/en/api/messages-streaming | https://aistudio.google.com/docs | https://js.langchain.com/docs
+| Topic | Official entry URL | Read when | Content checked |
+|---|---|---|---|
+| Migration to 7.0 | https://ai-sdk.dev/docs/migration-guides/migration-guide-7-0 | upgrading, or reading old v5/v6 code | 2026-11-11 |
+| Migration to 6.0 | https://ai-sdk.dev/docs/migration-guides/migration-guide-6-0 | `convertToModelMessages`, `Output.object`, codemods | 2026-11-11 |
+| Migration to 5.0 | https://ai-sdk.dev/docs/migration-guides/migration-guide-5-0 | `UIMessage`, tool part names, `@ai-sdk/rsc` | 2026-11-11 |
+| useChat, status, sources, metadata | https://ai-sdk.dev/docs/ai-sdk-ui/chatbot | wiring the hook or citations | 2026-11-11 |
+| Tool parts and approval | https://ai-sdk.dev/docs/ai-sdk-ui/chatbot-tool-usage | rendering tool states | 2026-11-11 |
+| UI message stream protocol | https://ai-sdk.dev/docs/ai-sdk-ui/stream-protocol | a non-JS backend emits the stream | 2026-11-11 |
+| Custom data parts | https://ai-sdk.dev/docs/ai-sdk-ui/streaming-data | pushing `data-*` parts | 2026-11-11 |
+| Transports | https://ai-sdk.dev/docs/ai-sdk-ui/transport | choosing or customising the transport | 2026-11-11 |
+| Message persistence and ids | https://ai-sdk.dev/docs/ai-sdk-ui/chatbot-message-persistence | storing and reloading chats | 2026-11-11 |
+| Repeated assistant messages | https://ai-sdk.dev/docs/troubleshooting/repeated-assistant-messages | a turn shows twice | 2026-11-11 |
+| Object streaming, `useObject` | https://ai-sdk.dev/docs/ai-sdk-ui/object-generation | streaming a structured object | 2026-11-11 |
+| AI SDK RSC (experimental) | https://ai-sdk.dev/docs/ai-sdk-rsc/overview | the project already uses `streamUI` | 2026-11-11 |
+| AI Elements | https://elements.ai-sdk.dev/ | adopting prebuilt chat components | 2026-11-11 |
+
+## Works with
+
+| Skill | Owns | Load when |
+|---|---|---|
+| `frontend-design` | Visual standard, error and empty-state wording | a message state or screen is designed |
+| `accessibility` | Accessible interaction, live regions, focus, motion | the thread must work with a keyboard and a screen reader |
+| `frontend-delivery-checklist` | The done gate | the chat is about to be called done |
+| `testing-e2e-playwright` | Browser tests | a streaming journey needs a test |
+| `pwa-engineering` | Install, offline, storage | the chat must work offline or queue sends |
