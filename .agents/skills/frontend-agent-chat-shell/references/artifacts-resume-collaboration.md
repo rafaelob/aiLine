@@ -1,8 +1,10 @@
 # Artifact placement, stream resume, and collaboration — implementation contract
 
 Load this when deciding where artifacts live, when wiring resume/stop, or when adding sharing.
-Provenance classes as in SKILL.md: `[observed N/4]`, `[verified: source, date]`,
-`[portfolio requirement]`, `[optional pattern]`.
+Provenance classes are defined in `chat-shell-composer-sessions.md`: `[observed N/4]`,
+`[verified: source, date]`, `[portfolio requirement]`, `[optional pattern]`. The stream resume section was
+re-read against the AI SDK docs on 2026-11-11; the vendor placement and collaboration sections keep their
+2026-07-29 dates and were not re-opened.
 
 Artifact **content** rendering (code highlighting, tables, charts inside a message) is
 `frontend-ai-generative-ui` territory. This file is about the surface it lives on.
@@ -61,6 +63,10 @@ close():
 ```
 
 - Escape closes a non-modal panel without trapping focus; a modal sheet (mobile) traps until closed.
+- A **source panel** (the target of a citation click) uses the same mechanics: it is a non-modal region on
+  wide screens and a modal sheet on narrow ones. A citation click opens it, scrolls to the cited item and
+  highlights it; closing returns focus to the citation that opened it. Its URL state carries the active
+  source id the same way the artifact id is carried.
 - The panel is resizable with a persisted width `[optional pattern]`; clamp so the thread never
   drops below a readable measure.
 - Panel open/close state is **per-session**, not a global preference.
@@ -71,7 +77,7 @@ close():
 
 ## 2. Stream resume contract
 
-`[verified: ai-sdk.dev/docs/ai-sdk-ui/chatbot-resume-streams, fetched 2026-07-29]`
+`[verified: ai-sdk.dev/docs/ai-sdk-ui/chatbot-resume-streams, re-read 2026-11-11]`
 
 Resumable streaming is **not** bare SSE `Last-Event-ID`. It is an application-level stream id plus a
 server-side buffer the client replays.
@@ -82,9 +88,9 @@ server-side buffer the client replays.
 |---|---|
 | `useChat({ resume: true })` | "automatically reconnects to active streams" |
 | GET `/api/chat/[id]/stream` | a handler **you create**; "resumes the existing stream if one is found". The `resume` option "triggers a GET request" to it |
-| `resumable-stream` package | manages the buffer storage (Redis) |
-| `activeStreamId` per session | server-side record of the stream in flight |
-| assistant-ui equivalent | `createResumableAssistantStreamResponse` `[verified: assistant-ui docs, 2026-07-29]` |
+| `resumable-stream` package | manages the buffer: publisher/subscriber over a Redis-compatible store; the producer runs to completion even if the first reader leaves |
+| `activeStreamId` per session | server-side record of the stream in flight, in a store you provide; the GET handler returns 204 when it is empty |
+| assistant-ui equivalent | `createResumableAssistantStreamResponse` UNVERIFIED (named on 2026-07-29, not re-opened; check assistant-ui docs before relying on it) |
 
 ### 2.2 What resume actually covers
 
@@ -110,12 +116,33 @@ billing, and the abandoned stream reappears on the next resume.
 POST /api/chat/<session>/stop
   1. persist the partial response as a message (marked interrupted)
   2. cancel the upstream generation
-  3. clear activeStreamId for the session
+  3. clear activeStreamId only if it still equals the stream id this stop targets (compare-and-clear)
   4. return the persisted message so the client reconciles instead of guessing
 ```
 
+Step 3 is compare-and-clear: a late stop request must not wipe a newer stream the user just started
+(`[verified: ai-sdk.dev troubleshooting "abort breaks resumable streams", 2026-11-11]`). The client sends
+the stream id it wants stopped, and the server ignores a stale one.
+
 The composer's stop control calls this endpoint **and then** aborts locally — in that order. Abort
-first and you race the persistence.
+first and you race the persistence. Call it only on an explicit user action, not during route cleanup,
+and after a stop do not auto-reconnect until the user sends a new message or retries. If the server
+passes the request's abort signal to the model call, a disconnect cancels the work resume depends on:
+keep generation independent of the request signal when `resume` is on.
+
+### 2.3a Python backends (FastAPI with `sse-starlette`)
+
+`[verified: github.com/sysid/sse-starlette README, 2026-11-11]` The response generator is cancelled when
+the client disconnects (the README's examples catch `asyncio.CancelledError` and poll
+`request.is_disconnected()`), and the library has no replay buffer or `Last-Event-ID` handling.
+
+- Run generation **detached from the response**: a task writes events into a stream buffer, so a disconnect
+  ends only the response.
+- The resume handler reads `Last-Event-ID` (or the AI SDK's GET) and replays from the buffer; it answers
+  204 when no stream is active, the same contract as the JS handler.
+- The stop endpoint cancels the task, persists the partial and compare-and-clears the active stream.
+- Create database sessions inside the generator, not as dependencies, and keep the shutdown grace period
+  shorter than the ASGI server's, or the process is killed first (both from the README).
 
 ### 2.4 Session-reopen reconcile matrix
 
@@ -137,7 +164,7 @@ A cut stream renders with a visible marker and a retry, and never as a short-but
 truncated answer presented as finished is indistinguishable, to the reader, from a real answer —
 which is the same failure class as an empty result that actually meant "we could not look".
 
-- Distinct visual treatment plus text; not colour alone.
+- Distinct visual treatment plus text (contrast and colour rules: `accessibility`).
 - Retry re-sends from the last user turn and preserves the partial as history `[optional pattern]`,
   or discards it — pick one and be consistent, because a user who sees the partial vanish assumes
   data loss.
@@ -209,6 +236,10 @@ but which model you copy is a product decision, not a default.
   whether the original author sees it, and whether it inherits the container's visibility. Silence
   here is how a private exploration becomes visible to a team.
 
+### 3.4a Attribution trap
+Never claim claude.ai web chat has a fork feature `[verified: sweep 2026-07-29, not re-checked; no official
+feature, the only fork on claude.ai web is a third-party userscript]`. The `/fork` evidence is Claude Code.
+
 ### 3.5 The anti-invariant
 `[verified: ChatGPT group chats shipped 2025-11, retired 2026-07-09]`
 
@@ -223,11 +254,12 @@ evidence against asynchronous collaboration, which the three models above show i
 - [ ] Placement pattern chosen from the three, with its cost written down.
 - [ ] Open artifact and active session are both in the URL; back-button behaves.
 - [ ] Focus moves in on open and returns to the invoker on close; Escape closes without trapping.
-- [ ] Mobile fallback is a designed sheet or route, verified at 360px.
+- [ ] Mobile fallback is a designed sheet or route, rendered at 1440, 390 and 320 (`frontend-delivery-checklist`).
+- [ ] The source panel opens on a citation click, scrolls to and highlights the item, and is a sheet on narrow screens.
 - [ ] Panel state persists per session, not globally.
 - [ ] `resume` wired with a real GET resume handler and a buffer store.
 - [ ] A dedicated stop endpoint exists and persists the partial, cancels the work, clears the
-      active stream; the client calls it **before** aborting locally.
+      active stream only if it still matches the stopped one; the client calls it **before** aborting locally.
 - [ ] No UI copy promises cross-device continuation.
 - [ ] All four reconcile cases handled; de-duplication is by id, never by text prefix.
 - [ ] Interrupted responses are visually and textually distinct from complete ones, with retry.
