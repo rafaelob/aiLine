@@ -30,4 +30,4 @@ Execute a verificação determinística mais próxima antes de ampliar. Testes `
 
 Tracker: github — rafaelob/aiLine; Issue = autoridade editável (DEC-113); commits citam #N; TODO/sprints são histórico.
 
-Fleet: para migrar a instalação ou instruções legadas, consulte control_docs/MIGRACAO_FLEET.md
+Fleet: cloud agents skip the Fleet rules: plain git, a branch and a PR with `Closes #N`.
