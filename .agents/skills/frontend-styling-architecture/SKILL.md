@@ -3,7 +3,7 @@ name: frontend-styling-architecture
 description: "Use when changing Tailwind CSS, shadcn/ui, cva, tailwind-merge or next-themes setup: token bridge, dark mode, source detection. Not choosing tokens or type -> frontend-design. Not contrast -> accessibility."
 license: Apache-2.0
 metadata:
-  version: "2.0.1"
+  version: "2.1.0"
 ---
 
 # Frontend styling architecture
@@ -45,7 +45,7 @@ truth. shadcn tokens point at roles under different names; `@theme inline` expos
   --card: var(--color-surface);        --card-foreground: var(--color-ink);
   --popover: var(--color-surface-raised);  --popover-foreground: var(--color-ink);
   --primary: var(--color-accent);      --primary-foreground: var(--color-on-accent);
-  --secondary: var(--color-track);     --secondary-foreground: var(--color-ink);
+  --secondary: var(--color-surface-raised);  --secondary-foreground: var(--color-ink);
   --muted: var(--color-track);         --muted-foreground: var(--color-ink-muted);
   --accent: var(--color-accent-wash);  --accent-foreground: var(--color-ink);
   --destructive: var(--color-bad);
@@ -62,6 +62,8 @@ truth. shadcn tokens point at roles under different names; `@theme inline` expos
 }
 ```
 
+- Keep each surface tier on its own role (`--secondary` raised, `--muted` track, `--card` surface): mapping two of them to one role flattens the depth the family steps by lightness.
+- shadcn naming trap: `--primary` is the brand accent (the one primary action, focus, selection); `--accent` is only the quiet hover and selection wash, never a second brand colour.
 - Map under a different name than the family role. Never redeclare a family name (`--color-canvas`) inside
   `@theme inline`: it is self-referential and the unlayered family `:root` wins by accident.
 - `--font-*`, `--text-*` and `--radius-*` in the unlayered family `:root` outrank Tailwind's layered theme defaults,
@@ -73,8 +75,9 @@ truth. shadcn tokens point at roles under different names; `@theme inline` expos
   `assets/recharts/chart-tokens.ts`. `--chart-1..5` exist only because shadcn's chart component asks for them.
 - Never wrap a token in `hsl()` or `rgb()`: family and shadcn tokens are complete colours (see traps).
 - Dual theme: redeclare the family roles under `.dark`. With next-themes the class sits on `<html>`, the same element as
-  `:root`, so the bridge needs no second copy. A nested `.dark` wrapper is UNVERIFIED (not rendered). `cockpit` is
-  dark-native and needs no `.dark` block.
+  `:root`, so the bridge needs no second copy. A nested `.dark` wrapper is UNVERIFIED (not rendered). `cockpit`'s
+  `:root` is already dark; a light cockpit redeclares only the colour roles in an override block and keeps its density
+  and hairlines (`FAMILIES.md`).
 
 ### 3. Tailwind 4 decisions
 
