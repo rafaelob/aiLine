@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Estado, Contexto &amp; Memória — Núcleo agnóstico de agentes</title>
 <meta name="description" content="Estado de orquestração agnóstico de provider: estado durável vs payload de provider, ledger canônico, modos provider-managed/app-managed/híbrido, reasoning e thinking state por provider, asset registry, contrato de compaction (perdas aceitáveis vs proibidas) e testes de memória. Complementa os guias de compactação e token counting sem duplicá-los." />
-<meta name="last-checked" content="2026-10-24" />
+<meta name="last-checked" content="2026-11-27" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -289,7 +289,7 @@
   <div class="header-row">
     <div class="brand">Estado, Contexto &amp; Memória <small>Núcleo agnóstico de agentes</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-10-24</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-11-27</strong></span>
       <span class="badge da">Núcleo · agnóstico de provider</span>
       <span class="badge info">Conceitual + referência</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
@@ -354,12 +354,12 @@
       <div class="hero-meta">
         <span class="badge da">Núcleo · agnóstico de provider</span>
         <span class="badge info">Conceitual + referência</span>
-        <span class="badge ok">SOTA · verificado 2026-10-24</span>
+        <span class="badge ok">SOTA · versões de pacote 2026-11-27 · demais itens 2026-11-17</span>
       </div>
     </div>
 
     <section id="para-agentes">
-      <h2>Resumo para agentes (verificado 2026-10-24)</h2>
+      <h2>Resumo para agentes (verificado 2026-11-27)</h2>
 
       <h3>Use este guia quando</h3>
       <ul>
@@ -383,28 +383,28 @@
         <li>Anthropic: Messages API com histórico reenviado; devolva thinking blocks e signatures no tool loop. Memory tool <code>memory_20250818</code> (client-side, GA, sem header beta, raiz <code>/memories</code>): valide todo path na aplicação.</li>
         <li>Anthropic context editing (beta <code>context-management-2025-06-27</code>): liste <code>clear_thinking_20251015</code> antes de <code>clear_tool_uses_20250919</code> e fixe <code>keep</code>; a compaction server-side é a estratégia principal.</li>
         <li>Gemini: Interactions API com <code>previous_interaction_id</code>; <code>store=true</code> por padrão (55 dias no pago, 1 dia no gratuito; retenção configurável de 7 a 55 dias no AI Studio); <code>store=false</code> não combina com <code>previous_interaction_id</code> nem com <code>background=true</code>; reenvie <code>tools</code>, <code>system_instruction</code> e <code>generation_config</code> a cada interação.</li>
-        <li>Thinking da Anthropic fica preso ao modelo produtor e a um conjunto fixo de modelos (no Sonnet 5.5 e no Haiku 5.5, também à conta); em contas criadas a partir de 2026-08-31 o prefixo é validado (400): mantenha o histórico append-only; <code>drop_block</code> só como paliativo.</li>
+        <li>Thinking da Anthropic fica preso ao modelo produtor e a um conjunto fixo de modelos (no Fable 5.2, no Mythos 5.2, no Sonnet 5.5 e no Haiku 5.5, também à conta); em contas criadas a partir de 2026-08-31 o prefixo é validado (400): mantenha o histórico append-only; <code>drop_block</code> só como paliativo.</li>
         <li>Frameworks: Agents SDK sessions (client-side; uma session não combina com <code>conversation_id</code>/<code>previous_response_id</code>), LangGraph checkpointer por <code>thread_id</code> + store, ADK Session/State + MemoryService, Deep Agents memória em arquivos (memória compartilhada somente leitura).</li>
         <li>Piso de segurança: deepagents &gt;= 0.7.25 (GHSA-47w2-rfrr-wvq8).</li>
-        <li>Default de <code>reasoning.effort</code>: documentado só para <code>gpt-6.1-sol</code> (<code>medium</code>); nos demais GPT-6 passe o effort explicitamente (ver <a href="#reasoning-thinking-por-provider">§5</a>).</li>
+        <li>Default de <code>reasoning.effort</code>: as páginas de modelo documentam <code>medium</code> só para <code>gpt-6.1-terra</code>; em <code>gpt-6-luna</code> e nos GPT-6.2 (<code>gpt-6.2-astra</code>, <code>gpt-6.2-sol</code>) o default não é documentado, e nos GPT-6.2 o <code>none</code> é rejeitado (use <code>low</code>): passe o effort explicitamente (ver <a href="#reasoning-thinking-por-provider">§5</a>).</li>
       </ul>
 
       <h3>Versões e modelos correntes</h3>
       <div class="table-wrap"><table>
-        <thead><tr><th>Item</th><th>Valor</th><th>Fonte (lido 2026-10-24)</th></tr></thead>
+        <thead><tr><th>Item</th><th>Valor</th><th>Fonte (docs lidas 2026-10-24; modelos Claude e Gemini relidos 2026-11-12; OpenAI relido 2026-11-17; pacotes, gemini-4-neon e lista de modelos Gemini relidos 2026-11-27)</th></tr></thead>
         <tbody>
-          <tr><td>Modelos OpenAI</td><td><code>gpt-6-astra</code>, <code>gpt-6.1-sol</code>, <code>gpt-6-sol</code>, <code>gpt-6-luna</code></td><td><a href="https://developers.openai.com/api/docs/guides/latest-model" target="_blank" rel="noopener">guides/latest-model</a></td></tr>
-          <tr><td>Modelos Anthropic</td><td><code>claude-fable-5-1</code>, <code>claude-opus-5-5</code> (effort padrão <code>medium</code>), <code>claude-sonnet-5-5</code>, <code>claude-haiku-5-5</code>; janela 1M, saída 128K</td><td><a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener">models/overview</a></td></tr>
-          <tr><td>Modelos Gemini</td><td><code>gemini-4-argon</code>, <code>gemini-3.8-flash</code></td><td><a href="https://ai.google.dev/gemini-api/docs/models" target="_blank" rel="noopener">gemini-api/docs/models</a></td></tr>
-          <tr><td>Cache read Anthropic</td><td>0,1x; 0,05x no Opus 5.5 e no Sonnet 5.5; 0,025x no Fable 5.1; mínimo 512 tokens</td><td><a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching" target="_blank" rel="noopener">prompt-caching</a></td></tr>
+          <tr><td>Modelos OpenAI</td><td><code>gpt-6.2-astra</code> (flagship) e <code>gpt-6.2-sol</code> (uso diário), lançados em 2026-11-17; <code>gpt-6.1-terra</code> e <code>gpt-6-luna</code> seguem vigentes; janela 1.050.000 e saída 128.000; modelos anteriores e preços: <a href="guia_openai_modelos.html#para-agentes">guia_openai_modelos</a></td><td><a href="https://developers.openai.com/api/docs/guides/latest-model" target="_blank" rel="noopener">guides/latest-model</a></td></tr>
+          <tr><td>Modelos Anthropic</td><td><code>claude-fable-5-2</code>, <code>claude-opus-5-5</code> (effort padrão <code>medium</code>), <code>claude-sonnet-5-5</code>, <code>claude-haiku-5-5</code>; janela 1M, saída 128K</td><td><a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener">models/overview</a></td></tr>
+          <tr><td>Modelos Gemini</td><td><code>gemini-4-argon</code>, <code>gemini-4-carbon</code>, <code>gemini-4-hydrogen</code>, <code>gemini-4-neon</code> (GA 2026-11-18)</td><td><a href="https://aistudio.google.com/docs/models" target="_blank" rel="noopener">docs/models</a> (lida em 2026-11-27)</td></tr>
+          <tr><td>Cache read Anthropic</td><td>0,1x; 0,05x no Opus 5.5 e no Sonnet 5.5; 0,025x no Fable 5.2; mínimo 512 tokens</td><td><a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching" target="_blank" rel="noopener">prompt-caching</a></td></tr>
           <tr><td>Cache OpenAI</td><td><code>prompt_cache_options.ttl</code> <code>"30m"</code> ou <code>"12h"</code></td><td><a href="https://developers.openai.com/api/docs/guides/prompt-caching" target="_blank" rel="noopener">guides/prompt-caching</a></td></tr>
-          <tr><td>SDKs Python</td><td>openai 3.37.0, anthropic 2.3.0, google-genai 2.33.0 (Interactions exige 2.3.0 ou superior)</td><td><a href="https://pypi.org/project/google-genai/" target="_blank" rel="noopener">pypi.org</a></td></tr>
-          <tr><td>Frameworks</td><td>openai-agents 0.24.0, langgraph 1.2.17 (checkpoint-postgres 3.2.0), google-adk 2.13.0, deepagents 0.7.32</td><td><a href="https://pypi.org/project/langgraph/" target="_blank" rel="noopener">pypi.org</a></td></tr>
+          <tr><td>SDKs Python</td><td>openai 3.60.0, anthropic 2.14.0, google-genai 3.6.1 (Interactions exige 2.3.0 ou superior)</td><td><a href="https://pypi.org/project/google-genai/" target="_blank" rel="noopener">pypi.org</a></td></tr>
+          <tr><td>Frameworks</td><td>openai-agents 0.26.0, langgraph 1.2.24 (checkpoint-postgres 3.2.1), google-adk 2.15.1, deepagents 0.7.42</td><td><a href="https://pypi.org/project/langgraph/" target="_blank" rel="noopener">pypi.org</a></td></tr>
         </tbody>
       </table></div>
 
       <h3>Não use</h3>
-      <p>Modelos, APIs e parâmetros desligados ou substituídos: veja as páginas oficiais de deprecação da <a href="https://developers.openai.com/api/docs/deprecations" target="_blank" rel="noopener">OpenAI</a>, da <a href="https://platform.claude.com/docs/en/about-claude/model-deprecations" target="_blank" rel="noopener">Anthropic</a> e do <a href="https://ai.google.dev/gemini-api/docs/deprecations" target="_blank" rel="noopener">Gemini</a>.</p>
+      <p>Modelos, APIs e parâmetros desligados ou substituídos: veja as páginas oficiais de deprecação da <a href="https://developers.openai.com/api/docs/deprecations" target="_blank" rel="noopener">OpenAI</a>, da <a href="https://platform.claude.com/docs/en/about-claude/model-deprecations" target="_blank" rel="noopener">Anthropic</a> e do <a href="https://aistudio.google.com/docs/deprecations" target="_blank" rel="noopener">Gemini</a>.</p>
 
       <h3>Mapa de seções</h3>
       <ul>
@@ -487,7 +487,7 @@
         <code>system_instruction</code> e <code>generation_config</code> valem por interação: reenvie a cada turno.
         Em qualquer modo, o ledger app-managed continua sendo a fonte de verdade; cache implícito é apenas
         otimização best-effort.
-        <span class="source-link">Fontes: <a href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">Interactions overview</a> · <a href="https://ai.google.dev/gemini-api/docs/background-execution" target="_blank" rel="noopener">background execution</a> · <a href="https://ai.google.dev/gemini-api/docs/streaming" target="_blank" rel="noopener">streaming</a>.</span>
+        <span class="source-link">Fontes: <a href="https://aistudio.google.com/docs/interactions-overview" target="_blank" rel="noopener">Interactions overview</a> · <a href="https://aistudio.google.com/docs/background-execution" target="_blank" rel="noopener">background execution</a> · <a href="https://aistudio.google.com/docs/streaming" target="_blank" rel="noopener">streaming</a>.</span>
       </div>
       <div class="callout warn">
         <strong>Para fluxos protegidos:</strong> quando requisitos de retenção/privacidade exigem controle
@@ -643,22 +643,22 @@
       <div class="table-wrap"><table>
         <thead><tr><th>Provider</th><th>Parâmetro</th><th>Valores</th><th>Notas de estado</th></tr></thead>
         <tbody>
-          <tr><td>OpenAI</td><td><code>reasoning.effort</code></td><td><code>none</code> · <code>minimal</code> · <code>low</code> · <code>medium</code> (default documentado só em <code>gpt-6.1-sol</code>, que não aceita <code>none</code> nem <code>minimal</code>; nos demais modelos GPT-6 o default não é documentado — passe <code>reasoning.effort</code> explicitamente; Astra <strong>não aceita <code>none</code></strong>) · <code>high</code> · <code>xhigh</code> · <code>max</code> (suporte por valor varia por modelo — checar a página do modelo)</td><td>Reasoning tokens contam no orçamento; reasoning não é exposto como cadeia bruta; em toda a família GPT-6 o modo (<code>reasoning.mode</code>: <code>standard</code>|<code>pro</code>, default <code>standard</code>) é independente do effort. <code>reasoning.context</code> (<code>auto</code>|<code>current_turn</code>|<code>all_turns</code>) define quanto reasoning de turnos anteriores entra na amostra seguinte; a resposta informa o modo efetivo. Reasoning persistido só é reaproveitável dentro da mesma família de modelo. Na família GPT-6, o item de input <code>configuration_update</code> (<code>{"type":"configuration_update","reasoning":{"effort":"high"}}</code>, antes da próxima mensagem do usuário) muda <strong>somente o effort</strong> no meio da conversa e vale até novo update; dois updates não podem ser adjacentes, não combinam com compaction/truncation automáticos (para compactar de forma explícita use o item de entrada <code>compaction_trigger</code>) e <code>/responses/compact</code> rejeita históricos que os contenham.</td></tr>
-          <tr><td>Anthropic</td><td><code>thinking</code> + <code>output_config.effort</code></td><td><code>adaptive</code> (padrão nos modelos atuais) · <code>between_tools</code> (Sonnet 5.5: thinking só entre tool calls; effort <code>low</code>|<code>medium</code>|<code>high</code>, sem <code>display</code>, sem <code>block_binding</code>) · <code>enabled</code> + <code>budget_tokens</code> retorna <strong>400</strong> em todos os modelos atuais · <code>disabled</code> retorna 400 em Opus 5.5, Fable 5.1 e Sonnet 5.5 (o Haiku 5.5 o aceita com effort até <code>high</code>)</td><td>Thinking blocks/signatures devem voltar no tool loop. O <code>effort</code> (<code>low</code>…<code>max</code>; default <code>medium</code> no Opus 5.5, <code>high</code> no Fable 5.1 e no Sonnet 5.5) afeta todos os tokens gerados e <strong>não é budget rígido</strong>: não substitui a reserva de saída do §9. <code>display</code>: <code>summarized</code> ou <code>omitted</code> (default varia por modelo; no Sonnet 5.5 o texto entre tool calls volta em blocos <code>thinking</code> e fica vazio com <code>omitted</code>).</td></tr>
-          <tr><td>Google</td><td><code>thinking_level</code></td><td><code>low</code> · <code>medium</code> · <code>high</code> (vários modelos Flash/Flash-Lite também <code>minimal</code>; suporte exato e default variam por modelo — ex.: <code>gemini-3.8-flash</code> só low/medium/high, default medium; <code>gemini-4-argon</code> low/medium/high; ver tabela oficial)</td><td>Direto em <code>generation_config</code> na <strong>Interactions API</strong>; contadores em <code>usage.total_thought_tokens</code>.</td></tr>
+          <tr><td>OpenAI</td><td><code>reasoning.effort</code></td><td><code>none</code> · <code>minimal</code> · <code>low</code> · <code>medium</code> (default <code>medium</code> documentado em <code>gpt-6.1-terra</code> e <code>gpt-6-luna</code>, ambos com <code>none</code>; nos <code>gpt-6.2-astra</code> e <code>gpt-6.2-sol</code> a API <strong>rejeita <code>none</code></strong> — use <code>low</code>, e a doc sugere começar em <code>medium</code> — e o default não está nas páginas de modelo: passe <code>reasoning.effort</code> explicitamente) · <code>high</code> · <code>xhigh</code> · <code>max</code> (suporte por valor varia por modelo — checar a página do modelo)</td><td>Reasoning tokens contam no orçamento; reasoning não é exposto como cadeia bruta; em toda a família GPT-6 o modo (<code>reasoning.mode</code>: <code>standard</code>|<code>pro</code>, default <code>standard</code>) é independente do effort. <code>reasoning.context</code> (<code>auto</code>|<code>current_turn</code>|<code>all_turns</code>) define quanto reasoning de turnos anteriores entra na amostra seguinte; a resposta informa o modo efetivo. Reasoning persistido só é reaproveitável dentro da mesma família de modelo. A partir do GPT-6.2 a API <strong>descarta os reasoning items</strong> quando detecta edição de prefixo no histórico, downgrade de modelo ou troca de usuário final ou de organização: a qualidade pode cair e o modelo pode gastar mais tokens refazendo trabalho (guia do GPT-6.2, lido em 2026-11-17); mantenha o prefixo intacto ao trocar configurações. Nos GPT-6 suportados, o item de input <code>configuration_update</code> (<code>{"type":"configuration_update","reasoning":{"effort":"high"}}</code>, antes da próxima mensagem do usuário) muda no meio da conversa o effort e/ou o formato de resposta (<code>text.format</code>) e vale até novo update; ele combina com o compaction automático por <code>context_management</code> (a API emite um novo update depois do item de compaction), mas o truncation automático e o <code>/responses/compact</code> standalone rejeitam históricos que o contenham; para compactar de forma explícita use o item de entrada <code>compaction_trigger</code> e depois reenvie um <code>configuration_update</code> (<a href="https://developers.openai.com/api/docs/guides/reasoning#change-reasoning-mid-conversation" target="_blank" rel="noopener">guides/reasoning</a>, lido em 2026-11-17).</td></tr>
+          <tr><td>Anthropic</td><td><code>thinking</code> + <code>output_config.effort</code></td><td><code>adaptive</code> (padrão nos modelos atuais) · <code>between_tools</code> (Sonnet 5.5: thinking só entre tool calls; effort <code>low</code>|<code>medium</code>|<code>high</code>, sem <code>display</code>, sem <code>block_binding</code>) · <code>enabled</code> + <code>budget_tokens</code> retorna <strong>400</strong> em todos os modelos atuais · <code>disabled</code> retorna 400 em Opus 5.5, Fable 5.2 e Sonnet 5.5 (o Haiku 5.5 o aceita com effort até <code>high</code>)</td><td>Thinking blocks/signatures devem voltar no tool loop. O <code>effort</code> (<code>low</code>…<code>max</code>; default <code>medium</code> no Opus 5.5, <code>high</code> no Fable 5.2 e no Sonnet 5.5) afeta todos os tokens gerados e <strong>não é budget rígido</strong>: não substitui a reserva de saída do §9. <code>display</code>: <code>summarized</code> ou <code>omitted</code> (default varia por modelo; no Sonnet 5.5 o texto entre tool calls volta em blocos <code>thinking</code> e fica vazio com <code>omitted</code>).</td></tr>
+          <tr><td>Google</td><td><code>thinking_level</code></td><td><code>low</code> · <code>medium</code> · <code>high</code> (vários modelos Flash/Flash-Lite também <code>minimal</code>; suporte exato e default variam por modelo — ex.: <code>gemini-4-argon</code> low/medium/high; <code>gemini-4-hydrogen</code> low/medium/high/xhigh, default high, sem <code>minimal</code>; ver tabela oficial)</td><td>Direto em <code>generation_config</code> na <strong>Interactions API</strong>; contadores em <code>usage.total_thought_tokens</code>.</td></tr>
         </tbody>
       </table></div>
       <div class="callout warn" id="thinking-binding-anthropic">
-        <strong>Anthropic — thinking blocks presos ao modelo produtor (e, no Sonnet 5.5 e no Haiku 5.5, à conta).</strong>
+        <strong>Anthropic — thinking blocks presos ao modelo produtor (e, no Fable 5.2, no Mythos 5.2, no Sonnet 5.5 e no Haiku 5.5, à conta).</strong>
         Cada bloco de thinking registra o modelo que o produziu e só pode ser lido por esse modelo e por um conjunto
         fixo de outros (a lista por plataforma está em
         <a href="https://platform.claude.com/docs/en/build-with-claude/preserved-thinking" target="_blank" rel="noopener">preserved thinking</a>).
         Bloco inválido é descartado (a request passa; não é faturado). Para
-        contas criadas a partir de 2026-08-31 00:00 UTC, o prefixo é validado por padrão no Fable 5.1, Opus 5.5,
-        Sonnet 5.5 e Haiku 5.5 (400 se <code>system</code>, <code>tools</code> ou mensagens anteriores mudarem após o bloco); para descartar em
+        contas criadas a partir de 2026-08-31 00:00 UTC, o prefixo é validado por padrão no Opus 5.5,
+        Sonnet 5.5 e Haiku 5.5 (400 se <code>system</code>, <code>tools</code> ou mensagens anteriores mudarem após o bloco); no Fable 5.2 e no Mythos 5.2 a checagem de prefixo sempre retorna 400 quando falha; para descartar em
         vez de falhar, use o header <code>thinking-binding-controls-2026-08-01</code> com
         <code>thinking.block_binding.prefix_mismatch_behavior: "drop_block"</code> (só com <code>adaptive</code> no Sonnet 5.5 e no Haiku 5.5).
-        Blocos do Sonnet 5.5 e do Haiku 5.5 valem só na conta produtora ou em contas ligadas. Consequência para o ledger:
+        Blocos do Fable 5.2, do Mythos 5.2, do Sonnet 5.5 e do Haiku 5.5 valem só na conta produtora ou em contas ligadas. Consequência para o ledger:
         ao trocar de modelo no meio da conversa, trate os blocos de thinking como não reaproveitáveis e
         reconstrua a projeção a partir do ledger.
         <div class="source-link">Fontes: <a href="https://platform.claude.com/docs/en/build-with-claude/extended-thinking" target="_blank" rel="noopener">Anthropic extended thinking</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/preserved-thinking" target="_blank" rel="noopener">preserved thinking</a></div>
@@ -670,7 +670,7 @@
         summaries e telemetria <code>usage.total_thought_tokens</code>/<code>total_output_tokens</code> no
         <a href="guia_gemini_interactions_api.html">guia da Gemini Interactions API</a>.
       </div>
-      <div class="source-link">Fontes oficiais: <a href="https://developers.openai.com/api/docs/guides/reasoning" target="_blank" rel="noopener">OpenAI reasoning</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/extended-thinking" target="_blank" rel="noopener">Anthropic extended thinking</a> · <a href="https://ai.google.dev/gemini-api/docs/thought-signatures" target="_blank" rel="noopener">Google thought signatures</a>.</div>
+      <div class="source-link">Fontes oficiais: <a href="https://developers.openai.com/api/docs/guides/reasoning" target="_blank" rel="noopener">OpenAI reasoning</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/extended-thinking" target="_blank" rel="noopener">Anthropic extended thinking</a> · <a href="https://aistudio.google.com/docs/thought-signatures" target="_blank" rel="noopener">Google thought signatures</a>.</div>
     </section>
 
     <section id="estado-na-responses-api">
@@ -940,7 +940,7 @@ ledger.ingest(response.output, usage=response.usage)</code></pre>
         medido de <strong>até ~30%</strong> em respostas com inputs multi-documento
         (<a href="https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/long-context-tips" target="_blank" rel="noopener">long-context-tips</a>).
         Gemini converge: contexto primeiro, query/instruções no fim
-        (<a href="https://ai.google.dev/gemini-api/docs/prompting-strategies" target="_blank" rel="noopener">prompting-strategies</a>, 2026-04-28).
+        (<a href="https://aistudio.google.com/docs/prompting-strategies" target="_blank" rel="noopener">prompting-strategies</a>, 2026-04-28).
         OpenAI não prescreve ordem mas o padrão é compatível com cache-prefix
         (<a href="https://developers.openai.com/api/docs/guides/prompt-caching" target="_blank" rel="noopener">prompt-caching</a>).
         Vale também para follow-ups curtos ("sim, prossiga"): <strong>não inverta</strong> a ordem;
@@ -1036,7 +1036,7 @@ ledger.ingest(response.output, usage=response.usage)</code></pre>
         byte-estável desta zona é candidato natural a <strong>breakpoint explícito</strong>
         (<code>prompt_cache_breakpoint: {"mode":"explicit"}</code> em content blocks, até 4 writes por request) —
         mas o <em>write</em> custa <strong>1,25×</strong> com <code>ttl</code> 30m e <strong>2,5×</strong> com 12h (<code>usage.input_tokens_details.cache_write_tokens</code>)
-        e o read 0,1× (0,05× no <code>gpt-6.1-sol</code>), então só marque o que realmente se repete. Mínimo
+        e o read 0,1× (0,05× no <code>gpt-6.2-astra</code>, <code>gpt-6.2-sol</code> e <code>gpt-6.1-terra</code>), então só marque o que realmente se repete. Mínimo
         cacheável: 1.024 tokens. <code>prompt_cache_key</code> é opcional (só separa a contabilidade). Meça via
         <code>usage.input_tokens_details.cached_tokens</code>; o Prompt Cache Diagnostics é GA.
         Compaction pode reduzir o reuso de cache; em
@@ -1046,8 +1046,8 @@ ledger.ingest(response.output, usage=response.usage)</code></pre>
         <strong>Anthropic Messages</strong> — caching explícito via <code>cache_control</code> em
         até <strong>4 breakpoints</strong>; ~20 blocos de lookback; TTL 5min default, extensível
         para 1h via <code>{"cache_control":{"type":"ephemeral","ttl":"1h"}}</code> no próprio
-        bloco. Mínimo cacheável: 512 tokens no Opus 5.5, Sonnet 5.5, Haiku 5.5 e Fable 5.1.
-        Leitura de cache custa 0,1× do input, exceto no <strong>Opus 5.5 e no Sonnet 5.5 (0,05×)</strong> e no Fable 5.1 (0,025×);
+        bloco. Mínimo cacheável: 512 tokens no Opus 5.5, Sonnet 5.5, Haiku 5.5 e Fable 5.2.
+        Leitura de cache custa 0,1× do input, exceto no <strong>Opus 5.5 e no Sonnet 5.5 (0,05×)</strong> e no Fable 5.2 (0,025×);
         write de 5 min custa 1,25× e o de 1 h, 2×. Coloque breakpoints no fim do system (kernel estável) e no
         último bloco estável de messages; meça via <code>usage.cache_creation_input_tokens</code> e
         <code>usage.cache_read_input_tokens</code>; o cache diagnostics é GA (objeto
@@ -1059,11 +1059,11 @@ ledger.ingest(response.output, usage=response.usage)</code></pre>
         leitura em <code>usage.total_cached_tokens</code>). <code>previous_interaction_id</code> preserva o
         histórico server-side e o prefixo estável tende a se beneficiar do cache implícito
         <span class="pill partial">derived</span> — a causalidade direta não está literalmente documentada.
-        Mínimo de 4.096 tokens no <code>gemini-4-argon</code> e no <code>gemini-3.8-flash</code>; no Argon o input em
+        Mínimo de 4.096 tokens nos modelos Gemini 4 (por exemplo <code>gemini-4-argon</code> e <code>gemini-4-hydrogen</code>); no Argon o input em
         cache tem 95% de desconto e, em multi-turn, a request anterior só entra no cache se a nova acrescentar ao menos
         2.050 tokens. Cache explícito não é suportado na Interactions API; hot_followup fica fora do prefixo
         cacheável por ser transitório
-        (<a href="https://ai.google.dev/gemini-api/docs/caching" target="_blank" rel="noopener">Gemini caching</a>).
+        (<a href="https://aistudio.google.com/docs/caching" target="_blank" rel="noopener">Gemini caching</a>).
         <br><br>
         <strong>Disciplina cross-provider que esta zona já enforce:</strong>
         (1) kernel byte-estável (system/instructions imutável na sessão);
@@ -1240,6 +1240,28 @@ losing any progress that is not recorded in your memory directory.</code></pre>
         transitórios) nem com o <strong>TTL de projeção</strong> do <code>hot_followup</code> ledger
         (camada iii).
       </p>
+      <div class="callout tip">
+        <strong>Como desenhar a memória: orientação da Anthropic Engineering (6 de novembro de 2026).</strong>
+        O artigo <a href="https://www.anthropic.com/research/components-of-agent-memory" target="_blank" rel="noopener">"The components of agent memory"</a>
+        (lido em 2026-11-12) separa cinco componentes: <em>transcripts</em> (log pesquisável, a verdade-base),
+        <em>memory notes</em> (conhecimento salvo entre sessões), <em>memory representations</em> (formas
+        estruturadas, como wikis de páginas ligadas), <em>injected context</em> (a camada de topo, carregada em
+        toda sessão) e <em>dreaming</em> (processo offline que revisa transcripts e reorganiza as camadas
+        abaixo); pesos, in-context learning e compaction ficam fora da definição. Orientações práticas:
+        <ul>
+          <li>Diga ao Claude <em>para que</em> serve a memória, não <em>como</em> usá-la; deixe ao modelo a
+            decisão de anotar quando alguém pede ou algo claramente vale lembrar. Regras fixas como "registre só
+            falhas" reduziram o benefício em modelos mais fortes nos testes do artigo.</li>
+          <li>Mantenha pequena a camada sempre carregada: memórias injetadas consomem tokens e uma nota errada
+            é levada para toda sessão. Use-a como índice e deixe o resto para busca sob demanda.</li>
+          <li>Busca ajuda mais que armazenar sozinho: as representações estruturadas renderam mais quando o
+            agent também tinha uma ferramenta de busca.</li>
+          <li>Teste as notas contra os transcripts (dreaming) e concentre essa revisão no que provavelmente
+            muda, ajustando a frequência para controlar custo.</li>
+        </ul>
+        Isso reforça a separação deste guia entre ledger/transcript como fonte de verdade e projeção enxuta no
+        prompt; os resultados numéricos do artigo vêm de testes da própria Anthropic e não foram reproduzidos aqui.
+      </div>
       <div class="source-link">Fontes oficiais: <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool" target="_blank" rel="noopener">Anthropic — Memory tool</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/context-editing" target="_blank" rel="noopener">Anthropic — Context editing</a>.</div>
     </section>
 
@@ -1651,13 +1673,13 @@ closure_marker {
       </div>
       <div class="callout tip">
         <strong>Quando <code>janela_do_modelo</code> deixa de ser a variável escassa.</strong>
-        Nos modelos atuais Opus 5.5, Sonnet 5.5 e Fable 5.1 a janela é de <strong>1M tokens</strong> com
+        Nos modelos atuais Opus 5.5, Sonnet 5.5 e Fable 5.2 a janela é de <strong>1M tokens</strong> com
         <strong>128K</strong> de saída máxima, cobrada a preço padrão (sem prêmio de long-context); o Haiku 5.5
         também tem 1M/128K, mas cobra US$ 0,50 in / US$ 2,50 out acima de 100.000 tokens de prompt (US$ 0,10 / US$ 0,50 até lá). O invariante acima não muda, mas o teto que realmente vincula passa a ser custo por
         turno, latência e degradação de atenção — não a janela física (ver a
         <a href="guia_contexto_compactacao_estrategias.html#definir-teto">estratégia do teto X</a>). Preços por MTok:
         Opus 5.5 <strong>US$ 4</strong> in · <strong>US$ 20</strong> out · cache read <strong>US$ 0,20</strong>
-        (<strong>0,05×</strong>, exceção à família de 0,1×); Sonnet 5.5 US$ 2 / US$ 10 · cache read <strong>US$ 0,10</strong> (<strong>0,05×</strong>); Fable 5.1 US$ 10 / US$ 50
+        (<strong>0,05×</strong>, exceção à família de 0,1×); Sonnet 5.5 US$ 2 / US$ 10 · cache read <strong>US$ 0,10</strong> (<strong>0,05×</strong>); Fable 5.2 US$ 8 / US$ 40
         (cache read 0,025×). Detalhamento em <a href="guia_token_counting.html#anthropic-tc-opus55">Token counting §A.3</a>.
         <div class="source-link">Fonte: <a href="https://platform.claude.com/docs/en/about-claude/pricing" target="_blank" rel="noopener">platform.claude.com · pricing</a> e <a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener">models overview</a></div>
       </div>
@@ -1761,7 +1783,7 @@ closure_marker {
           <tr><td><code>keep</code></td><td><code>{type:"thinking_turns",value:N}</code> (N&gt;0) ou <code>"all"</code></td><td>Depende da classe do modelo — ver abaixo</td><td>Quantos turnos recentes de assistant com thinking blocks preservar, ou <code>"all"</code> para manter todos.</td></tr>
         </tbody>
       </table></div>
-      <p>Nos modelos atuais (Fable 5.1, Mythos 5.1, Opus 5.5, Sonnet 5.5 e Haiku 5.5) o default de <code>keep</code> mantém todo o thinking anterior.</p>
+      <p>Nos modelos atuais (Fable 5.2, Mythos 5.2, Opus 5.5, Sonnet 5.5 e Haiku 5.5) o default de <code>keep</code> mantém todo o thinking anterior.</p>
       <div class="callout tip">
         <strong>Fixe <code>keep</code> explicitamente</strong> se o mesmo código roda contra mais de um
         modelo. A recomendação oficial é literal: <em>"If your code runs across multiple
@@ -1777,7 +1799,7 @@ closure_marker {
           frequentes).</li>
         <li>Thinking blocks <strong>mantidos</strong> preservam o cache (cache hits, menos tokens de
           input); thinking blocks <strong>limpos</strong> invalidam o cache a partir do ponto de corte. No
-          Fable 5.1, Opus 5.5, Sonnet 5.5 e Haiku 5.5, o context management server-side nunca invalida blocos de
+          Fable 5.2, Mythos 5.2, Opus 5.5, Sonnet 5.5 e Haiku 5.5, o context management server-side nunca invalida blocos de
           thinking; edições client-side em turnos anteriores podem invalidá-los em todos os turnos seguintes.</li>
       </ul>
 
@@ -1900,22 +1922,22 @@ closure_marker {
         <thead><tr><th>Framework</th><th>Conversa (curto prazo)</th><th>Memória de longo prazo</th></tr></thead>
         <tbody>
           <tr>
-            <td>OpenAI Agents SDK Python (0.24.0)</td>
+            <td>OpenAI Agents SDK Python (corrente 0.26.0; descrito na 0.24.0)</td>
             <td>Protocolo <code>Session</code> client-side: antes da run o SDK lê o histórico com <code>session.get_items(...)</code> e, depois, grava só os itens novos. Backends: <code>SQLiteSession</code>, <code>AsyncSQLiteSession</code>, <code>RedisSession</code> (em Redis Cluster, leitura e pop seguem disponíveis, mas append, clear e substituição transacionais exigem backend suportado), <code>SQLAlchemySession</code>, <code>MongoDBSession</code>, <code>DaprSession</code>, <code>AdvancedSQLiteSession</code>, <code>EncryptedSession</code> (wrapper) e <code>OpenAIConversationsSession</code> (histórico na Conversations API; as gravações saem em lotes de até 20 itens e podem ser confirmadas parcialmente — reconcilie antes de repetir). <code>RunConfig.session_input_callback</code> controla a fusão histórico + entrada nova.</td>
             <td>Não há store de memória no protocolo; <code>OpenAIResponsesCompactionSession</code> envolve outra session e compacta via <code>responses.compact</code> (automático por <code>should_trigger_compaction</code> ou manual por <code>run_compaction()</code>). Uma session <strong>não</strong> combina com <code>conversation_id</code>, <code>previous_response_id</code> ou <code>auto_previous_response_id</code> na mesma run — escolha um dos dois modelos de estado.</td>
           </tr>
           <tr>
-            <td>LangGraph (1.2.17)</td>
+            <td>LangGraph (1.2.24)</td>
             <td>Checkpointer por <em>thread</em>: <code>{"configurable": {"thread_id": "..."}}</code> na config; persiste o estado do grafo como checkpoints (continuidade, human-in-the-loop, time travel, tolerância a falhas). Implementações citadas na doc: <code>InMemorySaver</code>, <code>SqliteSaver</code>, <code>PostgresSaver</code>/<code>AsyncPostgresSaver</code>. Retenção: <code>PostgresSaver</code>/<code>AsyncPostgresSaver</code> têm <code>prune(thread_ids, strategy="keep_latest"|"delete")</code> em <code>langgraph-checkpoint-postgres</code> 3.2.0 (<code>keep_latest</code> recusa threads que usam <code>DeltaChannel</code>).</td>
             <td><code>Store</code>: dados definidos pela aplicação, compartilhados <em>entre threads</em> (preferências, fatos, conhecimento); <code>InMemoryStore</code> no exemplo. Ambos entram no grafo em <code>compile(checkpointer=..., store=...)</code>.</td>
           </tr>
           <tr>
-            <td>Google ADK Python (2.13.0)</td>
+            <td>Google ADK Python (corrente 2.15.1; descrito na 2.14.1)</td>
             <td><code>Session</code> (uma interação contínua, com sua sequência de <code>Events</code>) e <code>State</code> (<code>session.state</code>, dados do escopo da sessão), geridos por um <code>SessionService</code>.</td>
             <td><code>MemoryService</code> (conhecimento que atravessa sessões): <code>InMemoryMemoryService</code> (busca por palavra-chave, sem persistência), <code>VertexAiMemoryBankService</code> e <code>VertexAiRagMemoryService</code>. <code>add_session_to_memory</code> ingere uma sessão concluída; as tools <code>load_memory</code> (sob demanda) e <code>preload_memory</code> (no início de cada turno) recuperam via <code>search_memory</code>.</td>
           </tr>
           <tr>
-            <td>Deep Agents (0.7.32)</td>
+            <td>Deep Agents (corrente 0.7.42; descrito na 0.7.39)</td>
             <td>Estado do grafo LangGraph (checkpointer, acima); <code>StateBackend()</code> como backend padrão/fallback.</td>
             <td>Memória como arquivos: <code>memory=["/memories/AGENTS.md"]</code> em <code>create_deep_agent()</code>; <code>backend=</code> define onde vivem. <code>StoreBackend()</code> persiste entre threads com um <code>namespace</code> (por assistente ou por usuário); <code>CompositeBackend(routes={...})</code> roteia prefixos como <code>/memories/</code> e <code>/skills/</code>. O agente edita a memória com <code>edit_file</code>, ou uma consolidação em background atualiza o store.</td>
           </tr>
@@ -1931,19 +1953,19 @@ closure_marker {
     </section>
 
     <section class="ref" id="fontes-oficiais">
-      <h2>Fontes oficiais (lido 2026-10-24)</h2>
+      <h2>Fontes oficiais (lido 2026-10-24; Anthropic Fable/Mythos 5.2 relidos 2026-11-12; OpenAI GPT-6.2 relido 2026-11-17; pacotes relidos 2026-11-27)</h2>
       <p>
         Os fatos perecíveis (parâmetros de estado, reasoning/thinking, retenção, cache, compaction) foram conferidos nas páginas abaixo em
-        <strong>2026-10-24</strong>. Os contratos de dados (ledger, compaction item, asset registry) são recomendações de engenharia derivadas dos padrões oficiais.
+        <strong>2026-10-24</strong>; cache, context editing e thinking do Fable/Mythos 5.2 foram relidos em <strong>2026-11-12</strong> nas páginas prompt-caching e context-editing da Anthropic; os modelos GPT-6.2, preços, effort, cache e <code>configuration_update</code> da OpenAI foram relidos em <strong>2026-11-17</strong>; as versões de pacote foram relidas em <strong>2026-11-27</strong>. Os contratos de dados (ledger, compaction item, asset registry) são recomendações de engenharia derivadas dos padrões oficiais.
       </p>
       <div class="table-wrap"><table>
         <thead><tr><th>Tema</th><th>Fonte oficial</th></tr></thead>
         <tbody>
           <tr><td>OpenAI — estado de conversa, reasoning, compaction, prompt caching, modelos</td><td><a href="https://developers.openai.com/api/docs/guides/conversation-state" target="_blank" rel="noopener">conversation-state</a> · <a href="https://developers.openai.com/api/docs/guides/reasoning" target="_blank" rel="noopener">reasoning</a> · <a href="https://developers.openai.com/api/docs/guides/compaction" target="_blank" rel="noopener">compaction</a> · <a href="https://developers.openai.com/api/docs/guides/prompt-caching" target="_blank" rel="noopener">prompt-caching</a> · <a href="https://developers.openai.com/api/docs/guides/latest-model" target="_blank" rel="noopener">latest-model</a></td></tr>
           <tr><td>Anthropic — thinking, context windows, prompt caching, memory tool, context editing, compaction</td><td><a href="https://platform.claude.com/docs/en/build-with-claude/extended-thinking" target="_blank" rel="noopener">extended thinking</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/context-windows" target="_blank" rel="noopener">context windows</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching" target="_blank" rel="noopener">prompt caching</a> · <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool" target="_blank" rel="noopener">memory tool</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/context-editing" target="_blank" rel="noopener">context editing</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/compaction-on-demand" target="_blank" rel="noopener">compaction on demand</a> · <a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener">models overview</a></td></tr>
-          <tr><td>Google — Interactions API, thinking, thought signatures, caching, modelos</td><td><a href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">interactions-overview</a> · <a href="https://ai.google.dev/gemini-api/docs/thinking" target="_blank" rel="noopener">thinking</a> · <a href="https://ai.google.dev/gemini-api/docs/thought-signatures" target="_blank" rel="noopener">thought-signatures</a> · <a href="https://ai.google.dev/gemini-api/docs/models" target="_blank" rel="noopener">models</a></td></tr>
+          <tr><td>Google — Interactions API, thinking, thought signatures, caching, modelos</td><td><a href="https://aistudio.google.com/docs/interactions-overview" target="_blank" rel="noopener">interactions-overview</a> · <a href="https://aistudio.google.com/docs/thinking" target="_blank" rel="noopener">thinking</a> · <a href="https://aistudio.google.com/docs/thought-signatures" target="_blank" rel="noopener">thought-signatures</a> · <a href="https://aistudio.google.com/docs/models" target="_blank" rel="noopener">models</a></td></tr>
           <tr><td>Frameworks — sessions, persistence, memory</td><td><a href="https://openai.github.io/openai-agents-python/sessions/" target="_blank" rel="noopener">Agents SDK · sessions</a> · <a href="https://docs.langchain.com/oss/python/langgraph/persistence" target="_blank" rel="noopener">LangGraph · persistence</a> · <a href="https://adk.dev/sessions/" target="_blank" rel="noopener">ADK · sessions</a> e <a href="https://adk.dev/sessions/memory/" target="_blank" rel="noopener">memory</a> · <a href="https://docs.langchain.com/oss/python/deepagents/memory" target="_blank" rel="noopener">Deep Agents · memory</a></td></tr>
-          <tr><td>Versões de pacote (registros)</td><td><a href="https://pypi.org/project/openai/" target="_blank" rel="noopener">pypi.org</a> (openai 3.37.0, anthropic 2.3.0, google-genai 2.33.0, openai-agents 0.24.0, langgraph 1.2.17, langgraph-checkpoint-postgres 3.2.0, google-adk 2.13.0, deepagents 0.7.32)</td></tr>
+          <tr><td>Versões de pacote (registros)</td><td><a href="https://pypi.org/project/openai/" target="_blank" rel="noopener">pypi.org</a> (2026-11-27: openai 3.60.0, anthropic 2.14.0, google-genai 3.6.1, openai-agents 0.26.0, langgraph 1.2.24, langgraph-checkpoint-postgres 3.2.1, google-adk 2.15.1, deepagents 0.7.42)</td></tr>
         </tbody>
       </table></div>
     </section>

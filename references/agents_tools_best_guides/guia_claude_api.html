@@ -4,9 +4,9 @@
 <meta charset="utf-8" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%9A%3C/text%3E%3C/svg%3E" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Guia Claude API (Anthropic) — Referência completa · Fable 5.1 · Opus 5.5 · Sonnet 5.5 · Haiku 5.5</title>
-<meta name="description" content="Guia técnico da API da Anthropic (Claude) em PT-BR: Messages API, modelos Fable 5.1 / Opus 5.5 / Sonnet 5.5 / Haiku 5.5, API 2026-10-21, SDKs Python 2.x e TypeScript 1.x, streaming, thinking (adaptive, between_tools), effort, tool use, multimodal (vision/PDF/Files), prompt caching, compaction, batch, structured outputs, citations, Agent Skills, MCP, Managed Agents, referência REST/SDK, governança e plataformas de nuvem. Verificado em 2026-10-24." />
-<meta name="last-checked" content="2026-10-24" />
+<title>Guia Claude API (Anthropic) — Referência completa · Fable 5.2 · Opus 5.5 · Sonnet 5.5 · Haiku 5.5</title>
+<meta name="description" content="Guia técnico da API da Anthropic (Claude) em PT-BR: Messages API, modelos Fable 5.2 / Opus 5.5 / Sonnet 5.5 / Haiku 5.5, API 2026-10-21, SDKs Python 2.x e TypeScript 1.x, streaming, thinking (adaptive, between_tools), effort, tool use, multimodal (vision/PDF/Files), prompt caching, compaction, batch, structured outputs, citations, Agent Skills, MCP, Managed Agents, referência REST/SDK, governança e plataformas de nuvem. Verificado em 2026-11-27." />
+<meta name="last-checked" content="2026-11-27" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -303,9 +303,9 @@
   <div class="header-row">
     <div class="brand">Guia Claude API <small>Anthropic · PT-BR · Referência completa</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-10-24</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-11-27</strong></span>
       <span class="badge claude">anthropic · @anthropic-ai/sdk</span>
-      <span class="badge ok">Fable 5.1 · Opus 5.5 · Sonnet 5.5 · Haiku 5.5</span>
+      <span class="badge ok">Fable 5.2 · Opus 5.5 · Sonnet 5.5 · Haiku 5.5</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
     </div>
   </div>
@@ -324,7 +324,7 @@
 <div class="toc-section"><a href="#part-a-divider" style="color:inherit">Parte A — Fundamentos, Modelos & Mensagens</a></div><ol>
 <li><a href="#a-visao-geral">A1. Visão geral da plataforma &amp; primeira chamada</a></li>
 <li><a href="#a-sdks">A2. SDKs &amp; instalação</a></li>
-<li><a href="#a-modelos">A3. Modelos Claude (Fable 5.1 · Opus 5.5 · Sonnet 5.5 · Haiku 5.5)</a></li>
+<li><a href="#a-modelos">A3. Modelos Claude (Fable 5.2 · Opus 5.5 · Sonnet 5.5 · Haiku 5.5)</a></li>
 <li><a href="#a-models-api">A3.1 Endpoint Models API</a></li>
 <li><a href="#a-mensagens">A4. API de Mensagens — anatomia</a></li>
 <li><a href="#a-streaming">A5. Geração de texto &amp; streaming (SSE)</a></li>
@@ -427,7 +427,7 @@
       <h1>Guia Claude API (Anthropic) — Referência completa</h1>
       <p class="lead">
         Documentação técnica exaustiva, em português brasileiro, da <strong>API da Anthropic (Claude)</strong>,
-        focada nos modelos gerais atuais — <strong>Claude Fable 5.1</strong> (topo de linha),
+        focada nos modelos gerais atuais — <strong>Claude Fable 5.2</strong> (topo de linha),
         <strong>Claude Opus 5.5</strong> (ponto de partida recomendado), <strong>Claude Sonnet 5.5</strong> e
         <strong>Claude Haiku 5.5</strong>, na API <code>2026-10-21</code> (SDKs Python 2.x e TypeScript 1.x;
         quebras em <a href="#legado">Migração para a API 2026-10-21</a>). Cobre a Messages API, streaming (SSE), raciocínio
@@ -440,15 +440,15 @@
       <div class="hero-meta">
         <span class="badge claude">anthropic · Python ≥ 3.10</span>
         <span class="badge claude">@anthropic-ai/sdk · Node ≥ 20</span>
-        <span class="badge ok">Fable 5.1 · Opus 5.5 · Sonnet 5.5 · Haiku 5.5</span>
+        <span class="badge ok">Fable 5.2 · Opus 5.5 · Sonnet 5.5 · Haiku 5.5</span>
         <span class="badge info">anthropic-version: 2026-10-21</span>
-        <span class="badge">anthropic 2.3.0 · @anthropic-ai/sdk 1.3.0</span>
-        <span class="badge">Verificado em 2026-10-24</span>
+        <span class="badge">anthropic 2.14.0 · @anthropic-ai/sdk 1.14.0</span>
+        <span class="badge">Verificado em 2026-11-27</span>
       </div>
     </div>
 
     <section id="para-agentes">
-      <h2>Resumo para agentes (verificado 2026-10-24)</h2>
+      <h2>Resumo para agentes (verificado 2026-11-27)</h2>
 
       <h3>Use este guia quando</h3>
       <ul>
@@ -467,9 +467,9 @@
 
       <h3>Padrões vigentes</h3>
       <ul>
-        <li>Modelo padrão <code>claude-opus-5-5</code>; <code>claude-sonnet-5-5</code> para volume; <code>claude-haiku-5-5</code> para latência e custo; <code>claude-fable-5-1</code> para o topo da linha. <code>claude-mythos-5-1</code> é o mesmo modelo do Fable 5.1, só para organizações verificadas.</li>
+        <li>Modelo padrão <code>claude-opus-5-5</code>; <code>claude-sonnet-5-5</code> para volume; <code>claude-haiku-5-5</code> para latência e custo; <code>claude-fable-5-2</code> para o topo da linha (lançado em 2026-11-09). <code>claude-mythos-5-2</code> tem as mesmas specs e preço do Fable 5.2, só para organizações verificadas.</li>
         <li>Thinking já vem ligado nos modelos atuais; controle a profundidade com <code>output_config.effort</code> (<code>low</code> a <code>max</code>). Nunca envie <code>budget_tokens</code>. No Sonnet 5.5, <code>thinking: {"type":"disabled"}</code> retorna 400: use <code>{"type":"between_tools"}</code>.</li>
-        <li>Não envie <code>temperature</code>, <code>top_p</code> nem <code>top_k</code> (400 na API 2026-10-21), nem prefill de assistant. <code>tool_choice</code> <code>any</code>/<code>tool</code> é 400 em Fable 5.1, Opus 5.5 e Sonnet 5.5; use <code>auto</code> + <code>strict: true</code>.</li>
+        <li>Não envie <code>temperature</code>, <code>top_p</code> nem <code>top_k</code> (400 na API 2026-10-21), nem prefill de assistant. <code>tool_choice</code> <code>any</code>/<code>tool</code> é 400 em Fable 5.2, Opus 5.5 e Sonnet 5.5; use <code>auto</code> + <code>strict: true</code>.</li>
         <li>Use o SDK oficial na major atual (<code>pip install "anthropic&gt;=2,&lt;3"</code>; <code>npm install @anthropic-ai/sdk</code>). Sem SDK, envie <code>anthropic-version: 2026-10-21</code>. Os SDKs enviam a chave como <code>Authorization: Bearer</code>; a API aceita também <code>X-Api-Key</code>.</li>
         <li>Prompt caching com breakpoints explícitos (mínimo de 512 tokens nos modelos atuais); leia <code>usage</code> e use cache diagnostics (GA).</li>
         <li>Saída estruturada com <code>output_config.format</code> (Python: <code>client.messages.parse(..., output_format=Modelo)</code>); tools com <code>strict: true</code>.</li>
@@ -489,20 +489,21 @@ print(msg.stop_reason, [b.type for b in msg.content])  # leia blocos por type, n
 
       <h3>Versões e modelos correntes</h3>
       <div class="table-wrap"><table>
-        <thead><tr><th>Item</th><th>Valor</th><th>Fonte (lido 2026-10-24)</th></tr></thead>
+        <thead><tr><th>Item</th><th>Valor</th><th>Fonte (lido 2026-11-27)</th></tr></thead>
         <tbody>
-          <tr><td>Fable 5.1 / Mythos 5.1</td><td><code>claude-fable-5-1</code> · <code>claude-mythos-5-1</code>; 1M contexto, 128K saída; US$ 10 / 50 por MTok; retirada não antes de 2027-09-01</td><td><a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener">models/overview</a> · <a href="https://platform.claude.com/docs/en/about-claude/model-deprecations" target="_blank" rel="noopener">model-deprecations</a></td></tr>
+          <tr><td>Fable 5.2 / Mythos 5.2</td><td><code>claude-fable-5-2</code> · <code>claude-mythos-5-2</code>; 1M contexto, 128K saída; US$ 8 / 40 por MTok; effort padrão <code>high</code>; retirada não antes de 2027-11-09</td><td><a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener">models/overview</a> · <a href="https://platform.claude.com/docs/en/about-claude/model-deprecations" target="_blank" rel="noopener">model-deprecations</a></td></tr>
           <tr><td>Opus 5.5</td><td><code>claude-opus-5-5</code>; 1M / 128K; US$ 4 / 20; effort padrão <code>medium</code>; retirada não antes de 2027-09-22</td><td><a href="https://platform.claude.com/docs/en/about-claude/pricing" target="_blank" rel="noopener">pricing</a> · model-deprecations</td></tr>
           <tr><td>Sonnet 5.5</td><td><code>claude-sonnet-5-5</code>; 1M / 128K; US$ 2 / 10; effort padrão <code>high</code>; retirada não antes de 2027-09-28</td><td>pricing · model-deprecations</td></tr>
           <tr><td>Haiku 5.5</td><td><code>claude-haiku-5-5</code>; 1M / 128K; US$ 0,10 / 0,50 até 100K de prompt e US$ 0,50 / 2,50 acima; effort padrão <code>medium</code>; retirada não antes de 2027-10-07</td><td>pricing · model-deprecations</td></tr>
           <tr><td>Versão da API</td><td><code>2026-10-21</code></td><td><a href="https://platform.claude.com/docs/en/api/versioning" target="_blank" rel="noopener">api/versioning</a></td></tr>
-          <tr><td>SDKs</td><td>Python <code>anthropic</code> 2.3.0 (Python &gt;= 3.10); TS <code>@anthropic-ai/sdk</code> 1.3.0 (Node 20+, TS &gt;= 5.0); Go v2.3.0 (Go 1.25+); Java 3.3.0; C# 13.3.0; PHP 1.3.0; Ruby 2.3.0; CLI <code>ant</code> 2.3.0</td><td><a href="https://platform.claude.com/docs/en/cli-sdks-libraries/overview" target="_blank" rel="noopener">cli-sdks-libraries/overview</a> · <a href="https://pypi.org/project/anthropic/" target="_blank" rel="noopener">PyPI</a> · <a href="https://www.npmjs.com/package/@anthropic-ai/sdk" target="_blank" rel="noopener">npm</a></td></tr>
-          <tr><td>Betas vigentes</td><td><code>compact-2026-01-12</code>, <code>compact-2026-09-04</code>, <code>task-budgets-2026-03-13</code>, <code>mcp-client-2026-09-15</code>, <code>inline-tools-2026-09-15</code>, <code>managed-agents-2026-04-01</code></td><td><a href="https://platform.claude.com/docs/en/api/beta-headers" target="_blank" rel="noopener">api/beta-headers</a></td></tr>
+          <tr><td>SDKs</td><td>Python <code>anthropic</code> 2.14.0 (Python &gt;= 3.10); TS <code>@anthropic-ai/sdk</code> 1.14.0 (Node 20 LTS+, TS &gt;= 5.0); Go v2.15.0 (Go 1.25+); Java 3.14.0; C# 13.14.0; PHP 1.14.0; Ruby 2.14.0; CLI <code>ant</code> 2.14.0</td><td><a href="https://platform.claude.com/docs/en/cli-sdks-libraries/overview" target="_blank" rel="noopener">cli-sdks-libraries/overview</a> · <a href="https://pypi.org/project/anthropic/" target="_blank" rel="noopener">PyPI</a> · <a href="https://www.npmjs.com/package/@anthropic-ai/sdk" target="_blank" rel="noopener">npm</a></td></tr>
+          <tr><td>Betas vigentes: por endpoint</td><td><code>managed-agents-2026-04-01</code> (<code>/v1/agents</code>, <code>/v1/sessions</code>, <code>/v1/environments</code>); <code>mcp-tunnels-2026-06-22</code> (<code>/v1/tunnels</code>); <code>agent-memory-2026-07-22</code> (<code>/v1/memory_stores</code>; substitui <code>managed-agents-2026-04-01</code> nesses endpoints, e enviar os dois na mesma requisição retorna 400)</td><td><a href="https://platform.claude.com/docs/en/api/beta-headers" target="_blank" rel="noopener">api/beta-headers</a></td></tr>
+          <tr><td>Betas vigentes: por recurso</td><td><code>compact-2026-01-12</code> (compaction por limiar), <code>compact-2026-09-04</code> (compaction sob demanda), <code>mcp-client-2026-09-15</code> (MCP connector; superconjunto de <code>mcp-client-2025-11-20</code>, que também continua válido), <code>inline-tools-2026-09-15</code>, <code>task-budgets-2026-03-13</code>, <code>advisor-tool-2026-03-01</code>, <code>output-300k-2026-03-24</code>, <code>message-threads-2026-08-12</code>, <code>context-management-2025-06-27</code>. A página api/beta-headers <strong>não</strong> lista estes: cada um vem na documentação do recurso (seções deste guia).</td><td><a href="https://platform.claude.com/docs/en/build-with-claude/compaction" target="_blank" rel="noopener">compaction</a> · <a href="https://platform.claude.com/docs/en/agents-and-tools/mcp-connector" target="_blank" rel="noopener">mcp-connector</a> · página de cada recurso (lido 2026-11-27)</td></tr>
         </tbody>
       </table></div>
 
-      <h3>Não use</h3>
-      <p>Modelos e APIs desativados: <a href="https://platform.claude.com/docs/en/about-claude/model-deprecations" target="_blank" rel="noopener">model-deprecations</a>.</p>
+      <h3 id="nao-use">Não use</h3>
+      <p>Autoridade deste aviso para toda a coleção. Modelos e APIs desativados: <a href="https://platform.claude.com/docs/en/about-claude/model-deprecations" target="_blank" rel="noopener">model-deprecations</a> (lido 2026-11-27). Claude Sonnet 4.5 (<code>claude-sonnet-4-5-20250929</code>, alias <code>claude-sonnet-4-5</code>) está deprecado desde 2026-09-30 e será desativado em <strong>2026-11-30</strong>, com <code>claude-sonnet-5-5</code> como substituto. O modo rápido (<code>speed: "fast"</code>) do Opus 4.8 também deixa de existir em <strong>2026-11-30</strong>: depois dessa data, a requisição retorna erro; migre para o Opus 5.5 (<a href="https://platform.claude.com/docs/en/build-with-claude/fast-mode" target="_blank" rel="noopener">fast-mode</a>, lido 2026-11-27).</p>
 
       <h3>Mapa de seções</h3>
       <ul>
@@ -568,7 +569,7 @@ print(msg.stop_reason, [b.type for b in msg.content])  # leia blocos por type, n
       <p>
         Este é um guia técnico exaustivo, em português brasileiro, da <strong>API da Anthropic</strong> —
         a interface para construir aplicações sobre os modelos Claude. O guia é deliberadamente restrito
-        aos <strong>modelos gerais atuais</strong> (Fable 5.1, Opus 5.5 como ponto de partida recomendado, Sonnet 5.5
+        aos <strong>modelos gerais atuais</strong> (Fable 5.2, Opus 5.5 como ponto de partida recomendado, Sonnet 5.5
         e Haiku 5.5) na API <code>2026-10-21</code>; as quebras da migração para essa versão estão em
         <a href="#legado">Migração para a API 2026-10-21</a>. Para fatos perecíveis — IDs de modelo, preços,
         limites, datas e headers beta — a documentação oficial em <code>platform.claude.com</code> é
@@ -617,7 +618,7 @@ print(msg.stop_reason, [b.type for b in msg.content])  # leia blocos por type, n
             structured outputs, batch, embeddings, tool use e todas as ferramentas, Agent Skills, MCP),
             mais o <strong>SDK Python (<code>anthropic</code>)</strong> e o
             <strong>SDK JavaScript/TypeScript (<code>@anthropic-ai/sdk</code>)</strong> em profundidade —
-            tudo restrito aos modelos atuais (Fable 5.1, Opus 5.5, Sonnet 5.5, Haiku 5.5).</li>
+            tudo restrito aos modelos atuais (Fable 5.2, Opus 5.5, Sonnet 5.5, Haiku 5.5).</li>
           <li><strong>Resumido (não detalhado página a página, com link canônico para aprofundar):</strong>
             as subpáginas individuais de <a href="#d-managed-agents">Managed Agents</a> (cobertas em nível de
             visão geral e superfície REST/governança, não uma a uma — veja a lista completa em
@@ -669,7 +670,7 @@ print(msg.stop_reason, [b.type for b in msg.content])  # leia blocos por type, n
         <table>
           <thead><tr><th>Modelo</th><th>ID de API</th><th>Contexto</th><th>Saída máx.</th><th>Raciocínio</th><th>Melhor para</th></tr></thead>
           <tbody>
-            <tr><td><strong>Claude Fable 5.1</strong></td><td><code>claude-fable-5-1</code></td><td>1M tokens</td><td>128K</td><td>Adaptive thinking + <code>effort</code></td><td>Topo de linha: tarefas mais difíceis e agentes de horizonte longo</td></tr>
+            <tr><td><strong>Claude Fable 5.2</strong></td><td><code>claude-fable-5-2</code></td><td>1M tokens</td><td>128K</td><td>Adaptive thinking + <code>effort</code></td><td>Topo de linha: tarefas mais difíceis e agentes de horizonte longo</td></tr>
             <tr><td><strong>Claude Opus 5.5</strong> <span class="pill ok">ponto de partida</span></td><td><code>claude-opus-5-5</code></td><td>1M tokens</td><td>128K</td><td>Adaptive thinking + <code>effort</code> (padrão <code>medium</code>)</td><td>Coding agêntico e trabalho enterprise com melhor custo/capacidade</td></tr>
             <tr><td><strong>Claude Sonnet 5.5</strong></td><td><code>claude-sonnet-5-5</code></td><td>1M tokens</td><td>128K</td><td>Adaptive thinking + <code>between_tools</code> + <code>effort</code></td><td>Alto volume e agentes com ferramentas; equilíbrio capacidade/custo</td></tr>
             <tr><td><strong>Claude Haiku 5.5</strong></td><td><code>claude-haiku-5-5</code></td><td>1M tokens</td><td>128K</td><td>Adaptive thinking + <code>effort</code> (padrão <code>medium</code>)</td><td>Baixa latência e custo</td></tr>
@@ -718,7 +719,7 @@ console.log(message.content[0].text);</code></pre>
       </div>
       <div class="callout warn">
         <strong>Política de modelos deste guia:</strong> o corpo cobre só os modelos gerais atuais
-        (Fable 5.1, Opus 5.5, Sonnet 5.5, Haiku 5.5). O <strong>Mythos 5.1</strong> é o mesmo modelo do Fable 5.1 e só está
+        (Fable 5.2, Opus 5.5, Sonnet 5.5, Haiku 5.5). O <strong>Mythos 5.2</strong> tem as mesmas capacidades do Fable 5.2 e só está
         disponível para organizações verificadas pelos programas de verificação da Anthropic (ex.: Cyber Verification Program).
         Datas de retirada dos modelos atuais: tabela em <a href="#a-modelos">A3. Modelos Claude</a>.
       </div>
@@ -729,7 +730,7 @@ console.log(message.content[0].text);</code></pre>
   <p>Este guia foi construído a partir da documentação oficial pública da Anthropic em
   <strong>platform.claude.com/docs</strong>, do export
   <code>llms-full.txt</code> e do repositório oficial de cookbooks; os fatos perecíveis foram lidos nas páginas oficiais em
-  <strong>2026-10-24</strong>. Sempre que houver divergência
+  <strong>2026-11-17</strong> (modelos, preços, depreciações e versões de SDK relidos em <strong>2026-11-27</strong>). Sempre que houver divergência
   entre este guia e a documentação em produção, a documentação oficial é a fonte autoritativa.
   Páginas de referência usadas:</p>
   <ul style="columns:2;column-gap:36px;font-size:13px"><li><a href="https://platform.claude.com/docs/en/get-started" target="_blank" rel="noopener">platform.claude.com/docs/en/get-started</a></li>
@@ -739,7 +740,8 @@ console.log(message.content[0].text);</code></pre>
 <li><a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener">platform.claude.com/docs/en/about-claude/models/overview</a></li>
 <li><a href="https://platform.claude.com/docs/en/models/opus-5-5/overview" target="_blank" rel="noopener">platform.claude.com/docs/en/models/opus-5-5/overview</a></li>
 <li><a href="https://platform.claude.com/docs/en/models/opus-5-5/migration-guide" target="_blank" rel="noopener">platform.claude.com/docs/en/models/opus-5-5/migration-guide</a></li>
-<li><a href="https://platform.claude.com/docs/en/models/mythos-5-1/overview" target="_blank" rel="noopener">platform.claude.com/docs/en/models/mythos-5-1/overview</a></li>
+<li><a href="https://platform.claude.com/docs/en/models/fable-5-2/overview" target="_blank" rel="noopener">platform.claude.com/docs/en/models/fable-5-2/overview</a></li>
+<li><a href="https://platform.claude.com/docs/en/models/fable-5-2/whats-new-fable-5-2" target="_blank" rel="noopener">platform.claude.com/docs/en/models/fable-5-2/whats-new-fable-5-2</a></li>
 <li><a href="https://platform.claude.com/docs/en/about-claude/pricing" target="_blank" rel="noopener">platform.claude.com/docs/en/about-claude/pricing</a></li>
 <li><a href="https://platform.claude.com/docs/en/about-claude/model-deprecations" target="_blank" rel="noopener">platform.claude.com/docs/en/about-claude/model-deprecations</a></li>
 <li><a href="https://platform.claude.com/docs/en/release-notes/overview" target="_blank" rel="noopener">platform.claude.com/docs/en/release-notes/overview</a></li>
@@ -871,7 +873,7 @@ console.log(message.content[0].text);</code></pre>
 <!-- ========================================================== -->
 <section class="chapter" id="part-a-divider">
   <h2 style="border-bottom:3px solid var(--c-accent);padding:14px 0 10px;font-size:28px">Parte A — Fundamentos, Modelos &amp; API de Mensagens</h2>
-  <p>Esta parte cobre o essencial para começar com a API da Anthropic: visão geral da plataforma, primeira chamada e autenticação, SDKs, a tabela definitiva dos modelos atuais (Claude Fable 5.1, Opus 5.5, Sonnet 5.5 e Haiku 5.5), a anatomia da API de Mensagens, geração de texto e streaming (SSE), o campo <code>stop_reason</code>, structured outputs, o parâmetro <code>effort</code>, fast mode, janelas de contexto e contagem de tokens, embeddings, suporte multilíngue e o processamento em lote (Message Batches API).</p>
+  <p>Esta parte cobre o essencial para começar com a API da Anthropic: visão geral da plataforma, primeira chamada e autenticação, SDKs, a tabela definitiva dos modelos atuais (Claude Fable 5.2, Opus 5.5, Sonnet 5.5 e Haiku 5.5), a anatomia da API de Mensagens, geração de texto e streaming (SSE), o campo <code>stop_reason</code>, structured outputs, o parâmetro <code>effort</code>, fast mode, janelas de contexto e contagem de tokens, embeddings, suporte multilíngue e o processamento em lote (Message Batches API).</p>
 </section>
 
 <!-- ============================ 1. VISÃO GERAL / GET STARTED ============================ -->
@@ -993,12 +995,12 @@ console.log(message.content);</code></pre>
 
 <!-- ============================ 3. MODELOS CLAUDE ============================ -->
 <section class="chapter" id="a-modelos">
-  <h2>3. Modelos Claude (Fable 5.1 · Opus 5.5 · Sonnet 5.5 · Haiku 5.5)</h2>
-  <p>Esta é a <strong>seção canônica de modelos</strong> do guia — as demais partes a referenciam. A geração atual de uso geral é <strong>Fable 5.1</strong> (topo de linha), <strong>Opus 5.5</strong> (<strong>ponto de partida recomendado</strong> para a maioria das cargas), <strong>Sonnet 5.5</strong> (melhor combinação de velocidade e inteligência) e <strong>Haiku 5.5</strong> (baixa latência e custo). O <strong>Mythos 5.1</strong> é o mesmo modelo do Fable 5.1, disponível só para organizações verificadas pelos programas de verificação da Anthropic (ex.: Cyber Verification Program). <strong>Use <code>claude-opus-5-5</code> em código novo</strong> salvo necessidade específica.</p>
+  <h2>3. Modelos Claude (Fable 5.2 · Opus 5.5 · Sonnet 5.5 · Haiku 5.5)</h2>
+  <p>Esta é a <strong>seção canônica de modelos</strong> do guia — as demais partes a referenciam. A geração atual de uso geral é <strong>Fable 5.2</strong> (topo de linha), <strong>Opus 5.5</strong> (<strong>ponto de partida recomendado</strong> para a maioria das cargas), <strong>Sonnet 5.5</strong> (melhor combinação de velocidade e inteligência) e <strong>Haiku 5.5</strong> (baixa latência e custo). O <strong>Mythos 5.2</strong> oferece as mesmas capacidades do Fable 5.2, disponível só para organizações verificadas pelos programas de verificação da Anthropic (ex.: Cyber Verification Program). <strong>Use <code>claude-opus-5-5</code> em código novo</strong> salvo necessidade específica.</p>
 
   <div class="callout ok" id="a-estado-atual"><strong>Estado atual.</strong>
     <ul style="margin:8px 0 0;padding-left:20px">
-      <li><strong>SDKs:</strong> Python <code>anthropic</code> 2.3.0 (Python ≥ 3.10) e TypeScript <code>@anthropic-ai/sdk</code> 1.3.0, ambos na API <code>2026-10-21</code>. Fixe a faixa no lockfile. Quebras em <a href="#legado">Migração para a API 2026-10-21</a>. O Agent SDK é outro produto: <a href="guia_plugins_skills_mcp_frameworks.html#fw-claude-agent-sdk">guia_plugins_skills_mcp_frameworks.html</a>.</li>
+      <li><strong>SDKs:</strong> Python <code>anthropic</code> 2.14.0 (Python ≥ 3.10) e TypeScript <code>@anthropic-ai/sdk</code> 1.14.0, ambos na API <code>2026-10-21</code>. Fixe a faixa no lockfile. Quebras em <a href="#legado">Migração para a API 2026-10-21</a>. O Agent SDK é outro produto: <a href="guia_plugins_skills_mcp_frameworks.html#fw-claude-agent-sdk">guia_plugins_skills_mcp_frameworks.html</a>.</li>
       <li><strong>GA sem header beta:</strong> Files API, Agent Skills API, computer use (<code>computer_toolset_20260801</code>), browser use (<code>browser_toolset_20260801</code>), cache diagnostics, structured outputs, effort, tool search, programmatic tool calling e memory tool.</li>
       <li><strong>Ainda em beta:</strong> Claude Managed Agents (<code>managed-agents-2026-04-01</code>; sem data de GA anunciada), MCP connector, compaction (por limiar e sob demanda), context editing, advisor tool, tools inline, server-side fallback e task budgets.</li>
     </ul>
@@ -1008,15 +1010,15 @@ console.log(message.content);</code></pre>
   <h3 id="a-modelos-comparacao">Tabela comparativa</h3>
   <div class="table-wrap"><table>
     <thead><tr>
-      <th>Característica</th><th>Claude Fable 5.1</th><th>Claude Opus 5.5 <span class="pill ok">recomendado</span></th><th>Claude Sonnet 5.5</th><th>Claude Haiku 5.5</th>
+      <th>Característica</th><th>Claude Fable 5.2</th><th>Claude Opus 5.5 <span class="pill ok">recomendado</span></th><th>Claude Sonnet 5.5</th><th>Claude Haiku 5.5</th>
     </tr></thead>
     <tbody>
       <tr><td><strong>Descrição</strong></td><td>Topo de linha: raciocínio e agentes de longo horizonte</td><td>Coding agêntico de longa duração e trabalho de conhecimento</td><td>Melhor combinação de velocidade e inteligência</td><td>Menor latência e custo da linha atual</td></tr>
-      <tr><td><strong>ID de API</strong></td><td><code>claude-fable-5-1</code></td><td><code>claude-opus-5-5</code></td><td><code>claude-sonnet-5-5</code></td><td><code>claude-haiku-5-5</code></td></tr>
-      <tr><td><strong>Amazon Bedrock</strong></td><td><code>anthropic.claude-fable-5-1</code></td><td><code>anthropic.claude-opus-5-5</code></td><td><code>anthropic.claude-sonnet-5-5</code></td><td><code>anthropic.claude-haiku-5-5</code></td></tr>
-      <tr><td><strong>Google Cloud</strong></td><td><code>claude-fable-5-1</code></td><td><code>claude-opus-5-5</code></td><td><code>claude-sonnet-5-5</code></td><td><code>claude-haiku-5-5</code></td></tr>
-      <tr><td><strong>Lançamento</strong></td><td>2026-09-01</td><td>2026-09-22</td><td>2026-09-28</td><td>2026-10-07</td></tr>
-      <tr><td><strong>Retirada (mínima)</strong></td><td>não antes de 2027-09-01</td><td>não antes de 2027-09-22</td><td>não antes de 2027-09-28</td><td>não antes de 2027-10-07</td></tr>
+      <tr><td><strong>ID de API</strong></td><td><code>claude-fable-5-2</code></td><td><code>claude-opus-5-5</code></td><td><code>claude-sonnet-5-5</code></td><td><code>claude-haiku-5-5</code></td></tr>
+      <tr><td><strong>Amazon Bedrock</strong></td><td><code>global.anthropic.claude-fable-5-2</code> ou <code>us.anthropic.claude-fable-5-2</code> (só no endpoint <code>bedrock-runtime</code>)</td><td><code>anthropic.claude-opus-5-5</code></td><td><code>anthropic.claude-sonnet-5-5</code></td><td><code>anthropic.claude-haiku-5-5</code></td></tr>
+      <tr><td><strong>Google Cloud</strong></td><td><code>claude-fable-5-2</code></td><td><code>claude-opus-5-5</code></td><td><code>claude-sonnet-5-5</code></td><td><code>claude-haiku-5-5</code></td></tr>
+      <tr><td><strong>Lançamento</strong></td><td>2026-11-09</td><td>2026-09-22</td><td>2026-09-28</td><td>2026-10-07</td></tr>
+      <tr><td><strong>Retirada (mínima)</strong></td><td>não antes de 2027-11-09</td><td>não antes de 2027-09-22</td><td>não antes de 2027-09-28</td><td>não antes de 2027-10-07</td></tr>
       <tr><td><strong>Janela de contexto</strong></td><td>1M tokens</td><td>1M tokens</td><td>1M tokens</td><td>1M tokens</td></tr>
       <tr><td><strong>Máx. de saída</strong></td><td>128k tokens</td><td>128k tokens <span class="pill info">300k no Batch com <code>output-300k-2026-03-24</code></span></td><td>128k tokens <span class="pill info">300k no Batch com <code>output-300k-2026-03-24</code></span></td><td>128k tokens <span class="pill info">300k no Batch com <code>output-300k-2026-03-24</code></span></td></tr>
       <tr><td><strong>Modalidades</strong></td><td colspan="4">Texto + imagem &rarr; texto; PDF</td></tr>
@@ -1031,33 +1033,33 @@ console.log(message.content);</code></pre>
       <tr><td><strong>Knowledge cutoff (confiável)</strong></td><td>Jun 2026</td><td>Jun 2026</td><td>Jun 2026</td><td>Jun 2026</td></tr>
     </tbody>
   </table></div>
-  <p class="source-link">Fonte: <a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener">models/overview</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/thinking" target="_blank" rel="noopener">thinking</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching" target="_blank" rel="noopener">prompt-caching</a> · <a href="https://platform.claude.com/docs/en/about-claude/model-deprecations" target="_blank" rel="noopener">model-deprecations</a> (aviso mínimo de 60 dias antes de uma retirada). O <strong>Mythos 5.1</strong> (<code>claude-mythos-5-1</code>, lançado em 2026-09-01, 1M/128k, $10/$50, retirada não antes de 2027-09-01) tem as mesmas specs do Fable 5.1 e só está disponível para organizações verificadas pelos programas de verificação da Anthropic.</p>
+  <p class="source-link">Fonte: <a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener">models/overview</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/thinking" target="_blank" rel="noopener">thinking</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching" target="_blank" rel="noopener">prompt-caching</a> · <a href="https://platform.claude.com/docs/en/about-claude/model-deprecations" target="_blank" rel="noopener">model-deprecations</a> (aviso mínimo de 60 dias antes de uma retirada). O <strong>Mythos 5.2</strong> (<code>claude-mythos-5-2</code>, lançado em 2026-11-09, 1M/128k, $8/$40) tem as mesmas specs e preço do Fable 5.2 e só está disponível para organizações verificadas pelos programas de verificação da Anthropic.</p>
 
   <div class="callout info" id="a-modelos-snapshots">
-    <strong>Aliases vs. snapshots.</strong> Todo ID identifica um <strong>snapshot fixo</strong>. O ID sem data (<code>claude-opus-5-5</code>, <code>claude-sonnet-5-5</code>, <code>claude-fable-5-1</code>) <em>é</em> o snapshot — não um ponteiro evergreen; uma versão atualizada sai sob um ID novo. No Bedrock o Haiku 5.5 usa ID fixo sem sufixo de data (<code>anthropic.claude-haiku-5-5</code>). Os pesos são fixos por ID, mas a infraestrutura de serviço (roteador, classificadores, sampling) pode evoluir. Cada ID tem cronograma próprio de deprecação e retirada.
+    <strong>Aliases vs. snapshots.</strong> Todo ID identifica um <strong>snapshot fixo</strong>. O ID sem data (<code>claude-opus-5-5</code>, <code>claude-sonnet-5-5</code>, <code>claude-fable-5-2</code>) <em>é</em> o snapshot — não um ponteiro evergreen; uma versão atualizada sai sob um ID novo. No Bedrock o Haiku 5.5 usa ID fixo sem sufixo de data (<code>anthropic.claude-haiku-5-5</code>). Os pesos são fixos por ID, mas a infraestrutura de serviço (roteador, classificadores, sampling) pode evoluir. Cada ID tem cronograma próprio de deprecação e retirada.
     <span class="source-link"><a href="https://platform.claude.com/docs/en/about-claude/models/model-ids-and-versions" target="_blank" rel="noopener">model-ids-and-versions</a></span>
   </div>
 
   <h3 id="a-modelos-preco">Preços por MTok (milhão de tokens, USD)</h3>
-  <p>Preços da API de primeira parte (Claude API), rota <code>global</code>. A janela completa de 1M tokens é cobrada na <strong>mesma taxa por token</strong> em todo o contexto — sem header beta e sem <em>long-context premium</em> — <strong>exceto</strong> no Haiku 5.5, que tem duas faixas por tamanho do prompt (até 100.000 tokens e acima). Cache write de 5 minutos custa 1,25× a entrada base; o de 1 hora, 2×; a leitura (hit) custa 0,1×, <strong>exceto</strong> Opus 5.5 e Sonnet 5.5 (0,05×) e Fable 5.1/Mythos 5.1 (0,025×).</p>
+  <p>Preços da API de primeira parte (Claude API), rota <code>global</code>. A janela completa de 1M tokens é cobrada na <strong>mesma taxa por token</strong> em todo o contexto — sem header beta e sem <em>long-context premium</em> — <strong>exceto</strong> no Haiku 5.5, que tem duas faixas por tamanho do prompt (até 100.000 tokens e acima). Cache write de 5 minutos custa 1,25× a entrada base; o de 1 hora, 2×; a leitura (hit) custa 0,1×, <strong>exceto</strong> Opus 5.5 e Sonnet 5.5 (0,05×) e Fable 5.2/Mythos 5.2 (0,025×).</p>
   <div class="table-wrap"><table>
     <thead><tr>
       <th>Modelo</th><th>Entrada</th><th>Saída</th><th>Cache write 5m</th><th>Cache write 1h</th><th>Cache hit</th><th>Batch (entrada / saída)</th>
     </tr></thead>
     <tbody>
-      <tr><td>Claude Fable 5.1</td><td>$10</td><td>$50</td><td>$12.50</td><td>$20</td><td>$0.25 <span class="pill info">0,025×</span></td><td>$5 / $25</td></tr>
+      <tr><td>Claude Fable 5.2 / Mythos 5.2</td><td>$8</td><td>$40</td><td>$10</td><td>$16</td><td>$0.20 <span class="pill info">0,025×</span></td><td>$4 / $20</td></tr>
       <tr><td>Claude Opus 5.5</td><td>$4</td><td>$20</td><td>$5</td><td>$8</td><td>$0.20 <span class="pill info">0,05×</span></td><td>$2 / $10</td></tr>
       <tr><td>Claude Sonnet 5.5</td><td>$2</td><td>$10</td><td>$2.50</td><td>$4</td><td>$0.10 <span class="pill info">0,05×</span></td><td>$1 / $5</td></tr>
       <tr><td>Claude Haiku 5.5 <span class="pill info">≤100k tokens de prompt</span></td><td>$0.10</td><td>$0.50</td><td>$0.125</td><td>$0.20</td><td>$0.01</td><td>$0.05 / $0.25</td></tr>
       <tr><td>Claude Haiku 5.5 <span class="pill info">&gt;100k tokens de prompt</span></td><td>$0.50</td><td>$2.50</td><td>$0.625</td><td>$1</td><td>$0.05</td><td>$0.25 / $1.25</td></tr>
     </tbody>
   </table></div>
-  <p>Outros itens de preço: <code>inference_geo: "us"</code> custa 1,1×; <a href="#a-fast-mode">fast mode</a> do Opus 5.5 custa $8 / $40 (GA, sem Batch); busca na web custa $10 por 1.000 buscas; Managed Agents cobra os tokens acima mais <strong>$0,08 por session-hour</strong> (só enquanto <code>running</code>, sem desconto de Batch). Confirme em <a href="https://platform.claude.com/docs/en/about-claude/pricing" target="_blank" rel="noopener">pricing</a> antes de projetar custo. Nenhum dos quatro modelos suporta Priority Tier (<a href="https://platform.claude.com/docs/en/api/service-tiers" target="_blank" rel="noopener">service-tiers</a>).</p>
+  <p>Outros itens de preço: <code>inference_geo: "us"</code> custa 1,1×; <a href="#a-fast-mode">fast mode</a> custa $16 / $80 no Fable 5.2 e no Mythos 5.2 e $8 / $40 no Opus 5.5 (GA, sem Batch); busca na web custa $10 por 1.000 buscas; Managed Agents cobra os tokens acima mais <strong>$0,08 por session-hour</strong> (só enquanto <code>running</code>, sem desconto de Batch). Confirme em <a href="https://platform.claude.com/docs/en/about-claude/pricing" target="_blank" rel="noopener">pricing</a> antes de projetar custo. Nenhum dos quatro modelos suporta Priority Tier (<a href="https://platform.claude.com/docs/en/api/service-tiers" target="_blank" rel="noopener">service-tiers</a>).</p>
 
   <div class="callout warn"><strong>Tool use e tokens:</strong> o tool use adiciona um prompt de sistema interno (286 tokens com <code>tool_choice</code> <code>auto</code>/<code>none</code> no Opus 5.5, no Sonnet 5.5 e no Haiku 5.5; 406 tokens com <code>any</code>/<code>tool</code> no Haiku 5.5). Use <a href="#a-context-windows">token counting</a> com o ID do modelo-alvo para estimar custo.</div>
 
   <div class="callout danger" id="a-modelos-opus55"><strong>Claude Opus 5.5 (<code>claude-opus-5-5</code>, lançado em 2026-09-22) — ponto de partida recomendado.</strong>
-    Para coding agêntico de longa duração e trabalho de conhecimento; 1M de contexto, 128k de saída, $4 / $20, <code>effort</code> padrão <code>medium</code>. O que o Opus 5.5 rejeita ou exige (valem também para Fable 5.1 e Sonnet 5.5, salvo indicação):
+    Para coding agêntico de longa duração e trabalho de conhecimento; 1M de contexto, 128k de saída, $4 / $20, <code>effort</code> padrão <code>medium</code>. O que o Opus 5.5 rejeita ou exige (valem também para Fable 5.2 e Sonnet 5.5, salvo indicação; as exceções do Fable 5.2 estão em <a href="#a-modelos-fable-mythos">Fable 5.2 e Mythos 5.2</a>):
     <ul style="margin:10px 0 0;padding-left:20px">
       <li><strong>Thinking não pode ser desligado.</strong> <code>thinking: {"type":"disabled"}</code> e <code>{"type":"enabled","budget_tokens":N}</code> retornam <strong>400</strong> em qualquer <code>effort</code>. Omita <code>thinking</code> (ou envie <code>{"type":"adaptive"}</code>) e controle a profundidade com <code>output_config.effort</code>. No Sonnet 5.5 o equivalente de "desligar" é <code>between_tools</code> (ver <a href="#a-modelos-sonnet55">Sonnet 5.5</a>).</li>
       <li><strong><code>tool_choice</code> <code>any</code>/<code>tool</code> retorna 400</strong> (também em <code>count_tokens</code>). <code>auto</code> e <code>none</code> funcionam. Para saída válida contra um schema, use <code>auto</code> + <a href="#c-strict"><em>strict tool use</em></a> ou <a href="#a-structured-outputs">structured outputs</a>; para induzir uma ferramenta, diga no prompt quando ela se aplica.</li>
@@ -1079,7 +1081,7 @@ console.log(message.content);</code></pre>
       <li><strong><code>tool_choice</code> <code>any</code>/<code>tool</code> retorna 400.</strong> Use <code>auto</code> + <code>strict: true</code> ou structured outputs.</li>
       <li><strong>Thinking blocks presos a modelo, conversa e conta.</strong> Mantenha o histórico <em>append-only</em>.</li>
       <li><strong>Computer use</strong> só pela ferramenta <code>computer_toolset_20260801</code>.</li>
-      <li><strong>Advisor tool:</strong> como executor, o Sonnet 5.5 exige advisor Mythos 5.1, Fable 5.1, Opus 5.5 ou Sonnet 5.5.</li>
+      <li><strong>Advisor tool:</strong> como executor, o Sonnet 5.5 aceita advisor Mythos 5.2, Fable 5.2, Opus 5.5 ou Sonnet 5.5.</li>
       <li><strong>Texto entre tool calls</strong> volta em blocks <code>thinking</code>; com <code>display: "omitted"</code> (padrão) fica vazio. Defina <code>thinking.display</code> se sua UI mostra esse texto.</li>
       <li><strong>Effort:</strong> comece no padrão <code>high</code> e refaça o sweep na sua eval.</li>
     </ol>
@@ -1130,8 +1132,16 @@ console.log(message.stop_reason, message.content.map((b) =&gt; b.type));</code><
     <span class="source-link"><a href="https://platform.claude.com/docs/en/models/sonnet-5-5/whats-new-sonnet-5-5" target="_blank" rel="noopener">whats-new-sonnet-5-5</a> · <a href="https://platform.claude.com/docs/en/models/sonnet-5-5/migration-guide" target="_blank" rel="noopener">models/sonnet-5-5/migration-guide</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/thinking" target="_blank" rel="noopener">thinking</a>.</span>
   </div>
 
-  <h3 id="a-modelos-fable-mythos">Fable 5.1 e Mythos 5.1</h3>
-  <p>O <strong>Claude Fable 5.1</strong> (<code>claude-fable-5-1</code>, GA em 2026-09-01) é o topo da linha geral: $10 / $50 por MTok, 1M de contexto, 128k de saída, cache read a 0,025×, <code>effort</code> padrão <code>high</code>. Compartilha com o Opus 5.5 as quebras de contrato de thinking sempre ligado, <code>tool_choice</code> forçado e thinking blocks presos (sem <code>disabled</code>, sem <code>budget_tokens</code>, sem sampling não-default). Exige <strong>retenção de 30 dias</strong> (não é elegível a ZDR), tem cache mínimo de 512 tokens, watermark de texto da Anthropic e mídia gerada por code execution com C2PA, e suporta <code>thinking.display: "updates"</code> (beta) e effort por mensagem (beta). A latência é a mais alta do catálogo. O <strong>Claude Mythos 5.1</strong> (<code>claude-mythos-5-1</code>, lançado em 2026-09-01) é o mesmo modelo, com as mesmas specs e preço, e só está disponível para organizações verificadas pelos programas de verificação da Anthropic (ex.: Cyber Verification Program).</p>
+  <h3 id="a-modelos-fable-mythos">Fable 5.2 e Mythos 5.2</h3>
+  <p>O <strong>Claude Fable 5.2</strong> (<code>claude-fable-5-2</code>, lançado em 2026-11-09) é o topo da linha geral: $8 / $40 por MTok, 1M de contexto, 128k de saída, cache read a 0,025×, <code>effort</code> padrão <code>high</code> (os cinco níveis, <code>low</code> a <code>max</code>), latência comparativa moderada. Compartilha com o Opus 5.5 as quebras de contrato de thinking sempre ligado e <code>tool_choice</code> forçado (sem <code>disabled</code>, sem <code>budget_tokens</code>, sem sampling não-default). Exige <strong>retenção de 30 dias</strong> (não é elegível a ZDR sem autorização expressa da Anthropic), tem cache mínimo de 512 tokens, e suporta <code>thinking.display: "updates"</code> (beta), effort por mensagem (beta), compaction sob demanda (<code>compact-2026-09-04</code>) e tools inline (<code>inline-tools-2026-09-15</code>). O <strong>Claude Mythos 5.2</strong> (<code>claude-mythos-5-2</code>) tem as mesmas specs e preço, e só está disponível para organizações verificadas pelos programas de verificação da Anthropic (ex.: Cyber Verification Program).</p>
+  <p>Quebras de contrato do Fable 5.2 e do Mythos 5.2 (fonte: <a href="https://platform.claude.com/docs/en/models/fable-5-2/whats-new-fable-5-2" target="_blank" rel="noopener">whats-new-fable-5-2</a>):</p>
+  <ul>
+    <li><strong>Editar turnos anteriores invalida os thinking blocks.</strong> Um request que falha a checagem de prefixo (algo antes de um thinking block mudou desde que o modelo o produziu: <code>system</code>, <code>tools</code> ou mensagens anteriores) retorna <strong>400</strong> (<code>The block is bound to a different conversation</code>). Mantenha <code>system</code> e <code>tools</code> estáveis, só acrescente a <code>messages</code> e devolva cada turno do assistant exatamente como a API o retornou. Como paliativo, o beta <code>thinking-binding-controls-2026-08-01</code> com <code>thinking.block_binding.prefix_mismatch_behavior: "drop_block"</code> descarta os blocks afetados e os lista em <code>input_transformations</code> (pode aumentar os tokens de saída).</li>
+    <li><strong>Só Fable 5.2 e Mythos 5.2 leem os thinking blocks do Fable 5.2.</strong> Na Claude API e no Google Cloud (Google managed) eles leem também os blocks de Opus 5.5, Sonnet 5.5 e Haiku 5.5; qualquer outro modelo descarta os blocks do Fable 5.2 (a conversa perde o raciocínio desses turnos).</li>
+    <li><strong>Computer use só pelo toolset <code>computer_toolset_20260801</code>.</strong> Declarar a ferramenta antiga <code>computer_20251124</code> retorna 400 <code>invalid_request_error</code> em todas as plataformas, exceto Amazon Bedrock.</li>
+    <li><strong>Advisor tool:</strong> um executor Fable 5.2 ou Mythos 5.2 aceita só Fable 5.2 ou Mythos 5.2 como advisor (qualquer outro retorna 400). O advisor Fable 5.2 devolve o conselho criptografado.</li>
+    <li><strong>Fast mode</strong> (<code>speed: "fast"</code>, sem header beta) a $16 / $80 por MTok; ver <a href="#a-fast-mode">Effort &amp; Fast mode</a>.</li>
+  </ul>
   <div class="code-group">
     <div class="code-tabs" role="tablist">
       <button class="code-tab" role="tab" data-lang="python" aria-selected="true">Python</button>
@@ -1143,11 +1153,11 @@ console.log(message.stop_reason, message.content.map((b) =&gt; b.type));</code><
 client = anthropic.Anthropic()
 
 # Confirma em runtime o ID e os limites (evita hard-codar 1_000_000 / 128_000)
-model = client.models.retrieve("claude-fable-5-1")
+model = client.models.retrieve("claude-fable-5-2")
 print(model.id, model.max_input_tokens, model.max_tokens)
 
 resp = client.messages.create(
-    model="claude-fable-5-1",
+    model="claude-fable-5-2",
     max_tokens=8192,
     output_config={"effort": "high"},  # thinking adaptive sempre ligado: regule só pelo effort
     messages=[{"role": "user", "content": "Resuma os riscos do plano X."}],
@@ -1159,11 +1169,11 @@ print(resp.content)</code></pre>
 
 const client = new Anthropic();
 
-const model = await client.models.retrieve("claude-fable-5-1");
+const model = await client.models.retrieve("claude-fable-5-2");
 console.log(model.id, model.max_input_tokens, model.max_tokens);
 
 const resp = await client.messages.create({
-  model: "claude-fable-5-1",
+  model: "claude-fable-5-2",
   max_tokens: 8192,
   output_config: { effort: "high" }, // thinking adaptive sempre ligado
   messages: [{ role: "user", content: "Resuma os riscos do plano X." }],
@@ -1175,7 +1185,7 @@ console.log(resp.content);</code></pre>
   <h3 id="a-modelos-escolha">Quando usar cada modelo</h3>
   <ul>
     <li><strong>Opus 5.5</strong> <span class="pill ok">ponto de partida</span> — a maioria das cargas de coding agêntico de longa duração e trabalho de conhecimento. Comece em <code>effort: "medium"</code> e ajuste contra a sua eval.</li>
-    <li><strong>Fable 5.1</strong> — quando a carga exige a maior capacidade disponível em agentes de longo horizonte e você aceita ~2,5× o preço de entrada do Opus 5.5, a latência mais alta e a retenção de 30 dias.</li>
+    <li><strong>Fable 5.2</strong> — quando a carga exige a maior capacidade disponível em agentes de longo horizonte e você aceita 2× o preço de entrada do Opus 5.5 e a retenção de 30 dias.</li>
     <li><strong>Sonnet 5.5</strong> — produção em volume, agentes com ferramentas e fluxos enterprise onde velocidade e custo pesam; use <code>between_tools</code> para pular o thinking inicial.</li>
     <li><strong>Haiku 5.5</strong> — classificação, lookups rápidos, subagentes e volumes altos onde latência e custo dominam (1M de contexto, 128k de saída, thinking adaptive e <code>effort</code>). Não há Priority Tier no Haiku 5.5.</li>
   </ul>
@@ -1320,10 +1330,13 @@ console.log(message.content[0].text);</code></pre>
   </div>
 
   <h3 id="a-mensagens-system-role">Mensagens <code>role: "system"</code> no meio da conversa</h3>
-  <p>No Fable 5.1, Mythos 5.1, Opus 5.5 e Sonnet 5.5, você pode incluir mensagens <code>{"role": "system"}</code> depois de um turno <code>user</code> para acrescentar instruções no meio da conversa. Elas têm a mesma autoridade do campo <code>system</code> de topo e, por irem ao fim do histórico, <strong>não invalidam o prefixo em cache</strong> anterior. Uma mensagem <code>system</code> não pode ser a primeira de <code>messages</code>. <span class="source-link"><a href="https://platform.claude.com/docs/en/build-with-claude/mid-conversation-system-messages" target="_blank" rel="noopener">mid-conversation-system-messages</a>.</span></p>
+  <p>No Fable 5.2, Mythos 5.2, Opus 5.5 e Sonnet 5.5, você pode incluir mensagens <code>{"role": "system"}</code> depois de um turno <code>user</code> para acrescentar instruções no meio da conversa. Elas têm a mesma autoridade do campo <code>system</code> de topo e, por irem ao fim do histórico, <strong>não invalidam o prefixo em cache</strong> anterior. Uma mensagem <code>system</code> não pode ser a primeira de <code>messages</code>. <span class="source-link"><a href="https://platform.claude.com/docs/en/build-with-claude/mid-conversation-system-messages" target="_blank" rel="noopener">mid-conversation-system-messages</a>.</span></p>
+
+  <h3 id="a-mensagens-threads">Message threads <span class="pill beta">Beta</span></h3>
+  <p>Com o header <code>message-threads-2026-08-12</code>, a API guarda a conversa no servidor e cada request seguinte envia só as mensagens novas. Uma thread expira 5 minutos depois do último request e é apagada em no máximo 1 hora após o último uso. Disponível na Claude API, no Claude Platform on AWS, no Claude Models on Google Cloud (Anthropic managed) e no Claude in Microsoft Foundry. <span class="source-link"><a href="https://platform.claude.com/docs/en/release-notes/overview" target="_blank" rel="noopener">release notes</a> (2026-11-02).</span></p>
 
   <h3 id="a-mensagens-prefill">Prefill (mensagem <code>assistant</code> final)</h3>
-  <div class="callout danger"><strong>Cuidado:</strong> uma mensagem <code>assistant</code> na última posição de <code>messages</code> (prefill) <strong>não é suportada</strong> nos modelos atuais (Fable 5.1, Mythos 5.1, Opus 5.5, Sonnet 5.5 e Haiku 5.5): o request retorna erro <strong>400</strong>. Para moldar o formato da resposta, use <a href="#a-structured-outputs">structured outputs</a> ou instruções no <code>system</code>. <span class="source-link"><a href="https://platform.claude.com/docs/en/build-with-claude/working-with-messages" target="_blank" rel="noopener">working-with-messages</a></span></div>
+  <div class="callout danger"><strong>Cuidado:</strong> uma mensagem <code>assistant</code> na última posição de <code>messages</code> (prefill) <strong>não é suportada</strong> nos modelos atuais (Fable 5.2, Mythos 5.2, Opus 5.5, Sonnet 5.5 e Haiku 5.5): o request retorna erro <strong>400</strong>. Para moldar o formato da resposta, use <a href="#a-structured-outputs">structured outputs</a> ou instruções no <code>system</code>. <span class="source-link"><a href="https://platform.claude.com/docs/en/build-with-claude/working-with-messages" target="_blank" rel="noopener">working-with-messages</a></span></div>
 
   <h3 id="a-mensagens-vision">Entradas de visão (resumo)</h3>
   <p>Os blocos de <code>content</code> podem ser de tipo <code>image</code> além de <code>text</code>. A fonte da imagem pode ser <code>base64</code>, <code>url</code> ou <code>file</code> (referência a um arquivo da Files API). Tipos de mídia suportados: <code>image/jpeg</code>, <code>image/png</code>, <code>image/gif</code>, <code>image/webp</code>. O detalhamento de visão, PDFs e Files API está na Parte B.</p>
@@ -1500,7 +1513,7 @@ data: {"type":"message_stop"}</code></pre>
 <!-- ================= 6.1 SERVER-SIDE FALLBACK & FALLBACK CREDIT ================= -->
 <section class="chapter" id="a-server-side-fallback">
   <h2>6.1. Fallback em recusas: parâmetro <code>fallbacks</code> e <span class="pill beta">Beta</span> Fallback credit</h2>
-  <p>Os classificadores de segurança do <strong>Fable 5.1</strong>, <strong>Opus 5.5</strong> e <strong>Sonnet 5.5</strong> podem recusar um pedido — você recebe uma resposta HTTP 200 normal com <code>stop_reason: "refusal"</code> (ver <a href="#a-stop-reason">seção 6</a>), não um erro. O mesmo pedido costuma ser aceito por outro modelo. O <strong>server-side fallback</strong> automatiza esse retry <em>dentro de uma única chamada de API</em>: você define <code>fallbacks: "default"</code> (a Anthropic escolhe o modelo recomendado pela categoria da recusa) ou lista até <strong>3 modelos</strong> e, quando o modelo pedido recusa, a API roda o próximo da cadeia no mesmo request. Uma única resposta é devolvida, e o campo <code>model</code> de topo indica qual modelo efetivamente respondeu — o usuário recebe a resposta em um único round trip.</p>
+  <p>Os classificadores de segurança do <strong>Fable 5.2</strong>, <strong>Opus 5.5</strong> e <strong>Sonnet 5.5</strong> podem recusar um pedido — você recebe uma resposta HTTP 200 normal com <code>stop_reason: "refusal"</code> (ver <a href="#a-stop-reason">seção 6</a>), não um erro. O mesmo pedido costuma ser aceito por outro modelo. O <strong>server-side fallback</strong> automatiza esse retry <em>dentro de uma única chamada de API</em>: você define <code>fallbacks: "default"</code> (a Anthropic escolhe o modelo recomendado pela categoria da recusa) ou lista até <strong>3 modelos</strong> e, quando o modelo pedido recusa, a API roda o próximo da cadeia no mesmo request. Uma única resposta é devolvida, e o campo <code>model</code> de topo indica qual modelo efetivamente respondeu — o usuário recebe a resposta em um único round trip.</p>
 
   <div class="callout warn"><strong><span class="pill beta">Beta</span> Header:</strong> requer <code>anthropic-beta: server-side-fallback-2026-07-01</code>, que aceita tanto o modo <code>"default"</code> quanto a lista explícita (qualquer outro valor <code>server-side-fallback-*</code> faz a API rejeitar <code>fallbacks</code> com <strong>400</strong>). Disponível na <strong>Claude API</strong> e na <strong>Claude Platform on AWS</strong>; <strong>não</strong> em Amazon Bedrock, Google Cloud nem Microsoft Foundry — nessas plataformas use o SDK middleware (client-side). O parâmetro é <strong>rejeitado na Message Batches API</strong>: um item de batch com <code>fallbacks</code> retorna resultado com erro por item. Categorias de recusa: <code>cyber</code>, <code>bio</code>, <code>frontier_llm</code>, <code>reasoning_extraction</code>, <code>general_harms</code>.</div>
 
@@ -1524,7 +1537,7 @@ data: {"type":"message_stop"}</code></pre>
     </div>
     <div class="code-pane" data-lang="python" data-active="true">
 <pre><code class="language-python">response = client.beta.messages.create(
-    model="claude-fable-5-1",
+    model="claude-fable-5-2",
     max_tokens=1024,
     messages=[{"role": "user", "content": "Hello, Claude"}],
     fallbacks="default",   # fallback recomendado por categoria de recusa
@@ -1543,7 +1556,7 @@ print(served_by_fallback)</code></pre>
     </div>
     <div class="code-pane" data-lang="typescript" data-active="false">
 <pre><code class="language-typescript">const response = await client.beta.messages.create({
-  model: "claude-fable-5-1",
+  model: "claude-fable-5-2",
   max_tokens: 1024,
   messages: [{ role: "user", content: "Hello, Claude" }],
   fallbacks: "default", // fallback recomendado por categoria de recusa
@@ -1564,7 +1577,7 @@ console.log(model, servedByFallback);</code></pre>
   --header "anthropic-beta: server-side-fallback-2026-07-01" \
   --header "content-type: application/json" \
   --data '{
-    "model": "claude-fable-5-1",
+    "model": "claude-fable-5-2",
     "max_tokens": 1024,
     "fallbacks": "default",
     "messages": [{"role": "user", "content": "Hello, Claude"}]
@@ -1574,7 +1587,7 @@ console.log(model, servedByFallback);</code></pre>
 
   <p>Para controlar exatamente quais modelos servem as recusas, passe uma lista (até 3 entradas). Cada entrada deve ser um alvo permitido do modelo pedido: leia <code>allowed_fallback_models</code> na entrada do modelo na Models API e use um dos IDs listados:</p>
 <pre><code class="language-python">response = client.beta.messages.create(
-    model="claude-fable-5-1",
+    model="claude-fable-5-2",
     max_tokens=1024,
     messages=[{"role": "user", "content": "Hello, Claude"}],
     fallbacks=[{"model": "&lt;id de allowed_fallback_models&gt;"}],   # até 3 modelos, em ordem
@@ -1636,7 +1649,7 @@ console.log(model, servedByFallback);</code></pre>
 <pre><code class="language-python">request = {"max_tokens": 1024, "messages": [{"role": "user", "content": "Hello, Claude"}]}
 
 resp = client.beta.messages.create(
-    model="claude-fable-5-1", betas=["fallback-credit-2026-07-01"], **request
+    model="claude-fable-5-2", betas=["fallback-credit-2026-07-01"], **request
 )
 
 details = resp.stop_details
@@ -1661,7 +1674,7 @@ print(resp.model)</code></pre>
 response=$(curl --fail-with-body -sS https://api.anthropic.com/v1/messages \
   -H "x-api-key: $ANTHROPIC_API_KEY" -H "anthropic-version: 2026-10-21" \
   -H "anthropic-beta: fallback-credit-2026-07-01" -H "content-type: application/json" \
-  -d '{"model":"claude-fable-5-1","max_tokens":1024,
+  -d '{"model":"claude-fable-5-2","max_tokens":1024,
        "messages":[{"role":"user","content":"Hello, Claude"}]}')
 
 # 2) A recusa carrega um token de uso único em stop_details
@@ -1697,7 +1710,7 @@ jq -c '{stop_reason, model}' <<<"${response}"</code></pre>
     <li><strong>Strict tool use</strong> (<code>strict: true</code> em uma ferramenta): garante validação de schema nos nomes e inputs de ferramentas (como o Claude chama suas funções).</li>
   </ul>
 
-  <div class="callout info"><strong>Nota:</strong> GA na Claude API e no Amazon Bedrock para Fable 5.1, Opus 5.5, Sonnet 5.5 e Haiku 5.5. O parâmetro é <code>output_config.format</code> e não exige header beta. No SDK Python, o helper <code>client.messages.parse(..., output_format=ModeloPydantic)</code> é o método recomendado na documentação e devolve <code>response.parsed_output</code>. <span class="source-link"><a href="https://platform.claude.com/docs/en/build-with-claude/structured-outputs" target="_blank" rel="noopener">structured-outputs</a>.</span></div>
+  <div class="callout info"><strong>Nota:</strong> GA na Claude API e no Amazon Bedrock para Fable 5.2, Opus 5.5, Sonnet 5.5 e Haiku 5.5. O parâmetro é <code>output_config.format</code> e não exige header beta. No SDK Python, o helper <code>client.messages.parse(..., output_format=ModeloPydantic)</code> é o método recomendado na documentação e devolve <code>response.parsed_output</code>. <span class="source-link"><a href="https://platform.claude.com/docs/en/build-with-claude/structured-outputs" target="_blank" rel="noopener">structured-outputs</a>.</span></div>
 
   <h3 id="a-so-json">JSON outputs</h3>
   <p>Defina um JSON Schema e inclua-o em <code>output_config.format</code> com <code>type: "json_schema"</code>. A resposta vem como JSON válido em <code>response.content[0].text</code>.</p>
@@ -1810,16 +1823,16 @@ print(response.content[0].text)  # JSON válido garantido</code></pre>
 <section class="chapter" id="a-effort">
   <h2>8. Effort &amp; Fast mode</h2>
   <h3 id="a-effort-param">O parâmetro <code>effort</code></h3>
-  <p>O parâmetro <code>effort</code> (em <code>output_config.effort</code>) é <span class="pill ok">GA</span>, não exige header beta e orienta quão "disposto" o Claude está a gastar tokens — afeta <strong>todos</strong> os tokens da resposta (texto, chamadas de ferramenta e thinking). Níveis: <code>low</code>, <code>medium</code>, <code>high</code>, <code>xhigh</code>, <code>max</code>. É suportado em Fable 5.1, Mythos 5.1, Opus 5.5, Sonnet 5.5 e Haiku 5.5; nem todo modelo com <code>max</code> suporta <code>xhigh</code> (confira <code>capabilities</code> na Models API). O <strong>padrão é <code>high</code></strong> (Fable 5.1, Sonnet 5.5), <strong>exceto no Opus 5.5 e no Haiku 5.5, cujo padrão é <code>medium</code></strong>. Nesses modelos <code>effort</code> é o controle primário da profundidade de raciocínio, com adaptive thinking ligado.</p>
+  <p>O parâmetro <code>effort</code> (em <code>output_config.effort</code>) é <span class="pill ok">GA</span>, não exige header beta e orienta quão "disposto" o Claude está a gastar tokens — afeta <strong>todos</strong> os tokens da resposta (texto, chamadas de ferramenta e thinking). Níveis: <code>low</code>, <code>medium</code>, <code>high</code>, <code>xhigh</code>, <code>max</code>. É suportado em Fable 5.2, Mythos 5.2, Opus 5.5, Sonnet 5.5 e Haiku 5.5; nem todo modelo com <code>max</code> suporta <code>xhigh</code> (confira <code>capabilities</code> na Models API). O <strong>padrão é <code>high</code></strong> (Fable 5.2, Sonnet 5.5), <strong>exceto no Opus 5.5 e no Haiku 5.5, cujo padrão é <code>medium</code></strong>. Nesses modelos <code>effort</code> é o controle primário da profundidade de raciocínio, com adaptive thinking ligado.</p>
 
-  <div class="callout warn"><strong>O que o <code>effort</code> faz e não faz.</strong> É orientação comportamental, <em>não</em> um budget rígido nem um controle de verbosidade: o teto duro é <code>max_tokens</code>, e baixar o effort não encurta de forma confiável a resposta visível. Os níveis são <strong>recalibrados por modelo</strong> — um nível não equivale à mesma quantidade de raciocínio em modelos diferentes: refaça o sweep na sua eval ao trocar de modelo. Reserve <code>max_tokens</code> alto (até 128k) para não truncar o thinking. Mudar o <code>effort</code> entre requests invalida o prompt cache — exceto o <strong>effort por mensagem</strong> (<span class="pill beta">Beta</span>, header <code>mid-conversation-output-config-2026-07-01</code>: uma mensagem <code>{"role":"system","content":[],"output_config":{"effort":"low"}}</code> no meio da conversa) em Fable 5.1, Mythos 5.1, Opus 5.5 e Sonnet 5.5; não vale com o <code>between_tools</code> do Sonnet 5.5. <span class="source-link"><a href="https://platform.claude.com/docs/en/build-with-claude/effort" target="_blank" rel="noopener">effort</a>.</span></div>
+  <div class="callout warn"><strong>O que o <code>effort</code> faz e não faz.</strong> É orientação comportamental, <em>não</em> um budget rígido nem um controle de verbosidade: o teto duro é <code>max_tokens</code>, e baixar o effort não encurta de forma confiável a resposta visível. Os níveis são <strong>recalibrados por modelo</strong> — um nível não equivale à mesma quantidade de raciocínio em modelos diferentes: refaça o sweep na sua eval ao trocar de modelo. Reserve <code>max_tokens</code> alto (até 128k) para não truncar o thinking. Mudar o <code>effort</code> entre requests invalida o prompt cache — exceto o <strong>effort por mensagem</strong> (<span class="pill beta">Beta</span>, header <code>mid-conversation-output-config-2026-07-01</code>: uma mensagem <code>{"role":"system","content":[],"output_config":{"effort":"low"}}</code> no meio da conversa) em Fable 5.2, Mythos 5.2, Opus 5.5 e Sonnet 5.5; não vale com o <code>between_tools</code> do Sonnet 5.5. <span class="source-link"><a href="https://platform.claude.com/docs/en/build-with-claude/effort" target="_blank" rel="noopener">effort</a>.</span></div>
 
   <div class="table-wrap"><table>
     <thead><tr><th>Nível</th><th>Descrição</th></tr></thead>
     <tbody>
       <tr><td><code>max</code></td><td>Capacidade máxima, sem restrição de tokens. Reserve para problemas de fronteira.</td></tr>
       <tr><td><code>xhigh</code></td><td>Capacidade estendida para trabalho de longo horizonte (agentes e coding longos). Não é aceito com <code>thinking: between_tools</code> no Sonnet 5.5.</td></tr>
-      <tr><td><code>high</code></td><td>Alta capacidade; padrão em Fable 5.1 e Sonnet 5.5 (no Opus 5.5 e no Haiku 5.5 precisa ser setado explicitamente).</td></tr>
+      <tr><td><code>high</code></td><td>Alta capacidade; padrão em Fable 5.2 e Sonnet 5.5 (no Opus 5.5 e no Haiku 5.5 precisa ser setado explicitamente).</td></tr>
       <tr><td><code>medium</code></td><td>Equilíbrio com economia moderada de tokens; <strong>padrão no Opus 5.5 e no Haiku 5.5</strong>.</td></tr>
       <tr><td><code>low</code></td><td>Mais eficiente; economia significativa com alguma redução de capacidade.</td></tr>
     </tbody>
@@ -1864,10 +1877,10 @@ print(response.content[0].text)</code></pre>
 
   <div class="callout tip"><strong>Dica:</strong> comece pelo padrão do modelo (<code>medium</code> no Opus 5.5 e no Haiku 5.5, <code>high</code> nos demais), fixe o valor explicitamente no código e ajuste contra a sua eval: suba para <code>xhigh</code> em coding e agentes exigentes, use <code>low</code>/<code>medium</code> como controle primário de custo e latência. Em <code>xhigh</code>/<code>max</code> dê um <code>max_tokens</code> generoso (comece em 64k).</div>
 
-  <p><strong><code>effort</code> e thinking:</strong> no Fable 5.1, Opus 5.5, Sonnet 5.5 e Haiku 5.5 o thinking é adaptativo e o <code>effort</code> é o controle da profundidade; o thinking manual (<code>type: "enabled", budget_tokens</code>) retorna <strong>400</strong>, e <code>disabled</code> também (no Sonnet 5.5 use <code>between_tools</code>, que só aceita <code>low</code>/<code>medium</code>/<code>high</code>; o Haiku 5.5 é a exceção e aceita <code>disabled</code> com effort até <code>high</code>). <code>effort</code> também funciona sem thinking, controlando o gasto geral. Detalhes na <a href="#b-adaptive-thinking">Parte B</a>.</p>
+  <p><strong><code>effort</code> e thinking:</strong> no Fable 5.2, Opus 5.5, Sonnet 5.5 e Haiku 5.5 o thinking é adaptativo e o <code>effort</code> é o controle da profundidade; o thinking manual (<code>type: "enabled", budget_tokens</code>) retorna <strong>400</strong>, e <code>disabled</code> também (no Sonnet 5.5 use <code>between_tools</code>, que só aceita <code>low</code>/<code>medium</code>/<code>high</code>; o Haiku 5.5 é a exceção e aceita <code>disabled</code> com effort até <code>high</code>). <code>effort</code> também funciona sem thinking, controlando o gasto geral. Detalhes na <a href="#b-adaptive-thinking">Parte B</a>.</p>
 
-  <h3 id="a-fast-mode">Fast mode <span class="pill ok">GA (Opus 5.5)</span></h3>
-  <p>O fast mode entrega <strong>geração de tokens de saída até 2,5× mais rápida</strong> rodando o mesmo modelo com uma configuração de inferência mais veloz (mesmos pesos, mesma inteligência). Ativa-se com <code>speed: "fast"</code> em <code>messages.create</code> (SDKs Python 2.x e TypeScript 1.x), sem header beta. Entre os modelos gerais atuais, só o <strong>Opus 5.5</strong> o suporta (GA; há rate limit padrão nos tiers Start, Build e Scale) — na Claude API (inclusive Managed Agents) e no Microsoft Foundry em deployments hospedados no Azure, mas não em Claude Platform on AWS, Bedrock ou Google Cloud, a <strong>$8 / $40</strong> por MTok (entrada/saída). O preço vale sobre toda a janela de contexto e se acumula com os multiplicadores de prompt caching e <code>inference_geo</code>; não está disponível com a Batch API nem com Priority Tier. O ganho é em tokens de saída por segundo, não em <em>time to first token</em>; há rate limit dedicado (HTTP 429 com <code>retry-after</code>), e <code>usage.speed</code> indica a velocidade usada. <span class="source-link"><a href="https://platform.claude.com/docs/en/build-with-claude/fast-mode" target="_blank" rel="noopener">fast-mode</a> · <a href="https://platform.claude.com/docs/en/about-claude/pricing#fast-mode-pricing" target="_blank" rel="noopener">pricing</a>.</span></p>
+  <h3 id="a-fast-mode">Fast mode <span class="pill ok">GA (Fable 5.2, Mythos 5.2, Opus 5.5)</span></h3>
+  <p>O fast mode entrega <strong>geração de tokens de saída até 2,5× mais rápida</strong> rodando o mesmo modelo com uma configuração de inferência mais veloz (mesmos pesos, mesma inteligência). Ativa-se com <code>speed: "fast"</code> em <code>messages.create</code> (SDKs Python 2.x e TypeScript 1.x), sem header beta. Entre os modelos gerais atuais, o suportam o <strong>Fable 5.2</strong> (e o Mythos 5.2) e o <strong>Opus 5.5</strong> (GA; há rate limit padrão nos tiers Start, Build e Scale; não precisa pedir acesso). O Fable 5.2 e o Mythos 5.2 têm fast mode na Claude API, no Google Cloud (Anthropic managed e Google managed) e no Microsoft Foundry (deployments hospedados na Anthropic), a <strong>$16 / $80</strong> por MTok (entrada/saída); o Opus 5.5, na Claude API (inclusive Managed Agents), no Google Cloud (Anthropic managed) e no Foundry em deployments hospedados no Azure, a <strong>$8 / $40</strong>. No Foundry o fast mode tem ID próprio (<code>claude-fable-5-2-fast</code>, <code>claude-mythos-5-2-fast</code>, <code>claude-opus-5-5-fast</code>) e o <code>speed</code> deve ser omitido. Não há suporte em Bedrock nem em Claude Platform on AWS. O preço vale sobre toda a janela de contexto e se acumula com os multiplicadores de prompt caching e <code>inference_geo</code>; não está disponível com a Batch API nem com Priority Tier. O ganho é em tokens de saída por segundo, não em <em>time to first token</em>; há rate limit dedicado (HTTP 429 com <code>retry-after</code>), e <code>usage.speed</code> indica a velocidade usada. <span class="source-link"><a href="https://platform.claude.com/docs/en/build-with-claude/fast-mode" target="_blank" rel="noopener">fast-mode</a> · <a href="https://platform.claude.com/docs/en/about-claude/pricing#fast-mode-pricing" target="_blank" rel="noopener">pricing</a>.</span></p>
 
   <div class="code-group">
     <div class="code-tabs" role="tablist">
@@ -1912,7 +1925,7 @@ print(response.usage.speed)  # "fast" ou "standard"</code></pre>
 <!-- ============================ 9. CONTEXT WINDOWS & TOKEN COUNTING ============================ -->
 <section class="chapter" id="a-context-windows">
   <h2>9. Janelas de contexto &amp; contagem de tokens</h2>
-  <p>A "janela de contexto" é todo o texto que o modelo consegue referenciar ao gerar uma resposta, incluindo a própria resposta — uma "memória de trabalho". Fable 5.1, Opus 5.5, Sonnet 5.5 e Haiku 5.5 têm <strong>1M tokens</strong>. Esse valor é ao mesmo tempo o default e o teto — <strong>não existe variante de janela menor</strong>, e a janela inteira é cobrada à taxa padrão (sem header beta e sem <em>long-context premium</em>; exceto o Haiku 5.5, com taxas por faixa acima de 100.000 tokens de prompt). Um único request pode incluir até 600 imagens/páginas de PDF.</p>
+  <p>A "janela de contexto" é todo o texto que o modelo consegue referenciar ao gerar uma resposta, incluindo a própria resposta — uma "memória de trabalho". Fable 5.2, Opus 5.5, Sonnet 5.5 e Haiku 5.5 têm <strong>1M tokens</strong>. Esse valor é ao mesmo tempo o default e o teto — <strong>não existe variante de janela menor</strong>, e a janela inteira é cobrada à taxa padrão (sem header beta e sem <em>long-context premium</em>; exceto o Haiku 5.5, com taxas por faixa acima de 100.000 tokens de prompt). Um único request pode incluir até 600 imagens/páginas de PDF.</p>
 
   <div class="callout info"><strong>Nota:</strong> mais contexto não é automaticamente melhor. À medida que o número de tokens cresce, precisão e <em>recall</em> degradam — fenômeno conhecido como <em>context rot</em>. Curar o que entra no contexto importa tanto quanto quanto cabe.</div>
 
@@ -1923,7 +1936,7 @@ print(response.usage.speed)  # "fast" ou "standard"</code></pre>
   <p><strong>Overflow:</strong> se <code>input_tokens + max_tokens</code> exceder a janela, a API aceita o request e, se a geração atingir o limite, para com <code>stop_reason: "model_context_window_exceeded"</code> (ver <a href="#a-stop-reason">seção 6</a>).</p>
 
   <h3 id="a-token-counting">Contagem de tokens (conceito)</h3>
-  <p>O endpoint <code>POST /v1/messages/count_tokens</code> conta os tokens de entrada <em>antes</em> de enviar o request, ajudando a gerenciar rate limits/custos, decidir roteamento de modelo e otimizar o tamanho do prompt. Aceita a mesma lista estruturada de inputs (system, tools, imagens, PDFs) e retorna <code>{ "input_tokens": N }</code>. A contagem é gratuita, com rate limits próprios (RPM Start 5.000 / Build 10.000 / Scale 20.000); com <code>tool_choice</code> <code>any</code>/<code>tool</code> em modelos que o rejeitam (Fable 5.1, Opus 5.5, Sonnet 5.5) a contagem também retorna 400.</p>
+  <p>O endpoint <code>POST /v1/messages/count_tokens</code> conta os tokens de entrada <em>antes</em> de enviar o request, ajudando a gerenciar rate limits/custos, decidir roteamento de modelo e otimizar o tamanho do prompt. Aceita a mesma lista estruturada de inputs (system, tools, imagens, PDFs) e retorna <code>{ "input_tokens": N }</code>. A contagem é gratuita, com rate limits próprios (RPM Start 5.000 / Build 10.000 / Scale 20.000); com <code>tool_choice</code> <code>any</code>/<code>tool</code> em modelos que o rejeitam (Fable 5.2, Opus 5.5, Sonnet 5.5) a contagem também retorna 400.</p>
 
   <div class="code-group">
     <div class="code-tabs" role="tablist">
@@ -2137,14 +2150,14 @@ for await (const result of await client.messages.batches.results(batch.id)) {
 <!-- ================= 1. ADAPTIVE THINKING ================= -->
 <section class="chapter" id="b-adaptive-thinking">
   <h2>1. Adaptive thinking (raciocínio adaptativo)</h2>
-  <p>O <strong>adaptive thinking</strong> deixa o Claude decidir <em>dinamicamente</em> se vai raciocinar e quanto, com base na complexidade de cada requisição — em vez de você fixar um orçamento de tokens de pensamento. É o modo de thinking dos modelos atuais: <strong>Fable 5.1, Mythos 5.1, Opus 5.5, Sonnet 5.5 e Haiku 5.5</strong>; o thinking já vem ligado e não precisa de configuração (ver <a href="#b-extended-thinking">capítulo 2</a> para exibição e preservação). <strong>Nenhum header beta é necessário.</strong> A profundidade é guiada por <code>output_config.effort</code> (<a href="#a-effort">Parte A §8</a>).</p>
+  <p>O <strong>adaptive thinking</strong> deixa o Claude decidir <em>dinamicamente</em> se vai raciocinar e quanto, com base na complexidade de cada requisição — em vez de você fixar um orçamento de tokens de pensamento. É o modo de thinking dos modelos atuais: <strong>Fable 5.2, Mythos 5.2, Opus 5.5, Sonnet 5.5 e Haiku 5.5</strong>; o thinking já vem ligado e não precisa de configuração (ver <a href="#b-extended-thinking">capítulo 2</a> para exibição e preservação). <strong>Nenhum header beta é necessário.</strong> A profundidade é guiada por <code>output_config.effort</code> (<a href="#a-effort">Parte A §8</a>).</p>
   <p class="source-link">Fonte: <a href="https://platform.claude.com/docs/en/build-with-claude/thinking" target="_blank" rel="noopener">platform.claude.com/docs/en/build-with-claude/thinking</a></p>
 
   <h3>1.1. Suporte por modelo (o que a API aceita em <code>thinking.type</code>)</h3>
   <div class="table-wrap"><table>
     <thead><tr><th>Modelo</th><th>Sem campo / <code>adaptive</code></th><th><code>disabled</code></th><th><code>enabled</code> + <code>budget_tokens</code></th><th><code>between_tools</code></th></tr></thead>
     <tbody>
-      <tr><td><code>claude-fable-5-1</code>, <code>claude-opus-5-5</code> (e Mythos 5.1)</td><td><span class="pill ok">adaptive, sempre ligado</span></td><td><span class="pill na">400</span></td><td><span class="pill na">400</span></td><td><span class="pill na">400</span></td></tr>
+      <tr><td><code>claude-fable-5-2</code>, <code>claude-opus-5-5</code> (e Mythos 5.2)</td><td><span class="pill ok">adaptive, sempre ligado</span></td><td><span class="pill na">400</span></td><td><span class="pill na">400</span></td><td><span class="pill na">400</span></td></tr>
       <tr><td><code>claude-sonnet-5-5</code></td><td><span class="pill ok">adaptive (padrão)</span></td><td><span class="pill na">400</span> (aponta para <code>between_tools</code>)</td><td><span class="pill na">400</span></td><td><span class="pill ok">sim</span> — só com <code>effort</code> <code>low</code>/<code>medium</code>/<code>high</code></td></tr>
       <tr><td><code>claude-haiku-5-5</code></td><td><span class="pill ok">adaptive (padrão)</span></td><td><span class="pill ok">sim</span> — só com <code>effort</code> até <code>high</code> (400 em <code>xhigh</code>/<code>max</code>)</td><td><span class="pill na">400</span></td><td><span class="pill na">n/a</span></td></tr>
     </tbody>
@@ -2226,7 +2239,7 @@ for (const block of response.content) {
     <li><strong>Interleaved thinking automático:</strong> o modo adaptive ativa o raciocínio entre chamadas de ferramenta — ideal para fluxos agênticos.</li>
     <li><strong>Validação flexível:</strong> turnos anteriores do assistente <em>não</em> precisam começar com um bloco <code>thinking</code>.</li>
     <li><strong>Prompt caching:</strong> mudar o modo de thinking ou o <code>effort</code> entre requests invalida os breakpoints das mensagens (system e tools continuam em cache); o effort por mensagem (beta) é a exceção — ver <a href="#a-effort-param">Parte A §8</a>.</li>
-    <li><strong>Display padrão:</strong> <code>thinking.display</code> é <code>"omitted"</code> por padrão em Fable 5.1, Opus 5.5, Sonnet 5.5 e Haiku 5.5 — defina <code>"summarized"</code> se sua UI mostra o raciocínio (<a href="#b-extended-thinking">2.4</a>).</li>
+    <li><strong>Display padrão:</strong> <code>thinking.display</code> é <code>"omitted"</code> por padrão em Fable 5.2, Opus 5.5, Sonnet 5.5 e Haiku 5.5 — defina <code>"summarized"</code> se sua UI mostra o raciocínio (<a href="#b-extended-thinking">2.4</a>).</li>
     <li><strong>Controle de custo:</strong> <code>max_tokens</code> é o limite rígido do total de saída (pensamento + texto). Se vir <code>stop_reason: "max_tokens"</code>, aumente <code>max_tokens</code> ou reduza o <code>effort</code>. Com <code>max_tokens</code> acima de 21.333, o SDK exige streaming.</li>
     <li><strong>Sampling e prefill:</strong> <code>temperature</code>/<code>top_p</code>/<code>top_k</code> retornam 400 (mesmo com o valor padrão), e prefill não é permitido com thinking.</li>
   </ul>
@@ -2244,9 +2257,9 @@ for (const block of response.content) {
   <div class="table-wrap"><table>
     <thead><tr><th>Modo</th><th>Config</th><th>Disponibilidade</th><th>Quando usar</th></tr></thead>
     <tbody>
-      <tr><td><strong>Adaptive</strong></td><td>omitir <code>thinking</code> ou <code>{type: "adaptive"}</code></td><td>Fable 5.1, Mythos 5.1, Opus 5.5, Sonnet 5.5, Haiku 5.5.</td><td>O Claude decide quando/quanto raciocinar; use <code>effort</code> para guiar.</td></tr>
+      <tr><td><strong>Adaptive</strong></td><td>omitir <code>thinking</code> ou <code>{type: "adaptive"}</code></td><td>Fable 5.2, Mythos 5.2, Opus 5.5, Sonnet 5.5, Haiku 5.5.</td><td>O Claude decide quando/quanto raciocinar; use <code>effort</code> para guiar.</td></tr>
       <tr><td><strong>Between tools</strong></td><td><code>{type: "between_tools"}</code></td><td>Somente Sonnet 5.5 (<code>effort</code> ≤ <code>high</code>).</td><td>Pular o thinking inicial e raciocinar só entre chamadas de ferramenta (ver <a href="#a-modelos-sonnet55">Sonnet 5.5</a>).</td></tr>
-      <tr><td><strong>Disabled</strong></td><td><code>{type: "disabled"}</code></td><td>Somente Haiku 5.5 (com <code>effort</code> até <code>high</code>). <strong>400</strong> em Fable 5.1, Opus 5.5 e Sonnet 5.5.</td><td>Menor latência quando não precisa de raciocínio.</td></tr>
+      <tr><td><strong>Disabled</strong></td><td><code>{type: "disabled"}</code></td><td>Somente Haiku 5.5 (com <code>effort</code> até <code>high</code>). <strong>400</strong> em Fable 5.2, Opus 5.5 e Sonnet 5.5.</td><td>Menor latência quando não precisa de raciocínio.</td></tr>
     </tbody>
   </table></div>
 
@@ -2261,11 +2274,11 @@ for (const block of response.content) {
     <thead><tr><th>Valor</th><th>Comportamento</th><th>Padrão em</th></tr></thead>
     <tbody>
       <tr><td><code>"summarized"</code></td><td>Blocos contêm o texto resumido do pensamento.</td><td>— (defina explicitamente)</td></tr>
-      <tr><td><code>"omitted"</code></td><td>Blocos voltam com <code>thinking</code> vazio; <code>signature</code> ainda carrega o pensamento completo criptografado.</td><td>Fable 5.1, Opus 5.5, Sonnet 5.5, Haiku 5.5</td></tr>
+      <tr><td><code>"omitted"</code></td><td>Blocos voltam com <code>thinking</code> vazio; <code>signature</code> ainda carrega o pensamento completo criptografado.</td><td>Fable 5.2, Opus 5.5, Sonnet 5.5, Haiku 5.5</td></tr>
       <tr><td><code>"updates"</code> <span class="pill beta">Beta</span></td><td>Resume as notas de progresso entre chamadas de ferramenta. Header <code>thinking-display-updates-2026-08-18</code>.</td><td>—</td></tr>
     </tbody>
   </table></div>
-  <div class="callout warn"><strong>Atenção (mudança silenciosa):</strong> com <code>"omitted"</code> os blocos de pensamento aparecem no stream, mas com <code>thinking</code> vazio — inclusive o texto de progresso entre tool calls (Fable 5.1, Opus 5.5, Sonnet 5.5). Se sua UI mostra raciocínio ou progresso, defina <code>display</code> explicitamente. <code>display</code> é inválido com <code>disabled</code> e com <code>between_tools</code>. Mesmo com <code>"omitted"</code> você paga os tokens completos de pensamento — omitir reduz <em>latência</em> (time-to-first-text-token), não custo.</div>
+  <div class="callout warn"><strong>Atenção (mudança silenciosa):</strong> com <code>"omitted"</code> os blocos de pensamento aparecem no stream, mas com <code>thinking</code> vazio — inclusive o texto de progresso entre tool calls (Fable 5.2, Opus 5.5, Sonnet 5.5). Se sua UI mostra raciocínio ou progresso, defina <code>display</code> explicitamente. <code>display</code> é inválido com <code>disabled</code> e com <code>between_tools</code>. Mesmo com <code>"omitted"</code> você paga os tokens completos de pensamento — omitir reduz <em>latência</em> (time-to-first-text-token), não custo.</div>
 <pre><code class="language-python"># Mostrar o resumo do pensamento:
 thinking = {"type": "adaptive", "display": "summarized"}
 
@@ -2280,14 +2293,14 @@ thinking = {"type": "adaptive", "display": "omitted"}</code></pre>
   <div class="table-wrap"><table>
     <thead><tr><th>Modelo</th><th>Blocos de turnos anteriores</th></tr></thead>
     <tbody>
-      <tr><td>Fable 5.1, Mythos 5.1, Opus 5.5, Sonnet 5.5, Haiku 5.5</td><td>Mantidos em contexto (todos os turnos).</td></tr>
+      <tr><td>Fable 5.2, Mythos 5.2, Opus 5.5, Sonnet 5.5, Haiku 5.5</td><td>Mantidos em contexto (todos os turnos).</td></tr>
     </tbody>
   </table></div>
   <p>O faturamento dos blocos mantidos conta como <em>input</em> nos turnos seguintes; use <a href="#b-context-editing">context editing</a> para configurar a limpeza.</p>
-  <div class="callout danger"><strong>Blocos presos a modelo, conversa e conta (Fable 5.1, Opus 5.5, Sonnet 5.5, Haiku 5.5).</strong>
+  <div class="callout danger"><strong>Blocos presos a modelo, conversa e conta (Fable 5.2, Mythos 5.2, Opus 5.5, Sonnet 5.5, Haiku 5.5).</strong>
     <ul style="margin:8px 0 0;padding-left:20px">
-      <li><strong>Quem lê o quê.</strong> Cada bloco registra o modelo que o produziu. Os blocos valem só na conta produtora (ou contas ligadas). O <strong>Sonnet 5.5</strong> <em>não</em> lê blocos de Opus 5.5, Fable nem Mythos, e nenhum outro modelo lê blocos do Sonnet 5.5. O <strong>Opus 5.5</strong> não lê blocos de Fable/Mythos. Opus 5.5 e Sonnet 5.5 leem os blocos do <strong>Haiku 5.5</strong> (Claude API e Google Cloud); o Haiku 5.5 não lê os de Opus 5.5, Sonnet 5.5, Fable ou Mythos. <strong>Fable 5.1 e Mythos 5.1</strong> leem os do Opus 5.5 (Claude API). Blocos ilegíveis são <strong>descartados sem erro e sem cobrança</strong>.</li>
-      <li><strong>Verificação de prefixo.</strong> Para contas criadas a partir de 2026-08-31 00:00 UTC, a API retorna <strong>400</strong> se <code>system</code>, <code>tools</code> ou mensagens anteriores mudarem depois de um bloco de thinking. Para descartar os blocos afetados em vez de falhar: header <code>thinking-binding-controls-2026-08-01</code> + <code>thinking.block_binding.prefix_mismatch_behavior: "drop_block"</code> (só com <code>adaptive</code>); o descarte aparece em <code>input_transformations</code>.</li>
+      <li><strong>Quem lê o quê.</strong> Cada bloco registra o modelo que o produziu. Os blocos valem só na conta produtora (ou contas ligadas). O <strong>Sonnet 5.5</strong> <em>não</em> lê blocos de Opus 5.5, Fable nem Mythos. O <strong>Opus 5.5</strong> não lê blocos de Fable/Mythos. O <strong>Haiku 5.5</strong> não lê os de Opus 5.5, Sonnet 5.5, Fable ou Mythos. <strong>Fable 5.2 e Mythos 5.2</strong> leem os blocos um do outro e, na Claude API e no Google Cloud (Google managed), também os de Opus 5.5, Sonnet 5.5 e Haiku 5.5 — e <strong>nenhum outro modelo lê os blocos do Fable 5.2 ou do Mythos 5.2</strong>: trocar para outro modelo (inclusive Opus 5.5 ou um fallback) descarta o raciocínio desses turnos. Nessas duas plataformas, Opus 5.5 e Sonnet 5.5 leem os blocos do Haiku 5.5, e Opus 5.5, Fable 5.2 e Mythos 5.2 leem os do Sonnet 5.5. Blocos ilegíveis são <strong>descartados sem erro e sem cobrança</strong>.</li>
+      <li><strong>Verificação de prefixo.</strong> Se <code>system</code>, <code>tools</code> ou mensagens anteriores mudarem depois de um bloco de thinking, a checagem falha. No <strong>Fable 5.2 e no Mythos 5.2</strong> ela vale para todas as contas, de qualquer idade (release notes de 2026-11-09), e a API sempre retorna <strong>400</strong> (<code>The block is bound to a different conversation</code>). No <strong>Opus 5.5, Sonnet 5.5 e Haiku 5.5</strong> o resultado é "possível 400": com <code>prefix_mismatch_behavior</code> sem definir, a requisição pode falhar com 400 ou passar sem erro, e então os blocos inválidos chegam ao modelo, são cobrados e carregam raciocínio sobre conteúdo que já mudou; trate os dois casos (com o header abaixo, <code>input_transformations</code> lista esses blocos). Com <code>"error"</code> toda falha vira 400. Para descartar os blocos afetados em vez de falhar: header <code>thinking-binding-controls-2026-08-01</code> + <code>thinking.block_binding.prefix_mismatch_behavior: "drop_block"</code> (só com <code>adaptive</code>); o descarte aparece em <code>input_transformations</code>.</li>
       <li><strong>Boa prática.</strong> Mantenha o histórico <em>append-only</em>. Para mudar instruções, ferramentas ou <code>effort</code> no meio da conversa use mensagens <code>role: "system"</code> (<code>tool_addition</code>/<code>tool_removal</code>, <code>output_config</code> por mensagem) ou compaction server-side em vez de editar turnos.</li>
     </ul>
   </div>
@@ -2310,7 +2323,7 @@ thinking = {"type": "adaptive", "display": "omitted"}</code></pre>
     <li>Você executa a ferramenta e devolve um turno <code>user</code> com o bloco <code>tool_result</code>.</li>
     <li>No próximo turno, você reenvia o turno anterior do assistente <strong>com os blocos de pensamento intactos</strong> (com sua <code>signature</code>).</li>
   </ol>
-  <div class="callout warn"><strong>Atenção:</strong> não edite, reordene nem remova os blocos de pensamento ao reenviá-los; a API valida a <code>signature</code>. Com adaptive, o <strong>interleaved thinking</strong> é automático — o Claude pode raciocinar entre múltiplas chamadas de ferramenta.</div>
+  <div class="callout warn"><strong>Atenção:</strong> não edite, reordene nem remova os blocos de pensamento ao reenviá-los; a API valida a <code>signature</code> e rejeita blocos modificados com <strong>400</strong> (a sequência de blocos <code>thinking</code>/<code>redacted_thinking</code> consecutivos da última mensagem do assistente deve ser a gerada pelo modelo; só o texto colocado no campo <code>thinking</code> vazio de um bloco omitido é ignorado em vez de rejeitado — <a href="https://platform.claude.com/docs/en/build-with-claude/thinking" target="_blank" rel="noopener">thinking</a>, lido em 2026-11-12). Com adaptive, o <strong>interleaved thinking</strong> é automático — o Claude pode raciocinar entre múltiplas chamadas de ferramenta.</div>
 
   <h3>3.2. Exemplo: continuação após <code>tool_result</code></h3>
   <div class="code-group">
@@ -2422,10 +2435,10 @@ curl https://api.anthropic.com/v1/messages \
   </div>
 
   <h3>3.3. Interleaved thinking e texto de progresso</h3>
-  <p>O <strong>interleaved thinking</strong> permite raciocinar <em>entre</em> chamadas de ferramenta. Com adaptive é automático (sem header beta) em Fable 5.1, Mythos 5.1, Opus 5.5, Sonnet 5.5 e Haiku 5.5. Nesses modelos, o texto curto que o modelo escreve entre tool calls (<em>progress updates</em>) chega em blocos <code>thinking</code>, não <code>text</code> — vazios com <code>display: "omitted"</code>. Defina <code>display: "summarized"</code> (ou <code>"updates"</code>, beta) para exibi-lo.</p>
+  <p>O <strong>interleaved thinking</strong> permite raciocinar <em>entre</em> chamadas de ferramenta. Com adaptive é automático (sem header beta) em Fable 5.2, Mythos 5.2, Opus 5.5, Sonnet 5.5 e Haiku 5.5. Nesses modelos, o texto curto que o modelo escreve entre tool calls (<em>progress updates</em>) chega em blocos <code>thinking</code>, não <code>text</code> — vazios com <code>display: "omitted"</code>. Defina <code>display: "summarized"</code> (ou <code>"updates"</code>, beta) para exibi-lo.</p>
 
   <h3>3.4. <code>tool_choice</code> e raciocínio</h3>
-  <p>Em <strong>Fable 5.1, Mythos 5.1, Opus 5.5 e Sonnet 5.5</strong>, <code>tool_choice</code> <code>any</code>/<code>tool</code> retorna <strong>400</strong> incondicionalmente (inclusive em <code>count_tokens</code>): <q>tool_choice: type "tool" and "any" are not supported for this model.</q> Só <code>auto</code> (padrão) e <code>none</code> são aceitos. Para saída schema-válida use <code>auto</code> com <a href="#c-strict">strict tool use</a> (<code>strict: true</code>) ou <a href="#a-structured-outputs">structured outputs</a>; para induzir uma ferramenta, diga no prompt quando ela se aplica. O <strong>Haiku 5.5</strong> aceita <code>tool_choice</code> forçado (<code>any</code>/nome), mas a resposta não traz bloco <code>thinking</code>.</p>
+  <p>Em <strong>Fable 5.2, Mythos 5.2, Opus 5.5 e Sonnet 5.5</strong>, <code>tool_choice</code> <code>any</code>/<code>tool</code> retorna <strong>400</strong> incondicionalmente (inclusive em <code>count_tokens</code>): <q>tool_choice: type "tool" and "any" are not supported for this model.</q> Só <code>auto</code> (padrão) e <code>none</code> são aceitos. Para saída schema-válida use <code>auto</code> com <a href="#c-strict">strict tool use</a> (<code>strict: true</code>) ou <a href="#a-structured-outputs">structured outputs</a>; para induzir uma ferramenta, diga no prompt quando ela se aplica. O <strong>Haiku 5.5</strong> aceita <code>tool_choice</code> forçado (<code>any</code>/nome), mas a resposta não traz bloco <code>thinking</code>.</p>
 </section>
 
 
@@ -2434,7 +2447,7 @@ curl https://api.anthropic.com/v1/messages \
   <h2>4. Orçamentos de tarefa (task budgets)</h2>
   <p>Os <strong>task budgets</strong> definem um teto de tokens para uma <em>tarefa inteira</em> — somando múltiplas requisições/turnos de um fluxo agêntico — em vez de limitar token a token por chamada. Servem para controlar custo e horizonte de tarefas longas com ferramentas.</p>
   <p class="source-link">Fonte: <a href="https://platform.claude.com/docs/en/build-with-claude/task-budgets" target="_blank" rel="noopener">platform.claude.com/docs/en/build-with-claude/task-budgets</a></p>
-  <p><span class="pill beta">Beta</span> Requer o header <code>anthropic-beta: task-budgets-2026-03-13</code>. Suportado em <strong>Fable 5.1, Mythos 5.1, Opus 5.5, Sonnet 5.5 e Haiku 5.5</strong>. Defina <code>output_config.task_budget = {"type":"tokens","total": N}</code> (campo opcional <code>remaining</code> para retomar após compactação). O <strong>mínimo é 20.000 tokens</strong> (valores menores retornam <code>400</code>); o orçamento é <em>advisory</em> (hint suave), enquanto <code>max_tokens</code> continua sendo o teto rígido por requisição.</p>
+  <p><span class="pill beta">Beta</span> Requer o header <code>anthropic-beta: task-budgets-2026-03-13</code>. Suportado em <strong>Fable 5.2, Mythos 5.2, Opus 5.5, Sonnet 5.5 e Haiku 5.5</strong>. Defina <code>output_config.task_budget = {"type":"tokens","total": N}</code> (campo opcional <code>remaining</code> para retomar após compactação). O <strong>mínimo é 20.000 tokens</strong> (valores menores retornam <code>400</code>); o orçamento é <em>advisory</em> (hint suave), enquanto <code>max_tokens</code> continua sendo o teto rígido por requisição.</p>
 
   <h3>4.1. Como usar</h3>
   <p>Defina <code>output_config.task_budget</code> com o tipo e o total. Combine com <code>effort</code> para orientar a alocação de raciocínio dentro do orçamento. No SDK Python, use o namespace <code>client.beta.messages</code> e passe <code>betas=[...]</code>.</p>
@@ -2498,7 +2511,7 @@ curl https://api.anthropic.com/v1/messages \
   <p class="source-link">Fonte: <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching" target="_blank" rel="noopener">platform.claude.com/docs/en/build-with-claude/prompt-caching</a></p>
 
   <h3>5.1. Mínimo de tokens cacheáveis</h3>
-  <p>O mínimo é de <strong>512 tokens</strong> em todos os modelos atuais (<code>claude-fable-5-1</code>, <code>claude-mythos-5-1</code>, <code>claude-opus-5-5</code>, <code>claude-sonnet-5-5</code>, <code>claude-haiku-5-5</code>). Prompts menores são processados <strong>sem cache</strong> e nenhum erro é retornado. Verifique <code>usage.cache_creation_input_tokens</code> e <code>usage.cache_read_input_tokens</code>: se ambos forem 0, o prompt não foi cacheado.</p>
+  <p>O mínimo é de <strong>512 tokens</strong> em todos os modelos atuais (<code>claude-fable-5-2</code>, <code>claude-mythos-5-2</code>, <code>claude-opus-5-5</code>, <code>claude-sonnet-5-5</code>, <code>claude-haiku-5-5</code>). Prompts menores são processados <strong>sem cache</strong> e nenhum erro é retornado. Verifique <code>usage.cache_creation_input_tokens</code> e <code>usage.cache_read_input_tokens</code>: se ambos forem 0, o prompt não foi cacheado.</p>
   <div class="callout info"><strong>Limite de breakpoints:</strong> até <strong>4</strong> por request; o cache automático consome <strong>um dos 4 slots</strong>, e se já existirem 4 breakpoints explícitos a API retorna <strong>400</strong>. <span class="source-link"><a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching" target="_blank" rel="noopener">prompt-caching</a></span></div>
 
   <h3>5.2. TTL e preços</h3>
@@ -2507,10 +2520,10 @@ curl https://api.anthropic.com/v1/messages \
     <tbody>
       <tr><td>Cache write (TTL 5 min, padrão)</td><td>1,25× (refrescado sem custo extra a cada uso)</td></tr>
       <tr><td>Cache write (TTL 1 h)</td><td>2× (opt-in com <code>"ttl": "1h"</code>)</td></tr>
-      <tr><td>Cache hit / refresh (read)</td><td>0,1× (10% do preço base); 0,05× no Opus 5.5 e no Sonnet 5.5; 0,025× no Fable 5.1 e Mythos 5.1</td></tr>
+      <tr><td>Cache hit / refresh (read)</td><td>0,1× (10% do preço base); 0,05× no Opus 5.5 e no Sonnet 5.5; 0,025× no Fable 5.2 e Mythos 5.2</td></tr>
     </tbody>
   </table></div>
-  <p>Exemplo para <code>claude-opus-5-5</code> ($4/MTok de input): cache write 5m = $5/MTok; cache write 1h = $8/MTok; cache read = <strong>$0,20/MTok</strong> (0,05× no Opus 5.5; no Fable 5.1 e no Mythos 5.1 a leitura é 0,025× = $0,25/MTok — ambos abaixo dos 0,1× padrão). No Sonnet 5.5 ($2/MTok) a leitura também é 0,05× = <strong>$0,10/MTok</strong>; no Haiku 5.5 ($0,10/MTok até 100k tokens de prompt) valem os multiplicadores da tabela acima (hit = $0,01/MTok).</p>
+  <p>Exemplo para <code>claude-opus-5-5</code> ($4/MTok de input): cache write 5m = $5/MTok; cache write 1h = $8/MTok; cache read = <strong>$0,20/MTok</strong> (0,05× no Opus 5.5; no Fable 5.2 e no Mythos 5.2 ($8/MTok de input; write 5m $10, 1h $16) a leitura é 0,025× = $0,20/MTok — ambos abaixo dos 0,1× padrão). No Sonnet 5.5 ($2/MTok) a leitura também é 0,05× = <strong>$0,10/MTok</strong>; no Haiku 5.5 ($0,10/MTok até 100k tokens de prompt) valem os multiplicadores da tabela acima (hit = $0,01/MTok).</p>
 
   <h3>5.3. Caching automático (breakpoint no nível superior)</h3>
   <p>Adicione um único <code>cache_control</code> no <strong>nível superior</strong> do corpo da requisição. A API aplica o breakpoint ao <em>último bloco cacheável</em> e move o breakpoint para a frente automaticamente conforme a conversa cresce.</p>
@@ -2772,7 +2785,7 @@ console.log(message.diagnostics?.cache_miss_reason);</code></pre>
 <!-- ================= 8. COMPACTION ================= -->
 <section class="chapter" id="b-compaction">
   <h2>8. Compactação de contexto (compaction)</h2>
-  <p>A <strong>compaction</strong> resume o histórico antigo da conversa em uma forma condensada quando o contexto cresce, preservando as informações essenciais e liberando espaço — diferente do context editing, que <em>remove</em> blocos; a compaction <em>resume</em>. Há dois mecanismos, ambos <span class="pill beta">Beta</span>, nos mesmos modelos (Fable 5.1, Mythos 5.1, Opus 5.5, Sonnet 5.5 e Haiku 5.5). Sobre o tamanho da <a href="#a-context-windows">janela de contexto</a> que eles protegem, veja a Parte A.</p>
+  <p>A <strong>compaction</strong> resume o histórico antigo da conversa em uma forma condensada quando o contexto cresce, preservando as informações essenciais e liberando espaço — diferente do context editing, que <em>remove</em> blocos; a compaction <em>resume</em>. Há dois mecanismos, ambos <span class="pill beta">Beta</span>, nos mesmos modelos (Fable 5.2, Mythos 5.2, Opus 5.5, Sonnet 5.5 e Haiku 5.5). Sobre o tamanho da <a href="#a-context-windows">janela de contexto</a> que eles protegem, veja a Parte A.</p>
   <p class="source-link">Fonte: <a href="https://platform.claude.com/docs/en/build-with-claude/compaction" target="_blank" rel="noopener">compaction</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/compaction-on-demand" target="_blank" rel="noopener">compaction-on-demand</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/compaction-thinking-blocks" target="_blank" rel="noopener">compaction-thinking-blocks</a></p>
   <div class="table-wrap"><table>
     <thead><tr><th></th><th>Por gatilho (<code>compact-2026-01-12</code>)</th><th>Sob demanda (<code>compact-2026-09-04</code>)</th></tr></thead>
@@ -2875,13 +2888,13 @@ messages = [{"role": "assistant", "content": summary.content}, {"role": "user", 
       <tr><td>Imagens por requisição (API, janela de 1M)</td><td>600</td></tr>
       <tr><td>Dimensões máximas por imagem</td><td>8000×8000 px (reduz para 2000×2000 px se &gt; 20 imagens na requisição)</td></tr>
       <tr><td>Formatos suportados</td><td>JPEG, PNG, GIF, WebP (animações: só o 1º frame é usado)</td></tr>
-      <tr><td>Tamanho máximo da requisição</td><td>32 MB (endpoints padrão; menor em algumas plataformas parceiras)</td></tr>
+      <tr><td>Tamanho máximo da requisição</td><td>128 MB (Claude API de primeira parte, desde 2026-10-28; menor em plataformas parceiras)</td></tr>
     </tbody>
   </table></div>
   <div class="callout info"><strong>Nota:</strong> mesmo com a Files API, requisições com muitas imagens grandes podem falhar antes de atingir 600 imagens por causa do limite de tamanho do payload. Reduza dimensões/tamanho (downsampling) ou referencie por <code>file_id</code>.</div>
 
   <h3>9.2. Custo de tokens por imagem</h3>
-  <p>O Claude enxerga imagens em <em>patches</em> de <strong>28×28 px</strong> ("tokens visuais"): uma imagem custa <code>⌈width/28⌉ × ⌈height/28⌉</code> tokens visuais. Nos modelos atuais (<code>claude-fable-5-1</code>, <code>claude-mythos-5-1</code>, <code>claude-opus-5-5</code>, <code>claude-sonnet-5-5</code>, <code>claude-haiku-5-5</code>) o limite é de <strong>2576 px</strong> na borda longa e ~<strong>4784 tokens visuais</strong>; imagens maiores são redimensionadas (downscale) preservando o aspect ratio.</p>
+  <p>O Claude enxerga imagens em <em>patches</em> de <strong>28×28 px</strong> ("tokens visuais"): uma imagem custa <code>⌈width/28⌉ × ⌈height/28⌉</code> tokens visuais. Nos modelos atuais (<code>claude-fable-5-2</code>, <code>claude-mythos-5-2</code>, <code>claude-opus-5-5</code>, <code>claude-sonnet-5-5</code>, <code>claude-haiku-5-5</code>) o limite é de <strong>2576 px</strong> na borda longa e ~<strong>4784 tokens visuais</strong>; imagens maiores são redimensionadas (downscale) preservando o aspect ratio.</p>
   <div class="callout tip"><strong>Dica:</strong> a alta resolução é automática e <strong>não exige header beta</strong> — ótima para computer use, leitura de screenshots e documentos densos. Mas uma imagem pode usar milhares de tokens visuais; se não precisa da fidelidade extra, faça downsampling antes de enviar. Screenshots devolvidos como <code>tool_result</code> de computer/browser use que excedam o limite do modelo são <strong>rejeitados</strong> (não reduzidos): redimensione na sua aplicação. <span class="source-link"><a href="https://platform.claude.com/docs/en/build-with-claude/vision" target="_blank" rel="noopener">vision</a></span></div>
 
   <h3>9.3. Fontes de imagem e exemplo</h3>
@@ -2959,7 +2972,7 @@ console.log(message.content[0].text);</code></pre>
   <div class="table-wrap"><table>
     <thead><tr><th>Requisito</th><th>Limite</th></tr></thead>
     <tbody>
-      <tr><td>Tamanho máximo da requisição</td><td>32 MB (varia por plataforma)</td></tr>
+      <tr><td>Tamanho máximo da requisição</td><td>128 MB (Claude API de primeira parte, desde 2026-10-28; varia por plataforma)</td></tr>
       <tr><td>Máximo de páginas por requisição</td><td>600</td></tr>
       <tr><td>Formato</td><td>PDF padrão, sem senha/criptografia</td></tr>
     </tbody>
@@ -3373,7 +3386,7 @@ message = client.messages.create(
       <tr><td>Claude Haiku 5.5 (<code>claude-haiku-5-5</code>)</td><td><strong>286 tokens</strong></td><td><strong>406 tokens</strong> (forçar não traz bloco <code>thinking</code>)</td></tr>
     </tbody>
   </table></div>
-  <div class="callout info"><strong>Nota:</strong> esta tabela mostra apenas o custo em tokens do <em>system prompt de tool use</em> por modelo. Para a tabela comparativa de modelos, preços por token, snapshots e orientação de escolha (Fable 5.1 para o topo de capacidade, Opus 5.5 como ponto de partida, Sonnet 5.5 para equilíbrio, Haiku 5.5 para baixa latência/custo), veja <a href="#a-modelos">Modelos Claude</a>.</div>
+  <div class="callout info"><strong>Nota:</strong> esta tabela mostra apenas o custo em tokens do <em>system prompt de tool use</em> por modelo. Para a tabela comparativa de modelos, preços por token, snapshots e orientação de escolha (Fable 5.2 para o topo de capacidade, Opus 5.5 como ponto de partida, Sonnet 5.5 para equilíbrio, Haiku 5.5 para baixa latência/custo), veja <a href="#a-modelos">Modelos Claude</a>.</div>
 
   <h3 id="c-exemplo-server-tool">Exemplo mínimo (ferramenta server-side)</h3>
   <p>O exemplo mais simples usa uma ferramenta server-side, na qual a Anthropic cuida da execução:</p>
@@ -3482,7 +3495,7 @@ console.log(response.content);</code></pre>
       <tr><td><code>none</code></td><td>Impede o uso de qualquer ferramenta. Padrão quando não há <code>tools</code>.</td></tr>
     </tbody>
   </table></div>
-  <div class="callout warn"><strong>Atenção:</strong> em <strong>Fable 5.1, Mythos 5.1, Opus 5.5 e Sonnet 5.5</strong>, <code>any</code> e <code>tool</code> retornam <strong>400</strong> (também em <code>count_tokens</code>); só <code>auto</code> e <code>none</code> são aceitos — para garantir a chamada e o schema, use <code>auto</code> com <code>strict: true</code> ou <a href="#a-structured-outputs">structured outputs</a>. O Haiku 5.5 aceita <code>any</code>/<code>tool</code>, mas a resposta forçada não traz bloco <code>thinking</code>. Mudar <code>tool_choice</code> sob <a href="#c-tool-caching">prompt caching</a> invalida blocos de mensagem em cache.</div>
+  <div class="callout warn"><strong>Atenção:</strong> em <strong>Fable 5.2, Mythos 5.2, Opus 5.5 e Sonnet 5.5</strong>, <code>any</code> e <code>tool</code> retornam <strong>400</strong> (também em <code>count_tokens</code>); só <code>auto</code> e <code>none</code> são aceitos — para garantir a chamada e o schema, use <code>auto</code> com <code>strict: true</code> ou <a href="#a-structured-outputs">structured outputs</a>. O Haiku 5.5 aceita <code>any</code>/<code>tool</code>, mas a resposta forçada não traz bloco <code>thinking</code>. Mudar <code>tool_choice</code> sob <a href="#c-tool-caching">prompt caching</a> invalida blocos de mensagem em cache.</div>
   <div class="callout tip"><strong>Dica:</strong> combine <code>tool_choice: {"type": "auto"}</code> com <a href="#c-strict">strict tool use</a> (<code>strict: true</code>) para que os inputs das chamadas sigam o schema exatamente, e descreva no prompt quando a ferramenta deve ser usada.</div>
 </section>
 
@@ -3669,7 +3682,7 @@ console.log(response);</code></pre>
   <p>Permite ao Claude interagir com ambientes de desktop: captura de tela, controle de mouse/teclado e automação. <span class="pill ok">GA</span> — o toolset client-side <code>computer_toolset_20260801</code> é uma única entrada no array <code>tools</code>, sem header beta, e fornece 17 ferramentas membro. A aplicação executa cada chamada no ambiente que controla; o toolset está disponível na Claude API e no Google Cloud, mas não em Managed Agents.</p>
   <ul>
     <li>Use <code>{"type":"computer_toolset_20260801"}</code> em modelos/superfícies compatíveis; os membros incluem <code>screenshot</code>, <code>left_click</code>, <code>type</code> e <code>zoom</code>, e as chamadas retornam <code>tool_use</code> com <code>toolset_name:"computer"</code>.</li>
-    <li><strong>Só o toolset.</strong> Opus 5.5, Sonnet 5.5 e Haiku 5.5 usam <code>computer_toolset_20260801</code> na Claude API e no Google Cloud; declarar um <code>type</code> <code>computer_*</code> individual retorna <strong>400</strong> (<code>does not support tool types</code>).</li>
+    <li><strong>Só o toolset.</strong> Fable 5.2, Mythos 5.2, Opus 5.5, Sonnet 5.5 e Haiku 5.5 usam <code>computer_toolset_20260801</code> na Claude API e no Google Cloud; declarar um <code>type</code> <code>computer_*</code> individual retorna <strong>400</strong> (<code>does not support tool types</code>). No Fable 5.2 e no Mythos 5.2, a ferramenta antiga <code>computer_20251124</code> retorna 400 <code>invalid_request_error</code> em toda plataforma, exceto o Amazon Bedrock (InvokeModel, com <code>computer-use-2025-11-24</code> em <code>anthropic_beta</code>).</li>
   </ul>
   <p><span class="pill ok">ZDR</span> elegível (exceto Covered Models). No toolset não se passam <code>display_width_px</code>/<code>display_height_px</code> na definição; ele é frequentemente combinado com <code>text_editor</code> e <code>bash</code>. Screenshots devolvidos em <code>tool_result</code> que excedam o limite de resolução do modelo são rejeitados (ver <a href="#b-vision">Visão</a>).</p>
   <p>Ações disponíveis:</p>
@@ -3734,7 +3747,7 @@ print(response)</code></pre>
 <section id="c-memory-tool">
   <h3>4.5. Memory tool — <code>memory_20250818</code></h3>
   <p class="source-link">Fonte: <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool" target="_blank" rel="noopener">platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool</a></p>
-  <p>Permite ao Claude armazenar e recuperar informação entre conversas, via um diretório de arquivos de memória. É o primitivo-chave para <strong>recuperação just-in-time</strong>: em vez de carregar tudo de uma vez, o agente guarda o que aprende e recupera sob demanda, mantendo o contexto ativo focado. A ferramenta está disponível em Fable 5.1, Mythos 5.1, Opus 5.5, Sonnet 5.5 e Haiku 5.5. <span class="pill ok">GA</span> · <span class="pill ok">ZDR</span> elegível.</p>
+  <p>Permite ao Claude armazenar e recuperar informação entre conversas, via um diretório de arquivos de memória. É o primitivo-chave para <strong>recuperação just-in-time</strong>: em vez de carregar tudo de uma vez, o agente guarda o que aprende e recupera sob demanda, mantendo o contexto ativo focado. A ferramenta está disponível em Fable 5.2, Mythos 5.2, Opus 5.5, Sonnet 5.5 e Haiku 5.5. <span class="pill ok">GA</span> · <span class="pill ok">ZDR</span> elegível.</p>
   <p>A ferramenta é <strong>client-side</strong>: você controla onde e como os dados são guardados. O Claude faz chamadas de ferramenta e sua aplicação as executa localmente. Por segurança, restrinja todas as operações ao diretório <code>/memories</code>. Os SDKs trazem helpers (subclasse de <code>BetaAbstractMemoryTool</code> em Python; <code>betaMemoryTool</code> em TypeScript).</p>
   <p>Comandos que sua implementação precisa tratar: <code>view</code> (lista diretório ou mostra arquivo, com <code>view_range</code> opcional), <code>create</code> (<code>path</code>, <code>file_text</code>), <code>str_replace</code> (<code>old_str</code>/<code>new_str</code>), <code>insert</code> (<code>insert_line</code>, <code>insert_text</code>), <code>delete</code> (recursivo para diretórios) e <code>rename</code> (<code>old_path</code>/<code>new_path</code>; não sobrescreve destino existente).</p>
   <p>Quando habilitada, a Anthropic injeta automaticamente no system prompt o protocolo de memória: <em>"IMPORTANT: ALWAYS VIEW YOUR MEMORY DIRECTORY BEFORE DOING ANYTHING ELSE"</em>, lembrando o Claude de checar progresso anterior e gravar status, pois o contexto pode ser resetado a qualquer momento.</p>
@@ -3746,10 +3759,11 @@ print(response)</code></pre>
   <h3>4.6. Code execution tool — <code>code_execution_20260521</code></h3>
   <p class="source-link">Fonte: <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool" target="_blank" rel="noopener">platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool</a></p>
   <p>Roda código Python e Bash em um contêiner isolado para analisar dados, gerar arquivos e iterar sobre soluções. É um primitivo central para agentes de alto desempenho — habilita a filtragem dinâmica de web search/web fetch. <span class="pill ok">GA</span> (server-side), <strong>sem header beta</strong>. <strong>Não</strong> é elegível para ZDR.</p>
-  <div class="callout tip"><strong>Dica:</strong> code execution provisionado internamente pela filtragem dinâmica de <code>web_search_20260318</code>/<code>web_fetch_20260318</code> não gera cobrança adicional de code execution além dos custos normais de token. As cobranças padrão de code execution aplicam-se quando ele é usado fora desse fluxo.</div>
+  <div class="callout tip"><strong>Dica:</strong> code execution provisionado internamente pela filtragem dinâmica de <code>web_search_20260318</code>/<code>web_fetch_20260318</code> não gera cobrança adicional de code execution além dos custos normais de token. O mesmo vale quando a requisição inclui <code>web_search_20260209</code> ou <code>web_fetch_20260209</code> (ou versão posterior).</div>
+  <p><strong>Preço avulso</strong> (code execution sem web search/web fetch nessas versões; <a href="https://platform.claude.com/docs/en/about-claude/pricing#code-execution-tool" target="_blank" rel="noopener">pricing</a>, lido 2026-11-27): cobrado por tempo de execução, separado dos tokens, com mínimo de 5 minutos; cada organização recebe <strong>1.550 horas gratuitas por mês</strong> e o excedente custa <strong>US$ 0,05 por hora, por contêiner</strong>. Se a requisição inclui arquivos, o tempo é cobrado mesmo que a ferramenta não seja chamada, porque os arquivos são pré-carregados no contêiner.</p>
   <p><code>code_execution_20260521</code> suporta comandos Bash, operações de arquivo, persistência de estado do REPL e <a href="#c-programmatic">chamada programática de ferramentas</a> a partir do sandbox. Sua <em>tool description</em> informa ao modelo o limite de 90 s de <em>wall-clock</em> por célula Python na chamada programática (célula que excede retorna <code>return_code</code> não-zero e status <code>detection_timeout</code>). O <code>claude-haiku-5-5</code> consta na lista de modelos suportados.</p>
-  <div class="callout info"><strong>Plataformas:</strong> code execution está disponível na Claude API, Claude Platform on AWS e Microsoft Foundry; <em>não</em> está em Amazon Bedrock nem Claude Models on Google Cloud (Google managed).</div>
-  <p><strong>Contêiner (runtime):</strong> Python 3.11.12, Linux x86_64, <strong>5 GiB de RAM</strong>, <strong>5 GiB de disco</strong>, <strong>1 CPU</strong>. <strong>Sem acesso à internet</strong> e isolamento total do host. Contêineres expiram <strong>30 dias</strong> após a criação e são escopados ao workspace da API key. Bibliotecas pré-instaladas incluem pandas, numpy, scipy, scikit-learn, matplotlib, seaborn, pyarrow, openpyxl, pillow, python-pptx, python-docx, pypdf, pdfplumber, reportlab, sympy, sqlite, ripgrep, entre outras.</p>
+  <div class="callout info"><strong>Plataformas:</strong> code execution está disponível na Claude API, Claude Platform on AWS, Claude Models on Google Cloud (Anthropic managed) e Microsoft Foundry; <em>não</em> está em Amazon Bedrock nem em Claude Models on Google Cloud (Google managed).</div>
+  <p><strong>Contêiner (runtime):</strong> Python 3.11, Linux x86_64, <strong>5 GiB de RAM</strong>, <strong>5 GiB de disco</strong>, <strong>1 CPU</strong>. <strong>Sem acesso à internet</strong> e isolamento total do host. Contêineres expiram <strong>30 dias</strong> após a criação e são escopados ao workspace da API key. Bibliotecas pré-instaladas incluem pandas, numpy, scipy, scikit-learn, matplotlib, seaborn, pyarrow, openpyxl, pillow, python-pptx, python-docx, pypdf, pdfplumber, reportlab, sympy, sqlite, ripgrep, entre outras.</p>
   <p>Você pode <strong>reutilizar um contêiner</strong> entre requisições passando o <code>container</code> ID de uma resposta anterior, mantendo arquivos criados. Para enviar seus próprios arquivos, use a Files API estável e referencie-os com um bloco <code>container_upload</code> (<code>{"type": "container_upload", "file_id": "file_abc123"}</code>); não adicione header beta de Files.</p>
   <div class="code-group">
     <div class="code-tabs" role="tablist">
@@ -3846,8 +3860,19 @@ print(response)</code></pre>
   <h3>5.2. Web fetch — <code>web_fetch_20260318</code></h3>
   <p class="source-link">Fonte: <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/web-fetch-tool" target="_blank" rel="noopener">platform.claude.com/docs/en/agents-and-tools/tool-use/web-fetch-tool</a></p>
   <p>Recupera o conteúdo completo de páginas web e documentos PDF específicos (com extração automática de texto para PDFs) e responde com citações opcionais. A versão atual inclui filtragem dinâmica, bypass de cache e controle de inclusão dos resultados intermediários. <span class="pill ok">GA</span>. A página oficial exemplifica <code>claude-opus-5-5</code> com <code>web_fetch_20260318</code>. Disponível na Claude API, Claude Platform on AWS e Microsoft Foundry; <strong>não</strong> em Amazon Bedrock nem Google Cloud. Também não suporta sites renderizados dinamicamente com JavaScript (use o <a href="#c-browser-use-tool">browser use</a>). Sem cobrança adicional além dos tokens; aceito na Batch API.</p>
-  <div class="callout danger"><strong>Cuidado — exfiltração de dados:</strong> habilitar web fetch em ambientes onde o Claude processa entrada não confiável junto a dados sensíveis cria risco de exfiltração. Para mitigar, o Claude <strong>não pode construir URLs dinamicamente</strong> — só busca URLs fornecidas explicitamente pelo usuário ou vindas de resultados anteriores de web search/web fetch. Ainda há risco residual: considere desabilitar a ferramenta, usar <code>max_uses</code> para limitar requisições, e <code>allowed_domains</code> para restringir a domínios seguros.</div>
+  <div class="callout danger"><strong>Cuidado — exfiltração de dados:</strong> habilitar web fetch em ambientes onde o Claude processa entrada não confiável junto a dados sensíveis cria risco de exfiltração. Para mitigar, o Claude <strong>não pode construir URLs dinamicamente</strong>: só busca URLs que já apareceram na conversa (mensagens do usuário, resultados de ferramentas client-side e resultados anteriores de web search/web fetch). Ainda há risco residual: considere desabilitar a ferramenta, usar <code>max_uses</code> para limitar requisições, <code>allowed_domains</code> para restringir a domínios seguros e <code>url_sources</code> para impedir que resultados de ferramentas client-side contem como origem de URL.</div>
   <p>Parâmetros principais: <code>max_uses</code>, <code>max_content_tokens</code>, <code>allowed_domains</code>/<code>blocked_domains</code>, <code>allowed_callers</code> e citações (<code>citations: { enabled: true }</code>). <code>use_cache:false</code> força conteúdo fresco com custo de latência; <code>response_inclusion:"excluded"</code> pode omitir resultados intermediários consumidos por code execution (default <code>"full"</code>). O resultado (<code>web_fetch_tool_result</code> / <code>web_fetch_result</code>) traz a URL, um bloco <code>document</code> com o texto, <code>title</code> e <code>retrieved_at</code>. As citações usam <code>char_location</code> com <code>document_index</code>, <code>start_char_index</code>/<code>end_char_index</code> e <code>cited_text</code>.</p>
+  <p><strong>Origem das URLs (<code>url_sources</code>)</strong> — funciona em <code>web_fetch_20250910</code>, <code>20260209</code>, <code>20260309</code> e <code>20260318</code> (<a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/web-fetch-tool#url-sources" target="_blank" rel="noopener">web-fetch-tool</a>, lido 2026-11-27). Tem uma chave por origem permitida, e todas valem <code>{"type": "all"}</code> por padrão: <code>user_input</code> (mensagens do usuário; <code>type</code> <code>"all"</code> ou <code>"none"</code>), <code>client_tool_results</code> (resultados de ferramentas client-side; <code>"all"</code>, <code>"none"</code>, ou filtro <code>"only"</code>/<code>"except"</code> com <code>tools</code>) e <code>server_tool_results</code> (resultados de web search/web fetch; mesmos valores, e os filtros nomeiam <code>web_search</code> ou <code>web_fetch</code>). Os filtros listam ferramentas como objetos <code>tool_reference</code>, e cada nome deve existir no array <code>tools</code> da requisição, senão a requisição falha. Uma URL que só apareceu em origem excluída retorna o erro <code>url_not_in_prior_context</code>. Para excluir todos os resultados de ferramentas client-side, use <code>"client_tool_results": {"type": "none"}</code>; para excluir só uma ferramenta que devolve texto escrito pelo próprio Claude (por exemplo, <code>run_code</code>):</p>
+<pre><code class="language-json">{
+  "type": "web_fetch_20260318",
+  "name": "web_fetch",
+  "url_sources": {
+    "client_tool_results": {
+      "type": "except",
+      "tools": [{ "type": "tool_reference", "name": "run_code" }]
+    }
+  }
+}</code></pre>
 </section>
 
 <section id="c-tool-search">
@@ -3872,18 +3897,26 @@ print(response)</code></pre>
 <section id="c-advisor-tool">
   <h3>5.4. Advisor tool — <code>advisor_20260301</code></h3>
   <p class="source-link">Fonte: <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/advisor-tool" target="_blank" rel="noopener">platform.claude.com/docs/en/agents-and-tools/tool-use/advisor-tool</a></p>
-  <p>Pareia um modelo <strong>executor</strong> mais rápido e barato com um modelo <strong>advisor</strong> de maior inteligência que dá orientação estratégica no meio da geração. O advisor lê toda a conversa e produz um plano ou correção de rumo (tipicamente 400–700 tokens de texto), e o executor continua. Encaixa em cargas agênticas de longo horizonte (agentes de coding, computer use, pesquisa multi-passo) onde a maioria dos turnos é mecânica mas um excelente plano é crucial. <span class="pill beta">Beta</span> — header <code>advisor-tool-2026-03-01</code>. <span class="pill ok">ZDR</span> elegível.</p>
-  <p>O modelo executor (campo <code>model</code> de topo) e o advisor (campo <code>model</code> dentro da definição da ferramenta) devem formar um par válido — o advisor deve ser ao menos tão capaz quanto o executor. Pares atuais (<a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/advisor-tool#model-compatibility" target="_blank" rel="noopener">tabela oficial</a>):</p>
+  <p>Pareia um modelo <strong>executor</strong> mais rápido e barato com um modelo <strong>advisor</strong> de maior inteligência que dá orientação estratégica no meio da geração. O advisor lê toda a conversa e produz um plano ou correção de rumo (tipicamente 400–700 tokens de texto), e o executor continua. Encaixa em cargas agênticas de longo horizonte (agentes de coding, computer use, pesquisa multi-passo) onde a maioria dos turnos é mecânica mas um excelente plano é crucial. <span class="pill beta">Beta</span> — header <code>advisor-tool-2026-03-01</code>. <span class="pill ok">ZDR</span> elegível, exceto os modelos com retenção própria ("Covered Models", como o Fable 5.2, que exige retenção de 30 dias).</p>
+  <p>O modelo executor (campo <code>model</code> de topo) e o advisor (campo <code>model</code> dentro da definição da ferramenta) devem formar um par válido — o advisor deve ser ao menos tão capaz quanto o executor. A tabela abaixo mostra só os pares entre os modelos atuais; a oficial também aceita a geração anterior (por exemplo, Opus 5.5 aceita Fable 5.1 e Opus 5 como advisor, e o Haiku 5.5 aceita também Sonnet 5). Pares atuais (<a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/advisor-tool#model-compatibility" target="_blank" rel="noopener">tabela oficial</a>):</p>
   <div class="table-wrap"><table>
     <thead><tr><th>Executor</th><th>Advisor</th></tr></thead>
     <tbody>
-      <tr><td>Claude Haiku 5.5 (<code>claude-haiku-5-5</code>)</td><td>Fable 5.1, Mythos 5.1, Opus 5.5, Sonnet 5.5</td></tr>
-      <tr><td>Claude Sonnet 5.5 (<code>claude-sonnet-5-5</code>)</td><td>Fable 5.1, Mythos 5.1, Opus 5.5, Sonnet 5.5</td></tr>
-      <tr><td>Claude Opus 5.5 (<code>claude-opus-5-5</code>)</td><td>Fable 5.1, Mythos 5.1, Opus 5.5</td></tr>
-      <tr><td>Claude Fable 5.1 (<code>claude-fable-5-1</code>)</td><td>Fable 5.1, Mythos 5.1</td></tr>
+      <tr><td>Claude Haiku 5.5 (<code>claude-haiku-5-5</code>)</td><td>Fable 5.2, Mythos 5.2, Opus 5.5, Sonnet 5.5</td></tr>
+      <tr><td>Claude Sonnet 5.5 (<code>claude-sonnet-5-5</code>)</td><td>Fable 5.2, Mythos 5.2, Opus 5.5, Sonnet 5.5</td></tr>
+      <tr><td>Claude Opus 5.5 (<code>claude-opus-5-5</code>)</td><td>Fable 5.2, Mythos 5.2, Opus 5.5</td></tr>
+      <tr><td>Claude Fable 5.2 (<code>claude-fable-5-2</code>) e Mythos 5.2 (<code>claude-mythos-5-2</code>)</td><td>Fable 5.2, Mythos 5.2</td></tr>
     </tbody>
   </table></div>
-  <p>Par inválido retorna <code>400 invalid_request_error</code>. Disponível em beta na Claude API e Claude Platform on AWS (não em Bedrock, Claude Models on Google Cloud (Google managed) ou Microsoft Foundry). A definição da ferramenta aceita <code>max_tokens</code> (<code>tools[].max_tokens</code>) para limitar a saída do advisor por chamada — reduz latência e custo quando você não precisa de orientações longas.</p>
+  <p>O texto do conselho volta criptografado (<code>advisor_redacted_result</code>) quando o advisor é Fable 5.2, Mythos 5.2, Opus 5.5, Sonnet 5.5 ou Haiku 5.5 (e Fable/Mythos 5.1 e 5, Opus 5, geração anterior); só advisors de gerações mais antigas devolvem texto legível (<code>advisor_result</code>). Executores Fable 5.2 e Mythos 5.2 só aceitam advisors que devolvem o resultado criptografado.</p>
+  <p>Par inválido retorna <code>400 invalid_request_error</code>. Disponível em beta na Claude API, no Claude Platform on AWS e no Claude Models on Google Cloud (Anthropic managed) (não em Bedrock, Claude Models on Google Cloud (Google managed) ou Microsoft Foundry). A definição da ferramenta aceita <code>max_tokens</code> (<code>tools[].max_tokens</code>) para limitar a saída do advisor por chamada — reduz latência e custo quando você não precisa de orientações longas.</p>
+  <p>Parâmetros da definição (lido em 2026-11-17 em <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/advisor-tool" target="_blank" rel="noopener">advisor-tool</a>):</p>
+  <ul>
+    <li><code>max_uses</code> (inteiro, sem limite por padrão): máximo de chamadas ao advisor <em>por turno</em> (um turno pode abranger vários requests, por exemplo após <code>pause_turn</code>). Estourado o teto, a chamada volta como <code>advisor_tool_result_error</code> com <code>error_code: "max_uses_exceeded"</code> e o executor segue sem conselho; o request não falha. Não há teto por conversa: conte no cliente.</li>
+    <li><code>max_tokens</code>: mínimo <strong>1024</strong> (thinking + texto do advisor por chamada); acima do teto de saída do modelo advisor retorna 400.</li>
+    <li><code>caching</code>: <code>null</code> (desligado, padrão) ou <code>{"type": "ephemeral", "ttl": "5m" | "1h"}</code>; liga o cache da transcrição do próprio advisor entre chamadas. É um interruptor, não um breakpoint: o servidor decide as fronteiras.</li>
+  </ul>
+  <p>Cobrança e streaming: a chamada ao advisor é uma sub-inferência cobrada às tarifas do modelo advisor (iterações <code>type: "advisor_message"</code> em <code>usage.iterations</code>); o <code>usage</code> de topo e o <code>max_tokens</code> de topo cobrem só o executor. A sub-inferência não faz streaming: o stream do executor pausa (só <code>ping</code> a cada ~30 s) e o <code>advisor_tool_result</code> chega inteiro num único <code>content_block_start</code>.</p>
   <div class="code-group">
     <div class="code-tabs" role="tablist">
       <button class="code-tab" role="tab" data-lang="python" aria-selected="true">Python</button>
@@ -3937,7 +3970,7 @@ print(response)</code></pre>
   <h3>6.2. Chamada programática de ferramentas (programmatic tool calling)</h3>
   <p class="source-link">Fonte: <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/programmatic-tool-calling" target="_blank" rel="noopener">platform.claude.com/docs/en/agents-and-tools/tool-use/programmatic-tool-calling</a></p>
   <p>Permite ao Claude escrever código que chama suas ferramentas <strong>programaticamente dentro do sandbox de code execution</strong>, em vez de exigir round trips pelo modelo a cada invocação. Reduz latência em fluxos multi-ferramenta e diminui o consumo de tokens (o Claude filtra/processa dados antes de chegarem ao contexto). Ex.: checar conformidade de orçamento de 20 funcionários — em vez de 20 round trips com milhares de linhas no contexto, um único script roda as 20 consultas, filtra e retorna só quem excedeu o limite.</p>
-  <p>Requer <code>code_execution_20260521</code>, suportado em <strong>Fable 5.1, Mythos 5.1, Opus 5.5, Sonnet 5.5 e Haiku 5.5</strong>. <strong>Não</strong> é ZDR-elegível. Disponível na Claude API, Claude Platform on AWS e Microsoft Foundry (não em Bedrock nem em Claude Models on Google Cloud (Google managed)).</p>
+  <p>Requer <code>code_execution_20260521</code>, suportado em <strong>Fable 5.2, Mythos 5.2, Opus 5.5, Sonnet 5.5 e Haiku 5.5</strong>. <strong>Não</strong> é ZDR-elegível. Disponível na Claude API, Claude Platform on AWS, Claude Models on Google Cloud (Anthropic managed) e Microsoft Foundry (não em Bedrock nem em Claude Models on Google Cloud (Google managed)).</p>
   <p>Marque a ferramenta com <code>"allowed_callers": ["code_execution_20260521"]</code> para torná-la chamável de dentro do sandbox. O bloco <code>tool_use</code> da resposta inclui um campo <code>caller</code> identificando quem chamou. Monitore <code>expires_at</code> do contêiner: se ele expira enquanto aguarda seu <code>tool_result</code>, o Claude pode tratar como timeout e refazer.</p>
 <pre><code class="language-json">{
   "type": "code_execution_20260521",
@@ -4029,7 +4062,7 @@ print(response)</code></pre>
     </tbody>
   </table></div>
 
-  <div class="callout beta"><strong><span class="pill beta">Beta</span> Mudar ferramentas sem invalidar o cache.</strong> Dois betas (header obrigatório): <code>mid-conversation-tool-changes-2026-07-01</code> adiciona e remove ferramentas entre turnos preservando o prompt cache; <code>inline-tools-2026-09-15</code> permite enviar a <strong>definição completa</strong> de uma ferramenta nova dentro de um bloco <code>tool_addition</code> numa mensagem <code>role: "system"</code> no meio da conversa, e combina com <code>mcp-client-2026-09-15</code> para adicionar toolsets MCP inteiros da mesma forma (ver <a href="#c-mcp">seção MCP</a>). Disponíveis em Fable 5.1, Mythos 5.1, Opus 5.5 e Sonnet 5.5. <span class="source-link"><a href="https://platform.claude.com/docs/en/build-with-claude/mid-conversation-system-messages" target="_blank" rel="noopener">mid-conversation-system-messages</a>; <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/tool-use-with-prompt-caching" target="_blank" rel="noopener">tool-use-with-prompt-caching</a></span></div>
+  <div class="callout beta"><strong><span class="pill beta">Beta</span> Mudar ferramentas sem invalidar o cache.</strong> Dois betas (header obrigatório): <code>mid-conversation-tool-changes-2026-07-01</code> adiciona e remove ferramentas entre turnos preservando o prompt cache; <code>inline-tools-2026-09-15</code> permite enviar a <strong>definição completa</strong> de uma ferramenta nova dentro de um bloco <code>tool_addition</code> numa mensagem <code>role: "system"</code> no meio da conversa, e combina com <code>mcp-client-2026-09-15</code> para adicionar toolsets MCP inteiros da mesma forma (ver <a href="#c-mcp">seção MCP</a>). Disponíveis em Fable 5.2, Mythos 5.2, Opus 5.5 e Sonnet 5.5. <span class="source-link"><a href="https://platform.claude.com/docs/en/build-with-claude/mid-conversation-system-messages" target="_blank" rel="noopener">mid-conversation-system-messages</a>; <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/tool-use-with-prompt-caching" target="_blank" rel="noopener">tool-use-with-prompt-caching</a></span></div>
 </section>
 
 <section id="c-tool-runner">
@@ -4387,7 +4420,7 @@ print(response)</code></pre>
       <tr><td>PHP <span class="pill na">referência</span></td><td><code>anthropic-ai/sdk</code></td><td><code>composer require anthropic-ai/sdk</code></td><td>PHP 8.1.0+</td></tr>
     </tbody>
   </table></div>
-  <div class="callout info"><strong>Nota:</strong> versões de pacote são fatos perecíveis (<code>anthropic</code> 2.3.0 no PyPI e <code>@anthropic-ai/sdk</code> 1.3.0 no npm; todas as linguagens em <a href="https://platform.claude.com/docs/sdk-versions.json" target="_blank" rel="noopener">sdk-versions.json</a>). Verifique a versão instalada com <code>anthropic.__version__</code> (Python) ou pelo gerenciador de pacotes (<code>npm ls @anthropic-ai/sdk</code>). Repositórios oficiais: <code>anthropics/anthropic-sdk-python</code> e <code>anthropics/anthropic-sdk-typescript</code> (foco), além de <code>-java</code>, <code>-go</code>, <code>-ruby</code>, <code>-csharp</code>, <code>-php</code>.</div>
+  <div class="callout info"><strong>Nota:</strong> versões de pacote são fatos perecíveis (<code>anthropic</code> 2.14.0 no PyPI e <code>@anthropic-ai/sdk</code> 1.14.0 no npm, lidos em 2026-11-27; todas as linguagens em <a href="https://platform.claude.com/docs/sdk-versions.json" target="_blank" rel="noopener">sdk-versions.json</a>). Verifique a versão instalada com <code>anthropic.__version__</code> (Python) ou pelo gerenciador de pacotes (<code>npm ls @anthropic-ai/sdk</code>). Repositórios oficiais: <code>anthropics/anthropic-sdk-python</code> e <code>anthropics/anthropic-sdk-typescript</code> (foco), além de <code>-java</code>, <code>-go</code>, <code>-ruby</code>, <code>-csharp</code>, <code>-php</code>.</div>
 
   <h3 id="d-sdks-init">1.2. Inicialização do client (síncrono e assíncrono)</h3>
   <p>O exemplo "Olá, Claude" em três superfícies. Em Python existem dois clients: <code>Anthropic()</code> (síncrono) e <code>AsyncAnthropic()</code> (assíncrono, mesma interface com <code>await</code>).</p>
@@ -4570,7 +4603,7 @@ console.log(finalMessage.usage);</code></pre>
       <tr><td><code>stop_sequences</code></td><td>array de string</td><td>Não</td><td>Strings que param a geração; produzem <code>stop_reason: "stop_sequence"</code></td></tr>
       <tr><td><code>stream</code></td><td>boolean</td><td>Não</td><td>Streaming via SSE</td></tr>
       <tr><td><code>tools</code></td><td>array de <code>ToolUnion</code></td><td>Não</td><td>Definições de ferramentas (function calling / server tools)</td></tr>
-      <tr><td><code>tool_choice</code></td><td><code>ToolChoice</code></td><td>Não</td><td><code>auto</code> · <code>none</code> · <code>any</code> · <code>tool</code> (específica) — <code>any</code>/<code>tool</code> retornam 400 em Fable 5.1, Mythos 5.1, Opus 5.5 e Sonnet 5.5 (o Haiku 5.5 os aceita)</td></tr>
+      <tr><td><code>tool_choice</code></td><td><code>ToolChoice</code></td><td>Não</td><td><code>auto</code> · <code>none</code> · <code>any</code> · <code>tool</code> (específica) — <code>any</code>/<code>tool</code> retornam 400 em Fable 5.2, Mythos 5.2, Opus 5.5 e Sonnet 5.5 (o Haiku 5.5 os aceita)</td></tr>
       <tr><td><code>thinking</code></td><td><code>ThinkingConfigParam</code></td><td>Não</td><td><code>adaptive</code> (modelos atuais 5.x) · <code>between_tools</code> (Sonnet 5.5) · <code>disabled</code> (Haiku 5.5 com effort até <code>high</code>); <code>budget_tokens</code> retorna 400 — tabela em <a href="#b-adaptive-thinking">Parte B §1</a></td></tr>
       <tr><td><code>service_tier</code></td><td><code>"auto"</code> ou <code>"standard_only"</code></td><td>Não</td><td>Seleção de tier de capacidade</td></tr>
       <tr><td><code>container</code></td><td>string</td><td>Não</td><td>Reuso de container entre requisições (code execution)</td></tr>
@@ -4685,7 +4718,7 @@ print(message.usage)  # Usage(input_tokens=..., output_tokens=...)</code></pre>
   <h2>4. <code>POST /v1/messages/count_tokens</code></h2>
   <p>Conta o número de tokens de uma <code>Message</code> — incluindo tools, imagens e documentos — <strong>sem criar a mensagem</strong>. Útil para validar custos e limites antes de enviar. Aceita os mesmos parâmetros relevantes da Messages API: <code>model</code>, <code>messages</code>, <code>system</code>, <code>tools</code>, <code>tool_choice</code>, <code>thinking</code>, <code>mcp_servers</code> (mas não <code>max_tokens</code>).</p>
   <p class="source-link">Fonte: <a href="https://platform.claude.com/docs/en/api/messages/count_tokens" target="_blank" rel="noopener">platform.claude.com/docs/en/api/messages/count_tokens</a></p>
-  <p>A resposta é um objeto simples com <code>input_tokens</code> (number). O limite de tamanho de requisição é o mesmo da Token Counting API (32 MB).</p>
+  <p>A resposta é um objeto simples com <code>input_tokens</code> (number). O limite de tamanho de requisição é o mesmo da Token Counting API (128 MB na Claude API de primeira parte).</p>
   <div class="code-group">
     <div class="code-tabs" role="tablist">
       <button class="code-tab" role="tab" data-lang="bash" aria-selected="true">REST</button>
@@ -5138,7 +5171,7 @@ curl -X DELETE "https://api.anthropic.com/v1/skills/$SKILL_ID/versions/$VERSION"
       <tr><td>529</td><td><code>overloaded_error</code></td><td>API temporariamente sobrecarregada</td></tr>
     </tbody>
   </table></div>
-  <p><strong>Limites de tamanho de requisição:</strong> Messages 32 MB · Token Counting 32 MB · Batch 256 MB · Files 500 MB. Exceder retorna <code>413</code> (na API direta, devolvido pelo Cloudflare antes de chegar aos servidores).</p>
+  <p><strong>Limites de tamanho de requisição:</strong> Messages 128 MB · Token Counting 128 MB (Claude API de primeira parte) · Batch 256 MB · Files 500 MB. Exceder retorna <code>413</code> (na API direta, devolvido pelo Cloudflare antes de chegar aos servidores).</p>
 
   <h3 id="d-erros-formato">8.2. Formato do erro &amp; request ID</h3>
   <p>Erros são sempre JSON com um objeto <code>error</code> de topo (<code>type</code> + <code>message</code>) e um <code>request_id</code>. Toda resposta inclui o header <code>request-id</code> (ex. <code>req_018Ee...</code>) — inclua-o em tickets de suporte. Nos SDKs, leia <code>message._request_id</code>.</p>
@@ -5187,7 +5220,7 @@ curl -X DELETE "https://api.anthropic.com/v1/skills/$SKILL_ID/versions/$VERSION"
   <p class="source-link">Fonte: <a href="https://platform.claude.com/docs/en/api/client-sdks" target="_blank" rel="noopener">platform.claude.com/docs/en/api/client-sdks</a></p>
 
   <h3 id="d-plat-bedrock">9.1. Amazon Bedrock</h3>
-  <p>Claude in Amazon Bedrock roda em infraestrutura gerenciada pela AWS com <em>zero operator access</em> da Anthropic, servindo a Messages API em <code>/anthropic/v1/messages</code>. <strong>IDs de modelo carregam o prefixo <code>anthropic.</code></strong> — <code>anthropic.claude-fable-5-1</code>, <code>anthropic.claude-opus-5-5</code>, <code>anthropic.claude-sonnet-5-5</code> e <code>anthropic.claude-haiku-5-5</code> (ID fixo, sem sufixo de data nem alias).</p>
+  <p>Claude in Amazon Bedrock roda em infraestrutura gerenciada pela AWS com <em>zero operator access</em> da Anthropic, servindo a Messages API em <code>/anthropic/v1/messages</code>. <strong>IDs de modelo carregam o prefixo <code>anthropic.</code></strong> — <code>anthropic.claude-opus-5-5</code>, <code>anthropic.claude-sonnet-5-5</code> e <code>anthropic.claude-haiku-5-5</code> (ID fixo, sem sufixo de data nem alias). O Fable 5.2 (e o Mythos 5.2) está só no endpoint <code>bedrock-runtime</code>, com os IDs <code>global.anthropic.claude-fable-5-2</code> ou <code>us.anthropic.claude-fable-5-2</code> (<code>global.anthropic.claude-mythos-5-2</code> ou <code>us.anthropic.claude-mythos-5-2</code>); o Bedrock define seu próprio ciclo de vida.</p>
   <p>Autenticação: três caminhos — <strong>service role do Bedrock</strong> (recomendado), <strong>IAM assumed roles</strong> (sessão máx. 12h) e <strong>bearer tokens</strong> (12h, menos preferido). Instalação: <code>pip install -U "anthropic[bedrock]"</code> (Python) ou <code>npm install @anthropic-ai/bedrock-sdk</code>.</p>
   <div class="code-group">
     <div class="code-tabs" role="tablist">
@@ -5224,7 +5257,7 @@ print(message.content[0].text)</code></pre>
   <span class="source-link"><a href="https://platform.claude.com/docs/en/build-with-claude/claude-in-amazon-bedrock" target="_blank" rel="noopener">claude-in-amazon-bedrock</a></span></div>
 
   <h3 id="d-plat-vertex">9.2. Claude Models on Google Cloud (Google managed)</h3>
-  <p>Esta rota (cliente <code>AnthropicVertex</code>) é quase idêntica à Messages API, com <strong>duas diferenças no formato</strong>: (1) <code>model</code> não vai no corpo — é parte da URL do endpoint GCP; (2) <code>anthropic_version</code> vai no <strong>corpo</strong> (não no header) e deve valer <code>vertex-2023-10-16</code>. IDs de modelo: <code>claude-fable-5-1</code>, <code>claude-opus-5-5</code>, <code>claude-sonnet-5-5</code> e <code>claude-haiku-5-5</code> (sem sufixo de data). Instalação: <code>pip install -U google-cloud-aiplatform "anthropic[vertex]"</code>.</p>
+  <p>Esta rota (cliente <code>AnthropicVertex</code>) é quase idêntica à Messages API, com <strong>duas diferenças no formato</strong>: (1) <code>model</code> não vai no corpo — é parte da URL do endpoint GCP; (2) <code>anthropic_version</code> vai no <strong>corpo</strong> (não no header) e deve valer <code>vertex-2023-10-16</code>. IDs de modelo: <code>claude-fable-5-2</code>, <code>claude-opus-5-5</code>, <code>claude-sonnet-5-5</code> e <code>claude-haiku-5-5</code> (sem sufixo de data). Instalação: <code>pip install -U "anthropic[vertex]"</code> (o extra <code>vertex</code> do <code>anthropic</code> 2.14.0 depende só de <code>google-auth[requests]</code>; PyPI, lido 2026-11-27).</p>
   <div class="code-group">
     <div class="code-tabs" role="tablist">
       <button class="code-tab" role="tab" data-lang="python" aria-selected="true">Python</button>
@@ -5259,7 +5292,7 @@ curl -X POST \
   }'</code></pre>
     </div>
   </div>
-  <div class="callout info"><strong>Nota:</strong> esta rota oferece endpoints <strong>global</strong>, <strong>multi-region</strong> e <strong>regional</strong> (estes últimos com prêmio de 10%). Payload limitado a <strong>30 MB</strong>. Fable 5.1, Opus 5.5 e Sonnet 5.5 têm janela de <strong>1M tokens</strong> no Google Cloud. Recursos não suportados são semelhantes aos do Bedrock (sem Files, code execution/web fetch/advisor, Agent Skills, MCP connector, Batches, Models, Admin/Compliance, Managed Agents).</div>
+  <div class="callout info"><strong>Nota:</strong> esta rota oferece endpoints <strong>global</strong>, <strong>multi-region</strong> e <strong>regional</strong> (estes últimos com prêmio de 10%). Payload limitado a <strong>30 MB</strong>. Fable 5.2, Opus 5.5 e Sonnet 5.5 têm janela de <strong>1M tokens</strong> no Google Cloud. Recursos não suportados são semelhantes aos do Bedrock (sem Files, code execution/web fetch/advisor, Agent Skills, MCP connector, Batches, Models, Admin/Compliance, Managed Agents).</div>
 
   <h3 id="d-plat-foundry">9.3. Microsoft Foundry</h3>
   <p>Em Foundry, os modelos rodam na infraestrutura da Anthropic; é uma integração comercial para billing/acesso via Azure. Hierarquia: <strong>resource</strong> (segurança/billing) contém <strong>deployments</strong> (instâncias do modelo). O nome do deployment é o valor passado em <code>model</code>. Base URL: <code>https://{resource}.services.ai.azure.com/anthropic/v1/*</code>. Auth: API key (header <code>api-key</code> ou <code>x-api-key</code>) ou Entra ID (<code>Authorization: Bearer</code>). Suportado pelos SDKs C#, Java, PHP, Python e TypeScript (Go e Ruby não têm suporte nativo).</p>
@@ -5296,7 +5329,7 @@ print(message.content)</code></pre>
   }'</code></pre>
     </div>
   </div>
-  <div class="callout info"><strong>Nota:</strong> Os modelos de 1M tokens (Fable 5.1, Opus 5.5, Sonnet 5.5) mantêm a janela no Foundry; confira no catálogo do resource quais deployments estão disponíveis. Recursos não suportados: Admin API, Compliance API, Models API e Message Batches API. Para suporte, forneça <code>request-id</code> e <code>apim-request-id</code>. Não há headers de rate limit da Anthropic — use o monitoramento do Azure.</div>
+  <div class="callout info"><strong>Nota:</strong> Os modelos de 1M tokens (Fable 5.2, Opus 5.5, Sonnet 5.5) mantêm a janela no Foundry; confira no catálogo do resource quais deployments estão disponíveis. Recursos não suportados: Admin API, Compliance API, Models API e Message Batches API. Para suporte, forneça <code>request-id</code> e <code>apim-request-id</code>. Não há headers de rate limit da Anthropic — use o monitoramento do Azure.</div>
 
   <h3 id="d-plat-aws">9.4. Claude Platform on AWS</h3>
   <p>Dá a experiência completa da plataforma Anthropic (Messages API, Agent Skills, code execution, features beta) <strong>operada pela Anthropic</strong>, acessada via conta AWS com billing pelo AWS Marketplace. Diferente do Bedrock (onde a AWS opera o stack), aqui a AWS provê apenas a camada de auth (SigV4/API key), controle IAM e billing.</p>
@@ -5423,6 +5456,7 @@ curl https://api.anthropic.com/v1/sessions \
 
   <h3 id="d-ma-self-hosted">10.4. Self-hosted sandboxes &amp; modelo de segurança</h3>
   <p>Os <strong>self-hosted sandboxes</strong> mantêm a orquestração na Anthropic mas movem a execução de tools para infra que você controla — o código, filesystem e egress de rede do agente nunca saem do seu ambiente. Um <strong>environment worker</strong> (processo seu) consome itens da fila de trabalho do environment <code>self_hosted</code>, baixa as skills do agente, roda tool calls localmente e devolve resultados. Filesystem: <code>/workspace</code> (trabalho/skills) e <code>/mnt/session/outputs</code> (outputs finais).</p>
+  <p>Há também o <strong>Managed Agents self-hosted</strong> completo: você roda todo o serviço (não só os sandboxes) em infra própria e guarda ali agents, sessions e histórico; o acesso é por solicitação ao time de conta da Anthropic (release notes, 2026-11-12).</p>
   <p class="source-link">Fonte: <a href="https://platform.claude.com/docs/en/managed-agents/self-hosted-sandboxes" target="_blank" rel="noopener">platform.claude.com/docs/en/managed-agents/self-hosted-sandboxes</a></p>
   <div class="callout danger"><strong>Cuidado (modelo de responsabilidade compartilhada):</strong> ao self-hospedar, <strong>você</strong> é responsável pela qualidade/hardening da imagem do container, controles de egress de rede, armazenamento e rotação do <code>ANTHROPIC_ENVIRONMENT_KEY</code> (a chave que autoriza o polling da fila — guarde em secret manager, nunca em env files ou imagens), isolamento de workloads não confiáveis e retenção/redação dos logs e conteúdo de sessão. A Anthropic não inspeciona sua imagem, não consegue revogar uma chave vazada antes de você detectá-la e não isola tools dentro do seu container.</div>
 
@@ -5456,6 +5490,7 @@ curl https://api.anthropic.com/v1/sessions \
     </tbody>
   </table></div>
   <p class="source-link">Fonte: <a href="https://platform.claude.com/docs/en/managed-agents/multi-agent" target="_blank" rel="noopener">platform.claude.com/docs/en/managed-agents/multi-agent</a> · <a href="https://platform.claude.com/docs/en/managed-agents/memory" target="_blank" rel="noopener">memory</a> · <a href="https://platform.claude.com/docs/en/managed-agents/webhooks" target="_blank" rel="noopener">webhooks</a></p>
+  <p><strong>Configuração multiagent</strong> <span class="pill beta">Beta</span> (header <code>managed-agents-2026-04-01</code>; lido em 2026-11-12 em <a href="https://platform.claude.com/docs/en/managed-agents/multiagent-orchestration" target="_blank" rel="noopener">multiagent-orchestration</a>). O bloco <code>multiagent</code> da definição do agent, com <code>type: "multiagent_20261001"</code>, liga três mecanismos: <code>subagents</code> (o agent delega e acompanha cada thread), <code>workflows</code> (o agent escreve um programa que roda muitos agentes em segundo plano e combina os resultados) e <code>advisor</code> (<code>{"type":"enabled","model":"&lt;id&gt;"}</code>; só a thread primária consulta, cobrado às tarifas do modelo advisor). <code>subagents</code> e <code>workflows</code> vêm habilitados por padrão, cada um com <code>inline_agents</code> habilitado e uma lista <code>predefined_agents</code> própria e vazia. Regras: entradas são <code>{"type":"agent","id":…,"version":…}</code>, o ID como string ou <code>{"type":"self"}</code>; cada lista aceita até <strong>20</strong> agentes únicos; a delegação tem <strong>um nível</strong> (referenciar um agent que tenha <code>multiagent</code> retorna 400); as referências ficam fixadas nas versões resolvidas ao criar ou atualizar; todos precisam fixar a mesma <code>inference_geo</code> (ou nenhum); com <code>inline_agents</code> desligado a lista não pode ficar vazia (400). Uma sessão tem no máximo <strong>25</strong> threads filhas simultâneas (ociosas incluídas; threads de advisor e de execuções de workflow não contam). Cada agente de um workflow consome tokens: defina um orçamento de sessão.</p>
   <div class="callout info"><strong>Nota de fronteira:</strong> a Parte C também cobre Managed Agents do ângulo de <em>ferramentas/skills/MCP</em>. Aqui o foco é a superfície REST/governança (endpoints <code>/v1/agents</code>, <code>/v1/sessions</code>, <code>/v1/environments</code>, eventos, segurança self-hosted, retenção). Coordene com a Parte C para evitar duplicação de conteúdo conceitual de tools.</div>
 </section>
 
@@ -5584,7 +5619,7 @@ curl https://api.anthropic.com/v1/messages \
   <p>Cada entrada é um grupo de rate limit com o objeto <code>group</code> — <code>group.type</code> (<code>model_group</code>, <code>batch</code>, <code>token_count</code>, <code>files</code>, <code>skills</code>, <code>web_search</code>), <code>group.id</code> (prefixo <code>rlg_</code>, estável entre organizações) e, em <code>model_group</code>, <code>group.display_name</code> — e uma lista <code>limits</code> de pares <code>{type, value}</code> — <code>requests_per_minute</code>, <code>input_tokens_per_minute</code>, <code>output_tokens_per_minute</code>, <code>enqueued_batch_requests</code> etc. Em <code>model_group</code>, <code>models</code> lista cada ID e alias que conta no grupo. Filtre por <code>?model=</code> (apenas no endpoint org) ou <code>?group_type=</code>; o endpoint de workspace aceita <code>include_inherited=true</code> para trazer também os valores herdados (<code>source.type</code> distingue <code>workspace</code> de <code>organization</code>).</p>
 
   <h3 id="d-gov-usage-cost">11.6. Usage &amp; Cost API</h3>
-  <p>Acesso programático granular a uso e custo históricos. Parte da Admin API. Dois endpoints: <code>GET /v1/organizations/usage_report/messages</code> (uso — tokens por modelo/workspace/service tier; buckets <code>1m</code>/<code>1h</code>/<code>1d</code>) e <code>GET /v1/organizations/cost_report</code> (custo em USD, granularidade diária). Dados aparecem em ~5 minutos; polling recomendado: 1×/min.</p>
+  <p>Acesso programático granular a uso e custo históricos. Parte da Admin API. Dois endpoints: <code>GET /v1/organizations/usage_report/messages</code> (uso — tokens por modelo/workspace/service tier; buckets <code>1m</code>/<code>1h</code>/<code>1d</code>) e <code>GET /v1/organizations/cost_report</code> (custo em USD, granularidade diária). Dados aparecem em ~5 minutos; polling recomendado: 1×/min. Esses endpoints são hoje a API legada (continuam suportados); a <strong>Usage and Cost Analytics API</strong> (<span class="pill beta">Beta</span>, header <code>analytics-usage-cost-2026-08-24</code>; endpoints <code>/v1/organizations/analytics/usage</code> e <code>/v1/organizations/analytics/cost</code>) cobre organizações Console e Enterprise (<a href="https://platform.claude.com/docs/en/release-notes/overview" target="_blank" rel="noopener">release notes</a>, lido em 2026-11-12). A <strong>IP allowlist</strong> (<span class="pill beta">Beta</span>) recusa requests de endereços fora da lista, com até 1.000 endereços IPv4/IPv6 ou ranges CIDR por organização.</p>
   <p class="source-link">Fonte: <a href="https://platform.claude.com/docs/en/manage-claude/usage-cost-api" target="_blank" rel="noopener">platform.claude.com/docs/en/manage-claude/usage-cost-api</a></p>
   <div class="code-group">
     <div class="code-tabs" role="tablist">
@@ -5632,7 +5667,7 @@ group_by[]=workspace_id&group_by[]=description" \
   <h3 id="d-gov-residencia">11.8. Residência de dados</h3>
   <p>Dois controles independentes: <strong>Inference geo</strong> (onde a inferência roda, por requisição, via <code>inference_geo</code>) e <strong>Workspace geo</strong> (onde dados são armazenados em repouso, fixado na criação do workspace — atualmente só <code>"us"</code>).</p>
   <p class="source-link">Fonte: <a href="https://platform.claude.com/docs/en/manage-claude/data-residency" target="_blank" rel="noopener">platform.claude.com/docs/en/manage-claude/data-residency</a></p>
-  <p>Valores de <code>inference_geo</code>: <code>"global"</code> (default) e <code>"us"</code> (só infra dos EUA). A resposta reporta onde rodou em <code>usage.inference_geo</code>. Suportado em Fable 5.1, Mythos 5.1, Opus 5.5, Sonnet 5.5 e Haiku 5.5. Configurável por workspace via <code>allowed_inference_geos</code> e <code>default_inference_geo</code> (campo <code>data_residency</code> na Admin API).</p>
+  <p>Valores de <code>inference_geo</code>: <code>"global"</code> (default) e <code>"us"</code> (só infra dos EUA). A resposta reporta onde rodou em <code>usage.inference_geo</code>. Suportado em Fable 5.2, Mythos 5.2, Opus 5.5, Sonnet 5.5 e Haiku 5.5. Configurável por workspace via <code>allowed_inference_geos</code> e <code>default_inference_geo</code> (campo <code>data_residency</code> na Admin API).</p>
   <div class="callout info"><strong>Nota (pricing):</strong> inferência US-only (<code>inference_geo: "us"</code>) custa 1,1× a tarifa padrão em todas as categorias de token (e drena 1,1 token por token no burndown de Priority Tier). Roteamento global usa preço padrão. Disponível na API direta e Claude Platform on AWS; suportado também na Batch API (por requisição). Em Bedrock, Claude Models on Google Cloud (Google managed) e Foundry, a região é determinada pela URL/inference profile (parâmetro não se aplica).</div>
 
   <h3 id="d-gov-compliance">11.9. Compliance API</h3>
@@ -5700,7 +5735,7 @@ pip install "anthropic[aiohttp]"</code></pre>
     </tbody>
   </table></div>
   <h3 id="e-py-version">E1.1 Versão instalada em tempo de execução</h3>
-  <p>Versão estável: <strong>2.3.0</strong> (PyPI, publicada em 2026-10-23; <code>requires_python &gt;=3.10</code>); a lista legível por máquina das versões de todos os SDKs está em <a href="https://platform.claude.com/docs/sdk-versions.json" target="_blank" rel="noopener">platform.claude.com/docs/sdk-versions.json</a>. O SDK depende de <code>opentelemetry-api&gt;=1.1.0,&lt;2</code> e cria spans OpenTelemetry quando a aplicação registra um tracer provider global; desligue com <code>open_telemetry=False</code> no cliente ou <code>ANTHROPIC_OPEN_TELEMETRY=false</code> (conteúdo padrão <code>metadata_only</code>; <a href="https://platform.claude.com/docs/en/manage-claude/opentelemetry" target="_blank" rel="noopener">manage-claude/opentelemetry</a>, beta). Se um recurso novo não aparece, confirme a versão efetivamente carregada no ambiente Python:</p>
+  <p>Versão estável: <strong>2.14.0</strong> (PyPI, publicada em 2026-11-24; <code>requires_python &gt;=3.10</code>); a lista legível por máquina das versões de todos os SDKs está em <a href="https://platform.claude.com/docs/sdk-versions.json" target="_blank" rel="noopener">platform.claude.com/docs/sdk-versions.json</a>. O SDK depende de <code>opentelemetry-api&gt;=1.1.0,&lt;2</code> e cria spans OpenTelemetry quando a aplicação registra um tracer provider global; desligue com <code>open_telemetry=False</code> no cliente ou <code>ANTHROPIC_OPEN_TELEMETRY=false</code> (conteúdo padrão <code>metadata_only</code>; <a href="https://platform.claude.com/docs/en/manage-claude/opentelemetry" target="_blank" rel="noopener">manage-claude/opentelemetry</a>, beta). Se um recurso novo não aparece, confirme a versão efetivamente carregada no ambiente Python:</p>
   <pre><code class="language-python">import anthropic
 print(anthropic.__version__)</code></pre>
   <div class="callout tip"><strong>Dica:</strong> use <a href="https://pypi.org/project/python-dotenv/" target="_blank" rel="noopener">python-dotenv</a>
@@ -6335,7 +6370,7 @@ msg = bedrock.messages.create(
   <h2>F1. Instalação e runtimes suportados</h2>
   <pre><code class="language-bash">npm install @anthropic-ai/sdk
 # ou: pnpm add @anthropic-ai/sdk · yarn add @anthropic-ai/sdk · bun add @anthropic-ai/sdk</code></pre>
-  <p>Versão estável: <strong>1.3.0</strong> (npm, publicada em 2026-10-23; lista legível por máquina em <a href="https://platform.claude.com/docs/sdk-versions.json" target="_blank" rel="noopener">sdk-versions.json</a>). O SDK depende de <code>@opentelemetry/api ^1.4.1</code> e cria spans OpenTelemetry quando a aplicação registra um tracer provider global; desligue com <code>openTelemetry: false</code> ou <code>ANTHROPIC_OPEN_TELEMETRY=false</code> (conteúdo padrão <code>metadata_only</code>; <a href="https://platform.claude.com/docs/en/manage-claude/opentelemetry" target="_blank" rel="noopener">manage-claude/opentelemetry</a>, beta). Requer <strong>TypeScript ≥ 5.0</strong>. Os pacotes de plataforma em TypeScript exigem a v1 do <code>@anthropic-ai/sdk</code> ao lado. Runtimes oficialmente suportados:</p>
+  <p>Versão estável: <strong>1.14.0</strong> (npm, publicada em 2026-11-24; lista legível por máquina em <a href="https://platform.claude.com/docs/sdk-versions.json" target="_blank" rel="noopener">sdk-versions.json</a>). O SDK depende de <code>@opentelemetry/api ^1.4.1</code> e cria spans OpenTelemetry quando a aplicação registra um tracer provider global; desligue com <code>openTelemetry: false</code> ou <code>ANTHROPIC_OPEN_TELEMETRY=false</code> (conteúdo padrão <code>metadata_only</code>; <a href="https://platform.claude.com/docs/en/manage-claude/opentelemetry" target="_blank" rel="noopener">manage-claude/opentelemetry</a>, beta). Requer <strong>TypeScript ≥ 5.0</strong>. Os pacotes de plataforma em TypeScript exigem a v1 do <code>@anthropic-ai/sdk</code> ao lado. Runtimes oficialmente suportados:</p>
   <div class="table-wrap"><table>
     <thead><tr><th>Runtime</th><th>Suporte</th></tr></thead>
     <tbody>
@@ -6855,7 +6890,7 @@ const msg = await vertex.messages.create({
 <tr><td><code>@anthropic-ai/sdk</code></td><td>Pacote npm oficial do SDK JavaScript/TypeScript da Anthropic.</td></tr>
 <tr><td><code>@beta_tool</code></td><td>Decorador que gera o schema da ferramenta a partir da assinatura/docstring de uma função Python.</td></tr>
 <tr><td><code>_request_id</code></td><td>ID da requisição (header request-id); única propriedade _ pública.</td></tr>
-<tr><td><code>adaptive thinking</code></td><td>Modo de raciocínio em que o modelo decide quando/quanto pensar; sempre ligado em Fable 5.1 e Opus 5.5 e padrão no Sonnet 5.5 (thinking: {type:"adaptive"}).</td></tr>
+<tr><td><code>adaptive thinking</code></td><td>Modo de raciocínio em que o modelo decide quando/quanto pensar; sempre ligado em Fable 5.2 e Opus 5.5 e padrão no Sonnet 5.5 (thinking: {type:"adaptive"}).</td></tr>
 <tr><td><code>agent_toolset_20260401</code></td><td>Toolset pré-construído de Managed Agents: bash, operações de arquivo, web search/fetch.</td></tr>
 <tr><td><code>allowed_callers</code></td><td>Array que define quem chama a ferramenta: <code>"direct"</code> (modelo) e/ou <code>"code_execution_20260521"</code> (sandbox).</td></tr>
 <tr><td><code>Anthropic</code> / <code>AsyncAnthropic</code></td><td>Classes de cliente síncrono e assíncrono do SDK Python.</td></tr>
@@ -6873,14 +6908,14 @@ const msg = await vertex.messages.create({
 <tr><td><code>cache_control</code></td><td>Marca breakpoint de prompt caching (<code>{"type":"ephemeral"}</code>, opcional <code>"ttl":"1h"</code>).</td></tr>
 <tr><td><code>cache_creation_input_tokens</code></td><td>Tokens escritos no cache; se ele e <code>cache_read_input_tokens</code> são 0, não houve cache.</td></tr>
 <tr><td><code>cache_miss_reason</code></td><td>Motivo do cache miss, retornado em <code>message.diagnostics.cache_miss_reason.type</code> quando a requisição envia <code>diagnostics</code> (GA, sem header).</td></tr>
-<tr><td><code>cache_read_input_tokens</code></td><td>Tokens lidos do cache (cobrados a 0,1× do input base no Haiku 5.5; 0,05× no Opus 5.5 e no Sonnet 5.5; 0,025× no Fable 5.1 e Mythos 5.1).</td></tr>
+<tr><td><code>cache_read_input_tokens</code></td><td>Tokens lidos do cache (cobrados a 0,1× do input base no Haiku 5.5; 0,05× no Opus 5.5 e no Sonnet 5.5; 0,025× no Fable 5.2 e Mythos 5.2).</td></tr>
 <tr><td><code>citations</code></td><td>Habilita citações verificáveis (<code>{"enabled": true}</code>) em <code>document</code>/<code>search_result</code>.</td></tr>
 <tr><td><code>clear_thinking_20251015</code></td><td>Edit que remove blocos de pensamento antigos do contexto.</td></tr>
 <tr><td><code>clear_tool_uses_20250919</code></td><td>Edit que remove resultados de ferramenta antigos do contexto.</td></tr>
 <tr><td><code>compact_20260112</code></td><td>Edit que resume o histórico antigo (compaction) em vez de removê-lo.</td></tr>
 <tr><td><code>compaction</code></td><td>Parâmetro de topo da compactação sob demanda (<code>{"type":"summarize"}</code>, beta <code>compact-2026-09-04</code>); devolve um bloco <code>compaction</code> assinado e <code>stop_reason: "compaction"</code>.</td></tr>
 <tr><td><code>container</code></td><td>Parâmetro da Messages API usado para referenciar Skills (skill_id/type/version) e reusar contêineres de code execution.</td></tr>
-<tr><td><code>context window</code></td><td>Janela de contexto: total de tokens referenciáveis (Fable 5.1 / Opus 5.5 / Sonnet 5.5 / Haiku 5.5: 1M).</td></tr>
+<tr><td><code>context window</code></td><td>Janela de contexto: total de tokens referenciáveis (Fable 5.2 / Opus 5.5 / Sonnet 5.5 / Haiku 5.5: 1M).</td></tr>
 <tr><td><code>context_management</code></td><td>Controla edição/compactação de contexto via <code>edits</code> (betas <code>context-management-2025-06-27</code> / <code>compact-2026-01-12</code>).</td></tr>
 <tr><td><code>count_tokens</code></td><td>Endpoint /v1/messages/count_tokens que estima input_tokens antes do envio.</td></tr>
 <tr><td><code>custom_id</code></td><td>Identificador único (1–64 chars) de cada request num Message Batch.</td></tr>
@@ -6898,7 +6933,7 @@ const msg = await vertex.messages.create({
 <tr><td><code>input_examples</code></td><td>Exemplos de input válidos para guiar o Claude; não disponível em ferramentas server-side.</td></tr>
 <tr><td><code>iterPages()</code></td><td>Itera páginas inteiras (JS); hasNextPage()/getNextPage() para navegação manual.</td></tr>
 <tr><td><code>max_retries</code></td><td>Retentativas automáticas (padrão 2) para erros de conexão/408/409/429/≥500.</td></tr>
-<tr><td><code>max_tokens</code></td><td>Máximo de tokens a gerar numa resposta; limitado pelo teto do modelo (Fable 5.1 / Opus 5.5 / Sonnet 5.5 / Haiku 5.5: 128k). Na Batch API, Opus 5.5, Sonnet 5.5 e Haiku 5.5 chegam a 300k com o header beta <code>output-300k-2026-03-24</code>.</td></tr>
+<tr><td><code>max_tokens</code></td><td>Máximo de tokens a gerar numa resposta; limitado pelo teto do modelo (Fable 5.2 / Opus 5.5 / Sonnet 5.5 / Haiku 5.5: 128k). Na Batch API, Opus 5.5, Sonnet 5.5 e Haiku 5.5 chegam a 300k com o header beta <code>output-300k-2026-03-24</code>.</td></tr>
 <tr><td><code>maxRetries</code> (JS)</td><td>Opção do cliente/requisição; padrão 2.</td></tr>
 <tr><td>MCP connector</td><td>Recurso que conecta a Messages API a servidores MCP remotos sem cliente MCP separado (beta <code>mcp-client-2026-09-15</code>).</td></tr>
 <tr><td><code>mcp_toolset</code></td><td>Entrada no array <code>tools</code> que configura quais ferramentas de um servidor MCP habilitar.</td></tr>
@@ -6917,7 +6952,7 @@ const msg = await vertex.messages.create({
 <tr><td><code>signature</code></td><td>Campo opaco com o pensamento completo criptografado, usado para verificar/reconstruir blocos reenviados.</td></tr>
 <tr><td><code>sk-ant-admin...</code></td><td>Chave da Admin API (gerencia membros, workspaces, chaves).</td></tr>
 <tr><td><code>snapshot fixo</code></td><td>Cada model ID mapeia para pesos imutáveis; os IDs atuais são sem data, mas ainda assim pinned (não evergreen).</td></tr>
-<tr><td><code>speed: "fast"</code></td><td>Fast mode (GA no Opus 5.5; sem Batch nem Priority Tier): saída até 2,5× mais rápida, a $8/$40 por MTok. Sem header beta.</td></tr>
+<tr><td><code>speed: "fast"</code></td><td>Fast mode (GA no Fable 5.2, Mythos 5.2 e Opus 5.5; sem Batch nem Priority Tier): saída até 2,5× mais rápida, a $16/$80 por MTok (Fable 5.2, Mythos 5.2) ou $8/$40 (Opus 5.5). Sem header beta.</td></tr>
 <tr><td><code>stop_reason</code></td><td>Motivo do término da geração: end_turn, max_tokens, stop_sequence, tool_use, pause_turn, refusal, model_context_window_exceeded.</td></tr>
 <tr><td><code>strict</code></td><td>Propriedade que força (grammar-constrained sampling) os inputs da ferramenta a casarem com o JSON Schema.</td></tr>
 <tr><td><code>strict: true</code></td><td>Strict tool use: valida os inputs de uma ferramenta contra seu input_schema via sampling guiado por gramática.</td></tr>
@@ -6927,7 +6962,7 @@ const msg = await vertex.messages.create({
 <tr><td><code>task_budget</code></td><td>Teto de tokens para a tarefa inteira (várias requisições); beta <code>task-budgets-2026-03-13</code>.</td></tr>
 <tr><td><code>thinking</code></td><td>Configuração de raciocínio: <code>adaptive</code> (modelo decide), <code>between_tools</code> (Sonnet 5.5) ou <code>disabled</code> (só Haiku 5.5, com effort até <code>high</code>).</td></tr>
 <tr><td><code>toFile</code></td><td>Helper do SDK JS para criar uploads a partir de ReadStream/Buffer/Uint8Array com content-type explícito.</td></tr>
-<tr><td><code>tool_choice</code></td><td>Controla a escolha de ferramentas: <code>auto</code>, <code>none</code>, <code>any</code> ou <code>tool</code> (os dois últimos retornam 400 em Fable 5.1, Mythos 5.1, Opus 5.5 e Sonnet 5.5; o Haiku 5.5 os aceita).</td></tr>
+<tr><td><code>tool_choice</code></td><td>Controla a escolha de ferramentas: <code>auto</code>, <code>none</code>, <code>any</code> ou <code>tool</code> (os dois últimos retornam 400 em Fable 5.2, Mythos 5.2, Opus 5.5 e Sonnet 5.5; o Haiku 5.5 os aceita).</td></tr>
 <tr><td><code>tool_result</code></td><td>Bloco na mensagem do usuário que devolve o resultado de uma ferramenta client-side, casado por <code>tool_use_id</code>. Pode ter <code>is_error: true</code>.</td></tr>
 <tr><td><code>tool_runner</code></td><td>client.beta.messages.tool_runner — executa o laço de tool use automaticamente.</td></tr>
 <tr><td><code>tool_use</code></td><td>Bloco de conteúdo na resposta do assistente que representa a requisição do Claude para chamar uma ferramenta (com id, name, input). Acompanha <code>stop_reason: "tool_use"</code>.</td></tr>
@@ -6974,7 +7009,7 @@ const msg = await vertex.messages.create({
       <div class="brand" style="font-size:15px">Guia Claude API <small>Anthropic · PT-BR</small></div>
       <p style="margin:8px 0 0;color:var(--c-fg-muted);font-size:13.5px;line-height:1.55">
         Referência técnica construída a partir da documentação oficial pública em
-        <strong>2026-10-24</strong>. Para informações sempre atualizadas, consulte
+        <strong>2026-11-17</strong> (fatos de modelos, preços e SDKs relidos em <strong>2026-11-27</strong>). Para informações sempre atualizadas, consulte
         <a href="https://platform.claude.com/docs/en/intro" target="_blank" rel="noopener">platform.claude.com/docs</a>.
         Para fatos perecíveis (modelos, datas, preços, limites), a documentação oficial é a fonte autoritativa.
       </p>
@@ -6982,7 +7017,7 @@ const msg = await vertex.messages.create({
     <div style="font-size:13.5px;color:var(--c-fg-muted);line-height:1.7">
       <div><strong>Histórico editorial</strong></div>
       <div>Versão inicial publicada em <strong>2026-05-24</strong></div>
-      <div>Última revisão: <strong>2026-10-24</strong></div>
+      <div>Última revisão: <strong>2026-11-27</strong></div>
       <div style="margin-top:6px">
         <span class="badge claude">anthropic</span>
         <span class="badge info">PT-BR</span>

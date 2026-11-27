@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Guia de Agent Skills — Autoria, Ativação &amp; Harness</title>
 <meta name="description" content="Guia agnóstico do padrão Agent Skills: SKILL.md, progressive disclosure (L1/L2/L3), autoria portável, ativação por description, recursos/scripts/assets, implementação em harness próprio, contexto/budget/eviction, segurança e avaliação." />
-<meta name="last-checked" content="2026-10-24" />
+<meta name="last-checked" content="2026-11-27" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -287,7 +287,7 @@
   <div class="header-row">
     <div class="brand">Guia de Agent Skills <small>Autoria, ativação &amp; harness — agnóstico</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-10-24</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-11-27</strong></span>
       <span class="badge da">Spec Agent Skills · sem versão formal</span>
       <span class="badge info">PT-BR</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
@@ -353,8 +353,8 @@
       <div class="hero-meta">
         <span class="badge da">Spec Agent Skills · sem versão formal</span>
         <span class="badge info">PT-BR</span>
-        <span class="badge ok">Verificado 2026-10-24</span>
-        <span class="badge info">Skills sobre MCP · extensão Final</span>
+        <span class="badge ok">Verificado 2026-11-27</span>
+        <span class="badge info">Skills sobre MCP · extensão Beta</span>
       </div>
       <div class="callout info">
         <strong>Fonte canônica.</strong> <code>agentskills.io/specification</code>
@@ -368,7 +368,7 @@
     </div>
 
     <section id="para-agentes">
-      <h2>Resumo para agentes (verificado 2026-10-24)</h2>
+      <h2>Resumo para agentes (verificado 2026-11-27)</h2>
 
       <h3>Use este guia quando</h3>
       <ul>
@@ -392,20 +392,20 @@
         <li><code>allowed-tools</code> é experimental e não é fronteira de segurança; trate skill de terceiros como supply chain (OWASP AST01–AST10).</li>
         <li>Claude API: skills rodam no code execution tool, até 20 por request, sem rede e sem instalar pacotes; Skills API e Files API são GA, sem header beta; fora de ZDR.</li>
         <li>Claude Code: escopos enterprise &gt; personal &gt; project; skills de plugin têm namespace <code>plugin:skill</code>; skills da conta claude.ai rodam como <code>/anthropic-skills:&lt;nome&gt;</code>.</li>
-        <li>Skills por MCP: extensão <code>io.modelcontextprotocol/skills</code> (SEP-2640, Final, spec MCP 2026-07-28); máx. recomendado 512 arquivos / 16 MiB por skill; suporte de clientes ainda parcial.</li>
+        <li>Skills por MCP: extensão <code>io.modelcontextprotocol/skills</code> em estágio <strong>Beta</strong> (o SEP-2640 está Final, mas isso é o status do SEP, não o estágio da extensão; quebras ainda são permitidas), spec MCP 2026-07-28; máx. recomendado 512 arquivos / 16 MiB por skill; suporte de clientes ainda parcial (Claude Code: beta público, <code>servidor:skill</code>; versão de entrada <span class="pill partial">UNVERIFIED</span>: as docs dizem v2.1.331 ou posterior, o changelog registra a 2.1.332).</li>
       </ul>
 
       <h3>Versões e modelos correntes</h3>
       <div class="table-wrap"><table>
-        <thead><tr><th>Item</th><th>Valor</th><th>Fonte (lido 2026-10-24)</th></tr></thead>
+        <thead><tr><th>Item</th><th>Valor</th><th>Fonte (lido 2026-11-27)</th></tr></thead>
         <tbody>
-          <tr><td>Especificação Agent Skills</td><td>sem versão formal; campos <code>name</code>, <code>description</code>, <code>license</code>, <code>compatibility</code> (&lt;=500), <code>metadata</code>, <code>allowed-tools</code> (experimental)</td><td><a href="https://agentskills.io/specification">agentskills.io/specification</a></td></tr>
+          <tr><td>Especificação Agent Skills</td><td>sem versão formal; governança adotada em 2026-11-04 sob a Agentic AI Foundation (LF Projects); campos <code>name</code>, <code>description</code>, <code>license</code>, <code>compatibility</code> (&lt;=500), <code>metadata</code>, <code>allowed-tools</code> (experimental)</td><td><a href="https://agentskills.io/specification">agentskills.io/specification</a> · <a href="https://github.com/agentskills/agentskills/blob/main/GOVERNANCE.md">GOVERNANCE.md</a></td></tr>
           <tr><td>Skills na Claude API</td><td>GA; até 20 skills por request; container expira em 30 dias</td><td><a href="https://platform.claude.com/docs/en/build-with-claude/skills-guide">skills-guide</a></td></tr>
-          <tr><td>Claude Code</td><td>2.1.310 (<code>@anthropic-ai/claude-code</code>); três marketplaces oficiais: <code>claude-plugins-official</code>, <code>claude-community</code>, <code>claude-code-plugins</code></td><td><a href="https://code.claude.com/docs/en/skills">code.claude.com/docs/en/skills</a> · <a href="https://code.claude.com/docs/en/plugins/overview">plugins/overview</a></td></tr>
-          <tr><td>Agent Plugins</td><td>1.0.0 (Published)</td><td><a href="https://agent-plugins.org/">agent-plugins.org</a></td></tr>
-          <tr><td>MCP</td><td>spec 2026-07-28; extensão de skills SEP-2640 (Final)</td><td><a href="https://modelcontextprotocol.io/extensions/skills/overview">extensions/skills/overview</a></td></tr>
+          <tr><td>Claude Code</td><td>2.1.332 (<code>@anthropic-ai/claude-code</code>, npm 2026-11-24; estável 2.1.326); dois marketplaces da Anthropic: <code>claude-plugins-official</code> e <code>claude-community</code></td><td><a href="https://code.claude.com/docs/en/skills">code.claude.com/docs/en/skills</a> · <a href="https://code.claude.com/docs/en/plugins/overview">plugins/overview</a></td></tr>
+          <tr><td>Agent Plugins</td><td>1.0.0 (Published); o 1.1.0 é um working draft ainda não lançado, com <code>hooks.json</code> portátil</td><td><a href="https://agent-plugins.org/">agent-plugins.org</a> · <a href="https://github.com/agentplugins/agent-plugins-spec">agent-plugins-spec</a></td></tr>
+          <tr><td>MCP</td><td>spec 2026-07-28; extensão de skills em estágio Beta (SEP-2640 Final)</td><td><a href="https://modelcontextprotocol.io/extensions/skills/overview">extensions/skills/overview</a></td></tr>
           <tr><td>OWASP Agentic Skills Top 10</td><td>1.0 (edição 2026), AST01–AST10</td><td><a href="https://owasp.github.io/www-project-agentic-skills-top-10/">owasp.github.io</a></td></tr>
-          <tr><td>SDKs Anthropic</td><td>Python <code>anthropic</code> 2.3.0; TS <code>@anthropic-ai/sdk</code> 1.3.0 (API 2026-10-21)</td><td><a href="https://platform.claude.com/docs/en/cli-sdks-libraries/overview">cli-sdks-libraries/overview</a></td></tr>
+          <tr><td>SDKs Anthropic</td><td>Python <code>anthropic</code> 2.14.0 (PyPI, 2026-11-24); TS <code>@anthropic-ai/sdk</code> 1.14.0 (npm, 2026-11-24); API 2026-10-21 (header <code>anthropic-version</code> da <a href="https://platform.claude.com/docs/en/build-with-claude/skills-guide">skills-guide</a>)</td><td><a href="https://pypi.org/project/anthropic/">PyPI</a> · <a href="https://www.npmjs.com/package/@anthropic-ai/sdk">npm</a></td></tr>
         </tbody>
       </table></div>
 
@@ -455,7 +455,7 @@
         <a href="guia_deepagents.html#s-skills">guia_deepagents.html#s-skills</a> (SkillsMiddleware do Deep Agents),
         <a href="guia_agents_sdk.html">guia_agents_sdk.html</a> (skills no Sandbox do OpenAI Agents SDK) e
         <a href="guia_agents_sdk_orquestracao.html">guia_agents_sdk_orquestracao.html</a> e
-        <a href="guia_google_adk.html">guia_google_adk.html</a> (skills no ADK 2.13.0, SkillToolset estável e ciclo de vida experimental). A teoria geral de
+        <a href="guia_google_adk.html">guia_google_adk.html</a> (skills no ADK, SkillToolset estável e ciclo de vida experimental). A teoria geral de
         contexto/compactação fica em
         <a href="guia_contexto_compactacao_estrategias.html">guia_contexto_compactacao_estrategias.html</a> e
         <a href="guia_estado_contexto_memoria.html">guia_estado_contexto_memoria.html</a>; o threat model e os
@@ -1270,8 +1270,8 @@ MCP   = protocolo para expor tools, resources e prompts externos.</code></pre>
     ],
     "tools": [{"type": "code_execution_20260521", "name": "code_execution"}]
   }'</code></pre>
-      <p class="small">O code execution tool (GA) lista como suportados <code>claude-fable-5-1</code>,
-      <code>claude-opus-5-5</code>, <code>claude-sonnet-5-5</code> e <code>claude-haiku-5-5</code>.
+      <p class="small">O code execution tool (GA) lista como suportados <code>claude-fable-5-2</code>,
+      <code>claude-mythos-5-2</code>, <code>claude-opus-5-5</code>, <code>claude-sonnet-5-5</code> e <code>claude-haiku-5-5</code>.
       Confira a lista na
       <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool" target="_blank" rel="noopener">referência do tool</a>
       antes de assumir suporte. Skills não são elegíveis a ZDR (abaixo).</p>
@@ -1417,7 +1417,7 @@ MCP   = protocolo para expor tools, resources e prompts externos.</code></pre>
         juntos são truncados em 1.536 caracteres na listagem), <code>background</code>, <code>hooks</code>,
         <code>shell</code>, <code>user-invocable</code>, <code>license</code>, <code>compatibility</code> e
         <code>metadata</code>; booleanos aceitam <code>yes</code>/<code>no</code>/<code>on</code>/<code>off</code>/<code>1</code>/<code>0</code>.
-        A configuração <code>skillOverrides</code> ajusta cada skill para <code>on</code>, <code>off</code> ou
+        A configuração <code>skillOverrides</code> ajusta cada skill para <code>on</code>, <code>name-only</code> (lista só o nome, sem descrição), <code>off</code> ou
         <code>user-invocable-only</code>. O corpo pode ainda injetar contexto dinâmico via <code>!`comando`</code> (ou um bloco
         cercado aberto com <code>```!</code> para múltiplas linhas), executado <em>antes</em> de o modelo ver o
         conteúdo — pré-processamento, não uma tool que o Claude chama.
@@ -1472,11 +1472,12 @@ MCP   = protocolo para expor tools, resources e prompts externos.</code></pre>
         <code>~/.claude/skills/nome/</code> (com seu próprio <code>.claude-plugin/plugin.json</code> e um
         <code>SKILL.md</code> inicial) que carrega automaticamente na sessão seguinte como
         <code>nome@skills-dir</code>, sem passo de marketplace — em um <code>.claude/skills/</code> de projeto
-        isso exige aceitar o diálogo de confiança do workspace primeiro. A Anthropic mantém três marketplaces:
-        <code>claude-plugins-official</code> (curado pela Anthropic, registrado automaticamente na
-        primeira sessão interativa), <code>claude-community</code> (submissões de terceiros, publicadas após
-        revisão; repositório <code>claude-plugins-community</code>) e o marketplace de demonstração
-        <code>claude-code-plugins</code> (repositório <code>anthropics/claude-code</code>).
+        isso exige aceitar o diálogo de confiança do workspace primeiro. A Anthropic mantém dois marketplaces:
+        <code>claude-plugins-official</code> (plugins da Anthropic, de parceiros e de outros autores; registrado automaticamente na
+        primeira sessão interativa) e <code>claude-community</code> (submissões de terceiros; não vem registrado,
+        adicione com <code>/plugin marketplace add anthropics/claude-plugins-community</code>). O marketplace
+        <code>claude-code-plugins</code> (repositório <code>anthropics/claude-code</code>) está descontinuado: instale a partir de
+        <code>claude-plugins-official</code>.
       </p>
       <p>
         O manifesto <code>plugin.json</code> exige apenas <code>name</code>; os demais campos são
@@ -1484,8 +1485,26 @@ MCP   = protocolo para expor tools, resources e prompts externos.</code></pre>
         <code>homepage</code>, <code>repository</code>, <code>license</code>, <code>keywords</code>,
         <code>skills</code>, <code>agents</code>, <code>outputStyles</code>, <code>workflows</code>,
         <code>experimental</code> (<code>themes</code>, <code>monitors</code>, <code>evals</code>) e <code>types</code> (mods).
-        O <code>settings.json</code> do plugin só honra <code>agent</code> e <code>subagentStatusLine</code>.
+        A tabela de campos da <a href="https://code.claude.com/docs/en/plugins-reference" target="_blank" rel="noopener">plugins-reference</a> (lida em 2026-11-27)
+        traz ainda: <code>$schema</code>, <code>metadata</code>, <code>icon</code>, <code>defaultEnabled</code> (padrão <code>true</code>),
+        <code>engines</code> (faixa semver de <code>claude-code</code>; exige v2.1.323+), <code>network</code> (hosts, v2.1.328+, informativo),
+        <code>userConfig</code> (tipos <code>string</code>, <code>number</code>, <code>boolean</code>, <code>directory</code>, <code>file</code>;
+        <code>options</code> exige v2.1.271+; valores <code>sensitive</code> vão para o armazenamento seguro), <code>dependencies</code>,
+        <code>channels</code>, <code>commands</code>, <code>hooks</code>, <code>mcpServers</code> e <code>lspServers</code>: hooks, MCP e LSP podem ser
+        declarados no próprio manifesto. O campo <code>optionalDependencies</code> (plugins que se instalam junto com o plugin que os lista e podem
+        ser desativados ou desinstalados à parte) consta do changelog do Claude Code 2.1.331, mas ainda não da tabela da plugins-reference.
+        O <code>settings.json</code> do plugin só honra <code>agent</code> e <code>subagentStatusLine</code>
+        (<span class="pill partial">UNVERIFIED</span> em 2026-11-27: o <code>settings.json</code> não consta da tabela de layout padrão da plugins-reference).
         Plugins podem declarar dependências de outros plugins com faixas de versão (ex.: <code>^1.2</code>).
+      </p>
+      <p>
+        No marketplace (<code>.claude-plugin/marketplace.json</code>, com <code>name</code>, <code>owner</code> e <code>plugins</code>), cada entrada
+        precisa de <code>name</code> e <code>source</code>, e a fonte pode ser de sete tipos: caminho relativo, <code>github</code>, <code>url</code>,
+        <code>git-subdir</code>, <code>npm</code>, <code>archive</code> (exige https e <code>sha256</code>) e <code>command</code>. <code>ref</code> e
+        <code>sha</code> fixam fontes git; prefira <code>sha</code> e, em <code>archive</code>, o <code>sha256</code>. Marketplaces gerenciados em
+        <code>extraKnownMarketplaces</code> passarão a atualizar automaticamente por padrão em uma versão futura, <strong>em ou depois de 2026-11-30</strong>
+        (para excluir um, <code>autoUpdate: false</code> na entrada)
+        (<a href="https://code.claude.com/docs/en/plugins/marketplace-reference" target="_blank" rel="noopener">plugins/marketplace-reference</a> e changelog 2.1.331, lidos em 2026-11-27).
       </p>
       <div class="callout warn">
         <strong>Versionamento de plugin:</strong> o campo <code>version</code> do manifesto é opcional. Se
@@ -1501,7 +1520,10 @@ MCP   = protocolo para expor tools, resources e prompts externos.</code></pre>
       <p>
         <strong>Agent Plugins</strong> é um padrão aberto e vendor-neutral separado da Agent Skills
         Specification, publicado em <a href="https://agent-plugins.org/specification" target="_blank" rel="noopener">agent-plugins.org/specification</a>
-        como especificação <strong>1.0.0</strong> ("Published").
+        como especificação <strong>1.0.0</strong> ("Published"). O <strong>1.1.0 é um working draft ainda não lançado</strong>
+        (<a href="https://github.com/agentplugins/agent-plugins-spec" target="_blank" rel="noopener">agent-plugins-spec</a>, lido em 2026-11-27): acrescenta
+        <code>hooks.json</code> portátil na raiz do plugin (eventos <code>SessionStart</code>, <code>UserPromptSubmit</code>, <code>PreToolUse</code>,
+        <code>PostToolUse</code> e <code>Stop</code>) e o campo <code>displayName</code>. Até ser publicado, tudo o que segue vale para a 1.0.0, que não tem hooks portáteis.
         A própria página o define como <em>"a portable package format for reusable components that extend AI
         agents"</em> — <em>"an open, vendor-neutral standard for packaging reusable components into portable
         plugins"</em>. O Comitê Técnico (Technical Steering Committee) reúne Core Maintainers de
@@ -1579,6 +1601,8 @@ MCP   = protocolo para expor tools, resources e prompts externos.</code></pre>
           <tr><td><code>streamable-http</code></td><td><code>url</code> (obrig., HTTP/HTTPS absoluta, sem userinfo/fragment; HTTPS obrigatório fora de loopback), opcional <code>headers</code></td><td>Transporte remoto atual; sem expansão de placeholder em <code>url</code>/headers.</td></tr>
         </tbody>
       </table></div>
+      <p>A spec também admite o tipo <code>sse</code>, opcional para o cliente: um cliente 1.0.0 precisa suportar ao menos <code>stdio</code> ou
+      <code>streamable-http</code> (<a href="https://agent-plugins.org/specification" target="_blank" rel="noopener">agent-plugins.org/specification</a>, lido em 2026-11-27).</p>
       <pre><code class="language-json">{
   "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
   "mcpServers": {
@@ -1651,6 +1675,13 @@ MCP   = protocolo para expor tools, resources e prompts externos.</code></pre>
         via <code>stdio</code> e Streamable HTTP: VS Code, Cursor, GitHub Copilot, Kiro, OpenClaw, Grok Bot,
         ChatGPT &amp; Codex, Hermes Agent, NanoClaw e OpenHands.
         Claude Code não consta nessa lista (ele carrega o formato próprio <code>.claude-plugin/</code> — ver §6B).
+        A lista é montada no navegador e não foi relida em 2026-11-27: <span class="pill partial">UNVERIFIED</span>.
+        Dois desses clientes têm formato próprio sobre o mesmo núcleo: o <strong>Codex</strong> usa <code>plugin.json</code> na raiz com o namespace
+        <code>extensions.com.openai</code> (o <code>.codex-plugin/plugin.json</code> é só fallback legado;
+        <a href="https://developers.openai.com/plugins/build/plugins" target="_blank" rel="noopener">plugins/build/plugins</a>), e o <strong>Cursor</strong> usa
+        <code>.cursor-plugin/plugin.json</code>, com <code>${CURSOR_PLUGIN_ROOT}</code> no <code>mcp.json</code> em vez de <code>${PLUGIN_ROOT}</code>
+        (<a href="https://cursor.com/docs/plugins" target="_blank" rel="noopener">cursor.com/docs/plugins</a>); lidos em 2026-11-27. No ChatGPT, o antigo
+        &ldquo;Apps SDK&rdquo; passou a se chamar &ldquo;Plugins&rdquo; (data da renomeação <span class="pill partial">UNVERIFIED</span>).
       </div>
       <div class="source-link">Fonte oficial: <a href="https://agent-plugins.org/specification" target="_blank" rel="noopener">agent-plugins.org/specification</a> · <a href="https://agent-plugins.org/plugin-authors/manifest" target="_blank" rel="noopener">plugin-authors/manifest</a> · <a href="https://agent-plugins.org/plugin-authors/skills" target="_blank" rel="noopener">plugin-authors/skills</a> · <a href="https://agent-plugins.org/plugin-authors/mcp-servers" target="_blank" rel="noopener">plugin-authors/mcp-servers</a> · <a href="https://agent-plugins.org/plugin-authors/client-extensions" target="_blank" rel="noopener">plugin-authors/client-extensions</a> · <a href="https://agent-plugins.org/plugin-authors/build-an-agent-plugin" target="_blank" rel="noopener">plugin-authors/build-an-agent-plugin</a> · <a href="https://agent-plugins.org/client-implementers/implement-an-agent-plugins-client" target="_blank" rel="noopener">client-implementers/implement-an-agent-plugins-client</a> · <a href="https://agent-plugins.org/client-implementers/loading-and-discovery" target="_blank" rel="noopener">loading-and-discovery</a> · <a href="https://agent-plugins.org/client-implementers/mcp-runtime" target="_blank" rel="noopener">mcp-runtime</a> · <a href="https://agent-plugins.org/client-implementers/conformance" target="_blank" rel="noopener">conformance</a> · <a href="https://agent-plugins.org/schemas" target="_blank" rel="noopener">schemas</a></div>
     </section>
@@ -1658,14 +1689,25 @@ MCP   = protocolo para expor tools, resources e prompts externos.</code></pre>
     <section id="s-skills-mcp">
       <h2>6D. Skills sobre MCP (extensão oficial)</h2>
       <p>
-        <strong>Skills over MCP</strong> é uma extensão oficial do protocolo, <span class="pill ok">Final</span>
-        (<a href="https://modelcontextprotocol.io/seps/2640-skills-extension" target="_blank" rel="noopener">SEP-2640</a>),
+        <strong>Skills over MCP</strong> é uma extensão oficial do protocolo em estágio <span class="pill beta">Beta</span>
+        (os estágios do ciclo de vida de extensões, <a href="https://modelcontextprotocol.io/seps/3392-extension-lifecycle" target="_blank" rel="noopener">SEP-3392</a>,
+        são Experimental, Beta e Stable; em Beta, quebras ainda são permitidas). O <a href="https://modelcontextprotocol.io/seps/2640-skills-extension" target="_blank" rel="noopener">SEP-2640</a>
+        que a define está <em>Final</em>, e isso é o status do SEP, não o estágio da extensão
+        (<a href="https://modelcontextprotocol.io/extensions/overview" target="_blank" rel="noopener">extensions/overview</a>, lido em 2026-11-27). Ela é
         identificada por <code>io.modelcontextprotocol/skills</code> e mantida no repositório
         <a href="https://github.com/modelcontextprotocol/ext-skills" target="_blank" rel="noopener">modelcontextprotocol/ext-skills</a>.
         Ela <strong>não redefine</strong> o formato: a skill continua sendo um diretório com <code>SKILL.md</code> da
         Agent Skills Specification; a extensão só define <em>descoberta e leitura</em> por MCP. O suporte em SDKs e
         hosts ainda está sendo implementado: na matriz de clientes é parcial em ChatGPT, fast-agent e
-        Inspector e completo em <code>mcpc</code> (<a href="https://modelcontextprotocol.io/extensions/client-matrix" target="_blank" rel="noopener">matriz</a>).
+        Inspector e completo em <code>mcpc</code> (<a href="https://modelcontextprotocol.io/extensions/client-matrix" target="_blank" rel="noopener">matriz</a>;
+        as marcas de &ldquo;completo&rdquo; não vieram na leitura de 2026-11-27, pois a matriz é montada no navegador: <span class="pill partial">UNVERIFIED</span>).
+        O Claude Code consome skills de servidores MCP em beta público: elas aparecem como <code>servidor:skill</code>
+        (por exemplo <code>docs:pdf</code>), exigem a v2.1.331 ou posterior segundo a doc, e o changelog registra a entrada
+        na v2.1.332 (<span class="pill partial">UNVERIFIED</span> qual das duas versões está certa), rodam sem <code>allowed-tools</code> e ignoram, entre outros campos de frontmatter, <code>hooks</code>, <code>model</code>,
+        <code>effort</code>, <code>context</code>, <code>agent</code>, <code>paths</code> e <code>metadata</code>; a aprovação é por versão
+        e as regras são <code>Skill(mcp__servidor__*)</code>
+        (<a href="https://code.claude.com/docs/en/mcp#use-skills-from-mcp-servers" target="_blank" rel="noopener">doc MCP do Claude Code</a> ·
+        <a href="https://code.claude.com/docs/en/skills" target="_blank" rel="noopener">doc de skills</a>, lidas em 2026-11-27).
       </p>
       <div class="table-wrap"><table>
         <thead><tr><th>Aspecto</th><th>Contrato (spec MCP 2026-07-28 ou posterior)</th></tr></thead>
@@ -1691,7 +1733,8 @@ MCP   = protocolo para expor tools, resources e prompts externos.</code></pre>
         qualquer outra fonte de skill. Não confunda a extensão com o <code>mcp.json</code> do Agent Plugins (§6C), que
         só configura <em>servidores</em> MCP dentro de um pacote.
       </div>
-      <div class="source-link">Fonte oficial: <a href="https://modelcontextprotocol.io/extensions/skills/overview" target="_blank" rel="noopener">modelcontextprotocol.io/extensions/skills/overview</a> · <a href="https://modelcontextprotocol.io/extensions/overview" target="_blank" rel="noopener">extensions/overview</a> · <a href="https://github.com/modelcontextprotocol/ext-skills" target="_blank" rel="noopener">ext-skills</a>. Protocolo MCP: <a href="guia_protocolo_mcp.html#extensoes">Protocolo MCP §13</a>.</div>
+      <p><strong>Suporte em SDK (TypeScript).</strong> O SDK TypeScript v2 traz a extensão desde a <code>2.4.0</code> (2026-10-23), em subpaths <code>ext/skills</code>; a exportação da raiz dos pacotes não muda. No servidor, <code>SkillsExtension.attach(server)</code> atende <code>skills/list</code>, <code>skills/get</code>, <code>resources/directory/read</code> e o template de recurso <code>skill://{+path}</code> (o <code>attach</code> é marcado <code>@experimental</code> e pode mudar numa minor); <code>loadSkills(folder)</code> carrega um diretório de skills em Node. No cliente, <code>SkillsClient</code> oferece <code>list()</code>, <code>get()</code>, <code>read()</code> (verifica tamanho, digest e frontmatter do <code>SKILL.md</code> e levanta <code>SkillVerificationError</code> em divergência) e <code>readDirectory()</code>. Funciona nas revisões 2025-11-25 e 2026-07-28; só na 2026-07-28 o servidor envia <code>ttlMs</code>/<code>cacheScope</code> e o cliente os exige. Skills inválidas são ignoradas com aviso, ou falham no modo <code>strict</code>. Fonte: <a href="https://github.com/modelcontextprotocol/typescript-sdk/releases/tag/v2.4.0" target="_blank" rel="noopener">release v2.4.0</a> (lido em 2026-11-12).</p>
+<div class="source-link">Fonte oficial: <a href="https://modelcontextprotocol.io/extensions/skills/overview" target="_blank" rel="noopener">modelcontextprotocol.io/extensions/skills/overview</a> · <a href="https://modelcontextprotocol.io/extensions/overview" target="_blank" rel="noopener">extensions/overview</a> · <a href="https://github.com/modelcontextprotocol/ext-skills" target="_blank" rel="noopener">ext-skills</a>. Protocolo MCP: <a href="guia_protocolo_mcp.html#extensoes">Protocolo MCP §13</a>.</div>
     </section>
 
     <section class="chapter" id="parte-implementacao">
@@ -2188,7 +2231,7 @@ retention_value considers:
           array <code>tools</code> <em>entre turnos da mesma conversa</em> <strong>preservando o prompt
           cache</strong>. Como o binding L5 (tools/MCP) costuma acompanhar a ativação de skill, sem isso trocar a skill
           ativa invalida o prefixo inteiro e empurra <code>min_residency_turns</code> e <code>swap_margin</code> para
-          cima. Modelos: Fable 5.1, Mythos 5.1, Opus 5.5 e <strong>Sonnet 5.5</strong>.
+          cima. Modelos: Fable 5.2, Mythos 5.2, Opus 5.5 e <strong>Sonnet 5.5</strong>.
           <span class="pill beta">Beta</span> O header <code>inline-tools-2026-09-15</code> (só Claude API) deixa um
           <code>tool_addition</code> carregar a definição completa da tool, nos mesmos modelos.</li>
           <li><strong>Mínimo cacheável de 512 tokens</strong> em todos os modelos atuais: corpos de <code>SKILL.md</code> pequenos — os
@@ -2728,7 +2771,7 @@ SKILL.md states when each one is needed.</code></pre>
 
     <section class="ref" id="fontes-oficiais">
       <h2>Fontes &amp; verificação</h2>
-      <p>Fontes oficiais lidas em 2026-10-24. Todo fato relevante deste guia deve ser conferido contra a documentação oficial; o guia privilegia a especificação aberta Agent Skills, documentação oficial
+      <p>Fontes oficiais lidas em 2026-11-27 (o google-adk 2.14.0 da linha do ADK abaixo foi lido antes, em 2026-11-26). Todo fato relevante deste guia deve ser conferido contra a documentação oficial; o guia privilegia a especificação aberta Agent Skills, documentação oficial
       de plataformas e referências reconhecidas de segurança/governança.</p>
       <div class="table-wrap"><table>
         <thead><tr><th>Fonte</th><th>URL</th><th>Uso</th></tr></thead>
@@ -2741,8 +2784,8 @@ SKILL.md states when each one is needed.</code></pre>
           <tr><td>Agent Skills · Evaluating skills</td><td><a href="https://agentskills.io/skill-creation/evaluating-skills" target="_blank" rel="noopener">agentskills.io/skill-creation/evaluating-skills</a></td><td>Eval-driven iteration, casos de teste, assertions, grading, custo/qualidade.</td></tr>
           <tr><td>Agent Skills · Using scripts</td><td><a href="https://agentskills.io/skill-creation/using-scripts" target="_blank" rel="noopener">agentskills.io/skill-creation/using-scripts</a></td><td>Scripts, interfaces não interativas, saída estruturada, comandos avulsos pinados (uvx/npx/deno/go run) e dependências inline (PEP 723 etc.).</td></tr>
           <tr><td>Agent Skills · Quickstart</td><td><a href="https://agentskills.io/skill-creation/quickstart" target="_blank" rel="noopener">agentskills.io/skill-creation/quickstart</a></td><td>Tutorial de primeira skill em VS Code; confirma discovery/activation/execution como os três passos do padrão.</td></tr>
-          <tr><td>Agent Skills · Client Showcase</td><td><a href="https://agentskills.io/clients" target="_blank" rel="noopener">agentskills.io/clients</a></td><td>Lista de clientes que suportam Agent Skills (Claude Code, VS Code/Copilot, ChatGPT/Codex, Cursor, Gemini CLI e dezenas de outros) — confirma adoção ampla, sem versão wire formal.</td></tr>
-          <tr><td>Agent Plugins · Overview</td><td><a href="https://agent-plugins.org/" target="_blank" rel="noopener">agent-plugins.org</a></td><td>Padrão 1.0.0 de empacotamento de skills + MCP em plugins portáveis; TSC com Amazon, Cursor, Microsoft, OpenAI, Vercel.</td></tr>
+          <tr><td>Agent Skills · Client Showcase</td><td><a href="https://agentskills.io/clients" target="_blank" rel="noopener">agentskills.io/clients</a></td><td>Lista de clientes que suportam Agent Skills (Claude Code, VS Code/Copilot, ChatGPT/Codex, Cursor, Gemini CLI e dezenas de outros) — confirma adoção ampla, sem versão wire formal. A lista é montada no navegador e não veio na leitura de 2026-11-27 (<span class="pill partial">UNVERIFIED</span>); a doc do Gemini CLI avisa, na mesma data, que ele foi substituído pelo Antigravity CLI em 18 de junho de 2026 para usuários sem plano pago e do Google One (<a href="https://geminicli.com/docs/" target="_blank" rel="noopener">geminicli.com/docs</a>) e documenta skills em <code>.gemini/skills/</code> ou no alias <code>.agents/skills/</code> (<a href="https://geminicli.com/docs/cli/skills/" target="_blank" rel="noopener">cli/skills</a>).</td></tr>
+          <tr><td>Agent Plugins · Overview</td><td><a href="https://agent-plugins.org/" target="_blank" rel="noopener">agent-plugins.org</a></td><td>Padrão 1.0.0 de empacotamento de skills + MCP em plugins portáveis; TSC com Amazon, Cursor, Microsoft, OpenAI, Vercel. O 1.1.0 (hooks portáteis) é working draft, não lançado: <a href="https://github.com/agentplugins/agent-plugins-spec" target="_blank" rel="noopener">agent-plugins-spec</a>.</td></tr>
           <tr><td>Agent Plugins · Specification</td><td><a href="https://agent-plugins.org/specification" target="_blank" rel="noopener">agent-plugins.org/specification</a></td><td>Contrato normativo: estrutura do pacote, schema de <code>plugin.json</code>/<code>mcp.json</code>, isolamento de falhas.</td></tr>
           <tr><td>Agent Plugins · Manifest</td><td><a href="https://agent-plugins.org/plugin-authors/manifest" target="_blank" rel="noopener">plugin-authors/manifest</a></td><td>Referência completa de campos do <code>plugin.json</code>.</td></tr>
           <tr><td>Agent Plugins · Skills</td><td><a href="https://agent-plugins.org/plugin-authors/skills" target="_blank" rel="noopener">plugin-authors/skills</a></td><td>Como <code>skills/</code> usa a Agent Skills Specification sem redefini-la.</td></tr>
@@ -2753,15 +2796,17 @@ SKILL.md states when each one is needed.</code></pre>
           <tr><td>OpenAI Codex · Skills</td><td><a href="https://learn.chatgpt.com/docs/build-skills" target="_blank" rel="noopener">learn.chatgpt.com/docs/build-skills</a></td><td>Skills no Codex, progressive disclosure, budget da lista inicial, ativação implícita/explícita. URL canônica.</td></tr>
           <tr><td>OpenAI API · Skills (tools)</td><td><a href="https://developers.openai.com/api/docs/guides/tools-skills" target="_blank" rel="noopener">developers.openai.com/api/docs/guides/tools-skills</a></td><td>Skills como bundles versionados, compatíveis com o padrão aberto Agent Skills. Na Responses API, <code>skill_reference</code> só vale no hosted shell (<code>tools[].environment.skills</code>); o local shell usa <code>{name, description, path}</code>. Limites de upload: zip de 50 MB, 500 arquivos por versão, 25 MB por arquivo descomprimido, exatamente um <code>SKILL.md</code>. O Codex/ChatGPT documenta skills em <a href="https://learn.chatgpt.com/docs/build-skills" target="_blank" rel="noopener">learn.chatgpt.com/docs/build-skills</a>.</td></tr>
           <tr><td>OpenAI Agents SDK · Skills</td><td><a href="https://github.com/openai/openai-agents-python/issues/5025" target="_blank" rel="noopener">openai-agents-python#5025</a></td><td>No <code>openai-agents</code> 0.24.0 a capability de skills existe só no <code>SandboxAgent</code>; na issue #5025 (fechada em 2026-09-17) o mantenedor afirmou que não planeja skills para agentes não-sandbox neste SDK.</td></tr>
-          <tr><td>Google ADK · Skills</td><td><a href="https://adk.dev/skills/" target="_blank" rel="noopener">adk.dev/skills</a> · <a href="guia_google_adk.html">guia do ADK</a></td><td>No <code>google-adk</code> 2.13.0 o registro de features marca <code>SKILL_TOOLSET</code> como STABLE (a página adk.dev/skills ainda diz Experimental); os ciclos de vida de skill (<code>SKILL_LIFECYCLE</code>) são experimentais e ligados por <code>ADK_ENABLE_SKILL_LIFECYCLE=1</code>.</td></tr>
+          <tr><td>Google ADK · Skills</td><td><a href="https://adk.dev/skills/" target="_blank" rel="noopener">adk.dev/skills</a> · <a href="guia_google_adk.html">guia do ADK</a></td><td>No <code>google-adk</code> 2.14.0 o registro de features marca <code>SKILL_TOOLSET</code> como STABLE (a página adk.dev/skills ainda diz Experimental); os ciclos de vida de skill (<code>SKILL_LIFECYCLE</code>) são experimentais e ligados por <code>ADK_ENABLE_SKILL_LIFECYCLE=1</code>.</td></tr>
           <tr><td>Anthropic · Agent Skills Overview</td><td><a href="https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview" target="_blank" rel="noopener">platform.claude.com · agent-skills/overview</a></td><td>Skills como recursos filesystem-based; carregamento automático quando relevante.</td></tr>
           <tr><td>Anthropic · Skill authoring best practices</td><td><a href="https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices" target="_blank" rel="noopener">platform.claude.com · agent-skills/best-practices</a></td><td>Naming, descriptions, progressive disclosure, paths, scripts e testes.</td></tr>
           <tr><td>Anthropic Engineering · Agent Skills</td><td><a href="https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills" target="_blank" rel="noopener">anthropic.com/engineering · Agent Skills</a></td><td>Engenharia de skills como onboarding procedural para agentes.</td></tr>
           <tr><td>Microsoft Learn · Agent Skills</td><td><a href="https://learn.microsoft.com/en-us/agent-framework/agents/skills" target="_blank" rel="noopener">learn.microsoft.com · agent-framework/agents/skills</a></td><td>Agent Skills como pacotes portáveis com progressive disclosure.</td></tr>
           <tr><td>Model Context Protocol · Specification</td><td><a href="https://modelcontextprotocol.io/specification/2026-07-28" target="_blank" rel="noopener">modelcontextprotocol.io/specification/2026-07-28</a></td><td>MCP como protocolo para tools, resources e prompts externos. <span class="pill ok">Revisão atual</span> (<code>2026-07-28</code>).</td></tr>
-          <tr><td>MCP · Skills over MCP</td><td><a href="https://modelcontextprotocol.io/extensions/skills/overview" target="_blank" rel="noopener">extensions/skills/overview</a> · <a href="https://github.com/modelcontextprotocol/ext-skills" target="_blank" rel="noopener">ext-skills</a></td><td>Extensão oficial <code>io.modelcontextprotocol/skills</code> (SEP-2640, Final): <code>skills/list</code>, <code>skills/get</code>, manifesto com digests. Ver <a href="#s-skills-mcp">§6D</a> e <a href="guia_protocolo_mcp.html#extensoes">Protocolo MCP §13</a>.</td></tr>
+          <tr><td>MCP · Skills over MCP</td><td><a href="https://modelcontextprotocol.io/extensions/skills/overview" target="_blank" rel="noopener">extensions/skills/overview</a> · <a href="https://github.com/modelcontextprotocol/ext-skills" target="_blank" rel="noopener">ext-skills</a></td><td>Extensão oficial <code>io.modelcontextprotocol/skills</code> (estágio Beta; SEP-2640 Final):<code>skills/list</code>, <code>skills/get</code>, manifesto com digests. Ver <a href="#s-skills-mcp">§6D</a> e <a href="guia_protocolo_mcp.html#extensoes">Protocolo MCP §13</a>.</td></tr>
           <tr><td>OWASP · Agentic Skills Top 10</td><td><a href="https://owasp.github.io/www-project-agentic-skills-top-10/" target="_blank" rel="noopener">owasp.github.io/www-project-agentic-skills-top-10</a></td><td>AST01–AST10, versão 1.0 (edição 2026). Ver <a href="#seguranca-governanca">§9</a>.</td></tr>
-          <tr><td>Claude Code · Skills e Plugins</td><td><a href="https://code.claude.com/docs/en/skills" target="_blank" rel="noopener">code.claude.com/docs/en/skills</a> · <a href="https://code.claude.com/docs/en/plugins/overview" target="_blank" rel="noopener">plugins/overview</a> · <a href="https://code.claude.com/docs/en/plugins/manifest-reference" target="_blank" rel="noopener">plugins/manifest-reference</a></td><td>Escopos de descoberta, precedência, plugins, marketplaces (§6B).</td></tr>
+          <tr><td>Claude Code · Skills e Plugins</td><td><a href="https://code.claude.com/docs/en/skills" target="_blank" rel="noopener">code.claude.com/docs/en/skills</a> · <a href="https://code.claude.com/docs/en/plugins/overview" target="_blank" rel="noopener">plugins/overview</a> · <a href="https://code.claude.com/docs/en/plugins/manifest-reference" target="_blank" rel="noopener">plugins/manifest-reference</a></td><td>Escopos de descoberta, precedência, plugins, marketplaces (§6B). Campos do manifest e tipos de fonte do marketplace: <a href="https://code.claude.com/docs/en/plugins-reference" target="_blank" rel="noopener">plugins-reference</a> · <a href="https://code.claude.com/docs/en/plugins/marketplace-reference" target="_blank" rel="noopener">plugins/marketplace-reference</a>.</td></tr>
+          <tr><td>Codex e Cursor · Plugins</td><td><a href="https://developers.openai.com/plugins/build/plugins" target="_blank" rel="noopener">developers.openai.com/plugins/build/plugins</a> · <a href="https://cursor.com/docs/plugins" target="_blank" rel="noopener">cursor.com/docs/plugins</a></td><td>Formatos próprios sobre o núcleo Agent Plugins (§6C).</td></tr>
+          <tr><td>Agent Skills · Governança</td><td><a href="https://github.com/agentskills/agentskills/blob/main/GOVERNANCE.md" target="_blank" rel="noopener">GOVERNANCE.md</a></td><td>Adotada em 2026-11-04 sob a Agentic AI Foundation (LF Projects); código e specs Apache-2.0, docs CC-BY-4.0.</td></tr>
           <tr><td>MCP · Security best practices</td><td><a href="https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices" target="_blank" rel="noopener">modelcontextprotocol.io · security best practices</a></td><td>Riscos e boas práticas para integrações MCP.</td></tr>
           <tr><td>OWASP · Top 10 for LLM Applications</td><td><a href="https://owasp.org/www-project-top-10-for-large-language-model-applications/" target="_blank" rel="noopener">owasp.org · Top 10 LLM</a></td><td>Riscos de LLMs: prompt injection, output handling, supply chain.</td></tr>
           <tr><td>OWASP · LLM01 Prompt Injection</td><td><a href="https://genai.owasp.org/llmrisk/llm01-prompt-injection/" target="_blank" rel="noopener">genai.owasp.org · LLM01</a></td><td>Prompt injection e cenários de manipulação de comportamento.</td></tr>
@@ -2781,7 +2826,7 @@ SKILL.md states when each one is needed.</code></pre>
       <div class="brand" style="font-size:15px">Guia de Agent Skills <small>Autoria, ativação &amp; harness — agnóstico</small></div>
       <p style="margin:8px 0 0;color:var(--c-fg-muted);font-size:13.5px;line-height:1.55">
         Referência técnica construída a partir da documentação oficial pública do padrão Agent Skills;
-        estado da especificação e das integrações verificado em <strong>2026-10-24</strong>. Cobre
+        estado da especificação e das integrações verificado em <strong>2026-11-27</strong>. Cobre
         autoria/padrão; a integração por framework está nos guias cross-linkados. Para informação sempre
         atualizada, consulte as
         <a href="#fontes-oficiais">fontes oficiais</a>.
@@ -2789,7 +2834,7 @@ SKILL.md states when each one is needed.</code></pre>
     </div>
     <div style="font-size:13.5px;color:var(--c-fg-muted);line-height:1.7">
       <div><strong>Referência de produção</strong></div>
-      <div>última revisão · 2026-10-24</div>
+      <div>última revisão · 2026-11-27</div>
       <div style="margin-top:6px">
         <span class="badge da">Spec Agent Skills · sem versão formal</span>
         <span class="badge info">PT-BR</span>

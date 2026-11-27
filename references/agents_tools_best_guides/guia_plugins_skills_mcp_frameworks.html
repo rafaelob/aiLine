@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Guia de Plugins, Skills &amp; MCP em Frameworks — Integração Self-Hosted</title>
 <meta name="description" content="Como integrar um plugin (skills + MCP), só uma skill ou só um servidor MCP dentro do seu próprio processo/infra — Google ADK, OpenAI Agents SDK, LangChain, LangGraph, Deep Agents e Claude Agent SDK. Matriz nativo/via adapter/padrão manual, receitas de código verificadas contra doc oficial, o padrão cross-vendor agent-plugins.org, segurança e armadilhas. Não cobre recursos hospedados pelo provedor." />
-<meta name="last-checked" content="2026-10-24" />
+<meta name="last-checked" content="2026-11-27" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -287,7 +287,7 @@
   <div class="header-row">
     <div class="brand">Plugins, Skills &amp; MCP em Frameworks <small>Integração self-hosted — ADK, Agents SDK, LangChain/LangGraph, Deep Agents, Claude Agent SDK</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-10-24</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-11-27</strong></span>
       <span class="badge da">Self-hosted only</span>
       <span class="badge info">PT-BR</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
@@ -349,7 +349,7 @@
       <div class="hero-meta">
         <span class="badge da">Self-hosted only</span>
         <span class="badge info">PT-BR</span>
-        <span class="badge ok">SOTA · verificado 2026-10-24</span>
+        <span class="badge ok">SOTA · verificado 2026-11-27</span>
       </div>
       <div class="callout info">
         <strong>Fronteira deste guia.</strong> O padrão portátil de skill (<code>SKILL.md</code>, frontmatter,
@@ -363,7 +363,7 @@
     </div>
 
     <section id="para-agentes">
-      <h2>Resumo para agentes (verificado 2026-10-24)</h2>
+      <h2>Resumo para agentes (verificado 2026-11-27)</h2>
 
       <h3>Use este guia quando</h3>
       <ul>
@@ -391,17 +391,17 @@
 
       <h3>Versões e modelos correntes</h3>
       <div class="table-wrap"><table>
-        <thead><tr><th>Item</th><th>Valor</th><th>Fonte (lido 2026-10-24)</th></tr></thead>
+        <thead><tr><th>Item</th><th>Valor</th><th>Fonte (lido 2026-11-27)</th></tr></thead>
         <tbody>
-          <tr><td>Claude Agent SDK</td><td><code>claude-agent-sdk</code> 0.2.174 (Python &gt;= 3.10, CLI 2.1.310 embutido) · <code>@anthropic-ai/claude-agent-sdk</code> 0.3.310</td><td><a href="https://pypi.org/project/claude-agent-sdk/">PyPI</a> · <a href="https://www.npmjs.com/package/@anthropic-ai/claude-agent-sdk">npm</a></td></tr>
-          <tr><td>Google ADK</td><td><code>google-adk</code> 2.13.0 (Python &gt;= 3.11) · <code>@google/adk</code> 2.3.0</td><td><a href="https://pypi.org/project/google-adk/">PyPI</a></td></tr>
-          <tr><td>OpenAI Agents SDK</td><td><code>openai-agents</code> 0.24.0 · <code>@openai/agents</code> 0.21.0</td><td><a href="https://pypi.org/project/openai-agents/">PyPI</a> · <a href="https://www.npmjs.com/package/@openai/agents">npm</a></td></tr>
-          <tr><td>LangChain / LangGraph</td><td><code>langchain</code> 1.4.7 · <code>langgraph</code> 1.2.17</td><td><a href="https://pypi.org/project/langchain/">PyPI langchain</a></td></tr>
-          <tr><td>Deep Agents</td><td><code>deepagents</code> 0.7.32 (piso de segurança &gt;= 0.7.25, GHSA-47w2-rfrr-wvq8) · JS 1.15.1 (piso &gt;= 1.15.0, GHSA-wcqq-jj54-gfgm) · <code>deepagents-code</code> 0.2.1 (Python 3.14)</td><td><a href="https://pypi.org/project/deepagents/">PyPI</a></td></tr>
-          <tr><td>Pydantic AI</td><td><code>pydantic-ai-slim</code> 2.61.0 (piso &gt;= 2.59.0, GHSA-4whf-38hw-pxxh; <a href="guia_operacao_seguranca_evals.html#advisories-supply-chain">advisories</a>) · <code>pydantic-ai-harness</code> 0.61.0</td><td><a href="https://pypi.org/project/pydantic-ai-slim/">PyPI</a></td></tr>
-          <tr><td>Microsoft Agent Framework</td><td><code>agent-framework</code> 1.23.0</td><td><a href="https://pypi.org/project/agent-framework/">PyPI</a></td></tr>
-          <tr><td>Claude Code (piso de segurança)</td><td>&gt;= 2.1.179 (GHSA-pq7j-f95f-qfcv); atual 2.1.310</td><td><a href="https://github.com/advisories/GHSA-pq7j-f95f-qfcv">GHSA</a></td></tr>
-          <tr><td>Padrões abertos</td><td>Agent Plugins 1.0.0 (Published); Agent Skills sem versão formal; MCP 2026-07-28</td><td><a href="https://agent-plugins.org/">agent-plugins.org</a></td></tr>
+          <tr><td>Claude Agent SDK</td><td><code>claude-agent-sdk</code> 0.2.189 (Python &gt;= 3.10; CLI embutido 2.1.332, lido em <code>_cli_version.py</code> do sdist) · <code>@anthropic-ai/claude-agent-sdk</code> 0.3.332</td><td><a href="https://pypi.org/project/claude-agent-sdk/">PyPI</a> · <a href="https://www.npmjs.com/package/@anthropic-ai/claude-agent-sdk">npm</a></td></tr>
+          <tr><td>Google ADK</td><td><code>google-adk</code> 2.15.1 (Python &gt;= 3.11) · <code>@google/adk</code> 2.5.0</td><td><a href="https://pypi.org/project/google-adk/">PyPI</a></td></tr>
+          <tr><td>OpenAI Agents SDK</td><td><code>openai-agents</code> 0.26.0 (a 1.0.0-alpha.2 é pré-release) · <code>@openai/agents</code> 0.22.0</td><td><a href="https://pypi.org/project/openai-agents/">PyPI</a> · <a href="https://www.npmjs.com/package/@openai/agents">npm</a></td></tr>
+          <tr><td>LangChain / LangGraph</td><td><code>langchain</code> 1.5.2 · <code>langgraph</code> 1.2.24</td><td><a href="https://pypi.org/project/langchain/">PyPI langchain</a></td></tr>
+          <tr><td>Deep Agents</td><td><code>deepagents</code> 0.7.42 (piso de segurança &gt;= 0.7.25, GHSA-47w2-rfrr-wvq8) · JS 1.17.1 (piso &gt;= 1.15.0, GHSA-wcqq-jj54-gfgm) · <code>deepagents-code</code> 0.2.15 (Python 3.14)</td><td><a href="https://pypi.org/project/deepagents/">PyPI</a></td></tr>
+          <tr><td>Pydantic AI</td><td><code>pydantic-ai-slim</code> 2.76.0 (piso &gt;= 2.76.0, a versão corrente: GHSA-4whf-38hw-pxxh foi corrigida na 2.59.0 e GHSA-gm2p-369w-rcgv, low, na 2.74.0; <a href="guia_operacao_seguranca_evals.html#advisories-supply-chain">advisories</a>) · <code>pydantic-ai-harness</code> 0.76.0 (classificador PyPI &quot;3 - Alpha&quot;; piso &gt;= 0.76.0, a versão corrente: GHSA-5m5q-5qj4-gx9h, high, 0.70.0; GHSA-mj96-6529-3cpf, GHSA-wm3r-gc4c-q7qg, GHSA-g87v-g79r-whvj e GHSA-p2q8-3252-77c3, 0.74.0)</td><td><a href="https://pypi.org/project/pydantic-ai-slim/">PyPI</a></td></tr>
+          <tr><td>Microsoft Agent Framework</td><td><code>agent-framework</code> 1.26.0</td><td><a href="https://pypi.org/project/agent-framework/">PyPI</a></td></tr>
+          <tr><td>Claude Code (piso de segurança)</td><td>&gt;= 2.1.179 (GHSA-pq7j-f95f-qfcv); atual 2.1.332 (estável 2.1.326)</td><td><a href="https://github.com/advisories/GHSA-pq7j-f95f-qfcv">GHSA</a></td></tr>
+          <tr><td>Padrões abertos</td><td>Agent Plugins 1.0.0 (Published; o 1.1.0 é um working draft ainda não lançado, com <code>hooks.json</code> portátil); Agent Skills sem versão formal, sob a governança da Agentic AI Foundation (LF Projects) desde 2026-11-04; MCP 2026-07-28</td><td><a href="https://agent-plugins.org/">agent-plugins.org</a> · <a href="https://github.com/agentplugins/agent-plugins-spec">agent-plugins-spec</a> · <a href="https://github.com/agentskills/agentskills/blob/main/GOVERNANCE.md">GOVERNANCE.md</a></td></tr>
           <tr><td>Modelo de exemplo Anthropic</td><td><code>claude-sonnet-5-5</code></td><td><a href="https://platform.claude.com/docs/en/about-claude/models/overview">models/overview</a></td></tr>
         </tbody>
       </table></div>
@@ -479,12 +479,12 @@
         </table>
       </div>
       <p>
-        Os frameworks cobertos e as versões (PyPI/npm): <code>google-adk</code> <strong>2.13.0</strong>
-        (Python); <code>openai-agents</code> <strong>0.24.0</strong> / <code>@openai/agents</code>
-        <strong>0.21.0</strong>; <code>langchain</code> <strong>1.4.7</strong> / <code>langgraph</code>
-        <strong>1.2.17</strong>; <code>deepagents</code> <strong>0.7.32</strong> (Python) /
-        <strong>1.15.1</strong> (JS); <code>claude-agent-sdk</code> <strong>0.2.174</strong> (Python) /
-        <code>@anthropic-ai/claude-agent-sdk</code> <strong>0.3.310</strong> (TS). Cada afirmação de suporte
+        Os frameworks cobertos e as versões (PyPI/npm): <code>google-adk</code> <strong>2.15.1</strong>
+        (Python); <code>openai-agents</code> <strong>0.26.0</strong> / <code>@openai/agents</code>
+        <strong>0.22.0</strong>; <code>langchain</code> <strong>1.5.2</strong> / <code>langgraph</code>
+        <strong>1.2.24</strong>; <code>deepagents</code> <strong>0.7.42</strong> (Python) /
+        <strong>1.17.1</strong> (JS); <code>claude-agent-sdk</code> <strong>0.2.189</strong> (Python) /
+        <code>@anthropic-ai/claude-agent-sdk</code> <strong>0.3.332</strong> (TS). Cada afirmação de suporte
         nativo cita a página oficial ou o código-fonte da versão citada; onde a doc não confirmou, o texto diz
         "não verificado" em vez de inventar a assinatura.
       </p>
@@ -552,10 +552,15 @@
       <p>
         Em <code>mcp.json</code>, cada servidor declara <code>type</code>: <code>stdio</code> (<code>command</code> com um
         único token executável, mais <code>args</code>/<code>env</code>/<code>cwd</code>) ou <code>streamable-http</code>
-        (<code>url</code>, <code>headers</code> opcional).
+        (<code>url</code>, <code>headers</code> opcional); o tipo <code>sse</code> é opcional para o cliente (lido em 2026-11-27,
+        <a href="https://agent-plugins.org/specification" target="_blank" rel="noopener">agent-plugins.org/specification</a>).
         Não há campo portátil de credencial: headers são dados literais do pacote. <strong>Distribuição, instalação,
         permissões e capacidades específicas de cliente ficam sob controle de cada cliente</strong>; a 1.0.0 não define
-        modelo de permissão, sandbox nem assinatura (ver §10).
+        modelo de permissão, sandbox nem assinatura (ver §10). O <strong>1.1.0 é um working draft ainda não lançado</strong>
+        (<a href="https://github.com/agentplugins/agent-plugins-spec" target="_blank" rel="noopener">agent-plugins-spec</a>, lido em 2026-11-27): acrescenta
+        <code>hooks.json</code> portátil na raiz do plugin (eventos <code>SessionStart</code>, <code>UserPromptSubmit</code>,
+        <code>PreToolUse</code>, <code>PostToolUse</code> e <code>Stop</code>) e o campo <code>displayName</code>; até ser publicado,
+        a 1.0.0 continua sem hooks portáteis.
       </p>
       <div class="callout">
         <strong>Clientes compatíveis</strong> (<a href="https://agent-plugins.org/compatible-clients" target="_blank" rel="noopener">agent-plugins.org/compatible-clients</a>):
@@ -564,6 +569,16 @@
         biblioteca deste guia aparece: a lista é de <em>clientes/hosts</em>, não de SDKs. A Anthropic não aparece
         entre mantenedores nem clientes; o formato de plugin do Claude Code (§8, <code>.claude-plugin/plugin.json</code>)
         é distinto e a spec não declara interoperabilidade com ele.
+        A lista não foi relida em 2026-11-27 (a página a monta no navegador): <span class="pill partial">UNVERIFIED</span>.
+        Dois desses clientes publicam hoje o seu próprio formato sobre o mesmo núcleo, e a mesma pasta pede variáveis de raiz
+        diferentes por cliente: o <strong>Codex</strong> usa <code>plugin.json</code> na raiz com o namespace
+        <code>extensions.com.openai</code> (o <code>.codex-plugin/plugin.json</code> é só fallback legado; ver
+        <a href="https://developers.openai.com/plugins/build/plugins" target="_blank" rel="noopener">plugins/build/plugins</a>, lido em 2026-11-27) e o
+        <strong>Cursor</strong> usa <code>.cursor-plugin/plugin.json</code>, com <code>${CURSOR_PLUGIN_ROOT}</code> no <code>mcp.json</code> em vez de
+        <code>${PLUGIN_ROOT}</code> (<a href="https://cursor.com/docs/plugins" target="_blank" rel="noopener">cursor.com/docs/plugins</a>, lido em 2026-11-27).
+        No ChatGPT, o antigo &ldquo;Apps SDK&rdquo; passou a se chamar &ldquo;Plugins&rdquo; (data da renomeação: <span class="pill partial">UNVERIFIED</span>).
+        O Gemini CLI foi substituído pelo Antigravity CLI em 2026-06-18 para usuários sem plano pago e do Google One
+        (<a href="https://geminicli.com/docs/extensions/" target="_blank" rel="noopener">geminicli.com/docs/extensions</a>, lido em 2026-11-27).
       </div>
       <p>
         Nenhum dos frameworks cobertos documenta um carregador nativo para o formato <code>agent-plugins.org</code>.
@@ -589,63 +604,63 @@
           <tbody>
             <tr>
               <td><strong>Google ADK</strong> (Python)</td>
-              <td><code>google-adk</code> 2.13.0</td>
+              <td><code>google-adk</code> 2.15.1</td>
               <td><span class="pill ok">Nativo</span> <code>McpToolset</code></td>
               <td><span class="pill ok">Nativo</span> <code>SkillToolset</code> (<code>SKILL_TOOLSET</code> STABLE no registro de features; a página adk.dev/skills ainda diz Experimental)</td>
               <td><span class="pill na">Padrão manual</span> sem envelope de plugin no sentido 1</td>
             </tr>
             <tr>
               <td><strong>OpenAI Agents SDK</strong> (Python)</td>
-              <td><code>openai-agents</code> 0.24.0</td>
+              <td><code>openai-agents</code> 0.26.0</td>
               <td><span class="pill ok">Nativo</span> <code>MCPServerStdio</code>/<code>MCPServerStreamableHttp</code></td>
               <td><span class="pill beta">Nativo, só Sandbox Agents</span> <code>Skills</code> capability</td>
               <td><span class="pill na">Padrão manual</span> sem conceito de plugin (só hooks de lifecycle)</td>
             </tr>
             <tr>
               <td><strong>OpenAI Agents SDK</strong> (JS/TS)</td>
-              <td><code>@openai/agents</code> 0.21.0</td>
+              <td><code>@openai/agents</code> 0.22.0</td>
               <td><span class="pill ok">Nativo</span> <code>MCPServerStdio</code>/<code>MCPServerStreamableHttp</code></td>
               <td><span class="pill partial">Não confirmado</span> sem Skills capability documentada</td>
               <td><span class="pill na">Padrão manual</span></td>
             </tr>
             <tr>
               <td><strong>LangChain</strong></td>
-              <td><code>langchain</code> ≥1.4.0 (beta), 1.4.7 atual</td>
+              <td><code>langchain</code> 1.5.2</td>
               <td><span class="pill ok">Nativo, beta</span> <code>langchain.mcp.MCPAdapter</code></td>
               <td><span class="pill na">Padrão manual</span> na lib core (ver Deep Agents)</td>
               <td><span class="pill na">Padrão manual</span> — marketplace <code>langchain-plugins</code> alvo dcode/Claude Code/Codex, não a lib</td>
             </tr>
             <tr>
               <td><strong>LangGraph</strong></td>
-              <td><code>langgraph</code> 1.2.17</td>
+              <td><code>langgraph</code> 1.2.24</td>
               <td><span class="pill partial">Via adapter</span> tools do <code>langchain.mcp</code> ligados a um node/<code>ToolNode</code></td>
               <td><span class="pill na">Padrão manual</span> (ou suba um nível para Deep Agents)</td>
               <td><span class="pill na">Padrão manual</span></td>
             </tr>
             <tr>
               <td><strong>Deep Agents</strong> (Python/JS)</td>
-              <td><code>deepagents</code> 0.7.32 / JS 1.15.1</td>
+              <td><code>deepagents</code> 0.7.42 / JS 1.17.1</td>
               <td><span class="pill partial">Via adapter</span> tools LangChain passados em <code>tools=[...]</code></td>
               <td><span class="pill ok">Nativo</span> <code>SkillsMiddleware</code> + <code>skills=[...]</code></td>
               <td><span class="pill na">Padrão manual na lib</span> — CLI irmã <code>dcode</code> (<code>deepagents-code</code>) aceita manifests estilo Claude/Codex</td>
             </tr>
             <tr>
               <td><strong>Claude Agent SDK</strong> (Python/TS)</td>
-              <td><code>claude-agent-sdk</code> 0.2.174 / TS 0.3.310</td>
+              <td><code>claude-agent-sdk</code> 0.2.189 / TS 0.3.332</td>
               <td><span class="pill ok">Nativo</span> <code>mcp_servers</code> (stdio/http) + <code>create_sdk_mcp_server</code></td>
               <td><span class="pill ok">Nativo</span> <code>setting_sources</code> + <code>.claude/skills</code></td>
               <td><span class="pill ok">Nativo</span> <code>plugins=[{"type":"local","path":...}]</code> carrega plugin Claude Code inteiro</td>
             </tr>
             <tr>
               <td>Pydantic AI <span class="pill na">outros</span></td>
-              <td><code>pydantic-ai-slim</code> 2.61.0</td>
+              <td><code>pydantic-ai-slim</code> 2.76.0</td>
               <td><span class="pill ok">Nativo</span> <code>MCPToolset</code> (transporte unificado)</td>
               <td><span class="pill ok">Nativo</span> capability <code>Skills</code> do <code>pydantic-ai-harness</code> (0.x)</td>
               <td><span class="pill partial">Não confirmado</span></td>
             </tr>
             <tr>
               <td>Microsoft Agent Framework <span class="pill na">outros</span></td>
-              <td><code>agent-framework</code> 1.23.0</td>
+              <td><code>agent-framework</code> 1.26.0</td>
               <td><span class="pill ok">Nativo</span> <code>MCPStdioTool</code>/<code>MCPStreamableHTTPTool</code></td>
               <td><span class="pill ok">Nativo</span> <code>SkillsProvider.from_paths()</code></td>
               <td><span class="pill partial">Não confirmado</span></td>
@@ -665,8 +680,9 @@
     <section class="chapter" id="fw-google-adk">
       <h2>3. Google ADK</h2>
       <p>
-        <code>google-adk</code> <strong>2.13.0</strong> (Python; PyPI, 2026-10-23). O ADK também
-        publica TypeScript (<code>@google/adk</code> 2.3.0), Java (1.12.0), Kotlin (1.4.0) e Go (v2.6.0); os
+        <code>google-adk</code> <strong>2.15.1</strong> (Python; PyPI, 2026-11-25). O ADK também
+        publica TypeScript (<code>@google/adk</code> 2.5.0); Java, Kotlin e Go existem, mas suas versões atuais
+        não foram reverificadas em 2026-11-17 (<span class="pill partial">UNVERIFIED</span>). Os
         exemplos abaixo são Python — este guia não verificou os exemplos de código nesses idiomas.
       </p>
 
@@ -689,7 +705,7 @@ from mcp import StdioServerParameters
 TARGET_FOLDER_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 
 root_agent = LlmAgent(
-    model="gemini-3.8-flash",
+    model="gemini-4-hydrogen",
     name="filesystem_assistant_agent",
     instruction="Help the user manage their files.",
     tools=[
@@ -712,7 +728,7 @@ from google.adk.tools.mcp_tool import McpToolset
 from google.adk.tools.mcp_tool.mcp_session_manager import StreamableHTTPConnectionParams
 
 root_agent = Agent(
-    model="gemini-3.8-flash",
+    model="gemini-4-hydrogen",
     name="travel_planner_agent",
     tools=[
         McpToolset(
@@ -734,7 +750,7 @@ root_agent = Agent(
       <h3>Skill — <code>SkillToolset</code> + <code>load_skill_from_dir</code></h3>
       <p>
         Fontes: <a href="https://adk.dev/skills/" target="_blank" rel="noopener">adk.dev/skills</a> e o wheel
-        <code>google-adk</code> 2.13.0. Em 2.13.0 o registro de features marca
+        <code>google-adk</code> 2.14.0. Em 2.14.0 o registro de features marca
         <code>SKILL_TOOLSET</code> como STABLE (ligado por padrão); a página adk.dev/skills ainda diz "Experimental".
       </p>
       <pre><code>import pathlib
@@ -752,19 +768,22 @@ my_skill_toolset = skill_toolset.SkillToolset(
 )
 
 root_agent = Agent(
-    model="gemini-3.8-flash",
+    model="gemini-4-hydrogen",
     name="skill_user_agent",
     instruction="You are a helpful assistant that can leverage skills.",
     tools=[my_skill_toolset],
 )</code></pre>
       <div class="callout">
-        <strong>API no wheel 2.13.0.</strong> <code>google.adk.skills</code> expõe <code>load_skill_from_dir</code>
+        <strong>API no wheel 2.14.0.</strong> <code>google.adk.skills</code> expõe <code>load_skill_from_dir</code>
         e <code>google.adk.tools.skill_toolset.SkillToolset</code>, cujo construtor é
         <code>SkillToolset(skills=None, *, registry, code_executor, environment, skills_folder, script_timeout,
         save_output_artifacts, additional_tools, tool_name_prefix, tool_filter, discovery_mode=LAZY, lifecycle_config)</code>.
         O <strong>ciclo de vida de skills</strong> (<code>SKILL_LIFECYCLE</code>: ativação efêmera por turno,
         tool <code>unload_skill</code> opt-in, <code>SkillDiscoveryMode</code>) é experimental e fica desligado, ligado
-        por <code>ADK_ENABLE_SKILL_LIFECYCLE=1</code>. Detalhe em
+        por <code>ADK_ENABLE_SKILL_LIFECYCLE=1</code>. A tool <code>run_skill_script</code> (<code>RunSkillScriptTool</code>)
+        não aceita mais o argumento <code>command</code> (quebra da 2.14.0): passe só o caminho do script e seus argumentos.
+        Sem <code>code_executor</code> nem <code>environment</code> (no toolset ou no agente) ela devolve o erro
+        <code>NO_CODE_EXECUTOR</code>. Detalhe em
         <a href="guia_google_adk.html#skills">guia_google_adk.html#skills</a>.
       </div>
 
@@ -798,7 +817,7 @@ skills = [load_skill_from_dir(p) for p in pathlib_list(bundle["skills_dir"])]
 skills_toolset = skill_toolset.SkillToolset(skills=skills) if skills else None
 
 root_agent = Agent(
-    model="gemini-3.8-flash",
+    model="gemini-4-hydrogen",
     name="plugin_user_agent",
     tools=[*mcp_toolsets, *( [skills_toolset] if skills_toolset else [] )],
 )</code></pre>
@@ -809,7 +828,7 @@ root_agent = Agent(
 
       <h3><code>BasePlugin</code> — o outro "plugin" (lifecycle hooks)</h3>
       <p>
-        Fonte: código do wheel <code>google-adk</code> 2.13.0, <code>google/adk/plugins/base_plugin.py</code>.
+        Fonte: código do wheel <code>google-adk</code> 2.14.0, <code>google/adk/plugins/base_plugin.py</code>.
         A classe define, entre outros, <code>before_run_callback</code>,
         <code>before_agent_callback</code>, <code>before_model_callback</code>, <code>after_model_callback</code>,
         <code>before_tool_callback</code>, <code>after_tool_callback</code> e os callbacks de erro
@@ -837,8 +856,8 @@ runner = Runner(agent=root_agent, plugins=[AuditPlugin(name="AuditPlugin")])</co
     <section class="chapter" id="fw-openai-agents-sdk">
       <h2>4. OpenAI Agents SDK</h2>
       <p>
-        Python <code>openai-agents</code> <strong>0.24.0</strong>; JS/TS <code>@openai/agents</code>
-        <strong>0.21.0</strong> (PyPI/npm).
+        Python <code>openai-agents</code> <strong>0.26.0</strong>; JS/TS <code>@openai/agents</code>
+        <strong>0.22.0</strong> (PyPI/npm, 2026-11-27).
       </p>
 
       <h3>MCP — <code>MCPServerStdio</code> / <code>MCPServerStreamableHttp</code></h3>
@@ -956,15 +975,15 @@ skills_capability = Skills(
     <section class="chapter" id="fw-langchain">
       <h2>5. LangChain</h2>
       <p>
-        <code>langchain</code> <strong>1.4.7</strong> (PyPI, 2026-10-21). O namespace
+        <code>langchain</code> <strong>1.5.2</strong> (PyPI, 2026-11-18). O namespace
         <code>langchain.mcp</code> é explicitamente <strong>beta</strong>.
       </p>
 
       <h3>MCP — <code>langchain.mcp.MCPAdapter</code> (beta)</h3>
       <p>
         Fonte: <a href="https://docs.langchain.com/oss/python/langchain/mcp" target="_blank" rel="noopener">docs.langchain.com/oss/python/langchain/mcp</a>.
-        Requer <code>langchain[mcp]</code> (o extra <code>mcp</code> depende de <code>fastmcp&gt;=4.0.11,&lt;5.0.0</code>,
-        <code>langchain-core&gt;=1.6.13</code> e <code>langgraph&gt;=1.2.12,&lt;1.3</code>; prefira <code>fastmcp&gt;=4.1.2</code>, o piso de segurança); a doc confirma:
+        Requer <code>langchain[mcp]</code> (o extra <code>mcp</code> depende de <code>fastmcp&gt;=4.0.11</code>; a base exige
+        <code>langchain-core&gt;=1.8.0</code> e <code>langgraph&gt;=1.2.12,&lt;1.3</code>; prefira <code>fastmcp&gt;=4.2.6</code>, a versão corrente e o piso de segurança; a <code>4.2.3</code> é afetada por GHSA-78c8-3jhx-5mg7); a doc confirma:
         <em>"the <code>langchain.mcp</code> namespace ... is in beta"</em> e que importar de lá
         <em>"raises a <code>LangChainBetaWarning</code> once per process"</em>. Um alvo <code>str</code> precisa ser
         URL http(s); um <code>Path</code> inicia subprocesso stdio. Pedidos de elicitation do servidor são
@@ -1038,7 +1057,7 @@ stdio = MCPAdapter(Path("weather_server.py"))</code></pre>
     <section class="chapter" id="fw-langgraph">
       <h2>6. LangGraph</h2>
       <p>
-        <code>langgraph</code> <strong>1.2.17</strong> (PyPI, 2026-10-24). O pacote
+        <code>langgraph</code> <strong>1.2.24</strong> (PyPI, 2026-11-20). O pacote
         <code>langgraph</code> em si é um motor de grafo de estados — ele não publica um módulo
         <code>langgraph.mcp</code>, um conceito de skill nem um conceito de plugin próprios. A integração passa
         sempre por anexar <strong>tools do LangChain</strong> (produzidos por <code>langchain.mcp.MCPAdapter</code>)
@@ -1100,8 +1119,8 @@ async def build_graph():
     <section class="chapter" id="fw-deepagents">
       <h2>7. Deep Agents</h2>
       <p>
-        <code>deepagents</code> <strong>0.7.32</strong> (Python, exige Python ≥3.11; requer <code>langchain&gt;=1.4.7</code>,
-        <code>langchain-core&gt;=1.7.0</code> e <code>langchain-anthropic&gt;=1.7.6</code>) / <strong>1.15.1</strong> (JS) — PyPI/npm;
+        <code>deepagents</code> <strong>0.7.42</strong> (Python, exige Python ≥3.11; requer <code>langchain&gt;=1.5.2</code>,
+        <code>langchain-core&gt;=1.8.5</code>, <code>langchain-anthropic&gt;=1.7.13</code> e <code>langchain-google-genai&gt;=4.4.3</code>) / <strong>1.17.1</strong> (JS) — PyPI/npm, 2026-11-26;
         pisos de segurança <code>&gt;=0.7.25</code> (GHSA-47w2-rfrr-wvq8) e JS <code>&gt;=1.15.0</code> (GHSA-wcqq-jj54-gfgm). Deep Agents é construído sobre LangChain/LangGraph e adiciona
         middleware "batteries-included": filesystem virtual com backends plugáveis, subagents, human-in-the-loop
         e — o que interessa aqui — <strong>skills nativas</strong>.
@@ -1149,15 +1168,18 @@ async with MCPAdapter("https://mcp.example.com/mcp") as adapter:
       <p>
         Aqui está a mesma armadilha de nome do ADK, invertida: a <strong>biblioteca</strong> <code>deepagents</code>
         (o que você importa em Python/JS, seção acima) não tem conceito de "plugin" — só skills + MCP + backends.
-        Já o <strong>CLI</strong> irmão, <strong>Deep Agents Code (<code>dcode</code>, pacote <code>deepagents-code</code> 0.2.1)</strong>, é outro produto:
+        Já o <strong>CLI</strong> irmão, <strong>Deep Agents Code (<code>dcode</code>, pacote <code>deepagents-code</code> 0.2.15)</strong>, é outro produto:
         um harness de coding agent que <em>explicitamente</em> suporta plugins.
       </p>
       <div class="callout info">
         Fonte: <a href="https://docs.langchain.com/oss/deepagents/code/plugins" target="_blank" rel="noopener">docs.langchain.com/oss/deepagents/code/plugins</a>
         — citação: <em>"dcode supports Claude- and Codex-style plugin manifests and
-        marketplace catalogs."</em> Ou seja: o <code>dcode</code> reconhece <code>.claude-plugin/plugin.json</code>
-        e <code>.codex-plugin/plugin.json</code> (com <code>${CLAUDE_PLUGIN_ROOT}</code>/<code>${PLUGIN_ROOT}</code>),
-        reaproveitando o
+        marketplace catalogs."</em> Ou seja: o <code>dcode</code> reconhece o manifest estilo Claude
+        (<code>.claude-plugin/plugin.json</code>, com <code>${CLAUDE_PLUGIN_ROOT}</code>) e o estilo Codex. Hoje o formato atual do
+        Codex é o <code>plugin.json</code> portátil na raiz, com <code>extensions.com.openai</code>; o
+        <code>.codex-plugin/plugin.json</code> é só fallback legado
+        (<a href="https://developers.openai.com/plugins/build/plugins" target="_blank" rel="noopener">plugins/build/plugins</a>, lido em 2026-11-27),
+        e qual das duas grafias o <code>dcode</code> lê não consta na página citada: <span class="pill partial">UNVERIFIED</span>. O <code>dcode</code> reaproveita o
         mesmo layout de plugin do Claude Code (skills+MCP+hooks) — ver §8 — em vez de definir um schema
         concorrente. <code>dcode</code> também tem um mecanismo próprio de "Python extensions" via
         <code>extensions.com.langchain.deepagents.code.pythonExtensions</code> no manifest, atrás da flag
@@ -1181,16 +1203,23 @@ async with MCPAdapter("https://mcp.example.com/mcp") as adapter:
     <section class="chapter" id="fw-claude-agent-sdk">
       <h2>8. Claude Agent SDK</h2>
       <p>
-        Python <code>claude-agent-sdk</code> <strong>0.2.174</strong> (Python &ge;3.10, CLI 2.1.310 embutido); TypeScript
-        <code>@anthropic-ai/claude-agent-sdk</code> <strong>0.3.310</strong> (Node &ge;18); CLI <code>@anthropic-ai/claude-code</code> <strong>2.1.310</strong>
-        (PyPI/npm).
+        Python <code>claude-agent-sdk</code> <strong>0.2.189</strong> (Python &ge;3.10); TypeScript
+        <code>@anthropic-ai/claude-agent-sdk</code> <strong>0.3.332</strong> (Node &ge;18.14.0, campo <code>engines</code> do npm); CLI <code>@anthropic-ai/claude-code</code> <strong>2.1.332</strong>
+        (PyPI/npm, 2026-11-27). O changelog do pacote Python termina na 0.2.178 (CLI embutido 2.1.318); na 0.2.189 o CLI embutido é o 2.1.332,
+        lido em <code>src/claude_agent_sdk/_cli_version.py</code> do sdist (PyPI, 2026-11-26).
         Com Claude Code &ge; 2.1.302, sessões com <code>permission_mode</code>/<code>permissionMode</code> omitido iniciam em modo <code>default</code>
         em provedores terceiros, com telemetria desligada ou em instalação nova (a menos que <code>permissions.defaultMode</code> exista em settings).
-        Como o Python 0.2.174 embute o CLI 2.1.310, ambos os SDKs se alinham nesse comportamento; passe o modo explícito
+        Como o comportamento segue o CLI executado pelo SDK, verifique a versão dele; passe o modo explícito
         (<code>permission_mode="default"</code> / <code>permissionMode: 'default'</code>) para manter aprovações manuais determinísticas.
         É o único dos frameworks cobertos com suporte <strong>nativo nas três dimensões</strong> — porque
         ele carrega diretamente o formato de plugin do próprio Claude Code (skills + MCP + hooks + agents), em
         vez de reimplementar um subconjunto.
+      </p>
+      <p>
+        Mudanças do Claude Code 2.1.330 a 2.1.332 (changelog em <a href="https://code.claude.com/docs/en/changelog" target="_blank" rel="noopener">code.claude.com</a>, npm e PyPI, lidos em 2026-11-27; o <code>@anthropic-ai/claude-code</code> exige Node &ge;22 e a estável é a 2.1.326).
+        <strong>2.1.332:</strong> skills servidas por servidores MCP (beta; as docs dizem v2.1.331 ou posterior, o changelog registra a 2.1.332: <span class="pill partial">UNVERIFIED</span> qual das duas está certa), hook <code>PreSkillShellCommand</code>, nome de skill <code>computer-use</code> reservado, e o alias <code>sonnet</code> no Google Cloud Agent Platform e no Microsoft Foundry passa a apontar para o Sonnet 5.5 (no Foundry, <code>opus</code> aponta para o Opus 5.5 e o modelo padrão é o Sonnet 5.5; no Bedrock, <code>sonnet</code> continua apontando para o Sonnet 4.5, que será aposentado em 2026-11-30: ciclo de vida dos modelos Claude em <a href="guia_claude_api.html#a-modelos">guia_claude_api §3</a>).
+        <strong>2.1.331:</strong> <code>optionalDependencies</code> em plugins (plugins que se instalam junto com o plugin que os lista e podem ser desativados ou desinstalados à parte; confirmado no changelog em 2026-11-27, mas o campo ainda não aparece na tabela de campos de <a href="https://code.claude.com/docs/en/plugins-reference" target="_blank" rel="noopener">plugins-reference</a>, que está defasada) e, em uma versão futura, <strong>em ou depois de 2026-11-30</strong>, os marketplaces em <code>extraKnownMarketplaces</code> gerenciados passarão a atualizar automaticamente por padrão (para excluir um, use <code>autoUpdate: false</code> na entrada; nenhuma versão lançada foi nomeada).
+        <strong>2.1.330:</strong> tarefas agendadas e <code>/loop</code> por até 30 dias.
       </p>
 
       <h3>MCP — <code>mcp_servers</code> / <code>mcpServers</code></h3>
@@ -1330,6 +1359,44 @@ asyncio.run(main())</code></pre>
         plugin do Claude Code em detalhe — marketplaces, <code>plugin.json</code> completo, LSP servers,
         monitors).
       </p>
+
+      <h3>Hooks de callback e permissões do CLI</h3>
+      <p>
+        Fontes lidas em 2026-11-17: <a href="https://github.com/anthropics/claude-agent-sdk-python/releases/tag/v0.2.177" target="_blank" rel="noopener">release v0.2.177 do SDK Python</a>,
+        <a href="https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md" target="_blank" rel="noopener">CHANGELOG do Claude Code</a>,
+        <a href="https://code.claude.com/docs/en/settings" target="_blank" rel="noopener">settings</a> e
+        <a href="https://code.claude.com/docs/en/sub-agents" target="_blank" rel="noopener">sub-agents</a>.
+        O SDK executa o CLI do Claude Code, então os itens abaixo dependem da versão do CLI instalada.
+      </p>
+      <ul>
+        <li><strong>Falha de hook que bloqueia.</strong> No Python, <code>HookMatcher(on_failure="block")</code> (SDK 0.2.177)
+          bloqueia a ação quando o callback levanta exceção, devolve <code>None</code> ou devolve um valor que o CLI rejeita; o padrão
+          é <code>"continue"</code> (a falha vale como "sem decisão"). Com um CLI antigo que não suporta a opção, conectar com
+          <code>on_failure="block"</code> levanta <code>CLIConnectionError</code>. No TypeScript o changelog do Claude Code 2.1.317
+          registra <code>onFailure: "block"</code> para callbacks de hook do Agent SDK; no SDK TypeScript a opção existe nos matchers de hook desde a 0.3.317 e, para hooks <code>mcp_tool</code>, desde a 0.3.328 (<a href="https://raw.githubusercontent.com/anthropics/claude-agent-sdk-typescript/main/CHANGELOG.md" target="_blank" rel="noopener">CHANGELOG do SDK TypeScript</a>, lido em 2026-11-27).
+          Use <code>"block"</code> em hooks de segurança (fail-closed); o padrão deixa a ação seguir.</li>
+        <li><strong>Migração no SDK TypeScript 0.3.327 e 0.3.332.</strong> Na 0.3.327, as opções de hook passam a exigir arrays e
+          <code>createSdkMcpServer()</code> dentro de <code>mcpServers</code> de um agente fica deprecado; na 0.3.332,
+          <code>setPermissionMode()</code> passa a resolver com <code>{ mode }</code> (o modo em vigor) ou <code>undefined</code>;
+          código que guarda a promise como <code>Promise&lt;void&gt;</code> deixa de compilar, e quem desestrutura o resultado deve tratar <code>undefined</code>. Código escrito a partir de exemplos
+          anteriores quebra nessas versões (<a href="https://raw.githubusercontent.com/anthropics/claude-agent-sdk-typescript/main/CHANGELOG.md" target="_blank" rel="noopener">CHANGELOG do SDK TypeScript</a>, lido em 2026-11-27).</li>
+        <li><strong>Escritas fora do diretório de trabalho.</strong> <code>permissions.blockWritesOutsideWorkingDirectories</code>
+          (Claude Code 2.1.314+) faz <code>Write</code>, <code>Edit</code> e <code>NotebookEdit</code> recusarem caminhos fora dos diretórios de
+          trabalho em todo modo de permissão, salvo alguns arquivos do próprio Claude Code. Um <code>true</code> vindo de qualquer escopo vale mesmo que
+          a política gerenciada diga <code>false</code>.</li>
+        <li><strong>Sessão sem ninguém olhando.</strong> <code>permissions.denyInsteadOfPrompting</code> (2.1.319+) nega a chamada de tool que
+          esperaria um prompt de permissão, para que a sessão continue sem bloquear. Só vale em <code>~/.claude/settings.json</code>,
+          em <code>--settings</code> ou em configuração gerenciada, e um <code>true</code> do usuário prevalece sobre um <code>false</code> gerenciado.</li>
+        <li><strong>Modo auto.</strong> A chave <code>autoMode</code> (escopo usuário ou gerenciado) acrescenta suas regras de allow e deny ao
+          classificador do modo auto; <code>autoMode.classifyAllShell</code> manda todo comando de shell ao classificador, mesmo quando uma
+          regra de allow estreita o cobriria. Os valores <code>auto</code> e <code>bypassPermissions</code> de
+          <code>permissions.defaultMode</code> não têm efeito vindos de settings de projeto ou locais: defina-os em user ou managed, ou use
+          <code>--permission-mode</code> numa sessão.</li>
+        <li><strong>Esforço dos subagentes.</strong> A variável <code>CLAUDE_CODE_SUBAGENT_EFFORT</code> (2.1.316+) define o nível de effort com que os
+          subagentes rodam quando nada mais o define. Pela página de sub-agents, a precedência dos demais é <code>CLAUDE_CODE_EFFORT_LEVEL</code>, depois
+          o parâmetro <code>effort</code> da invocação (2.1.292+, só subagente não-fork), depois o campo <code>effort</code> do frontmatter do subagente;
+          onde <code>CLAUDE_CODE_SUBAGENT_EFFORT</code> se encaixa nessa ordem não consta nas páginas lidas: <span class="pill partial">UNVERIFIED</span>.</li>
+      </ul>
     </section>
 
     <section id="outros-frameworks">
@@ -1340,7 +1407,7 @@ asyncio.run(main())</code></pre>
       </p>
       <h3>Pydantic AI</h3>
       <p>
-        <code>pydantic-ai-slim</code> <strong>2.61.0</strong> (PyPI, 2026-10-24; exige Python &ge;3.11; piso de segurança <code>&ge;2.59.0</code>, GHSA-4whf-38hw-pxxh; <a href="guia_operacao_seguranca_evals.html#advisories-supply-chain">advisories</a>).
+        <code>pydantic-ai-slim</code> <strong>2.76.0</strong> (PyPI, 2026-11-27; exige Python &ge;3.11; piso de segurança <code>&ge;2.76.0</code>, a versão corrente: GHSA-4whf-38hw-pxxh foi corrigida na 2.59.0 e GHSA-gm2p-369w-rcgv (low, credenciais de sessões Realtime da ElevenLabs) na 2.74.0; <a href="guia_operacao_seguranca_evals.html#advisories-supply-chain">advisories</a>).
         <strong>MCP nativo</strong>: classe unificada <code>pydantic_ai.mcp.MCPToolset</code> (baseada em FastMCP <code>Client</code>; aceita URL HTTP, script path local, servidor FastMCP ou instância <code>fastmcp.Client</code>; método <code>call_tool_for_app</code> presente):
       </p>
       <pre><code>from pydantic_ai import Agent
@@ -1350,10 +1417,10 @@ toolset = MCPToolset('http://localhost:8000/mcp')   # Streamable HTTP
 agent = Agent('anthropic:claude-sonnet-5-5', toolsets=[toolset])</code></pre>
       <p>
         <strong>Skill nativo</strong>: suporte oficial documentado através do pacote
-        <code>pydantic-ai-harness</code> <strong>0.61.0</strong> (PyPI, 2026-10-24, Python &ge;3.11), capability <code>Skills</code>
+        <code>pydantic-ai-harness</code> <strong>0.76.0</strong> (PyPI, 2026-11-27, Python &ge;3.11, classificador &quot;3 - Alpha&quot;: não é estável), capability <code>Skills</code>
         (fontes: <a href="https://pydantic.dev/docs/ai/harness/skills/" target="_blank" rel="noopener">pydantic.dev/docs/ai/harness/skills</a> e
         <a href="https://pydantic.dev/docs/ai/overview/coding-agent-skills/" target="_blank" rel="noopener">coding-agent-skills</a>).
-        As skills são carregadas sob demanda através do tool <code>load_capability</code> (requer a extra <code>[skills]</code>; API 0.x sujeita a evolução):
+        As skills são carregadas sob demanda (requer a extra <code>[skills]</code>; API 0.x e Alpha, sujeita a evolução). Desde o Pydantic AI 2.75.0, arquivos do workspace abaixo da autoridade <code>'operator'</code> deixam de chegar às instruções de <code>RepoContext</code>, <code>Skills</code> e <code>Memory</code>, e a <code>Skills</code> expõe essas skills pelos tools <code>list_skills</code>/<code>load_skill</code> em vez de <code>load_capability</code> (<a href="https://github.com/pydantic/pydantic-ai/releases/tag/v2.75.0" target="_blank" rel="noopener">release v2.75.0</a>, lido em 2026-11-27). Antes de atualizar runs duráveis, esgote-os ou use versionamento de worker do Temporal / nova versão do app DBOS: a 2.75.0 grava chamadas <code>realpath</code> extras no início da run.
       </p>
       <pre><code>from pydantic_ai import Agent
 from pydantic_ai_harness import Skills
@@ -1369,7 +1436,7 @@ agent = Agent(
       </p>
       <h3>Microsoft Agent Framework</h3>
       <p>
-        <code>agent-framework</code> <strong>1.23.0</strong> (PyPI, 2026-10-22; pacote core <code>agent-framework-core</code> 1.23.0).
+        <code>agent-framework</code> <strong>1.26.0</strong> (PyPI, 2026-11-12; pacote core <code>agent-framework-core</code> 1.26.0).
         Exporta <code>Agent</code>, <code>RawAgent</code>, <code>MCPStdioTool</code>, <code>MCPStreamableHTTPTool</code> e <code>SkillsProvider</code>.
         <strong>MCP nativo</strong>: <code>MCPStdioTool</code> e <code>MCPStreamableHTTPTool</code> (suporta <code>static_headers</code> e <code>header_provider</code>;
         fonte: <a href="https://learn.microsoft.com/en-us/python/api/agent-framework-core/agent_framework.mcpstreamablehttptool" target="_blank" rel="noopener">learn.microsoft.com</a>):
@@ -1420,7 +1487,11 @@ agent = Agent(
         <li>
           Fixe por commit/versão, nunca instale de uma URL não controlada — a própria doc do Claude Code é
           explícita quanto a <code>--plugin-url</code>: <em>"only point this flag at archives you control or
-          trust"</em>.
+          trust"</em>. No marketplace do Claude Code, uma entrada de plugin pode vir de sete tipos de fonte: caminho
+          relativo, <code>github</code>, <code>url</code>, <code>git-subdir</code>, <code>npm</code>, <code>archive</code>
+          (exige https e <code>sha256</code>) e <code>command</code>. Fontes git aceitam <code>ref</code>/<code>sha</code>
+          para fixar a versão: prefira <code>sha</code> e, em <code>archive</code>, o <code>sha256</code>
+          (<a href="https://code.claude.com/docs/en/plugins/marketplace-reference" target="_blank" rel="noopener">plugins/marketplace-reference</a>, lido em 2026-11-27).
         </li>
         <li>
           Revise <code>hooks/hooks.json</code> e <code>.mcp.json</code>/<code>mcp.json</code> antes de habilitar
@@ -1462,9 +1533,9 @@ agent = Agent(
         <table>
           <thead><tr><th>Framework</th><th>Onde o script de skill roda</th></tr></thead>
           <tbody>
-            <tr><td>Claude Agent SDK / Claude Code</td><td>Via tool <code>Bash</code>, sujeito ao <code>permission_mode</code>/<code>allowed_tools</code> da sessão — sem isolamento de processo dedicado por padrão; com Claude Code &ge; 2.1.302 (CLI 2.1.310 embutido no Python 0.2.174 / TS 0.3.310), a sessão sem modo explícito inicia em <code>default</code> em provedores terceiros ou instalação limpa. Passe <code>permission_mode="default"</code> / <code>permissionMode: 'default'</code> para manter aprovações manuais determinísticas.</td></tr>
+            <tr><td>Claude Agent SDK / Claude Code</td><td>Via tool <code>Bash</code>, sujeito ao <code>permission_mode</code>/<code>allowed_tools</code> da sessão — sem isolamento de processo dedicado por padrão; com Claude Code &ge; 2.1.302, a sessão sem modo explícito inicia em <code>default</code> em provedores terceiros ou instalação limpa. Passe <code>permission_mode="default"</code> / <code>permissionMode: 'default'</code> para manter aprovações manuais determinísticas.</td></tr>
             <tr><td>OpenAI Agents SDK (Sandbox Agents)</td><td>Dentro do sandbox do agente (isolamento de container/VM conforme o sandbox client escolhido) — a skill é montada e executada isolada do processo host.</td></tr>
-            <tr><td>Google ADK</td><td>Como tool Python normal dentro do processo do agente — sem sandbox dedicado nesta verificação (<code>google-adk</code> 2.13.0); scripts de skill herdam os privilégios do processo ADK.</td></tr>
+            <tr><td>Google ADK</td><td>Pelo <code>code_executor</code> ou <code>environment</code> configurado no <code>SkillToolset</code> (ou no agente); sem nenhum dos dois, <code>run_skill_script</code> falha com <code>NO_CODE_EXECUTOR</code> (<code>google-adk</code> 2.14.0). O isolamento é o do executor/ambiente que você escolher, não do toolset.</td></tr>
             <tr><td>Deep Agents</td><td>Via backend (<code>FilesystemBackend</code> ou outro) — o isolamento depende de qual backend você escolheu, não é garantido pelo <code>SkillsMiddleware</code> em si.</td></tr>
           </tbody>
         </table>
@@ -1509,7 +1580,7 @@ agent = Agent(
           segurança portátil entre clientes — cada harness precisa impor sua própria política.
         </li>
         <li>
-          <strong>Google ADK Skills: status no registro de features vs documentação.</strong> Em <code>google-adk</code> 2.13.0 o registro de código marca <code>SKILL_TOOLSET</code> como STABLE, embora a documentação em <code>adk.dev/skills</code> ainda mencione Experimental. Os ciclos de vida de skill (<code>SKILL_LIFECYCLE</code>) continuam experimentais e exigem <code>ADK_ENABLE_SKILL_LIFECYCLE=1</code>.
+          <strong>Google ADK Skills: status no registro de features vs documentação.</strong> Em <code>google-adk</code> 2.14.0 o registro de código marca <code>SKILL_TOOLSET</code> como STABLE, embora a documentação em <code>adk.dev/skills</code> ainda mencione Experimental. Os ciclos de vida de skill (<code>SKILL_LIFECYCLE</code>) continuam experimentais e exigem <code>ADK_ENABLE_SKILL_LIFECYCLE=1</code>.
         </li>
         <li>
           <strong><code>@openai/agents</code> (JS): não assuma paridade de Skills com Python.</strong> A
@@ -1643,16 +1714,21 @@ def load_plugin_manifest(plugin_dir: str) -> dict:
           <tr><td>Claude Agent SDK · Skills</td><td><a href="https://code.claude.com/docs/en/agent-sdk/skills" target="_blank" rel="noopener">code.claude.com/docs/en/agent-sdk/skills</a></td><td><code>setting_sources</code>, <code>.claude/skills</code>.</td></tr>
           <tr><td>Claude Agent SDK · Plugins</td><td><a href="https://code.claude.com/docs/en/agent-sdk/plugins" target="_blank" rel="noopener">code.claude.com/docs/en/agent-sdk/plugins</a></td><td><code>plugins=[{"type":"local","path":...}]</code>.</td></tr>
           <tr><td>Agent Plugins</td><td><a href="https://agent-plugins.org/" target="_blank" rel="noopener">agent-plugins.org</a> / <a href="https://agent-plugins.org/specification" target="_blank" rel="noopener">/specification</a></td><td>1.0.0 (Published), estrutura do bundle, TSC, ausência de modelo de segurança.</td></tr>
-          <tr><td>Agent Skills specification</td><td><a href="https://agentskills.io/specification" target="_blank" rel="noopener">agentskills.io/specification</a></td><td>Formato <code>SKILL.md</code> — detalhado em guia_skills.html.</td></tr>
+          <tr><td>Agent Plugins · repositório da spec</td><td><a href="https://github.com/agentplugins/agent-plugins-spec" target="_blank" rel="noopener">github.com/agentplugins/agent-plugins-spec</a></td><td>1.1.0 working draft (<code>hooks.json</code> portátil, <code>displayName</code>); lido em 2026-11-27.</td></tr>
+          <tr><td>Agent Skills specification</td><td><a href="https://agentskills.io/specification" target="_blank" rel="noopener">agentskills.io/specification</a> · <a href="https://github.com/agentskills/agentskills/blob/main/GOVERNANCE.md" target="_blank" rel="noopener">GOVERNANCE.md</a></td><td>Formato <code>SKILL.md</code> — detalhado em guia_skills.html; governança sob a Agentic AI Foundation desde 2026-11-04 (lido em 2026-11-27).</td></tr>
+          <tr><td>Claude Code · Plugins reference e marketplace reference</td><td><a href="https://code.claude.com/docs/en/plugins-reference" target="_blank" rel="noopener">plugins-reference</a> · <a href="https://code.claude.com/docs/en/plugins/marketplace-reference" target="_blank" rel="noopener">plugins/marketplace-reference</a></td><td>Campos do manifest, sete tipos de fonte de marketplace, <code>sha</code>/<code>sha256</code> (lido em 2026-11-27).</td></tr>
+          <tr><td>OpenAI · Plugins (Codex)</td><td><a href="https://developers.openai.com/plugins/build/plugins" target="_blank" rel="noopener">developers.openai.com/plugins/build/plugins</a></td><td><code>plugin.json</code> na raiz com <code>extensions.com.openai</code>; <code>.codex-plugin/</code> como fallback legado (lido em 2026-11-27).</td></tr>
+          <tr><td>Cursor · Plugins</td><td><a href="https://cursor.com/docs/plugins" target="_blank" rel="noopener">cursor.com/docs/plugins</a></td><td><code>.cursor-plugin/plugin.json</code> e <code>${CURSOR_PLUGIN_ROOT}</code> (lido em 2026-11-27).</td></tr>
+          <tr><td>Gemini CLI · Extensions</td><td><a href="https://geminicli.com/docs/extensions/" target="_blank" rel="noopener">geminicli.com/docs/extensions</a></td><td>Aviso de que o Gemini CLI foi substituído pelo Antigravity CLI em 2026-06-18 (lido em 2026-11-27).</td></tr>
           <tr><td>Pydantic AI · MCP client</td><td><a href="https://ai.pydantic.dev/mcp/client/" target="_blank" rel="noopener">ai.pydantic.dev/mcp/client</a></td><td><code>MCPToolset</code> unificado.</td></tr>
           <tr><td>Pydantic AI · Harness Skills</td><td><a href="https://pydantic.dev/docs/ai/harness/skills/" target="_blank" rel="noopener">pydantic.dev/docs/ai/harness/skills</a></td><td>Capability oficial <code>Skills</code> do <code>pydantic-ai-harness</code>.</td></tr>
           <tr><td>Microsoft Agent Framework · Skills</td><td><a href="https://learn.microsoft.com/en-us/agent-framework/agents/skills" target="_blank" rel="noopener">learn.microsoft.com/en-us/agent-framework/agents/skills</a></td><td><code>SkillsProvider.from_paths()</code> e flags de aprovação.</td></tr>
           <tr><td>Microsoft Agent Framework · MCPStreamableHTTPTool</td><td><a href="https://learn.microsoft.com/en-us/python/api/agent-framework-core/agent_framework.mcpstreamablehttptool" target="_blank" rel="noopener">learn.microsoft.com/.../mcpstreamablehttptool</a></td><td>Classe MCP nativa.</td></tr>
           <tr><td>PyPI JSON API / npm registry</td><td>pypi.org/pypi/{google-adk,langchain,langgraph,deepagents,claude-agent-sdk,openai-agents,pydantic-ai-slim,agent-framework}/json; registry.npmjs.org/{@anthropic-ai/claude-agent-sdk,@openai/agents,deepagents}/latest</td><td>Versões correntes verificadas por fetch direto.</td></tr>
-          <tr><td>Wheels inspecionados</td><td><code>google-adk</code> 2.13.0, <code>agent-framework-core</code> 1.23.0, <code>pydantic-ai-slim</code> 2.61.0, <code>langchain</code> 1.4.7, <code>deepagents</code> 0.7.32, <code>openai-agents</code> 0.24.0</td><td>Versões inspecionadas no wheel.</td></tr>
+          <tr><td>Wheels inspecionados</td><td><code>google-adk</code> 2.14.0, <code>agent-framework-core</code> 1.26.0, <code>pydantic-ai-slim</code> 2.68.0, <code>pydantic-ai-harness</code> 0.68.0 (as versões correntes estão na tabela do topo), <code>langchain</code> 1.5.0, <code>deepagents</code> 0.7.36 (os de 2026-11-12 só tiveram os símbolos citados conferidos; <code>openai-agents</code> 0.24.0 foi inspecionado em 2026-10-24)</td><td>Versões inspecionadas no wheel.</td></tr>
         </tbody>
       </table></div>
-      <p>Estado verificado em <strong>2026-10-24</strong>. Suporte a bundle único de plugin (skills + MCP num mesmo manifesto) no Microsoft Agent Framework e no Pydantic AI não foi localizado na documentação oficial dentro do escopo desta verificação (<span class="pill partial">não confirmado</span>; não afirmado como ausente).</p>
+      <p>Estado verificado em <strong>2026-11-27</strong> (versões correntes da tabela de versões, medidas ou reconfirmadas nessa data; as versões citadas em cada seção por framework mantêm a data de leitura indicada nela; a seção de hooks e permissões foi lida em 2026-11-17; os símbolos de wheel da linha acima seguem inspecionados nas datas indicadas). Suporte a bundle único de plugin (skills + MCP num mesmo manifesto) no Microsoft Agent Framework e no Pydantic AI não foi localizado na documentação oficial dentro do escopo desta verificação (<span class="pill partial">não confirmado</span>; não afirmado como ausente).</p>
     </section>
 
   </main>
@@ -1673,7 +1749,7 @@ def load_plugin_manifest(plugin_dir: str) -> dict:
     </div>
     <div style="font-size:13.5px;color:var(--c-fg-muted);line-height:1.7">
       <div><strong>Referência de produção</strong></div>
-      <div>última revisão · 2026-10-24</div>
+      <div>última revisão · 2026-11-27</div>
       <div style="margin-top:6px">
         <span class="badge da">Self-hosted only</span>
         <span class="badge info">PT-BR</span>

@@ -5,8 +5,8 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%9A%3C/text%3E%3C/svg%3E" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>File Inputs sem Provider Storage + Hosted Execution — Núcleo</title>
-<meta name="description" content="Padrão para ingestão de arquivos em agentes sob ZDR/PHI sem deixar estado retido no provider: Modo A estrito (base64 inline, signed URL efêmera, chunks/render app-side) vs Modo B hosted opcional (Code Interpreter, Hosted Shell, code execution). SourceRecord/EvidenceCard, regra de payload por turno, pipeline de imagem web e integração em OpenAI Responses, Gemini Interactions, Anthropic Messages, Agents SDK, LangGraph, Deep Agents e Google ADK. Verificado em 2026-10-24." />
-<meta name="last-checked" content="2026-10-24" />
+<meta name="description" content="Padrão para ingestão de arquivos em agentes sob ZDR/PHI sem deixar estado retido no provider: Modo A estrito (base64 inline, signed URL efêmera, chunks/render app-side) vs Modo B hosted opcional (Code Interpreter, Hosted Shell, code execution). SourceRecord/EvidenceCard, regra de payload por turno, pipeline de imagem web e integração em OpenAI Responses, Gemini Interactions, Anthropic Messages, Agents SDK, LangGraph, Deep Agents e Google ADK. Verificado em 2026-11-27." />
+<meta name="last-checked" content="2026-11-27" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -278,7 +278,7 @@
   <div class="header-row">
     <div class="brand">File Inputs sem Provider Storage <small>Núcleo agnóstico · super-guia de agentes</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-10-24</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-11-27</strong></span>
       <span class="badge da">Núcleo · v1</span>
       <span class="badge ok">Modo A estrito</span>
       <span class="badge warn">Modo B hosted</span>
@@ -362,12 +362,12 @@
       <div class="hero-meta">
         <span class="badge da">Núcleo · v1</span>
         <span class="badge info">OpenAI · Gemini · Anthropic</span>
-        <span class="badge ok">SOTA · verificado 2026-10-24</span>
+        <span class="badge ok">SOTA · limites de arquivo, pacotes e entrada Office do Gemini lidos em 2026-11-27</span>
       </div>
     </div>
 
     <section id="para-agentes">
-      <h2>Resumo para agentes (verificado 2026-10-24)</h2>
+      <h2>Resumo para agentes (verificado 2026-11-27)</h2>
 
       <h3>Use este guia quando</h3>
       <ul>
@@ -386,8 +386,8 @@
       <h3>Padrões vigentes</h3>
       <ul>
         <li>Modo A = bytes no request (base64 ou URL), sem Files API, <code>store=false</code> (OpenAI e Gemini) e sem cache explícito; reinjete a fonte do seu <code>SourceRegistry</code> a cada turno (<a href="#politica-modo-a">§3</a>).</li>
-        <li>OpenAI Responses: <code>input_file</code> / <code>input_image</code> inline, <code>store=false</code>; <code>/v1/files</code> e <code>/v1/conversations</code> não são elegíveis a ZDR. <code>gpt-6-astra</code> e <code>gpt-6.1-sol</code> rejeitam <code>reasoning.effort:"none"</code> (HTTP 400).</li>
-        <li>Gemini Interactions (<code>client.interactions</code>): bloco inline <code>{type, data|uri, mime_type}</code>, <code>store=false</code> (incompatível com <code>background</code> e <code>previous_interaction_id</code>); <code>resolution</code> é por item; inline até 100 MB (PDF 50 MB), URL externa só até 15 MB por arquivo; para imagem e áudio fique abaixo de 20 MB.</li>
+        <li>OpenAI Responses: <code>input_file</code> / <code>input_image</code> inline, <code>store=false</code>; <code>/v1/files</code> e <code>/v1/conversations</code> não são elegíveis a ZDR. <code>gpt-6.2-astra</code> e <code>gpt-6.2-sol</code> rejeitam <code>reasoning.effort:"none"</code> (use <code>low</code>).</li>
+        <li>Gemini Interactions (<code>client.interactions</code>): bloco inline <code>{type, data|uri, mime_type}</code>, <code>store=false</code> (incompatível com <code>background</code> e <code>previous_interaction_id</code>); <code>resolution</code> é por item; inline até 100 MB (PDF 50 MB), URL externa só até 15 MB por arquivo; para imagem e áudio fique abaixo de 20 MB. Desde 2026-11-18, Office e OpenDocument (<code>.docx</code>, <code>.pptx</code>, <code>.xlsx</code> e equivalentes) entram direto como <code>document</code>, com limite de 50 MB por arquivo, 2.000 páginas ou slides e 50.000 células por planilha (<a href="https://aistudio.google.com/docs/document-processing" target="_blank" rel="noopener">document-processing</a>, lido em 2026-11-27; detalhes em <a href="guia_multimodal.html#gi-office">guia_multimodal §6.4</a>).</li>
         <li>Anthropic Messages: bloco <code>image</code> / <code>document</code> em base64; a Files API não é elegível a ZDR.</li>
         <li>Modo B (execução hospedada) não é ZDR estrito: containers OpenAI guardam estado efêmero até expirar; Anthropic code execution não é elegível; faça o cálculo no seu backend se ZDR estrito for requisito.</li>
         <li>Imagens e arquivos podem passar por varredura de CSAM e ser retidos mesmo sob ZDR (OpenAI).</li>
@@ -398,14 +398,14 @@
       <h3>Versões e modelos correntes</h3>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Item</th><th>Valor</th><th>Fonte (2026-10-24)</th></tr></thead>
+          <thead><tr><th>Item</th><th>Valor</th><th>Fonte (lido 2026-11-27)</th></tr></thead>
           <tbody>
             <tr><td>OpenAI file inputs</td><td>&lt; 50 MB por arquivo, 50 MB combinados; Files API 512 MB (fora do Modo A)</td><td><a href="https://developers.openai.com/api/docs/guides/file-inputs" target="_blank" rel="noopener">file-inputs</a></td></tr>
             <tr><td>Gemini entrada de arquivo</td><td>inline 100 MB · File API 2 GB / 48 h · GCS 2 GB / 30 dias · URL externa 15 MB</td><td><a href="https://ai.google.dev/gemini-api/docs/file-input-methods" target="_blank" rel="noopener">file-input-methods</a></td></tr>
-            <tr><td>Anthropic Files API</td><td>GA, sem header beta; não elegível a ZDR</td><td><a href="https://platform.claude.com/docs/en/build-with-claude/zero-data-retention" target="_blank" rel="noopener">ZDR</a></td></tr>
-            <tr><td>Modelos dos exemplos</td><td>gpt-6-astra · gemini-3.8-flash · claude-opus-5-5</td><td><a href="https://developers.openai.com/api/docs/pricing" target="_blank" rel="noopener">pricing</a></td></tr>
-            <tr><td>SDKs</td><td>openai 3.37.0 · google-genai 2.33.0 · anthropic 2.3.0</td><td>PyPI</td></tr>
-            <tr><td>Frameworks</td><td>openai-agents 0.24.0 · langgraph 1.2.17 · deepagents 0.7.32 · google-adk 2.13.0</td><td>PyPI</td></tr>
+            <tr><td>Anthropic Files API</td><td>GA, sem header beta; 500 MB por arquivo, 1 TB por organização; não elegível a ZDR; arquivos escopados ao workspace e retidos até a exclusão ou a expiração (<code>expires_in_seconds</code>, de 3.600 a 7.776.000)</td><td><a href="https://platform.claude.com/docs/en/build-with-claude/files" target="_blank" rel="noopener">files</a></td></tr>
+            <tr><td>Modelos dos exemplos</td><td>gpt-6.2-astra · gemini-4-hydrogen · claude-opus-5-5</td><td><a href="https://developers.openai.com/api/docs/models" target="_blank" rel="noopener">OpenAI models</a> · <a href="https://aistudio.google.com/docs/models" target="_blank" rel="noopener">Gemini models</a> · <a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener">Claude models</a></td></tr>
+            <tr><td>SDKs</td><td>openai 3.60.0 · google-genai 3.6.1 · anthropic 2.14.0</td><td>PyPI (2026-11-27)</td></tr>
+            <tr><td>Frameworks</td><td>openai-agents 0.26.0 · langgraph 1.2.24 · deepagents 0.7.42 · google-adk 2.15.1</td><td>PyPI (2026-11-27)</td></tr>
           </tbody>
         </table>
       </div>
@@ -740,9 +740,9 @@ Rules:
         <code>file_data</code> base64 (com prefixo data URI) ou <code>file_url</code>/signed URL. Use
         <code>store=False</code>. <code>detail</code> aceita <code>low</code>, <code>high</code>, <code>original</code> e
         <code>auto</code> (default); <code>original</code> é indicado para imagem grande/densa/espacial. Em
-        <code>gpt-6-astra</code>, <code>auto</code> usa o mesmo dimensionamento de <code>original</code>.
-        <code>detail:"auto"</code> no <code>gpt-6.1-sol</code>: a página de imagens não lista o modelo
-        (<span class="pill partial">UNVERIFIED</span>); meça com <code>responses.input_tokens.count</code>.
+        <code>detail:"auto"</code> nos <code>gpt-6.2-astra</code> e <code>gpt-6.2-sol</code>: a página de imagens
+        não traz o dimensionamento desses modelos (<span class="pill partial">UNVERIFIED</span>, conferido em 2026-11-17);
+        meça com <code>responses.input_tokens.count</code>.
       </p>
       <pre><code class="language-python">content = [
     {"type": "input_text", "text": caption(IMG_ORIG_001)},
@@ -773,7 +773,7 @@ Rules:
 ]
 
 response = client.responses.create(
-    model="gpt-6-astra",
+    model="gpt-6.2-astra",
     store=False,                      # sob ZDR, store é sempre tratado como false
     input=[{"role": "user", "content": content}],
     text={"format": {"type": "json_schema", "name": "EvidenceCard", "schema": EVIDENCE_SCHEMA}}
@@ -808,14 +808,14 @@ response = client.responses.create(
         preserve <code>id</code>/<code>signature</code> entre turnos conforme a documentação.
       </p>
       <pre><code class="language-python">interaction = client.interactions.create(
-    model="gemini-3.8-flash",
+    model="gemini-4-hydrogen",
     store=False,
     background=False,
     input=[{
         "type": "user_input",
         "content": [
             {"type": "text", "text": caption(IMG_ORIG_001)},
-            # resolution por item (Gemini 3): low | medium | high | ultra_high
+            # resolution por item (Gemini 4 e, na geração anterior, Gemini 3): low | medium | high | ultra_high
             {"type": "image", "data": IMG_ORIG_001.base64, "mime_type": "image/png", "resolution": "high"},
 
             {"type": "text", "text": caption(WEBIMG_REF_001)},
@@ -842,7 +842,7 @@ response = client.responses.create(
       <div class="callout info">
         <strong>Resolução de mídia.</strong> Na Interactions, configure o teto de tokens <em>por item</em> com o campo
         <code>resolution</code> (minúsculas: <code>low</code>, <code>medium</code>, <code>high</code>; <code>ultra_high</code> só para
-        imagem, <em>somente Gemini 3</em>). A doc recomenda <code>high</code> para imagem e <code>medium</code> para PDF.
+        imagem, por item de conteúdo). A doc (lida em 2026-11-27) recomenda <code>high</code> para imagem e <code>medium</code> para PDF.
         Só <code>resolution</code> por item é documentado na Interactions; não use <code>generation_config.media_resolution</code>.
         Detalhe em <a href="guia_multimodal.html#h-gemini">Multimodal · Gemini</a>.
       </div>
@@ -889,7 +889,7 @@ response = client.responses.create(
     }]
 )</code></pre>
       <div class="callout info">
-        <strong>Limites:</strong> request máximo <strong>32 MB</strong>; até <strong>600 páginas</strong> de PDF
+        <strong>Limites:</strong> request máximo <strong>128 MB</strong> na Claude API (varia por plataforma); até <strong>600 páginas</strong> de PDF
         (100 quando a janela de contexto da request é menor que 1M tokens) e até <strong>600 imagens</strong> por request
         (todos os modelos vigentes têm janela de 1M). Imagem: até 8000x8000 px e <strong>10 MB</strong> em base64 na Claude API; acima de 20 imagens
         vale um limite de dimensão mais estrito por imagem (redimensione para no máximo 2000 px). GIF animado usa só o primeiro
@@ -906,7 +906,7 @@ response = client.responses.create(
       </div>
       <div class="callout tip">
         <strong>ZDR:</strong> PDF inline via Messages API é <strong>ZDR elegível</strong>, <em>exceto</em> nos Covered Models
-        (<code>claude-fable-5-1</code> e <code>claude-mythos-5-1</code>), que exigem retenção de 30 dias e não
+        (<code>claude-fable-5-2</code> e <code>claude-mythos-5-2</code>, mais os <code>5-1</code> ainda ativos), que exigem retenção de 30 dias e não
         estão disponíveis sob ZDR sem autorização da Anthropic. Files API e code execution não são ZDR elegíveis. HIPAA readiness via
         BAA é um arranjo separado; veja a tabela de elegibilidade na página de retenção e
         <a href="guia_claude_api.html#b-files">Claude API · Files</a>.
@@ -1116,7 +1116,7 @@ def spreadsheet_worker(source_id: str, operation: str) -&gt; dict:
 # Not part of the strict no-provider-storage path.
 
 response = client.responses.create(
-    model="gpt-6-astra",
+    model="gpt-6.2-astra",
     store=False,
     tools=[{"type": "code_interpreter", "container": {"type": "auto", "memory_limit": "4g"}}],
     input=[{
@@ -1140,7 +1140,7 @@ response = client.responses.create(
 # With store=false, keep and replay id/signature fields if tool combination needs continuity.
 
 interaction = client.interactions.create(
-    model="gemini-3.8-flash",
+    model="gemini-4-hydrogen",
     store=False,
     input=[{"type": "user_input", "content": [
         {"type": "text", "text": "Compute and verify the summary from this CSV excerpt."},
@@ -1291,8 +1291,7 @@ message = client.messages.create(
     <section class="ref" id="fontes-oficiais">
       <h2>Fontes oficiais</h2>
       <p>
-        Estado conferido em <strong>2026-10-24</strong> contra developers.openai.com, ai.google.dev, platform.claude.com e os
-        registros PyPI/npm. Os exemplos usam <code>gpt-6-astra</code>, <code>gemini-3.8-flash</code> e <code>claude-opus-5-5</code>.
+        Conferido em <strong>2026-11-27</strong> contra os registros PyPI, aistudio.google.com/docs (document-processing, file-input-methods, media-resolution) e platform.claude.com (Files API, code execution). Os limites de arquivo da OpenAI vêm do guia de file inputs, lido em 2026-11-27; o dimensionamento de imagem e vision do GPT-6.2 foi lido em 2026-11-17. Os exemplos usam <code>gpt-6.2-astra</code>, <code>gemini-4-hydrogen</code> e <code>claude-opus-5-5</code>; <code>gemini-4-hydrogen</code> é o ID dos exemplos da página media-resolution e <code>claude-opus-5-5</code> o dos exemplos da página Files API.
         O registro confirma publicação, não compatibilidade com o seu pin.
       </p>
       <div class="table-wrap"><table>

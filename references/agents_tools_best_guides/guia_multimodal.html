@@ -5,8 +5,8 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%9A%3C/text%3E%3C/svg%3E" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Guia Multimodal — OpenAI, Gemini e Anthropic (imagens, PDFs, Office, vídeo, áudio, code interpreter)</title>
-<meta name="description" content="Guia técnico exaustivo e comparativo de como OpenAI (Responses API), Google Gemini (Interactions API) e Anthropic Claude (Messages API) tratam imagens, PDFs, Office, planilhas, vídeo, áudio e code interpreter, com parâmetros, limites, exemplos e equivalências. Verificado em 2026-10-24." />
-<meta name="last-checked" content="2026-10-24" />
+<meta name="description" content="Guia técnico exaustivo e comparativo de como OpenAI (Responses API), Google Gemini (Interactions API) e Anthropic Claude (Messages API) tratam imagens, PDFs, Office, planilhas, vídeo, áudio e code interpreter, com parâmetros, limites, exemplos e equivalências. Verificado em 2026-11-27." />
+<meta name="last-checked" content="2026-11-27" />
 <meta name="robots" content="index,follow" />
 <style>
   /* ------- design tokens ------- */
@@ -330,7 +330,7 @@
   <div class="header-row">
     <div class="brand">Guia Multimodal <small>OpenAI · Gemini · Anthropic</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-10-24</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-11-27</strong></span>
       <span class="badge openai">OpenAI</span>
       <span class="badge gemini">Gemini</span>
       <span class="badge anthropic">Claude</span>
@@ -423,7 +423,7 @@
 
   <main id="main">
     <section id="para-agentes" aria-labelledby="h-para-agentes">
-      <h2 id="h-para-agentes">Resumo para agentes (verificado 2026-10-24) <a class="anchor" href="#para-agentes">¶</a></h2>
+      <h2 id="h-para-agentes">Resumo para agentes (verificado 2026-11-27) <a class="anchor" href="#para-agentes">¶</a></h2>
 
       <h3>Use este guia quando</h3>
       <ul>
@@ -442,8 +442,9 @@
 
       <h3>Padrões vigentes</h3>
       <ul>
-        <li>OpenAI: Responses API com <code>input_text</code>, <code>input_image</code> e <code>input_file</code>. Entrada nativa de vídeo não é documentada: extraia quadros e envie como imagem.</li>
+        <li>OpenAI: Responses API com <code>input_text</code>, <code>input_image</code> e <code>input_file</code>. Entrada nativa de vídeo não é documentada: extraia quadros e envie como imagem. Modelos atuais: <code>gpt-6.2-astra</code> (flagship, exemplos deste guia), <code>gpt-6.2-sol</code> (uso diário), <code>gpt-6.1-terra</code> (visão e computer use) e <code>gpt-6-luna</code> (custo); todos com texto e imagem de entrada e saída só texto.</li>
         <li>Gemini: <code>google-genai</code> com Interactions (<code>steps[]</code>); mídia em blocos <code>{type, data|uri, mime_type}</code>; <code>resolution</code> é por item. Não envie <code>temperature</code>, <code>top_p</code> nem <code>top_k</code> (ignorados hoje; HTTP 400 em gerações futuras).</li>
+        <li>Escolha do modelo Gemini: <code>gemini-4-hydrogen</code> (Flash do Gemini 4, GA 2026-11-12) para execução; <code>gemini-4-neon</code> (GA 2026-11-18) para trabalho complexo de alta frequência; <code>gemini-4-carbon</code> e <code>gemini-4-argon</code> para julgamento; o <code>gemini-4-hydrogen</code> é o modelo dos exemplos deste guia (só o exemplo de cache explícito usa o <code>gemini-3.8-flash</code>, Stable, porque nenhum Gemini 4 tem cache explícito). Os quatro Gemini 4 recebem texto, imagem, vídeo, áudio e PDF, geram só texto e não têm Live API nem cache explícito.</li>
         <li>Anthropic: Messages API com blocos <code>image</code> e <code>document</code>; sem áudio nem vídeo nativos documentados. Planilhas e DOCX: Files API + code execution, ou converta para texto.</li>
         <li>Arquivo grande ou reutilizado: Files API do provider; arquivo pequeno e de uso único: inline (Gemini: fique abaixo de 20 MB; as páginas oficiais divergem sobre 20 e 100 MB).</li>
         <li>Tokens de mídia variam entre páginas oficiais do Gemini: meça com <code>models.count_tokens</code> e, na OpenAI, com <code>responses.input_tokens.count</code>.</li>
@@ -454,15 +455,17 @@
       <h3>Versões e modelos correntes</h3>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Item</th><th>Valor</th><th>Fonte (lido 2026-10-24)</th></tr></thead>
+          <thead><tr><th>Item</th><th>Valor</th><th>Fonte (lido 2026-11-17 a 2026-11-27)</th></tr></thead>
           <tbody>
-            <tr><td>Gemini flagship</td><td><code>gemini-4-argon</code> (GA 2026-10-13; saída só texto; $2/$10 por 1M até 2026-11-30, depois $4/$20)</td><td><a href="https://ai.google.dev/gemini-api/docs/models/gemini-4-argon">Gemini models</a></td></tr>
-            <tr><td>Gemini rápido</td><td><code>gemini-3.8-flash</code> (GA 2026-09-02) · <code>gemini-3.5-flash-lite</code></td><td><a href="https://ai.google.dev/gemini-api/docs/pricing">Gemini pricing</a></td></tr>
-            <tr><td>Imagem / vídeo / voz / STT Gemini</td><td><code>gemini-nano-banana-2.1</code> · <code>gemini-omni-1.1-flash</code> · <code>gemini-3.8-flash-tts</code> · <code>gemini-3.5-transcribe</code></td><td><a href="https://ai.google.dev/gemini-api/docs/changelog">Gemini changelog</a></td></tr>
-            <tr><td>OpenAI texto + visão</td><td><code>gpt-6-astra</code> · <code>gpt-6.1-sol</code> · <code>gpt-6-sol</code> · <code>gpt-6-luna</code></td><td><a href="https://developers.openai.com/api/docs/pricing">OpenAI pricing</a></td></tr>
-            <tr><td>OpenAI imagem / STT / voz</td><td><code>gpt-image-2.5-sunburst</code> e <code>gpt-image-2.5-flare</code> · <code>gpt-transcribe</code> e <code>gpt-live-transcribe</code> · <code>gpt-realtime-2.1-mini</code> e <code>gpt-live-1</code></td><td><a href="https://developers.openai.com/api/docs/models">OpenAI models</a></td></tr>
-            <tr><td>Anthropic</td><td><code>claude-fable-5-1</code> · <code>claude-opus-5-5</code> · <code>claude-sonnet-5-5</code> · <code>claude-haiku-5-5</code> (aposentadoria não antes de 2027-09-01 / 2027-09-22 / 2027-09-28 / 2027-10-07)</td><td><a href="https://platform.claude.com/docs/en/about-claude/model-deprecations">Claude model deprecations</a></td></tr>
-            <tr><td>SDKs</td><td>openai 3.37.0 (npm 7.43.0) · google-genai 2.33.0 (npm @google/genai 2.31.0) · anthropic 2.3.0 (npm @anthropic-ai/sdk 1.3.0)</td><td><a href="https://pypi.org/pypi/openai/json">PyPI</a> e <a href="https://registry.npmjs.org/openai/latest">npm</a></td></tr>
+            <tr><td>Gemini fronteira (julgamento)</td><td><code>gemini-4-carbon</code> (GA 2026-11-10) e <code>gemini-4-argon</code> (GA 2026-10-13); saída só texto; ambos $2/$10 por 1M até 2026-11-30, depois $4/$20</td><td><a href="https://aistudio.google.com/docs/models/gemini-4-carbon">gemini-4-carbon</a> · <a href="https://ai.google.dev/gemini-api/docs/models/gemini-4-argon">gemini-4-argon</a></td></tr>
+            <tr><td>Gemini intermediário (alta frequência)</td><td><code>gemini-4-neon</code> (GA 2026-11-18; saída só texto; $3/$15 por 1M; contexto de 1.048.576 tokens; sem Live API nem cache explícito; sem tier gratuito; thinking padrão <code>high</code>)</td><td><a href="https://aistudio.google.com/docs/models/gemini-4-neon">gemini-4-neon</a> (lido 2026-11-26)</td></tr>
+            <tr><td>Gemini Flash (execução)</td><td><code>gemini-4-hydrogen</code> (GA 2026-11-12; saída só texto; $1,50/$7,50 por 1M; sem Live API nem cache explícito; thinking padrão <code>high</code>)</td><td><a href="https://aistudio.google.com/docs/models/gemini-4-hydrogen">gemini-4-hydrogen</a></td></tr>
+            <tr><td>Gemini rápido anterior</td><td><code>gemini-3.8-flash</code> (GA 2026-09-02; segue Stable; $0,75/$3,75 até 2026-12-31, depois $1,50/$7,50) · <code>gemini-3.5-flash-lite</code> ($0,30/$2,50)</td><td><a href="https://aistudio.google.com/docs/pricing">Gemini pricing</a></td></tr>
+            <tr><td>Imagem / vídeo / voz / STT Gemini</td><td><code>gemini-nano-banana-2.1</code> · <code>gemini-omni-1.2-flash</code> (GA 2026-11-05; o <code>gemini-omni-1.1-flash</code> roteia para ele em 2026-12-03) · <code>gemini-3.8-flash-tts</code> · <code>gemini-3.5-transcribe</code></td><td><a href="https://aistudio.google.com/docs/omni">Gemini Omni</a> · <a href="https://ai.google.dev/gemini-api/docs/changelog">Gemini changelog</a></td></tr>
+            <tr><td>OpenAI texto + visão</td><td><code>gpt-6.2-astra</code> (flagship, 2026-11-17; US$ 8/0,40/40 por 1M input/cached/output) · <code>gpt-6.2-sol</code> (uso diário, US$ 2/0,10/10) · <code>gpt-6.1-terra</code> (visão e computer use; US$ 1/5) · <code>gpt-6-luna</code> (US$ 0,10/0,50). Geração anterior (<code>gpt-6-astra</code>, <code>gpt-6.1-sol</code>, <code>gpt-6-sol</code>): sem desligamento na página de deprecations em 2026-11-27; preços na <a href="guia_openai_modelos.html#s-catalogo">primeira tabela de preços do guia da OpenAI</a>. Todos: texto e imagem de entrada, saída só texto, contexto 1.050.000</td><td><a href="https://developers.openai.com/api/docs/pricing">OpenAI pricing</a> ·<a href="https://developers.openai.com/api/docs/models/gpt-6.2-astra">models/gpt-6.2-astra</a> · <a href="https://developers.openai.com/api/docs/models/gpt-6.2-sol">models/gpt-6.2-sol</a></td></tr>
+            <tr><td>OpenAI imagem / STT / voz</td><td><code>gpt-image-2.6-sunburst</code> e <code>gpt-image-2.6-flare</code> (2026-11-04) · <code>gpt-image-2.5-sunburst</code> e <code>gpt-image-2.5-flare</code> · <code>gpt-transcribe</code> e <code>gpt-live-transcribe</code> · <code>gpt-realtime-2.1-mini</code> e <code>gpt-live-1.1</code> (2026-11-19; endpoint <code>v1/live/sessions</code>)</td><td><a href="https://developers.openai.com/api/docs/models/gpt-live-1.1">models/gpt-live-1.1</a> · <a href="https://developers.openai.com/api/docs/changelog">OpenAI changelog</a> (lido em 2026-11-27)</td></tr>
+            <tr><td>Anthropic</td><td><code>claude-fable-5-2</code> (2026-11-09) · <code>claude-opus-5-5</code> · <code>claude-sonnet-5-5</code> · <code>claude-haiku-5-5</code> (aposentadoria não antes de 2027-11-09 / 2027-09-22 / 2027-09-28 / 2027-10-07)</td><td><a href="https://platform.claude.com/docs/en/about-claude/model-deprecations">Claude model deprecations</a></td></tr>
+            <tr><td>SDKs</td><td>openai 3.60.0 (npm 7.65.0) · google-genai 3.6.1 (npm @google/genai 3.6.1) · anthropic 2.14.0 (npm @anthropic-ai/sdk 1.14.0); lidos em 2026-11-26</td><td><a href="https://pypi.org/pypi/openai/json">PyPI</a> e <a href="https://registry.npmjs.org/openai/latest">npm</a></td></tr>
           </tbody>
         </table>
       </div>
@@ -497,7 +500,7 @@
 
     <section id="como-ler" aria-labelledby="h-como-ler">
       <h2 id="h-como-ler">Como ler este guia <a class="anchor" href="#como-ler">¶</a></h2>
-      <p>Comece em <a href="#decisao">Decisão rápida</a>, confirme no <a href="#comparacao">Quadro comparativo</a> e desça ao deep-dive do provider escolhido. Exemplos usam <code>gpt-6-astra</code> (Responses API), <code>gemini-3.8-flash</code> (Interactions API) e <code>claude-opus-5-5</code> (Messages API).</p>
+      <p>Comece em <a href="#decisao">Decisão rápida</a>, confirme no <a href="#comparacao">Quadro comparativo</a> e desça ao deep-dive do provider escolhido. Exemplos usam <code>gpt-6.2-astra</code> (Responses API), <code>gemini-4-hydrogen</code> (Interactions API; só o exemplo de cache explícito usa <code>gemini-3.8-flash</code>, porque nenhum Gemini 4 tem cache explícito) e <code>claude-opus-5-5</code> (Messages API).</p>
       <div class="callout">
         <strong>Legenda.</strong> <span class="pill ok">Suportado</span> = recurso nativo documentado. <span class="pill partial">Parcial</span> = funciona com workaround/conversão. <span class="pill bad">Não suporta</span> = ausente nas docs oficiais. <span class="pill na">N/D</span> = depende de tier/modelo, ver nota. <span class="unverified">UNVERIFIED</span> = não confirmado na fonte oficial.
       </div>
@@ -511,22 +514,22 @@
         <thead><tr><th style="width:32%">Tenho / quero…</th><th class="openai">OpenAI</th><th class="gemini">Gemini</th><th class="anthropic">Anthropic</th><th>Observação</th></tr></thead>
         <tbody>
           <tr><td>Foto ou screenshot único + pergunta</td><td>Responses · <code>input_image</code> URL/base64/file_id</td><td>Item <code>image</code> com <code>data</code> inline (100 MB na tabela oficial; 20 MB nas páginas de mídia) ou <code>uri</code></td><td>Messages · <code>image</code> base64/url/file</td><td>Todos suportam três modos de entrada.</td></tr>
-          <tr><td>OCR de texto pequeno / UI denso / computer-use</td><td><span class="pill ok">Ideal</span> <code>detail: "original"</code> em <code>gpt-6-astra</code></td><td><code>resolution: "high"</code>/<code>"ultra_high"</code> por item (Gemini 3)</td><td><span class="pill ok">Ideal</span> Opus 5.5 (hi-res 2576 px; computer-use via <code>computer_toolset_20260801</code>)</td><td>Em todos: levantar resolução custa tokens — meça antes.</td></tr>
-          <tr><td>PDF nativo com layout/charts</td><td>Responses · <code>input_file</code> ≤50 MB</td><td><span class="pill ok">Ideal</span> Nativo, ≤50 MB, ≤1000 páginas</td><td>Messages · <code>document</code> ≤32 MB, 600 pgs (1M ctx)</td><td>Os três renderizam página como imagem + texto.</td></tr>
+          <tr><td>OCR de texto pequeno / UI denso / computer-use</td><td><span class="pill ok">Ideal</span> <code>detail: "original"</code> em <code>gpt-6.2-astra</code> ou <code>gpt-6.1-terra</code> (modelo da OpenAI para visão e computer use); o suporte a <code>original</code> nesses dois não consta na tabela de sizing <span class="unverified">UNVERIFIED</span> — documentado no <code>gpt-6-astra</code> (geração anterior)</td><td><code>resolution: "high"</code>/<code>"ultra_high"</code> por item (Gemini 3)</td><td><span class="pill ok">Ideal</span> Opus 5.5 (hi-res 2576 px; computer-use via <code>computer_toolset_20260801</code>)</td><td>Em todos: levantar resolução custa tokens — meça antes.</td></tr>
+          <tr><td>PDF nativo com layout/charts</td><td>Responses · <code>input_file</code> ≤50 MB</td><td><span class="pill ok">Ideal</span> Nativo, ≤50 MB, ≤1000 páginas</td><td>Messages · <code>document</code>, request ≤128 MB, 600 pgs (1M ctx)</td><td>Os três renderizam página como imagem + texto.</td></tr>
           <tr><td>PDF grande (&gt;50 MB ou &gt;1000 páginas)</td><td>File Search (vector store)</td><td>Dividir o PDF (limite de 50 MB / 1.000 páginas por request) + cache</td><td>Files API (≤500 MB) + caching</td><td>Acima do limit por request, RAG/vector store é o caminho em todos.</td></tr>
           <tr><td>Citações por trecho dentro do PDF</td><td>File Search annotations</td><td>Prompt com timestamps/instruções</td><td><span class="pill ok">Ideal</span> <code>citations.enabled: true</code> nativo</td><td>Apenas Anthropic tem citation primitive built-in.</td></tr>
-          <tr><td>XLSX/DOCX/PPTX com fidelidade visual</td><td>Converter para PDF → <code>input_file</code></td><td>Converter para PDF → inline/Files API</td><td>Converter para PDF → <code>document</code></td><td>Nenhum tem vision nativo para Office binário.</td></tr>
+          <tr><td>XLSX/DOCX/PPTX com fidelidade visual</td><td>Converter para PDF → <code>input_file</code></td><td>Enviar o arquivo como <code>document</code> (Office/OpenDocument desde 2026-11-18; Gemini 4 renderiza <code>.docx</code>/<code>.pptx</code> como imagens de página); PDF continua válido</td><td>Converter para PDF → <code>document</code></td><td>OpenAI e Anthropic: nenhum tem vision nativo para Office binário. Gemini: sim, Office e OpenDocument entram direto (§6.4).</td></tr>
           <tr><td>Análise de planilha (joins, pivots, gráficos)</td><td>Code Interpreter · <code>file_ids</code></td><td>Code Execution · sandbox Python</td><td>Code Execution · <code>container_upload</code></td><td>Os três rodam Python sandbox — diferenças em memória, network e duração.</td></tr>
           <tr><td>CSV pequeno (consulta simples)</td><td><code>input_file</code> (até 1000 linhas processadas)</td><td>Inline <code>text/csv</code></td><td>Inline em <code>text</code> block</td><td>Anthropic e Gemini: enviar como texto é o atalho.</td></tr>
           <tr><td>Vídeo &lt;1 min</td><td><span class="pill partial">Frame extraction</span> (sem nativo)</td><td><span class="pill ok">Ideal</span> Inline ou Files API (<code>type: "video"</code>)</td><td><span class="pill partial">Frame extraction</span> (sem nativo)</td><td>Só Gemini tem ingestão de vídeo nativa.</td></tr>
           <tr><td>Vídeo longo (palestra, filme)</td><td>Sem entrada de vídeo nativa documentada; extrair frames + <code>gpt-transcribe</code></td><td><span class="pill ok">Ideal</span> Files API 2GB / YouTube URL</td><td>Frames + transcript externo</td><td>Gemini ganha de longe (até 3h em LOW res).</td></tr>
           <tr><td>Transcrever áudio (STT)</td><td><span class="pill ok">Ideal</span> <code>gpt-transcribe</code> (arquivo) · <code>gpt-live-transcribe</code> (streaming)</td><td><code>gemini-3.5-transcribe</code> (diarização, timestamps por palavra) · Live API</td><td><span class="pill bad">Não suporta</span> nativo</td><td>Use <code>gpt-transcribe</code>/<code>gemini-3.5-transcribe</code> e mande o transcript para Claude.</td></tr>
           <tr><td>Áudio + texto em um workflow</td><td>STT → Responses → voz (<code>gpt-realtime-2.1-mini</code>); Realtime para fala ao vivo</td><td>Inline/Files API · 25 a 32 tokens/s (páginas oficiais divergem; meça com <code>count_tokens</code>)</td><td>Não suportado nativamente</td><td>Anthropic: pré-transcrever.</td></tr>
-          <tr><td>Conversa de voz em tempo real</td><td>Realtime API (<code>gpt-realtime-2.1</code>) · Live API da OpenAI (<code>gpt-live-1</code>)</td><td>Live API (<code>gemini-3.8-live</code>)</td><td>Não suportado</td><td>WebSocket bidirecional nos dois primeiros.</td></tr>
+          <tr><td>Conversa de voz em tempo real</td><td>Realtime API (<code>gpt-realtime-2.1</code>) · Live API da OpenAI (<code>gpt-live-1.1</code>)</td><td>Live API (<code>gemini-3.8-live</code>)</td><td>Não suportado</td><td>WebSocket bidirecional nos dois primeiros.</td></tr>
           <tr><td>Diarização e timestamps (quem falou, quando)</td><td><code>gpt-transcribe</code> não tem diarização nem timestamps</td><td><code>gemini-3.5-transcribe</code> com <code>diarization_mode: "speaker"</code> (até 8 falantes)</td><td>Não suportado</td><td>Para falantes ou timestamps use <code>gemini-3.5-transcribe</code> (a doc da OpenAI não nomeia modelo vigente com essas saídas).</td></tr>
-          <tr><td>Gerar imagem</td><td><code>gpt-image-2.5-flare</code>/<code>-sunburst</code> via tool ou Images API</td><td><code>gemini-nano-banana-2.1</code></td><td><span class="pill bad">Não suporta</span></td><td>Claude é só image-understanding.</td></tr>
-          <tr><td>Gerar vídeo</td><td><span class="pill bad">Não suporta</span></td><td><code>gemini-omni-1.1-flash</code> (3–10 s, Interactions API)</td><td><span class="pill bad">Não suporta</span></td><td>Só o Gemini gera vídeo.</td></tr>
-          <tr><td>Cachear PDF/imagem para re-uso</td><td>Prompt caching automático (Responses)</td><td>Implícito (mín. 4.096 tokens) · explícito <code>caches.create</code> só no <code>generateContent</code></td><td><code>cache_control: ephemeral</code> 5m/1h</td><td>Estratégias bem diferentes — ver <a href="#cmp-cache">§3.10</a>.</td></tr>
+          <tr><td>Gerar imagem</td><td><code>gpt-image-2.6-flare</code>/<code>-sunburst</code> pela Images API; <code>gpt-image-2.5-flare</code>/<code>-sunburst</code> também pela tool <code>image_generation</code></td><td><code>gemini-nano-banana-2.1</code></td><td><span class="pill bad">Não suporta</span></td><td>Claude é só image-understanding.</td></tr>
+          <tr><td>Gerar vídeo</td><td><span class="pill bad">Não suporta</span></td><td><code>gemini-omni-1.2-flash</code> (3–15 s, padrão 10 s, Interactions API)</td><td><span class="pill bad">Não suporta</span></td><td>Só o Gemini gera vídeo.</td></tr>
+          <tr><td>Cachear PDF/imagem para re-uso</td><td>Prompt caching automático (Responses)</td><td>Implícito (mín. 4.096 tokens) · explícito <code>caches.create</code> só no <code>generateContent</code> e fora dos modelos Gemini 4</td><td><code>cache_control: ephemeral</code> 5m/1h</td><td>Estratégias bem diferentes — ver <a href="#cmp-cache">§3.10</a>.</td></tr>
           <tr><td>Batch offline multimodal</td><td>Batch API (JSONL)</td><td>Batch · 50% off (só <code>generateContent</code>)</td><td>Message Batches · 50% off</td><td>Desconto similar nos três.</td></tr>
         </tbody>
       </table>
@@ -560,34 +563,38 @@
       <table>
         <thead><tr><th>Provider</th><th>Modelo</th><th>Context</th><th>Output</th><th>Imagem</th><th>PDF</th><th>Áudio in</th><th>Vídeo in</th><th>Code exec</th></tr></thead>
         <tbody>
-          <tr class="col-openai"><td rowspan="6" class="col-openai"><strong>OpenAI</strong></td><td><code>gpt-6-astra</code> <span class="pill new">flagship</span></td><td>1.050.000</td><td>128.000</td><td>Patch 32 px × 1,2 · high até 2.500 patches/65.535 px · original 65.535 px (cap 30k patches)</td><td>50 MB · <code>detail</code> auto/low/high</td><td>—</td><td>via frames</td><td>Tool <code>code_interpreter</code></td></tr>
-          <tr><td><code>gpt-6.1-sol</code> · <code>gpt-6-sol</code> · <code>gpt-6-luna</code></td><td>1.050.000</td><td>128.000</td><td>Sizing e multiplicador <span class="unverified">UNVERIFIED</span> (fora da tabela oficial): meça com <code>responses.input_tokens.count</code></td><td>50 MB</td><td>—</td><td>via frames</td><td>Sim</td></tr>
+          <tr class="col-openai"><td rowspan="7" class="col-openai"><strong>OpenAI</strong></td><td><code>gpt-6.2-astra</code> <span class="pill new">flagship</span> · <code>gpt-6.2-sol</code> <span class="pill new">uso diário</span></td><td>1.050.000</td><td>128.000</td><td>Sizing e multiplicador <span class="unverified">UNVERIFIED</span> (a tabela oficial de sizing ainda não lista os GPT-6.2; ver <a href="#cmp-image">§3.3</a>): meça com <code>responses.input_tokens.count</code></td><td>50 MB · <code>detail</code> auto/low/high</td><td>—</td><td>via frames</td><td>Tool <code>code_interpreter</code></td></tr>
+          <tr><td><code>gpt-6-luna</code></td><td>1.050.000</td><td>128.000</td><td>Sizing e multiplicador <span class="unverified">UNVERIFIED</span> (fora da tabela oficial): meça com <code>responses.input_tokens.count</code></td><td>50 MB</td><td>—</td><td>via frames</td><td>Sim</td></tr>
+          <tr><td><code>gpt-6.1-terra</code></td><td>1.050.000</td><td>128.000</td><td>Sizing e multiplicador <span class="unverified">UNVERIFIED</span>: meça com <code>responses.input_tokens.count</code></td><td>50 MB (limite de <code>input_file</code> da Responses)</td><td>—</td><td>via frames</td><td>Tool <code>code_interpreter</code></td></tr>
           <tr><td><code>gpt-transcribe</code></td><td>—</td><td>—</td><td>—</td><td>—</td><td>Audio API (arquivo ≤ 25 MB)</td><td>—</td><td>—</td></tr>
           <tr><td><code>gpt-live-transcribe</code></td><td>—</td><td>—</td><td>—</td><td>—</td><td>Realtime (PCM 24 kHz)</td><td>—</td><td>—</td></tr>
           <tr><td><code>gpt-realtime-2.1</code></td><td>—</td><td>—</td><td>—</td><td>—</td><td>Realtime (PCM16)</td><td>—</td><td>—</td></tr>
-          <tr><td><code>gpt-live-1</code></td><td>—</td><td>—</td><td>—</td><td>—</td><td>Live (full duplex, áudio + texto)</td><td>—</td><td>—</td></tr>
-          <tr class="col-gemini"><td rowspan="6" class="col-gemini"><strong>Gemini</strong></td><td><code>gemini-4-argon</code> <span class="pill new">flagship</span></td><td>1.048.576</td><td>65.536</td><td>conforme <code>resolution</code></td><td>50 MB · 1.000 pgs</td><td>Sim</td><td>Sim (static ou agentic)</td><td>Python sandbox</td></tr>
-          <tr><td><code>gemini-3.8-flash</code> <span class="pill new">default</span></td><td>1.048.576</td><td>65.536</td><td>280/560/1.120/2.240 tok conforme <code>resolution</code></td><td>50 MB · 1.000 pgs</td><td>25–32 tok/s</td><td>70/280 tok/frame (ver divergência)</td><td>Python sandbox</td></tr>
+          <tr><td><code>gpt-live-1.1</code></td><td>—</td><td>—</td><td>—</td><td>—</td><td>Live (full duplex, áudio + texto)</td><td>—</td><td>—</td></tr>
+          <tr class="col-gemini"><td rowspan="9" class="col-gemini"><strong>Gemini</strong></td><td><code>gemini-4-carbon</code> <span class="pill new">julgamento</span></td><td>1.048.576</td><td>65.536 (até 1.048.576 em <em>long decode</em>)</td><td>Sim (tokens por imagem: meça com <code>count_tokens</code>)</td><td>Sim</td><td>Sim</td><td>Sim</td><td><span class="unverified">UNVERIFIED</span></td></tr>
+          <tr><td><code>gemini-4-argon</code> <span class="pill new">flagship</span></td><td>1.048.576</td><td>65.536</td><td>conforme <code>resolution</code></td><td>50 MB · 1.000 pgs</td><td>Sim</td><td>Sim (static ou agentic)</td><td>Python sandbox</td></tr>
+          <tr><td><code>gemini-4-neon</code> <span class="pill new">alta frequência</span></td><td>1.048.576</td><td>65.536 (até 1.048.576 em <em>long decode</em>)</td><td>Sim (tokens por imagem: meça com <code>count_tokens</code>)</td><td>Sim</td><td>Sim</td><td>Sim</td><td>Sim</td></tr>
+          <tr><td><code>gemini-4-hydrogen</code> <span class="pill new">execução</span></td><td>1.048.576</td><td>65.536 (até 1.048.576 em <em>long decode</em>)</td><td>Sim (tokens por imagem: meça com <code>count_tokens</code>)</td><td>Sim</td><td>Sim</td><td>Sim</td><td>Sim</td></tr>
+          <tr><td><code>gemini-3.8-flash</code> <span class="pill ok">Stable</span></td><td>1.048.576</td><td>65.536</td><td>280/560/1.120/2.240 tok conforme <code>resolution</code></td><td>50 MB · 1.000 pgs</td><td>25–32 tok/s</td><td>70/280 tok/frame (ver divergência)</td><td>Python sandbox</td></tr>
           <tr><td><code>gemini-3.5-flash-lite</code></td><td>1.048.576</td><td>65.536</td><td>idem</td><td>idem</td><td>Sim</td><td>Sim</td><td>Sim</td></tr>
           <tr><td><code>gemini-3.5-transcribe</code></td><td>—</td><td>—</td><td>—</td><td>—</td><td>STT com diarização e timestamps por palavra</td><td>—</td><td>—</td></tr>
-          <tr><td><code>gemini-omni-1.1-flash</code></td><td>1.048.576</td><td>—</td><td>—</td><td>—</td><td>—</td><td>gera/edita vídeo (3–10 s)</td><td>—</td></tr>
+          <tr><td><code>gemini-omni-1.2-flash</code></td><td><span class="unverified">UNVERIFIED</span></td><td>—</td><td>—</td><td>—</td><td>—</td><td>gera/edita vídeo (3–15 s)</td><td>—</td></tr>
           <tr><td><code>gemini-3.8-live</code></td><td>—</td><td>—</td><td>—</td><td>—</td><td>Live API bidir</td><td>Live API bidir</td><td>—</td></tr>
-          <tr class="col-anthropic"><td rowspan="4" class="col-anthropic"><strong>Anthropic</strong></td><td><code>claude-opus-5-5</code> <span class="pill new">recomendado</span></td><td>1M</td><td>128k</td><td>Hi-res 2576 px / 4784 tok</td><td>600 pgs · 32 MB</td><td><span class="pill bad">Não</span></td><td><span class="pill bad">Não</span></td><td>Sim (<code>code_execution_20260521</code>; <code>computer_toolset_20260801</code> p/ computer use)</td></tr>
-          <tr><td><code>claude-sonnet-5-5</code></td><td>1M</td><td>128k</td><td>Hi-res 2576 px / 4784 tok</td><td>600 pgs · 32 MB</td><td><span class="pill bad">Não</span></td><td><span class="pill bad">Não</span></td><td>Sim</td></tr>
-          <tr><td><code>claude-fable-5-1</code></td><td>1M</td><td>128k</td><td>Hi-res 2576 px / 4784 tok</td><td>600 pgs · 32 MB</td><td><span class="pill bad">Não</span></td><td><span class="pill bad">Não</span></td><td>Sim</td></tr>
-          <tr><td><code>claude-haiku-5-5</code></td><td>1M</td><td>128k</td><td>Hi-res 2576 px / 4784 tok</td><td>600 pgs · 32 MB</td><td><span class="pill bad">Não</span></td><td><span class="pill bad">Não</span></td><td>Sim</td></tr>
+          <tr class="col-anthropic"><td rowspan="4" class="col-anthropic"><strong>Anthropic</strong></td><td><code>claude-opus-5-5</code> <span class="pill new">recomendado</span></td><td>1M</td><td>128k</td><td>Hi-res 2576 px / 4784 tok</td><td>600 pgs · request ≤ 128 MB</td><td><span class="pill bad">Não</span></td><td><span class="pill bad">Não</span></td><td>Sim (<code>code_execution_20260521</code>; <code>computer_toolset_20260801</code> p/ computer use)</td></tr>
+          <tr><td><code>claude-sonnet-5-5</code></td><td>1M</td><td>128k</td><td>Hi-res 2576 px / 4784 tok</td><td>600 pgs · request ≤ 128 MB</td><td><span class="pill bad">Não</span></td><td><span class="pill bad">Não</span></td><td>Sim</td></tr>
+          <tr><td><code>claude-fable-5-2</code></td><td>1M</td><td>128k</td><td>Hi-res 2576 px / 4784 tok</td><td>600 pgs · request ≤ 128 MB</td><td><span class="pill bad">Não</span></td><td><span class="pill bad">Não</span></td><td>Sim</td></tr>
+          <tr><td><code>claude-haiku-5-5</code></td><td>1M</td><td>128k</td><td>Hi-res 2576 px / 4784 tok</td><td>600 pgs · request ≤ 128 MB</td><td><span class="pill bad">Não</span></td><td><span class="pill bad">Não</span></td><td>Sim</td></tr>
         </tbody>
       </table>
       </div>
       <div class="callout tip">
-        <strong>Como ler a tabela.</strong> As colunas cobrem apenas <strong>entrada</strong>; os modelos de texto do Gemini e da OpenAI só geram texto (imagem, áudio e vídeo saem de modelos próprios — §4.2, §6.7, §6.2). "Áudio in —" na OpenAI significa que a Responses não documenta áudio como entrada de <code>gpt-6-*</code> (a matriz de migração marca <code>input_audio</code> como "coming soon"); o caminho é <code>gpt-transcribe</code> ou Realtime. Anthropic: a Messages API não documenta entrada de áudio nem de vídeo. <code>gemini-4-argon</code> não tem Live API nem geração de imagem ou áudio.
+        <strong>Como ler a tabela.</strong> As colunas cobrem apenas <strong>entrada</strong>; os modelos de texto do Gemini e da OpenAI só geram texto (imagem, áudio e vídeo saem de modelos próprios — §4.2, §6.7, §6.2). "Áudio in —" na OpenAI significa que a Responses não documenta áudio como entrada dos modelos <code>gpt-6.x</code> (a matriz de migração marca "Audio" como "Coming soon" na Responses; a página "Audio in Chat Completions" diz que a Responses descreve hoje texto e imagem de entrada com saída em texto); o caminho é <code>gpt-transcribe</code> ou Realtime. Anthropic: a Messages API não documenta entrada de áudio nem de vídeo. Os modelos <code>gemini-4-carbon</code>, <code>gemini-4-argon</code> e <code>gemini-4-hydrogen</code> não têm Live API nem geração de imagem ou áudio e não aceitam cache explícito; os limites por modalidade (50 MB · 1.000 pgs de PDF etc.) vêm das páginas de API e só aparecem por modelo quando a página do modelo os cita.
       </div>
       <div class="callout ok">
-        <strong>Claude atual.</strong> Opus 5.5, Sonnet 5.5 e Fable 5.1 aceitam visão hi-res, PDF, citations, Files API (GA, sem header beta) e code execution. O que eles rejeitam: thinking desligado; <code>tool_choice</code> <code>any</code>/<code>tool</code> (400). Para computer use, a tool é <code>computer_toolset_20260801</code>. Preços e cache: §7.9 e §7.12.
+        <strong>Claude atual.</strong> Opus 5.5, Sonnet 5.5 e Fable 5.2 aceitam visão hi-res, PDF, citations, Files API (GA, sem header beta) e code execution. O que eles rejeitam: thinking desligado; <code>tool_choice</code> <code>any</code>/<code>tool</code> (400). Para computer use, a tool é <code>computer_toolset_20260801</code> (no Fable 5.2 a <code>computer_20251124</code> devolve 400, exceto no Amazon Bedrock). Preços e cache: §7.9 e §7.12.
         <span class="source-link">Fontes: <a href="https://platform.claude.com/docs/en/models/overview" target="_blank" rel="noopener">models/overview</a>.</span>
       </div>
       <h3 id="cmp-image">3.3 Imagem / visão <a class="anchor" href="#cmp-image">¶</a></h3>
-      <p>Os três providers aceitam vision input nativamente, mas divergem em <strong>MIME types aceitos</strong>, <strong>quantidade de imagens por request</strong>, <strong>tamanho máximo por arquivo</strong>, <strong>como tokenizam o pixel</strong> e <strong>como expõem coordenadas espaciais</strong>. A tabela abaixo lado-a-lado é a referência de bolso — cada célula expande no deep-dive correspondente. Observe que a OpenAI usa <em>patches de 32 px</em> (multiplicador 1,2× no <code>gpt-6-astra</code>), o Gemini tokeniza por <em><code>resolution</code></em> (1.120 tokens por imagem em <code>high</code> segundo a página media-resolution; as páginas de image understanding e tokens dizem 258 por tile — divergência oficial) e a Anthropic usa <code>ceil(W/28) · ceil(H/28)</code>.</p>
+      <p>Os três providers aceitam vision input nativamente, mas divergem em <strong>MIME types aceitos</strong>, <strong>quantidade de imagens por request</strong>, <strong>tamanho máximo por arquivo</strong>, <strong>como tokenizam o pixel</strong> e <strong>como expõem coordenadas espaciais</strong>. A tabela abaixo lado-a-lado é a referência de bolso — cada célula expande no deep-dive correspondente. Observe que a OpenAI usa <em>patches de 32 px</em> (multiplicador 1,2× documentado no <code>gpt-6-astra</code>, geração anterior; nos GPT-6.2: <span class="unverified">UNVERIFIED</span>), o Gemini tokeniza por <em><code>resolution</code></em> (1.120 tokens por imagem em <code>high</code> segundo a página media-resolution; as páginas de image understanding e tokens dizem 258 por tile — divergência oficial) e a Anthropic usa <code>ceil(W/28) · ceil(H/28)</code>.</p>
       <div class="table-wrap">
       <table>
         <thead><tr><th style="width:24%">Aspecto</th><th class="openai">OpenAI</th><th class="gemini">Google Gemini</th><th class="anthropic">Anthropic Claude</th></tr></thead>
@@ -614,15 +621,15 @@
             <td>Tamanho máximo por imagem</td>
             <td>Sem cap por imagem; payload total ≤ <strong>512 MB</strong>.</td>
             <td>Inline: 100 MB (tabela oficial de métodos de entrada; as páginas de mídia falam em 20 MB — divergência). Files API: <strong>2 GB / arquivo</strong>, 20 GB / projeto, retenção 48 h.</td>
-            <td><strong>10 MB / imagem</strong> via API direta; <strong>5 MB</strong> em Amazon Bedrock. Request total ≤ <strong>32 MB</strong>.</td>
+            <td><strong>10 MB / imagem</strong> via API direta; <strong>5 MB</strong> em Amazon Bedrock. Request total ≤ <strong>128 MB</strong> na API first-party (outras plataformas têm limites próprios).</td>
           </tr>
           <tr>
             <td>Dimensões máximas (px)</td>
             <td>
-              <code>gpt-6-astra</code>: <code>high</code> até 65.535 px / 2.500 patches; <code>original</code> mantém as dimensões (reduz só acima de 65.535 px) com hard-reject acima de 30.000 patches; <code>low</code> cabe em 512×512. <code>gpt-6.1-sol</code>, <code>gpt-6-sol</code> e <code>gpt-6-luna</code> não constam na tabela oficial de sizing <span class="unverified">UNVERIFIED</span>: §4.2.
+              <code>gpt-6-astra</code> (geração anterior; tabela oficial): <code>high</code> até 65.535 px / 2.500 patches; <code>original</code> mantém as dimensões (reduz só acima de 65.535 px) com hard-reject acima de 30.000 patches; <code>low</code> cabe em 512×512. <code>gpt-6.2-astra</code>, <code>gpt-6.2-sol</code>, <code>gpt-6.1-terra</code> e <code>gpt-6-luna</code> não constam na tabela oficial de sizing <span class="unverified">UNVERIFIED</span>: §4.2.
             </td>
             <td>Nenhum limite de dimensão documentado na página de image understanding; páginas de PDF são escaladas entre 768×768 e 3072×3072 (AR preservado). Até 384 px nos dois lados = 1 tile (258 tokens).</td>
-            <td><strong>8000×8000 px</strong> (geral); teto mais restrito se &gt; 20 imagens/documentos no request (resida para ≤2000 px no lado maior para ficar seguro). Long-edge reescalado: 1568 px (padrão) / 2576 px (hi-res: Opus 5.5, Sonnet 5.5, Fable 5.1 e Haiku 5.5).</td>
+            <td><strong>8000×8000 px</strong> (geral); teto mais restrito se &gt; 20 imagens/documentos no request (resida para ≤2000 px no lado maior para ficar seguro). Long-edge reescalado: 1568 px (padrão) / 2576 px (hi-res: Opus 5.5, Sonnet 5.5, Fable 5.2 e Haiku 5.5).</td>
           </tr>
           <tr>
             <td>Fórmula de tokenização</td>
@@ -630,9 +637,9 @@
               <details><summary>Patch de 32 px × 1,2</summary>
                 <pre style="margin:4px 0;font-size:11.5px"><code>patches = ceil(W/32) · ceil(H/32)
 billed = ceil(min(patches, budget) · 1.2)
-budget (gpt-6-astra, high): 2.5k patches | original/auto: sem redução de tamanho
+budget (gpt-6-astra, high; 6.2: UNVERIFIED): 2.5k patches | original/auto: sem redução de tamanho
 &gt; 30.000 patches após o resize → request rejeitada</code></pre>
-                <p>Multiplicador <strong>1,2</strong> documentado para o <code>gpt-6-astra</code> (<code>original</code> até 65.535 px). <code>gpt-6.1-sol</code>, <code>gpt-6-sol</code> e <code>gpt-6-luna</code> não constam na tabela oficial <span class="unverified">UNVERIFIED</span>: meça com <code>responses.input_tokens.count</code>.</p>
+                <p>Multiplicador <strong>1,2</strong> documentado para o <code>gpt-6-astra</code> (geração anterior; <code>original</code> até 65.535 px). <code>gpt-6.2-astra</code>, <code>gpt-6.2-sol</code>, <code>gpt-6.1-terra</code> e <code>gpt-6-luna</code> não constam na tabela oficial <span class="unverified">UNVERIFIED</span>: meça com <code>responses.input_tokens.count</code>.</p>
               </details>
             </td>
             <td>
@@ -648,15 +655,15 @@ senão:
             </td>
             <td>
               <code>tokens = ceil(W / 28) · ceil(H / 28)</code>
-              <p style="margin:6px 0 0;font-size:12.5px">Sweet spot ~1,19 MP → ~1568 tk (std). Opus 5.5/Sonnet 5.5/Fable 5.1 até 4784 tk @ 2576 px lado longo.</p>
+              <p style="margin:6px 0 0;font-size:12.5px">Sweet spot ~1,19 MP → ~1568 tk (std). Opus 5.5/Sonnet 5.5/Fable 5.2 até 4784 tk @ 2576 px lado longo.</p>
             </td>
           </tr>
           <tr>
             <td>Parâmetro de resolução / detalhe</td>
-            <td><code>input_image.detail</code>: <code>low</code> (512×512), <code>high</code> (até 2.500 patches no <code>gpt-6-astra</code>), <code>original</code> (até 65.535 px) e <code>auto</code> (padrão; ≡ <code>original</code> no <code>gpt-6-astra</code>; ≡ <code>high</code> em <code>input_file</code>).</td>
+            <td><code>input_image.detail</code>: <code>low</code> (512×512), <code>high</code> (até 2.500 patches no <code>gpt-6-astra</code>), <code>original</code> (até 65.535 px) e <code>auto</code> (padrão; ≡ <code>original</code> no <code>gpt-6-astra</code>; ≡ <code>high</code> em <code>input_file</code>). Valores por modelo documentados só para o <code>gpt-6-astra</code> (geração anterior); nos GPT-6.2 <span class="unverified">UNVERIFIED</span>.</td>
             <td><code>resolution</code> por item na Interactions API: <code>low</code>, <code>medium</code>, <code>high</code>, <code>ultra_high</code> (só imagem). O <code>generation_config.media_resolution</code> global não é documentado ali.</td>
             <td>
-              <span class="pill na">Sem parâmetro</span>. Os modelos atuais (Opus 5.5, Sonnet 5.5, Fable 5.1, Haiku 5.5) usam hi-res (2576 px / 4784 tk) automaticamente. Não há header beta nem opt-in de cliente.
+              <span class="pill na">Sem parâmetro</span>. Os modelos atuais (Opus 5.5, Sonnet 5.5, Fable 5.2, Haiku 5.5) usam hi-res (2576 px / 4784 tk) automaticamente. Não há header beta nem opt-in de cliente.
             </td>
           </tr>
           <tr>
@@ -667,7 +674,7 @@ senão:
           </tr>
           <tr>
             <td>Geração de imagem</td>
-            <td><span class="pill ok">Sim</span> · <code>gpt-image-2.5-flare</code>/<code>-sunburst</code> via tool <code>image_generation</code> em Responses ou Images API (<code>POST /v1/images/generations</code>, <code>/v1/images/edits</code>)</td>
+            <td><span class="pill ok">Sim</span> · <code>gpt-image-2.6-flare</code>/<code>-sunburst</code> (2026-11-04) pela Images API (<code>POST /v1/images/generations</code>, <code>/v1/images/edits</code>); <code>gpt-image-2.5-flare</code>/<code>-sunburst</code> também pela tool <code>image_generation</code> em Responses. Suporte da tool <code>image_generation</code> aos modelos 2.6: <span class="unverified">UNVERIFIED</span> (a página do modelo e o changelog só citam a Images API).</td>
             <td><span class="pill ok">Sim</span> · <code>gemini-nano-banana-2.1</code> (Nano Banana 2.1) via <code>response_format: {type: "image"}</code></td>
             <td><span class="pill bad">Não suporta</span>. Apenas image-understanding.</td>
           </tr>
@@ -689,7 +696,7 @@ senão:
         <tbody>
           <tr>
             <td>Vision nativo (texto + página como imagem)</td>
-            <td><span class="pill ok">Sim</span> em modelos com visão (<code>gpt-6-astra</code>, <code>gpt-6.1-sol</code>, <code>gpt-6-sol</code>, <code>gpt-6-luna</code>): texto extraído e imagens das páginas entram no contexto. <code>input_file.detail</code> controla a fidelidade das imagens de página (§4.3).</td>
+            <td><span class="pill ok">Sim</span> em modelos com visão (<code>gpt-6.2-astra</code>, <code>gpt-6.2-sol</code>, <code>gpt-6.1-terra</code>, <code>gpt-6-luna</code> e os GPT-6 anteriores): texto extraído e imagens das páginas entram no contexto. <code>input_file.detail</code> controla a fidelidade das imagens de página (§4.3).</td>
             <td><span class="pill ok">Sim</span>. Página renderizada como imagem + texto nativo extraído. <strong>Em Gemini 3</strong>, tokens de texto nativo são <strong>grátis</strong>.</td>
             <td><span class="pill ok">Sim</span>. Cada página = text tokens (1.5k–3k típico) + image tokens (fórmula de patches <code>⌈W/28⌉ × ⌈H/28⌉</code> — ver §7.2).</td>
           </tr>
@@ -703,7 +710,7 @@ senão:
             <td>Cap de tamanho por PDF</td>
             <td><strong>50 MB</strong> por arquivo e combinado por request</td>
             <td><strong>50 MB</strong> por PDF (inline ou Files API)</td>
-            <td><strong>32 MB</strong> request total (Bedrock e Google Cloud podem ser menores); <strong>500 MB</strong> via Files API</td>
+            <td><strong>128 MB</strong> request total na API first-party (Bedrock e Google Cloud podem ser menores); <strong>500 MB</strong> via Files API</td>
           </tr>
           <tr>
             <td>Cap de páginas por request</td>
@@ -742,7 +749,7 @@ senão:
       </div>
 
       <h3 id="cmp-office">3.5 Office, Excel, CSV e documentos estruturados <a class="anchor" href="#cmp-office">¶</a></h3>
-      <p>Nenhum dos três providers tem vision nativo para formatos Office binários (DOCX/PPTX/XLSX). A estratégia universal é <strong>(a)</strong> converter para PDF quando fidelidade visual importa, <strong>(b)</strong> mandar como texto inline para CSV/TXT/MD pequenos, ou <strong>(c)</strong> delegar para o sandbox Python (Code Interpreter / Code Execution) para tabular analytics. A tabela abaixo mostra como cada provider trata cada família.</p>
+      <p>OpenAI e Anthropic não têm vision nativo para formatos Office binários (DOCX/PPTX/XLSX); o Gemini passou a aceitar Office e OpenDocument diretamente em 2026-11-18 (<code>.docx</code>, <code>.doc</code>, <code>.dotx</code>, <code>.odt</code>, <code>.pptx</code>, <code>.ppt</code>, <code>.odp</code>, <code>.xlsx</code>, <code>.xls</code>, <code>.ods</code>; ver §6.4). Para os dois primeiros, a estratégia universal é <strong>(a)</strong> converter para PDF quando fidelidade visual importa, <strong>(b)</strong> mandar como texto inline para CSV/TXT/MD pequenos, ou <strong>(c)</strong> delegar para o sandbox Python (Code Interpreter / Code Execution) para tabular analytics. A tabela abaixo mostra como cada provider trata cada família.</p>
       <div class="table-wrap">
       <table>
         <thead><tr><th style="width:22%">Formato</th><th class="openai">OpenAI</th><th class="gemini">Google Gemini</th><th class="anthropic">Anthropic Claude</th></tr></thead>
@@ -754,8 +761,8 @@ senão:
               <p style="margin:6px 0 0;font-size:12.5px"><span class="pill partial">Parcial</span> · text-only path</p>
             </td>
             <td>
-              <span class="pill bad">Sem vision nativo</span>. Files API armazena, modelo lê como texto.
-              <p style="margin:6px 0 0;font-size:12.5px">Converter para PDF antes (LibreOffice, etc.)</p>
+              <span class="pill ok">Nativo</span> desde 2026-11-18 (<code>.docx</code>/<code>.dotx</code>/<code>.odt</code>; <code>.doc</code> também): em Gemini 4 vira imagens de página (~560 tokens/página no <code>medium</code>); em Gemini 3, texto extraído mais imagens embutidas.
+              <p style="margin:6px 0 0;font-size:12.5px">Limites: 50 MB por arquivo, 2.000 páginas. Recorte por <code>processing.page_options</code> (§6.4). Fonte: <a href="https://aistudio.google.com/docs/document-processing" target="_blank" rel="noopener">document-processing</a>, lida em 2026-11-26.</p>
             </td>
             <td>
               Caminho oficial: <strong>converter para PDF</strong> e usar <code>document</code> block para manter parsing de imagens + citations. Alternativa: <code>container_upload</code> + sandbox com <code>python-docx</code>.
@@ -764,7 +771,7 @@ senão:
           <tr>
             <td><code>.pptx</code> · <code>.ppt</code> · Keynote · Google Slides</td>
             <td><code>input_file</code> extrai só texto; converta para PDF para preservar os visuais.</td>
-            <td><span class="pill bad">Sem vision nativo</span>. Converter para PDF.</td>
+            <td><span class="pill ok">Nativo</span> desde 2026-11-18 (<code>.pptx</code>, <code>.ppt</code>, <code>.odp</code>): slides viram imagens (~560 tokens/slide no <code>medium</code> em Gemini 4; até 2.000 slides). Keynote e Google Slides não constam na lista de tipos: exporte para PPTX ou PDF.</td>
             <td>PDF para fidelidade visual, ou <code>container_upload</code> + <code>python-pptx</code>.</td>
           </tr>
           <tr>
@@ -774,7 +781,7 @@ senão:
               <p style="margin:6px 0 0;font-size:12.5px">Para joins/pivots/charts: <strong>Code Interpreter</strong> ou <strong>Hosted Shell</strong>.</p>
             </td>
             <td>
-              <span class="pill partial">Code Execution</span> é o caminho oficial. Upload via Files API, prompt: <code>pandas.read_excel(...)</code>. XLSX não tem vision: vira texto puro.
+              <span class="pill ok">Nativo</span> desde 2026-11-18 (<code>.xlsx</code>, <code>.xls</code>, <code>.ods</code>): em Gemini 4 todas as planilhas entram com valores, fórmulas e nomes de aba (em Gemini 3, <code>.xlsx</code>/<code>.xls</code> viram CSV só com valores); até 50.000 células por planilha; recorte por <code>processing.spreadsheet_options</code> (<code>sheet_index</code>, <code>visible_cells</code>, <code>content_layers</code>). <span class="pill partial">Code Execution</span> segue sendo o caminho para joins, pivôs e gráficos (<code>pandas.read_excel(...)</code>).
             </td>
             <td>
               <span class="pill partial">Code Execution</span> obrigatório. <code>container_upload</code> + tool <code>code_execution_20260521</code> + <code>openpyxl</code>/<code>xlrd</code>/<code>pyarrow</code> pré-instalados.
@@ -815,7 +822,7 @@ senão:
       </div>
 
       <h3 id="cmp-video">3.6 Vídeo <a class="anchor" href="#cmp-video">¶</a></h3>
-      <p>Vídeo é a modalidade onde os três providers mais divergem. <strong>Apenas o Gemini tem entrada de vídeo nativa</strong> (URLs do YouTube, recorte, FPS configurável, horas em contexto) e gera vídeo com <code>gemini-omni-1.1-flash</code>. A OpenAI não tem geração de vídeo e não documenta entrada nativa; a Anthropic não documenta nenhuma das duas (ausência nas páginas oficiais). O caminho em OpenAI e Anthropic é <strong>extração de frames + transcript externo</strong>.</p>
+      <p>Vídeo é a modalidade onde os três providers mais divergem. <strong>Apenas o Gemini tem entrada de vídeo nativa</strong> (URLs do YouTube, recorte, FPS configurável, horas em contexto) e gera vídeo com <code>gemini-omni-1.2-flash</code>. A OpenAI não tem geração de vídeo e não documenta entrada nativa; a Anthropic não documenta nenhuma das duas (ausência nas páginas oficiais). O caminho em OpenAI e Anthropic é <strong>extração de frames + transcript externo</strong>.</p>
       <div class="table-wrap">
       <table>
         <thead><tr><th style="width:22%">Aspecto</th><th class="openai">OpenAI</th><th class="gemini">Google Gemini</th><th class="anthropic">Anthropic Claude</th></tr></thead>
@@ -847,7 +854,7 @@ senão:
           <tr>
             <td>Recorte, duração e tokens</td>
             <td>—</td>
-            <td>Recorte por <code>processing.start_offset</code>/<code>end_offset</code> (só static; unidade não declarada: <span class="unverified">UNVERIFIED</span>). Contexto de 1M: ~1 h em resolução alta, ~3 h em baixa. Tokens: as páginas oficiais divergem (258 tk/frame + 32 tk/s de áudio contra 70-280 tk/frame + 25 tk/s); confira <code>usage</code>. Agentic usa ≈ 10× menos tokens numa palestra de 1 h.</td>
+            <td>Recorte por <code>processing.start_offset</code>/<code>end_offset</code> (só static; strings em segundos com sufixo <code>s</code>, como <code>"1200s"</code>; também <code>fps</code> em (0, 24] e <code>content_layers</code> <code>frames</code>/<code>audio</code>/<code>transcript</code>; <code>aistudio.google.com/docs/video-understanding</code>, lido em 2026-11-26). Contexto de 1M: ~1 h em resolução alta, ~3 h em baixa. Tokens: as páginas oficiais divergem (258 tk/frame + 32 tk/s de áudio contra 70-280 tk/frame + 25 tk/s); confira <code>usage</code>. Agentic usa ≈ 10× menos tokens numa palestra de 1 h.</td>
             <td>—</td>
           </tr>
           <tr>
@@ -859,7 +866,7 @@ senão:
           <tr>
             <td>Geração de vídeo</td>
             <td><span class="pill bad">Não suporta</span></td>
-            <td><span class="pill ok">Sim</span> · <code>gemini-omni-1.1-flash</code> (3–10 s, 360p–4K, 24 fps; extensão e interpolação) via Interactions API.</td>
+            <td><span class="pill ok">Sim</span> · <code>gemini-omni-1.2-flash</code> (3 a 15 s, padrão 10 s; 360p, 720p padrão, 1080p e 4K por upscaling; edição e extensão) via Interactions API. FPS e interpolação no 1.2: <span class="unverified">UNVERIFIED</span>.</td>
             <td><span class="pill bad">Não suporta</span></td>
           </tr>
           <tr>
@@ -873,14 +880,14 @@ senão:
       </div>
 
       <h3 id="cmp-audio">3.7 Áudio <a class="anchor" href="#cmp-audio">¶</a></h3>
-      <p>Áudio é a modalidade com <strong>maior assimetria entre os providers</strong>. A OpenAI separa STT de arquivo (<code>gpt-transcribe</code>), STT em streaming (<code>gpt-live-transcribe</code>) e voz/Realtime (<code>gpt-realtime-2.1-mini</code>, <code>gpt-live-1</code>); o Gemini entende áudio nativamente na Interactions API, tem STT dedicado (<code>gemini-3.5-transcribe</code>), TTS (<code>gemini-3.8-flash-tts</code>) e Live API; a Anthropic <strong>não tem áudio</strong> na Messages API.</p>
+      <p>Áudio é a modalidade com <strong>maior assimetria entre os providers</strong>. A OpenAI separa STT de arquivo (<code>gpt-transcribe</code>), STT em streaming (<code>gpt-live-transcribe</code>) e voz/Realtime (<code>gpt-realtime-2.1-mini</code>, <code>gpt-live-1.1</code>); o Gemini entende áudio nativamente na Interactions API, tem STT dedicado (<code>gemini-3.5-transcribe</code>), TTS (<code>gemini-3.8-flash-tts</code>) e Live API; a Anthropic <strong>não tem áudio</strong> na Messages API.</p>
       <div class="table-wrap">
       <table>
         <thead><tr><th style="width:22%">Aspecto</th><th class="openai">OpenAI</th><th class="gemini">Google Gemini</th><th class="anthropic">Anthropic Claude</th></tr></thead>
         <tbody>
           <tr>
             <td>Áudio como entrada de modelo de chat</td>
-            <td><span class="pill bad">Não documentado</span> na Responses para <code>gpt-6-*</code> (a matriz de migração marca <code>input_audio</code> como "coming soon"). Use STT → Responses → voz ou Realtime.</td>
+            <td><span class="pill bad">Não documentado</span> na Responses para os modelos <code>gpt-6.x</code> (a matriz de migração marca "Audio" como "Coming soon"). Use STT → Responses → voz ou Realtime.</td>
             <td><span class="pill ok">Sim</span> — item <code>{type: "audio"}</code> (<code>data</code> ou <code>uri</code>). Entende fala, música, sons ambientais, emoção.</td>
             <td><span class="pill bad">Não documentado</span>. Pré-transcreva e mande como bloco <code>text</code>.</td>
           </tr>
@@ -917,7 +924,7 @@ senão:
           <tr>
             <td>Streaming bidirecional / Realtime</td>
             <td>
-              <span class="pill ok">Realtime API</span> (WebSocket/WebRTC): <code>gpt-realtime-2.1</code>, <code>gpt-realtime-2.1-mini</code>, <code>gpt-realtime-translate</code>, <code>gpt-realtime-whisper</code>; sessão <code>type: "transcription"</code> com <code>gpt-live-transcribe</code> (sem <code>server_vad</code>/<code>semantic_vad</code>). Eventos: <code>input_audio_buffer.append</code>, <code>response.output_audio.delta</code>. <code>gpt-live-1</code>: full duplex, <code>v1/live/sessions</code>, só áudio e texto, US$ 0,05/min.
+              <span class="pill ok">Realtime API</span> (WebSocket/WebRTC): <code>gpt-realtime-2.1</code>, <code>gpt-realtime-2.1-mini</code>, <code>gpt-realtime-translate</code>, <code>gpt-realtime-whisper</code>; sessão <code>type: "transcription"</code> com <code>gpt-live-transcribe</code> (sem <code>server_vad</code>/<code>semantic_vad</code>). Eventos: <code>input_audio_buffer.append</code>, <code>response.output_audio.delta</code>. <code>gpt-live-1.1</code>: full duplex, <code>v1/live/sessions</code>, só áudio e texto, US$ 0,05/min ativo e US$ 0,02/min em standby WebRTC (lido em 2026-11-26; <a href="guia_openai_modelos.html#s-voice-live">OpenAI Modelos §28.5</a>).
             </td>
             <td><span class="pill ok">Live API</span> (WebSocket): <code>gemini-3.8-live</code>, <code>gemini-3.8-live-extended-thinking</code>; áudio in/out, vídeo in, tool calls.</td>
             <td><span class="pill bad">Não suporta</span></td>
@@ -930,7 +937,7 @@ senão:
           </tr>
           <tr>
             <td>Saída de áudio (TTS)</td>
-            <td>Voz via Realtime: <code>gpt-realtime-2.1-mini</code> (o endpoint <code>/v1/audio/speech</code> não é suportado por ele) e <code>gpt-live-1</code>.</td>
+            <td>Voz via Realtime: <code>gpt-realtime-2.1-mini</code> (o endpoint <code>/v1/audio/speech</code> não é suportado por ele) e <code>gpt-live-1.1</code>.</td>
             <td><code>gemini-3.8-flash-tts</code> / <code>gemini-3.8-flash-lite-tts</code> via <code>response_format: {type: "audio"}</code>.</td>
             <td><span class="pill bad">Não suporta</span></td>
           </tr>
@@ -1025,10 +1032,10 @@ senão:
           </tr>
           <tr>
             <td>Pricing model</td>
-            <td>Billed at built-in-tools rate. Tiers maiores de <code>memory_limit</code> custam mais. Desde <strong>02/06/2026</strong>, sessões elegíveis são cobradas <strong>por minuto</strong>, com mínimo de 5 min por sessão; as taxas publicadas continuam expressas por 20 min. ZDR honrado.</td>
+            <td>Aplica-se a tarifa das ferramentas integradas. Tiers maiores de <code>memory_limit</code> custam mais. Sessões elegíveis são cobradas <strong>por minuto</strong>, com mínimo de 5 min por sessão; as taxas publicadas continuam expressas por 20 min. ZDR honrado.</td>
             <td><strong>Não-separately-metered</strong>. Paga input + output tokens no rate do modelo. Código gerado, charts gerados e stdout contam como output tokens.</td>
             <td>
-              <strong>$0.05/hora/container</strong> após <strong>1.550 horas grátis/org/mês</strong>. Mínimo <strong>5 min por sessão</strong>. <span class="pill ok">Free</span> quando combinado com <code>web_search</code> ou <code>web_fetch</code>. <strong>Não ZDR-eligible</strong>. Containers em paralelo: 10×min(5min, real) cada.
+              <strong>$0.05/hora/container</strong> após <strong>1.550 horas grátis/org/mês</strong>. Mínimo <strong>5 min por sessão</strong>. <span class="pill ok">Free</span> quando combinado com <code>web_search</code> ou <code>web_fetch</code>. <strong>Não ZDR-eligible</strong>. Containers em paralelo: some <code>max(5 min, duração real)</code> de cada container (dez containers usados por 1 min cada somam 50 container-minutos faturáveis, antes da cota grátis); o mínimo de 5 min é um piso, não um teto. A página oficial só declara o mínimo de 5 min e a tarifa por container (lida em 2026-11-27): aplicar o mínimo a cada container paralelo é <span class="unverified">UNVERIFIED</span>; veja <a href="guia_claude_api.html#c-code-execution-tool">Claude API §4.6</a>.
             </td>
           </tr>
           <tr>
@@ -1109,7 +1116,7 @@ senão:
       </div>
 
       <h3 id="cmp-cache">3.10 Caching / Context caching <a class="anchor" href="#cmp-cache">¶</a></h3>
-      <p>Cache de prefixo é uma alavanca de custo importante quando você reusa grandes contextos (PDFs, imagens, instruções). As três estratégias diferem: <strong>OpenAI</strong> faz caching automático na Responses (com TTL e breakpoints opcionais); <strong>Gemini</strong> tem dois modelos (implícito na Interactions API + explícito via <code>caches.create</code>, só no <code>generateContent</code> e não no <code>gemini-4-argon</code>); <strong>Anthropic</strong> exige opt-in explícito via <code>cache_control: ephemeral</code> em cada bloco cacheável.</p>
+      <p>Cache de prefixo é uma alavanca de custo importante quando você reusa grandes contextos (PDFs, imagens, instruções). As três estratégias diferem: <strong>OpenAI</strong> faz caching automático na Responses (com TTL e breakpoints opcionais); <strong>Gemini</strong> tem dois modelos (implícito na Interactions API + explícito via <code>caches.create</code>, só no <code>generateContent</code> e em nenhum modelo Gemini 4); <strong>Anthropic</strong> exige opt-in explícito via <code>cache_control: ephemeral</code> em cada bloco cacheável.</p>
       <div class="table-wrap">
       <table>
         <thead><tr><th style="width:22%">Aspecto</th><th class="openai">OpenAI</th><th class="gemini">Google Gemini</th><th class="anthropic">Anthropic Claude</th></tr></thead>
@@ -1136,24 +1143,24 @@ senão:
             <td>
               Implicit cache mín. tokens:
               <ul style="margin:0;padding-left:18px">
-                <li><code>gemini-4-argon</code> e <code>gemini-3.8-flash</code>: <strong>4.096 tk</strong>. No Argon, em multi-turn o novo request precisa acrescentar ≥ 2.050 tokens.</li>
+                <li><code>gemini-4-carbon</code>, <code>gemini-4-argon</code>, <code>gemini-4-hydrogen</code> e <code>gemini-3.8-flash</code>: <strong>4.096 tk</strong>. No Argon, em multi-turn o novo request precisa acrescentar ≥ 2.050 tokens.</li>
                 <li><code>gemini-3.5-flash-lite</code>: não listado na página de caching.</li>
               </ul>
-              Explicit: sem mínimo, sem máximo; não suportado no <code>gemini-4-argon</code>.
+              Explicit: sem mínimo, sem máximo; não suportado nos modelos Gemini 4 nem na Interactions API.
             </td>
-            <td><strong>512 tokens</strong> em Fable 5.1, Mythos 5.1, Opus 5.5, Sonnet 5.5 e Haiku 5.5 (página de prompt caching).</td>
+            <td><strong>512 tokens</strong> em Fable 5.2, Mythos 5.2, Opus 5.5, Sonnet 5.5 e Haiku 5.5 (página de prompt caching).</td>
           </tr>
           <tr>
             <td>TTL options</td>
-            <td><code>prompt_cache_options.ttl</code>: <code>"30m"</code> (default) ou <code>"12h"</code>.</td>
+            <td><code>prompt_cache_options.ttl</code>: <code>"30m"</code> é o default; <code>"12h"</code> é opt-in (desde 2026-10-20) e a escrita custa 2,5× o preço de input.</td>
             <td>Explicit: default <strong>1 hora</strong>, sem mínimo nem máximo. Configurável (<code>ttl="300s"</code>, etc.). Update via <code>caches.update</code>.</td>
             <td><code>"5m"</code> (default) ou <code>"1h"</code>.</td>
           </tr>
           <tr>
             <td>Fator de custo (cache read)</td>
-            <td>Leitura a 0,1× do input (0,05× no <code>gpt-6.1-sol</code>); escrita 1,25× (TTL 30m) ou 2,5× (TTL 12h). Tokens cacheados aparecem em <code>usage.input_tokens_details.cached_tokens</code>.</td>
+            <td>Leitura a 0,1× do input (0,05× nos <code>gpt-6.2-astra</code>, <code>gpt-6.2-sol</code> e <code>gpt-6.1-terra</code>); escrita 1,25× (TTL 30m) ou 2,5× (TTL 12h). Nos GPT-6.2 o TTL se define em <code>prompt_cache_options.ttl</code> (<code>"30m"</code> ou <code>"12h"</code>). Tokens cacheados aparecem em <code>usage.input_tokens_details.cached_tokens</code>.</td>
             <td>Explicit: <strong>~90% de desconto</strong> em cached input tokens + cobrança prorrateada de storage por TTL. Implicit: pass-through savings (até 75–90%).</td>
-            <td>Cache read é uma fração do preço de input, e essa fração <strong>varia por modelo</strong>: <strong>10%</strong> no Haiku 5.5 · <strong>5%</strong> no Sonnet 5.5 e no <code>claude-opus-5-5</code> · <strong>2,5%</strong> no Fable 5.1. Inspecione <code>usage.cache_creation_input_tokens</code> e <code>cache_read_input_tokens</code>. Ver preços exatos em §7.12.</td>
+            <td>Cache read é uma fração do preço de input, e essa fração <strong>varia por modelo</strong>: <strong>10%</strong> no Haiku 5.5 · <strong>5%</strong> no Sonnet 5.5 e no <code>claude-opus-5-5</code> · <strong>2,5%</strong> no Fable 5.2. Inspecione <code>usage.cache_creation_input_tokens</code> e <code>cache_read_input_tokens</code>. Ver preços exatos em §7.12.</td>
           </tr>
           <tr>
             <td>Modalidades e posicionamento</td>
@@ -1201,7 +1208,7 @@ senão:
               Para <strong>Paid Services</strong>: <em>"Google does not use your prompts (including associated system instructions, cached content, and files such as images, videos, or documents) or responses to improve our products"</em>.
             </td>
             <td>
-              Para ZDR real: prompts/responses podem ser logados por tempo limitado para abuse; <strong>ZDR precisa ser aprovado por projeto</strong>; <strong>Interactions API deve usar <code>store=false</code></strong> (o default é <code>store=true</code>, retenção de 55 dias no pago; <code>store=false</code> é incompatível com <code>background</code> e <code>previous_interaction_id</code>); <strong>File API storage é INDEPENDENTE do ZDR logging</strong> — os arquivos ficam armazenados até expirar (48 h) ou serem deletados manualmente; <strong>explicit caching</strong> (<code>cached_content</code>) deve ser <strong>evitado</strong> para footprint zero absoluto. O <strong>cache implícito</strong> fica só em RAM, isolado por projeto, TTL de 24 h, e não viola ZDR. <span class="pill bad">Pegadinha crítica</span> <strong>Grounding com Google Search/Maps SEMPRE retém prompts/output por 30 dias, SEM opt-out</strong>.
+              Para ZDR real: prompts/responses podem ser logados por tempo limitado para abuse; <strong>ZDR precisa ser aprovado por projeto</strong>; <strong>Interactions API deve usar <code>store=false</code></strong> (o default é <code>store=true</code>, retenção de 55 dias no pago; <code>store=false</code> é incompatível com <code>background</code> e <code>previous_interaction_id</code>); no <code>generateContent</code>, projetos pagos criados a partir de 2026-10-26 também armazenam as requests por padrão (<code>store=true</code>); <strong>File API storage é INDEPENDENTE do ZDR logging</strong> — os arquivos ficam armazenados até expirar (48 h) ou serem deletados manualmente; <strong>explicit caching</strong> (<code>cached_content</code>) deve ser <strong>evitado</strong> para footprint zero absoluto. O <strong>cache implícito</strong> fica só em RAM, isolado por projeto, TTL de 24 h, e não viola ZDR. <span class="pill bad">Pegadinha crítica</span> <strong>Grounding com Google Search/Maps SEMPRE retém prompts/output por 30 dias, SEM opt-out</strong>.
             </td>
           </tr>
           <tr>
@@ -1290,14 +1297,14 @@ senão:
   <h2 id="h-openai">OpenAI — deep dive <a class="anchor" href="#openai">¶</a></h2>
   <p class="prov-intro">
     A <strong>Responses API</strong> é a superfície multimodal adotada; áudio ao vivo usa <strong>Realtime</strong> (ou <strong>GPT-Live</strong>), e turnos delimitados usam STT → Responses → voz.
-    Modelos atuais: <code>gpt-6-astra</code> (flagship), <code>gpt-6.1-sol</code>, <code>gpt-6-sol</code> e <code>gpt-6-luna</code> (escala/custo).
-    Imagem: <code>gpt-image-2.5-flare</code> (padrão) e <code>gpt-image-2.5-sunburst</code> (edição de precisão).
-    Transcrição de arquivo: <code>gpt-transcribe</code>; streaming ao vivo: <code>gpt-live-transcribe</code>. Voz: <code>gpt-realtime-2.1</code> (+ <code>-mini</code>), <code>gpt-live-1</code>.
+    Modelos atuais (2026-11-17): <code>gpt-6.2-astra</code> (flagship), <code>gpt-6.2-sol</code> (uso diário: código e agentes), <code>gpt-6.1-terra</code> (trabalho visual e computer use) e <code>gpt-6-luna</code> (escala/custo).
+    Imagem: <code>gpt-image-2.6-sunburst</code> e <code>gpt-image-2.6-flare</code> (2026-11-04, Images API) e <code>gpt-image-2.5-flare</code> (padrão dos exemplos) e <code>gpt-image-2.5-sunburst</code> (edição de precisão), que também funcionam pela tool <code>image_generation</code>.
+    Transcrição de arquivo: <code>gpt-transcribe</code>; streaming ao vivo: <code>gpt-live-transcribe</code>. Voz: <code>gpt-realtime-2.1</code> (+ <code>-mini</code>), <code>gpt-live-1.1</code>.
     <strong>Não existe geração de vídeo na OpenAI.</strong>
   </p>
   <div class="callout ok">
-    <strong>Família GPT-6.</strong> Os quatro modelos aceitam texto + imagem como entrada direta, têm contexto de <strong>1.050.000</strong> tokens (até 922.000 de input / 128.000 de output) e as mesmas tools (<code>web_search</code>, <code>file_search</code>, <code>image_generation</code>, <code>code_interpreter</code>, <code>hosted_shell</code>, <code>apply_patch</code>, <code>skills</code>, <code>computer_use</code>, <code>mcp</code>, <code>tool_search</code>). PDF continua chegando como <code>input_file</code> (extração de texto + rasterização de página), não como modalidade própria. Esforço de raciocínio: <code>gpt-6-astra</code> e <code>gpt-6.1-sol</code> <strong>não aceitam</strong> <code>reasoning.effort: "none"</code> (Astra responde HTTP 400; o 6.1 Sol também não aceita <code>minimal</code>); <code>gpt-6-sol</code> e <code>gpt-6-luna</code> aceitam. Só o 6.1 Sol tem default documentado (<code>medium</code>); Astra, 6 Sol e 6 Luna não têm default documentado: passe <code>reasoning.effort</code> explicitamente. Preços Standard por 1M (input / cached / cache-write / output, até 272K): Astra US$ 10 / 1 / 12,50 / 50; 6.1 Sol US$ 2 / 0,10 / 2,50 / 10; 6 Luna US$ 0,10 / 0,01 / 0,125 / 0,50.
-    <span class="source-link">Fontes: <a href="https://developers.openai.com/api/docs/models/gpt-6-astra" target="_blank" rel="noopener">models/gpt-6-astra</a> · <a href="https://developers.openai.com/api/docs/models/gpt-6.1-sol" target="_blank" rel="noopener">models/gpt-6.1-sol</a> · <a href="https://developers.openai.com/api/docs/guides/latest-model" target="_blank" rel="noopener">guides/latest-model</a> · <a href="https://developers.openai.com/api/docs/pricing" target="_blank" rel="noopener">pricing</a>.</span>
+    <strong>Família GPT-6.</strong> Todos aceitam texto + imagem como entrada direta (saída só texto), têm contexto de <strong>1.050.000</strong> tokens (até 922.000 de input / 128.000 de output), endpoints Responses, Chat Completions e Batch, e as mesmas tools (<code>web_search</code>, <code>file_search</code>, <code>image_generation</code>, <code>code_interpreter</code>, <code>hosted_shell</code>, <code>apply_patch</code>, <code>skills</code>, <code>computer_use</code>, <code>mcp</code>, <code>tool_search</code>); a chamada de tools exige a Responses. PDF continua chegando como <code>input_file</code> (extração de texto + rasterização de página), não como modalidade própria. Esforço de raciocínio: <code>gpt-6.2-astra</code> e <code>gpt-6.2-sol</code> <strong>rejeitam</strong> <code>reasoning.effort: "none"</code> (use <code>low</code>; comece em <code>medium</code> numa integração nova); nos GPT-6.2 omita <code>temperature</code>, <code>top_p</code> e <code>top_logprobs</code>. O default de effort dos GPT-6.2 e a aceitação de <code>xhigh</code>/<code>max</code> neles <span class="unverified">UNVERIFIED</span> (as páginas dos modelos não os listam): passe <code>reasoning.effort</code> explicitamente. Já <code>gpt-6.1-terra</code> e <code>gpt-6-luna</code> aceitam <code>none</code> a <code>max</code>; só o <code>gpt-6.1-terra</code> tem <code>medium</code> como default documentado, e no <code>gpt-6-luna</code> o default não é documentado (passe <code>reasoning.effort</code> explicitamente). Preços Standard por 1M (input / cached / output, até 272K): Astra 6.2 US$ 8 / 0,40 / 40 (acima de 272K: 16 / 0,80 / 60); Sol 6.2 US$ 2 / 0,10 / 10 (acima de 272K: 4 / 0,20 / 15); Batch custa 50%. 6.1 Terra US$ 1 / 0,05 / 5; 6 Luna US$ 0,10 / 0,01 / 0,50 (geração anterior: <a href="guia_openai_modelos.html#s-catalogo">primeira tabela de preços do guia da OpenAI</a>). Escrita de cache de 30 min: 1,25× o input; 12 h: 2,5×. Os GPT-6.2 passam a descartar os reasoning items quando detectam edição de prefixo, downgrade de modelo ou troca de usuário/organização: mantenha o prefixo estável para preservar raciocínio e cache.
+    <span class="source-link">Fontes (lidas em 2026-11-17): <a href="https://developers.openai.com/api/docs/models/gpt-6.2-astra" target="_blank" rel="noopener">models/gpt-6.2-astra</a> · <a href="https://developers.openai.com/api/docs/models/gpt-6.2-sol" target="_blank" rel="noopener">models/gpt-6.2-sol</a> · <a href="https://developers.openai.com/api/docs/models/gpt-6.1-terra" target="_blank" rel="noopener">models/gpt-6.1-terra</a> · <a href="https://developers.openai.com/api/docs/guides/latest-model" target="_blank" rel="noopener">guides/latest-model</a> · <a href="https://developers.openai.com/api/docs/pricing" target="_blank" rel="noopener">pricing</a>.</span>
   </div>
 
   <h3 id="openai-overview">4.1 API surface <a class="anchor" href="#openai-overview">¶</a></h3>
@@ -1327,7 +1334,7 @@ senão:
         </tr>
         <tr>
           <td>Realtime API · GPT-Live</td>
-          <td>WebSocket / WebRTC sessions (<code>gpt-realtime-2.1</code>, <code>gpt-realtime-translate</code>, <code>gpt-realtime-whisper</code>); GPT-Live: <code>/v1/live/sessions</code> (<code>gpt-live-1</code>)</td>
+          <td>WebSocket / WebRTC sessions (<code>gpt-realtime-2.1</code>, <code>gpt-realtime-translate</code>, <code>gpt-realtime-whisper</code>); GPT-Live: <code>/v1/live/sessions</code> (<code>gpt-live-1.1</code>)</td>
           <td>Streaming audio (<code>input_audio_buffer.append</code>), text events; <code>gpt-realtime-2.1</code> accepts image input</td>
           <td>Streaming audio (<code>response.output_audio.delta</code>), streaming text transcripts</td>
           <td>Use for live, low-latency voice/translation/transcription. PCM16 / G.711 µ-law / G.711 A-law.</td>
@@ -1373,9 +1380,9 @@ senão:
 
   <h4>Pilha multimodal preferida</h4>
   <ul>
-    <li>Texto + visão + PDF + planilhas: Responses API com <code>gpt-6-astra</code> (máxima capacidade) ou <code>gpt-6.1-sol</code> / <code>gpt-6-luna</code> (custo/latência). Os exemplos deste guia usam <code>gpt-6-astra</code>; a chamada é idêntica em qualquer modelo com visão — só troque <code>model</code>.</li>
+    <li>Texto + visão + PDF + planilhas: Responses API com <code>gpt-6.2-astra</code> (máxima capacidade) ou <code>gpt-6.2-sol</code> / <code>gpt-6.1-terra</code> / <code>gpt-6-luna</code> (custo/latência). Os exemplos deste guia usam <code>gpt-6.2-astra</code>; a chamada é idêntica em qualquer modelo com visão — só troque <code>model</code>.</li>
     <li>Áudio delimitado: STT (<code>gpt-transcribe</code>) → Responses. Voz de saída e voz ao vivo: Realtime em <code>gpt-realtime-2.1</code> (ou <code>-mini</code> por custo) ou GPT-Live.</li>
-    <li>Imagem: <code>gpt-image-2.5-flare</code> (cotidiano, mais rápido) ou <code>gpt-image-2.5-sunburst</code> (precisão de edição), pela tool <code>image_generation</code> da Responses ou pela Images API.</li>
+    <li>Imagem: <code>gpt-image-2.5-flare</code> (cotidiano, mais rápido) ou <code>gpt-image-2.5-sunburst</code> (precisão de edição), pela tool <code>image_generation</code> da Responses ou pela Images API; <code>gpt-image-2.6-flare</code> / <code>gpt-image-2.6-sunburst</code> (2026-11-04) pela Images API (§4.2).</li>
     <li>Vídeo: apenas <em>entrada</em>, por extração de frames + transcrição (§4.6). Não há geração de vídeo OpenAI.</li>
   </ul>
 
@@ -1397,7 +1404,7 @@ image_part = {"type": "input_image", "image_url": "https://example.com/image.jpg
 # image_part = {"type": "input_image", "file_id": uploaded.id}                          # modo 3: Files API
 
 response = client.responses.create(
-    model="gpt-6-astra",
+    model="gpt-6.2-astra",
     input=[{"role": "user", "content": [
         {"type": "input_text", "text": "What is in this image?"},
         image_part,
@@ -1415,7 +1422,7 @@ print(response.output_text)
         <tr><td><code>low</code></td><td>Model receives a low-resolution 512×512 version. Fast and cheap; lose fine detail.</td></tr>
         <tr><td><code>high</code></td><td>High-fidelity tokenization (still bounded by the model's patch budget or tile budget).</td></tr>
         <tr><td><code>original</code></td><td>Largest patch budget; recommended for computer-use, click-accuracy, dense text, and spatially sensitive tasks.</td></tr>
-        <tr><td><code>auto</code></td><td>Default. <code>auto</code> equals <code>original</code> on <code>gpt-6-astra</code>.</td></tr>
+        <tr><td><code>auto</code></td><td>Default. <code>auto</code> equals <code>original</code> on <code>gpt-6-astra</code> (geração anterior; not yet documented for the GPT-6.2 models).</td></tr>
       </tbody>
     </table>
   </div>
@@ -1433,7 +1440,7 @@ print(response.output_text)
       </thead>
       <tbody>
         <tr>
-          <td><code>gpt-6-astra</code></td>
+          <td><code>gpt-6-astra</code> (geração anterior; a tabela oficial ainda não lista <code>gpt-6.2-astra</code> nem <code>gpt-6.2-sol</code>: <span class="unverified">UNVERIFIED</span>)</td>
           <td><code>low</code>, <code>high</code>, <code>original</code>, <code>auto</code></td>
           <td><code>low</code> cabe em 512×512. <code>high</code> → até <strong>2.500 patches</strong> E <strong>65.535 px</strong> de dimensão máxima (ambos valem). <code>original</code> preserva as dimensões (reduz só acima de 65.535 px). <code>auto</code> ≡ <code>original</code>.</td>
         </tr>
@@ -1441,7 +1448,7 @@ print(response.output_text)
     </table>
   </div>
   <div class="callout warn">
-    <strong>Teto de 30.000 patches por imagem.</strong> Em qualquer nível de <code>detail</code>, uma imagem que ainda precise de mais de 30.000 patches depois do redimensionamento é <em>rejeitada</em>, não reduzida. <code>gpt-6-sol</code>, <code>gpt-6-luna</code> e <code>gpt-6.1-sol</code> <strong>não constam</strong> na tabela de sizing oficial — <span class="unverified">UNVERIFIED</span> se seguem as regras do Astra; confira com <code>responses.input_tokens.count</code> (§4.11). <span class="source-link">Fonte: <a href="https://developers.openai.com/api/docs/guides/images-vision#model-sizing-behavior" target="_blank" rel="noopener">guides/images-vision#model-sizing-behavior</a>.</span>
+    <strong>Teto de 30.000 patches por imagem.</strong> Em qualquer nível de <code>detail</code>, uma imagem que ainda precise de mais de 30.000 patches depois do redimensionamento é <em>rejeitada</em>, não reduzida. <code>gpt-6.2-astra</code>, <code>gpt-6.2-sol</code>, <code>gpt-6.1-terra</code> e <code>gpt-6-luna</code> <strong>não constam</strong> na tabela de sizing oficial (lida em 2026-11-17) — <span class="unverified">UNVERIFIED</span> se seguem as regras do <code>gpt-6-astra</code>; confira com <code>responses.input_tokens.count</code> (§4.11). <span class="source-link">Fonte: <a href="https://developers.openai.com/api/docs/guides/images-vision#model-sizing-behavior" target="_blank" rel="noopener">guides/images-vision#model-sizing-behavior</a>.</span>
   </div>
 
   <h4>Token cost formulas</h4>
@@ -1453,10 +1460,10 @@ C. resized_patch_count = ceil(resized_width/32) * ceil(resized_height/32)
    &gt; 30.000 → a API rejeita a request
 D. billed_tokens = ceil(resized_patch_count * model_multiplier)
 </code></pre>
-  <p>O multiplicador é <strong>1,2</strong> em <code>gpt-6-astra</code> (os demais modelos GPT-6: <span class="unverified">UNVERIFIED</span>); aplica-se uma vez, só aos tokens da imagem. Exemplo oficial (<code>gpt-6-astra</code>, <code>detail: high</code>): 1024 × 1024 → 1024 patches → <code>ceil(1024 × 1,2) = 1.229</code> tokens; 2048 × 2048 → reduzida a 1600 × 1600 (2.500 patches) → 3.000 tokens. Use a <a href="https://developers.openai.com/api/docs/guides/image-cost-calculator" target="_blank" rel="noopener">calculadora oficial</a> para estimar uma imagem.</p>
+  <p>O multiplicador é <strong>1,2</strong> em <code>gpt-6-astra</code> (geração anterior; nos demais modelos GPT-6, inclusive os 6.2: <span class="unverified">UNVERIFIED</span>); aplica-se uma vez, só aos tokens da imagem. Exemplo oficial (<code>gpt-6-astra</code>, <code>detail: high</code>; o cálculo para os 6.2 não está publicado): 1024 × 1024 → 1024 patches → <code>ceil(1024 × 1,2) = 1.229</code> tokens; 2048 × 2048 → reduzida a 1600 × 1600 (2.500 patches) → 3.000 tokens. Use a <a href="https://developers.openai.com/api/docs/guides/image-cost-calculator" target="_blank" rel="noopener">calculadora oficial</a> para estimar uma imagem.</p>
 
-  <h4>Geração e edição de imagem — <code>gpt-image-2.5</code></h4>
-  <p><code>gpt-image-2.5-sunburst</code> (precisão de edição) e <code>gpt-image-2.5-flare</code> (geração cotidiana, mais rápida) são os modelos atuais (lançados em 2026-09-08). Dois caminhos: a Images API (<code>model</code> direto) ou a tool <code>image_generation</code> da Responses API, onde o modelo principal fica no topo e o de imagem vai dentro da tool.</p>
+  <h4>Geração e edição de imagem — <code>gpt-image-2.5</code> e <code>gpt-image-2.6</code></h4>
+  <p><code>gpt-image-2.5-sunburst</code> (precisão de edição) e <code>gpt-image-2.5-flare</code> (geração cotidiana, mais rápida) são modelos atuais (lançados em 2026-09-08). Os <code>gpt-image-2.6-sunburst</code> e <code>gpt-image-2.6-flare</code> (2026-11-04) acrescentam controle de complexidade, saída SVG e GIF animado pela Images API (<code>/v1/images/generations</code> e <code>/v1/images/edits</code>); a edição guiada por marcação vale para os modelos 2.5 e 2.6. Dois caminhos: a Images API (<code>model</code> direto) ou a tool <code>image_generation</code> da Responses API, onde o modelo principal fica no topo e o de imagem vai dentro da tool (suporte da tool aos modelos 2.6: <span class="unverified">UNVERIFIED</span>). Os exemplos e os parâmetros abaixo foram lidos para os modelos 2.5.</p>
 <pre><code class="language-python">import base64
 from openai import OpenAI
 
@@ -1473,7 +1480,7 @@ open("otter.png", "wb").write(base64.b64decode(result.data[0].b64_json))
 
 # 2) Responses API (tool): o modelo principal decide quando gerar
 response = client.responses.create(
-    model="gpt-6-astra",
+    model="gpt-6.2-astra",
     input="Generate an image of a gray tabby cat hugging an otter with an orange scarf",
     tools=[{"type": "image_generation", "model": "gpt-image-2.5-flare"}],
 )
@@ -1520,7 +1527,7 @@ pdf_part = {"type": "input_file", "file_id": uploaded.id}                  # rec
 # pdf_part = {"type": "input_file", "filename": "doc.pdf", "file_data": f"data:application/pdf;base64,{b64}"}
 
 response = client.responses.create(
-    model="gpt-6-astra",
+    model="gpt-6.2-astra",
     input=[{"role": "user", "content": [
         pdf_part,
         {"type": "input_text", "text": "Summarize the key points."},
@@ -1542,7 +1549,7 @@ uploaded = client.files.create(
 )
 
 response = client.responses.create(
-    model="gpt-6-astra",
+    model="gpt-6.2-astra",
     tools=[{
         "type": "code_interpreter",
         "container": {"type": "auto", "memory_limit": "4g", "file_ids": [uploaded.id]},
@@ -1616,7 +1623,7 @@ client = OpenAI()
 container = client.containers.create(name="analytics", memory_limit="16g")   # ou {"type": "auto", "memory_limit": "4g"} inline
 
 response = client.responses.create(
-    model="gpt-6-astra",
+    model="gpt-6.2-astra",
     tools=[{"type": "code_interpreter", "container": container.id}],
     tool_choice="required",
     input="use the python tool to plot y = x**2 and save it as plot.png",
@@ -1636,7 +1643,7 @@ for item in response.output:
   <ul>
     <li>API availability: Responses.</li>
     <li>Rate limit: <strong>100 RPM per org</strong> for Code Interpreter calls.</li>
-    <li>Pricing: billed at the built-in-tools rate; higher <code>memory_limit</code> tiers cost more (<code>1g</code> &lt; <code>4g</code> &lt; <code>16g</code> &lt; <code>64g</code>). Eligible container sessions are billed <strong>per minute</strong> with a 5-minute minimum (OpenAI changelog).</li>
+    <li>Preço: aplica-se a tarifa das ferramentas integradas; tiers maiores de <code>memory_limit</code> custam mais (<code>1g</code> &lt; <code>4g</code> &lt; <code>16g</code> &lt; <code>64g</code>). Sessões de container elegíveis são cobradas <strong>por minuto</strong>, com mínimo de 5 minutos.</li>
     <li>ZDR: ver §3.11.1 (armazenamento efêmero do container).</li>
   </ul>
 
@@ -1680,7 +1687,7 @@ content += [
 ]
 
 resp = client.responses.create(
-    model="gpt-6-astra",
+    model="gpt-6.2-astra",
     input=[{"role": "user", "content": content}],
 )
 print(resp.output_text)
@@ -1706,7 +1713,7 @@ print(resp.output_text)
         <tr>
           <td>Realtime sessions · GPT-Live</td>
           <td>Áudio bidirecional para agentes de voz e tradução ao vivo; também a saída de voz.</td>
-          <td><code>gpt-realtime-2.1</code>, <code>gpt-realtime-2.1-mini</code>, <code>gpt-realtime-translate</code>, <code>gpt-live-1</code></td>
+          <td><code>gpt-realtime-2.1</code>, <code>gpt-realtime-2.1-mini</code>, <code>gpt-realtime-translate</code>, <code>gpt-live-1.1</code></td>
         </tr>
       </tbody>
     </table>
@@ -1748,7 +1755,7 @@ print(transcription.text)
 
   <h4>Realtime audio</h4>
   <ul>
-    <li>Conecte por WebSocket ou WebRTC (<code>gpt-realtime-2.1</code>, <code>gpt-realtime-translate</code>, <code>gpt-realtime-whisper</code>); o GPT-Live (<code>gpt-live-1</code>) usa <code>/v1/live/sessions</code>.</li>
+    <li>Conecte por WebSocket ou WebRTC (<code>gpt-realtime-2.1</code>, <code>gpt-realtime-translate</code>, <code>gpt-realtime-whisper</code>); o GPT-Live (<code>gpt-live-1.1</code>) usa <code>/v1/live/sessions</code>.</li>
     <li>Envie PCM16 com <code>input_audio_buffer.append</code> (cada chunk ≤ 15 MB) e use VAD do servidor (<code>session.update</code>) ou faça commit manual; receba <code>response.output_audio.delta</code> (PCM base64). Sem MP3 ou Opus.</li>
     <li>Duração máxima de uma sessão Realtime: <strong>60 minutos</strong> (<a href="https://developers.openai.com/api/docs/guides/realtime-conversations" target="_blank" rel="noopener">realtime-conversations</a>).</li>
   </ul>
@@ -1806,11 +1813,11 @@ client.files.delete(uploaded.id)
     <table data-topic="openai-params-responses-top">
       <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Allowed values</th><th>Applies to</th></tr></thead>
       <tbody>
-        <tr><td><code>model</code></td><td>string</td><td>—</td><td>Any model with vision (<code>gpt-6-astra</code>, <code>gpt-6.1-sol</code>, <code>gpt-6-sol</code>, <code>gpt-6-luna</code>)</td><td>All</td></tr>
+        <tr><td><code>model</code></td><td>string</td><td>—</td><td>Any model with vision (<code>gpt-6.2-astra</code>, <code>gpt-6.2-sol</code>, <code>gpt-6.1-terra</code>, <code>gpt-6-luna</code>)</td><td>All</td></tr>
         <tr><td><code>tools[].type=image_generation</code></td><td>tool</td><td>—</td><td>Enables image generation as a tool call; <code>model</code> dentro da tool: <code>gpt-image-2.5-flare</code> ou <code>gpt-image-2.5-sunburst</code></td><td>Image output</td></tr>
         <tr><td><code>tools[].type=code_interpreter</code></td><td>tool</td><td>—</td><td>Enables <code>python</code> tool with attached files</td><td>Spreadsheet/data tasks</td></tr>
         <tr><td><code>tools[].container</code></td><td>object|string</td><td><code>{"type":"auto","memory_limit":"1g"}</code></td><td><code>{"type":"auto","memory_limit":"1g|4g|16g|64g","file_ids":[...]}</code> or <code>"cntr_..."</code></td><td>Code Interpreter</td></tr>
-        <tr><td><code>reasoning.effort</code></td><td>string</td><td>default documentado só em <code>gpt-6.1-sol</code> (<code>medium</code>); nos demais, passe explicitamente</td><td><code>gpt-6-astra</code> and <code>gpt-6.1-sol</code> reject <code>none</code> (HTTP 400)</td><td>All</td></tr>
+        <tr><td><code>reasoning.effort</code></td><td>string</td><td>default <code>medium</code> documentado só em <code>gpt-6.1-terra</code>; em <code>gpt-6-luna</code> e nos GPT-6.2, passe explicitamente (nos GPT-6.2, comece em <code>medium</code>)</td><td><code>gpt-6.2-astra</code> e <code>gpt-6.2-sol</code> rejeitam <code>none</code> (use <code>low</code>)</td><td>Todos</td></tr>
         <tr><td><code>instructions</code></td><td>string</td><td>null</td><td>System-level guidance</td><td>All</td></tr>
         <tr><td><code>store</code></td><td>bool</td><td>true</td><td>If false (or org has ZDR) no application state is retained</td><td>All</td></tr>
       </tbody>
@@ -1899,9 +1906,9 @@ client.files.delete(uploaded.id)
         <tr><td>Image input (vision models)</td><td>Input tokens</td><td><code>ceil(resized_patch_count * model_multiplier)</code> (see formulas above; multiplier 1.2 on the current models)</td></tr>
         <tr><td>PDF input</td><td>Input tokens</td><td>Sum of extracted-text tokens <strong>plus</strong> per-page image tokens (image tokenization as above)</td></tr>
         <tr><td>Spreadsheet input</td><td>Input tokens</td><td>Tokens for first 1,000 rows + auto-generated header/summary metadata</td></tr>
-        <tr><td>Image generation (<code>gpt-image-2.5-*</code>)</td><td>Image output tokens + image input tokens (for edits/refs)</td><td>Separate image-token pricing (US$ 8 input / US$ 2 cached / US$ 30 output per 1M); the vision calculator does not cover it.</td></tr>
+        <tr><td>Image generation (<code>gpt-image-2.5-*</code> e <code>gpt-image-2.6-*</code>)</td><td>Image output tokens + image input tokens (for edits/refs)</td><td>Separate image-token pricing (US$ 8 input / US$ 2 cached / US$ 30 output per 1M); the vision calculator does not cover it.</td></tr>
         <tr><td>Audio transcription (<code>gpt-transcribe</code>)</td><td>Per-minute</td><td>US$ 0,0045/min (<code>gpt-live-transcribe</code> and <code>gpt-realtime-whisper</code>: US$ 0,017/min).</td></tr>
-        <tr><td>Realtime sessions</td><td>Per-input/output token (audio + text streams)</td><td>Sessions ≤ 60 min; audio chunks ≤ 15 MB. GPT-Live (<code>gpt-live-1</code>): US$ 0,05/min, billed per second, backend billed separately.</td></tr>
+        <tr><td>Realtime sessions</td><td>Per-input/output token (audio + text streams)</td><td>Sessões ≤ 60 min; chunks de áudio ≤ 15 MB. GPT-Live (<code>gpt-live-1.1</code>): US$ 0,05/min ativo e US$ 0,02/min em standby WebRTC, cobrado por segundo; o backend é cobrado à parte.</td></tr>
         <tr><td>Code Interpreter</td><td>Per-container; eligible sessions billed per minute (5-minute minimum)</td><td>Higher <code>memory_limit</code> tiers cost more.</td></tr>
       </tbody>
     </table>
@@ -1911,15 +1918,16 @@ client.files.delete(uploaded.id)
   <h4>Image-input billing cheatsheet</h4>
   <ul>
     <li><strong><code>detail: low</code></strong> is the cheapest path; always use it for thumbnails, previews, or any "is this safe / what category" task.</li>
-    <li><strong><code>detail: high</code></strong> allows up to 2,500 patches on <code>gpt-6-astra</code> (<code>low</code> fits 512×512).</li>
+    <li><strong><code>detail: high</code></strong> allows up to 2,500 patches on <code>gpt-6-astra</code> (geração anterior) (<code>low</code> fits 512×512); GPT-6.2 sizing is not yet published.</li>
     <li><strong><code>detail: original</code></strong> preserves the image dimensions — by far the most expensive image input, but the only mode that captures dense text/small UI.</li>
     <li>Use Code Interpreter / Hosted Shell for cheap aggregations and escalate to vision only when the picture is the question.</li>
   </ul>
 
   <h4>Lacunas conhecidas</h4>
   <ul>
-    <li><span class="unverified">UNVERIFIED</span> Image sizing and multiplier of <code>gpt-6-sol</code>, <code>gpt-6-luna</code> and <code>gpt-6.1-sol</code> — absent from the official sizing table.</li>
-    <li>Default <code>reasoning.effort</code> de <code>gpt-6-astra</code>, <code>gpt-6-sol</code> e <code>gpt-6-luna</code>: não documentado (o Astra rejeita <code>none</code> com 400, como o <code>gpt-6.1-sol</code>); passe o effort explicitamente.</li>
+    <li><span class="unverified">UNVERIFIED</span> Dimensionamento de imagem e multiplicador de <code>gpt-6.2-astra</code>, <code>gpt-6.2-sol</code>, <code>gpt-6.1-terra</code> e <code>gpt-6-luna</code>: ausentes da tabela oficial de dimensionamento (lida em 2026-11-17).</li>
+    <li>Default <code>reasoning.effort</code> de <code>gpt-6.2-astra</code> e <code>gpt-6.2-sol</code>: não documentado, e <code>xhigh</code>/<code>max</code> nos GPT-6.2 não constam nas páginas dos modelos; os GPT-6.2 rejeitam <code>none</code> (use <code>low</code>; comece em <code>medium</code>). Passe o effort explicitamente.</li>
+    <li><span class="unverified">UNVERIFIED</span> Disponibilidade de áudio/Realtime nos GPT-6.2 e snapshots datados dos GPT-6.2: as páginas dos modelos não os citam.</li>
   </ul>
 </section>
 <section class="provider provider-gemini" id="gemini" aria-labelledby="h-gemini">
@@ -1932,16 +1940,17 @@ client.files.delete(uploaded.id)
     <table>
       <thead><tr><th>Item</th><th>Valor atual</th><th>Fonte</th></tr></thead>
       <tbody>
-        <tr><td>Endpoint</td><td><code>POST https://generativelanguage.googleapis.com/v1beta/interactions</code>; autenticação pelo header <code>x-goog-api-key</code>. Service tier, Live API, Agents, Webhooks, cache, Computer Use e MCP tool existem só em <code>v1beta</code>.</td><td><a href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">interactions-overview</a> · <a href="https://ai.google.dev/gemini-api/docs/apiv" target="_blank" rel="noopener">apiv</a></td></tr>
-        <tr><td>Python</td><td><code>google-genai</code> <strong>2.33.0</strong> (PyPI, 2026-10-23; Python ≥ 3.10; fixe <code>&lt;3.0.0</code>)</td><td><a href="https://pypi.org/pypi/google-genai/json" target="_blank" rel="noopener">PyPI</a></td></tr>
-        <tr><td>JavaScript / TypeScript</td><td><code>@google/genai</code> <strong>2.31.0</strong> (npm, 2026-10-23; Node ≥ 20)</td><td><a href="https://registry.npmjs.org/@google/genai" target="_blank" rel="noopener">npm</a></td></tr>
-        <tr><td>Java · Go</td><td><code>com.google.genai:google-genai</code> <strong>1.79.0</strong> (Maven <code>lastUpdated</code> 2026-10-23) · <code>google.golang.org/genai</code> <strong>v1.76.0</strong> (2026-10-22)</td><td><a href="https://repo1.maven.org/maven2/com/google/genai/google-genai/maven-metadata.xml" target="_blank" rel="noopener">Maven Central</a> · <a href="https://proxy.golang.org/google.golang.org/genai/@latest" target="_blank" rel="noopener">proxy.golang.org</a></td></tr>
-        <tr><td>Mínimo para o schema <code>steps[]</code></td><td>Python e JS <strong>≥ 2.3.0</strong> (<code>count_tokens</code> exige SDK &gt; 2.0.0)</td><td><a href="https://ai.google.dev/gemini-api/docs/interactions-overview#sdks" target="_blank" rel="noopener">interactions-overview#sdks</a></td></tr>
-        <tr><td>Modelo dos exemplos</td><td><code>gemini-3.8-flash</code> (GA 2026-09-02; Flash atual). Lite atual: <code>gemini-3.5-flash-lite</code>. Modelos e preços: <a href="#gi-models">§6.12</a>.</td><td><a href="https://ai.google.dev/gemini-api/docs/models" target="_blank" rel="noopener">models</a></td></tr>
+        <tr><td>Endpoint</td><td><code>POST https://generativelanguage.googleapis.com/v1beta/interactions</code>; autenticação pelo header <code>x-goog-api-key</code>. Os SDKs 3.x usam <code>v1</code> por padrão; Live API, Agents, Webhooks, cache explícito, saída de áudio (<code>speech_config</code>) e transcrição (<code>transcription_config</code>) existem só em <code>v1beta</code>, e a Interactions, o Service tier, o Computer Use e o MCP tool existem nas duas versões.</td><td><a href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">interactions-overview</a> · <a href="https://ai.google.dev/gemini-api/docs/apiv" target="_blank" rel="noopener">apiv</a></td></tr>
+        <tr><td>Python</td><td><code>google-genai</code> <strong>3.6.1</strong> (PyPI, 2026-11-18; Python ≥ 3.11)</td><td><a href="https://pypi.org/pypi/google-genai/json" target="_blank" rel="noopener">PyPI</a></td></tr>
+        <tr><td>JavaScript / TypeScript</td><td><code>@google/genai</code> <strong>3.6.1</strong> (npm, 2026-11-18; Node ≥ 22)</td><td><a href="https://registry.npmjs.org/@google/genai" target="_blank" rel="noopener">npm</a></td></tr>
+        <tr><td>Java · Go</td><td><code>com.google.genai:google-genai</code> <strong>2.6.0</strong> (Maven Central, lido em 2026-11-26) · <code>google.golang.org/genai</code> <strong>v1.79.1</strong> (proxy.golang.org, lido em 2026-11-26)</td><td><a href="https://repo1.maven.org/maven2/com/google/genai/google-genai/maven-metadata.xml" target="_blank" rel="noopener">Maven Central</a> · <a href="https://proxy.golang.org/google.golang.org/genai/@latest" target="_blank" rel="noopener">proxy.golang.org</a></td></tr>
+        <tr><td>Modelo dos exemplos</td><td><code>gemini-4-hydrogen</code> (Flash do Gemini 4, para execução); alta frequência: <code>gemini-4-neon</code>; julgamento: <code>gemini-4-carbon</code> e <code>gemini-4-argon</code>. Só o exemplo de cache explícito (§5.2) usa <code>gemini-3.8-flash</code> (GA 2026-09-02; segue Stable). Lite (geração anterior; o Gemini 4 não tem equivalente): <code>gemini-3.5-flash-lite</code>. Modelos e preços: <a href="#gi-models">§6.12</a>.</td><td><a href="https://ai.google.dev/gemini-api/docs/models" target="_blank" rel="noopener">models</a></td></tr>
       </tbody>
     </table>
   </div>
-  <p class="small">Aviso oficial do README do <code>python-genai</code>: na próxima versão major (3.0) a chamada automática de funções deixará de ser acionável por <code>Models.generate_content</code> (só por <code>Chats</code>); quem depende disso fixa <code>google-genai&lt;3.0.0</code> (<a href="https://github.com/googleapis/python-genai/blob/main/README.md" target="_blank" rel="noopener">README</a>).</p>
+  <div class="callout warn">
+    <strong>Mudanças incompatíveis do <code>google-genai</code> 3.0.0 (2026-11-05).</strong> (1) A versão de API padrão da Gemini Developer API passa a <code>v1</code> (Vertex não muda); os aliases <code>gemini-flash-latest</code>, <code>gemini-flash-lite-latest</code> e <code>gemini-pro-latest</code> existem só em <code>v1beta</code>. Para voltar: <code>GOOGLE_GENAI_API_VERSION=beta</code> ou <code>HttpOptions(api_version="v1beta")</code>. (2) O cliente HTTP padrão é o <code>httpx2</code> e o <code>httpx</code> deixa de ser instalado; para mantê-lo, instale <code>google-genai[httpx]</code> e defina <code>GOOGLE_GENAI_HTTP_CLIENT=httpx</code>. (3) Na Interactions, <code>CodeExecutionResultStep.result</code> deixa de ser string e vira a união <code>CodeExecutionResultStepResult</code>. Se você usa o <code>google-adk</code> 2.15.1, ele exige <code>google-genai&gt;=2.34,&lt;3</code> (PyPI, lido em 2026-11-27): use a série 3.x em outro ambiente (<a href="guia_gemini_interactions_api.html#s-visao-geral-sdks">guia da Interactions API, §1.4</a>). Fontes: <a href="https://github.com/googleapis/python-genai/releases/tag/v3.0.0" target="_blank" rel="noopener">release v3.0.0</a> · <a href="https://aistudio.google.com/docs/api-versions" target="_blank" rel="noopener">api-versions</a>. A chamada automática de funções (AFC) por <code>Models.generate_content</code> na 3.x: <span class="unverified">UNVERIFIED</span> (as notas da 3.0.0 não a citam).
+  </div>
 
   <h3 id="gemini-generatecontent-only">5.2 O que ainda só existe no <code>generateContent</code> <a class="anchor" href="#gemini-generatecontent-only">¶</a></h3>
   <p>A overview oficial da Interactions API lista três recursos do <code>generateContent</code> que <strong>ainda não estão</strong> disponíveis nela. Só para eles use <code>generate_content</code>; todo o resto do guia usa a Interactions API:</p>
@@ -1950,13 +1959,14 @@ client.files.delete(uploaded.id)
       <thead><tr><th>Recurso</th><th>Situação na Interactions API</th><th>O que fazer</th></tr></thead>
       <tbody>
         <tr><td>Batch API (50 % do preço)</td><td>Não disponível</td><td><code>client.batches.create(...)</code> sobre <code>generateContent</code>; para jobs em lote de embeddings use <code>client.batches.create_embeddings</code> (§5.3).</td></tr>
-        <tr><td>Cache explícito (<code>client.caches</code>)</td><td>Não disponível; o cache <strong>implícito</strong> funciona via <code>previous_interaction_id</code> e em modo stateless</td><td>Exemplo abaixo. Mínimo do cache implícito: 4.096 tokens no 3.8 Flash e no Argon (o <code>gemini-4-argon</code> não tem cache explícito); o <code>gemini-3.5-flash-lite</code> não consta na página de caching.</td></tr>
-        <tr><td>Automatic Function Calling (Python)</td><td>Não disponível; o ciclo <code>function_call</code> → <code>function_result</code> é manual (<a href="#gi-tools">§6.10</a>)</td><td>Fixe <code>google-genai&lt;3.0.0</code> se depende de AFC no <code>generate_content</code>, ou use o loop manual.</td></tr>
+        <tr><td>Cache explícito (<code>client.caches</code>)</td><td>Não disponível; o cache <strong>implícito</strong> funciona via <code>previous_interaction_id</code> e em modo stateless</td><td>Exemplo abaixo. Mínimo do cache implícito: 4.096 tokens no 3.8 Flash, no Hydrogen, no Neon, no Carbon e no Argon (nenhum modelo Gemini 4 tem cache explícito); o <code>gemini-3.5-flash-lite</code> não consta na página de caching.</td></tr>
+        <tr><td>Automatic Function Calling (Python)</td><td>Não disponível; o ciclo <code>function_call</code> → <code>function_result</code> é manual (<a href="#gi-tools">§6.10</a>)</td><td>Use o loop manual; o comportamento da AFC do SDK na 3.x está na nota acima (<span class="unverified">UNVERIFIED</span>).</td></tr>
       </tbody>
     </table>
   </div>
 
   <h4>Cache explícito de um PDF grande (Python, <code>generate_content</code>)</h4>
+  <p>O exemplo usa o <code>gemini-3.8-flash</code> porque o cache explícito só existe no <code>generateContent</code> com modelos Gemini 3: nenhum Gemini 4 o aceita (página <code>caching</code>, lida em 2026-11-27).</p>
 <pre><code>from google import genai
 from google.genai import types
 
@@ -2018,7 +2028,7 @@ print(len(result.embeddings[0].values))  # 768 (renormalizado automaticamente)</
   <!-- 6.1 API surface                                                      -->
   <!-- =================================================================== -->
   <h3 id="gi-overview">6.1 API surface <a class="anchor" href="#gi-overview">¶</a></h3>
-  <p>A Interactions API expõe um único recurso <code>interactions</code> sob <code>https://generativelanguage.googleapis.com/v1beta/interactions</code> (<code>v1</code> também aceita Interactions; o default dos SDKs é <code>v1beta</code>, e Service Tier, Live API, Agents, Webhooks, cache, Computer Use e a tool MCP existem só em <code>v1beta</code>). O estado da conversa é persistido no servidor por padrão (<code>store=true</code>): os turnos seguintes referenciam <code>previous_interaction_id</code> em vez de reenviar o histórico. Autenticação pelo header <code>x-goog-api-key: $GEMINI_API_KEY</code>. <code>steps[]</code> é o único schema de resposta, com SDK Python/JS <strong>≥ 2.3.0</strong>.</p>
+  <p>A Interactions API expõe um único recurso <code>interactions</code> sob <code>https://generativelanguage.googleapis.com/v1beta/interactions</code> (<code>v1</code> também aceita Interactions; o default dos SDKs é <code>v1beta</code>, e Service Tier, Live API, Agents, Webhooks, cache, Computer Use e a tool MCP existem só em <code>v1beta</code>). O estado da conversa é persistido no servidor por padrão (<code>store=true</code>): os turnos seguintes referenciam <code>previous_interaction_id</code> em vez de reenviar o histórico. Autenticação pelo header <code>x-goog-api-key: $GEMINI_API_KEY</code>. <code>steps[]</code> é o único schema de resposta, com SDK Python/JS <strong>3.6.1</strong>.</p>
 
   <h4>RPCs e endpoints REST</h4>
   <div class="table-wrap">
@@ -2037,12 +2047,12 @@ print(len(result.embeddings[0].values))  # 768 (renormalizado automaticamente)</
   <h4>SDKs</h4>
   <div class="table-wrap">
     <table>
-      <thead><tr><th>Linguagem</th><th>Pacote</th><th>Mínimo para Interactions</th><th>Última versão</th></tr></thead>
+      <thead><tr><th>Linguagem</th><th>Pacote</th><th>Última versão</th></tr></thead>
       <tbody>
-        <tr><td>Python</td><td><code>google-genai</code></td><td><code>&gt;= 2.3.0</code></td><td><strong>2.33.0</strong> (PyPI, 2026-10-23)</td></tr>
-        <tr><td>JavaScript / TypeScript</td><td><code>@google/genai</code></td><td><code>&gt;= 2.3.0</code></td><td><strong>2.31.0</strong> (npm, 2026-10-23)</td></tr>
-        <tr><td>Java</td><td><code>com.google.genai:google-genai</code></td><td>—</td><td><strong>1.79.0</strong> (Maven Central, <code>lastUpdated</code> 2026-10-23)</td></tr>
-        <tr><td>Go</td><td><code>google.golang.org/genai</code></td><td>—</td><td><strong>v1.76.0</strong> (2026-10-22)</td></tr>
+        <tr><td>Python</td><td><code>google-genai</code></td><td><strong>3.6.1</strong> (PyPI, 2026-11-18)</td></tr>
+        <tr><td>JavaScript / TypeScript</td><td><code>@google/genai</code></td><td><strong>3.6.1</strong> (npm, 2026-11-18)</td></tr>
+        <tr><td>Java</td><td><code>com.google.genai:google-genai</code></td><td><strong>2.6.0</strong> (Maven Central, lido em 2026-11-26)</td></tr>
+        <tr><td>Go</td><td><code>google.golang.org/genai</code></td><td><strong>v1.79.1</strong> (proxy.golang.org, lido em 2026-11-26)</td></tr>
       </tbody>
     </table>
   </div>
@@ -2056,14 +2066,14 @@ print(len(result.embeddings[0].values))  # 768 (renormalizado automaticamente)</
       <button class="code-tab" role="tab" aria-selected="false" data-lang="curl">curl</button>
     </div>
     <div class="code-pane" data-lang="python" data-active="true">
-<pre><code><span class="tok-c"># pip install "google-genai&gt;=2.3.0"</span>
+<pre><code><span class="tok-c"># pip install "google-genai==3.6.1"</span>
 <span class="tok-k">from</span> google <span class="tok-k">import</span> genai
 
 <span class="tok-c"># lê GEMINI_API_KEY do ambiente</span>
 client = genai.Client()
 
 interaction = client.interactions.create(
-    model=<span class="tok-s">"gemini-3.8-flash"</span>,
+    model=<span class="tok-s">"gemini-4-hydrogen"</span>,
     input=<span class="tok-s">"Explique a IA em poucas palavras."</span>,
 )
 <span class="tok-n">print</span>(interaction.output_text)        <span class="tok-c"># atalho: une últimos blocos de texto</span>
@@ -2071,12 +2081,12 @@ interaction = client.interactions.create(
 <span class="tok-n">print</span>(interaction.usage.total_tokens)</code></pre>
     </div>
     <div class="code-pane" data-lang="ts">
-<pre><code><span class="tok-c">// npm i @google/genai@^2.3.0</span>
+<pre><code><span class="tok-c">// npm i @google/genai@^3.4.0</span>
 <span class="tok-k">import</span> { GoogleGenAI } <span class="tok-k">from</span> <span class="tok-s">"@google/genai"</span>;
 <span class="tok-k">const</span> ai = <span class="tok-k">new</span> GoogleGenAI({});
 
 <span class="tok-k">const</span> interaction = <span class="tok-k">await</span> ai.interactions.create({
-  model: <span class="tok-s">"gemini-3.8-flash"</span>,
+  model: <span class="tok-s">"gemini-4-hydrogen"</span>,
   input: <span class="tok-s">"Explique a IA em poucas palavras."</span>,
 });
 console.log(interaction.outputText);
@@ -2087,7 +2097,7 @@ console.log(interaction.id);</code></pre>
   -H <span class="tok-s">"x-goog-api-key: $GEMINI_API_KEY"</span> \
   -H <span class="tok-s">"Content-Type: application/json"</span> \
   -d <span class="tok-s">'{
-    "model": "gemini-3.8-flash",
+    "model": "gemini-4-hydrogen",
     "input": "Explique a IA em poucas palavras."
   }'</span></code></pre>
     </div>
@@ -2144,11 +2154,11 @@ client = genai.Client()
     image_b64 = base64.b64encode(f.read()).decode(<span class="tok-s">"utf-8"</span>)
 
 interaction = client.interactions.create(
-    model=<span class="tok-s">"gemini-3.8-flash"</span>,
+    model=<span class="tok-s">"gemini-4-hydrogen"</span>,
     input=[
         {<span class="tok-s">"type"</span>: <span class="tok-s">"text"</span>,  <span class="tok-s">"text"</span>: <span class="tok-s">"Gere uma receita para os scones mostrados."</span>},
         {<span class="tok-s">"type"</span>: <span class="tok-s">"image"</span>, <span class="tok-s">"data"</span>: image_b64, <span class="tok-s">"mime_type"</span>: <span class="tok-s">"image/jpeg"</span>},
-        <span class="tok-c"># alternativa por referência: {"type": "image", "uri": img.uri, "mime_type": img.mime_type, "resolution": "high"}</span>
+        <span class="tok-c"># alternativa por referência: {"type": "image", "uri": img.uri, "mime_type": img.mime_type}</span>
     ],
 )
 <span class="tok-n">print</span>(interaction.output_text)</code></pre>
@@ -2239,7 +2249,7 @@ client = genai.Client()
 pdf = client.files.upload(file=<span class="tok-s">"relatorio.pdf"</span>)
 
 interaction = client.interactions.create(
-    model=<span class="tok-s">"gemini-3.8-flash"</span>,
+    model=<span class="tok-s">"gemini-4-hydrogen"</span>,
     input=[
         {<span class="tok-s">"type"</span>: <span class="tok-s">"text"</span>, <span class="tok-s">"text"</span>: <span class="tok-s">"Resuma o relatório em 5 bullets em PT-BR."</span>},
         {<span class="tok-s">"type"</span>: <span class="tok-s">"document"</span>, <span class="tok-s">"uri"</span>: pdf.uri, <span class="tok-s">"mime_type"</span>: pdf.mime_type},
@@ -2254,18 +2264,29 @@ interaction = client.interactions.create(
   <!-- 6.4 Office / Excel / CSV                                             -->
   <!-- =================================================================== -->
   <h3 id="gi-office">6.4 Office / Excel / CSV <a class="anchor" href="#gi-office">¶</a></h3>
-  <p>A Interactions API <strong>não tem conversores nativos</strong> para <code>.docx</code>, <code>.pptx</code>, <code>.xlsx</code>, <code>.csv</code>. Há dois caminhos práticos:</p>
-  <ol>
-    <li><strong>Pré-converter para PDF</strong> (LibreOffice headless, Aspose, scripts) e enviar como <code>{type:"document", mime_type:"application/pdf"}</code> — preserva layout, gráficos e tabelas com fidelidade visual.</li>
-    <li><strong>Usar a tool <code>code_execution</code></strong> (ver <a href="#gi-code">§6.5</a>) e deixar o sandbox Python ler o arquivo com <code>openpyxl</code>, <code>pandas</code>, <code>python-docx</code>, <code>python-pptx</code>. Útil para analytics e transformação tabular.</li>
-  </ol>
-  <p>A página oficial de documentos afirma que só PDF é entendido visualmente; TXT, Markdown, HTML, XML e similares são extraídos como texto puro (tags, formatação e gráficos se perdem). <code>.docx</code>, <code>.pptx</code> e <code>.xlsx</code> não são citados como entrada nativa: siga os dois caminhos acima.</p>
+  <p>Desde 2026-11-18 (changelog) a Gemini API <strong>aceita Office e OpenDocument diretamente</strong> em <code>{type:"document"}</code>, com Gemini 4 e Gemini 3 (páginas <code>document-processing</code> e <code>changelog</code>, lidas em 2026-11-26). CSV não consta na lista de tipos dessa página; TXT, Markdown, HTML e XML continuam sendo extraídos como texto puro (tags, formatação e gráficos se perdem).</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Extensões</th><th>Gemini 4 e posteriores</th><th>Gemini 3</th></tr></thead>
+    <tbody>
+      <tr><td><code>.docx</code>, <code>.dotx</code>, <code>.odt</code>, <code>.pptx</code></td><td>Imagens de página/slide (medium, ~560 tokens/página)</td><td>Texto extraído mais imagens embutidas (a doc lista isso para Gemini 3)</td></tr>
+      <tr><td><code>.doc</code>, <code>.ppt</code>, <code>.odp</code></td><td>Imagens de página/slide (medium, ~560 tokens/página)</td><td>Imagens de página/slide</td></tr>
+      <tr><td><code>.xlsx</code>, <code>.xls</code></td><td>Todas as planilhas: valores, fórmulas e nomes</td><td>Todas as planilhas como CSV, só valores</td></tr>
+      <tr><td><code>.ods</code></td><td>Todas as planilhas: valores, fórmulas e nomes</td><td>Todas as planilhas: valores, fórmulas e nomes</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>Limites</strong> (valem para o arquivo inteiro, mesmo com recorte): 50 MB por arquivo; 1.000 páginas de PDF; 2.000 páginas ou slides de Office/OpenDocument; 50.000 células por planilha; páginas renderizadas em imagens de 2 megapixels (288 DPI). Tokens por página: ~280 (<code>low</code>), ~560 (<code>medium</code>, padrão) e ~1.120 (<code>high</code>) em Gemini 4 e 3. MIME types, p. ex. <code>.docx</code> = <code>application/vnd.openxmlformats-officedocument.wordprocessingml.document</code>, <code>.xlsx</code> = <code>application/vnd.openxmlformats-officedocument.spreadsheetml.sheet</code>, <code>.pptx</code> = <code>application/vnd.openxmlformats-officedocument.presentationml.presentation</code>.</p>
+  <p><strong>Recorte (slicing)</strong> — só Gemini 3 e 4, em entradas do usuário e em resultados de ferramentas (changelog de 2026-11-18). Adicione <code>processing: {"type": "static", ...}</code> ao bloco <code>document</code>: <code>page_options</code> (<code>start_page</code> e <code>end_page</code>, 1-indexados e inclusivos; <code>content_layers</code>: <code>page_image</code> e/ou <code>page_text</code>, padrão <code>page_image</code>) para PDFs, documentos e apresentações; <code>spreadsheet_options</code> (<code>sheet_index</code> 1-indexado, <code>visible_cells</code> em notação A1 como <code>A1:G40</code>, <code>content_layers</code>: <code>data</code>, <code>formulas</code>, <code>visual</code>; padrão <code>data</code> e <code>formulas</code>). <code>resolution</code> (<code>low</code>/<code>medium</code>/<code>high</code>) fica no bloco externo. Só as páginas, abas e camadas escolhidas são processadas e cobradas. O exemplo oficial usa <code>gemini-4-hydrogen</code>; a lista de modelos para o recorte é "Gemini 4 e Gemini 3" (não foi executado aqui).</p>
+<pre><code>{"type": "document", "uri": f.uri, "mime_type": "application/pdf",
+ "processing": {"type": "static",
+                "page_options": {"start_page": 3, "end_page": 7, "content_layers": ["page_image"]}}}</code></pre>
+  <p>Continuam úteis dois caminhos: <strong>pré-converter para PDF</strong> (LibreOffice headless, Aspose) quando a fidelidade visual de formatos fora da lista importa, e a tool <code>code_execution</code> (<a href="#gi-code">§6.5</a>) com <code>openpyxl</code>, <code>pandas</code>, <code>python-docx</code>, <code>python-pptx</code> para analytics e transformação tabular.</p>
+  <p class="small">Respostas de função: a página de function calling lida em 2026-11-26 lista <code>document</code> (PDF, CSV, Office e OpenDocument), <code>audio</code> e <code>video</code> em <code>function_result.result</code> (Gemini 3+), mas não descreve recorte nesse ponto; o changelog diz que o recorte também vale em respostas de função (leitura parcial da página de function calling: UNVERIFIED o restante).</p>
 
   <h4>Exemplo — XLSX via code_execution</h4>
 <pre><code>xlsx = client.files.upload(file=<span class="tok-s">"vendas_2026.xlsx"</span>)
 
 interaction = client.interactions.create(
-    model=<span class="tok-s">"gemini-3.8-flash"</span>,
+    model=<span class="tok-s">"gemini-4-hydrogen"</span>,
     input=[
         {<span class="tok-s">"type"</span>: <span class="tok-s">"text"</span>, <span class="tok-s">"text"</span>: <span class="tok-s">"Gere um gráfico de barras de vendas por região e devolva o PNG."</span>},
         {<span class="tok-s">"type"</span>: <span class="tok-s">"document"</span>, <span class="tok-s">"uri"</span>: xlsx.uri,
@@ -2292,7 +2313,7 @@ interaction = client.interactions.create(
   <h4>Exemplo Python — CSV analytics</h4>
 <pre><code>csv_file = client.files.upload(file=<span class="tok-s">"transactions.csv"</span>)
 interaction = client.interactions.create(
-    model=<span class="tok-s">"gemini-3.8-flash"</span>,
+    model=<span class="tok-s">"gemini-4-hydrogen"</span>,
     input=[
         {<span class="tok-s">"type"</span>: <span class="tok-s">"text"</span>, <span class="tok-s">"text"</span>: <span class="tok-s">"Qual o ticket médio por mês no CSV? Retorne uma tabela markdown."</span>},
         {<span class="tok-s">"type"</span>: <span class="tok-s">"document"</span>, <span class="tok-s">"uri"</span>: csv_file.uri, <span class="tok-s">"mime_type"</span>: <span class="tok-s">"text/csv"</span>},
@@ -2315,9 +2336,9 @@ interaction = client.interactions.create(
   <!-- 6.6 Vídeo                                                            -->
   <!-- =================================================================== -->
   <h3 id="gi-video">6.6 Vídeo <a class="anchor" href="#gi-video">¶</a></h3>
-  <p>Vídeos entram como <code>{type: "video"}</code>. O campo <code>processing</code> do item escolhe como o vídeo vai ao contexto: <code>"static"</code> (default em todos os modelos: frames a 1 FPS, áudio a 1 Kbps mono, timestamps por segundo) ou <code>"agentic"</code> (o modelo navega pela linha do tempo e carrega só a transcrição, os frames e o áudio de que precisa; a doc cita até 88% menos tokens e ~7% mais qualidade em vídeo longo). O modo agentic está disponível em Gemini 3.8 Flash e 3.5 Flash-Lite. Comece por <code>agentic</code> em vídeos longos ou perguntas sobre momentos específicos; use <code>static</code> em clipes &lt; 5 min sensíveis a latência ou quando precisar de precisão por frame. Recorte (<code>start_offset</code>/<code>end_offset</code>) e FPS customizado só existem em <code>static</code>. <code>resolution</code> (tokens por frame) e <code>processing</code> são independentes e combináveis.</p>
+  <p>Vídeos entram como <code>{type: "video"}</code>. O campo <code>processing</code> do item escolhe como o vídeo vai ao contexto: <code>"static"</code> (default em todos os modelos: frames a 1 FPS, áudio a 1 Kbps mono, timestamps por segundo) ou <code>"agentic"</code> (o modelo navega pela linha do tempo e carrega só a transcrição, os frames e o áudio de que precisa; a doc cita até 88% menos tokens e ~7% mais qualidade em vídeo longo). O modo agentic está disponível em Gemini 4 Carbon, Argon, Neon e Hydrogen, 3.8 Flash, 3.6 Flash e 3.5 Flash-Lite (<code>aistudio.google.com/docs/video-understanding</code>, lida em 2026-11-26). Comece por <code>agentic</code> em vídeos longos ou perguntas sobre momentos específicos; use <code>static</code> em clipes &lt; 5 min sensíveis a latência ou quando precisar de precisão por frame. Recorte (<code>start_offset</code>/<code>end_offset</code>, strings em segundos como <code>"1200s"</code>), FPS customizado (maior que 0 e até 24; padrão 1) e <code>content_layers</code> (<code>frames</code>, <code>audio</code>, <code>transcript</code>; padrão frames e áudio) só estão descritos para <code>static</code>; <code>start_offset</code> além da duração devolve <code>400 INVALID_ARGUMENT</code> e <code>end_offset</code> além da duração é cortado no fim. Para vídeo longo, a doc sugere pedir <code>"transcript"</code> para achar os instantes e depois <code>frames</code> naquele trecho com <code>fps</code> maior (p. ex. 2.0). <code>resolution</code> (tokens por frame) e <code>processing</code> são independentes e combináveis.</p>
 
-  <p>MIME aceitos: <code>video/mp4</code>, <code>video/mpeg</code>, <code>video/mov</code>, <code>video/avi</code>, <code>video/x-flv</code>, <code>video/mpg</code>, <code>video/webm</code>, <code>video/wmv</code>, <code>video/3gpp</code>.</p>
+  <p>MIME aceitos de vídeo: lista única em <a href="guia_gemini_interactions_api.html#s-video">guia da Interactions API, §10.2</a>.</p>
 
   <h4>Limites</h4>
   <div class="table-wrap">
@@ -2344,7 +2365,7 @@ vid = client.files.upload(file=<span class="tok-s">"aula_45min.mp4"</span>)
     vid = client.files.get(name=vid.name)
 
 interaction = client.interactions.create(
-    model=<span class="tok-s">"gemini-3.8-flash"</span>,
+    model=<span class="tok-s">"gemini-4-hydrogen"</span>,
     input=[
         {
             <span class="tok-s">"type"</span>: <span class="tok-s">"video"</span>,
@@ -2363,7 +2384,7 @@ interaction = client.interactions.create(
 
   <h4>Exemplo Python — recorte e FPS customizado (somente static)</h4>
 <pre><code>interaction = client.interactions.create(
-    model=<span class="tok-s">"gemini-3.8-flash"</span>,
+    model=<span class="tok-s">"gemini-4-hydrogen"</span>,
     input=[
         {
             <span class="tok-s">"type"</span>: <span class="tok-s">"video"</span>,
@@ -2371,8 +2392,8 @@ interaction = client.interactions.create(
             <span class="tok-s">"mime_type"</span>: vid.mime_type,
             <span class="tok-s">"processing"</span>: {
                 <span class="tok-s">"type"</span>: <span class="tok-s">"static"</span>,
-                <span class="tok-s">"start_offset"</span>: 1200,
-                <span class="tok-s">"end_offset"</span>: 1500,
+                <span class="tok-s">"start_offset"</span>: <span class="tok-s">"1200s"</span>,
+                <span class="tok-s">"end_offset"</span>: <span class="tok-s">"1500s"</span>,
                 <span class="tok-s">"fps"</span>: 0.5,               <span class="tok-c"># 1 frame a cada 2 s</span>
             },
         },
@@ -2380,7 +2401,7 @@ interaction = client.interactions.create(
     ],
 )
 <span class="tok-n">print</span>(interaction.output_text)</code></pre>
-  <p class="small">Os valores <code>1200</code>/<code>1500</code> são os do exemplo oficial; a página não declara a unidade dos offsets (leitura como segundos: <span class="unverified">UNVERIFIED</span>).</p>
+  <p class="small">Os offsets são strings em segundos com sufixo <code>s</code> (<code>"1200s"</code>, <code>"10.5s"</code>), conforme a página <code>video-understanding</code> lida em 2026-11-26; números sem o sufixo não aparecem na doc atual (o exemplo anterior deste guia os usava e a unidade era UNVERIFIED). Não executado aqui.</p>
 
   <p>YouTube: passe a URL pública em <code>{"type": "video", "uri": "https://www.youtube.com/watch?v=..."}</code>.</p>
 
@@ -2393,6 +2414,8 @@ interaction = client.interactions.create(
   <!-- =================================================================== -->
   <h3 id="gi-audio">6.7 Áudio <a class="anchor" href="#gi-audio">¶</a></h3>
   <p>Áudio entra como <code>{type: "audio"}</code>. Internamente o Gemini reamostra para 16 Kbps e combina canais em mono; a página de áudio cobra <strong>32 tokens/segundo</strong> (1 minuto = 1.920 tokens; 1 hora ≈ 115.200) e entende também sons que não são fala. A página <code>media-resolution</code> dá <strong>25 tokens/s</strong> para Gemini 3 — divergência oficial não reconciliada; use <code>usage</code> para custo real.</p>
+  <p><strong>Recorte de áudio</strong> (changelog de 2026-11-18; <code>aistudio.google.com/docs/audio</code>, lida em 2026-11-26): adicione <code>processing</code> ao bloco <code>audio</code> com <code>type: "static"</code> e, opcionalmente, <code>start_offset</code> (padrão <code>"0s"</code>; além da duração devolve <code>400 INVALID_ARGUMENT</code>) e <code>end_offset</code> (padrão o fim do arquivo; cortado se exceder; deve ser maior que <code>start_offset</code>), ambos como strings em segundos (<code>"60s"</code>, <code>"12.5s"</code>). Só o trecho é cobrado. A página não lista os modelos que suportam o recorte (os exemplos usam <code>gemini-4-hydrogen</code>): UNVERIFIED. Limites lidos na mesma página: até 9,5 horas por prompt e 20 MB por requisição inline.</p>
+  <p><strong>Edição por voz</strong> (2026-11-17): <code>gemini-3.5-transcribe</code> e <code>gemini-3.5-transcribe-live</code> editam, reescrevem e formatam conteúdo a partir de instruções por voz, aplicadas à fala ditada ou a um texto existente em <code>source_text</code> (changelog, lido em 2026-11-26; a página de transcrição não foi lida).</p>
 
   <p>MIME aceitos: <code>audio/wav</code>, <code>audio/mp3</code>, <code>audio/mpeg</code>, <code>audio/aiff</code>, <code>audio/aac</code>, <code>audio/ogg</code>, <code>audio/flac</code>, <code>audio/m4a</code>, <code>audio/opus</code>, <code>audio/alaw</code>, <code>audio/mulaw</code>, <code>audio/l16</code>, <code>audio/webm</code>.</p>
 
@@ -2407,7 +2430,7 @@ interaction = client.interactions.create(
 <pre><code>audio = client.files.upload(file=<span class="tok-s">"reuniao.wav"</span>)
 
 interaction = client.interactions.create(
-    model=<span class="tok-s">"gemini-3.8-flash"</span>,
+    model=<span class="tok-s">"gemini-4-hydrogen"</span>,
     input=[
         {<span class="tok-s">"type"</span>: <span class="tok-s">"text"</span>, <span class="tok-s">"text"</span>: <span class="tok-s">"Resuma a reunião em 3 bullets e liste as decisões."</span>},
         {<span class="tok-s">"type"</span>: <span class="tok-s">"audio"</span>, <span class="tok-s">"uri"</span>: audio.uri, <span class="tok-s">"mime_type"</span>: audio.mime_type},
@@ -2501,7 +2524,7 @@ f = client.files.upload(file=<span class="tok-s">"aula.mp4"</span>)
 <span class="tok-k">assert</span> f.state == <span class="tok-s">"ACTIVE"</span>, f.state
 
 interaction = client.interactions.create(
-    model=<span class="tok-s">"gemini-3.8-flash"</span>,
+    model=<span class="tok-s">"gemini-4-hydrogen"</span>,
     input=[
         {<span class="tok-s">"type"</span>: <span class="tok-s">"text"</span>, <span class="tok-s">"text"</span>: <span class="tok-s">"Resuma."</span>},
         {<span class="tok-s">"type"</span>: <span class="tok-s">"video"</span>, <span class="tok-s">"uri"</span>: f.uri, <span class="tok-s">"mime_type"</span>: f.mime_type},
@@ -2512,11 +2535,11 @@ interaction = client.interactions.create(
   <!-- 6.9 Cache implícito                                                  -->
   <!-- =================================================================== -->
   <h3 id="gi-cache">6.9 Cache implícito <a class="anchor" href="#gi-cache">¶</a></h3>
-  <p>Na Interactions API o caching é <strong>implícito</strong>: habilitado automaticamente e best-effort, tanto no modo stateful (com <code>previous_interaction_id</code>) quanto no stateless. O mínimo é de <strong>4.096 tokens</strong> de prefixo idêntico no Gemini 3.8 Flash e no <code>gemini-4-argon</code> (no Argon, em multi-turn só se cacheia o request anterior inteiro se ≥ 2.050 tokens foram adicionados; o <code>gemini-3.5-flash-lite</code> não consta na página de caching). Em hits, os tokens cacheados aparecem em <code>usage.total_cached_tokens</code> e <code>usage.cached_tokens_by_modality</code>; ausência de hit é comportamento possível, não falha de contrato. O cache <em>explícito</em> (<code>client.caches</code>) não existe na Interactions: use o exemplo de <a href="#gemini-generatecontent-only">§5.2</a> (o Argon não tem cache explícito). Fonte: <a href="https://ai.google.dev/gemini-api/docs/caching" target="_blank" rel="noopener">caching</a>.</p>
+  <p>Na Interactions API o caching é <strong>implícito</strong>: habilitado automaticamente e best-effort, tanto no modo stateful (com <code>previous_interaction_id</code>) quanto no stateless. O mínimo é de <strong>4.096 tokens</strong> de prefixo idêntico no Gemini 3.8 Flash e nos modelos <code>gemini-4-hydrogen</code>, <code>gemini-4-carbon</code> e <code>gemini-4-argon</code> (nos modelos Gemini 4, em multi-turn e loops de agente só se cacheia o request anterior inteiro se o novo request adicionar ≥ 2.050 tokens, contando saída, thoughts e resultados de função; o <code>gemini-3.5-flash-lite</code> não consta na página de caching). Para ter hit, ponha o conteúdo grande e comum (PDF, vídeo, áudio) no início do prompt e a pergunta variável depois. Em hits, os tokens cacheados aparecem em <code>usage.total_cached_tokens</code> e <code>usage.cached_tokens_by_modality</code>; ausência de hit é comportamento possível, não falha de contrato. O cache <em>explícito</em> (<code>client.caches</code>) não existe na Interactions: use o exemplo de <a href="#gemini-generatecontent-only">§5.2</a> (nenhum modelo Gemini 4 tem cache explícito). Fonte: <a href="https://aistudio.google.com/docs/caching" target="_blank" rel="noopener">aistudio.google.com/docs/caching</a>, lido em 2026-11-12.</p>
 
   <h4>Exemplo Python — cache implícito via multi-turn</h4>
 <pre><code>i1 = client.interactions.create(
-    model=<span class="tok-s">"gemini-3.8-flash"</span>,
+    model=<span class="tok-s">"gemini-4-hydrogen"</span>,
     input=[
         {<span class="tok-s">"type"</span>: <span class="tok-s">"text"</span>, <span class="tok-s">"text"</span>: <span class="tok-s">"Leia este edital."</span>},
         {<span class="tok-s">"type"</span>: <span class="tok-s">"document"</span>, <span class="tok-s">"uri"</span>: edital.uri, <span class="tok-s">"mime_type"</span>: <span class="tok-s">"application/pdf"</span>},
@@ -2525,7 +2548,7 @@ interaction = client.interactions.create(
 <span class="tok-n">print</span>(i1.usage.total_input_tokens, i1.usage.total_cached_tokens)
 <span class="tok-c"># segundo turno: prefixo idêntico cacheado server-side</span>
 i2 = client.interactions.create(
-    model=<span class="tok-s">"gemini-3.8-flash"</span>,
+    model=<span class="tok-s">"gemini-4-hydrogen"</span>,
     previous_interaction_id=i1.id,
     input=<span class="tok-s">"Qual o objeto da licitação?"</span>,
 )
@@ -2547,7 +2570,7 @@ i2 = client.interactions.create(
         <tr><td><code>code_execution</code></td><td>sandbox Python (<a href="#gi-code">§6.5</a>)</td></tr>
         <tr><td><code>url_context</code></td><td>o servidor busca URLs citadas no prompt</td></tr>
         <tr><td><code>file_search</code></td><td>RAG sobre stores (<code>file_search_store_names</code>, <code>top_k</code>, <code>metadata_filter</code>)</td></tr>
-        <tr><td><code>mcp_server</code></td><td>MCP remoto (<code>name</code>, <code>url</code>, <code>headers</code>, <code>allowed_tools</code>). Divergência oficial: a overview lista o MCP remoto como não suportado no Gemini 3, a página de function calling o documenta: <span class="unverified">UNVERIFIED</span>; a alternativa segura é expor as operações como tools <code>function</code> no cliente</td></tr>
+        <tr><td><code>mcp_server</code></td><td>MCP remoto (<code>name</code>, <code>url</code>, <code>headers</code>, <code>allowed_tools</code>). Com Gemini 3 há conflito na documentação oficial, descrito só no <a href="guia_gemini_interactions_api.html#s-visao-geral-limites">guia da Interactions API, §1.5</a> (<span class="unverified">UNVERIFIED</span>); a alternativa segura é expor as operações como tools <code>function</code> no cliente</td></tr>
         <tr><td><code>google_search</code> · <code>google_maps</code> · <code>retrieval</code> · <code>computer_use</code></td><td>grounding com Search e Maps, Vertex AI Search e agente de UI no browser</td></tr>
       </tbody>
     </table>
@@ -2594,12 +2617,12 @@ i2 = client.interactions.create(
     <table>
       <thead><tr><th>Campo</th><th>Valores</th><th>Notas</th></tr></thead>
       <tbody>
-        <tr><td><code>temperature</code></td><td>float</td><td><span class="badge warn">não defina</span>: o <code>gemini-4-argon</code> ignora o campo (doc oficial: "ignored if provided") e o Antigravity retorna 400.</td></tr>
+        <tr><td><code>temperature</code></td><td>float</td><td><span class="badge warn">não defina</span>: o <code>gemini-4-argon</code> ignora o campo (doc oficial: "ignored if provided"), o <code>gemini-4-hydrogen</code>, o <code>gemini-4-neon</code> e o <code>gemini-4-carbon</code> também (página <a href="https://aistudio.google.com/docs/whats-new-gemini-4-carbon" target="_blank" rel="noopener">whats-new-gemini-4-carbon</a>, lida em 2026-11-27) e o Antigravity retorna 400.</td></tr>
         <tr><td><code>top_p</code></td><td>float</td><td>Mesmo caso de <code>temperature</code> (e <code>top_k</code>); <code>candidate_count</code> não é suportado.</td></tr>
         <tr><td><code>seed</code></td><td>int</td><td>Reprodutibilidade.</td></tr>
         <tr><td><code>stop_sequences</code></td><td>string[]</td><td>Gatilhos de parada.</td></tr>
         <tr><td><code>max_output_tokens</code></td><td>int</td><td>Limite de saída.</td></tr>
-        <tr><td><code>thinking_level</code></td><td><code>low</code> | <code>medium</code> (default) | <code>high</code>; <code>minimal</code> é o default do <code>gemini-3.5-flash-lite</code></td><td>No <code>gemini-3.8-flash</code> <code>minimal</code> retorna erro.</td></tr>
+        <tr><td><code>thinking_level</code></td><td><code>low</code> | <code>medium</code> (default) | <code>high</code>; <code>minimal</code> é o default do <code>gemini-3.5-flash-lite</code>; <code>gemini-4-hydrogen</code> e <code>gemini-4-neon</code> também aceitam <code>xhigh</code> e têm default <code>high</code></td><td>No <code>gemini-3.8-flash</code> e nos modelos Gemini 4 <code>minimal</code> retorna erro (página <code>thinking</code>, lida em 2026-11-26).</td></tr>
         <tr><td><code>thinking_summaries</code></td><td><code>auto</code> | <code>none</code></td><td>Streaming de <code>thought_summary</code>.</td></tr>
         <tr><td><code>speech_config</code></td><td>lista <code>[{"voice": ...}]</code> ou objeto com <code>speakers</code>/<code>mode</code></td><td>Voz e falantes para TTS (<a href="#gi-audio">§6.7</a>).</td></tr>
         <tr><td><code>tool_choice</code></td><td><code>auto</code> | <code>any</code> | <code>none</code> | <code>validated</code> (ou <code>ToolChoiceConfig</code>)</td><td>Controle de seleção de tool.</td></tr>
@@ -2652,12 +2675,16 @@ response_format = {
     <table>
       <thead><tr><th>Model ID</th><th>Categoria</th><th>Status e notas</th></tr></thead>
       <tbody>
-        <tr><td><code>gemini-3.8-flash</code> <span class="pill new">atual</span></td><td>Flash 1M, multimodal — <strong>default recomendado</strong></td><td>GA desde 2026-09-02; 1.048.576 tokens de entrada / 65.536 de saída; entrada texto/imagem/vídeo/áudio/PDF, saída texto. Thinking <code>low</code>/<code>medium</code> (default)/<code>high</code> (<code>minimal</code> retorna erro). Modelo default do Computer Use e do Antigravity; vídeo agentic. US$ 0,75/3,75 até 2026-12-31 (depois 1,50/7,50).</td></tr>
-        <tr><td><code>gemini-4-argon</code> <span class="pill new">2026-10-13</span></td><td>Gemini 4, saída só texto</td><td>GA desde 2026-10-13; 1.048.576 tokens de entrada / 65.536 de saída (até 1.048.576 em <em>long decode</em>: exige <code>background=True</code> e <code>max_output_tokens</code> &gt; 65.536; retoma via <code>continuation_token</code>). Thinking <code>low</code>/<code>medium</code> (default)/<code>high</code>; <code>temperature</code>/<code>top_p</code>/<code>top_k</code> ignorados; só cache implícito; sem Live API; fora do tier gratuito. US$ 2,00/10,00 até 2026-11-30 (depois 4,00/20,00). Entrada: texto, imagem, vídeo, áudio e PDF.</td></tr>
+        <tr><td><code>gemini-4-neon</code></td><td>Gemini 4 intermediário, saída só texto — alta frequência</td><td>GA desde 2026-11-18. 1.048.576 tokens de contexto compartilhados entre entrada, thinking e saída / 65.536 de saída síncrona (até 1.048.576 em <em>long decode</em>). Entrada texto/imagem/vídeo/áudio/PDF. Thinking <code>low</code>/<code>medium</code>/<code>high</code> (default)/<code>xhigh</code>; <code>minimal</code> retorna erro. Sem Live API, sem geração de imagem ou áudio, sem cache explícito (só implícito, mín. 4.096 tokens) e sem tier gratuito; <code>temperature</code>/<code>top_p</code>/<code>top_k</code> ignorados. Suporta Interactions, Computer Use, tool retrieval (Preview), Batch, Flex e Priority. US$ 3/15 (cache 0,15); Batch/Flex 1,50/7,50; Priority 5,40/27 (<code>aistudio.google.com/docs/models/gemini-4-neon</code>, lida em 2026-11-26).</td></tr>
+        <tr><td><code>genie-4</code></td><td>Mundo interativo em tempo real (vídeo 720p a 24 fps com áudio estéreo), Interactions <code>v1beta</code></td><td>GA desde 2026-11-19; saída de vídeo e áudio por streaming, sessão de até 120 s; US$ 1,50 entrada / US$ 9 texto / US$ 17,50 vídeo por 1M tokens (≈ US$ 0,10/s); sem tier gratuito, Batch, Flex, Priority nem cache. Para vídeo offline de duração fixa use <code>gemini-omni-1.2-flash</code>. Ver <a href="guia_gemini_interactions_api.html#s-genie">guia da Interactions API §18.11</a> (<code>aistudio.google.com/docs/models/genie-4</code>, lida em 2026-11-26).</td></tr>
+        <tr><td><code>gemini-4-hydrogen</code></td><td>Tier Flash do Gemini 4, saída só texto — execução; modelo dos exemplos deste guia</td><td>GA desde 2026-11-12; único ID, sem alias. 1.048.576 tokens de contexto / 65.536 de saída (até 1.048.576 em <em>long decode</em>). Entrada texto/imagem/vídeo/áudio/PDF. Thinking <code>low</code>/<code>medium</code>/<code>high</code> (default)/<code>xhigh</code>; <code>minimal</code> retorna erro. Sem Live API, sem geração de imagem ou áudio e sem cache explícito (só implícito, mín. 4.096 tokens); <code>temperature</code>/<code>top_p</code>/<code>top_k</code> ignorados. Suporta Interactions, Computer Use, Batch, Flex e Priority. US$ 1,50/7,50 (cache 0,075); Batch/Flex 0,75/3,75; Priority 2,70/13,50.</td></tr>
+        <tr><td><code>gemini-4-carbon</code></td><td>Gemini 4, saída só texto — julgamento</td><td>GA desde 2026-11-10; 1.048.576 tokens de contexto / 65.536 de saída (até 1.048.576 em <em>long decode</em>). Entrada texto/imagem/vídeo/áudio/PDF. Thinking <code>low</code>/<code>medium</code> (default)/<code>high</code>; só cache implícito; sem Live API; Computer Use, Batch, Flex e Priority. <code>temperature</code>/<code>top_p</code>/<code>top_k</code> ignorados (<code>aistudio.google.com/docs/whats-new-gemini-4-carbon</code>, lida em 2026-11-27). US$ 2,00/10,00 até 2026-11-30 (depois 4,00/20,00).</td></tr>
+        <tr><td><code>gemini-3.8-flash</code> <span class="pill ok">Stable</span></td><td>Flash 1M, multimodal (geração anterior); usado só no exemplo de cache explícito (§5.2)</td><td>GA desde 2026-09-02; segue Stable (geração anterior), sem data de desligamento. 1.048.576 tokens de entrada / 65.536 de saída; entrada texto/imagem/vídeo/áudio/PDF, saída texto. Thinking <code>low</code>/<code>medium</code> (default)/<code>high</code> (<code>minimal</code> retorna erro). Computer Use; vídeo agentic. US$ 0,75/3,75 até 2026-12-31 (depois 1,50/7,50).</td></tr>
+        <tr><td><code>gemini-4-argon</code></td><td>Gemini 4, saída só texto</td><td>GA desde 2026-10-13; 1.048.576 tokens de entrada / 65.536 de saída (até 1.048.576 em <em>long decode</em>: exige <code>background=True</code> e <code>max_output_tokens</code> &gt; 65.536; retoma via <code>continuation_token</code>). Thinking <code>low</code>/<code>medium</code> (default)/<code>high</code>; <code>temperature</code>/<code>top_p</code>/<code>top_k</code> ignorados; só cache implícito; sem Live API; fora do tier gratuito. US$ 2,00/10,00 até 2026-11-30 (depois 4,00/20,00). Entrada: texto, imagem, vídeo, áudio e PDF.</td></tr>
         <tr><td><code>gemini-3.5-flash-lite</code></td><td>Lite atual (alto volume, subagentes)</td><td>Estável (GA 2026-07-21); US$ 0,30/2,50; thinking default <code>minimal</code>; vídeo agentic.</td></tr>
-        <tr><td><code>gemini-nano-banana-2.1</code> <span class="pill new">2026-10-06</span></td><td>Geração de imagem (Nano Banana 2.1)</td><td>GA desde 2026-10-06; 131.072 in / 32.768 out; thinking <code>minimal</code>/<code>medium</code> (default)/<code>high</code>; sem caching, function calling nem structured outputs; Batch suportado. US$ 1,50 entrada / 7,50 saída de texto e thinking / 30,00 saída de imagem (≈ US$ 0,0336 a 1K, 0,0504 a 2K, 0,113 a 4K).</td></tr>
-        <tr><td><code>gemini-omni-1.1-flash</code> <span class="pill new">atual</span></td><td>Geração/edição de vídeo conversacional</td><td>GA desde 2026-08-27; clipes de 3–10 s (360p/720p/1080p/4K, 24 fps), extensão e interpolação. Segundo a página do modelo, é Interactions-only; a lista de modelos da overview da Interactions não o cita (divergência oficial não resolvida). US$ 1,50 entrada / 17,50 saída de vídeo.</td></tr>
-        <tr><td><code>gemini-3.8-flash-tts</code> · <code>gemini-3.8-flash-lite-tts</code></td><td>Text-to-speech</td><td>GA desde 2026-09-22. US$ 0,50 entrada (texto) / 9,00 (áudio) até 2026-12-31 no Flash TTS.</td></tr>
+        <tr><td><code>gemini-nano-banana-2.1</code></td><td>Geração de imagem (Nano Banana 2.1)</td><td>GA desde 2026-10-06; 131.072 in / 32.768 out; thinking <code>minimal</code>/<code>medium</code> (default)/<code>high</code>; sem caching, function calling nem structured outputs; Batch suportado. US$ 1,50 entrada / 7,50 saída de texto e thinking / 30,00 saída de imagem (≈ US$ 0,0336 a 1K, 0,0504 a 2K, 0,113 a 4K).</td></tr>
+        <tr><td><code>gemini-omni-1.2-flash</code></td><td>Geração/edição de vídeo conversacional</td><td>GA desde 2026-11-05; clipes de 3 a 15 s (padrão 10 s; 360p, 720p padrão, 1080p e 4K por upscaling), com edição e extensão pela Interactions API. O <code>gemini-omni-1.1-flash</code> roteia para ele a partir de 2026-12-03, cobrado pela tarifa do 1.2. A lista de modelos da overview da Interactions não o cita (divergência oficial não resolvida). US$ 1,50 entrada / 12,00 saída de vídeo (≈ US$ 0,07 por segundo a 720p; 5.792 tokens de saída por segundo de vídeo 720p).</td></tr>
+        <tr><td><code>gemini-3.8-flash-tts</code> · <code>gemini-3.8-flash-lite-tts</code></td><td>Text-to-speech</td><td>GA desde 2026-09-22. Flash TTS: US$ 0,50 entrada (texto) / 9,00 (áudio) até 2026-12-31; a partir de 2027-01-01, US$ 1,00 / 18,00 (<code>aistudio.google.com/docs/pricing</code>, lida em 2026-11-27). Preço e reajuste do <code>gemini-3.8-flash-lite-tts</code>: <span class="unverified">UNVERIFIED</span>.</td></tr>
         <tr><td><code>gemini-3.5-transcribe</code></td><td>Speech-to-text dedicado</td><td>GA desde 2026-08-26; 85+ idiomas, diarização, timestamps por palavra. US$ 2,00 entrada de áudio.</td></tr>
         <tr><td><code>gemini-embedding-2</code></td><td>Embeddings multimodais</td><td>GA desde 2026-04-22; não passa por <code>interactions.create</code> (§5.3).</td></tr>
         <tr><td><code>lyria-3.5</code></td><td>Música</td><td>GA desde 2026-09-03.</td></tr>
@@ -2665,7 +2692,7 @@ response_format = {
       </tbody>
     </table>
   </div>
-  <p><strong>Live API</strong> é uma superfície WebSocket separada: <code>gemini-3.8-live</code> e <code>gemini-3.8-live-extended-thinking</code> não aparecem na lista de modelos suportados pela Interactions. <strong>Computer Use</strong> usa a tool <code>computer_use</code> com <code>gemini-3.8-flash</code> (recomendado), <code>gemini-3.5-flash-lite</code> ou <code>gemini-4-argon</code> (Preview). Os agentes (<code>deep-research-preview-04-2026</code>, <code>deep-research-max-preview-04-2026</code>, <code>antigravity-preview-09-2026</code>) estão em <a href="#gi-tools">§6.10</a>.</p>
+  <p><strong>Live API</strong> é uma superfície WebSocket separada: <code>gemini-3.8-live</code> e <code>gemini-3.8-live-extended-thinking</code> não aparecem na lista de modelos suportados pela Interactions; os modelos Gemini 4 também não têm Live API. <strong>Computer Use</strong> (GA desde 2026-10-30, na Interactions e no <code>generateContent</code>) usa a tool <code>computer_use</code> com <code>gemini-4-hydrogen</code>, <code>gemini-4-neon</code>, <code>gemini-4-carbon</code>, <code>gemini-4-argon</code>, <code>gemini-3.8-flash</code> ou <code>gemini-3.5-flash-lite</code> (página <code>computer-use</code>, lida em 2026-11-27). Os agentes (<code>deep-research-preview-04-2026</code>, <code>deep-research-max-preview-04-2026</code>, <code>antigravity-preview-09-2026</code>) estão em <a href="#gi-tools">§6.10</a>.</p>
 
   <!-- =================================================================== -->
   <!-- 6.13 Limitações & gotchas                                            -->
@@ -2695,7 +2722,7 @@ response_format = {
     <li><code>tools</code>, <code>system_instruction</code> e <code>generation_config</code> são por interação: reenvie a cada turno, inclusive ao devolver <code>function_result</code>.</li>
     <li>Em streaming, o <code>interaction.completed</code> traz <code>usage</code> mas <strong>não</strong> traz <code>steps</code>; reconstrua pelos deltas ou faça <code>GET /interactions/{id}</code>. Argumentos de function_call chegam em <code>delta.partial_arguments</code> (<code>delta.type == "arguments"</code>): acumule antes do <code>json.loads()</code>.</li>
     <li><code>thought_signature</code> é opaco — não parseie. Em modo stateless devolva os steps de pensamento e de <code>processing_*</code> intactos.</li>
-    <li>Thinking: no <code>gemini-3.8-flash</code> <code>minimal</code> retorna erro; não defina <code>temperature</code>/<code>top_p</code>/<code>top_k</code>.</li>
+    <li>Thinking: no <code>gemini-3.8-flash</code> e nos modelos Gemini 4 (incluindo <code>gemini-4-hydrogen</code> e <code>gemini-4-neon</code>) <code>minimal</code> retorna erro; não defina <code>temperature</code>/<code>top_p</code>/<code>top_k</code>.</li>
     <li>MCP remoto em Gemini 3: a overview diz não suportado ("coming soon") e a página de function calling documenta <code>mcp_server</code> — <span class="unverified">UNVERIFIED</span>; teste antes de usar.</li>
     <li>ZDR e retenção (<code>store=false</code>, cache implícito, Files API): <a href="#cmp-coding-zdr">§3.11.1</a>.</li>
   </ul>
@@ -2758,26 +2785,26 @@ response_format = {
   </p>
 
 <h4>Compatibilidade modelo × modalidade</h4>
-  <p>Fonte: <a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener">models/overview</a>, visão, PDF e a página do code execution tool. <code>claude-mythos-5-1</code> existe só para organizações verificadas e não entra na tabela.</p>
+  <p>Fonte: <a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener">models/overview</a>, visão, PDF e a página do code execution tool. <code>claude-mythos-5-2</code> existe só para organizações verificadas (mesmo preço e especificações do Fable 5.2) e não entra na tabela.</p>
   <div class="table-wrap">
   <table>
     <thead><tr>
       <th>Modelo</th><th>API ID</th><th>Context</th><th>Output (sync)</th><th>Preço in/out por MTok</th><th>Visão</th><th>PDF nativo</th><th>Code execution</th>
     </tr></thead>
     <tbody>
-      <tr><td>Claude Fable 5.1 <span class="pill new">topo</span></td><td><code>claude-fable-5-1</code></td><td>1M</td><td>128k</td><td>$10 / $50</td><td><span class="pill ok">Sim</span> (hi-res 2576 px)</td><td><span class="pill ok">Sim</span></td><td><span class="pill ok">Sim</span></td></tr>
+      <tr><td>Claude Fable 5.2</td><td><code>claude-fable-5-2</code></td><td>1M</td><td>128k</td><td>$8 / $40</td><td><span class="pill ok">Sim</span> (hi-res 2576 px)</td><td><span class="pill ok">Sim</span></td><td><span class="pill ok">Sim</span></td></tr>
       <tr><td>Claude Opus 5.5 <span class="pill new">recomendado</span></td><td><code>claude-opus-5-5</code></td><td>1M</td><td>128k</td><td>$4 / $20</td><td><span class="pill ok">Sim</span> (hi-res 2576 px)</td><td><span class="pill ok">Sim</span></td><td><span class="pill ok">Sim</span></td></tr>
-      <tr><td>Claude Sonnet 5.5 <span class="pill new">2026-09-28</span></td><td><code>claude-sonnet-5-5</code></td><td>1M</td><td>128k</td><td>$2 / $10</td><td><span class="pill ok">Sim</span> (hi-res 2576 px)</td><td><span class="pill ok">Sim</span></td><td><span class="pill ok">Sim</span></td></tr>
-      <tr><td>Claude Haiku 5.5 <span class="pill new">2026-10-07</span></td><td><code>claude-haiku-5-5</code></td><td>1M</td><td>128k</td><td>$0,10 / $0,50 (até 100k tokens de prompt) · $0,50 / $2,50 (acima)</td><td><span class="pill ok">Sim</span> (hi-res 2576 px)</td><td><span class="pill ok">Sim</span></td><td><span class="pill ok">Sim</span></td></tr>
+      <tr><td>Claude Sonnet 5.5</td><td><code>claude-sonnet-5-5</code></td><td>1M</td><td>128k</td><td>$2 / $10</td><td><span class="pill ok">Sim</span> (hi-res 2576 px)</td><td><span class="pill ok">Sim</span></td><td><span class="pill ok">Sim</span></td></tr>
+      <tr><td>Claude Haiku 5.5</td><td><code>claude-haiku-5-5</code></td><td>1M</td><td>128k</td><td>$0,10 / $0,50 (até 100k tokens de prompt) · $0,50 / $2,50 (acima)</td><td><span class="pill ok">Sim</span> (hi-res 2576 px)</td><td><span class="pill ok">Sim</span></td><td><span class="pill ok">Sim</span></td></tr>
     </tbody>
   </table>
   </div>
   <div class="callout tip">
-    <strong>Modelos atuais.</strong> Comece por <code>claude-opus-5-5</code> (recomendado para a maioria das cargas) ou <code>claude-sonnet-5-5</code> (velocidade × inteligência); use <code>claude-fable-5-1</code> para raciocínio difícil e agentes de longo horizonte e <code>claude-haiku-5-5</code> para baixo custo. Todos os exemplos deste guia usam <code>claude-opus-5-5</code>. Retirada mais cedo (não antes de): Fable 5.1 2027-09-01, Opus 5.5 2027-09-22, Sonnet 5.5 2027-09-28, Haiku 5.5 2027-10-07.
+    <strong>Modelos atuais.</strong> Comece por <code>claude-opus-5-5</code> (recomendado para a maioria das cargas) ou <code>claude-sonnet-5-5</code> (velocidade × inteligência); use <code>claude-fable-5-2</code> para raciocínio difícil e agentes de longo horizonte e <code>claude-haiku-5-5</code> para baixo custo. Todos os exemplos deste guia usam <code>claude-opus-5-5</code>. Retirada mais cedo (não antes de): Fable 5.2 2027-11-09, Opus 5.5 2027-09-22, Sonnet 5.5 2027-09-28, Haiku 5.5 2027-10-07.
     <span class="source-link">Fonte: <a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener">models/overview</a> · <a href="https://platform.claude.com/docs/en/about-claude/model-deprecations" target="_blank" rel="noopener">model-deprecations</a>.</span>
   </div>
   <div class="callout warn">
-    <strong>Opus 5.5, Fable 5.1 e Sonnet 5.5 mudam o contrato de parâmetros</strong> (nada disso afeta os blocos <code>image</code>/<code>document</code>): thinking adaptativo sempre ligado em Opus 5.5 e Fable 5.1 (<code>thinking.type</code> <code>"disabled"</code> ou <code>"enabled"</code> devolve 400; controle por <code>effort</code>); no Sonnet 5.5, <code>"disabled"</code> devolve 400 e o substituto é <code>{"type":"between_tools"}</code>; <code>tool_choice</code> <code>any</code>/<code>tool</code> devolve 400 nos três; para computer use, a tool é <code>computer_toolset_20260801</code>. No Haiku 5.5, <code>enabled</code> com <code>budget_tokens</code> devolve 400, <code>disabled</code> vale com <code>effort</code> até <code>high</code> e <code>tool_choice</code> forçado é aceito. Prefill de resposta é rejeitado no Opus 5.5.
+    <strong>Opus 5.5, Fable 5.2 e Sonnet 5.5 mudam o contrato de parâmetros</strong> (nada disso afeta os blocos <code>image</code>/<code>document</code>): thinking adaptativo sempre ligado em Opus 5.5 e Fable 5.2 (<code>thinking.type</code> <code>"disabled"</code> ou <code>"enabled"</code> devolve 400; controle por <code>effort</code>); no Sonnet 5.5, <code>"disabled"</code> devolve 400 e o substituto é <code>{"type":"between_tools"}</code>; <code>tool_choice</code> <code>any</code>/<code>tool</code> devolve 400 nos três; para computer use, a tool é <code>computer_toolset_20260801</code> (a <code>computer_20251124</code> devolve 400 no Fable 5.2 e no Opus 5.5, exceto no Amazon Bedrock). No Fable 5.2, reenviar um bloco de thinking editado devolve 400 e o modelo exige retenção de dados de 30 dias. No Haiku 5.5, <code>enabled</code> com <code>budget_tokens</code> devolve 400, <code>disabled</code> vale com <code>effort</code> até <code>high</code> e <code>tool_choice</code> forçado é aceito. Prefill de resposta é rejeitado no Opus 5.5.
   </div>
   <p>
     Visão e PDF são <strong>universais</strong> entre os modelos ativos — escolha por throughput/custo, não por modalidade. Code Execution
@@ -2817,19 +2844,19 @@ image/webp   (WebP lossy pode degradar OCR; teste antes de comprimir)</code></pr
     <thead><tr><th>Limite</th><th>Valor</th><th>Notas</th></tr></thead>
     <tbody>
       <tr><td>Máx. imagens por turno no <code>claude.ai</code></td><td>20</td><td>Superfície UI, não API</td></tr>
-      <tr><td>Máx. imagens por request</td><td>600</td><td>Opus 5.5, Sonnet 5.5, Haiku 5.5, Fable 5.1 (todos com contexto de 1M)</td></tr>
+      <tr><td>Máx. imagens por request</td><td>600</td><td>Opus 5.5, Sonnet 5.5, Haiku 5.5, Fable 5.2 (todos com contexto de 1M)</td></tr>
       <tr><td>Dimensões máximas</td><td><strong>8000 × 8000 px</strong> em geral</td><td>Se &gt;20 imagens/documentos no mesmo request, o teto cai — resida para ≤2000 px no lado maior</td></tr>
       <tr><td>Tamanho de arquivo via API direta</td><td><strong>10 MB por imagem</strong> (base64)</td><td>Claude API first-party; a Amazon Bedrock e o Google Cloud têm limite menor (linha abaixo).</td></tr>
       <tr><td>Tamanho de arquivo via Amazon Bedrock / Google Cloud</td><td>5 MB (base64)</td><td>Mais restritivo que a API direta</td></tr>
       <tr><td>Tamanho de arquivo via claude.ai</td><td>10 MB</td><td>UI</td></tr>
-      <tr><td>Tamanho total do request (endpoints padrão)</td><td>32 MB</td><td>Use Files API quando o número de imagens for grande</td></tr>
+      <tr><td>Tamanho total do request (Messages e Token Counting, API first-party)</td><td>128 MB</td><td>Use Files API quando o número de imagens for grande; outras plataformas têm limites próprios (menores no Bedrock e no Google Cloud)</td></tr>
     </tbody>
   </table>
   </div>
 
   <h4>Resolução nativa e tokenização</h4>
   <div class="callout tip">
-    Fable 5.1, Opus 5.5, Sonnet 5.5 e Haiku 5.5 usam o tier hi-res. A tokenização usa patches de <strong>28×28 px</strong> (visual tokens). <span class="source-link">Fonte: <a href="https://platform.claude.com/docs/en/build-with-claude/vision#image-limits-and-costs" target="_blank" rel="noopener">vision#image-limits-and-costs</a>.</span>
+    Fable 5.2, Opus 5.5, Sonnet 5.5 e Haiku 5.5 usam o tier hi-res. A tokenização usa patches de <strong>28×28 px</strong> (visual tokens). <span class="source-link">Fonte: <a href="https://platform.claude.com/docs/en/build-with-claude/vision#image-limits-and-costs" target="_blank" rel="noopener">vision#image-limits-and-costs</a>.</span>
   </div>
   <ul>
     <li><strong>Tier hi-res:</strong> nativo ≈ <strong>4784 tokens</strong> por imagem, até 2576 px no lado longo (padrão da API: 1568 px). Automático — <strong>sem cabeçalho beta</strong> nem opt-in de cliente.</li>
@@ -2891,7 +2918,7 @@ print(msg.content[0].text)</code></pre>
     <li><strong>Saúde:</strong> pode analisar imagens médicas gerais, mas não é ferramenta de diagnóstico para CT/MRI; jamais substitua aconselhamento médico.</li>
     <li><strong>Metadados:</strong> Claude não lê EXIF nem metadados de imagem.</li>
     <li><strong>Persistência:</strong> uploads via base64/URL são <strong>efêmeros</strong>, descartados após a request; imagens via Files API persistem até serem deletadas.</li>
-    <li><strong>Geração/edição:</strong> Claude é <strong>image-understanding only</strong>. Não gera nem edita imagens — use OpenAI <code>gpt-image-2.5-flare</code>/<code>-sunburst</code>, Gemini <code>gemini-nano-banana-2.1</code>, Stability etc.</li>
+    <li><strong>Geração/edição:</strong> Claude é <strong>image-understanding only</strong>. Não gera nem edita imagens — use OpenAI <code>gpt-image-2.6-flare</code>/<code>-sunburst</code> (ou 2.5), Gemini <code>gemini-nano-banana-2.1</code>, Stability etc.</li>
   </ul>
 
   <h3 id="anthropic-pdf">7.3 PDF <a class="anchor" href="#anthropic-pdf">¶</a></h3>
@@ -2918,7 +2945,7 @@ print(msg.content[0].text)</code></pre>
   <table>
     <thead><tr><th>Requisito</th><th>Limite</th></tr></thead>
     <tbody>
-      <tr><td>Tamanho máximo do request</td><td><strong>32 MB</strong> (varia por plataforma)</td></tr>
+      <tr><td>Tamanho máximo do request</td><td><strong>128 MB</strong> na API first-party (varia por plataforma)</td></tr>
       <tr><td>Páginas por request</td><td><strong>600</strong> (ou <strong>100</strong> quando a context window da requisição é menor que 1M tokens)</td></tr>
       <tr><td>Formato</td><td>PDF padrão, <strong>sem senha/encriptação</strong></td></tr>
       <tr><td>Files API — máximo por arquivo</td><td><strong>500 MB</strong></td></tr>
@@ -3053,7 +3080,7 @@ print("".join(b.text for b in resp.content if b.type == "text"))</code></pre>
 
   <h4>Versão do tool</h4>
   <div class="callout tip">
-    Use <code>code_execution_20260521</code> (GA, sem cabeçalho <code>anthropic-beta</code>) em Fable 5.1, Mythos 5.1, Opus 5.5, Sonnet 5.5 e Haiku 5.5. A descrição da tool informa o limite de 90 s por célula Python no tool calling programático. Para computer use, a tool é <code>computer_toolset_20260801</code>. Fonte: <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool#tool-versions" target="_blank" rel="noopener">code-execution-tool#tool-versions</a>.
+    Use <code>code_execution_20260521</code> (GA, sem cabeçalho <code>anthropic-beta</code>) em Fable 5.2, Mythos 5.2, Opus 5.5, Sonnet 5.5 e Haiku 5.5. A descrição da tool informa o limite de 90 s por célula Python no tool calling programático. Para computer use, a tool é <code>computer_toolset_20260801</code>. Fonte: <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool#tool-versions" target="_blank" rel="noopener">code-execution-tool#tool-versions</a>.
   </div>
 
   <h4>Runtime do sandbox</h4>
@@ -3276,8 +3303,8 @@ client.files.delete(up.id)
     <li>TTL: <code>"5m"</code> (default) ou <code>"1h"</code>.</li>
     <li>Cache é <strong>chaveado por prefixo</strong>: qualquer mudança mais cedo no prefixo invalida tudo o que vem depois.</li>
     <li><strong>Tamanho mínimo cacheável:</strong> <strong>512 tokens</strong> em todos os modelos atuais. Abaixo disso o cache não é criado, nenhum erro é retornado e você paga input cheio. Com 512 tokens, um screenshot único ou um PDF de 1–2 páginas já podem ser cacheados. Fonte: <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching#cache-limitations" target="_blank" rel="noopener">prompt-caching#cache-limitations</a>.</li>
-    <li><strong>Multiplicadores:</strong> write 5m = <strong>1,25×</strong> o input base; write 1h = <strong>2×</strong>; read = <strong>0,1×</strong> no Haiku 5.5, <strong>0,05×</strong> no Opus 5.5 e no Sonnet 5.5, <strong>0,025×</strong> no Fable 5.1. Opus 5.5 ($4/MTok): write 5m $5 · write 1h $8 · read $0,20. Sonnet 5.5 ($2/MTok): read $0,10. Fontes: <a href="https://platform.claude.com/docs/en/about-claude/pricing" target="_blank" rel="noopener">pricing</a> e <a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener">models/overview</a>.</li>
-    <li>Image caching: bytes da imagem + representação tokenizada são cacheados — modelos hi-res (Opus 5.5, Sonnet 5.5, Haiku 5.5, Fable 5.1) são quem mais ganha.</li>
+    <li><strong>Multiplicadores:</strong> write 5m = <strong>1,25×</strong> o input base; write 1h = <strong>2×</strong>; read = <strong>0,1×</strong> no Haiku 5.5, <strong>0,05×</strong> no Opus 5.5 e no Sonnet 5.5, <strong>0,025×</strong> no Fable 5.2 (US$ 8/MTok: write 5m $10 · write 1h $16 · read $0,20). Opus 5.5 ($4/MTok): write 5m $5 · write 1h $8 · read $0,20. Sonnet 5.5 ($2/MTok): read $0,10. Fontes: <a href="https://platform.claude.com/docs/en/about-claude/pricing" target="_blank" rel="noopener">pricing</a> e <a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener">models/overview</a>.</li>
+    <li>Image caching: bytes da imagem + representação tokenizada são cacheados — modelos hi-res (Opus 5.5, Sonnet 5.5, Haiku 5.5, Fable 5.2) são quem mais ganha.</li>
     <li>PDF caching: cada página é cacheada como image + text tokens — economia escala linearmente com o doc.</li>
   </ul>
 
@@ -3357,7 +3384,7 @@ client.files.delete(up.id)
       <tr><td><code>tools</code></td><td>array</td><td>Inclua <code>code_execution_*</code>, web search, etc.</td></tr>
       <tr><td><code>betas</code></td><td>array&lt;string&gt;</td><td>Somente features beta ainda não promovidas, por exemplo <code>["compact-2026-01-12"]</code>; Files/Skills/toolsets GA não exigem header</td></tr>
       <tr><td><code>container</code></td><td>string</td><td>Reuso de sandbox pelo container ID</td></tr>
-      <tr><td><code>thinking</code></td><td>object</td><td>Opus 5.5, Fable 5.1 e Mythos 5.1: thinking adaptativo <strong>sempre ligado</strong> — <code>{"type":"disabled"}</code> e <code>{"type":"enabled"}</code> devolvem <strong>HTTP 400</strong>; controle por <code>effort</code>. Sonnet 5.5: adaptativo por padrão; <code>{"type":"disabled"}</code> devolve 400 e o substituto é <code>{"type":"between_tools"}</code> (só com effort ≤ <code>high</code>). Haiku 5.5: adaptativo por padrão; <code>{"type":"enabled","budget_tokens":N}</code> devolve 400 e <code>{"type":"disabled"}</code> vale com effort ≤ <code>high</code>. <code>output_config.effort</code>: <code>low</code>, <code>medium</code>, <code>high</code>, <code>xhigh</code>, <code>max</code> (default: Opus 5.5 e Haiku 5.5 <code>medium</code>; Fable 5.1 e Sonnet 5.5 <code>high</code>).</td></tr>
+      <tr><td><code>thinking</code></td><td>object</td><td>Opus 5.5, Fable 5.2 e Mythos 5.2: thinking adaptativo <strong>sempre ligado</strong> — <code>{"type":"disabled"}</code> e <code>{"type":"enabled"}</code> devolvem <strong>HTTP 400</strong>; controle por <code>effort</code>. Sonnet 5.5: adaptativo por padrão; <code>{"type":"disabled"}</code> devolve 400 e o substituto é <code>{"type":"between_tools"}</code> (só com effort ≤ <code>high</code>). Haiku 5.5: adaptativo por padrão; <code>{"type":"enabled","budget_tokens":N}</code> devolve 400 e <code>{"type":"disabled"}</code> vale com effort ≤ <code>high</code>. <code>output_config.effort</code>: <code>low</code>, <code>medium</code>, <code>high</code>, <code>xhigh</code>, <code>max</code> (default: Opus 5.5 e Haiku 5.5 <code>medium</code>; Fable 5.2 e Sonnet 5.5 <code>high</code>).</td></tr>
       <tr><td><code>output_config.format</code></td><td>object</td><td>Structured output nativo via JSON schema</td></tr>
     </tbody>
   </table>
@@ -3377,7 +3404,7 @@ client.files.delete(up.id)
   <h4>PDF</h4>
   <ul>
     <li>Sem PDFs com senha/encriptados.</li>
-    <li>Teto de <strong>600 páginas</strong> (modelos de 1M de contexto, todos os atuais) — <em>mas</em> request size (32 MB) e context window podem bater antes.</li>
+    <li>Teto de <strong>600 páginas</strong> (modelos de 1M de contexto, todos os atuais) — <em>mas</em> request size (128 MB na API first-party) e context window podem bater antes.</li>
     <li>Cada página é texto + imagem; PDFs de 100 páginas podem consumir 200k+ tokens facilmente.</li>
   </ul>
 
@@ -3401,10 +3428,10 @@ client.files.delete(up.id)
 
   <h4>Geral</h4>
   <ul>
-    <li>Blocos multimodais contam para o mesmo limite de 32 MB por request; muitas imagens grandes → Files API.</li>
+    <li>Blocos multimodais contam para o mesmo limite de 128 MB por request (API first-party); muitas imagens grandes → Files API.</li>
     <li>Blocos <code>image</code> e <code>document</code> só existem dentro de mensagens com <code>role: "user"</code>.</li>
     <li>O chain-of-thought do modelo (quando thinking está habilitado) <strong>não</strong> faz streaming da imagem. Não espere "ver" Claude olhando a imagem passo-a-passo em adaptive thinking.</li>
-    <li><strong><code>tool_choice</code> forçado:</strong> <code>any</code>/<code>tool</code> devolve 400 em Opus 5.5, Sonnet 5.5 e Fable 5.1; use <code>auto</code> com <code>strict: true</code> ou structured outputs. O Haiku 5.5 aceita <code>tool_choice</code> forçado (a resposta não traz bloco <code>thinking</code>). Nada disso afeta os blocos <code>image</code>/<code>document</code>.</li>
+    <li><strong><code>tool_choice</code> forçado:</strong> <code>any</code>/<code>tool</code> devolve 400 em Opus 5.5, Sonnet 5.5 e Fable 5.2; use <code>auto</code> com <code>strict: true</code> ou structured outputs. O Haiku 5.5 aceita <code>tool_choice</code> forçado (a resposta não traz bloco <code>thinking</code>). Nada disso afeta os blocos <code>image</code>/<code>document</code>.</li>
   </ul>
 
   <h3 id="anthropic-pricing">7.12 Pricing &amp; token accounting <a class="anchor" href="#anthropic-pricing">¶</a></h3>
@@ -3413,7 +3440,7 @@ client.files.delete(up.id)
   <table>
     <thead><tr><th>Superfície</th><th>Custo</th></tr></thead>
     <tbody>
-      <tr><td>Fable 5.1</td><td>$10 / 1M input · $50 / 1M output · cache read $0,25 (0,025×) · batch $5 / $25</td></tr>
+      <tr><td>Fable 5.2</td><td>$8 / 1M input · $40 / 1M output · cache write 5m $10 · write 1h $16 · cache read $0,20 (0,025×) · batch $4 / $20 · fast mode (<code>speed: "fast"</code>) $16 / $80</td></tr>
       <tr><td>Opus 5.5</td><td>$4 / 1M input · $20 / 1M output · cache write 5m $5 · write 1h $8 · cache read $0,20 (0,05×) · batch $2 / $10</td></tr>
       <tr><td>Sonnet 5.5</td><td>$2 / 1M input · $10 / 1M output · cache read $0,10 (0,05×) · batch $1 / $5</td></tr>
       <tr><td>Haiku 5.5</td><td>Até 100k tokens de prompt: $0,10 / 1M input · $0,50 / 1M output · cache read $0,01 · batch $0,05 / $0,25. Acima de 100k: $0,50 / $2,50 · cache read $0,05 · batch $0,25 / $1,25</td></tr>
@@ -3473,7 +3500,7 @@ client.vector_stores.files.create(vector_store_id=vs.id, file_id=up.id)
 
 # 2) Perguntar com a tool file_search; include devolve os trechos recuperados
 resp = client.responses.create(
-    model="gpt-6-astra",
+    model="gpt-6.2-astra",
     tools=[{"type": "file_search", "vector_store_ids": [vs.id]}],
     include=["file_search_call.results"],
     input="Quais cláusulas tratam de rescisão? Cite o trecho.",
@@ -3494,7 +3521,7 @@ client = genai.Client()
 
 f = client.files.upload(file="manual.pdf")  # PDF: até 50 MB
 interaction = client.interactions.create(
-    model="gemini-3.8-flash",
+    model="gemini-4-hydrogen",
     input=[
         {"type": "document", "uri": f.uri, "mime_type": "application/pdf"},
         {"type": "text", "text": "Quais cláusulas tratam de rescisão? "
@@ -3541,7 +3568,7 @@ for block in msg.content:
 client = OpenAI()
 up = client.files.create(file=open("vendas.xlsx", "rb"), purpose="user_data")
 resp = client.responses.create(
-    model="gpt-6-astra",
+    model="gpt-6.2-astra",
     tools=[{"type": "code_interpreter",
             "container": {"type": "auto", "memory_limit": "4g", "file_ids": [up.id]}}],
     input="Faça pivot de vendas por região e gere PNG do gráfico.",
@@ -3556,7 +3583,7 @@ resp = client.responses.create(
 client = genai.Client()
 f = client.files.upload(file="vendas.xlsx")
 interaction = client.interactions.create(
-    model="gemini-3.8-flash",
+    model="gemini-4-hydrogen",
     input=[
         {"type": "document", "uri": f.uri,
          "mime_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"},
@@ -3595,7 +3622,7 @@ msg = client.messages.create(
 <pre><code class="language-python"># OpenAI — tool image_generation na Responses, com GPT Image 2.5 (ver §4.2)
 from openai import OpenAI
 c = OpenAI()
-r = c.responses.create(model="gpt-6-astra",
+r = c.responses.create(model="gpt-6.2-astra",
     tools=[{"type": "image_generation", "model": "gpt-image-2.5-flare"}],
     input="Capa: paisagem futurista, neon ciano.",
 )
@@ -3623,14 +3650,14 @@ mande o resultado à Claude apenas para revisão/descrição.
 
 <pre><code class="language-jsonl"># OpenAI Batch API — JSONL, /v1/responses, conclusão em até 24h
 {"custom_id":"doc-001","method":"POST","url":"/v1/responses",
- "body":{"model":"gpt-6-astra","input":[{"role":"user","content":[
+ "body":{"model":"gpt-6.2-astra","input":[{"role":"user","content":[
    {"type":"input_file","file_id":"file-abc1"},
    {"type":"input_text","text":"Classifique em [contrato, fatura, outro]."}]}]}}
 {"custom_id":"doc-002", ...}
 # client.batches.create(input_file_id=..., endpoint="/v1/responses", completion_window="24h")
 </code></pre>
 <pre><code class="language-python"># Gemini Batch (50 % off): sem equivalente na Interactions API; só no generateContent (§5.2)
-# client.batches.create(model="gemini-3.8-flash", src=[...], config={"display_name": "classify-docs"})
+# client.batches.create(model="gemini-4-hydrogen", src=[...], config={"display_name": "classify-docs"})
 </code></pre>
 <pre><code class="language-python"># Anthropic Message Batches — até 100k requests, 24h, 50 % off
 import anthropic
@@ -3672,7 +3699,7 @@ batch = client.messages.batches.create(requests=requests)
               <td>Tamanho máximo de imagem</td>
               <td>Sem cap por imagem; payload total ≤ <strong>512 MB</strong></td>
               <td>Inline até 100 MB (mantenha imagens e áudio abaixo de 20 MB, conforme as páginas de mídia) · URL externa 15 MB por arquivo · Files API 2 GB</td>
-              <td><strong>10 MB</strong> por imagem via API direta · 5 MB via Amazon Bedrock/Google Cloud · request ≤ 32 MB</td>
+              <td><strong>10 MB</strong> por imagem via API direta · 5 MB via Amazon Bedrock/Google Cloud · request ≤ 128 MB (API first-party)</td>
             </tr>
             <tr>
               <td>Nº de imagens por request</td>
@@ -3684,7 +3711,7 @@ batch = client.messages.batches.create(requests=requests)
               <td>Tamanho máximo de PDF</td>
               <td><strong>50 MB</strong> por arquivo e por request combinado</td>
               <td><strong>50 MB</strong> (inline ou Files API)</td>
-              <td><strong>32 MB</strong> (payload total)</td>
+              <td><strong>128 MB</strong> (payload total na API first-party)</td>
             </tr>
             <tr>
               <td>Páginas de PDF por documento</td>
@@ -3718,8 +3745,8 @@ batch = client.messages.batches.create(requests=requests)
             </tr>
             <tr>
               <td>Geração de mídia</td>
-              <td>Imagem (<code>gpt-image-2.5-flare</code>, <code>-sunburst</code>); voz via Realtime; sem vídeo</td>
-              <td>Imagem (<code>gemini-nano-banana-2.1</code>), vídeo (<code>gemini-omni-1.1-flash</code>, 3–10 s), voz (<code>gemini-3.8-flash-tts</code>)</td>
+              <td>Imagem (<code>gpt-image-2.6-flare</code>, <code>-sunburst</code>; também 2.5); voz via Realtime; sem vídeo</td>
+              <td>Imagem (<code>gemini-nano-banana-2.1</code>), vídeo (<code>gemini-omni-1.2-flash</code>, 3–15 s), voz (<code>gemini-3.8-flash-tts</code>)</td>
               <td><span class="pill bad">Não</span></td>
             </tr>
             <tr>
@@ -3744,7 +3771,7 @@ batch = client.messages.batches.create(requests=requests)
     <section id="sources" aria-labelledby="h-sources">
       <h2 id="h-sources">10. Fontes &amp; verificação <a class="anchor" href="#sources">¶</a></h2>
       <p style="margin:0 0 14px;color:var(--c-fg-muted)">
-        Páginas oficiais consultadas em <strong>2026-10-24</strong>. Itens marcados
+        IDs de modelo e preços da OpenAI (GPT-6.2 Astra/Sol), IDs de modelo Anthropic e Gemini, preços Gemini e versões de SDK foram reconferidos nas páginas oficiais e nos registries em <strong>2026-11-17</strong>; o <code>gpt-live-1.1</code>, o cache explícito, os preços e reajustes de 2027-01-01 do Flash TTS, a lista de modelos do Computer Use e o tratamento de <code>temperature</code> no <code>gemini-4-carbon</code> foram reconferidos em <strong>2026-11-27</strong>; limites de request, cache e deprecações seguem como reconferidos em <strong>2026-11-12</strong>; as demais seções seguem como lidas em <strong>2026-10-24</strong> (cada fonte datada no texto mantém a sua data). Itens marcados
         <span class="unverified">UNVERIFIED</span> não foram confirmados: valem como notas de pesquisa até a fonte oficial os documentar.
       </p>
 
@@ -3752,7 +3779,7 @@ batch = client.messages.batches.create(requests=requests)
       <ul>
         <li><a href="https://developers.openai.com/api/docs/guides/images-vision" target="_blank" rel="noopener">Images and vision</a> · <a href="https://developers.openai.com/api/docs/guides/file-inputs" target="_blank" rel="noopener">File inputs</a> · <a href="https://developers.openai.com/api/docs/guides/image-generation" target="_blank" rel="noopener">Image generation</a></li>
         <li><a href="https://developers.openai.com/api/docs/guides/speech-to-text" target="_blank" rel="noopener">Speech to text</a> · <a href="https://developers.openai.com/api/docs/guides/realtime-transcription" target="_blank" rel="noopener">Realtime transcription</a> · <a href="https://developers.openai.com/api/docs/guides/realtime-conversations" target="_blank" rel="noopener">Realtime conversations</a> · <a href="https://developers.openai.com/api/docs/guides/text-to-speech" target="_blank" rel="noopener">Text to speech</a></li>
-        <li><a href="https://developers.openai.com/api/docs/models/gpt-6-astra" target="_blank" rel="noopener">GPT-6 Astra</a> · <a href="https://developers.openai.com/api/docs/models/gpt-6.1-sol" target="_blank" rel="noopener">GPT-6.1 Sol</a> · <a href="https://developers.openai.com/api/docs/models/gpt-transcribe" target="_blank" rel="noopener">gpt-transcribe</a> · <a href="https://developers.openai.com/api/docs/models/gpt-image-2.5-flare" target="_blank" rel="noopener">GPT Image 2.5 Flare</a></li>
+        <li><a href="https://developers.openai.com/api/docs/models/gpt-6.2-astra" target="_blank" rel="noopener">GPT-6.2 Astra</a> · <a href="https://developers.openai.com/api/docs/models/gpt-6.2-sol" target="_blank" rel="noopener">GPT-6.2 Sol</a> · <a href="https://developers.openai.com/api/docs/models/gpt-live-1.1" target="_blank" rel="noopener">GPT-Live 1.1</a> · <a href="https://developers.openai.com/api/docs/models/gpt-6-astra" target="_blank" rel="noopener">GPT-6 Astra (tabela de sizing de imagem)</a> · <a href="https://developers.openai.com/api/docs/models/gpt-transcribe" target="_blank" rel="noopener">gpt-transcribe</a> · <a href="https://developers.openai.com/api/docs/models/gpt-image-2.5-flare" target="_blank" rel="noopener">GPT Image 2.5 Flare</a> · <a href="https://developers.openai.com/api/docs/models/gpt-image-2.6-sunburst" target="_blank" rel="noopener">GPT Image 2.6 Sunburst</a> · <a href="https://developers.openai.com/api/docs/models/gpt-image-2.6-flare" target="_blank" rel="noopener">GPT Image 2.6 Flare</a></li>
         <li><a href="https://developers.openai.com/api/docs/guides/latest-model" target="_blank" rel="noopener">Latest model guide</a> · <a href="https://developers.openai.com/api/docs/pricing" target="_blank" rel="noopener">Pricing</a> · <a href="https://developers.openai.com/api/docs/deprecations" target="_blank" rel="noopener">Deprecations</a> · <a href="https://developers.openai.com/api/docs/changelog" target="_blank" rel="noopener">Changelog</a></li>
       </ul>
 
@@ -3761,17 +3788,17 @@ batch = client.messages.batches.create(requests=requests)
         <li><a href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">Interactions API</a> · <a href="https://ai.google.dev/gemini-api/docs/image-understanding" target="_blank" rel="noopener">Image understanding</a> · <a href="https://ai.google.dev/gemini-api/docs/media-resolution" target="_blank" rel="noopener">Media resolution</a> · <a href="https://ai.google.dev/gemini-api/docs/document-processing" target="_blank" rel="noopener">Document processing</a> · <a href="https://ai.google.dev/gemini-api/docs/file-input-methods" target="_blank" rel="noopener">File input methods</a></li>
         <li><a href="https://ai.google.dev/gemini-api/docs/video-understanding" target="_blank" rel="noopener">Video understanding</a> · <a href="https://ai.google.dev/gemini-api/docs/audio" target="_blank" rel="noopener">Audio understanding</a> · <a href="https://ai.google.dev/gemini-api/docs/transcribe" target="_blank" rel="noopener">Speech-to-text</a> · <a href="https://ai.google.dev/gemini-api/docs/speech-generation" target="_blank" rel="noopener">Speech generation</a> · <a href="https://ai.google.dev/gemini-api/docs/image-generation" target="_blank" rel="noopener">Image generation</a></li>
         <li><a href="https://ai.google.dev/gemini-api/docs/function-calling" target="_blank" rel="noopener">Function calling</a> · <a href="https://ai.google.dev/gemini-api/docs/models" target="_blank" rel="noopener">Models</a> · <a href="https://ai.google.dev/gemini-api/docs/pricing" target="_blank" rel="noopener">Pricing</a> · <a href="https://ai.google.dev/gemini-api/docs/deprecations" target="_blank" rel="noopener">Deprecations</a> · <a href="https://ai.google.dev/gemini-api/docs/changelog" target="_blank" rel="noopener">Changelog</a></li>
+        <li><a href="https://aistudio.google.com/docs/models/gemini-4-hydrogen" target="_blank" rel="noopener">gemini-4-hydrogen</a> · <a href="https://aistudio.google.com/docs/models/gemini-4-carbon" target="_blank" rel="noopener">gemini-4-carbon</a> · <a href="https://aistudio.google.com/docs/omni" target="_blank" rel="noopener">Omni</a> · <a href="https://aistudio.google.com/docs/caching" target="_blank" rel="noopener">Caching</a> · <a href="https://aistudio.google.com/docs/api-versions" target="_blank" rel="noopener">API versions</a></li>
       </ul>
 
       <h3 id="src-anthropic" class="anthropic">10.3 Anthropic — <code>platform.claude.com</code> <a class="anchor" href="#src-anthropic">¶</a></h3>
       <ul>
         <li><a href="https://platform.claude.com/docs/en/build-with-claude/vision" target="_blank" rel="noopener">Vision</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/pdf-support" target="_blank" rel="noopener">PDF support</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/files" target="_blank" rel="noopener">Files API</a> · <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool" target="_blank" rel="noopener">Code execution tool</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching" target="_blank" rel="noopener">Prompt caching</a></li>
-        <li><a href="https://platform.claude.com/docs/en/models/overview" target="_blank" rel="noopener">Models overview</a> · <a href="https://platform.claude.com/docs/en/about-claude/model-deprecations" target="_blank" rel="noopener">Model deprecations</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/overview" target="_blank" rel="noopener">Features overview</a></li>
+        <li><a href="https://platform.claude.com/docs/en/models/overview" target="_blank" rel="noopener">Models overview</a> · <a href="https://platform.claude.com/docs/en/about-claude/model-deprecations" target="_blank" rel="noopener">Model deprecations</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/overview" target="_blank" rel="noopener">Features overview</a> · <a href="https://platform.claude.com/docs/en/api/errors" target="_blank" rel="noopener">API errors (limites de request)</a> · <a href="https://platform.claude.com/docs/en/about-claude/pricing" target="_blank" rel="noopener">Pricing</a></li>
       </ul>
 
       <div class="callout tip" style="margin-top:18px">
-        <strong>Divergências entre páginas oficiais</strong> ficam registradas no texto, não resolvidas: tokens por mídia no Gemini (258 por tile e 32 tokens/s contra 1.120 por imagem e 25 tokens/s), limite inline de 100 MB contra 20 MB, nomes de eventos SSE e suporte a MCP remoto no Gemini 3. SDKs: <code>openai</code> 3.37.0 / 7.43.0, <code>google-genai</code> 2.33.0 / <code>@google/genai</code> 2.31.0, <code>anthropic</code> 2.3.0 / <code>@anthropic-ai/sdk</code> 1.3.0.
-      </div>
+        <strong>Divergências entre páginas oficiais</strong> ficam registradas no texto, não resolvidas: tokens por mídia no Gemini (258 por tile e 32 tokens/s contra 1.120 por imagem e 25 tokens/s), limite inline de 100 MB contra 20 MB, nomes de eventos SSE e suporte a MCP remoto no Gemini 3. Versões dos SDKs: tabela "Versões e modelos correntes" no início do guia.</div>
     </section>
 
 

@@ -5,8 +5,8 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%9A%3C/text%3E%3C/svg%3E" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Guia LangGraph — Referência completa (Python)</title>
-<meta name="description" content="Guia técnico do LangGraph 1.2.17 em Python: StateGraph, nodes, edges, Send, Command, persistência (checkpointers), human-in-the-loop, streaming v3, memória, multi-agent (supervisor via tools), time travel, durable execution, Functional API e Agent Server (LangSmith Deployment). Verificado em 2026-10-24." />
-<meta name="last-checked" content="2026-10-24" />
+<meta name="description" content="Guia técnico do LangGraph 1.2.24 em Python: StateGraph, nodes, edges, Send, Command, persistência (checkpointers), human-in-the-loop, streaming v3, memória, multi-agent (supervisor via tools), time travel, durable execution, Functional API e LangSmith Agent Server. Verificado em 2026-11-27." />
+<meta name="last-checked" content="2026-11-27" />
 <meta name="robots" content="index,follow" />
 <style>
   :root {
@@ -266,8 +266,8 @@
   <div class="header-row">
     <div class="brand">Guia LangGraph <small>Python — Referência completa</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-10-24</strong></span>
-      <span class="badge lc">langgraph 1.2.17</span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-11-27</strong></span>
+      <span class="badge lc">langgraph 1.2.24</span>
       <span class="badge info">Python</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
     </div>
@@ -355,7 +355,7 @@
       <li><a href="#s-auth">Autenticação personalizada</a></li>
       <li><a href="#s-double-texting">Double-texting (4 estratégias)</a></li>
       <li><a href="#s-webhooks">Webhooks</a></li>
-      <li><a href="#s-studio">LangGraph Studio</a></li>
+      <li><a href="#s-studio">LangSmith Studio</a></li>
       <li><a href="#s-deploy">Opções de deployment</a></li>
     </ol>
 
@@ -393,18 +393,18 @@
       </p>
       <div class="hero-meta">
         <span class="badge lc">langgraph</span>
-        <span class="badge info">Python 3.10+</span>
-        <span class="badge ok">Verificado em 2026-10-24</span>
+        <span class="badge info">Python 3.10+ (langgraph) · 3.11+ (langchain 1.5)</span>
+        <span class="badge ok">Verificado em 2026-11-27</span>
       </div>
     </div>
 
     <section id="para-agentes">
-      <h2>Resumo para agentes (verificado 2026-10-24)</h2>
+      <h2>Resumo para agentes (verificado 2026-11-27)</h2>
 
       <h3>Use este guia quando</h3>
       <ul>
         <li>Você constrói ou depura um grafo LangGraph em Python: StateGraph, reducers, Command/Send, checkpointers, interrupt, streaming, Store, Functional API.</li>
-        <li>Você configura, implanta ou chama o Agent Server (LangSmith Deployment): <code>langgraph.json</code>, CLI, REST, SDK, auth, webhooks.</li>
+        <li>Você configura, implanta ou chama o LangSmith Agent Server: <code>langgraph.json</code>, CLI, REST, SDK, auth, webhooks.</li>
         <li>Você precisa da assinatura exata de uma classe, função ou exceção do LangGraph 1.2 (Parte B) ou de um padrão pronto (Parte D).</li>
       </ul>
 
@@ -419,9 +419,9 @@
       <ul>
         <li>Agente: <code>from langchain.agents import create_agent</code> com <code>system_prompt=</code> e middleware; o estado é um <code>TypedDict</code>; <code>tools=</code> não aceita <code>ToolNode</code> (<a href="#ref-create-agent">create_agent</a>).</li>
         <li>Grafo próprio: <code>StateGraph</code> + reducers; roteamento e atualização no mesmo passo com <code>Command</code>; fan-out com <code>Send</code> (importe de <code>langgraph.types</code>); multi-agente = supervisor com subagentes em <code>@tool</code> e handoff com <code>Command(goto=..., graph=Command.PARENT, update=...)</code> (<a href="#s-multi-agent">§24</a>).</li>
-        <li>Persistência: sempre um checkpointer e um <code>thread_id</code>; produção em <code>PostgresSaver</code>; <code>interrupt()</code> + <code>Command(resume=)</code> para aprovação humana. Não envolva <code>interrupt()</code> em <code>try/except Exception</code>; efeitos antes do <code>interrupt()</code> reexecutam no resume; <code>interrupt_before</code>/<code>interrupt_after</code> são breakpoints de debug (<a href="#s-hitl">§19</a>). Pickle no checkpointer é opt-in: não habilite com dados não confiáveis.</li>
+        <li>Persistência: sempre um checkpointer e um <code>thread_id</code>; produção em <code>PostgresSaver</code>; <code>interrupt()</code> + <code>Command(resume=)</code> para aprovação humana. Não envolva <code>interrupt()</code> em <code>try/except Exception</code>; efeitos antes do <code>interrupt()</code> reexecutam no resume; <code>interrupt_before</code>/<code>interrupt_after</code> são breakpoints de debug (<a href="#s-hitl">§19</a>). Desde a 1.2.20, cada <code>interrupt()</code> de uma task recebe seu próprio ID e existe um modo de resume estrito (opt-in) que recusa respostas obsoletas de interrupt: chave <code>configurable</code> privada no <code>langgraph</code> e parâmetro <code>strict_resume</code> em <code>client.runs.create/stream/wait</code> do <code>langgraph-sdk</code> 0.4.14+ (<a href="#s-hitl-strict">§19</a>). Pickle no checkpointer é opt-in: não habilite com dados não confiáveis.</li>
         <li>Timeouts por nó só valem em nós assíncronos; <code>NodeTimeoutError</code> herda de <code>Exception</code> e a RetryPolicy padrão o repete (<a href="#s-cache-retry-timeout">§15</a>).</li>
-        <li>Streaming: <code>stream_events(..., version="v3")</code> é o driver recomendado em código novo; <code>stream</code>/<code>invoke</code> usam <code>version="v2"</code> (<a href="#s-streaming">§17</a>).</li>
+        <li>Streaming: <code>stream_events(..., version="v3")</code> é o driver recomendado em código novo pela documentação do LangGraph, mas o status é contraditório entre fontes (<code>langchain-core</code> 1.8.5 o descreve como depreciado, só em docstring; o <code>langgraph</code> 1.2.24 o mantém beta; veja o aviso em <a href="#s-streaming">§17</a>); <code>stream</code>/<code>invoke</code> usam <code>version="v2"</code>.</li>
         <li>OpenAI via LangChain: <code>ChatOpenAI(..., use_responses_api=True)</code>; Anthropic: <code>ChatAnthropic</code>; Gemini: <code>ChatGoogleGenerativeAI</code> (usa <code>generateContent</code>; a página de integração não documenta Interactions, então para Interactions use <code>google-genai</code> direto). Claude Opus 5.5: não force <code>tool_choice</code> (inclui <code>response_format=ToolStrategy(...)</code>) nem passe <code>thinking={"type": "disabled"}</code> (<code>400</code>; issue <a href="https://github.com/langchain-ai/langchain/issues/40777" target="_blank" rel="noopener">#40777</a> segue aberta).</li>
         <li>Tools MCP: <code>pip install "langchain[mcp]"</code> e <code>langchain.mcp.MCPAdapter</code> (beta; só tools; uma <code>target</code> string precisa ser URL http(s), servidor local = <code>Path("server.py")</code>); em JS, <code>@langchain/mcp-adapters</code>.</li>
         <li>Agent Server: <code>multitask_strategy</code> padrão é <code>enqueue</code>; <code>on_disconnect</code> padrão é <code>continue</code> (<a href="#s-threads-runs">§30</a>).</li>
@@ -430,16 +430,16 @@
 
       <h3>Versões e modelos correntes</h3>
       <div class="table-wrap"><table>
-        <thead><tr><th>Item</th><th>Valor (2026-10-24)</th><th>Fonte</th></tr></thead>
+        <thead><tr><th>Item</th><th>Valor (2026-11-27)</th><th>Fonte</th></tr></thead>
         <tbody>
-          <tr><td><code>langgraph</code></td><td><code>1.2.17</code> (Python 3.10+; linha 1.x)</td><td><a href="https://pypi.org/project/langgraph/" target="_blank" rel="noopener">PyPI</a></td></tr>
-          <tr><td><code>langchain</code> · <code>langchain-core</code></td><td><code>1.4.7</code> · <code>1.7.0</code></td><td><a href="https://pypi.org/project/langchain/" target="_blank" rel="noopener">PyPI</a> · <a href="https://docs.langchain.com/oss/python/langchain/install" target="_blank" rel="noopener">docs · install</a></td></tr>
-          <tr><td><code>langchain-openai</code> · <code>-anthropic</code> · <code>-google-genai</code></td><td><code>1.7.2</code> · <code>1.7.6</code> · <code>4.4.2</code></td><td><a href="https://pypi.org/project/langchain-openai/" target="_blank" rel="noopener">PyPI</a></td></tr>
-          <tr><td><code>langgraph-checkpoint</code> · <code>-postgres</code> · <code>-sqlite</code></td><td><code>4.3.0</code> · <code>3.2.0</code> · <code>3.1.2</code></td><td><a href="https://pypi.org/project/langgraph-checkpoint/" target="_blank" rel="noopener">PyPI</a></td></tr>
-          <tr><td><code>langgraph-sdk</code> · <code>-cli</code> · <code>-api</code></td><td><code>0.4.9</code> · <code>0.4.38</code> · <code>0.16.6</code></td><td><a href="https://pypi.org/project/langgraph-cli/" target="_blank" rel="noopener">PyPI</a></td></tr>
-          <tr><td><code>@langchain/langgraph</code> · <code>langchain</code> · <code>@langchain/core</code> (npm)</td><td><code>1.5.2</code> · <code>1.5.19</code> · <code>1.3.0</code>; MCP em JS: <code>@langchain/mcp-adapters</code> <code>2.0.1</code></td><td><a href="https://www.npmjs.com/package/@langchain/langgraph" target="_blank" rel="noopener">npm</a></td></tr>
-          <tr><td>Modelos nos exemplos</td><td><code>gpt-6.1-sol</code> · <code>claude-sonnet-5-5</code> (retirada não antes de 2027-09-28) · <code>gemini-3.8-flash</code>; string provider:model; Google: <code>google_genai:gemini-3.8-flash</code></td><td><a href="https://developers.openai.com/api/docs/deprecations" target="_blank" rel="noopener">OpenAI</a> · <a href="https://platform.claude.com/docs/en/about-claude/model-deprecations" target="_blank" rel="noopener">Anthropic</a> · <a href="https://ai.google.dev/gemini-api/docs/deprecations" target="_blank" rel="noopener">Google</a></td></tr>
-          <tr><td>Deploy</td><td>LangSmith Deployment; runtime = Agent Server; Cloud (Plus+), Hybrid, Self-Hosted com control plane (Enterprise), Standalone</td><td><a href="https://docs.langchain.com/langsmith/deployment" target="_blank" rel="noopener">docs · deployment</a></td></tr>
+          <tr><td><code>langgraph</code></td><td><code>1.2.24</code> (Python 3.10+; linha 1.x)</td><td><a href="https://pypi.org/project/langgraph/" target="_blank" rel="noopener">PyPI</a></td></tr>
+          <tr><td><code>langchain</code> · <code>langchain-core</code></td><td><code>1.5.2</code> · <code>1.8.5</code> (exigem Python 3.11+)</td><td><a href="https://pypi.org/project/langchain/" target="_blank" rel="noopener">PyPI</a> · <a href="https://docs.langchain.com/oss/python/langchain/install" target="_blank" rel="noopener">docs · install</a></td></tr>
+          <tr><td><code>langchain-openai</code> · <code>-anthropic</code> · <code>-google-genai</code></td><td><code>1.8.5</code> (Python 3.11+) · <code>1.7.13</code> · <code>4.5.3</code></td><td><a href="https://pypi.org/project/langchain-openai/" target="_blank" rel="noopener">PyPI</a> · <a href="https://github.com/langchain-ai/langchain-google/releases/tag/libs%2Fgenai%2Fv4.5.1" target="_blank" rel="noopener">langchain-google-genai 4.5.1</a> (lido em 2026-11-27)</td></tr>
+          <tr><td><code>langgraph-checkpoint</code> · <code>-postgres</code> · <code>-sqlite</code></td><td><code>4.3.2</code> · <code>3.2.1</code> · <code>3.1.3</code></td><td><a href="https://pypi.org/project/langgraph-checkpoint/" target="_blank" rel="noopener">PyPI</a></td></tr>
+          <tr><td><code>langgraph-sdk</code> · <code>-cli</code> · <code>-api</code></td><td><code>0.4.14</code> · <code>0.4.44</code> · <code>0.19.1</code></td><td><a href="https://pypi.org/project/langgraph-cli/" target="_blank" rel="noopener">PyPI</a></td></tr>
+          <tr><td><code>@langchain/langgraph</code> · <code>langchain</code> · <code>@langchain/core</code> (npm)</td><td><code>1.7.5</code> · <code>1.6.8</code> · <code>1.5.1</code>; MCP em JS: <code>@langchain/mcp-adapters</code> <code>2.0.3</code></td><td><a href="https://www.npmjs.com/package/@langchain/langgraph" target="_blank" rel="noopener">npm</a></td></tr>
+          <tr><td>Modelos nos exemplos</td><td><code>gpt-6.2-sol</code> · <code>gpt-6-luna</code> · <code>claude-sonnet-5-5</code> (retirada não antes de 2027-09-28) · <code>gemini-4-hydrogen</code>; string provider:model; Google: <code>google_genai:gemini-4-hydrogen</code></td><td><a href="https://developers.openai.com/api/docs/deprecations" target="_blank" rel="noopener">OpenAI</a> · <a href="https://platform.claude.com/docs/en/about-claude/model-deprecations" target="_blank" rel="noopener">Anthropic</a> · <a href="https://aistudio.google.com/docs/models" target="_blank" rel="noopener">Google</a> (lido em 2026-11-27)</td></tr>
+          <tr><td>Deploy</td><td>LangSmith Agent Server: Cloud (Plus+), Hybrid, Self-Hosted com control plane (Enterprise), Standalone; <code>langgraph deploy</code> está em beta (<a href="#s-cli">§28.4</a>)</td><td><a href="https://docs.langchain.com/langsmith/deploy-overview" target="_blank" rel="noopener">docs · deploy-overview</a> (lido em 2026-11-27)</td></tr>
         </tbody>
       </table></div>
 
@@ -449,8 +449,8 @@
       <h3>Mapa de seções</h3>
       <ul>
         <li><a href="#sobre">#sobre</a> — escopo do guia e da linha 1.2 · <a href="#fontes-oficiais">#fontes-oficiais</a> — fontes oficiais e data de verificação.</li>
-        <li><a href="#part-a-divider">#part-a-divider</a> — Parte A (conceitos): <a href="#s-intro">#s-intro</a> visão geral · <a href="#s-install">#s-install</a> instalação, pisos de segurança, modelos · <a href="#s-modelo">#s-modelo</a> modelo conceitual · <a href="#s-stategraph">#s-stategraph</a> · <a href="#s-state">#s-state</a> schemas · <a href="#s-reducers">#s-reducers</a> · <a href="#s-messagesstate">#s-messagesstate</a> · <a href="#s-nodes">#s-nodes</a> · <a href="#s-edges">#s-edges</a> · <a href="#s-send">#s-send</a> map-reduce · <a href="#s-command">#s-command</a> roteamento + update · <a href="#s-runtime">#s-runtime</a> runtime e context · <a href="#s-subgraphs">#s-subgraphs</a> · <a href="#s-recursion">#s-recursion</a> · <a href="#s-cache-retry-timeout">#s-cache-retry-timeout</a> cache, retry, timeout, error handlers · <a href="#s-viz">#s-viz</a> · <a href="#s-streaming">#s-streaming</a> streaming v2/v3 · <a href="#s-persistence">#s-persistence</a> checkpointers · <a href="#s-hitl">#s-hitl</a> interrupt e resume · <a href="#s-memory">#s-memory</a> Store · <a href="#s-time-travel">#s-time-travel</a> · <a href="#s-durable">#s-durable</a> durable execution e drain · <a href="#s-functional">#s-functional</a> · <a href="#s-multi-agent">#s-multi-agent</a> supervisor via tools e handoffs · <a href="#s-workflows">#s-workflows</a> · <a href="#s-migrations">#s-migrations</a> migrações de grafo com checkpointer.</li>
-        <li><a href="#part-b-divider">#part-b-divider</a> — Parte B (referência de API): <a href="#ref-stategraph">#ref-stategraph</a> · <a href="#ref-start-end">#ref-start-end</a> · <a href="#ref-messagesstate">#ref-messagesstate</a> · <a href="#ref-add-messages">#ref-add-messages</a> · <a href="#ref-send">#ref-send</a> · <a href="#ref-command">#ref-command</a> · <a href="#ref-overwrite">#ref-overwrite</a> · <a href="#ref-runtime">#ref-runtime</a> · <a href="#ref-runcontrol">#ref-runcontrol</a> · <a href="#ref-policies">#ref-policies</a> · <a href="#ref-remainingsteps">#ref-remainingsteps</a> · <a href="#ref-interrupt">#ref-interrupt</a> · <a href="#ref-functional">#ref-functional</a> · <a href="#ref-stream-parts">#ref-stream-parts</a> · <a href="#ref-stream-writer">#ref-stream-writer</a> · <a href="#ref-base-checkpointer">#ref-base-checkpointer</a> · <a href="#ref-inmemory-saver">#ref-inmemory-saver</a> · <a href="#ref-sqlite-saver">#ref-sqlite-saver</a> · <a href="#ref-postgres-saver">#ref-postgres-saver</a> · <a href="#ref-redis-saver">#ref-redis-saver</a> · <a href="#ref-serde">#ref-serde</a> · <a href="#ref-basestore">#ref-basestore</a> · <a href="#ref-inmemory-store">#ref-inmemory-store</a> · <a href="#ref-postgres-store">#ref-postgres-store</a> · <a href="#ref-create-agent">#ref-create-agent</a> · <a href="#ref-toolnode">#ref-toolnode</a> · <a href="#ref-errors">#ref-errors</a> exceções.</li>
+        <li><a href="#part-a-divider">#part-a-divider</a> — Parte A (conceitos): <a href="#s-intro">#s-intro</a> visão geral · <a href="#s-install">#s-install</a> instalação, pisos de segurança, modelos · <a href="#s-modelo">#s-modelo</a> modelo conceitual · <a href="#s-stategraph">#s-stategraph</a> · <a href="#s-state">#s-state</a> schemas · <a href="#s-reducers">#s-reducers</a> · <a href="#s-messagesstate">#s-messagesstate</a> · <a href="#s-nodes">#s-nodes</a> · <a href="#s-edges">#s-edges</a> · <a href="#s-send">#s-send</a> map-reduce · <a href="#s-command">#s-command</a> roteamento + update · <a href="#s-runtime">#s-runtime</a> runtime e context · <a href="#s-subgraphs">#s-subgraphs</a> · <a href="#s-recursion">#s-recursion</a> · <a href="#s-cache-retry-timeout">#s-cache-retry-timeout</a> cache, retry, timeout, error handlers · <a href="#s-viz">#s-viz</a> · <a href="#s-streaming">#s-streaming</a> streaming v2/v3 · <a href="#s-persistence">#s-persistence</a> checkpointers · <a href="#s-hitl">#s-hitl</a> interrupt e resume (<a href="#s-hitl-strict">#s-hitl-strict</a> strict resume e ids por interrupt) · <a href="#s-memory">#s-memory</a> Store · <a href="#s-time-travel">#s-time-travel</a> · <a href="#s-durable">#s-durable</a> durable execution e drain · <a href="#s-functional">#s-functional</a> · <a href="#s-multi-agent">#s-multi-agent</a> supervisor via tools e handoffs · <a href="#s-workflows">#s-workflows</a> · <a href="#s-migrations">#s-migrations</a> migrações de grafo com checkpointer.</li>
+        <li><a href="#part-b-divider">#part-b-divider</a> — Parte B (referência de API): <a href="#ref-stategraph">#ref-stategraph</a> · <a href="#ref-start-end">#ref-start-end</a> · <a href="#ref-messagesstate">#ref-messagesstate</a> · <a href="#ref-add-messages">#ref-add-messages</a> · <a href="#ref-send">#ref-send</a> · <a href="#ref-command">#ref-command</a> · <a href="#ref-overwrite">#ref-overwrite</a> · <a href="#ref-runtime">#ref-runtime</a> · <a href="#ref-runcontrol">#ref-runcontrol</a> · <a href="#ref-policies">#ref-policies</a> · <a href="#ref-remainingsteps">#ref-remainingsteps</a> · <a href="#ref-interrupt">#ref-interrupt</a> · <a href="#ref-functional">#ref-functional</a> · <a href="#ref-stream-parts">#ref-stream-parts</a> · <a href="#ref-stream-writer">#ref-stream-writer</a> · <a href="#ref-base-checkpointer">#ref-base-checkpointer</a> · <a href="#ref-inmemory-saver">#ref-inmemory-saver</a> · <a href="#ref-sqlite-saver">#ref-sqlite-saver</a> · <a href="#ref-postgres-saver">#ref-postgres-saver</a> · <a href="#ref-redis-saver">#ref-redis-saver</a> · <a href="#ref-serde">#ref-serde</a> · <a href="#ref-basestore">#ref-basestore</a> · <a href="#ref-inmemory-store">#ref-inmemory-store</a> · <a href="#ref-postgres-store">#ref-postgres-store</a> · <a href="#ref-create-agent">#ref-create-agent</a> (<a href="#s-decision-middleware">#s-decision-middleware</a> router, auto mode e recusa) · <a href="#ref-toolnode">#ref-toolnode</a> · <a href="#ref-errors">#ref-errors</a> exceções.</li>
         <li><a href="#part-c-divider">#part-c-divider</a> — Parte C (Agent Server): <a href="#s-platform">#s-platform</a> arquitetura e variáveis · <a href="#s-cli">#s-cli</a> CLI · <a href="#s-langgraph-json">#s-langgraph-json</a> · <a href="#s-threads-runs">#s-threads-runs</a> endpoints REST · <a href="#s-sdk-python">#s-sdk-python</a> · <a href="#s-platform-stream">#s-platform-stream</a> · <a href="#s-auth">#s-auth</a> auth e pisos do servidor · <a href="#s-double-texting">#s-double-texting</a> · <a href="#s-webhooks">#s-webhooks</a> · <a href="#s-studio">#s-studio</a> · <a href="#s-deploy">#s-deploy</a> opções de deployment.</li>
         <li><a href="#part-d-divider">#part-d-divider</a> — Parte D (receitas): <a href="#r-react-structured">#r-react-structured</a> · <a href="#r-plan-execute">#r-plan-execute</a> · <a href="#r-reflection">#r-reflection</a> · <a href="#r-reflexion">#r-reflexion</a> · <a href="#r-self-discover">#r-self-discover</a> · <a href="#r-rewoo">#r-rewoo</a> · <a href="#r-supervisor">#r-supervisor</a> · <a href="#r-network">#r-network</a> · <a href="#r-hierarchical">#r-hierarchical</a> · <a href="#r-crag">#r-crag</a> · <a href="#r-self-rag">#r-self-rag</a> · <a href="#r-adaptive-rag">#r-adaptive-rag</a> · <a href="#r-lats">#r-lats</a> · <a href="#r-storm">#r-storm</a> · <a href="#r-endpoints">#r-endpoints</a> variáveis do Standalone Server.</li>
       </ul>
@@ -486,7 +486,7 @@
         <code>error_handler=</code> por nó (recebe <code>NodeError</code> e retorna <code>Command</code>
         para compensação/reroteamento — padrão Saga), <code>set_node_defaults()</code>,
         <code>trace_policy</code> em <code>add_node</code>, <code>stream_events(version="v3")</code> com
-        projeções tipadas e <code>response_schema</code> em <code>interrupt()</code> exigem
+        projeções tipadas, <code>response_schema</code> em <code>interrupt()</code> e o strict resume (1.2.20+, chave privada, <a href="#s-hitl-strict">§19</a>) exigem
         <code>langgraph &gt;= 1.2</code> e são opt-in. A linha segue <strong>1.x</strong> (sem 1.3 nem 2.x).
         O default da <code>recursion_limit</code> é <strong>1000</strong>. Fixe uma versão testada, não apenas
         <code>&gt;=1.2</code>; versões e pisos de segurança estão no <a href="#para-agentes">resumo</a>.
@@ -503,17 +503,17 @@
             <tr><td>Graph API (conceitos)</td><td><a href="https://docs.langchain.com/oss/python/langgraph/graph-api" target="_blank" rel="noopener">docs.langchain.com/.../langgraph/graph-api</a></td></tr>
             <tr><td>Use the graph API (how-to)</td><td><a href="https://docs.langchain.com/oss/python/langgraph/use-graph-api" target="_blank" rel="noopener">docs.langchain.com/.../langgraph/use-graph-api</a></td></tr>
             <tr><td>Persistence</td><td><a href="https://docs.langchain.com/oss/python/langgraph/persistence" target="_blank" rel="noopener">docs.langchain.com/.../langgraph/persistence</a></td></tr>
-            <tr><td>Human-in-the-loop</td><td><a href="https://docs.langchain.com/oss/python/langgraph/human-in-the-loop" target="_blank" rel="noopener">docs.langchain.com/.../langgraph/human-in-the-loop</a></td></tr>
+            <tr><td>Human-in-the-loop (interrupts)</td><td><a href="https://docs.langchain.com/oss/python/langgraph/interrupts" target="_blank" rel="noopener">docs.langchain.com/.../langgraph/interrupts</a></td></tr>
             <tr><td>Streaming</td><td><a href="https://docs.langchain.com/oss/python/langgraph/streaming" target="_blank" rel="noopener">docs.langchain.com/.../langgraph/streaming</a></td></tr>
-            <tr><td>Durable execution</td><td><a href="https://docs.langchain.com/oss/python/langgraph/durable-execution" target="_blank" rel="noopener">docs.langchain.com/.../langgraph/durable-execution</a></td></tr>
+            <tr><td>Durable execution (modos de durabilidade)</td><td><a href="https://docs.langchain.com/oss/python/langgraph/checkpointers#durability-modes" target="_blank" rel="noopener">docs.langchain.com/.../langgraph/checkpointers#durability-modes</a> · <a href="https://docs.langchain.com/oss/python/langgraph/fault-tolerance" target="_blank" rel="noopener">fault-tolerance</a></td></tr>
             <tr><td>Functional API</td><td><a href="https://docs.langchain.com/oss/python/langgraph/functional-api" target="_blank" rel="noopener">docs.langchain.com/.../langgraph/functional-api</a></td></tr>
             <tr><td>Subgraphs</td><td><a href="https://docs.langchain.com/oss/python/langgraph/use-subgraphs" target="_blank" rel="noopener">docs.langchain.com/.../langgraph/use-subgraphs</a></td></tr>
             <tr><td>Time travel</td><td><a href="https://docs.langchain.com/oss/python/langgraph/use-time-travel" target="_blank" rel="noopener">docs.langchain.com/.../langgraph/use-time-travel</a></td></tr>
             <tr><td>Workflows &amp; agents</td><td><a href="https://docs.langchain.com/oss/python/langgraph/workflows-agents" target="_blank" rel="noopener">docs.langchain.com/.../langgraph/workflows-agents</a></td></tr>
-            <tr><td>Choosing APIs</td><td><a href="https://docs.langchain.com/oss/python/langgraph/choosing-apis" target="_blank" rel="noopener">docs.langchain.com/.../langgraph/choosing-apis</a></td></tr>
+            <tr><td>Escolha entre Graph API e Functional API</td><td><a href="https://docs.langchain.com/oss/python/langgraph/functional-api#when-to-use-the-functional-api" target="_blank" rel="noopener">docs.langchain.com/.../langgraph/functional-api#when-to-use-the-functional-api</a></td></tr>
             <tr><td>API reference</td><td><a href="https://reference.langchain.com/python/langgraph/" target="_blank" rel="noopener">reference.langchain.com/python/langgraph/</a></td></tr>
             <tr><td>Repositório GitHub</td><td><a href="https://github.com/langchain-ai/langgraph" target="_blank" rel="noopener">github.com/langchain-ai/langgraph</a></td></tr>
-            <tr><td>Supervisor via tools (LangChain)</td><td><a href="https://docs.langchain.com/oss/python/langchain/supervisor" target="_blank" rel="noopener">docs.langchain.com/.../langchain/supervisor</a></td></tr>
+            <tr><td>Supervisor via tools (LangChain)</td><td><a href="https://docs.langchain.com/oss/python/langchain/multi-agent/subagents-personal-assistant" target="_blank" rel="noopener">docs.langchain.com/.../langchain/multi-agent/subagents-personal-assistant</a></td></tr>
             <tr><td><code>create_agent</code> (API reference)</td><td><a href="https://reference.langchain.com/python/langchain/agents/factory/create_agent" target="_blank" rel="noopener">reference.langchain.com/.../agents/factory/create_agent</a></td></tr>
           </tbody>
         </table>
@@ -522,7 +522,7 @@
         Última verificação contra estas fontes e contra PyPI, npm e os advisories do GitHub
         (<a href="https://github.com/langchain-ai/langgraph/security/advisories" target="_blank" rel="noopener">langgraph</a> ·
         <a href="https://github.com/langchain-ai/langchain/security/advisories" target="_blank" rel="noopener">langchain</a>):
-        <strong>2026-10-24</strong>.
+        <strong>2026-11-27</strong>.
         Sempre que houver divergência entre este guia e a documentação oficial em
         produção, a documentação oficial é a fonte autoritativa. Esta página exemplifica
         Python; para JS/TS consulte a
@@ -590,11 +590,11 @@
 
 <section id="s-install">
   <h2>2. Instalação</h2>
-  <pre><code class="language-bash"># Pin reproduzível (Python 3.10+)
-pip install "langgraph==1.2.17" "langchain==1.4.7" "langchain-core==1.7.0"
+  <pre><code class="language-bash"># Pin reproduzível (o langchain 1.5.2 exige Python 3.11+)
+pip install "langgraph==1.2.24" "langchain==1.5.2" "langchain-core==1.8.5"
 
 # Porta JavaScript/TypeScript equivalente
-npm install "@langchain/langgraph@1.5.2" "langchain@1.5.19" "@langchain/core@1.3.0"</code></pre>
+npm install "@langchain/langgraph@1.7.5" "langchain@1.6.8" "@langchain/core@1.5.1"</code></pre>
   <p>
     As tags prerelease do npm (<code>alpha</code>/<code>next</code>/<code>rc</code>/<code>dev</code>) ficam fora do pin de produção; os números de Python e JS não são paralelos.
   </p>
@@ -607,10 +607,10 @@ npm install "@langchain/langgraph@1.5.2" "langchain@1.5.19" "@langchain/core@1.3
       <tbody>
         <tr><td><code>langgraph</code></td><td>Núcleo (StateGraph, runtime, in-memory checkpointer).</td></tr>
         <tr><td><code>langgraph-checkpoint-sqlite</code></td><td><code>SqliteSaver</code> / <code>AsyncSqliteSaver</code>.</td></tr>
-        <tr><td><code>langgraph-checkpoint-postgres</code></td><td><code>PostgresSaver</code> / <code>AsyncPostgresSaver</code> (3.2.0).</td></tr>
+        <tr><td><code>langgraph-checkpoint-postgres</code></td><td><code>PostgresSaver</code> / <code>AsyncPostgresSaver</code> (3.2.1).</td></tr>
         <tr><td><code>langgraph-checkpoint-redis</code></td><td><code>RedisSaver</code> / <code>AsyncRedisSaver</code> (community Redis).</td></tr>
-        <tr><td><code>langchain</code></td><td><code>create_agent</code>, middleware, <code>langchain.mcp</code> (1.4.7).</td></tr>
-        <tr><td><code>langchain-openai</code> (1.7.2) · <code>langchain-anthropic</code> (1.7.6) · <code>langchain-google-genai</code> (4.4.2)</td><td>Modelos e mensagens — opcionais, mas a maior parte dos exemplos depende deles.</td></tr>
+        <tr><td><code>langchain</code></td><td><code>create_agent</code>, middleware, <code>langchain.mcp</code> (1.5.0).</td></tr>
+        <tr><td><code>langchain-openai</code> (1.8.5) · <code>langchain-anthropic</code> (1.7.13) · <code>langchain-google-genai</code> (4.5.3)</td><td>Modelos e mensagens — opcionais, mas a maior parte dos exemplos depende deles.</td></tr>
       </tbody>
     </table>
   </div>
@@ -621,10 +621,10 @@ npm install "@langchain/langgraph@1.5.2" "langchain@1.5.19" "@langchain/core@1.3
 <div class="callout tip"><strong>Veja também:</strong> para integrar um plugin (skills + MCP), só uma skill ou só um servidor MCP <em>self-hosted</em> neste e nos demais frameworks (Google ADK, OpenAI Agents SDK, LangChain, LangGraph, Deep Agents, Claude Agent SDK), com matriz de suporte nativo e receitas, consulte <a href="guia_plugins_skills_mcp_frameworks.html">Plugins, Skills &amp; MCP em frameworks</a>.</div>
   <p>
     Para ferramentas MCP em Python, use o namespace embutido <code>langchain.mcp</code>
-    (<strong>beta</strong>, requer <code>langchain[mcp]&gt;=1.4.0</code>) — instale o extra
+    (<strong>beta</strong>, requer <code>langchain[mcp]</code>, <code>langchain</code> 1.5.2) — instale o extra
     <code>fastmcp</code>: <code>pip install "langchain[mcp]"</code> (puxa
-    <code>fastmcp&gt;=4.0.11,&lt;5.0.0</code>) ou <code>pip install fastmcp</code> junto de
-    um <code>langchain&gt;=1.4</code> já instalado. A classe é
+    o <code>fastmcp</code>) ou <code>pip install fastmcp</code> junto de
+    um <code>langchain</code> 1.5.2 já instalado. A classe é
     <code>MCPAdapter</code>: usa o FastMCP para negociação de protocolo e conexão, e
     adapta as tools MCP descobertas em tools LangChain assíncronas prontas para
     <code>create_agent</code>.
@@ -657,7 +657,7 @@ async with MCPAdapter("https://example.com/mcp") as adapter:
     <a href="https://github.com/langchain-ai/langchain/blob/master/libs/langchain_v1/langchain/mcp/adapter.py" target="_blank" rel="noopener">langchain_v1/langchain/mcp/adapter.py</a>.
     Em JavaScript/TypeScript <strong>não há</strong> port
     de <code>langchain.mcp</code>: use <code>@langchain/mcp-adapters</code>
-    (<code>MCPAdapter</code> com <code>{ servers }</code> e <code>adapter.listTools()</code>, 2.0.1).
+    (<code>MCPAdapter</code> com <code>{ servers }</code> e <code>adapter.listTools()</code>, 2.0.3).
     Os nomes de tool ganham o prefixo <code>servidor_tool</code> por padrão
     (<code>prefixToolNameWithServerName: false</code> mantém o nome cru); peers
     <code>@langchain/core ^1.2.6</code> e <code>@langchain/langgraph ^1.4.18</code>.
@@ -670,11 +670,11 @@ async with MCPAdapter("https://example.com/mcp") as adapter:
       <li><code>langgraph&gt;=1.2.14</code> e <code>langgraph-sdk&gt;=0.4.6</code> — <strong><code>GHSA-3fx2-cqw9-xr3c</code></strong> (CWE-22): <code>RemoteGraph</code> com streaming v3 aceita <code>thread_id</code>/<code>assistant_id</code> controlado por atacante. O piso cobre também a <code>CVE-2026-28277</code> (desserialização msgpack, corrigida na 1.0.10). Pisos da camada de servidor: §33.</li>
       <li><code>langchain-core&gt;=1.3.3</code> (<strong><code>GHSA-pjwx-r37v-7724</code></strong>), <code>langchain&gt;=1.3.9</code> e <code>langchain-anthropic&gt;=1.4.6</code> (<strong><code>GHSA-gr75-jv2w-4656</code></strong>), <code>langchain-openai&gt;=1.1.14</code> (<strong><code>GHSA-r7w7-9xr2-qq2r</code></strong>).</li>
       <li><code>langgraph-checkpoint-redis</code> — <strong><code>CVE-2026-27022</code></strong>, RediSearch query injection; o advisory é do pacote <strong>npm</strong> <code>@langchain/langgraph-checkpoint-redis</code> (corrigido na 1.0.2); <strong>UNVERIFIED</strong> para o equivalente Python: confira o advisory do seu pacote.</li>
-      <li>npm (GitHub Security Advisories de <code>langchain-ai/langgraphjs</code>) — <strong><code>GHSA-wp87-994x-j95x</code></strong> (high): JSON simples como input do grafo é interpretado como <code>Command</code> (por isso <code>isCommand</code> não aceita objetos simples; construa <code>new Command(...)</code>); <strong><code>GHSA-432w-3h3v-2pv4</code></strong> (low): o <code>headers</code> compartilhado do <code>RemoteGraph</code> vaza API key → <strong><code>@langchain/langgraph&gt;=1.4.21</code></strong> e <code>@langchain/langgraph-sdk&gt;=1.12.3</code>. <strong><code>GHSA-8p8h-xj5r-m5wf</code></strong> (high): namespaces do store sem isolamento → <code>@langchain/langgraph-checkpoint-postgres&gt;=1.0.6</code> e <code>@langchain/langgraph-checkpoint-redis&gt;=1.0.12</code>.</li>
+      <li>npm (GitHub Security Advisories de <code>langchain-ai/langgraphjs</code>) — <strong><code>GHSA-wp87-994x-j95x</code></strong> (high): JSON simples como input do grafo é interpretado como <code>Command</code> (por isso <code>isCommand</code> não aceita objetos simples; construa <code>new Command(...)</code>); <strong><code>GHSA-432w-3h3v-2pv4</code></strong> (low): o <code>headers</code> compartilhado do <code>RemoteGraph</code> vaza API key → <strong><code>@langchain/langgraph&gt;=1.4.21</code></strong> e <code>@langchain/langgraph-sdk&gt;=1.12.3</code>. <strong><code>GHSA-8p8h-xj5r-m5wf</code></strong> (high): namespaces do store sem isolamento → <code>@langchain/langgraph-checkpoint-postgres&gt;=1.0.6</code> e <code>@langchain/langgraph-checkpoint-redis&gt;=1.0.12</code>. <strong><code>GHSA-p874-xggm-73rv</code></strong> (medium, 2026-11-16): o <code>MongoDBStore</code> passava valores do chamador a queries do MongoDB sem validar (exposição entre tenants; JavaScript no servidor onde habilitado) → <code>@langchain/langgraph-checkpoint-mongodb&gt;=1.5.1</code>.</li>
     </ul>
     Detalhes de vetor e pré-condição em
     <a href="guia_operacao_seguranca_evals.html">guia de operação e segurança</a>.</div>
-  <p>O overview oficial não declara versão mínima de Python; <code>langchain 1.4.7</code> exige Python 3.10+.</p>
+  <p>O overview oficial não declara versão mínima de Python; <code>langgraph 1.2.24</code> exige Python 3.10+, mas <code>langchain 1.5.2</code>, <code>langchain-core 1.8.x</code> e <code>langchain-openai 1.8.5</code> exigem Python 3.11+ (metadado <code>requires_python</code> no PyPI, 2026-11-27).</p>
 
   <h3>Política de integração de modelos (chat models)</h3>
   <p>
@@ -693,8 +693,8 @@ async with MCPAdapter("https://example.com/mcp") as adapter:
     </table>
   </div>
   <div class="callout warn">
-    <strong>OpenAI — use <code>ChatOpenAI(model="gpt-6.1-sol", use_responses_api=True)</code>.</strong>
-    Uma string <code>"openai:gpt-6.1-sol"</code> só roteia para a Responses API quando a chamada usa um recurso
+    <strong>OpenAI — use <code>ChatOpenAI(model="gpt-6.2-sol", use_responses_api=True)</code>.</strong>
+    Uma string <code>"openai:gpt-6.2-sol"</code> só roteia para a Responses API quando a chamada usa um recurso
     exclusivo dela (gatilhos abaixo). Para garantir a Responses API (ex.: ZDR, threading server-side), passe o objeto
     como <code>model=</code> de <code>create_agent</code>.
   </div>
@@ -703,13 +703,13 @@ from langchain_anthropic import ChatAnthropic
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 # OpenAI — Responses API: use a flag explícita.
-openai_llm = ChatOpenAI(model="gpt-6.1-sol", use_responses_api=True)
+openai_llm = ChatOpenAI(model="gpt-6.2-sol", use_responses_api=True)
 
 # Anthropic — SDK nativo (Messages API):
 anthropic_llm = ChatAnthropic(model="claude-sonnet-5-5")
 
-# Google — SDK google-genai (>= 4.0); em strings provider:model use "google_genai:"
-google_llm = ChatGoogleGenerativeAI(model="gemini-3.8-flash")  # str: "google_genai:gemini-3.8-flash"
+# Google — langchain-google-genai (>= 4.5.3, versão atual); em strings provider:model use "google_genai:"
+google_llm = ChatGoogleGenerativeAI(model="gemini-4-hydrogen")  # str: "google_genai:gemini-4-hydrogen"
 
 # (opcional) threading server-side por response id no OpenAI:
 openai_llm = ChatOpenAI(model="gpt-6-luna", use_previous_response_id=True)</code></pre>
@@ -723,8 +723,16 @@ openai_llm = ChatOpenAI(model="gpt-6-luna", use_previous_response_id=True)</code
     é <code>use_responses_api=True</code> ou um desses gatilhos.
   </p>
   <pre><code class="language-python"># Estes já roteiam para a Responses API automaticamente:
-llm        = ChatOpenAI(model="gpt-6.1-sol", reasoning_effort="medium")
+llm        = ChatOpenAI(model="gpt-6.2-sol", reasoning_effort="medium")
 llm_tools  = ChatOpenAI(model="gpt-6-luna").bind_tools([{"type": "web_search"}])</code></pre>
+  <div class="callout info">
+    <strong>GPT-6.2 (<code>gpt-6.2-astra</code> e <code>gpt-6.2-sol</code>, lançados em 2026-11-17).</strong>
+    O <code>ChatOpenAI</code> aceita qualquer string de modelo; <code>temperature</code> e <code>top_p</code> têm default <code>None</code> e não vão no payload, e é assim que
+    devem ficar nesses modelos. A API rejeita <code>reasoning.effort="none"</code>: use <code>low</code> no lugar de <code>none</code>/<code>minimal</code> (a doc recomenda começar em <code>medium</code>).
+    Tool calling exige a Responses API. Janela de 1.050.000 tokens e saída máxima de 128.000; <code>gpt-6.1-terra</code> e <code>gpt-6-luna</code> seguem vigentes.
+    Fonte: <a href="https://developers.openai.com/api/docs/guides/latest-model" target="_blank" rel="noopener">guides/latest-model</a> e
+    <a href="https://developers.openai.com/api/docs/models/gpt-6.2-sol" target="_blank" rel="noopener">models/gpt-6.2-sol</a> (lidos em 2026-11-17); o padrão de <code>reasoning.effort</code> do 6.2 não está nas páginas de modelo: <strong>UNVERIFIED</strong>.
+  </div>
   <div class="callout danger">
     <strong>Anthropic — Opus 5.5: <code>ChatAnthropic</code> ainda envia configuração que a
     API rejeita.</strong> A issue
@@ -800,7 +808,7 @@ graph.invoke({"messages": [{"role": "user", "content": "hi!"}]})</code></pre>
   </div>
   <div class="source-link">Fontes:
     <a href="https://docs.langchain.com/oss/python/langgraph/overview" target="_blank" rel="noopener">overview</a>,
-    <a href="https://docs.langchain.com/oss/python/langgraph/choosing-apis" target="_blank" rel="noopener">choosing-apis</a>.
+    <a href="https://docs.langchain.com/oss/python/langgraph/functional-api#when-to-use-the-functional-api" target="_blank" rel="noopener">functional-api (quando usar)</a>.
   </div>
 </section>
 
@@ -960,7 +968,7 @@ from langgraph.channels import DeltaChannel
 class State(TypedDict):
     messages: Annotated[list[str], DeltaChannel(my_reducer, snapshot_frequency=5)]</code></pre>
   <ul>
-    <li><code>snapshot_frequency=K</code> grava um snapshot completo a cada <em>K</em> steps, limitando a latência de leitura a O(K); <code>None</code> (default) = sem snapshots.</li>
+    <li><code>snapshot_frequency=K</code> grava um snapshot completo a cada <em>K</em> atualizações do canal, limitando a latência de leitura a O(K). O default é <code>100</code>: valores menores aceleram a leitura de threads longas ao custo de mais armazenamento; valores maiores (ex.: <code>1000</code>) fazem o inverso. Precisa ser inteiro positivo (<code>None</code> não é aceito); um limite global de 5000 super-steps desde o último snapshot também força um snapshot. Fonte: <a href="https://github.com/langchain-ai/langgraph/releases/tag/1.2.18" target="_blank" rel="noopener">release 1.2.18</a> e <code>channels/delta.py</code> da tag 1.2.21 (lidos em 2026-11-12).</li>
     <li>API ainda <strong>beta</strong> — pode mudar entre versões.</li>
   </ul>
 
@@ -999,11 +1007,11 @@ class State(MessagesState):
     <code>add_messages(format="langchain-openai")</code> reformata o conteúdo em
     blocos <code>text</code>/<code>image_url</code> e converte respostas de
     ferramenta em <code>ToolMessage</code>. A linha atual de
-    <code>langchain-core</code> é a <strong>1.x</strong> (<code>1.7.0</code>,
+    <code>langchain-core</code> é a <strong>1.x</strong> (<code>1.8.5</code>,
     <span class="pill ok">PyPI JSON</span>); pacotes relacionados:
-    <code>langchain</code> <strong>1.4.7</strong>,
-    <code>langchain-openai</code> <strong>1.7.2</strong>, <code>langchain-anthropic</code> <strong>1.7.6</strong> e
-    <code>langchain-google-genai</code> <strong>4.4.2</strong> (exige <code>google-genai&gt;=2.20.0,&lt;3</code>).
+    <code>langchain</code> <strong>1.5.2</strong>,
+    <code>langchain-openai</code> <strong>1.8.5</strong> (exige <code>openai&gt;=2.45.0</code> e Python 3.11+), <code>langchain-anthropic</code> <strong>1.7.13</strong> e
+    <code>langchain-google-genai</code> <strong>4.5.3</strong> (exige <code>google-genai&gt;=3.3.0</code>).
     Mantenha o conjunto resolvido no lockfile: atualizar um pacote de integração pode exigir
     a linha atual de <code>langchain-core</code>. O piso de segurança do <code>langchain-core</code>
     (<code>&gt;=1.3.3</code>) está em <a href="#s-install">§2</a>.
@@ -1273,7 +1281,7 @@ graph = builder.compile(cache=InMemoryCache())</code></pre>
     SQLite gravável). A exploração exige que o app (a) configure um backend de cache,
     (b) coloque um nó sob <code>CachePolicy</code> e (c) haja escrita não confiável
     nesse backend — caching é opt-in, não ligado por default. <strong>Fixe
-    <code>langgraph-checkpoint&gt;=4.0.0</code></strong> (que passa a usar
+    <code>langgraph-checkpoint</code> 4.3.2</strong> (o fix do advisory é a 4.0.0, que passa a usar
     <code>pickle_fallback=False</code>) e nunca exponha o backend de cache a escritores
     não confiáveis.
     <div class="source-link">Fonte: <a href="https://github.com/langchain-ai/langgraph/security/advisories/GHSA-mhr3-j7m5-c7c9" target="_blank" rel="noopener">GHSA-mhr3-j7m5-c7c9</a></div>
@@ -1490,7 +1498,7 @@ async def generate_joke(state: State, writer: StreamWriter):
 
   <h3>Event streaming (<code>stream_events</code> / <code>version="v3"</code>) <span class="pill ok">recomendado</span></h3>
   <div class="callout tip">
-    <strong>API recomendada para código novo</strong> — inclusive como
+    <strong>API recomendada na documentação do LangGraph para código novo (veja o aviso abaixo)</strong> — inclusive como
     <strong>driver HITL</strong>.
     <code>graph.stream_events(...)</code> / <code>graph.astream_events(..., version="v3")</code>
     oferece <strong>projeções tipadas</strong> sobre o fluxo de eventos, em vez de um dict
@@ -1498,6 +1506,20 @@ async def generate_joke(state: State, writer: StreamWriter):
     <code>stream.interrupts</code> e retome <strong>somente</strong> com
     <code>Command(resume=...)</code> — não passe <code>Command(update=...)</code>
     como input de resume. Ver <a href="#s-hitl">§19</a>.
+  </div>
+  <div class="callout warn">
+    <strong>Status em divergência (lido em 2026-11-27).</strong> A página oficial
+    <a href="https://docs.langchain.com/oss/python/langgraph/event-streaming" target="_blank" rel="noopener">langgraph/event-streaming</a>
+    não marca o v3 como beta nem depreciado. Já as docstrings de <code>stream_events</code> do
+    <code>langchain-core</code> 1.8.5
+    (<a href="https://github.com/langchain-ai/langchain/pull/42038" target="_blank" rel="noopener">PR #42038</a>,
+    <a href="https://github.com/langchain-ai/langchain/pull/42040" target="_blank" rel="noopener">PR #42040</a>)
+    chamam <code>version="v3"</code> de depreciado em favor de <code>stream()</code>/<code>astream()</code> ou
+    <code>astream_events(version="v2")</code>; a depreciação é só de documentação, e a chamada ainda emite
+    <code>LangChainBetaWarning</code>, sem cronograma de remoção. No <code>langgraph</code> 1.2.24
+    (<code>pregel/main.py</code>) a implementação continua marcada <code>@beta</code> ("experimental").
+    Para código que precisa de estabilidade, prefira <code>stream</code> com <code>version="v2"</code>;
+    ao usar o v3, fixe a versão e trate o aviso como esperado.
   </div>
   <div class="callout warn">
     Não confunda esta <code>version="v3"</code> (específica de
@@ -1794,7 +1816,37 @@ graph.invoke(None, config=cfg)  # resume até o próximo breakpoint</code></pre>
 interrupted = graph.invoke({"vals": []}, config, version="v2")
 resume_map = {i.id: f"answer for {i.value}" for i in interrupted.interrupts}
 result = graph.invoke(Command(resume=resume_map), config, version="v2")</code></pre>
-  <div class="source-link">Fonte: <a href="https://docs.langchain.com/oss/python/langgraph/human-in-the-loop" target="_blank" rel="noopener">human-in-the-loop</a></div>
+  <h3 id="s-hitl-strict">Strict resume e um id por <code>interrupt()</code></h3>
+  <p>
+    Por padrão, um <code>Command(resume=...)</code> que cita um id de interrupt que
+    <em>não está mais pendente</em> é ignorado em silêncio: os nós reexecutam até o
+    <code>interrupt()</code> e o grafo pausa de novo nas mesmas perguntas, sem erro. Um
+    cliente que responde duas vezes (ou responde uma pergunta já descartada) não percebe
+    nada. O <strong>strict resume</strong> é um modo <em>opt-in</em> que recusa essas
+    respostas obsoletas antes de gravar qualquer coisa.
+  </p>
+  <pre><code class="language-python">from langgraph.errors import UnknownInterruptError
+
+# chave configurable PRIVADA (CONFIG_KEY_STRICT_RESUME): não há parâmetro público documentado
+config = {"configurable": {"thread_id": "t1", "__pregel_strict_resume": True}}
+
+try:
+    graph.invoke(Command(resume={"id-que-nao-esta-pendente": "ok"}), config, version="v2")
+except UnknownInterruptError as err:
+    print(err.reason)  # "not_pending" | "empty_map" | "ambiguous"
+    # err.interrupt_ids e err.pending_ids trazem os ids envolvidos</code></pre>
+  <ul>
+    <li><code>not_pending</code>: o mapa cita um id que não está pendente. <code>empty_map</code>: mapa vazio. <code>ambiguous</code>: um único valor com vários interrupts pendentes (sem o modo estrito isso levanta <code>RuntimeError</code>).</li>
+    <li>Um único valor sem nenhum interrupt pendente continua aceito: é como se retoma um breakpoint estático (<code>interrupt_before</code>/<code>interrupt_after</code>).</li>
+    <li>A checagem vale para o grafo raiz; é pulada em grafos aninhados e quando se retoma de um checkpoint que a thread já ultrapassou. <code>RemoteGraph</code> não repassa a chave: o lado remoto decide por conta própria.</li>
+    <li>Cada <code>interrupt()</code> de uma mesma task tem <strong>seu próprio id</strong> (hash do namespace da task + quantidade de respostas que a task já recebeu). A primeira pergunta de um nó mantém o id do hash puro; ids salvos por versões anteriores ainda respondem. Uma resposta repetida depois que o nó fez a pergunta seguinte é recusada como <code>not_pending</code> em vez de ser tomada como resposta da próxima pergunta.</li>
+    <li>Um nó reexecutado pela retry policy reaproveita as respostas que a task já tinha, em vez de perguntar de novo.</li>
+  </ul>
+  <p>
+    Por ser chave privada, o nome pode mudar sem aviso. Contra um Agent Server há um parâmetro público: <code>strict_resume=True</code> em <code>client.runs.create</code>, <code>client.runs.stream</code> e <code>client.runs.wait</code> (<code>langgraph-sdk</code> 0.4.14+); a run falha com <code>UnknownInterruptError</code> e a thread fica como estava, mas só vale em servidores cujo <code>/info</code> reporta <code>strict_resume</code> (docstring do SDK, lida em 2026-11-17). A versão JS (<code>@langchain/langgraph</code> 1.7.0) tem a mesma chave e a mesma semântica e, além disso, aceita <code>Command({ resume: false })</code> e outros valores falsy (que antes lançavam <code>EmptyInputError</code>).
+  </p>
+  <div class="source-link">Fonte: <a href="https://github.com/langchain-ai/langgraph/releases/tag/1.2.20" target="_blank" rel="noopener">langgraph 1.2.20</a> (PRs #9574 e #9589) e <a href="https://github.com/langchain-ai/langgraphjs/releases/tag/%40langchain/langgraph%401.7.0" target="_blank" rel="noopener">@langchain/langgraph 1.7.0</a> — lidos em 2026-11-12</div>
+  <div class="source-link">Fonte: <a href="https://docs.langchain.com/oss/python/langgraph/interrupts" target="_blank" rel="noopener">interrupts</a></div>
 </section>
 
 <section id="s-memory">
@@ -2076,7 +2128,7 @@ from langchain.tools import tool
 from langgraph.checkpoint.memory import InMemorySaver
 from langchain_openai import ChatOpenAI
 
-model = ChatOpenAI(model="gpt-6.1-sol", use_responses_api=True)
+model = ChatOpenAI(model="gpt-6.2-sol", use_responses_api=True)
 
 def add(a: float, b: float) -&gt; float:
     """Add two numbers."""
@@ -2118,7 +2170,7 @@ result = supervisor.invoke(
     grafo mais externo, desde que só ele tenha checkpointer e receba <code>thread_id</code>. Para
     hierarquias, achate em um supervisor com uma tool por agente-folha ou embrulhe supervisores
     intermediários como tools do topo. Fonte:
-    <a href="https://docs.langchain.com/oss/python/langchain/supervisor" target="_blank" rel="noopener">langchain/supervisor</a>.
+    <a href="https://docs.langchain.com/oss/python/langchain/multi-agent/subagents-personal-assistant" target="_blank" rel="noopener">langchain/multi-agent/subagents-personal-assistant</a>.
   </p>
   <h3>Handoff tool via <code>Command</code> (padrão canônico)</h3>
   <pre><code class="language-python">from typing import Annotated
@@ -2366,8 +2418,9 @@ agent = agent_builder.compile()</code></pre>
   </div>
 
   <div class="callout info">
-    Todos os pacotes LangChain exigem Python 3.10+. Fonte:
-    <a href="https://docs.langchain.com/oss/python/langchain/install" target="_blank" rel="noopener">langchain/install</a>.
+    <code>langchain</code> 1.5.0 e <code>langchain-core</code> 1.8.0 exigem Python 3.11+ (<code>requires_python</code> no PyPI). A página
+    <a href="https://docs.langchain.com/oss/python/langchain/install" target="_blank" rel="noopener">langchain/install</a>
+    ainda diz "Python 3.10+" (lida em 2026-11-12): o PyPI prevalece.
   </div>
 
   <h3>Sistema de <em>middleware</em> (customização do <code>create_agent</code>)</h3>
@@ -2384,14 +2437,66 @@ agent = agent_builder.compile()</code></pre>
     <table>
       <thead><tr><th>Middleware</th><th>Gancho · função</th></tr></thead>
       <tbody>
-        <tr><td><code>HumanInTheLoopMiddleware</code></td><td><code>after_model</code> — adiciona interrupts de aprovação em tool calls (HITL para agentes <code>create_agent</code>, no lugar do <code>interrupt</code>/<code>Command</code> cru). Default <code>interrupt_mode="batched"</code>; <code>interrupt_mode="per_call"</code> (<code>langchain&gt;=1.4.6</code>) levanta um interrupt por tool call, respondido por ID, com <code>type: "tool_approval"</code> e <code>response_schema</code>.</td></tr>
-        <tr><td><code>SummarizationMiddleware</code></td><td><code>before_model</code> — sumariza o histórico quando as mensagens passam um limiar; aceita <code>summarizer=</code> (<code>langchain&gt;=1.4.5</code>).</td></tr>
+        <tr><td><code>HumanInTheLoopMiddleware</code></td><td><code>after_model</code> — adiciona interrupts de aprovação em tool calls (HITL para agentes <code>create_agent</code>, no lugar do <code>interrupt</code>/<code>Command</code> cru). Default <code>interrupt_mode="batched"</code>; <code>interrupt_mode="per_call"</code> levanta um interrupt por tool call, respondido por ID, com <code>type: "tool_approval"</code> e <code>response_schema</code>.</td></tr>
+        <tr><td><code>SummarizationMiddleware</code></td><td><code>before_model</code> — sumariza o histórico quando as mensagens passam um limiar; aceita <code>summarizer=</code>.</td></tr>
         <tr><td><code>TodoListMiddleware</code></td><td>Planejamento/tracking estruturado de tarefas (é o padrão que sustenta o <code>deepagents</code>).</td></tr>
         <tr><td>Anthropic prompt-caching</td><td><code>wrap_model_call</code> — injeta tags de cache-control nas chamadas Anthropic.</td></tr>
+        <tr><td><code>ModelRefusalMiddleware</code> <span class="pill ok">langchain 1.5.2</span></td><td><code>wrap_model_call</code> — levanta <code>ModelRefusalError</code> (de <code>langchain_core.exceptions</code>) quando a resposta traz um bloco <code>refusal</code> padrão; sem ele, a recusa volta como resposta final “bem-sucedida”. Liste-o depois de <code>ModelFallbackMiddleware</code> para o fallback poder capturar o erro.</td></tr>
+        <tr><td><code>ModelRouterMiddleware</code> <span class="pill beta">beta · langchain&gt;=1.5.0</span></td><td><code>before_agent</code> + <code>wrap_model_call</code> — um modelo de decisão classifica a última <code>HumanMessage</code> uma vez por execução e o modelo escolhido atende todas as chamadas do run (<a href="#s-decision-middleware">detalhes</a>).</td></tr>
+        <tr><td><code>AutoModeMiddleware</code> <span class="pill beta">beta · langchain&gt;=1.5.0</span></td><td><code>wrap_tool_call</code> — um modelo de decisão estima a probabilidade de a tool call ser arriscada e bloqueia as acima do limiar; não pede aprovação humana (<a href="#s-decision-middleware">detalhes</a>).</td></tr>
       </tbody>
     </table>
   </div>
   <div class="source-link">Fonte: <a href="https://www.langchain.com/blog/agent-middleware" target="_blank" rel="noopener">langchain.com/blog/agent-middleware</a></div>
+
+  <h3 id="s-decision-middleware">Modelos de decisão: <code>ModelRouterMiddleware</code> e <code>AutoModeMiddleware</code> <span class="pill beta">beta</span></h3>
+  <p>
+    O <code>langchain-core</code> 1.8.0 traz o módulo <code>langchain_core.decisions</code>:
+    <code>BaseDecisionModel</code> responde perguntas tipadas (<code>Noul</code> = probabilidade
+    sim/não, <code>Choice</code>, <code>Score</code>, <code>Box</code>) sobre texto, mensagens ou estado, em vez de gerar texto.
+    Os dois middlewares abaixo recebem um <code>classifier</code> <strong>obrigatório</strong> do tipo
+    <code>BaseDecisionModel</code> — o pacote não escolhe provedor por você. Há duas implementações:
+    <code>OpenAIClassifier</code> (<code>from langchain_openai.decisions import OpenAIClassifier</code>; beta; <code>langchain-openai&gt;=1.8.0</code>;
+    envolve a Decisions API da OpenAI, aceita <code>Noul</code>, <code>Choice</code> e <code>Score</code>, recusa <code>Box</code> com <code>ValueError</code> e
+    levanta <code>ModelRefusalError</code> se qualquer pergunta for recusada) e <code>TypeSafeClassifier</code> (pacote <code>langchain-typesafe</code> 0.1.0).
+    Para o Gemini, uma busca por <code>BaseDecisionModel</code> no repositório <code>langchain-ai/langchain</code> (2026-11-17) não achou implementação
+    em <code>langchain-google-genai</code>: não há classe oficial para as Decisions do Gemini em Python.
+  </p>
+  <pre><code class="language-python">from langchain.agents import create_agent
+from langchain.agents.middleware import (
+    AutoModeMiddleware, ModelChoice, ModelRefusalMiddleware, ModelRouterMiddleware,
+)
+from langchain_core.decisions import NoulCriteria
+
+# classifier: qualquer langchain_core.decisions.BaseDecisionModel
+router = ModelRouterMiddleware(
+    choices={
+        "fast": ModelChoice(model=fast_model, criteria="Simple, well-scoped tasks."),
+        "powerful": ModelChoice(model=powerful_model, criteria="Complex tasks requiring deeper reasoning."),
+    },
+    instructions="Choose the least costly model suited to the task.",
+    classifier=classifier,
+)
+auto_mode = AutoModeMiddleware(
+    tools=[delete_file],
+    criteria=NoulCriteria(
+        true="The call writes, deletes, publishes, or changes access.",
+        false="The call only reads public or user-provided data.",
+    ),
+    classifier=classifier,
+)
+agent = create_agent(
+    fast_model,                       # modelo base; o router o substitui por chamada
+    tools=[read_file, delete_file],
+    middleware=[router, auto_mode, ModelRefusalMiddleware()],
+)</code></pre>
+  <ul>
+    <li><strong>Router:</strong> <code>choices</code> mapeia um rótulo a <code>ModelChoice(model=, criteria=)</code> (<code>model</code> é instância ou string de <code>init_chat_model</code>); a resposta completa (<code>ChoiceAnswer</code>, com probabilidades e confiança) fica no estado em <code>model_route</code>. Sem <code>HumanMessage</code> no estado levanta <code>ValueError</code>; falha do classificador propaga e encerra o run — não há troca silenciosa de modelo.</li>
+    <li><strong>Auto mode:</strong> só as tools listadas em <code>tools</code> são classificadas (as demais passam direto). O classificador recebe a tool call, a descrição da tool e até 30 mensagens recentes; probabilidade <code>&gt;= 0.5</code> devolve um <code>ToolMessage</code> de erro sem executar a tool. Falha do classificador propaga e a tool não roda. O <code>instructions</code> default trata o conteúdo do estado como dado, não como instrução.</li>
+    <li>Ambos têm <code>trace_policy</code> que omite o payload (mensagens e argumentos) dos traces do middleware.</li>
+    <li>Os thresholds e os critérios devem vir de exemplos rotulados do seu tráfego — o mesmo princípio das Decisions APIs (<a href="guia_arquitetura_orquestracao.html#model-router">Arquitetura §12</a>).</li>
+  </ul>
+  <div class="source-link">Fonte: <a href="https://github.com/langchain-ai/langchain/releases/tag/langchain%3D%3D1.5.0" target="_blank" rel="noopener">langchain 1.5.0</a>, <a href="https://github.com/langchain-ai/langchain/releases/tag/langchain-core%3D%3D1.8.0" target="_blank" rel="noopener">langchain-core 1.8.0</a>, <a href="https://github.com/langchain-ai/langchain/releases/tag/langchain%3D%3D1.4.9" target="_blank" rel="noopener">langchain 1.4.9</a>; código-fonte <code>agents/middleware/model_router.py</code>, <code>auto_mode.py</code> e <code>model_refusal.py</code> da tag <code>langchain==1.5.0</code> — lidos em 2026-11-12</div>
 
   <h3>Blocos de conteúdo padrão (<code>content_blocks</code>)</h3>
   <p>
@@ -2692,7 +2797,7 @@ async with AsyncPostgresSaver.from_conn_string(uri) as cp:
     <code>prune(thread_ids, *, strategy="keep_latest")</code>
     (também no <code>AsyncPostgresSaver</code>) limpa checkpoints antigos: <code>"keep_latest"</code> mantém só o mais recente de cada thread
     e recusa threads que usam <code>DeltaChannel</code>; <code>"delete"</code> remove a thread inteira
-    (<a href="https://github.com/langchain-ai/langgraph/releases/tag/checkpointpostgres%3D%3D3.2.0" target="_blank" rel="noopener">release 3.2.0</a>).
+    (<a href="https://github.com/langchain-ai/langgraph/releases/tag/checkpointpostgres%3D%3D3.2.0" target="_blank" rel="noopener">release 3.2.0</a>; a 3.2.1, de 2026-11-14, só traz otimizações de leitura).
   </p>
 </section>
 
@@ -2858,7 +2963,7 @@ graph = builder.compile()</code></pre>
   </div>
   <div class="callout info">
     <strong>Protocolos no deployment.</strong> Um grafo compilado localmente não vira
-    servidor MCP ou A2A por possuir tools. Em Agent Server/LangSmith Deployment,
+    servidor MCP ou A2A por possuir tools. Em um LangSmith Agent Server,
     trate essas superfícies como configuração de deployment, com autenticação e
     allowlist próprias; o A2A tem documentação operacional em
     <a href="https://docs.langchain.com/langsmith/server-a2a" target="_blank" rel="noopener">Server A2A</a>
@@ -2914,7 +3019,7 @@ graph = builder.compile()</code></pre>
 <section id="s-cli">
   <h2>28. CLI <code>langgraph</code></h2>
   <p>Instale com:</p>
-  <pre><code class="language-bash">pip install -U "langgraph-cli[inmem]&gt;=0.4.32"   # piso: GHSA-8prr-f582-jqq3 (deploy --verbose vazava o token de push)</code></pre>
+  <pre><code class="language-bash">pip install "langgraph-cli[inmem]==0.4.44"   # piso de segurança &gt;=0.4.32: GHSA-8prr-f582-jqq3 (deploy --verbose vazava o token de push)</code></pre>
   <p>Todos os comandos leem <code>./langgraph.json</code> por padrão. Cinco subcomandos cobrem o ciclo completo: <code>dev</code>, <code>build</code>, <code>up</code>, <code>deploy</code>, <code>dockerfile</code>.</p>
 
   <h3>28.1 <code>langgraph dev</code> — servidor local in-memory</h3>
@@ -2971,15 +3076,16 @@ graph = builder.compile()</code></pre>
     </tbody>
   </table></div>
 
-  <h3>28.4 <code>langgraph deploy</code> — push para LangSmith</h3>
-  <pre><code class="language-bash">langgraph deploy --name my-agent --deployment-type dedicated --api-key $LANGSMITH_API_KEY</code></pre>
+  <h3>28.4 <code>langgraph deploy</code> — push para o LangSmith Agent Server</h3>
+  <p><code>langgraph deploy</code> e seus subcomandos estão em <strong>beta</strong> na documentação oficial (lida em 2026-11-27): espere mudanças frequentes.</p>
+  <pre><code class="language-bash">langgraph deploy --name my-agent --agent-server-type dedicated --api-key $LANGSMITH_API_KEY</code></pre>
   <div class="table-wrap"><table>
     <thead><tr><th>Flag</th><th>Default</th><th>Função</th></tr></thead>
     <tbody>
       <tr><td><code>--api-key TEXT</code></td><td>env</td><td>LangSmith API key</td></tr>
-      <tr><td><code>--name TEXT</code></td><td>cwd</td><td>Nome do deployment</td></tr>
-      <tr><td><code>--deployment-id TEXT</code></td><td>—</td><td>Atualiza deployment existente</td></tr>
-      <tr><td><code>--deployment-type TEXT</code></td><td><code>serverless</code></td><td><code>serverless</code> (scale to zero) ou <code>dedicated</code> (sempre ativo). Só vale ao criar um deployment e é ignorada com <code>--push-to</code></td></tr>
+      <tr><td><code>--name TEXT</code></td><td>cwd</td><td>Nome do Agent Server</td></tr>
+      <tr><td><code>--agent-server-id TEXT</code></td><td>—</td><td>Atualiza um Agent Server existente</td></tr>
+      <tr><td><code>--agent-server-type TEXT</code></td><td><code>serverless</code></td><td><code>serverless</code> (scale to zero) ou <code>dedicated</code> (sempre ativo). Só vale ao criar um Agent Server e é ignorada com <code>--push-to</code></td></tr>
       <tr><td><code>--agent-id TEXT</code> · <code>--agent-environment</code></td><td>env</td><td>ID lógico do agente e ambiente (<code>development</code>, <code>staging</code> ou <code>production</code>); exigem agent mode no tenant e <code>langgraph-cli&gt;=0.4.32</code></td></tr>
       <tr><td><code>--remote / --no-remote</code></td><td>auto</td><td>Forçar build remoto/local (por padrão, remoto se não houver Docker local)</td></tr>
       <tr><td><code>-t, --tag TEXT</code></td><td><code>latest</code></td><td>Tag da imagem enviada</td></tr>
@@ -2992,7 +3098,7 @@ graph = builder.compile()</code></pre>
       <tr><td><code>--verbose</code></td><td>off</td><td>Log detalhado de build/push do Docker. Piso <code>langgraph-cli&gt;=0.4.32</code> (GHSA-8prr-f582-jqq3: o token temporário de push do registry vazava no log)</td></tr>
     </tbody>
   </table></div>
-  <p>Subcomandos: <code>langgraph deploy list</code>, <code>... revisions list ID</code>, <code>... delete ID</code>, <code>... logs [-f] [-q TEXT] [--type deploy|build] [--deployment-id ID | --name NAME]</code>. Fontes: <a href="https://docs.langchain.com/langsmith/cli" target="_blank" rel="noopener">docs.langchain.com/langsmith/cli</a> e <code>deploy.py</code> do <code>langgraph-cli</code>.</p>
+  <p>Subcomandos: <code>langgraph deploy list</code>, <code>... revisions list ID</code>, <code>... delete ID</code>, <code>... logs [-f] [-q TEXT] [--type deploy|build] [--agent-server-id ID | --name NAME]</code>. Fontes: <a href="https://docs.langchain.com/langsmith/cli" target="_blank" rel="noopener">docs.langchain.com/langsmith/cli</a> e <code>deploy.py</code> do <code>langgraph-cli</code> 0.4.44 (lidos em 2026-11-27).</p>
 
   <h3>28.5 <code>langgraph dockerfile</code> — gera Dockerfile</h3>
   <pre><code class="language-bash">langgraph dockerfile ./Dockerfile -c langgraph.json</code></pre>
@@ -3035,7 +3141,7 @@ graph = builder.compile()</code></pre>
   <p>Booleanos para desabilitar grupos: <code>disable_meta</code>, <code>disable_assistants</code>, <code>disable_runs</code>, <code>disable_threads</code>, <code>disable_store</code>, <code>disable_ui</code>, <code>disable_webhooks</code>. <code>/ok</code> liveness fica disponível mesmo com <code>disable_meta: true</code>. MCP e A2A têm switches próprios de disable (seção de configuração em <a href="https://docs.langchain.com/langsmith/cli" target="_blank" rel="noopener">docs.langchain.com/langsmith/cli</a>).</p>
 
   <h3>Sub-schema <code>webhooks</code></h3>
-  <p><code>env_prefix</code> (default <code>LG_WEBHOOK_</code>), <code>headers</code> (estáticos, <code>langgraph-api&gt;=0.5.36</code>) e <code>url</code> com <code>allowed_domains</code>, <code>allowed_ports</code>, <code>require_https</code>, <code>disable_loopback</code> e <code>max_url_length</code>. Fonte: <a href="https://docs.langchain.com/langsmith/use-webhooks" target="_blank" rel="noopener">docs.langchain.com/langsmith/use-webhooks</a>.</p>
+  <p><code>env_prefix</code> (default <code>LG_WEBHOOK_</code>), <code>headers</code> (estáticos, <code>langgraph-api</code> 0.19.1) e <code>url</code> com <code>allowed_domains</code>, <code>allowed_ports</code>, <code>require_https</code>, <code>disable_loopback</code> e <code>max_url_length</code>. Fonte: <a href="https://docs.langchain.com/langsmith/use-webhooks" target="_blank" rel="noopener">docs.langchain.com/langsmith/use-webhooks</a>.</p>
 
   <h3>Sub-schema <code>store.index</code> — busca semântica</h3>
   <pre><code class="language-json">"store": {
@@ -3166,7 +3272,7 @@ graph = builder.compile()</code></pre>
       <li><code>GET /ok</code> · <code>GET /info</code> · <code>GET /metrics</code> · <code>GET /docs</code></li>
     </ul>
   </details>
-  <p class="source-link">Fonte: OpenAPI do Agent Server em <a href="https://docs.langchain.com/langsmith/agent-server-api" target="_blank" rel="noopener">docs.langchain.com/langsmith/agent-server-api</a>.</p>
+  <p class="source-link">Fonte: referência da API do Agent Server (OpenAPI) em <a href="https://docs.langchain.com/langsmith/server-api-ref" target="_blank" rel="noopener">docs.langchain.com/langsmith/server-api-ref</a> (lida em 2026-11-27).</p>
 
   <h3>30.4 Cron expressions</h3>
   <p>5-field POSIX cron <code>m h dom mon dow</code>, sempre em <strong>UTC</strong>.</p>
@@ -3320,8 +3426,8 @@ async for ev in client.runs.stream(
   <p>Duas fases em cada request: 1) <strong>Autenticação</strong> (<code>@auth.authenticate</code> devolve o usuário), 2) <strong>Autorização</strong> (handler mais específico decide; retorna <code>None</code>/<code>True</code> = permite, <code>False</code> = 403, ou um <code>dict</code> filtro restringindo metadata).</p>
   <div class="callout danger">
     <strong>Pisos de segurança da autorização (GitHub Security Advisories de <code>langchain-ai/langgraph</code>).</strong>
-    <code>langgraph-sdk&gt;=0.4.6</code> e <code>langgraph&gt;=1.2.14</code> (GHSA-3fx2-cqw9-xr3c: o streaming v3 do <code>RemoteGraph</code> aceitava <code>thread_id</code>/<code>assistant_id</code> controlado por atacante; corrente do SDK 0.4.9).
-    <code>langgraph-api&gt;=0.15.0</code> (GHSA-4hm6-w6qq-w73v: a custom authentication podia permitir acesso <em>cross-user</em> ao Store; corrente 0.16.6).
+    <code>langgraph-sdk&gt;=0.4.6</code> e <code>langgraph&gt;=1.2.14</code> (GHSA-3fx2-cqw9-xr3c: o streaming v3 do <code>RemoteGraph</code> aceitava <code>thread_id</code>/<code>assistant_id</code> controlado por atacante; corrente do SDK 0.4.14).
+    <code>langgraph-api&gt;=0.15.0</code> (GHSA-4hm6-w6qq-w73v: a custom authentication podia permitir acesso <em>cross-user</em> ao Store; corrente 0.17.1).
   </div>
 
   <pre><code class="language-json">"auth": { "path": "./auth.py:auth", "disable_studio_auth": false }</code></pre>
@@ -3465,7 +3571,7 @@ await client.runs.create(thread_id, aid, input=msg, multitask_strategy="rollback
 </section>
 
 <section id="s-studio">
-  <h2>36. LangGraph Studio</h2>
+  <h2>36. LangSmith Studio</h2>
   <p>Studio é a aplicação web em <code>smith.langchain.com</code> que conecta a um servidor LangGraph (local ou deployment) para visualizar grafos, percorrer threads, editar estado, refazer steps e iterar prompts.</p>
 
   <h3>36.1 Dois modos de execução</h3>
@@ -3473,7 +3579,7 @@ await client.runs.create(thread_id, aid, input=msg, multitask_strategy="rollback
     <thead><tr><th>Modo</th><th>Como conectar</th><th>Auth</th></tr></thead>
     <tbody>
       <tr><td>Local</td><td><code>langgraph dev</code> em <code>:2024</code>; Studio aponta para localhost</td><td>Handlers recebem contexto Studio-tagged (a menos que <code>disable_studio_auth: true</code>)</td></tr>
-      <tr><td>Cloud</td><td>LangSmith Deployment publicado via <code>langgraph deploy</code></td><td>Auth normal; 1-click deploy a partir do Studio é suportado</td></tr>
+      <tr><td>Cloud</td><td>LangSmith Agent Server publicado via <code>langgraph deploy</code> (beta)</td><td>Auth normal; 1-click deploy a partir do Studio é suportado</td></tr>
     </tbody>
   </table></div>
 
@@ -3496,7 +3602,7 @@ await client.runs.create(thread_id, aid, input=msg, multitask_strategy="rollback
 
 <section id="s-deploy">
   <h2>37. Opções de deployment</h2>
-  <p>Na documentação oficial o produto de deployment é o <strong>LangSmith Deployment</strong> e o runtime de todas as opções é o mesmo <strong>Agent Server</strong> (<a href="https://docs.langchain.com/langsmith/deployment" target="_blank" rel="noopener">docs.langchain.com/langsmith/deployment</a>).</p>
+  <p>Na documentação oficial (lida em 2026-11-27) a página de deploy diz que o <strong>LangSmith Deployment</strong> agora se chama <strong>LangSmith Agent Server</strong>: o runtime de todas as opções é o mesmo Agent Server (<a href="https://docs.langchain.com/langsmith/deploy-overview" target="_blank" rel="noopener">docs.langchain.com/langsmith/deploy-overview</a>).</p>
   <div class="table-wrap"><table>
     <thead><tr><th>Opção</th><th>Control plane</th><th>Data plane</th><th>Infra</th><th>Plano</th></tr></thead>
     <tbody>
@@ -3555,7 +3661,7 @@ def search(query: str) -&gt; str: ...
 def respond(state: MessagesState):
     return {"final": state["messages"][-1].tool_calls[0]["args"]}
 
-llm = ChatOpenAI(model="gpt-6.1-sol", use_responses_api=True).bind_tools([search, WeatherResponse])
+llm = ChatOpenAI(model="gpt-6.2-sol", use_responses_api=True).bind_tools([search, WeatherResponse])
 
 def call_model(state: MessagesState):
     return {"messages": [llm.invoke(state["messages"])]}
@@ -3591,9 +3697,9 @@ class PlanExecute(TypedDict):
     past_steps: list[tuple[str, str]]
     response: str
 
-planner   = planner_prompt   | ChatOpenAI(model="gpt-6.1-sol", use_responses_api=True).with_structured_output(Plan)
+planner   = planner_prompt   | ChatOpenAI(model="gpt-6.2-sol", use_responses_api=True).with_structured_output(Plan)
 executor  = create_agent(ChatOpenAI(model="gpt-6-luna", use_responses_api=True), tools=[search])
-replanner = replanner_prompt | ChatOpenAI(model="gpt-6.1-sol", use_responses_api=True).with_structured_output(Plan)
+replanner = replanner_prompt | ChatOpenAI(model="gpt-6.2-sol", use_responses_api=True).with_structured_output(Plan)
 
 async def plan_step(s):    return {"plan": (await planner.ainvoke({"input": s["input"]})).steps}
 async def execute_step(s):
@@ -3613,11 +3719,11 @@ app = g.compile()</code></pre>
 <section id="r-reflection">
   <h2>R3. Reflection</h2>
   <p><strong>Ideia.</strong> Generator escreve, reflector critica, loop até crítico satisfeito ou N rodadas.</p>
-  <p><strong>URL:</strong> <a href="https://github.com/langchain-ai/langgraph/tree/main/examples/reflection" target="_blank" rel="noopener"><code>examples/reflection</code></a> · <a href="https://blog.langchain.com/reflection-agents/" target="_blank" rel="noopener">blog</a></p>
+  <p><strong>URL:</strong> <a href="https://github.com/langchain-ai/langgraph/tree/main/examples/reflection" target="_blank" rel="noopener"><code>examples/reflection</code></a> · <a href="https://www.langchain.com/blog/reflection-agents" target="_blank" rel="noopener">blog</a></p>
   <pre><code class="language-python">from langgraph.graph import StateGraph, MessagesState, END
 
-generate = generator_prompt  | ChatOpenAI(model="gpt-6.1-sol", use_responses_api=True)
-reflect  = reflection_prompt | ChatOpenAI(model="gpt-6.1-sol", use_responses_api=True)
+generate = generator_prompt  | ChatOpenAI(model="gpt-6.2-sol", use_responses_api=True)
+reflect  = reflection_prompt | ChatOpenAI(model="gpt-6.2-sol", use_responses_api=True)
 
 async def generation_node(state: MessagesState):
     return {"messages": [await generate.ainvoke(state["messages"])]}
@@ -3656,8 +3762,8 @@ class AnswerQuestion(BaseModel):
     reflection: Reflection
     search_queries: list[str] = Field(description="1-3 queries to address gaps.")
 
-responder = responder_prompt | ChatOpenAI(model="gpt-6.1-sol", use_responses_api=True).bind_tools([AnswerQuestion])
-revisor   = revisor_prompt   | ChatOpenAI(model="gpt-6.1-sol", use_responses_api=True).bind_tools([AnswerQuestion])
+responder = responder_prompt | ChatOpenAI(model="gpt-6.2-sol", use_responses_api=True).bind_tools([AnswerQuestion])
+revisor   = revisor_prompt   | ChatOpenAI(model="gpt-6.2-sol", use_responses_api=True).bind_tools([AnswerQuestion])
 
 def run_tools(state):
     queries = state["messages"][-1].tool_calls[0]["args"]["search_queries"]
@@ -3687,7 +3793,7 @@ class State(TypedDict):
     task: str; modules: list[str]
     selected: str; adapted: str; plan: str; answer: str
 
-llm = ChatOpenAI(model="gpt-6.1-sol", use_responses_api=True)
+llm = ChatOpenAI(model="gpt-6.2-sol", use_responses_api=True)
 
 def select(s):    return {"selected": llm.invoke(f"Select modules for: {s['task']}\nFrom: {s['modules']}").content}
 def adapt(s):     return {"adapted":  llm.invoke(f"Adapt these to the task '{s['task']}': {s['selected']}").content}
@@ -3741,13 +3847,13 @@ app = g.compile()</code></pre>
 <section id="r-supervisor">
   <h2>R7. Multi-agent supervisor</h2>
   <p><strong>Ideia.</strong> Um LLM supervisor escolhe qual especialista chamar próximo; cada chamada retorna controle ao supervisor. Cada especialista é um agente <code>create_agent</code> exposto como <code>@tool</code> (detalhe e exemplo completo em <a href="#s-multi-agent">§24</a>).</p>
-  <p><strong>URL:</strong> <a href="https://docs.langchain.com/oss/python/langchain/supervisor" target="_blank" rel="noopener"><code>docs.langchain.com/oss/python/langchain/supervisor</code></a></p>
+  <p><strong>URL:</strong> <a href="https://docs.langchain.com/oss/python/langchain/multi-agent/subagents-personal-assistant" target="_blank" rel="noopener"><code>docs.langchain.com/oss/python/langchain/multi-agent/subagents-personal-assistant</code></a></p>
   <pre><code class="language-python">from langchain.agents import create_agent
 from langchain.tools import tool
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import InMemorySaver
 
-model = ChatOpenAI(model="gpt-6.1-sol", use_responses_api=True)
+model = ChatOpenAI(model="gpt-6.2-sol", use_responses_api=True)
 math_agent     = create_agent(model, tools=[add], system_prompt="You are a math expert.")
 research_agent = create_agent(model, tools=[web_search], system_prompt="You are a research expert.")
 
@@ -4041,13 +4147,13 @@ app = g.compile()</code></pre>
       <div class="brand" style="font-size:15px">Guia LangGraph <small>Python</small></div>
       <p style="margin:8px 0 0;color:var(--c-fg-muted);font-size:13.5px;line-height:1.55">
         Referência técnica conferida contra a documentação oficial pública e os registros de pacotes em
-        <strong>2026-10-24</strong>. Para informações sempre atualizadas, consulte
+        <strong>2026-11-27</strong>. Para informações sempre atualizadas, consulte
         <a href="https://docs.langchain.com/oss/python/langgraph/overview" target="_blank" rel="noopener">docs.langchain.com/oss/python/langgraph</a>.
       </p>
     </div>
     <div style="font-size:13.5px;color:var(--c-fg-muted);line-height:1.7">
       <div><strong>Histórico editorial</strong></div>
-      <div>Última verificação · 2026-10-24</div>
+      <div>Última verificação · 2026-11-27</div>
       <div style="margin-top:6px">
         <span class="badge lc">langgraph</span>
         <span class="badge info">Python</span>
