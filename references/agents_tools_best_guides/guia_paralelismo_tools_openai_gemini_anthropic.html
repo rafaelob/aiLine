@@ -5,7 +5,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%9A%3C/text%3E%3C/svg%3E" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="Guia comparativo de paralelismo de tools em OpenAI, Gemini e Anthropic: contratos tipados, autorização, scheduler bounded, backpressure, idempotência, circuit breakers, contexto e avaliação de processo e resultado." />
-  <meta name="last-checked" content="2026-10-24" />
+  <meta name="last-checked" content="2026-11-27" />
   <title>Paralelismo de Tools em Frameworks de Agentes — Relatório Técnico Avançado</title>
   <style>
     :root {
@@ -153,7 +153,7 @@
       <a href="#openai-same-turn">3.3 Built-in + function tools</a>
       <a href="#openai-agents">3.6 OpenAI Agents SDK</a>
       <a href="#anthropic">4. Anthropic Claude</a>
-      <a href="#s-anthropic-opus55-tool-choice" style="padding-left:18px;font-size:12.5px;opacity:.85">4.6 tool_choice forçado removido (Opus 5.5, Sonnet 5.5, Fable 5.1)</a>
+      <a href="#s-anthropic-opus55-tool-choice" style="padding-left:18px;font-size:12.5px;opacity:.85">4.6 tool_choice forçado removido (Opus 5.5, Sonnet 5.5, Fable 5.2)</a>
       <a href="#gemini">5. Gemini / Interactions API</a>
       <a href="#per-tool">6. Paralelo por tool?</a>
       <a href="#scheduler">7. Scheduler recomendado</a>
@@ -189,14 +189,14 @@
       <h1>Paralelismo de tools em frameworks de agentes: OpenAI, Anthropic e Gemini</h1>
       <p class="lead">Análise ampliada para desenho de um framework multi-provider que usa OpenAI Responses API e Agents SDK, Messages API da Anthropic e a Interactions API do Gemini (<code>google-genai</code>). O foco é separar emissão de tool calls pelo modelo, execução client-side, ferramentas hosted/server-side, serialização por dependência, latência, segurança, custo, observabilidade e política por ferramenta.</p>
       <div class="meta">
-        <span class="pill">Verificado em 2026-10-24</span>
+        <span class="pill">Verificado em 2026-11-27 (versões de SDK e de pacotes, datas de retirada dos modelos Anthropic, modelos Gemini e tool retrieval do Gemini); 2026-11-17 (modelos OpenAI, paralelismo OpenAI e tool_choice da Anthropic); demais seções: 2026-10-24</span>
         <span class="pill">OpenAI Responses + Agents SDK</span>
         <span class="pill">Anthropic Messages API</span>
         <span class="pill">Gemini Interactions API</span>
         <span class="pill">Arquitetura multi-provider</span>
-        <span class="pill" style="background:rgba(157,246,207,.18);border-color:rgba(157,246,207,.45)">Modelos de referência: <code>gpt-6-astra</code> / <code>gpt-6.1-sol</code>; <code>claude-opus-5-5</code> / <code>claude-sonnet-5-5</code>; <code>gemini-3.8-flash</code></span>
-        <span class="pill" style="background:rgba(124,206,255,.18);border-color:rgba(124,206,255,.45)">SDKs: <code>openai</code> 3.37.0, <code>anthropic</code> 2.3.0, <code>google-genai</code> 2.33.0</span>
-        <span class="pill" style="background:rgba(255,138,138,.20);border-color:rgba(255,138,138,.5)"><code>tool_choice</code> forçado (<code>any</code>/<code>tool</code>) retorna 400 em Fable 5.1, Mythos 5.1, Opus 5.5 e Sonnet 5.5 — vide §4.6</span>
+        <span class="pill" style="background:rgba(157,246,207,.18);border-color:rgba(157,246,207,.45)">Modelos de referência: <code>gpt-6.2-astra</code> / <code>gpt-6.2-sol</code>; <code>claude-opus-5-5</code> / <code>claude-sonnet-5-5</code>; <code>gemini-4-hydrogen</code></span>
+        <span class="pill" style="background:rgba(124,206,255,.18);border-color:rgba(124,206,255,.45)">SDKs: <code>openai</code> 3.60.0, <code>anthropic</code> 2.14.0, <code>google-genai</code> 3.6.1</span>
+        <span class="pill" style="background:rgba(255,138,138,.20);border-color:rgba(255,138,138,.5)"><code>tool_choice</code> forçado (<code>any</code>/<code>tool</code>) retorna 400 em Fable 5.2, Mythos 5.2, Opus 5.5 e Sonnet 5.5 — vide §4.6</span>
       </div>
     </header>
 
@@ -222,22 +222,22 @@
       <ul>
         <li>OpenAI (Responses API): <code>parallel_tool_calls</code> vem ligado e controla só a emissão; ferramentas hospedadas (built-in) não entram no lote paralelo de funções. No Agents SDK, <code>ModelSettings.parallel_tool_calls</code> (emissão) é separado de <code>RunConfig.tool_execution = ToolExecutionConfig(max_function_tool_concurrency=N)</code> (execução local; <code>None</code> = todas).</li>
         <li>Anthropic: várias <code>tool_use</code> por turno; devolva todos os <code>tool_result</code> na mesma mensagem user, antes de qualquer texto; para uma chamada não executada devolva <code>is_error: true</code>. <code>disable_parallel_tool_use</code> fica dentro de <code>tool_choice</code>. Lotes de computer use e browser use rodam em sequência e param na primeira falha.</li>
-        <li><code>tool_choice</code> <code>any</code>/<code>tool</code> retorna 400 em Fable 5.1, Mythos 5.1, Opus 5.5 e Sonnet 5.5 (também em count_tokens): use <code>auto</code> + <code>strict: true</code>. O Haiku 5.5 aceita forçar, e a chamada forçada não gera bloco thinking.</li>
+        <li><code>tool_choice</code> <code>any</code>/<code>tool</code> retorna 400 em Fable 5.2, Mythos 5.2, Opus 5.5 e Sonnet 5.5 (também em count_tokens): use <code>auto</code> + <code>strict: true</code>. O Haiku 5.5 aceita forçar, e a chamada forçada não gera bloco thinking.</li>
         <li>Gemini (Interactions API): responda TODO step <code>function_call</code> com um <code>function_result</code> (<code>call_id</code> = id do step) e reenvie <code>tools</code>, <code>system_instruction</code> e <code>generation_config</code> a cada interação. Modos: <code>generation_config.tool_choice</code> = <code>auto</code>, <code>any</code>, <code>none</code>, <code>validated</code> ou <code>allowed_tools</code>.</li>
         <li>Gemini: built-in + function na mesma interação é Preview (Gemini 4 e 3) e exige <code>validated</code>; em stateless devolva os steps <code>thought</code> intactos e na ordem.</li>
         <li>Nenhum provedor oferece política paralelo/serial por tool: o scheduler e o teto de concorrência são seus. Mantenha 10 a 20 tools ativas por request e valide cada chamada antes de executar.</li>
-        <li>Pydantic AI: use <code>&gt;=2.59.0</code> (cobre GHSA-6fqq-452j-qhrp, slot de concorrência retido em streams interrompidos; piso em <a href="guia_operacao_seguranca_evals.html#advisories-supply-chain">advisories de cadeia de suprimentos</a>).</li>
+        <li>Pydantic AI: use <code>&gt;=2.76.0</code>, a versão corrente (GHSA-6fqq-452j-qhrp, slot de concorrência retido em streams interrompidos, foi corrigida na 2.59.0; piso em <a href="guia_operacao_seguranca_evals.html#advisories-supply-chain">advisories de cadeia de suprimentos</a>).</li>
       </ul>
 
       <h3>Versões e modelos correntes</h3>
       <table>
-        <thead><tr><th>Item</th><th>Valor</th><th>Fonte (lido 2026-10-24)</th></tr></thead>
+        <thead><tr><th>Item</th><th>Valor</th><th>Fonte (docs lidas 2026-10-24; modelos OpenAI relidos 2026-11-17; pacotes, modelos Anthropic e Gemini relidos 2026-11-27)</th></tr></thead>
         <tbody>
-          <tr><td>OpenAI modelos</td><td>gpt-6-astra, gpt-6.1-sol, gpt-6-sol, gpt-6-luna</td><td><a href="https://developers.openai.com/api/docs/guides/latest-model" target="_blank" rel="noopener">guides/latest-model</a></td></tr>
-          <tr><td>Anthropic modelos</td><td>claude-fable-5-1, claude-opus-5-5, claude-sonnet-5-5, claude-haiku-5-5 (Mythos 5.1: acesso limitado); retirada não antes de 2027-09-01 / 09-22 / 09-28 / 10-07</td><td><a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener">models/overview</a></td></tr>
-          <tr><td>Gemini modelos</td><td>gemini-4-argon (GA 2026-10-13), gemini-3.8-flash (GA 2026-09-02)</td><td><a href="https://ai.google.dev/gemini-api/docs/models" target="_blank" rel="noopener">gemini-api/docs/models</a></td></tr>
-          <tr><td>SDKs Python</td><td>openai 3.37.0, anthropic 2.3.0 (API 2026-10-21), google-genai 2.33.0 (Interactions exige 2.3.0 ou superior), openai-agents 0.24.0</td><td><a href="https://pypi.org/project/anthropic/" target="_blank" rel="noopener">pypi.org</a></td></tr>
-          <tr><td>SDKs npm</td><td>openai 7.43.0, @anthropic-ai/sdk 1.3.0, @google/genai 2.31.0, @openai/agents 0.21.0</td><td><a href="https://registry.npmjs.org/@openai/agents" target="_blank" rel="noopener">registry.npmjs.org</a></td></tr>
+          <tr><td>OpenAI modelos</td><td>gpt-6.2-astra (flagship) e gpt-6.2-sol (2026-11-17), gpt-6.1-terra, gpt-6-luna</td><td><a href="https://developers.openai.com/api/docs/guides/latest-model" target="_blank" rel="noopener">guides/latest-model</a></td></tr>
+          <tr><td>Anthropic modelos</td><td>claude-fable-5-2, claude-opus-5-5, claude-sonnet-5-5, claude-haiku-5-5 (Mythos 5.2: só organizações verificadas); retirada não antes de 2027-11-09 (Fable 5.2 e Mythos 5.2), 2027-09-22 (Opus 5.5), 2027-09-28 (Sonnet 5.5) e 2027-10-07 (Haiku 5.5); depreciações e desativações dos modelos Claude anteriores: <a href="guia_claude_api.html#nao-use">guia_claude_api</a></td><td><a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener">models/overview</a> · <a href="https://platform.claude.com/docs/en/about-claude/model-deprecations" target="_blank" rel="noopener">model-deprecations</a></td></tr>
+          <tr><td>Gemini modelos</td><td>gemini-4-argon (GA 2026-10-13), gemini-4-carbon (GA 2026-11-10), gemini-4-hydrogen (GA 2026-11-12; camada Flash do Gemini 4), gemini-4-neon (GA 2026-11-18; camada intermediária, saída em texto, Interactions), gemini-3.8-flash (GA 2026-09-02; geração anterior)</td><td><a href="https://ai.google.dev/gemini-api/docs/models" target="_blank" rel="noopener">gemini-api/docs/models</a></td></tr>
+          <tr><td>SDKs Python</td><td>openai 3.60.0, anthropic 2.14.0 (API 2026-10-21), google-genai 3.6.1 (Interactions exige 2.3.0 ou superior; a 3.0 muda o padrão para a API v1 e o cliente HTTP para httpx2), openai-agents 0.26.0</td><td><a href="https://pypi.org/project/anthropic/" target="_blank" rel="noopener">pypi.org</a></td></tr>
+          <tr><td>SDKs npm</td><td>openai 7.65.0, @anthropic-ai/sdk 1.14.0, @google/genai 3.6.1, @openai/agents 0.22.0</td><td><a href="https://registry.npmjs.org/@openai/agents" target="_blank" rel="noopener">registry.npmjs.org</a></td></tr>
           <tr><td>Protocolos</td><td>MCP spec 2026-07-28; A2A 1.0</td><td><a href="https://modelcontextprotocol.io/specification/versioning" target="_blank" rel="noopener">MCP versioning</a></td></tr>
         </tbody>
       </table>
@@ -293,7 +293,7 @@
         </div>
         <div class="card compact">
           <div class="kpi">Claude</div>
-          <p>Claude pode emitir múltiplas client tools por padrão; <code>disable_parallel_tool_use=true</code> limita isso. Server tools da Anthropic não entram no seu executor client-side. <strong>Em Fable 5.1, Mythos 5.1, Opus 5.5 e Sonnet 5.5, <code>tool_choice</code> forçado (<code>any</code>/<code>tool</code>) retorna 400</strong> — só <code>auto</code>/<code>none</code>; use <code>auto</code>+<code>strict:true</code>. <a class="ref" href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/parallel-tool-use" target="_blank" rel="noopener">[S13]</a> <a class="ref" href="https://platform.claude.com/docs/en/models/opus-5-5/whats-new-opus-5-5" target="_blank" rel="noopener">[S34]</a></p>
+          <p>Claude pode emitir múltiplas client tools por padrão; <code>disable_parallel_tool_use=true</code> limita isso. Server tools da Anthropic não entram no seu executor client-side. <strong>Em Fable 5.2, Mythos 5.2, Opus 5.5 e Sonnet 5.5, <code>tool_choice</code> forçado (<code>any</code>/<code>tool</code>) retorna 400</strong> — só <code>auto</code>/<code>none</code>; use <code>auto</code>+<code>strict:true</code>. <a class="ref" href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/parallel-tool-use" target="_blank" rel="noopener">[S13]</a> <a class="ref" href="https://platform.claude.com/docs/en/models/opus-5-5/whats-new-opus-5-5" target="_blank" rel="noopener">[S34]</a></p>
         </div>
         <div class="card compact">
           <div class="kpi">Gemini</div>
@@ -386,7 +386,7 @@ Modelo recebe resultados e continua ou finaliza</div>
 
     <section id="comparison">
       <h2>2. Matriz comparativa multi-provider</h2>
-      <div class="callout info"><strong>Dois mecanismos de paralelismo server-side na Responses API:</strong> (1) <strong>Programmatic Tool Calling</strong> — o modelo escreve JavaScript num runtime V8 isolado hospedado que chama tools <em>em paralelo</em> (<code>Promise.all</code>), com loops/condições, devolvendo um resultado agregado menor ao contexto; as function calls client-owned continuam executadas pela SUA aplicação (análogo funcional ao <em>programmatic tool calling</em> da Anthropic via <code>code_execution_20260521</code>). (2) <strong>Orquestração multi-agente (beta)</strong> na Responses API — subagentes paralelos no provider; o custo é a <strong>soma de todos os subagentes</strong>. O guia de multi-agent documenta <code>gpt-6.1-sol</code>; o guia “Using GPT-6” lista a capacidade para o GPT-6 em geral. Detalhe: <a href="guia_openai_modelos.html#s-tools-ptc">guia OpenAI §11.9</a>.</div>
+      <div class="callout info"><strong>Dois mecanismos de paralelismo server-side na Responses API:</strong> (1) <strong>Programmatic Tool Calling</strong> — o modelo escreve JavaScript num runtime V8 isolado hospedado que chama tools <em>em paralelo</em> (<code>Promise.all</code>), com loops/condições, devolvendo um resultado agregado menor ao contexto; as function calls client-owned continuam executadas pela SUA aplicação (análogo funcional ao <em>programmatic tool calling</em> da Anthropic via <code>code_execution_20260521</code>). (2) <strong>Orquestração multi-agente (beta)</strong> na Responses API — subagentes paralelos no provider; o custo é a <strong>soma de todos os subagentes</strong>. Ative com <code>multi_agent.enabled</code> e o header <code>OpenAI-Beta: responses_multi_agent=v1</code>; <code>max_concurrent_subagents</code> (padrão 3) limita os subagentes ativos na árvore inteira. Para as function tools suas, o HTTP termina quando todos os agentes ativos concluíram ou pausaram à espera de uma function call do cliente (você executa todas as pendentes e continua em nova requisição); no WebSocket você devolve cada <code>function_call_output</code> com <code>response.inject</code> assim que ficar pronto, e o agente que esperava retoma sem aguardar os demais, por isso o WebSocket é o recomendado para fluxos longos ou com muitas tools. Não serve para cadeia sequencial, estado mutável compartilhado ou grafo fixo. Os modelos que disponibilizam o beta estão em <a href="guia_agents_sdk_orquestracao.html#multi-agente-hospedado">guia_agents_sdk_orquestracao</a> (confira a página do modelo antes de ativar). Detalhe do multi-agent: <a href="guia_agents_sdk_orquestracao.html#agents-as-tools">guia de orquestração</a>; detalhe do PTC: <a href="guia_openai_modelos.html#s-tools-ptc">guia OpenAI §11.9</a>.</div>
       <div class="scroll">
       <table class="matrix">
         <thead>
@@ -445,7 +445,7 @@ Modelo recebe resultados e continua ou finaliza</div>
             <td><strong>Reasoning/contexto</strong></td>
             <td>Preservar reasoning items ou usar <code>previous_response_id</code>; reasoning tokens impactam custo/latência <a class="ref" href="https://developers.openai.com/api/docs/guides/reasoning" target="_blank" rel="noopener">[S5]</a></td>
             <td>Runner gerencia muito do loop, mas política ainda é sua</td>
-            <td>Em Opus 5.5/Fable 5.1 o thinking é sempre ligado; em Sonnet 5.5 o padrão é adaptive (<code>disabled</code> retorna 400; o substituto é <code>between_tools</code>). Blocos de thinking só são lidos pelo modelo que os produziu e por um conjunto fixo de modelos (Sonnet 5.5 e Haiku 5.5: também presos à conta) — preserve-os durante o tool use. <a class="ref" href="https://platform.claude.com/docs/en/build-with-claude/thinking-tool-workflows" target="_blank" rel="noopener">[S15]</a> <a class="ref" href="#S34">[S34]</a></td>
+            <td>Em Opus 5.5/Fable 5.2 o thinking é sempre ligado; em Sonnet 5.5 o padrão é adaptive (<code>disabled</code> retorna 400; o substituto é <code>between_tools</code>). Blocos de thinking só são lidos pelo modelo que os produziu e por um conjunto fixo de modelos (Fable 5.2, Mythos 5.2, Sonnet 5.5 e Haiku 5.5: também presos à conta) — preserve-os durante o tool use. <a class="ref" href="https://platform.claude.com/docs/en/build-with-claude/thinking-tool-workflows" target="_blank" rel="noopener">[S15]</a> <a class="ref" href="#S34">[S34]</a></td>
             <td>Steps <code>thought</code> com <code>signature</code>: stateful, o servidor gerencia; stateless, devolva os steps intactos <a class="ref" href="https://ai.google.dev/gemini-api/docs/thought-signatures" target="_blank" rel="noopener">[S20]</a></td>
           </tr>
         </tbody>
@@ -455,8 +455,8 @@ Modelo recebe resultados e continua ou finaliza</div>
 
     <section id="openai">
       <h2>3. OpenAI em profundidade</h2>
-      <div class="callout info"><strong>Eixo ortogonal a <code>parallel_tool_calls</code>:</strong> <code>async:true</code> por tool deixa 1 call lenta sem bloquear o turno, com entrega tardia pelo mesmo <code>call_id</code> (<code>function_call_output</code>/<code>custom_tool_call_output</code> num request de continuação com <code>previous_response_id</code>). Suportado pela família <strong>GPT-6</strong> (Astra e posteriores). Não usar com tools hosted, programmatic tool calling ou, em multi-agent, combinado com parallel tool calls. Fonte: <a href="https://developers.openai.com/api/docs/guides/async-tool-calling" target="_blank" rel="noopener">async-tool-calling</a>.</div>
-      <p>Na OpenAI, a recomendação central é separar <strong>function tools client-side</strong> de <strong>built-in/hosted tools</strong>. A Responses API oferece function calling, built-in tools, MCP e tool search. <a class="ref" href="https://developers.openai.com/api/docs/guides/tools" target="_blank" rel="noopener">[S2]</a> A família vigente é <strong>GPT-6</strong>: <code>gpt-6-astra</code> (flagship), <code>gpt-6.1-sol</code> (equilíbrio entre velocidade, custo e inteligência), <code>gpt-6-sol</code> e <code>gpt-6-luna</code> (volume). O parâmetro <code>reasoning.effort</code> aceita <code>none</code> em <code>gpt-6-sol</code> e <code>gpt-6-luna</code>; <code>gpt-6-astra</code> e <code>gpt-6.1-sol</code> vão de <code>low</code> a <code>max</code> (sem <code>none</code> nem <code>minimal</code>). Detalhes de modelo e preço no <a href="guia_openai_modelos.html#para-agentes">guia OpenAI</a>.</p>
+      <div class="callout info"><strong>Eixo ortogonal a <code>parallel_tool_calls</code>:</strong> <code>async:true</code> por tool deixa 1 call lenta sem bloquear o turno, com entrega tardia pelo mesmo <code>call_id</code> (<code>function_call_output</code>/<code>custom_tool_call_output</code> num request de continuação com <code>previous_response_id</code>). Suportado por GPT-6 Astra e modelos posteriores (a doc lida em 2026-11-17 não lista os GPT-6.2 nominalmente). Não usar com tools hosted, programmatic tool calling ou, em multi-agent, combinado com parallel tool calls. Fonte: <a href="https://developers.openai.com/api/docs/guides/async-tool-calling" target="_blank" rel="noopener">async-tool-calling</a>.</div>
+      <p>Na OpenAI, a recomendação central é separar <strong>function tools client-side</strong> de <strong>built-in/hosted tools</strong>. A Responses API oferece function calling, built-in tools, MCP e tool search. <a class="ref" href="https://developers.openai.com/api/docs/guides/tools" target="_blank" rel="noopener">[S2]</a> A família vigente é <strong>GPT-6</strong>: <code>gpt-6.2-astra</code> (flagship), <code>gpt-6.2-sol</code> (uso diário: código e agentes), <code>gpt-6.1-terra</code> (visão e computer use) e <code>gpt-6-luna</code> (volume); as gerações GPT-6 anteriores à 6.2 estão no guia OpenAI. O parâmetro <code>reasoning.effort</code> rejeita <code>none</code> nos GPT-6.2 (use <code>low</code>; comece em <code>medium</code>) e, nos GPT-6.2, <code>temperature</code>, <code>top_p</code> e <code>top_logprobs</code> devem ser omitidos; <code>gpt-6.1-terra</code> e <code>gpt-6-luna</code> aceitam <code>none</code>. O default de effort dos GPT-6.2 e o suporte a <code>xhigh</code>/<code>max</code> neles: UNVERIFIED. Fonte: <a href="https://developers.openai.com/api/docs/guides/latest-model" target="_blank" rel="noopener">guides/latest-model</a> e páginas dos modelos, lidas em 2026-11-17. Detalhes de modelo e preço no <a href="guia_openai_modelos.html#para-agentes">guia OpenAI</a>.</p>
 
       <h3>3.1 O que <code>parallel_tool_calls</code> faz de fato</h3>
       <p><code>parallel_tool_calls</code> controla se o modelo pode emitir múltiplas chamadas no mesmo turno; vem ligado por padrão. Quando configurado como <code>false</code>, a doc garante exatamente zero ou uma tool call. <a class="ref" href="https://developers.openai.com/api/docs/guides/function-calling#parallel-function-calling" target="_blank" rel="noopener">[S1]</a></p>
@@ -464,7 +464,7 @@ Modelo recebe resultados e continua ou finaliza</div>
         <p><strong>Bom caso:</strong> só function tools externas, todas read-only e independentes. Exemplo: consultar CRM, billing e tickets para o mesmo cliente. O modelo pode emitir três function calls no mesmo output, e você executa as três em paralelo.</p>
       </div>
       <pre><code>response = client.responses.create(
-    model=&quot;gpt-6.1-sol&quot;,
+    model=&quot;gpt-6.2-sol&quot;,
     input=&quot;Consulte CRM, billing e tickets do cliente 123.&quot;,
     tools=[crm_lookup_tool, billing_lookup_tool, ticket_lookup_tool],
     parallel_tool_calls=True,
@@ -495,13 +495,13 @@ results = await asyncio.gather(
 
       <h3 id="openai-same-turn">3.3 Built-in tool e function tools no mesmo request</h3>
       <div class="callout info">
-        <p><strong>O que a doc diz:</strong> <em>“On supported models beginning with GPT-5, functions can be called in parallel when built-in tools are also available. Built-in tools cannot be called in parallel.”</em> <a class="ref" href="https://developers.openai.com/api/docs/guides/function-calling#parallel-function-calling" target="_blank" rel="noopener">[S1]</a> Ou seja: ter uma built-in na lista de <code>tools</code> não impede function calls paralelas; o que a doc exclui é a própria built-in do batch paralelo de funções.</p>
+        <p><strong>O que a doc diz:</strong> Nos modelos suportados, function calls podem ser paralelas quando há built-ins disponíveis, mas built-ins não podem entrar no batch paralelo de funções (paráfrase; texto relido em 2026-11-17; a frase anterior dizia que built-ins não podiam ser chamadas em paralelo) <a class="ref" href="https://developers.openai.com/api/docs/guides/function-calling#parallel-function-calling" target="_blank" rel="noopener">[S1]</a> Ou seja: ter uma built-in na lista de <code>tools</code> não impede function calls paralelas; o que a doc exclui é a própria built-in do batch paralelo de funções. A doc não restringe <code>parallel_tool_calls</code> por modelo além de um piso de geração anterior aos GPT-6.2; para os GPT-6.2 não há nota específica.</p>
       </div>
       <p>A built-in é executada dentro do fluxo hospedado da OpenAI: seu código não recebe uma pausa controlada no meio do reasoning para iniciar suas functions em paralelo a ela, e só controla a execução quando a API devolve function calls ao cliente. File Search, por exemplo, é uma hosted tool gerenciada pela OpenAI, chamada automaticamente quando o modelo decide usá-la. <a class="ref" href="https://developers.openai.com/api/docs/guides/tools-file-search" target="_blank" rel="noopener">[S3]</a></p>
       <p>A doc não especifica a <em>ordem</em> nem se o modelo mistura built-in e function calls no mesmo output. Decisão de engenharia (não contrato do provedor): use <code>hosted_tool_strategy="separate_phase"</code> quando alguma function for mutação, porque o scheduler não desfaz uma built-in já executada; para functions todas read-only, <code>same_turn</code> é aceitável e você valida o resultado no runtime.</p>
       <pre><code># Só reads: built-in + functions no mesmo request; o scheduler paraleliza apenas as function calls.
 response = client.responses.create(
-    model=&quot;gpt-6.1-sol&quot;,
+    model=&quot;gpt-6.2-sol&quot;,
     input=&quot;Pesquise notícias da empresa X e consulte CRM, billing e tickets.&quot;,
     tools=[
         {&quot;type&quot;: &quot;web_search&quot;},
@@ -538,14 +538,14 @@ Request 3 ou continuação: síntese final</div>
       </div>
       <pre><code># Fase 1: hosted tool OpenAI
 research = client.responses.create(
-    model=&quot;gpt-6.1-sol&quot;,
+    model=&quot;gpt-6.2-sol&quot;,
     input=&quot;Pesquise informações recentes sobre a empresa X.&quot;,
     tools=[{&quot;type&quot;: &quot;web_search&quot;}],
 )
 
 # Fase 2: apenas function tools externas, paralelizáveis
 ops = client.responses.create(
-    model=&quot;gpt-6.1-sol&quot;,
+    model=&quot;gpt-6.2-sol&quot;,
     previous_response_id=research.id,
     input=&quot;Cruze agora com CRM, billing e tickets do cliente 123.&quot;,
     tools=[crm_lookup_tool, billing_lookup_tool, ticket_lookup_tool],
@@ -568,14 +568,14 @@ while True:
       <p>Isso importa porque “paralelo” não é um estado global do agente. É uma propriedade de um conjunto específico de calls independentes em um step específico.</p>
 
       <h3 id="openai-agents">3.6 OpenAI Agents SDK</h3>
-      <div class="callout info"><strong>Mid-turn steering não é paralelismo:</strong> <code>response.steer</code> via WebSocket injeta input no turno corrente, disponível na família <strong>GPT-6</strong>, sem reescrever output já enviado, desfazer ações nem cancelar tools/hosted work já iniciados — o servidor termina o item de output e qualquer hosted tool em andamento antes de aplicar o steer. Fonte: <a href="https://developers.openai.com/api/docs/guides/steering" target="_blank" rel="noopener">steering</a>.</div>
-      <p>O Agents SDK é útil quando você quer loop de agente, tracing, handoffs, guardrails, agents-as-tools e execução de function tools com menos boilerplate. A documentação do SDK lista categorias como hosted OpenAI tools, local/runtime tools, function calling, agents as tools e Codex tool. <a class="ref" href="https://openai.github.io/openai-agents-python/tools/" target="_blank" rel="noopener">[S9]</a> O Agents SDK (<code>openai-agents</code> 0.24.0) é distinto da Agents API (beta, harness gerenciado).</p>
+      <div class="callout info"><strong>Mid-turn steering não é paralelismo:</strong> <code>response.steer</code> via WebSocket injeta input no turno corrente, documentado para a família <strong>GPT-6</strong> (suporte nos GPT-6.2: UNVERIFIED; um modelo incompatível responde <code>steering_not_supported</code>), sem reescrever output já enviado, desfazer ações nem cancelar tools/hosted work já iniciados — o servidor termina o item de output e qualquer hosted tool em andamento antes de aplicar o steer. Fonte: <a href="https://developers.openai.com/api/docs/guides/steering" target="_blank" rel="noopener">steering</a>.</div>
+      <p>O Agents SDK é útil quando você quer loop de agente, tracing, handoffs, guardrails, agents-as-tools e execução de function tools com menos boilerplate. A documentação do SDK lista categorias como hosted OpenAI tools, local/runtime tools, function calling, agents as tools e Codex tool. <a class="ref" href="https://openai.github.io/openai-agents-python/tools/" target="_blank" rel="noopener">[S9]</a> O Agents SDK (<code>openai-agents</code> 0.26.0, PyPI 2026-11-27) é distinto da Agents API (beta, harness gerenciado).</p>
       <p>O detalhe mais importante para o seu framework: <code>ModelSettings.parallel_tool_calls</code> não é a mesma coisa que <code>ToolExecutionConfig.max_function_tool_concurrency</code> (<code>RunConfig.tool_execution</code>; <code>None</code> = inicia todas as calls locais emitidas). O primeiro controla se o modelo pode emitir múltiplas calls; o segundo controla quantas local function tools o SDK executa simultaneamente depois que o modelo emitiu as calls. <a class="ref" href="https://openai.github.io/openai-agents-python/running_agents/" target="_blank" rel="noopener">[S7]</a> <a class="ref" href="https://openai.github.io/openai-agents-python/ref/run_config/" target="_blank" rel="noopener">[S8]</a></p>
       <pre><code>from agents import Agent, ModelSettings, Runner, RunConfig, ToolExecutionConfig
 
 ops_agent = Agent(
     name=&quot;OpsAgent&quot;,
-    model=&quot;gpt-6.1-sol&quot;,
+    model=&quot;gpt-6.2-sol&quot;,
     tools=[crm_lookup, billing_lookup, ticket_lookup],
     model_settings=ModelSettings(parallel_tool_calls=True),
 )
@@ -601,11 +601,12 @@ result = await Runner.run(
       <h3>3.7 MCP, tool search e superfícies grandes de tools</h3>
       <p>Com remote MCP e catálogos grandes, a latência de listar/importar tools e o custo de schemas ficam relevantes. A documentação de MCP da OpenAI descreve que, quando a API recupera tools de um MCP server, um item <code>mcp_list_tools</code> pode aparecer e deve ser preservado no contexto para evitar refetch em cada turno, otimizando latência. <a class="ref" href="https://developers.openai.com/api/docs/guides/tools-connectors-mcp" target="_blank" rel="noopener">[S10]</a></p>
       <p>Para muitas tools, prefira <strong>tool search</strong>, namespaces ou fases de exposição. O pior padrão é expor 80 tools em todo request e esperar que o modelo escolha corretamente, com baixo custo e baixa latência.</p>
+      <p>No Gemini há <strong>tool retrieval</strong> (Preview), só na Interactions API <code>v1beta</code>: declare <code>{"type":"tool_search"}</code> e marque as tools adiadas com <code>defer_loading: true</code> (com <code>short_description</code> opcional); a busca roda no servidor por padrão, ou no cliente com <code>execution:"client"</code>. Vale para os modelos carbon, neon, hydrogen, argon, 3.8-flash e 3.6-flash; com <code>store=false</code> reenvie os itens <code>tool_search_call</code>/<code>tool_search_result</code> com <code>signature</code>; só uma entrada <code>tool_search</code> por request; sem preço próprio. Fontes: <a href="https://aistudio.google.com/docs/tool-retrieval" target="_blank" rel="noopener">tool-retrieval</a> e <a href="https://aistudio.google.com/docs/changelog" target="_blank" rel="noopener">changelog</a>, lidos em 2026-11-27. Detalhes em <a href="guia_gemini_interactions_api.html#s-tool-retrieval">guia_gemini_interactions_api §13.11</a>.</p>
     </section>
 
     <section id="anthropic">
       <h2>4. Anthropic Claude em profundidade</h2>
-      <p>Claude tem uma semântica de tool use muito clara para client tools: a resposta pode conter blocos <code>tool_use</code>; seu aplicativo executa e retorna blocos <code>tool_result</code>. A documentação de tool use explica que os custos incluem tokens dos schemas, blocos <code>tool_use</code>, <code>tool_result</code> e, para server-side tools, possíveis cobranças adicionais. <a class="ref" href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview" target="_blank" rel="noopener">[S14]</a> Modelos atuais: <code>claude-fable-5-1</code>, <code>claude-opus-5-5</code>, <code>claude-sonnet-5-5</code> e <code>claude-haiku-5-5</code>; os exemplos deste guia usam Opus 5.5 e Sonnet 5.5.</p>
+      <p>Claude tem uma semântica de tool use muito clara para client tools: a resposta pode conter blocos <code>tool_use</code>; seu aplicativo executa e retorna blocos <code>tool_result</code>. A documentação de tool use explica que os custos incluem tokens dos schemas, blocos <code>tool_use</code>, <code>tool_result</code> e, para server-side tools, possíveis cobranças adicionais. <a class="ref" href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview" target="_blank" rel="noopener">[S14]</a> Modelos atuais: <code>claude-fable-5-2</code>, <code>claude-opus-5-5</code>, <code>claude-sonnet-5-5</code> e <code>claude-haiku-5-5</code>; os exemplos deste guia usam Opus 5.5 e Sonnet 5.5.</p>
 
       <h3>4.1 Paralelismo default e <code>disable_parallel_tool_use</code></h3>
       <p>Por padrão, Claude pode usar múltiplas tools para responder uma consulta. Você desabilita isso com <code>disable_parallel_tool_use=true</code> dentro de <code>tool_choice</code>. Com <code>auto</code>, isso garante no máximo uma tool. <code>disable_parallel_tool_use</code> dentro de <code>auto</code> continua válido em todos os modelos, inclusive nos quatro modelos de §4.6, que rejeitam <code>any</code>/<code>tool</code> (§4.6). <a class="ref" href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/parallel-tool-use" target="_blank" rel="noopener">[S13]</a></p>
@@ -642,7 +643,7 @@ messages.append({
     ],
 })</code></pre>
 
-      <p>Lotes de ações de computer use e browser use são executados em sequência e param na primeira falha; responda com um <code>tool_result</code> para cada <code>tool_use</code>, porque um lote sem resposta retorna <code>invalid_request_error</code>. O Fable 5.1 pode emitir menos chamadas paralelas em loops longos: não dependa de um número mínimo de calls por turno. <a class="ref" href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/parallel-tool-use" target="_blank" rel="noopener">[S13]</a> <a class="ref" href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/computer-use-tool" target="_blank" rel="noopener">computer-use-tool</a></p>
+      <p>Lotes de ações de computer use e browser use são executados em sequência e param na primeira falha; responda com um <code>tool_result</code> para cada <code>tool_use</code>, porque um lote sem resposta retorna <code>invalid_request_error</code>. A doc registra que o Fable 5.1 (geração anterior) pode emitir menos chamadas paralelas em loops longos (a nota, relida em 2026-11-17, ainda cita só o Fable 5.1 e não menciona o Fable 5.2: UNVERIFIED): não dependa de um número mínimo de calls por turno. <a class="ref" href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/parallel-tool-use" target="_blank" rel="noopener">[S13]</a> <a class="ref" href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/computer-use-tool" target="_blank" rel="noopener">computer-use-tool</a></p>
 
       <h3>4.3 Client tools vs server tools</h3>
       <table>
@@ -661,7 +662,7 @@ messages.append({
       <table>
         <thead><tr><th>Modelo</th><th>Thinking</th><th><code>tool_choice</code> forçado (<code>any</code>/<code>tool</code>)</th></tr></thead>
         <tbody>
-          <tr><td><code>claude-opus-5-5</code>, <code>claude-fable-5-1</code> (e Mythos 5.1)</td><td>Sempre adaptive; <code>disabled</code> e <code>enabled</code>+<code>budget_tokens</code> retornam 400. Controle por <code>output_config.effort</code> (<code>low</code>, <code>medium</code>, <code>high</code>, <code>xhigh</code>, <code>max</code>); padrão <code>medium</code> no Opus 5.5 e <code>high</code> no Fable 5.1.</td><td><span class="tag danger">400</span></td></tr>
+          <tr><td><code>claude-opus-5-5</code>, <code>claude-fable-5-2</code> (e Mythos 5.2)</td><td>Sempre adaptive; <code>disabled</code> e <code>enabled</code>+<code>budget_tokens</code> retornam 400. Controle por <code>output_config.effort</code> (<code>low</code>, <code>medium</code>, <code>high</code>, <code>xhigh</code>, <code>max</code>); padrão <code>medium</code> no Opus 5.5 e <code>high</code> no Fable 5.2.</td><td><span class="tag danger">400</span></td></tr>
           <tr><td><code>claude-sonnet-5-5</code></td><td>Adaptive por padrão; <code>disabled</code> e <code>budget_tokens</code> retornam 400; o substituto de <code>disabled</code> é <code>{"type":"between_tools"}</code> (effort até <code>high</code>). Padrão de effort: <code>high</code>.</td><td><span class="tag danger">400</span></td></tr>
           <tr><td><code>claude-haiku-5-5</code></td><td>Adaptive por padrão (effort padrão <code>medium</code>); <code>budget_tokens</code> retorna 400; <code>disabled</code> é aceito com effort até <code>high</code>.</td><td>Aceito (<code>any</code>/<code>tool</code>), mas a resposta não traz bloco <code>thinking</code>.</td></tr>
         </tbody>
@@ -679,9 +680,9 @@ messages.append({
         </tbody>
       </table>
 
-      <h3 id="s-anthropic-opus55-tool-choice">4.6 <code>tool_choice</code> forçado removido em Opus 5.5, Sonnet 5.5, Fable 5.1 e Mythos 5.1</h3>
+      <h3 id="s-anthropic-opus55-tool-choice">4.6 <code>tool_choice</code> forçado removido em Opus 5.5, Sonnet 5.5, Fable 5.2 e Mythos 5.2</h3>
       <div class="callout danger">
-        <p><strong><code>tool_choice</code> com <code>type:"any"</code> ou <code>type:"tool"</code> retorna 400 <code>invalid_request_error</code> em <code>claude-opus-5-5</code>, <code>claude-sonnet-5-5</code>, <code>claude-fable-5-1</code> e Mythos 5.1</strong>, em qualquer nível de <code>effort</code> e também no endpoint de <a class="ref" href="https://platform.claude.com/docs/en/build-with-claude/token-counting" target="_blank" rel="noopener">token counting</a>. Só <code>auto</code> e <code>none</code> valem. Isso vale mesmo com thinking sempre adaptive: adaptive não reabre forced tool use nesses modelos. Fonte: <a class="ref" href="#S35">[S35]</a> (tabela de restrições por modelo) e <a class="ref" href="#S34">[S34]</a>.</p>
+        <p><strong><code>tool_choice</code> com <code>type:"any"</code> ou <code>type:"tool"</code> retorna 400 <code>invalid_request_error</code> em <code>claude-opus-5-5</code>, <code>claude-sonnet-5-5</code>, <code>claude-fable-5-2</code> e Mythos 5.2</strong>, em qualquer nível de <code>effort</code> e também no endpoint de <a class="ref" href="https://platform.claude.com/docs/en/build-with-claude/token-counting" target="_blank" rel="noopener">token counting</a>. Só <code>auto</code> e <code>none</code> valem. Isso vale mesmo com thinking sempre adaptive: adaptive não reabre forced tool use nesses modelos. Fonte: <a class="ref" href="#S35">[S35]</a> (tabela de restrições por modelo) e <a class="ref" href="#S34">[S34]</a>.</p>
         <p><strong>Receita para obrigar formato ou chamada:</strong></p>
         <ol>
           <li>Mantenha <code>tool_choice={"type":"auto"}</code> (o default) e ative <code>"strict":true</code> na definição da tool para garantir JSON válido pelo schema quando o modelo decidir chamá-la. <a class="ref" href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/strict-tool-use" target="_blank" rel="noopener">strict-tool-use</a></li>
@@ -712,7 +713,7 @@ response = client.messages.create(
 
     <section id="gemini">
       <h2>5. Gemini / Interactions API em profundidade</h2>
-      <p>A Interactions API é GA e a superfície recomendada para todos os projetos novos no Gemini API; ela expõe a conversa como uma lista de <code>steps</code> (chamadas de tool, resultados, thinking e saída final). <a class="ref" href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">[S23]</a> Este guia cobre só o que afeta paralelismo de tools; o contrato completo (endpoint, <code>response_format</code>, estado, streaming, agentes, webhooks) está no <a href="guia_gemini_interactions_api.html">guia de Interactions API</a>. SDK: <code>google-genai</code> 2.33.0 (Python ≥ 3.10; Interactions exige ≥ 2.3.0). Modelos: <code>gemini-3.8-flash</code> (modelo de referência dos exemplos) e <code>gemini-4-argon</code>; a doc de function calling não faz ressalva por modelo e a página do <code>gemini-4-argon</code> lista function calling como suportado. O Argon ignora <code>temperature</code>, <code>top_p</code> e <code>top_k</code>: remova-os do request. <span class="tag warn">UNVERIFIED</span> Remote MCP com Gemini 3: a visão geral da Interactions diz que não é suportado, e a página de function calling documenta <code>mcp_server</code> sem restrição de modelo; confirma: chamada de teste com <code>gemini-3.8-flash</code>.</p>
+      <p>A Interactions API é GA e a superfície recomendada para todos os projetos novos no Gemini API; ela expõe a conversa como uma lista de <code>steps</code> (chamadas de tool, resultados, thinking e saída final). <a class="ref" href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">[S23]</a> Este guia cobre só o que afeta paralelismo de tools; o contrato completo (endpoint, <code>response_format</code>, estado, streaming, agentes, webhooks) está no <a href="guia_gemini_interactions_api.html">guia de Interactions API</a>. SDK: <code>google-genai</code> 3.6.1 (Python ≥ 3.11; Interactions exige ≥ 2.3.0; PyPI, 2026-11-27). Modelos: <code>gemini-4-hydrogen</code> (modelo de referência dos exemplos) e <code>gemini-4-argon</code> (também existem <code>gemini-4-carbon</code> e <code>gemini-4-neon</code>; function calling nesses dois: UNVERIFIED nesta página); o Hydrogen e o Argon listam function calling como suportado em suas páginas de modelo, e a doc de function calling não faz ressalva por modelo. O Argon ignora <code>temperature</code>, <code>top_p</code> e <code>top_k</code>: remova-os do request. Remote MCP com Gemini 3 (geração anterior): as fontes oficiais divergem, veja <a href="guia_gemini_interactions_api.html#s-visao-geral-limites">guia_gemini_interactions_api §1.5</a>.</p>
 
       <h3>5.1 Function calls paralelas em steps</h3>
       <p>Você declara a tool como <code>{"type":"function","name","description","parameters"}</code> em <code>tools</code>. Quando o modelo chama funções, a resposta traz steps <code>function_call</code> com <code>id</code>, <code>name</code> e <code>arguments</code>. Chamadas independentes chegam como <strong>vários steps <code>function_call</code> na mesma resposta</strong>, e todas devem ser respondidas: você devolve um item <code>function_result</code> por chamada, com <code>call_id</code> igual ao <code>id</code> do step, junto de <code>previous_interaction_id</code> — e reenvia <code>tools</code>, porque <code>tools</code>, <code>system_instruction</code> e <code>generation_config</code> são por interação. <a class="ref" href="https://ai.google.dev/gemini-api/docs/function-calling" target="_blank" rel="noopener">[S18]</a></p>
@@ -724,7 +725,7 @@ client = genai.Client()
 tools = [crm_tool, billing_tool, ticket_tool]  # {&quot;type&quot;: &quot;function&quot;, &quot;name&quot;: ..., &quot;parameters&quot;: ...}
 
 interaction = client.interactions.create(
-    model=&quot;gemini-3.8-flash&quot;,
+    model=&quot;gemini-4-hydrogen&quot;,
     input=&quot;Consulte CRM, billing e tickets do cliente 123.&quot;,
     tools=tools,
 )
@@ -737,7 +738,7 @@ while True:
     with ThreadPoolExecutor(max_workers=3) as pool:
         results = list(pool.map(dispatch, calls))
     interaction = client.interactions.create(
-        model=&quot;gemini-3.8-flash&quot;,
+        model=&quot;gemini-4-hydrogen&quot;,
         input=[
             {
                 &quot;type&quot;: &quot;function_result&quot;,
@@ -770,7 +771,7 @@ print(interaction.output_text)</code></pre>
       <p>Em modelos com thinking, a resposta inclui steps <code>thought</code> com <code>signature</code>. No modo stateful (<code>previous_interaction_id</code>), o servidor gerencia as assinaturas; no stateless (<code>store=false</code> ou histórico manual), você deve devolver os steps intactos, na ordem. Se seu framework reordena, comprime ou resume histórico, trate signatures como campos sagrados. <code>store=false</code> não combina com <code>background=true</code> nem com encadeamento. <a class="ref" href="https://ai.google.dev/gemini-api/docs/thought-signatures" target="_blank" rel="noopener">[S20]</a></p>
 
       <h3>5.4 Built-in + custom no mesmo request</h3>
-      <p>A combinação de tools built-in (por exemplo Google Search) com function tools na mesma interação (<em>tool combination</em>) é <strong>Preview</strong> nos modelos Gemini 4 e Gemini 3; com a circulação de contexto das tools habilitada use <code>tool_choice</code> <code>validated</code> (o modo <code>auto</code> não é suportado). <a class="ref" href="https://ai.google.dev/gemini-api/docs/tool-combination" target="_blank" rel="noopener">[S19]</a> A built-in roda no servidor do Google e aparece como steps próprios (<code>google_search_call</code>/<code>google_search_result</code>); só os steps <code>function_call</code> entram no seu scheduler. Structured output (<code>response_format</code> com schema) combinado com tools built-in é <strong>Preview e só em Gemini 3</strong>. Para schema + function tools no mesmo turno, a doc não garante que o modelo devolva o JSON em vez de chamar a função: como decisão de engenharia, separe em dois turnos (chamadas, depois serialização com <code>response_format</code>) e valide o resultado.</p>
+      <p>A combinação de tools built-in (por exemplo Google Search) com function tools na mesma interação (<em>tool combination</em>) é <strong>Preview</strong> nos modelos Gemini 4 e Gemini 3; com a circulação de contexto das tools habilitada use <code>tool_choice</code> <code>validated</code> (o modo <code>auto</code> não é suportado). <a class="ref" href="https://ai.google.dev/gemini-api/docs/tool-combination" target="_blank" rel="noopener">[S19]</a> A built-in roda no servidor do Google e aparece como steps próprios (<code>google_search_call</code>/<code>google_search_result</code>); só os steps <code>function_call</code> entram no seu scheduler. Structured output (<code>response_format</code> com schema) combinado com tools built-in é <strong>Preview e só em Gemini 3</strong> (geração anterior). Para schema + function tools no mesmo turno, a doc não garante que o modelo devolva o JSON em vez de chamar a função: como decisão de engenharia, separe em dois turnos (chamadas, depois serialização com <code>response_format</code>) e valide o resultado.</p>
 
       <h3>5.5 Streaming de chamadas</h3>
       <p>No stream SSE, o step <code>function_call</code> chega como <code>step.start</code> (com o nome) seguido de <code>step.delta</code> com <code>arguments_delta</code> (JSON parcial a acumular) e <code>step.stop</code>; a interação termina em <code>interaction.completed</code> (com <code>usage</code>). Um step <code>function_call</code> leva o status da interação a <code>requires_action</code>, informado em <code>interaction.status_update</code> (<code>in_progress</code> ou <code>requires_action</code>). Recomendação nossa: execute a tool só depois do <code>step.stop</code> do step e trate eventos desconhecidos com segurança. <a class="ref" href="https://ai.google.dev/gemini-api/docs/interactions/streaming" target="_blank" rel="noopener">interactions/streaming</a></p>
@@ -780,7 +781,7 @@ print(interaction.output_text)</code></pre>
         <thead><tr><th>Vantagens</th><th>Desvantagens / cuidados</th></tr></thead>
         <tbody>
           <tr><td>Function calls paralelas como steps independentes, cada um com <code>id</code>.</td><td>Sem boolean <code>parallel_tool_calls</code>: o limite de fan-out é do seu scheduler.</td></tr>
-          <tr><td>Tool combination (Preview) permite built-in + function na mesma interação.</td><td>Structured output + built-ins é Preview e só Gemini 3.</td></tr>
+          <tr><td>Tool combination (Preview) permite built-in + function na mesma interação.</td><td>Structured output + built-ins é Preview, no Gemini 4 e no Gemini 3.</td></tr>
           <tr><td>Estado server-side (<code>previous_interaction_id</code>) reduz o histórico que você reenvia e deixa o Google gerenciar signatures.</td><td><code>store=true</code> por padrão (retenção de 55 dias no tier pago, configurável no AI Studio para 7, 14, 28 ou 55 dias; 1 dia no free); stateless exige devolver steps intactos.</td></tr>
         </tbody>
       </table>
@@ -1061,7 +1062,7 @@ Batch 2 serial/dependente: get_contract, create_invoice conforme resultado</div>
       <h3>8.4 Throughput e rate limits</h3>
       <p>Paralelismo reduz latência individual, mas pode aumentar QPS e carga no banco. Uma execução paralela com 10 tools por usuário e 100 usuários simultâneos vira 1.000 chamadas externas simultâneas. O scheduler precisa de:</p>
       <ul>
-        <li>semaphore global por provider (no Pydantic AI, use <code>&gt;=2.59.0</code>, que cobre GHSA-6fqq-452j-qhrp; piso em <a href="guia_operacao_seguranca_evals.html#advisories-supply-chain">advisories de cadeia de suprimentos</a>: um modelo com limite de concorrência retém o slot quando o stream termina antes do fim nas versões afetadas <a class="ref" href="https://github.com/advisories/GHSA-6fqq-452j-qhrp" target="_blank" rel="noopener">[advisory]</a>);</li>
+        <li>semaphore global por provider (no Pydantic AI, use <code>&gt;=2.76.0</code>, a versão corrente, que cobre GHSA-6fqq-452j-qhrp, corrigida na 2.59.0; piso em <a href="guia_operacao_seguranca_evals.html#advisories-supply-chain">advisories de cadeia de suprimentos</a>: um modelo com limite de concorrência retém o slot quando o stream termina antes do fim nas versões afetadas <a class="ref" href="https://github.com/advisories/GHSA-6fqq-452j-qhrp" target="_blank" rel="noopener">[advisory]</a>);</li>
         <li>semaphore por tool ou rate-limit bucket;</li>
         <li>timeouts curtos e diferenciados por tool;</li>
         <li>circuit breaker para serviços degradados;</li>
@@ -1169,7 +1170,7 @@ async def batch_get_weather(cities: list[str]) -&gt; dict[str, Weather]:
           </tr>
           <tr>
             <td><strong>google-genai</strong></td>
-            <td>Você quer Gemini, multimodalidade, IDs de function call, tool combination em Gemini 3 e integração Google.</td>
+            <td>Você quer Gemini, multimodalidade, IDs de function call, tool combination (Preview, Gemini 4 e Gemini 3) e integração Google.</td>
             <td>Você não quer lidar com thought signatures/parts em histórico manual ou contratos que variam por modelo.</td>
           </tr>
         </tbody>
@@ -1280,7 +1281,7 @@ async def batch_get_weather(cities: list[str]) -&gt; dict[str, Weather]:
           </ul>
         </div>
         <div class="card">
-          <h3>Histórico/provider adapter</h3>
+          <h3>Regras de histórico por provider</h3>
           <ul>
             <li>OpenAI: preservar reasoning items ou usar <code>previous_response_id</code>; não combinar com <code>conversation</code> sem contrato explícito.</li>
             <li>Anthropic: tool_result imediatamente após tool_use, agrupados no paralelo.</li>
@@ -1396,7 +1397,7 @@ async def batch_get_weather(cities: list[str]) -&gt; dict[str, Weather]:
                 for r in results
             ],
         })</code></pre>
-      <div class="callout warn"><p><strong>Em <code>claude-opus-5-5</code>, <code>claude-sonnet-5-5</code>, <code>claude-fable-5-1</code> e Mythos 5.1, <code>tool_choice</code> forçado (<code>any</code>/<code>tool</code>) é rejeitado sempre (400)</strong>, independente do effort — use <code>auto</code>+<code>strict:true</code> (§<a href="#s-anthropic-opus55-tool-choice">4.6</a>). O Haiku 5.5 aceita forçar, mas a resposta não traz bloco <code>thinking</code>. <a class="ref" href="#S35">[S35]</a></p></div>
+      <div class="callout warn"><p><strong>Em <code>claude-opus-5-5</code>, <code>claude-sonnet-5-5</code>, <code>claude-fable-5-2</code> e Mythos 5.2, <code>tool_choice</code> forçado (<code>any</code>/<code>tool</code>) é rejeitado sempre (400)</strong>, independente do effort — use <code>auto</code>+<code>strict:true</code> (§<a href="#s-anthropic-opus55-tool-choice">4.6</a>). O Haiku 5.5 aceita forçar, mas a resposta não traz bloco <code>thinking</code>. <a class="ref" href="#S35">[S35]</a></p></div>
 
       <h3>14.4 Gemini Interactions API — loop de function calls</h3>
       <p>A Interactions API é GA e recomendada para projetos novos. O objeto de interação expõe <code>steps</code> (chamadas/resultados de tools e saída final); <code>previous_interaction_id</code> carrega apenas a história. Tools, instruções de sistema e configuração de geração são reapresentadas a cada chamada. <code>store=false</code> torna a execução stateless e impede encadeamento/background: nesse caso você devolve os steps (incluindo <code>thought</code> com <code>signature</code>) intactos. <a class="ref" href="#S18">[S18]</a> <a class="ref" href="#S20">[S20]</a> <a class="ref" href="#S23">[S23]</a></p>
@@ -1462,7 +1463,7 @@ async def run_interactions_loop(client, *, model, user_input, tools, policy, pre
         <tbody>
           <tr><td><code>auto</code></td><td><code>false</code> ou omitido</td><td>Zero, uma ou várias client tools.</td><td>Reads independentes e tarefas abertas.</td></tr>
           <tr><td><code>auto</code></td><td><code>true</code></td><td>Zero ou uma tool.</td><td>Quando quer limitar fan-out.</td></tr>
-          <tr><td><code>any</code></td><td><code>true</code></td><td>Exatamente uma tool, onde o modelo aceita forçar.</td><td><span class="tag danger">400</span> em Fable 5.1, Mythos 5.1, Opus 5.5 e Sonnet 5.5 (inclusive em <code>count_tokens</code>). Use <code>auto</code>+<code>strict:true</code> (§4.6).</td></tr>
+          <tr><td><code>any</code></td><td><code>true</code></td><td>Exatamente uma tool, onde o modelo aceita forçar.</td><td><span class="tag danger">400</span> em Fable 5.2, Mythos 5.2, Opus 5.5 e Sonnet 5.5 (inclusive em <code>count_tokens</code>). Use <code>auto</code>+<code>strict:true</code> (§4.6).</td></tr>
           <tr><td><code>tool</code></td><td><code>true</code></td><td>Exatamente a tool forçada, onde aceito.</td><td><span class="tag danger">400</span> nos mesmos 4 modelos (Haiku 5.5 aceita). A API preenche o início da mensagem do assistant, sem texto antes do <code>tool_use</code>.</td></tr>
           <tr><td><code>none</code></td><td>n/a</td><td>Nenhuma tool.</td><td>Síntese final ou fase sem ações; válido em todos os modelos atuais.</td></tr>
           <tr><td colspan="2"><strong>server <code>web_search_20260318</code> + N client tools</strong></td><td colspan="2">Server tool (<code>server_tool_use</code>) e <code>tool_use</code> client podem aparecer no mesmo assistant turn; preserve todos os blocos e mande só os <code>tool_use</code> client ao scheduler. O loop server-side pode terminar em <code>pause_turn</code>: reenvie a resposta como está.</td></tr>
@@ -1478,9 +1479,9 @@ async def run_interactions_loop(client, *, model, user_input, tools, policy, pre
           <tr><td><code>any</code></td><td>Força function call.</td><td>A doc não promete “uma única chamada”.</td><td>Validar o número de steps <code>function_call</code>.</td></tr>
           <tr><td><code>none</code></td><td>Proíbe function calls.</td><td>Não remove tool steps já no histórico.</td><td>Usar para síntese.</td></tr>
           <tr><td><code>validated</code></td><td>Aderência ao schema da função.</td><td>Não substitui política de side effects.</td><td>Preservar steps/signatures.</td></tr>
-          <tr><td colspan="2"><strong>Tool combination</strong> (built-in + function)</td><td colspan="2">Preview para Gemini 4 e Gemini 3; com circulação de contexto das tools use <code>validated</code> (<code>auto</code> não é suportado). <code>gemini-3.8-flash</code> é o modelo de referência.</td></tr>
+          <tr><td colspan="2"><strong>Tool combination</strong> (built-in + function)</td><td colspan="2">Preview para Gemini 4 e Gemini 3; com circulação de contexto das tools use <code>validated</code> (<code>auto</code> não é suportado). <code>gemini-4-hydrogen</code> é o modelo de referência dos exemplos.</td></tr>
           <tr><td colspan="2"><strong>Múltiplas function calls</strong></td><td colspan="2">Vários steps <code>function_call</code> na mesma resposta; responda a todos com <code>function_result</code> e <code>call_id</code> correspondente.</td></tr>
-          <tr><td colspan="2"><strong>Structured output + built-in tools</strong></td><td colspan="2">Preview e só Gemini 3. Com function tools, separe em dois turnos e valide.</td></tr>
+          <tr><td colspan="2"><strong>Structured output + built-in tools</strong></td><td colspan="2">Preview, no Gemini 4 e no Gemini 3. Com function tools, separe em dois turnos e valide.</td></tr>
         </tbody>
       </table>
     </section>
@@ -1967,7 +1968,7 @@ class AgentToolPolicy:
 
     <section id="sources">
       <h2>25. Fontes oficiais (lido 2026-10-24)</h2>
-      <p>Referências oficiais que sustentam os fatos deste guia, todas lidas em 2026-10-24. Links abrem em nova aba.</p>
+      <p>Referências oficiais que sustentam os fatos deste guia, todas lidas em 2026-10-24, exceto as relidas em 2026-11-17 e datadas no texto (modelos, SDKs, paralelismo e multi-agent da OpenAI, <code>tool_choice</code> forçado da Anthropic). Links abrem em nova aba.</p>
       <ol class="source-list">
         <li id="S1"><strong>[S1]</strong> <a href="https://developers.openai.com/api/docs/guides/function-calling" target="_blank" rel="noopener">OpenAI — Function Calling guide</a><br><span class="small">https://developers.openai.com/api/docs/guides/function-calling#parallel-function-calling — built-ins não entram no batch paralelo de funções</span></li>
         <li id="S2"><strong>[S2]</strong> <a href="https://developers.openai.com/api/docs/guides/tools" target="_blank" rel="noopener">OpenAI — Responses API: Using tools</a><br><span class="small">https://developers.openai.com/api/docs/guides/tools</span></li>
@@ -1997,11 +1998,11 @@ class AgentToolPolicy:
         <li id="S27"><strong>[S27]</strong> <a href="https://a2a-protocol.org/latest/specification/" target="_blank" rel="noopener">A2A — Specification</a><br><span class="small">comunicação entre agentes independentes; wire 1.0</span></li>
         <li id="S34"><strong>[S34]</strong> <a href="https://platform.claude.com/docs/en/models/opus-5-5/whats-new-opus-5-5" target="_blank" rel="noopener">Anthropic — What's new in Claude Opus 5.5</a><br><span class="small">thinking sempre adaptive (effort padrão <code>medium</code>), <code>tool_choice</code> forçado não suportado (400)</span></li>
         <li id="S35"><strong>[S35]</strong> <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools" target="_blank" rel="noopener">Anthropic — Define tools (forçando tool use)</a><br><span class="small">tabela de restrições de <code>tool_choice</code> por modelo; prefill com <code>any</code>/<code>tool</code></span></li>
-        <li id="S36"><strong>[S36]</strong> <a href="https://developers.openai.com/api/docs/guides/async-tool-calling" target="_blank" rel="noopener">OpenAI — Async tool calling</a><br><span class="small">GPT-6 Astra e posteriores</span></li>
+        <li id="S36"><strong>[S36]</strong> <a href="https://developers.openai.com/api/docs/guides/async-tool-calling" target="_blank" rel="noopener">OpenAI — Async tool calling</a><br><span class="small">GPT-6 Astra e modelos posteriores (lido 2026-11-17)</span></li>
         <li id="S37"><strong>[S37]</strong> <a href="https://developers.openai.com/api/docs/guides/steering" target="_blank" rel="noopener">OpenAI — Mid-turn steering</a><br><span class="small">família GPT-6 via WebSocket</span></li>
       </ol>
       <div class="callout info">
-        <p><strong>Pacotes e modelos (registros e páginas oficiais).</strong> PyPI: <code>openai</code> 3.37.0, <code>anthropic</code> 2.3.0, <code>google-genai</code> 2.33.0, <code>openai-agents</code> 0.24.0, <code>claude-agent-sdk</code> 0.2.174, <code>pydantic-ai</code> 2.61.0. npm: <code>openai</code> 7.43.0, <code>@anthropic-ai/sdk</code> 1.3.0, <code>@google/genai</code> 2.31.0, <code>@openai/agents</code> 0.21.0. Modelos: <a href="https://developers.openai.com/api/docs/guides/latest-model" target="_blank" rel="noopener">OpenAI</a>, <a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener">Anthropic</a>, <a href="https://ai.google.dev/gemini-api/docs/models" target="_blank" rel="noopener">Gemini</a>. Pydantic AI: <a href="https://github.com/advisories/GHSA-6fqq-452j-qhrp" target="_blank" rel="noopener">GHSA-6fqq-452j-qhrp</a>.</p>
+        <p><strong>Pacotes e modelos (registros e páginas oficiais).</strong> PyPI (2026-11-27): <code>openai</code> 3.60.0, <code>anthropic</code> 2.14.0, <code>google-genai</code> 3.6.1, <code>openai-agents</code> 0.26.0, <code>claude-agent-sdk</code> 0.2.189, <code>pydantic-ai</code> 2.76.0. npm (2026-11-27): <code>openai</code> 7.65.0, <code>@anthropic-ai/sdk</code> 1.14.0, <code>@google/genai</code> 3.6.1, <code>@openai/agents</code> 0.22.0. Modelos: <a href="https://developers.openai.com/api/docs/guides/latest-model" target="_blank" rel="noopener">OpenAI</a>, <a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener">Anthropic</a>, <a href="https://ai.google.dev/gemini-api/docs/models" target="_blank" rel="noopener">Gemini</a>. Pydantic AI: <a href="https://github.com/advisories/GHSA-6fqq-452j-qhrp" target="_blank" rel="noopener">GHSA-6fqq-452j-qhrp</a>.</p>
       </div>
       <div class="callout purple">
         <p><strong>Nota de interpretação:</strong> as APIs evoluem. O framework deve tratar estes comportamentos como contratos de adaptação por versão de provedor/modelo, não como uma abstração permanente. Sempre que você habilitar um novo modelo, tool type, route ou SDK version, rode os testes de contrato de tool-calling antes de liberar em produção. Reporte evals de <em>processo</em> (seleção de tool, autorização, retries, handoffs, retenção de contexto e fan-out) separadas do <em>outcome</em> (correção, segurança, latência e custo); uma resposta final plausível não compensa uma violação de policy.</p>

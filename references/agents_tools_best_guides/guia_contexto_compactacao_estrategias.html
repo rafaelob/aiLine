@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Guia independente de gerenciamento manual de contexto, orçamento por fatias, snapshots cumulativos e compactação para orquestrações de IA.">
-  <meta name="ai-summary" content="Defina um teto operacional X abaixo da janela do modelo, subtraia reservas de saída e margem, divida o input em fatias, compacte por estágios auditáveis, persista snapshots cumulativos sem apagar originais e preserve ledger próprio, tool pairs, anexos por retrieval, estado selado de provedor, microconversas e privacidade. Cache não é estado; compaction server-side exige reconciliação de uso e retenção. Anthropic tem duas mecânicas de compactação server-side (threshold e on-demand, ambas beta); a OpenAI tem compaction automática e /responses/compact. Verificado em 2026-10-24.">
-  <meta name="last-checked" content="2026-10-24">
+  <meta name="ai-summary" content="Defina um teto operacional X abaixo da janela do modelo, subtraia reservas de saída e margem, divida o input em fatias, compacte por estágios auditáveis, persista snapshots cumulativos sem apagar originais e preserve ledger próprio, tool pairs, anexos por retrieval, estado selado de provedor, microconversas e privacidade. Cache não é estado; compaction server-side exige reconciliação de uso e retenção. Anthropic tem duas mecânicas de compactação server-side (threshold e on-demand, ambas beta); a OpenAI tem compaction automática e /responses/compact. Verificado em 2026-11-27.">
+  <meta name="last-checked" content="2026-11-27">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' fill='%230b6b5f'/%3E%3Cpath d='M14 35h36v8H14zM14 21h24v8H14z' fill='white'/%3E%3C/svg%3E">
   <title>Guia SOTA de Contexto e Compactação para Orquestrações de IA</title>
   <script type="application/ld+json">
@@ -14,7 +14,7 @@
     "@type": "TechArticle",
     "headline": "Guia SOTA de Gerenciamento de Contexto e Compactacao",
     "inLanguage": "pt-BR",
-    "dateModified": "2026-10-24",
+    "dateModified": "2026-11-27",
     "about": [
       "LLM context management",
       "manual compaction",
@@ -581,7 +581,7 @@
     <div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px">
         <p class="eyebrow" style="margin:0">Guia independente de contexto SOTA</p>
-        <p class="eyebrow" style="margin:0">Verificado em <strong>2026-10-24</strong></p>
+        <p class="eyebrow" style="margin:0">Verificado em <strong>2026-11-27</strong></p>
       </div>
       <h1>Contexto e compactação em orquestrações de IA</h1>
       <p class="subtitle">Uma estratégia prática para definir um teto operacional <strong>X</strong>, dividir o input em fatias com políticas diferentes, compactar sem quebrar protocolo, persistir snapshots cumulativos e provar que o contexto está sob controle.</p>
@@ -625,7 +625,7 @@
     <main>
       <article>
         <section id="para-agentes" data-section="agent-summary">
-          <h2>Resumo para agentes (verificado 2026-10-24)</h2>
+          <h2>Resumo para agentes (verificado 2026-11-27)</h2>
 
           <h3>Use este guia quando</h3>
           <ul>
@@ -645,24 +645,24 @@
           <ul>
             <li>O ledger da aplicação é a autoridade; bloco <code>compaction</code>, item de compactação da OpenAI, cache e IDs de continuação são projeções, não backup.</li>
             <li>Anthropic: prefira a compaction on-demand (beta <code>compact-2026-09-04</code>, parâmetro <code>compaction</code>, bloco primeiro em <code>messages</code>, exatamente um); use threshold (beta <code>compact-2026-01-12</code>, edit <code>compact_20260112</code>) quando quiser que a API decida dentro do request. Não combine <code>compaction</code> com <code>context_management</code> no mesmo request.</li>
-            <li>Anthropic: some <code>usage.iterations[]</code> para custo e rate limit; <code>count_tokens</code> não dispara compactação; on-demand não existe no Bedrock.</li>
-            <li>Em Fable 5.1, Opus 5.5, Sonnet 5.5 e Haiku 5.5, remova (ou descarte com <code>drop_block</code>) o thinking dos turnos reinseridos após <code>pause_after_compaction</code>; só o on-demand preserva thinking, nas condições da página "Compaction and preserved thinking".</li>
-            <li>OpenAI: automático com <code>context_management: [{"type":"compaction","compact_threshold":N}]</code> ou manual com <code>POST /responses/compact</code> (stateless, compatível com ZDR). <code>/responses/compact</code> não funciona com multi-agent; itens <code>configuration_update</code> não combinam com compaction automática.</li>
+            <li>Anthropic: some <code>usage.iterations[]</code> para custo e rate limit; <code>count_tokens</code> não dispara compactação; o on-demand é beta também no Amazon Bedrock, mas Fable 5.2 e Mythos 5.2 não constam na lista de modelos do Bedrock (<a href="https://platform.claude.com/docs/en/build-with-claude/compaction-on-demand" target="_blank" rel="noopener">compaction-on-demand</a>, lido 2026-11-27).</li>
+            <li>Em Fable 5.2, Mythos 5.2, Opus 5.5, Sonnet 5.5 e Haiku 5.5, remova (ou descarte com <code>drop_block</code>) o thinking dos turnos reinseridos após <code>pause_after_compaction</code>; só o on-demand preserva thinking, nas condições da página "Compaction and preserved thinking".</li>
+            <li>OpenAI: automático com <code>context_management: [{"type":"compaction","compact_threshold":N}]</code> ou manual com <code>POST /responses/compact</code> (stateless, compatível com ZDR). <code>/responses/compact</code> não funciona com multi-agent (<a href="https://developers.openai.com/api/docs/guides/deployment-checklist#use-multi-agent-for-parallel-work" target="_blank" rel="noopener">deployment-checklist</a>, lido 2026-11-27) e rejeita históricos com itens <code>configuration_update</code>; a compaction automática os aceita e emite um <code>configuration_update</code> novo logo após o item <code>compaction</code>, com o último <code>reasoning.effort</code> e <code>text.format</code> definidos (<a href="https://developers.openai.com/api/docs/guides/compaction" target="_blank" rel="noopener">guides/compaction</a>, lido 2026-11-27).</li>
             <li>Gemini (Interactions): <code>previous_interaction_id</code> é estado server-side, não compactação; só há cache implícito. Compacte no seu ledger.</li>
-            <li>Cache: mínimo cacheável Anthropic 512 tokens nos cinco modelos correntes; leitura 0,1x (0,05x Opus 5.5 e Sonnet 5.5; 0,025x Fable 5.1). Parametrize esses valores no registry de modelos, não no código.</li>
+            <li>Cache: mínimo cacheável Anthropic 512 tokens nos cinco modelos correntes; leitura 0,1x (0,05x Opus 5.5 e Sonnet 5.5; 0,025x Fable 5.2). Parametrize esses valores no registry de modelos, não no código.</li>
             <li>Os percentuais da escada (soft 0,70–0,75, compact 0,80–0,85, hard 0,90–0,92) e o exemplo de 258k são calibração, não contrato de provedor.</li>
           </ul>
 
           <h3>Versões e modelos correntes</h3>
           <div class="table-wrap"><table>
-            <thead><tr><th>Item</th><th>Valor</th><th>Fonte (lido 2026-10-24)</th></tr></thead>
+            <thead><tr><th>Item</th><th>Valor</th><th>Fonte (lido 2026-11-27)</th></tr></thead>
             <tbody>
-              <tr><td>Modelos Claude com compaction</td><td>claude-fable-5-1, claude-mythos-5-1 (acesso limitado), claude-opus-5-5, claude-sonnet-5-5, claude-haiku-5-5; janela 1M, saída máxima 128K</td><td><a href="https://platform.claude.com/docs/en/build-with-claude/compaction" target="_blank" rel="noopener">build-with-claude/compaction</a></td></tr>
+              <tr><td>Modelos Claude com compaction</td><td>claude-fable-5-2, claude-mythos-5-2 (só organizações verificadas), claude-opus-5-5, claude-sonnet-5-5, claude-haiku-5-5; janela 1M, saída máxima 128K</td><td><a href="https://platform.claude.com/docs/en/build-with-claude/compaction" target="_blank" rel="noopener">build-with-claude/compaction</a></td></tr>
               <tr><td>Compaction Anthropic</td><td>on-demand beta compact-2026-09-04; threshold beta compact-2026-01-12</td><td><a href="https://platform.claude.com/docs/en/build-with-claude/compaction-on-demand" target="_blank" rel="noopener">compaction-on-demand</a></td></tr>
-              <tr><td>Compaction OpenAI</td><td>context_management automático; POST /responses/compact; exemplos oficiais com gpt-6-astra</td><td><a href="https://developers.openai.com/api/docs/guides/compaction" target="_blank" rel="noopener">guides/compaction</a></td></tr>
+              <tr><td>Compaction OpenAI</td><td>context_management automático; POST /responses/compact; exemplos oficiais do modo manual com gpt-6.2-astra</td><td><a href="https://developers.openai.com/api/docs/guides/compaction" target="_blank" rel="noopener">guides/compaction</a></td></tr>
               <tr><td>Cache OpenAI</td><td>prompt_cache_options.ttl 30m ou 12h; escrita 1,25x (30m) / 2,5x (12h)</td><td><a href="https://developers.openai.com/api/docs/guides/prompt-caching" target="_blank" rel="noopener">guides/prompt-caching</a></td></tr>
-              <tr><td>Gemini</td><td>gemini-4-argon e gemini-3.8-flash; Interactions API GA; só cache implícito</td><td><a href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">interactions-overview</a></td></tr>
-              <tr><td>SDKs Python</td><td>anthropic 2.3.0, openai 3.37.0, google-genai 2.33.0</td><td><a href="https://pypi.org/project/anthropic/" target="_blank" rel="noopener">pypi.org</a></td></tr>
+              <tr><td>Gemini</td><td>gemini-4-argon, gemini-4-carbon, gemini-4-hydrogen e gemini-4-neon; Interactions API GA; só cache implícito, com mínimo de 4.096 tokens nos modelos Gemini 4 (cache explícito não existe na Interactions API nem nos Gemini 4; <a href="https://aistudio.google.com/docs/caching" target="_blank" rel="noopener">caching</a>, lido 2026-11-27)</td><td><a href="https://ai.google.dev/gemini-api/docs/interactions-overview" target="_blank" rel="noopener">interactions-overview</a></td></tr>
+              <tr><td>SDKs Python</td><td>anthropic 2.14.0, openai 3.60.0, google-genai 3.6.1</td><td><a href="https://pypi.org/project/anthropic/" target="_blank" rel="noopener">pypi.org</a></td></tr>
             </tbody>
           </table></div>
 
@@ -804,9 +804,9 @@ emergency = hard_input_budget * 0.95</code></pre>
             Contar turnos engana. Uma única resposta de ferramenta, um PDF ou uma matriz de evidência pode consumir mais tokens que dezenas de mensagens curtas.
           </div>
 
-          <div class="callout risk" data-fact="nos modelos claude atuais opus 5.5 sonnet 5.5 e fable 5.1 a janela de 1M e cobrada a preco padrao entao o teto X passa a ser limitado por custo latencia e atencao e nao por preco de janela">
+          <div class="callout risk" data-fact="nos modelos claude atuais opus 5.5 sonnet 5.5 e fable 5.2 a janela de 1M e cobrada a preco padrao entao o teto X passa a ser limitado por custo latencia e atencao e nao por preco de janela">
             <strong>Quando o preço para de defender o teto X</strong>
-            Nos modelos Claude atuais — Opus 5.5, Sonnet 5.5, Haiku 5.5 e Fable 5.1 — a janela é de <strong>1M tokens</strong> com <strong>128K</strong> de saída máxima, cobrada a preço padrão (exceto o Haiku 5.5, que tem faixa de preço acima de 100k tokens de prompt), sem prêmio de long-context nos demais. O preço deixou de segurar o contexto por você: o <code>teto_de_custo_e_latencia</code> da fórmula acima é um <strong>parâmetro que você define explicitamente</strong>. Os fatores que continuam vinculando são o custo linear por turno (Opus 5.5: US$ 4/MTok de input, então 1M de input custa ~US$ 4 <em>por chamada</em>, e um loop agêntico faz muitas), a latência de TTFT e a degradação de atenção em contexto longo.
+            Nos modelos Claude atuais — Opus 5.5, Sonnet 5.5, Haiku 5.5 e Fable 5.2 — a janela é de <strong>1M tokens</strong> com <strong>128K</strong> de saída máxima, cobrada a preço padrão (exceto o Haiku 5.5, que tem faixa de preço acima de 100k tokens de prompt), sem prêmio de long-context nos demais. O preço deixou de segurar o contexto por você: o <code>teto_de_custo_e_latencia</code> da fórmula acima é um <strong>parâmetro que você define explicitamente</strong>. Os fatores que continuam vinculando são o custo linear por turno (Opus 5.5: US$ 4/MTok de input, então 1M de input custa ~US$ 4 <em>por chamada</em>, e um loop agêntico faz muitas), a latência de TTFT e a degradação de atenção em contexto longo.
             <strong>Não trate isso como licença para inflar <code>W_steady</code>.</strong> A meta do §0 continua valendo: qualidade sob restrição, não a maior janela disponível por reflexo.
             <span class="source-link"><a href="https://platform.claude.com/docs/en/about-claude/pricing" target="_blank" rel="noopener">platform.claude.com · pricing</a>.</span>
           </div>
@@ -1017,7 +1017,7 @@ emergency = hard_input_budget * 0.95</code></pre>
 
           <div class="callout" data-fact="cada degrau da escada impacta o prompt cache de forma diferente e snapshot e o degrau canonico desenhado para mover o breakpoint atomically">
             <strong>Compactação e prompt cache: cada degrau abaixo tem impacto diferente no prefix-cache.</strong>
-            Como cache depende de prefixo estável ou objeto explícito de cache (OpenAI: prefix match exato, implícito ou explícito via <code>prompt_cache_breakpoint</code>, e a compaction pode reduzir o reuso de cache; Anthropic: prefix hash por breakpoint via <code>cache_control</code>, até 4 breakpoints; Gemini Interactions: só cache implícito (mínimo de 4.096 tokens em <code>gemini-4-argon</code> e <code>gemini-3.8-flash</code>; no Argon o cache de multi-turn cobre o request anterior só se o novo request adicionar pelo menos 2.050 tokens, e o hit tem 95% de desconto; não causalmente acoplado a <code>previous_interaction_id</code>, mas ambos beneficiam prefixo estável)), qualquer operação que <em>modifique</em> conteúdo antes do breakpoint atual <strong>invalida o cache</strong>; operações que <em>cortam pela cauda</em> ou <em>movem o breakpoint atomically</em> preservam.
+            Como cache depende de prefixo estável ou objeto explícito de cache (OpenAI: prefix match exato, implícito ou explícito via <code>prompt_cache_breakpoint</code>, e a compaction pode reduzir o reuso de cache; Anthropic: prefix hash por breakpoint via <code>cache_control</code>, até 4 breakpoints; Gemini Interactions: só cache implícito (mínimo de 4.096 tokens nos modelos Gemini 4; no Argon o cache de multi-turn cobre o request anterior só se o novo request adicionar pelo menos 2.050 tokens, e o hit tem 95% de desconto; não causalmente acoplado a <code>previous_interaction_id</code>, mas ambos beneficiam prefixo estável)), qualquer operação que <em>modifique</em> conteúdo antes do breakpoint atual <strong>invalida o cache</strong>; operações que <em>cortam pela cauda</em> ou <em>movem o breakpoint atomically</em> preservam.
             Resumo:
             <code>hygiene</code> preserva cache só quando atua fora da projeção cacheada ou na cauda pós-breakpoint; qualquer dedupe/normalização em conteúdo <code>&lt;= breakpoint</code> invalida o prefixo;
             <code>trim_old_pairs</code> preserva cache apenas quando remove cauda pós-breakpoint; se remove pares antigos dentro do prefixo cacheado, cria novo prefixo e paga nova cache write no próximo turno;
@@ -1030,11 +1030,11 @@ emergency = hard_input_budget * 0.95</code></pre>
             <span class="pill partial">derived</span> mapeamento operação→cache é inferência consistente; o ganho exato depende do provider + tamanho do prefix.
           </div>
 
-          <div class="callout tip" data-fact="minimo cacheavel anthropic 512 tokens em opus 5.5 sonnet 5.5 haiku 5.5 e fable 5.1 leitura de cache 0.05x no opus 5.5 e sonnet 5.5 e 0.025x no fable 5.1">
+          <div class="callout tip" data-fact="minimo cacheavel anthropic 512 tokens em opus 5.5 sonnet 5.5 haiku 5.5 e fable 5.2 leitura de cache 0.05x no opus 5.5 e sonnet 5.5 e 0.025x no fable 5.2">
             <strong>Mínimo cacheável e break-even do snapshot na Anthropic</strong>
-            Um bloco só entra no prompt cache se atingir o <strong>mínimo cacheável</strong> do modelo: <strong>512 tokens</strong> no Opus 5.5, Sonnet 5.5, Haiku 5.5 e Fable 5.1. Se o seu <code>cache_breakpoint_id</code> é posicionado por uma regra do tipo "só corta acima de ~1k tokens", essa regra é <strong>específica de modelo</strong> e deve ser parametrizada no registry do §14, não hardcoded.
+            Um bloco só entra no prompt cache se atingir o <strong>mínimo cacheável</strong> do modelo: <strong>512 tokens</strong> no Opus 5.5, Sonnet 5.5, Haiku 5.5 e Fable 5.2. Se o seu <code>cache_breakpoint_id</code> é posicionado por uma regra do tipo "só corta acima de ~1k tokens", essa regra é <strong>específica de modelo</strong> e deve ser parametrizada no registry do §14, não hardcoded.
             <br><br>
-            Multiplicadores sobre o preço base de input: cache write <strong>1,25×</strong> (TTL 5 min) ou <strong>2×</strong> (TTL 1 h); cache read <strong>0,1×</strong>, exceto <strong>0,05×</strong> no Opus 5.5 e no Sonnet 5.5 e <strong>0,025×</strong> no Fable 5.1. <span class="pill partial">derived</span> No Opus 5.5, o sobrecusto da escrita é 0,25× (5 min) ou 1,0× (1 h) e cada leitura economiza 0,95×: o reposicionamento se paga <strong>já na 1ª leitura</strong> com TTL de 5 min e a partir da <strong>2ª</strong> com TTL de 1 h, desde que o prefixo sobreviva ao TTL sem nova invalidação. O TTL, não o preço, costuma decidir.
+            Multiplicadores sobre o preço base de input: cache write <strong>1,25×</strong> (TTL 5 min) ou <strong>2×</strong> (TTL 1 h); cache read <strong>0,1×</strong>, exceto <strong>0,05×</strong> no Opus 5.5 e no Sonnet 5.5 e <strong>0,025×</strong> no Fable 5.2. <span class="pill partial">derived</span> No Opus 5.5, o sobrecusto da escrita é 0,25× (5 min) ou 1,0× (1 h) e cada leitura economiza 0,95×: o reposicionamento se paga <strong>já na 1ª leitura</strong> com TTL de 5 min e a partir da <strong>2ª</strong> com TTL de 1 h, desde que o prefixo sobreviva ao TTL sem nova invalidação. O TTL, não o preço, costuma decidir.
             <span class="source-link"><a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching" target="_blank" rel="noopener">platform.claude.com · prompt caching</a>.</span>
           </div>
 
@@ -1131,7 +1131,7 @@ emergency = hard_input_budget * 0.95</code></pre>
 
 while keep_going:
     response = client.responses.create(
-        model="gpt-6-sol",
+        model="gpt-6.2-sol",
         input=conversation,
         store=False,
         context_management=[{"type": "compaction", "compact_threshold": 200000}],
@@ -1174,7 +1174,7 @@ while keep_going:
           <pre><code>long_input_items_array = [...]  # janela completa de turnos anteriores
 
 compacted = client.responses.compact(
-    model="gpt-6-astra",
+    model="gpt-6.2-astra",
     input=long_input_items_array,
 )
 
@@ -1188,7 +1188,7 @@ next_input = [
 ]
 
 next_response = client.responses.create(
-    model="gpt-6-astra",
+    model="gpt-6.2-astra",
     input=next_input,
     store=False,  # mantém o fluxo compatível com ZDR
 )</code></pre>
@@ -1227,9 +1227,15 @@ next_response = client.responses.create(
             A compactação server-side da OpenAI resolve a fatia <em>conversa/tools</em> do jeito do provedor — análoga ao degrau <code>summarize_old</code>/<code>snapshot</code> da <a href="#escada">escada</a> (seção 5), mas decidida e executada pelo servidor, não pelo seu orquestrador. Ela não substitui o <a href="#snapshots">ledger canônico e os snapshots cumulativos</a> (seção 6): o item de compactação é opaco e não serve como registro auditável do que foi preservado ou removido — para isso, continue mantendo seu próprio snapshot com <code>preserved_ids</code>/<code>removed_ids</code>/<code>reclaimed_tokens</code> em paralelo.
           </div>
 
+          <div class="callout tip" data-fact="agents api da openai compacta em segundo plano por padrao desde 2026-10-30 e compaction async false torna a compactacao bloqueante">
+            <strong>Agents API (beta público): compactação em segundo plano</strong>
+            Na Agents API (<code>v1/agents</code>, <code>v1/agents/sessions</code>) a OpenAI gerencia a compactação da sessão, e desde 2026-10-30 ela roda <em>em segundo plano por padrão</em>: defina <code>compaction.async</code> como <code>false</code> para compactação bloqueante. A fonte avisa que a compactação em segundo plano pode aumentar o uso de tokens. Isso vale para sessões da Agents API; os modos da Responses API acima (<code>context_management</code> e <code>responses.compact()</code>) seguem como descritos. Fonte: <a href="https://developers.openai.com/api/docs/changelog" target="_blank" rel="noopener">developers.openai.com/api/docs/changelog</a> (entrada de 30 de outubro de 2026, lida em 2026-11-12); o formato exato do objeto <code>compaction</code> na configuração do agent não foi relido no reference: UNVERIFIED.
+          </div>
+
           <div class="callout" data-fact="fontes oficiais openai server side compaction guia dedicado deployment checklist e api reference responses compact">
             <strong>Fontes oficiais</strong>
-            OpenAI — guia dedicado <a href="https://developers.openai.com/api/docs/guides/compaction" target="_blank" rel="noopener"><code>developers.openai.com/api/docs/guides/compaction</code></a>; <a href="https://developers.openai.com/api/docs/guides/deployment-checklist#leverage-compaction" target="_blank" rel="noopener"><code>developers.openai.com/api/docs/guides/deployment-checklist</code></a> (seção "Leverage compaction"); referência <a href="https://developers.openai.com/api/docs/api-reference/responses/compact" target="_blank" rel="noopener"><code>developers.openai.com/api/docs/api-reference/responses/compact</code></a>. Os exemplos oficiais usam <code>gpt-6-astra</code> no modo manual; os exemplos deste guia usam <code>gpt-6-sol</code> no modo automático. A documentação não restringe o modo automático por modelo. Restrições: o <code>/responses/compact</code> não é suportado com multi-agent; itens <code>configuration_update</code> (família GPT-6, muda só o effort) não combinam com compaction/truncation automáticos, e o <code>/responses/compact</code> rejeita históricos que os contenham (<a href="https://developers.openai.com/api/docs/guides/deployment-checklist" target="_blank" rel="noopener">deployment-checklist</a>); para compactar de forma explícita use o item de entrada <code>compaction_trigger</code> (guia de compaction).
+            OpenAI — guia dedicado <a href="https://developers.openai.com/api/docs/guides/compaction" target="_blank" rel="noopener"><code>developers.openai.com/api/docs/guides/compaction</code></a>; <a href="https://developers.openai.com/api/docs/guides/deployment-checklist#leverage-compaction" target="_blank" rel="noopener"><code>developers.openai.com/api/docs/guides/deployment-checklist</code></a> (seção "Leverage compaction"); referência <a href="https://developers.openai.com/api/docs/api-reference/responses/compact" target="_blank" rel="noopener"><code>developers.openai.com/api/docs/api-reference/responses/compact</code></a>. Em 2026-11-27 todos os exemplos oficiais (modo automático, <code>compaction_trigger</code> e endpoint manual) usam <code>gpt-6.2-astra</code>; os exemplos deste guia usam <code>gpt-6.2-sol</code> no modo automático e <code>gpt-6.2-astra</code> no manual. A documentação não restringe o modo automático por modelo. Restrições: o <code>/responses/compact</code> não é suportado com multi-agent e rejeita históricos que contenham itens <code>configuration_update</code> (guia compaction: retire os updates antes, guarde o último <code>reasoning.effort</code> e <code>text.format</code> e anexe um único <code>configuration_update</code> novo depois da janela devolvida). Na compaction automática os updates anteriores são aceitos e a API emite um novo logo após o item <code>compaction</code>; no <code>compaction_trigger</code> a API não emite esse item novo e é o cliente que anexa o seu antes da próxima mensagem. O <code>compaction_trigger</code> também não carrega declarações <code>additional_tools</code> anteriores. Sobre a compaction automática, vale o guia dedicado (lido 2026-11-27), que aceita os updates; o trecho "Leverage compaction" do deployment-checklist não foi relido: UNVERIFIED.
+            <br>GPT-6.2 (lido 2026-11-17): reasoning items são descartados quando o prefixo é editado (ver <a href="https://developers.openai.com/api/docs/guides/keep-prefix-unchanged" target="_blank" rel="noopener">keep-prefix-unchanged</a>), o que degrada o raciocínio herdado: compactar com o endpoint ou com o item oficial preserva o estado, editar o histórico à mão não. O cache aceita <code>prompt_cache_options.ttl</code> (<code>30m</code> ou <code>12h</code>) e a leitura de cache custa 0,05× no 6.2 Astra/Sol; os preços por modelo estão na <a href="guia_openai_modelos.html#s-catalogo">tabela de preços de guia_openai_modelos.html</a>.
           </div>
         </section>
 
@@ -1296,9 +1302,9 @@ conversation.extend(response.content)</code></pre>
             </tbody>
           </table>
 
-          <div class="callout" data-fact="modelos que suportam compactacao threshold anthropic fable51 mythos51 opus55 sonnet55 haiku55">
+          <div class="callout" data-fact="modelos que suportam compactacao threshold anthropic fable52 mythos52 opus55 sonnet55 haiku55">
             <strong>Modelos suportados</strong>
-            Fable 5.1, Mythos 5.1 (acesso limitado), <strong><code>claude-opus-5-5</code></strong>, <strong><code>claude-sonnet-5-5</code></strong> e <strong><code>claude-haiku-5-5</code></strong>. Plataformas: Claude API, Claude Platform on AWS, Amazon Bedrock, Google Cloud e Microsoft Foundry — todas em beta. ZDR-elegível (exclui Covered Models pelas regras de retenção específicas de modelo). Nos modelos Claude 5.1 e posteriores, uma request com <code>instructions</code> customizadas resume só a conversa visível: thinking blocks anteriores não entram no input do sumarizador. No threshold, em Fable 5.1, Opus 5.5, Sonnet 5.5 e Haiku 5.5, remova ou descarte o thinking dos turnos que você reinsere após <code>pause_after_compaction</code> (a preservação sob condições é exclusiva do on-demand, §5B.2). Para confirmar por código em vez de lista estática, chame a <a href="https://platform.claude.com/docs/en/api/beta/models/list" target="_blank" rel="noopener">Models API</a> com o beta header e leia <code>capabilities.compaction</code> de cada modelo.
+            Fable 5.2, Mythos 5.2 (só organizações verificadas), <strong><code>claude-opus-5-5</code></strong>, <strong><code>claude-sonnet-5-5</code></strong> e <strong><code>claude-haiku-5-5</code></strong>. Plataformas: Claude API, Claude Platform on AWS, Amazon Bedrock, Google Cloud e Microsoft Foundry — todas em beta. ZDR-elegível (exclui Covered Models pelas regras de retenção específicas de modelo). Nos modelos Claude atuais e na geração anterior 5.1, uma request com <code>instructions</code> customizadas resume só a conversa visível: thinking blocks anteriores não entram no input do sumarizador. No threshold, em Fable 5.2, Mythos 5.2, Opus 5.5, Sonnet 5.5 e Haiku 5.5, remova ou descarte o thinking dos turnos que você reinsere após <code>pause_after_compaction</code> (a preservação sob condições é exclusiva do on-demand, §5B.2). Para confirmar por código em vez de lista estática, chame a <a href="https://platform.claude.com/docs/en/api/beta/models/list" target="_blank" rel="noopener">Models API</a> com o beta header e leia <code>capabilities.compaction</code> de cada modelo.
           </div>
 
           <div class="callout risk" data-fact="compactacao anthropic contribui para rate limits e billing e o usage top level nao inclui a iteracao de compactacao some usage.iterations para o total cobrado">
@@ -1552,6 +1558,15 @@ if response.stop_reason == "compaction":
               </tr>
             </tbody>
           </table>
+
+          <h3>Catálogo grande de ferramentas sem quebrar o cache</h3>
+          <p>As definições de ferramentas ficam no começo do prefixo cacheado: editar o array de ferramentas no meio da conversa descarta o cache. Os três provedores oferecem um caminho para expor ferramentas sob demanda (OpenAI e Anthropic lidos em 2026-11-12; Gemini em 2026-11-26):</p>
+          <ul>
+            <li><strong>OpenAI (Responses API, modelos GPT-6 atuais):</strong> adicione <code>tool_search</code> em <code>tools</code> e marque as funções adiadas com <code>defer_loading: true</code>. As ferramentas descobertas entram <em>no fim</em> do contexto, o que preserva o cache; mudar o conjunto carregado quebra o cache dali em diante. A página recomenda namespaces e servidores MCP em vez de funções soltas, com menos de 10 funções por namespace. Fonte: <a href="https://developers.openai.com/api/docs/guides/tools-tool-search" target="_blank" rel="noopener">guides/tools-tool-search</a>.</li>
+            <li><strong>Anthropic (beta):</strong> declare todo o conjunto em <code>tools</code> (com <code>defer_loading: true</code> nas que começam ocultas) e use blocos <code>tool_addition</code>/<code>tool_removal</code> numa mensagem <code>role: "system"</code> para oferecer ou retirar uma ferramenta a partir de um ponto da conversa; o array <code>tools</code> não muda e o prefixo cacheado continua válido. Com o header <code>inline-tools-2026-09-15</code> o bloco pode trazer a definição completa; se todas as ferramentas forem adiadas, a primeira definida por valor custa um cache miss. Fonte: <a href="https://platform.claude.com/docs/en/build-with-claude/mid-conversation-system-messages" target="_blank" rel="noopener">build-with-claude/mid-conversation-system-messages</a>; mecânica e limites em <a href="guia_claude_api.html#c-tool-caching">Guia Claude API, seção 6.7</a>; comparativo dos três provedores em <a href="guia_agentic_vision_code_tools.html#parte-tool-search">Tool Search &amp; seleção dinâmica</a>.</li>
+            <li><strong>Gemini (Preview, só Interactions API <code>v1beta</code>):</strong> inclua <code>{"type":"tool_search"}</code> em <code>tools</code> e marque as funções adiadas com <code>defer_loading: true</code>; a busca roda no servidor por padrão ou no cliente (<code>execution:"client"</code>). O efeito no cache implícito não está documentado nas fontes lidas: UNVERIFIED. Fontes: <a href="https://aistudio.google.com/docs/tool-retrieval" target="_blank" rel="noopener">tool-retrieval</a> e <a href="https://aistudio.google.com/docs/changelog" target="_blank" rel="noopener">changelog</a>, lidos em 2026-11-26; detalhes em <a href="guia_gemini_interactions_api.html#s-tool-retrieval">guia_gemini_interactions_api §13.11</a>.</li>
+          </ul>
+          <p>Gemini: nenhum mecanismo equivalente foi verificado para este guia (UNVERIFIED).</p>
 
           <div class="callout evidence" data-fact="tool result precisa ter evento de truncamento ou pruning quando perde conteudo">
             <strong>Evidência</strong>
@@ -1971,7 +1986,7 @@ if response.stop_reason == "compaction":
           </dl>
         </section>
         <section id="fontes" data-section="sources">
-          <h2>Fontes oficiais (lido 2026-10-24)</h2>
+          <h2>Fontes oficiais (compaction OpenAI e Anthropic lidas em 2026-11-27; demais lidas em 2026-11-17 ou antes)</h2>
           <ul>
             <li>OpenAI: <a href="https://developers.openai.com/api/docs/guides/compaction" target="_blank" rel="noopener">compaction</a> (automático via <code>context_management</code>, manual via <code>/responses/compact</code>), <a href="https://developers.openai.com/api/docs/guides/background" target="_blank" rel="noopener">background</a> e <a href="https://developers.openai.com/api/docs/guides/prompt-caching" target="_blank" rel="noopener">prompt caching</a>.</li>
             <li>Anthropic: <a href="https://platform.claude.com/docs/en/build-with-claude/compaction" target="_blank" rel="noopener">compaction</a> (threshold beta <code>compact-2026-01-12</code>), <a href="https://platform.claude.com/docs/en/build-with-claude/compaction-on-demand" target="_blank" rel="noopener">compaction on-demand</a> (beta <code>compact-2026-09-04</code>), <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching" target="_blank" rel="noopener">prompt caching</a> e <a href="https://platform.claude.com/docs/en/about-claude/pricing" target="_blank" rel="noopener">pricing</a>.</li>

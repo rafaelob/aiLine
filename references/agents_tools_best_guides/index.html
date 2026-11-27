@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Guia Completo de Agentes — Portal</title>
 <meta name="description" content="Portal mestre do Guia Completo de Agentes: porta de entrada única para os guias de orquestração de agentes de IA (núcleo agnóstico, frameworks Agents SDK / LangGraph / Google ADK / Deep Agents, providers OpenAI / Anthropic / Google, contexto, tokens, multimodal, paralelismo, skills, operação e segurança). Resumo para agentes (qual guia abrir para cada tarefa, padrões vigentes, versões e modelos correntes), tese operacional, matriz tópico→guia e mapa de decisões." />
-<meta name="last-checked" content="2026-10-24" />
+<meta name="last-checked" content="2026-11-27" />
 <meta name="robots" content="index,follow" />
 <link rel="alternate" type="text/plain" href="llms.txt" title="Mapa da coleção para agentes" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%9A%3C/text%3E%3C/svg%3E" />
@@ -306,7 +306,7 @@
   <div class="header-row">
     <div class="brand">Guia Completo de Agentes <small>Portal mestre · orquestração de agentes de IA</small></div>
     <div class="header-right">
-      <span class="badge">Verificado em <strong style="margin-left:4px">2026-10-24</strong></span>
+      <span class="badge">Verificado em <strong style="margin-left:4px">2026-11-27</strong></span>
       <span class="badge da">25 guias</span>
       <span class="badge info">multi-provedor</span>
       <button class="theme-btn" type="button" id="theme-toggle" aria-label="Alternar tema claro/escuro">Tema</button>
@@ -368,12 +368,12 @@
       <div class="hero-meta">
         <span class="badge da">26 HTML</span>
         <span class="badge info">OpenAI · Anthropic · Google</span>
-        <span class="badge ok">Fatos verificados em fontes oficiais em 2026-10-24</span>
+        <span class="badge ok">Versões de pacote e ciclo de vida verificados em 2026-11-27 · modelos OpenAI em 2026-11-17</span>
       </div>
     </div>
 
     <section class="ref" id="para-agentes">
-      <h2>Resumo para agentes (verificado 2026-10-24)</h2>
+      <h2>Resumo para agentes (verificado 2026-11-27)</h2>
 
       <h3>Use este guia quando</h3>
       <ul>
@@ -393,7 +393,7 @@
         <caption>Uma linha por guia; o link leva ao bloco <code>#para-agentes</code> do guia</caption>
         <thead><tr><th>Tarefa</th><th>Guia</th></tr></thead>
         <tbody>
-          <tr><td>Projetar o sistema multiagente agnóstico de provedor (planos, handoff vs agent-as-tool, model router)</td><td><a href="guia_arquitetura_orquestracao.html#para-agentes"><code>guia_arquitetura_orquestracao.html</code></a></td></tr>
+          <tr><td>Projetar o sistema multiagente agnóstico de provedor (planos, handoff vs agent-as-tool, model router, <a href="guia_arquitetura_orquestracao.html#multi-modelo-multi-agente">planner/executor e agentes paralelos</a>, <a href="guia_arquitetura_orquestracao.html#decisions-como-roteador">Decisions APIs como roteador</a>)</td><td><a href="guia_arquitetura_orquestracao.html#para-agentes"><code>guia_arquitetura_orquestracao.html</code></a></td></tr>
           <tr><td>Modelar estado durável, ledger, memória, compaction e reidratação; estado nos frameworks</td><td><a href="guia_estado_contexto_memoria.html#para-agentes"><code>guia_estado_contexto_memoria.html</code></a></td></tr>
           <tr><td>Desenhar o registro de ferramentas, a fronteira MCP, o hardening de MCP server e RAG</td><td><a href="guia_ferramentas_mcp_rag.html#para-agentes"><code>guia_ferramentas_mcp_rag.html</code></a></td></tr>
           <tr><td>Escolher SDK/adapter e ver qual superfície cada adapter usa (Responses, Interactions, Messages); provider-switching contract</td><td><a href="guia_providers_adapters.html#para-agentes"><code>guia_providers_adapters.html</code></a></td></tr>
@@ -402,11 +402,11 @@
           <tr><td>Streaming durável e resumível; transporte por provedor (SSE, WebSocket, background)</td><td><a href="guia_streaming_durabilidade_resume.html#para-agentes"><code>guia_streaming_durabilidade_resume.html</code></a></td></tr>
           <tr><td>Implementar com o OpenAI Agents SDK (Python/JS): referência, versões, default de modelo</td><td><a href="guia_agents_sdk.html#para-agentes"><code>guia_agents_sdk.html</code></a></td></tr>
           <tr><td>Aplicar o blueprint de orquestração no Agents SDK (handoffs, guardrails, MCP, sessions)</td><td><a href="guia_agents_sdk_orquestracao.html#para-agentes"><code>guia_agents_sdk_orquestracao.html</code></a></td></tr>
-          <tr><td>Implementar com LangGraph e LangChain (<code>create_agent</code>, StateGraph, checkpointers, interrupt/Command)</td><td><a href="guia_langgraph.html#para-agentes"><code>guia_langgraph.html</code></a></td></tr>
+          <tr><td>Implementar com LangGraph e LangChain (<code>create_agent</code>, StateGraph, checkpointers, interrupt/Command, <a href="guia_langgraph.html#s-hitl-strict">strict resume</a>, <a href="guia_langgraph.html#s-decision-middleware">middleware de modelos de decisão</a>)</td><td><a href="guia_langgraph.html#para-agentes"><code>guia_langgraph.html</code></a></td></tr>
           <tr><td>Aplicar o blueprint de orquestração em LangGraph (supervisor via tools, HITL, durabilidade)</td><td><a href="guia_langgraph_orquestracao.html#para-agentes"><code>guia_langgraph_orquestracao.html</code></a></td></tr>
           <tr><td>Implementar com o Google ADK 2.x (LlmAgent, workflow agents, Workflow Runtime, Agent Runtime)</td><td><a href="guia_google_adk.html#para-agentes"><code>guia_google_adk.html</code></a></td></tr>
           <tr><td>Aplicar o blueprint de orquestração no Google ADK (sessions/state, callbacks, A2A)</td><td><a href="guia_google_adk_orquestracao.html#para-agentes"><code>guia_google_adk_orquestracao.html</code></a></td></tr>
-          <tr><td>Implementar com Deep Agents (planejamento, subagentes, sandboxes, Managed Deep Agents)</td><td><a href="guia_deepagents.html#para-agentes"><code>guia_deepagents.html</code></a></td></tr>
+          <tr><td>Implementar com Deep Agents (planejamento, subagentes, sandboxes, Managed Deep Agents, <a href="guia_deepagents.html#s-refusal">recusas do modelo</a>)</td><td><a href="guia_deepagents.html#para-agentes"><code>guia_deepagents.html</code></a></td></tr>
           <tr><td>Escolher e chamar modelos OpenAI (família GPT-6, Responses API, Agents API, áudio, imagem, preços)</td><td><a href="guia_openai_modelos.html#para-agentes"><code>guia_openai_modelos.html</code></a></td></tr>
           <tr><td>Chamar a Claude API (Messages API: thinking, effort, tools, caching, compaction, batches, Skills, Managed Agents)</td><td><a href="guia_claude_api.html#para-agentes"><code>guia_claude_api.html</code></a></td></tr>
           <tr><td>Chamar o Gemini pela Interactions API (google-genai): thinking, function calling, agentes gerenciados</td><td><a href="guia_gemini_interactions_api.html#para-agentes"><code>guia_gemini_interactions_api.html</code></a></td></tr>
@@ -424,30 +424,30 @@
       <h3 id="para-agentes-padroes">Padrões vigentes</h3>
       <ul>
         <li><strong>OpenAI:</strong> use a Responses API (<code>client.responses.create</code>) e a Conversations API para estado; o Agents SDK quando o loop roda no seu app. A Decisions API (<code>POST /v1/decisions</code>, só <code>gpt-6-luna</code>) é GA desde 2026-10-22.</li>
-        <li><strong>OpenAI GPT-6:</strong> <code>gpt-6-astra</code> e <code>gpt-6.1-sol</code> aceitam <code>reasoning.effort</code> de <code>low</code> a <code>max</code> (sem <code>none</code> nem <code>minimal</code>); com effort diferente de <code>none</code>, não envie <code>temperature</code>, <code>top_p</code> nem <code>top_logprobs</code>. O modelo padrão do Agents SDK é <code>gpt-5.6-luna</code>, não GPT-6: passe <code>model=</code> e <code>model_settings</code> explícitos.</li>
-        <li><strong>Gemini (superfície):</strong> use a Interactions API (<code>client.interactions.create</code>, GA desde junho de 2026) com <code>google-genai</code> (Interactions exige 2.3.0 ou superior; fixe <code>&lt;3.0.0</code>) e <code>previous_interaction_id</code> para estado. <code>generateContent</code> só onde a Interactions ainda não cobre: Batch, AFC no SDK Python e cache explícito.</li>
-        <li><strong>Gemini (modelos):</strong> <code>gemini-3.8-flash</code> é o padrão; <code>thinking_level</code> aceita <code>low</code>, <code>medium</code> e <code>high</code> (<code>minimal</code> retorna erro no 3.8 Flash). <code>gemini-4-argon</code> só gera texto, não tem Live API nem cache explícito e ignora <code>temperature</code>, <code>top_p</code> e <code>top_k</code>.</li>
+        <li><strong>OpenAI GPT-6.2:</strong> <code>gpt-6.2-astra</code> (flagship) e <code>gpt-6.2-sol</code> (uso diário: código e agentes) são os correntes desde 2026-11-17; rejeitam <code>reasoning.effort</code> <code>none</code> (use <code>low</code>; comece em <code>medium</code>) e exigem omitir <code>temperature</code>, <code>top_p</code> e <code>top_logprobs</code>; o default de effort e o suporte a <code>xhigh</code>/<code>max</code> neles: UNVERIFIED. <code>gpt-6.1-terra</code> e <code>gpt-6-luna</code> seguem correntes. O modelo padrão do Agents SDK não é um GPT-6: passe <code>model=</code> explícito (autoridade: <a href="guia_agents_sdk.html#s-models-default">guia_agents_sdk.html</a>).</li>
+        <li><strong>Gemini (superfície):</strong> use a Interactions API (<code>client.interactions.create</code>, GA desde junho de 2026) com <code>google-genai</code> (Interactions exige 2.3.0 ou superior; a 3.0 mudou o padrão para a API <code>v1</code>, o cliente HTTP para httpx2 e deixou os aliases <code>*-latest</code> só na <code>v1beta</code>: fixe a versão e teste ao subir) e <code>previous_interaction_id</code> para estado. <code>generateContent</code> só onde a Interactions ainda não cobre: Batch, AFC no SDK Python e cache explícito.</li>
+        <li><strong>Gemini (modelos):</strong> <code>gemini-4-hydrogen</code> é o Flash padrão. <code>gemini-4-argon</code> só gera texto, não tem Live API nem cache explícito e ignora <code>temperature</code>, <code>top_p</code> e <code>top_k</code>. <code>gemini-4-hydrogen</code> (GA 2026-11-12, camada Flash do Gemini 4) aceita <code>thinking_level</code> de <code>low</code> a <code>xhigh</code> (padrão <code>high</code>, sem <code>minimal</code>) e não tem Live API nem cache explícito; está no enum de modelos da Interactions nos SDKs e na lista de modelos do tool retrieval, que é só da Interactions (<a href="https://aistudio.google.com/docs/tool-retrieval.md" target="_blank" rel="noopener">tool-retrieval</a>, lido em 2026-11-27). <code>gemini-4-neon</code> (GA 2026-11-18, camada intermediária do Gemini 4) gera só texto, não tem Live API nem free tier, tem só cache implícito, aceita <code>thinking_level</code> de <code>low</code> a <code>xhigh</code> (padrão <code>high</code>; <code>minimal</code> retorna erro) e suporta Interactions (<a href="https://aistudio.google.com/docs/models/gemini-4-neon" target="_blank" rel="noopener">página do modelo</a>, lida em 2026-11-26); no SDK tipado, o enum só lista o Neon a partir do <code>google-genai</code> 3.6.1 (<a href="https://github.com/googleapis/python-genai/releases/tag/v3.6.1" target="_blank" rel="noopener">release v3.6.1</a>, lido em 2026-11-27; se uma versão anterior aceita a string simples: UNVERIFIED). Tool retrieval (<code>{"type":"tool_search"}</code> + <code>defer_loading: true</code>) existe em Preview na Interactions <code>v1beta</code>.</li>
         <li><strong>Anthropic (superfície):</strong> use a Messages API (<code>client.messages.create</code>). Sem SDK, envie <code>anthropic-version: 2026-10-21</code> (os SDKs Python 2.x e TypeScript 1.x já enviam). Nessa versão <code>temperature</code>, <code>top_p</code> e <code>top_k</code> retornam 400 em qualquer modelo.</li>
-        <li><strong>Anthropic (modelos):</strong> controle o raciocínio por <code>output_config.effort</code>; <code>budget_tokens</code> retorna 400 nos modelos atuais e o Sonnet 5.5 usa <code>thinking: {"type":"between_tools"}</code> no lugar de <code>disabled</code>. <code>tool_choice</code> <code>any</code>/<code>tool</code> retorna 400 em Fable 5.1, Opus 5.5 e Sonnet 5.5 (o Haiku 5.5 aceita).</li>
-        <li><strong>MCP:</strong> implemente a especificação <code>2026-07-28</code>; no Python fixe <code>mcp&gt;=2.2.0,&lt;3</code> (frameworks que ainda limitam <code>mcp&lt;2</code> exigem <code>mcp&gt;=1.30.0,&lt;2</code>) e <code>fastmcp&gt;=4.1.2</code> (projeto distinto do SDK oficial <code>mcp</code>).</li>
+        <li><strong>Anthropic (modelos):</strong> controle o raciocínio por <code>output_config.effort</code>; <code>budget_tokens</code> retorna 400 nos modelos atuais e o Sonnet 5.5 usa <code>thinking: {"type":"between_tools"}</code> no lugar de <code>disabled</code>. <code>tool_choice</code> <code>any</code>/<code>tool</code> retorna 400 em Fable 5.2, Mythos 5.2, Opus 5.5 e Sonnet 5.5 (o Haiku 5.5 aceita). O thinking do Fable 5.2 e do Mythos 5.2 é sempre ligado, e o Computer use exige <code>computer_toolset_20260801</code>.</li>
+        <li><strong>MCP:</strong> implemente a especificação <code>2026-07-28</code>; no Python fixe <code>mcp&gt;=2.3.0,&lt;3</code> e <code>fastmcp&gt;=4.2.6</code> (GHSA-78c8-3jhx-5mg7; projeto distinto do SDK oficial <code>mcp</code>).</li>
         <li><strong>LangChain e LangGraph:</strong> <code>from langchain.agents import create_agent</code>; supervisor com subagentes expostos como <code>@tool</code>.</li>
       </ul>
 
       <h3 id="para-agentes-versoes">Versões e modelos correntes</h3>
       <div class="table-wrap"><table>
-        <caption>Valores lidos em fonte oficial em 2026-10-24; cada guia traz as fontes e a data de leitura dos fatos que cita. Marque <code>UNVERIFIED</code> o que não conseguir confirmar.</caption>
+        <caption>Valores lidos em fonte oficial em 2026-11-17 (modelos OpenAI) e em 2026-11-27 (versões de pacote, depreciações e retiradas); cada guia traz as fontes e a data de leitura dos fatos que cita. Marque <code>UNVERIFIED</code> o que não conseguir confirmar.</caption>
         <thead><tr><th>Item</th><th>Valor</th><th>Fonte</th></tr></thead>
         <tbody>
-          <tr><td>Modelos de texto OpenAI</td><td><code>gpt-6-astra</code>, <code>gpt-6.1-sol</code>, <code>gpt-6-sol</code>, <code>gpt-6-luna</code>; contexto de 1.050.000 tokens (Astra: entrada máxima 922.000, saída máxima 128.000)</td><td><a href="https://developers.openai.com/api/docs/guides/latest-model" target="_blank" rel="noopener">guides/latest-model</a></td></tr>
-          <tr><td>Imagem e transcrição OpenAI</td><td><code>gpt-image-2.5-sunburst</code> (edição precisa), <code>gpt-image-2.5-flare</code> (geração rápida); <code>gpt-transcribe</code> (arquivo ou turno), <code>gpt-live-transcribe</code> (ao vivo)</td><td><a href="https://developers.openai.com/api/docs/guides/image-generation" target="_blank" rel="noopener">guides/image-generation</a></td></tr>
-          <tr><td>SDKs OpenAI</td><td><code>openai</code> 3.37.0 (Python) e 7.43.0 (JS), ambos de 2026-10-22; <code>openai-agents</code> 0.24.0 (2026-10-15) e <code>@openai/agents</code> 0.21.0 (2026-10-20)</td><td><a href="https://pypi.org/project/openai/" target="_blank" rel="noopener">pypi.org/project/openai</a> · <a href="https://pypi.org/project/openai-agents/" target="_blank" rel="noopener">openai-agents</a></td></tr>
-          <tr><td>Modelos Claude</td><td><code>claude-fable-5-1</code>, <code>claude-opus-5-5</code>, <code>claude-sonnet-5-5</code>, <code>claude-haiku-5-5</code> (contexto de 1M, saída máxima de 128K); <code>claude-mythos-5-1</code> é o mesmo modelo do Fable 5.1, só para organizações verificadas. Retirada anunciada, não antes de: Fable 5.1 e Mythos 5.1 em 2027-09-01, Opus 5.5 em 2027-09-22, Sonnet 5.5 em 2027-09-28, Haiku 5.5 em 2027-10-07</td><td><a href="https://platform.claude.com/docs/en/about-claude/model-deprecations" target="_blank" rel="noopener">model-deprecations</a></td></tr>
-          <tr><td>API e SDKs Anthropic</td><td><code>anthropic-version: 2026-10-21</code>; <code>anthropic</code> 2.3.0 (PyPI) e <code>@anthropic-ai/sdk</code> 1.3.0 (npm), ambos de 2026-10-23; <code>claude-agent-sdk</code> 0.2.174 (2026-10-24)</td><td><a href="https://platform.claude.com/docs/en/api/versioning" target="_blank" rel="noopener">api/versioning</a></td></tr>
-          <tr><td>Modelos Gemini</td><td><code>gemini-4-argon</code> (GA 2026-10-13), <code>gemini-3.8-flash</code> (GA 2026-09-02, padrão), <code>gemini-3.5-flash-lite</code>; imagem <code>gemini-nano-banana-2.1</code> (GA 2026-10-06); transcrição <code>gemini-3.5-transcribe</code>; embeddings <code>gemini-embedding-2</code>. Degraus de preço anunciados: Argon sobe em 2026-12-01 e o 3.8 Flash em 2027-01-01; nenhum desligamento anunciado para esses ids</td><td><a href="https://ai.google.dev/gemini-api/docs/models" target="_blank" rel="noopener">gemini-api/docs/models</a> · <a href="https://ai.google.dev/gemini-api/docs/pricing" target="_blank" rel="noopener">pricing</a></td></tr>
-          <tr><td>SDKs Google</td><td><code>google-genai</code> 2.33.0 (Python) e <code>@google/genai</code> 2.31.0 (JS), ambos de 2026-10-23; <code>google-adk</code> 2.13.0 (2026-10-23; Python 3.11 ou superior) e <code>@google/adk</code> 2.3.0</td><td><a href="https://pypi.org/project/google-genai/" target="_blank" rel="noopener">pypi.org/project/google-genai</a> · <a href="https://adk.dev/" target="_blank" rel="noopener">adk.dev</a></td></tr>
-          <tr><td>LangChain</td><td><code>langgraph</code> 1.2.17 (2026-10-24), <code>langchain</code> 1.4.7 (2026-10-21), <code>deepagents</code> 0.7.32 (2026-10-23; Python 3.11 ou superior), <code>deepagents-code</code> 0.2.1 (Python 3.14)</td><td><a href="https://pypi.org/project/langgraph/" target="_blank" rel="noopener">pypi.org/project/langgraph</a></td></tr>
-          <tr><td>Pydantic AI</td><td><code>pydantic-ai-slim</code> 2.61.0 (2026-10-24; Python 3.11 ou superior)</td><td><a href="https://pypi.org/project/pydantic-ai-slim/" target="_blank" rel="noopener">pypi.org/project/pydantic-ai-slim</a></td></tr>
-          <tr><td>MCP e A2A</td><td>Especificação MCP <code>2026-07-28</code> (a corrente); <code>mcp</code> 2.3.0 (PyPI), <code>@modelcontextprotocol/server</code> e <code>client</code> 2.4.0 (npm), <code>fastmcp</code> 4.1.3 (PyPI); A2A 1.0 com <code>a2a-sdk</code> 1.2.3 (Python)</td><td><a href="https://modelcontextprotocol.io/specification/versioning" target="_blank" rel="noopener">MCP versioning</a> · <a href="https://a2a-protocol.org/latest/specification/" target="_blank" rel="noopener">A2A</a></td></tr>
+          <tr><td>Modelos de texto OpenAI</td><td><code>gpt-6.2-astra</code> e <code>gpt-6.2-sol</code> (2026-11-17), <code>gpt-6.1-terra</code> (2026-10-26, US$ 1 / US$ 5 por 1M), <code>gpt-6-luna</code>. A geração anterior (<code>gpt-6-astra</code>, <code>gpt-6.1-sol</code>, <code>gpt-6-sol</code>) segue servida, sem desligamento anunciado (lido em 2026-11-27). Preços e contexto: primeira tabela de preços de <a href="guia_openai_modelos.html#s-catalogo">guia_openai_modelos</a> (contexto de Terra e dos 6.2 aqui: UNVERIFIED)</td><td><a href="https://developers.openai.com/api/docs/guides/latest-model" target="_blank" rel="noopener">guides/latest-model</a></td></tr>
+          <tr><td>Imagem e transcrição OpenAI</td><td><code>gpt-image-2.6-sunburst</code> (edição precisa), <code>gpt-image-2.6-flare</code> (geração rápida); <code>gpt-transcribe</code> (arquivo ou turno), <code>gpt-live-transcribe</code> (ao vivo); voz: <code>gpt-live-1.1</code> (2026-11-19, substitui o <code>gpt-live-1</code> em sessões novas; changelog lido em 2026-11-27)</td><td><a href="https://developers.openai.com/api/docs/guides/image-generation" target="_blank" rel="noopener">guides/image-generation</a></td></tr>
+          <tr><td>SDKs OpenAI</td><td><code>openai</code> 3.60.0 (Python) e 7.65.0 (JS), ambos lidos em 2026-11-27; <code>openai-agents</code> 0.26.0 (2026-11-24) e <code>@openai/agents</code> 0.22.0 (2026-11-12)</td><td><a href="https://pypi.org/project/openai/" target="_blank" rel="noopener">pypi.org/project/openai</a> · <a href="https://pypi.org/project/openai-agents/" target="_blank" rel="noopener">openai-agents</a></td></tr>
+          <tr><td>Modelos Claude</td><td><code>claude-fable-5-2</code> (2026-11-09, US$ 8 / US$ 40 por 1M), <code>claude-opus-5-5</code>, <code>claude-sonnet-5-5</code>, <code>claude-haiku-5-5</code> (contexto de 1M, saída máxima de 128K); <code>claude-mythos-5-2</code> (mesmo preço do Fable 5.2) é só para organizações verificadas. Retirada anunciada, não antes de: Fable 5.2 e Mythos 5.2 em 2027-11-09, Opus 5.5 em 2027-09-22, Sonnet 5.5 em 2027-09-28, Haiku 5.5 em 2027-10-07. Ciclo de vida dos modelos Claude: <a href="guia_claude_api.html#a-modelos">guia_claude_api</a> (lidas em 2026-11-27)</td><td><a href="https://platform.claude.com/docs/en/about-claude/model-deprecations" target="_blank" rel="noopener">model-deprecations</a></td></tr>
+          <tr><td>API e SDKs Anthropic</td><td><code>anthropic-version: 2026-10-21</code>; <code>anthropic</code> 2.14.0 (PyPI) e <code>@anthropic-ai/sdk</code> 1.14.0 (npm), ambos de 2026-11-24; <code>claude-agent-sdk</code> 0.2.189 (2026-11-25)</td><td><a href="https://platform.claude.com/docs/en/api/versioning" target="_blank" rel="noopener">api/versioning</a></td></tr>
+          <tr><td>Modelos Gemini</td><td><code>gemini-4-argon</code> (GA 2026-10-13), <code>gemini-4-carbon</code> (GA 2026-11-10), <code>gemini-4-hydrogen</code> (GA 2026-11-12, camada Flash do Gemini 4), <code>gemini-4-neon</code> (GA 2026-11-18, camada intermediária, US$ 3 / US$ 15 por 1M), <code>gemini-3.8-flash</code> (GA 2026-09-02, geração anterior, ainda Stable, sem desligamento anunciado), <code>gemini-3.5-flash-lite</code> (geração anterior); <code>genie-4</code> (GA 2026-11-19, geração de mundos em tempo real na Interactions <code>v1beta</code>); imagem <code>gemini-nano-banana-2.1</code> (GA 2026-10-06); transcrição <code>gemini-3.5-transcribe</code> (geração anterior); embeddings <code>gemini-embedding-2</code> (o <code>gemini-embedding-2-preview</code> foi desligado em 2026-11-06 e roteado para ele). Degraus de preço anunciados: Argon e Carbon sobem após 2026-11-30 e o 3.8 Flash em 2027-01-01; nenhum desligamento anunciado para os ids Gemini 4 (a página de depreciações, lida em 2026-11-27, não lista data para eles). Desligamentos lidos nessa página: <code>gemini-omni-1.1-flash</code> em 2026-12-03, os TTS preview em 2026-12-18; <code>gemini-3.1-flash-live-preview</code> (geração anterior) sem data anunciada (substituto <code>gemini-3.8-live</code>)</td><td><a href="https://ai.google.dev/gemini-api/docs/models" target="_blank" rel="noopener">gemini-api/docs/models</a> · <a href="https://ai.google.dev/gemini-api/docs/pricing" target="_blank" rel="noopener">pricing</a></td></tr>
+          <tr><td>SDKs Google</td><td><code>google-genai</code> 3.6.1 (Python, upload de 2026-11-18) e <code>@google/genai</code> 3.6.1 (JS), lidos em 2026-11-27; <code>google-adk</code> 2.15.1 (2026-11-25; exige <code>google-genai&gt;=2.34,&lt;3</code>, limitação do ADK; Python 3.11 ou superior é o requisito da 2.14.1, não relido) e <code>@google/adk</code> 2.5.0</td><td><a href="https://pypi.org/project/google-genai/" target="_blank" rel="noopener">pypi.org/project/google-genai</a> · <a href="https://adk.dev/" target="_blank" rel="noopener">adk.dev</a></td></tr>
+          <tr><td>LangChain</td><td><code>langgraph</code> 1.2.24 (2026-11-20), <code>langchain</code> 1.5.2 (2026-11-18; Python 3.11 ou superior é o requisito da 1.5.0, não relido), <code>deepagents</code> 0.7.42 (2026-11-26; Python 3.11 ou superior é o requisito da 0.7.39, não relido), <code>deepagents-code</code> 0.2.15 (Python 3.14 ou superior; fixa <code>deepagents==0.7.42</code>)</td><td><a href="https://pypi.org/project/langgraph/" target="_blank" rel="noopener">pypi.org/project/langgraph</a></td></tr>
+          <tr><td>Pydantic AI</td><td><code>pydantic-ai-slim</code> 2.76.0 (2026-11-27; Python 3.11 ou superior) · <code>pydantic-ai-harness</code> 0.76.0 (2026-11-27, Alpha)</td><td><a href="https://pypi.org/project/pydantic-ai-slim/" target="_blank" rel="noopener">pypi.org/project/pydantic-ai-slim</a></td></tr>
+          <tr><td>MCP e A2A</td><td>Especificação MCP <code>2026-07-28</code> (a corrente); <code>mcp</code> 2.3.0 (PyPI), <code>@modelcontextprotocol/server</code> e <code>client</code> 2.4.0 (npm), <code>fastmcp</code> 4.2.6 (PyPI, 2026-11-26); A2A 1.0 com <code>a2a-sdk</code> 1.3.1 (Python)</td><td><a href="https://modelcontextprotocol.io/specification/versioning" target="_blank" rel="noopener">MCP versioning</a> · <a href="https://a2a-protocol.org/latest/specification/" target="_blank" rel="noopener">A2A</a></td></tr>
         </tbody>
       </table></div>
 
@@ -633,19 +633,19 @@
         </a>
         <a class="card" href="guia_protocolo_mcp.html" data-card data-keywords="protocolo mcp revisão 2026-07-28 stateless initialize sessão server/discover mrtr extensões bibliotecas sdk autorização pisos segurança">
           <div class="card-title">Protocolo MCP</div>
-          <p class="card-desc">A revisão 2026-07-28 do protocolo (core stateless, sem <code>initialize</code> nem sessões, MRTR, extensões versionadas), quais bibliotecas a implementam, autorização, extensões e pisos de segurança dos SDKs.</p>
+          <p class="card-desc">A revisão 2026-07-28 do protocolo (core stateless, sem <code>initialize</code> nem sessões, MRTR, extensões versionadas), quais bibliotecas a implementam, calendário da próxima revisão (alvo 2027-03-30), autorização, extensões e pisos de segurança dos SDKs.</p>
           <div class="card-badges"><span class="badge da">Núcleo</span><span class="badge">MCP · protocolo</span><span class="badge ok">Publicado</span></div>
           <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
         </a>
         <a class="card" href="guia_providers_adapters.html" data-card data-keywords="providers adapters sdk responses api pydantic ai anthropic google structured output provider switching contract roles superfície por adapter litellm vercel crewai instructor">
           <div class="card-title">Providers &amp; adapters</div>
-          <p class="card-desc">Camada de adapter agnóstica: papel de cada SDK, superfície por adapter (quais usam a Responses API por padrão), parâmetros críticos da Responses API, Pydantic AI complementar, provider-switching contract + loss declaration.</p>
+          <p class="card-desc">Camada de adapter agnóstica: papel de cada SDK, superfície por adapter (quais usam a Responses API por padrão), parâmetros críticos da Responses API, Pydantic AI complementar, provider-switching contract + loss declaration; versões de SDK e depreciações de 2026-11-26.</p>
           <div class="card-badges"><span class="badge da">Núcleo</span><span class="badge">Adapters</span><span class="badge ok">Publicado</span></div>
           <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
         </a>
         <a class="card" href="guia_operacao_seguranca_evals.html" data-card data-keywords="operação segurança evals guardrails tracing cost ledger zdr retenção runbooks policy threat model slo sli release incidente">
           <div class="card-title">Operação, segurança &amp; evals</div>
-          <p class="card-desc">Operação como arquitetura: privacidade/ZDR, guardrails em 3 pontos, tracing/cost ledger, acceptance gates, runbooks, policy-as-code, threat model, advisories de supply chain com pisos de versão, SLIs/SLOs.</p>
+          <p class="card-desc">Operação como arquitetura: privacidade/ZDR, guardrails em 3 pontos, tracing/cost ledger, acceptance gates, runbooks, policy-as-code, threat model, advisories de supply chain com pisos de versão (fastmcp, pydantic-ai e SDKs MCP relidos em 2026-11-26), SLIs/SLOs.</p>
           <div class="card-badges"><span class="badge da">Núcleo</span><span class="badge">Segurança</span><span class="badge ok">Publicado</span></div>
           <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
         </a>
@@ -658,19 +658,19 @@
       <div class="card-grid">
         <a class="card" href="guia_agents_sdk.html" data-card data-keywords="openai agents sdk handoffs guardrails sessions tracing runner function tool tripwire">
           <div class="card-title">OpenAI Agents SDK</div>
-          <p class="card-desc">openai-agents: agentes, handoffs, guardrails (tripwire), sessions, tracing e integração com a Responses API.</p>
+          <p class="card-desc">openai-agents (0.26.0): agentes, handoffs, guardrails (tripwire), sessions, tracing e integração com a Responses API; notas das mudanças das 0.25 e 0.26 (provider Runloop removido, breaking changes).</p>
           <div class="card-badges"><span class="badge da">Framework</span><span class="badge info">Python</span><span class="badge ok">versão atual no guia</span></div>
           <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
         </a>
         <a class="card" href="guia_langgraph.html" data-card data-keywords="langgraph stategraph checkpointers hitl interrupt command grafo create_agent supervisor streaming reducers">
           <div class="card-title">LangGraph</div>
-          <p class="card-desc">Orquestração baseada em grafo: StateGraph e reducers, checkpointers, human-in-the-loop (interrupt/Command), streaming tipado e <code>create_agent</code>.</p>
+          <p class="card-desc">Orquestração baseada em grafo: StateGraph e reducers, checkpointers, human-in-the-loop (interrupt/Command), streaming tipado (status do <code>stream_events</code> v3 contraditório entre fontes em 2026-11-26) e <code>create_agent</code>.</p>
           <div class="card-badges"><span class="badge da">Framework</span><span class="badge info">Python</span><span class="badge ok">versão atual no guia</span></div>
           <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
         </a>
         <a class="card" href="guia_google_adk.html" data-card data-keywords="google adk agent development kit llmagent workflow sequential parallel loop tools mcp a2a workflow runtime grafo 2.x agent runtime">
           <div class="card-title">Google ADK 2.x</div>
-          <p class="card-desc">Agent Development Kit 2.x: LlmAgent e workflow agents, tools/MCP/A2A, Workflow Runtime em grafo e deploy no Agent Runtime.</p>
+          <p class="card-desc">Agent Development Kit 2.x: LlmAgent e workflow agents, tools/MCP/A2A, Workflow Runtime em grafo e deploy no Agent Runtime; atualizado para a 2.15.1 (o Visual Agent Builder saiu do ADK Web na 2.15.0).</p>
           <div class="card-badges"><span class="badge da">Framework</span><span class="badge info">Python</span><span class="badge ok">versão atual no guia</span></div>
           <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
         </a>
@@ -705,22 +705,22 @@
       <h2>Providers &amp; modelos</h2>
       <p>Referências de API por provedor de modelo.</p>
       <div class="card-grid">
-        <a class="card" href="guia_openai_modelos.html" data-card data-keywords="openai modelos gpt-6 astra gpt-6.1-sol sol luna agents api responses api reasoning effort ultrafast decisions api gpt-transcribe gpt image 2.5 streaming function calling structured output">
+        <a class="card" href="guia_openai_modelos.html" data-card data-keywords="openai modelos gpt-6 gpt-6.2 gpt-6.2-astra gpt-6.2-sol astra gpt-6.1-terra sol luna agents api responses api reasoning effort ultrafast decisions api gpt-transcribe gpt image 2.6 streaming function calling structured output">
           <div class="card-title">Modelos OpenAI</div>
-          <p class="card-desc">Família GPT-6 (Astra, 6.1 Sol, Sol, Luna), Responses API, Agents API (beta) e Decisions API (GA): seleção de modelo, reasoning.effort, Fast/Ultrafast, streaming, function calling e structured outputs.</p>
-          <div class="card-badges"><span class="badge da">Provider</span><span class="badge info">OpenAI</span><span class="badge ok">GPT-6 · Astra/6.1 Sol/Sol/Luna</span></div>
+          <p class="card-desc">Família GPT-6 (GPT-6.2 Astra e Sol correntes desde 2026-11-17, 6.1 Terra, Luna), Responses API, Agents API (beta) e Decisions API (GA): seleção de modelo, reasoning.effort, Fast/Ultrafast, configs Healthcare/Legal (2026-11-24), voz <code>gpt-live-1.1</code>, streaming, function calling e structured outputs.</p>
+          <div class="card-badges"><span class="badge da">Provider</span><span class="badge info">OpenAI</span><span class="badge ok">GPT-6.2 · Astra/Sol · 6.1 Terra · Luna</span></div>
           <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
         </a>
-        <a class="card" href="guia_claude_api.html" data-card data-keywords="anthropic claude fable 5.1 opus 5.5 sonnet 5.5 haiku 5.5 fast mode messages api streaming tools thinking adaptive between_tools prompt caching compaction batches structured output managed agents">
+        <a class="card" href="guia_claude_api.html" data-card data-keywords="anthropic claude fable 5.2 mythos 5.2 opus 5.5 sonnet 5.5 haiku 5.5 fast mode messages api streaming tools thinking adaptive between_tools prompt caching compaction batches structured output managed agents">
           <div class="card-title">Anthropic Claude API</div>
-          <p class="card-desc">Messages API: streaming, tool use, adaptive thinking (incl. <code>between_tools</code>), effort, prompt caching, compaction, batches, structured output, Skills e Managed Agents (beta).</p>
-          <div class="card-badges"><span class="badge da">Provider</span><span class="badge info">Anthropic</span><span class="badge ok">Fable 5.1 · Opus 5.5 · Sonnet 5.5 · Haiku 5.5</span></div>
+          <p class="card-desc">Messages API: streaming, tool use, adaptive thinking (incl. <code>between_tools</code>), effort, prompt caching, compaction, batches, structured output, Skills e Managed Agents (beta); ciclo de vida dos modelos Claude e SDKs 2.14.0/1.14.0.</p>
+          <div class="card-badges"><span class="badge da">Provider</span><span class="badge info">Anthropic</span><span class="badge ok">Fable 5.2 · Opus 5.5 · Sonnet 5.5 · Haiku 5.5</span></div>
           <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
         </a>
-        <a class="card" href="guia_gemini_interactions_api.html" data-card data-keywords="google gemini gemini 4 argon gemini-4-argon interactions api google-genai thinking level thought signatures streaming function calling antigravity agentes gerenciados managed agents environment sandbox deep research quickstart">
+        <a class="card" href="guia_gemini_interactions_api.html" data-card data-keywords="google gemini gemini 4 argon gemini-4-argon carbon hydrogen gemini-4-hydrogen neon gemini-4-neon genie-4 tool retrieval interactions api google-genai thinking level thought signatures streaming function calling antigravity agentes gerenciados managed agents environment sandbox deep research quickstart">
           <div class="card-title">Gemini Interactions API</div>
-          <p class="card-desc">Google Gemini via a Interactions API (GA, padrão para código novo) e o SDK google-genai: thinking_level, thought signatures, streaming, function calling e agentes gerenciados (Deep Research, Antigravity); generateContent apenas onde a Interactions ainda não cobre (Batch, AFC no Python, cache explícito).</p>
-          <div class="card-badges"><span class="badge da">Provider</span><span class="badge info">Google</span><span class="badge ok">Gemini 4 Argon · 3.8 · Interactions GA</span></div>
+          <p class="card-desc">Google Gemini via a Interactions API (GA, padrão para código novo) e o SDK google-genai: thinking_level, thought signatures, streaming, function calling, tool retrieval (Preview) e agentes gerenciados (Deep Research, Antigravity); modelos Gemini 4 incluindo o <code>gemini-4-neon</code> (GA 2026-11-18) e o <code>genie-4</code> (mundos em tempo real); generateContent apenas onde a Interactions ainda não cobre (Batch, AFC no Python, cache explícito).</p>
+          <div class="card-badges"><span class="badge da">Provider</span><span class="badge info">Google</span><span class="badge ok">Gemini 4 (Argon · Carbon · Hydrogen) · 3.8 · Interactions GA</span></div>
           <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
         </a>
       </div>
@@ -751,25 +751,25 @@
       <div class="card-grid">
         <a class="card" href="guia_agentic_vision_code_tools.html" data-card data-keywords="agentic vision code interpreter code execution shell tool search defer_loading tool registry seleção dinâmica crop zoom rotate render pdf gating custos containers worker sandbox vision_preprocess_document schemas descriptions strict">
           <div class="card-title">Agentic vision &amp; code tools</div>
-          <p class="card-desc">Code Interpreter / Code Execution / Shell como lupa visual (crop, zoom, render de PDF), gating de tools no runtime, Tool Search e defer_loading (OpenAI/Anthropic), ToolRegistry com seleção dinâmica para Gemini, worker isolado de visão e schemas de custom functions multi-provider.</p>
+          <p class="card-desc">Code Interpreter / Code Execution / Shell como lupa visual (crop, zoom, render de PDF), gating de tools no runtime, Tool Search e defer_loading (OpenAI/Anthropic) e tool retrieval do Gemini (Preview), ToolRegistry com seleção dinâmica para Gemini, worker isolado de visão e schemas de custom functions multi-provider.</p>
           <div class="card-badges"><span class="badge da">Transversal</span><span class="badge info">OpenAI · Gemini · Anthropic</span><span class="badge ok">Publicado</span></div>
           <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
         </a>
         <a class="card" href="guia_multimodal.html" data-card data-keywords="multimodal imagem visão pdf vision openai gemini anthropic documento ocr">
           <div class="card-title">Multimodal (imagem, visão, PDF)</div>
-          <p class="card-desc">Entrada multimodal em OpenAI, Gemini (Interactions) e Anthropic: imagens, visão, PDFs, áudio e vídeo, com foco em provenance e citações; o que só existe no generateContent tem seção própria.</p>
+          <p class="card-desc">Entrada multimodal em OpenAI, Gemini (Interactions) e Anthropic: imagens, visão, PDFs, Office/OpenDocument (nativo no Gemini desde 2026-11-18), áudio e vídeo, com recorte por <code>processing</code> no Gemini, foco em provenance e citações; o que só existe no generateContent tem seção própria.</p>
           <div class="card-badges"><span class="badge da">Transversal</span><span class="badge info">OpenAI · Gemini · Anthropic</span></div>
           <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
         </a>
         <a class="card" href="guia_file_inputs_no_storage.html" data-card data-keywords="file inputs sem provider storage zdr phi hosted execution code interpreter hosted shell code execution base64 signed url sourcerecord evidencecard payload por turno modo a modo b retenção privacidade openai gemini anthropic">
           <div class="card-title">File inputs sem provider storage</div>
-          <p class="card-desc">Ingestão de arquivos sob ZDR/PHI sem estado retido no provider (Modo A) vs hosted execution opcional (Modo B): SourceRecord/EvidenceCard, payload por turno, pipeline de imagem web e adapters em OpenAI/Gemini/Anthropic sobre Agents SDK, LangGraph, Deep Agents e ADK.</p>
+          <p class="card-desc">Ingestão de arquivos sob ZDR/PHI sem estado retido no provider (Modo A) vs hosted execution opcional (Modo B): SourceRecord/EvidenceCard, payload por turno, pipeline de imagem web e adapters em OpenAI/Gemini/Anthropic sobre Agents SDK, LangGraph, Deep Agents e ADK; entrada Office/OpenDocument nativa no Gemini (2026-11-18).</p>
           <div class="card-badges"><span class="badge da">Transversal</span><span class="badge info">ZDR · multimodal</span><span class="badge ok">Publicado</span></div>
           <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
         </a>
         <a class="card" href="guia_paralelismo_tools_openai_gemini_anthropic.html" data-card data-keywords="paralelismo tools chamadas paralelas function calling scheduler latência throughput openai gemini anthropic tool loop">
           <div class="card-title">Paralelismo de tools</div>
-          <p class="card-desc">Chamadas de ferramentas em paralelo entre provedores: protocolo de tool loop, quando paralelizar vs serializar, scheduler e trade-offs de latência; <code>tool_choice</code> forçado (400 em Fable 5.1, Opus 5.5 e Sonnet 5.5) e built-ins fora do batch paralelo da OpenAI.</p>
+          <p class="card-desc">Chamadas de ferramentas em paralelo entre provedores: protocolo de tool loop, quando paralelizar vs serializar, scheduler e trade-offs de latência; <code>tool_choice</code> forçado (400 em Fable 5.2, Mythos 5.2, Opus 5.5 e Sonnet 5.5), built-ins fora do batch paralelo da OpenAI e tool retrieval do Gemini (Preview).</p>
           <div class="card-badges"><span class="badge da">Transversal</span><span class="badge info">OpenAI · Gemini · Anthropic</span></div>
           <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
         </a>
@@ -788,7 +788,7 @@
       <div class="card-grid">
         <a class="card" href="guia_skills.html" data-card data-keywords="skills agent skills skill.md progressive disclosure autoria ativação description recursos governança trust tiers eviction templates">
           <div class="card-title">Agent Skills padronizado</div>
-          <p class="card-desc">Agent Skills (AgentSkills.io): padrão, SKILL.md, progressive disclosure (L1/L2/L3), autoria portável, ativação/descriptions, recursos, governança e templates.</p>
+          <p class="card-desc">Agent Skills (AgentSkills.io): padrão, SKILL.md, progressive disclosure (L1/L2/L3), autoria portável, ativação/descriptions, recursos, governança e templates; skills servidas por MCP no Claude Code (beta) e o estado <code>name-only</code> do <code>skillOverrides</code>.</p>
           <div class="card-badges"><span class="badge da">Skills</span><span class="badge">Portável</span><span class="badge ok">Publicado</span></div>
           <span class="card-arrow">Abrir <span aria-hidden="true">→</span></span>
         </a>
@@ -833,18 +833,18 @@
         <caption>Recursos em beta, preview ou experimentais. Onde ler = guia dono do fato e das fontes.</caption>
         <thead><tr><th>Recurso</th><th>Provedor</th><th>Status</th><th>Onde ler</th></tr></thead>
         <tbody>
-          <tr><td>Multi-agente hospedado (subagentes; header <code>OpenAI-Beta: responses_multi_agent=v1</code>)</td><td>OpenAI Responses</td><td><span class="pill beta">beta</span> (experimental no Agents SDK)</td><td><a href="guia_agents_sdk.html#s-agents-multi-patterns">Agents SDK · multi-agent</a></td></tr>
+          <tr><td>Multi-agente hospedado (subagentes; header <code>OpenAI-Beta: responses_multi_agent=v1</code>)</td><td>OpenAI Responses</td><td><span class="pill beta">beta</span> (experimental no Agents SDK)</td><td><a href="guia_agents_sdk_orquestracao.html#multi-agente-hospedado">Orquestração no Agents SDK · multi-agente hospedado</a></td></tr>
           <tr><td>Agents API (<code>POST /v1/agents/sessions</code>, header <code>OpenAI-Beta: agents=v1</code>; harness gerenciado, produto distinto do Agents SDK; sem ZDR)</td><td>OpenAI</td><td><span class="pill beta">beta</span></td><td><a href="guia_openai_modelos.html#s-quickstart-agentsapi">Modelos OpenAI · Agents API</a></td></tr>
           <tr><td>Managed Agents (orquestração, memory, sandboxes, webhooks; header <code>managed-agents-2026-04-01</code>; sem ZDR e sem HIPAA BAA)</td><td>Anthropic</td><td><span class="pill beta">beta</span></td><td><a href="guia_claude_api.html#d-managed-agents">Claude API · Managed Agents</a></td></tr>
           <tr><td>Exportação OpenTelemetry da Messages API e de sessões de Managed Agents (destino configurado no Console; os SDKs emitem spans)</td><td>Anthropic</td><td><span class="pill beta">beta</span> (conteúdo padrão <code>metadata_only</code>)</td><td><a href="guia_claude_api.html">Claude API</a></td></tr>
           <tr><td>Betas da Messages API: <code>mcp-client-2026-09-15</code>, <code>compact-2026-01-12</code> (limiar), <code>compact-2026-09-04</code> (sob demanda), <code>inline-tools-2026-09-15</code>, <code>mid-conversation-tool-changes-2026-07-01</code>, <code>server-side-fallback-2026-07-01</code>, <code>task-budgets-2026-03-13</code>, <code>advisor-tool-2026-03-01</code>, <code>output-300k-2026-03-24</code></td><td>Anthropic</td><td><span class="pill beta">beta</span> (headers de opt-in; Files API, Skills API, cache diagnostics e computer use são GA, sem header)</td><td><a href="guia_claude_api.html">Claude API</a> · <a href="guia_contexto_compactacao_estrategias.html#compactacao-servidor-anthropic">Contexto &amp; compactação</a></td></tr>
           <tr><td>Antigravity Agent (agente de código em sandbox — <code>antigravity-preview-09-2026</code>)</td><td>Gemini Interactions</td><td><span class="pill beta">preview</span></td><td><a href="guia_gemini_interactions_api.html#s-antigravity">Gemini Interactions · Antigravity</a></td></tr>
           <tr><td>Deep Research (<code>deep-research-preview-04-2026</code>, <code>deep-research-max-preview-04-2026</code>)</td><td>Gemini Interactions</td><td><span class="pill beta">preview</span></td><td><a href="guia_gemini_interactions_api.html#s-deep-research">Gemini Interactions · Deep Research</a></td></tr>
-          <tr><td>Computer use no <code>gemini-4-argon</code></td><td>Gemini Interactions</td><td><span class="pill beta">preview</span></td><td><a href="guia_gemini_interactions_api.html#s-computer-use">Gemini Interactions · Computer use</a></td></tr>
-          <tr><td><code>to_mcp_server</code>, <code>to_a2a</code> e o ciclo de vida de skills (<code>SKILL_LIFECYCLE</code>, desligado por padrão) no ADK 2.13</td><td>Google ADK</td><td><span class="pill beta">experimental</span></td><td><a href="guia_google_adk.html#skills">Google ADK · Skills</a></td></tr>
+          <tr><td>Ciclo de vida de skills no ADK (<code>SKILL_LIFECYCLE</code>, desligado por padrão; <code>to_mcp_server</code> e <code>to_a2a</code> são estáveis no Python desde a 2.14.0)</td><td>Google ADK</td><td><span class="pill beta">experimental</span></td><td><a href="guia_google_adk.html#skills">Google ADK · Skills</a></td></tr>
+          <tr><td>Suporte A2A do ADK em Go, Java e Kotlin</td><td>Google ADK</td><td><span class="pill beta">experimental</span> (lido em 2026-11-27)</td><td><a href="https://adk.dev/a2a/" target="_blank" rel="noopener">adk.dev/a2a</a></td></tr>
           <tr><td>MCP Registry</td><td>MCP</td><td><span class="pill beta">preview</span> (a página oficial avisa que pode haver mudanças incompatíveis ou reset de dados antes do GA)</td><td><a href="guia_protocolo_mcp.html">Protocolo MCP</a></td></tr>
-          <tr><td>Skills sobre MCP (<code>io.modelcontextprotocol/skills</code>, SEP-2640) e MCP Server Cards (SEP-2127)</td><td>MCP</td><td><span class="pill ok">extensões oficiais Final</span> (suporte de clientes parcial)</td><td><a href="guia_skills.html#s-skills-mcp">Skills · 6D</a></td></tr>
-          <tr><td>Agent Plugins (<code>plugin.json</code>, <code>mcp.json</code>)</td><td>Padrão aberto</td><td><span class="pill ok">1.0.0 publicado</span></td><td><a href="guia_skills.html#s-agent-plugins">Skills · 6C</a></td></tr>
+          <tr><td>Skills sobre MCP (<code>io.modelcontextprotocol/skills</code>, SEP-2640) e MCP Server Cards (SEP-2127)</td><td>MCP</td><td><span class="pill beta">extensões oficiais em estágio Beta</span> (os dois SEPs estão Final, mas o estágio da extensão é Beta; suporte de clientes parcial)</td><td><a href="guia_skills.html#s-skills-mcp">Skills · 6D</a></td></tr>
+          <tr><td>Agent Plugins (<code>plugin.json</code>, <code>mcp.json</code>)</td><td>Padrão aberto</td><td><span class="pill ok">1.0.0 publicado</span> (o 1.1.0, com hooks portáteis, é working draft não lançado)</td><td><a href="guia_skills.html#s-agent-plugins">Skills · 6C</a></td></tr>
           <tr><td>Managed Deep Agents (<code>mda</code>)</td><td>LangChain</td><td><span class="pill beta">public beta</span> no LangSmith</td><td><a href="guia_deepagents.html#s-managed-deep-agents">DeepAgents · 21.1</a></td></tr>
           <tr><td><code>langchain.mcp.MCPAdapter</code> (extra <code>langchain[mcp]</code>; só <code>list_tools()</code>, sem resources nem prompts do MCP)</td><td>LangChain</td><td><span class="pill beta">beta</span> (namespace beta; avisa no import)</td><td><a href="guia_deepagents.html#s-mcp">DeepAgents · MCP</a></td></tr>
         </tbody>
@@ -854,9 +854,9 @@
       <div class="callout warn"><strong>A confirmar (UNVERIFIED — não é fato do guia).</strong> Divergências
       entre páginas oficiais; não escrever nenhuma como afirmação até confirmação oficial:
       <ul>
-        <li><strong>MCP remoto com Gemini 3</strong> — a visão geral da Interactions diz que ainda não funciona com os modelos Gemini 3 ("coming soon"); a página de function calling documenta a tool <code>mcp_server</code>. Teste no modelo-alvo. <a href="guia_gemini_interactions_api.html">Gemini Interactions</a>.</li>
+        <li><strong>MCP remoto com Gemini 3</strong> — as páginas oficiais divergem; teste no modelo-alvo (detalhe e autoridade: <a href="guia_gemini_interactions_api.html#s-visao-geral-limites">Gemini Interactions §1.5</a>).</li>
         <li><strong>Limite de entrada inline no Gemini</strong> — a página de métodos de entrada diz 100 MB; as páginas de imagem e áudio dizem 20 MB. Regra operacional dos guias: abaixo de 20 MB por request. <a href="guia_file_inputs_no_storage.html">File inputs (ZDR)</a>.</li>
-        <li><strong><code>reasoning.effort</code> padrão dos GPT-6</strong> — só o <code>gpt-6.1-sol</code> tem default documentado (<code>medium</code>); em <code>gpt-6-astra</code>, <code>gpt-6-sol</code> e <code>gpt-6-luna</code> nenhuma página oficial declara o default. Passe o valor explicitamente. <a href="guia_openai_modelos.html">Modelos OpenAI</a>.</li>
+        <li><strong><code>reasoning.effort</code> padrão dos GPT-6</strong> — só o <code>gpt-6.1-terra</code> tem <code>medium</code> documentado; em <code>gpt-6-luna</code>, <code>gpt-6.2-astra</code> e <code>gpt-6.2-sol</code> o default não está documentado (UNVERIFIED nos GPT-6.2, lido em 2026-11-27). Passe o valor explicitamente. <a href="guia_openai_modelos.html">Modelos OpenAI</a>.</li>
         <li><strong>OWASP Agentic Top 10</strong> — a página oficial só informa a publicação (2025-12-09); os nomes ASI01-ASI10 vêm de fontes secundárias. <a href="guia_operacao_seguranca_evals.html#threat-model">Operação, segurança &amp; evals</a>.</li>
       </ul></div>
 
@@ -866,17 +866,17 @@
       <a href="guia_operacao_seguranca_evals.html#advisories-supply-chain">Operação, segurança &amp; evals §8</a>;
       aqui ficam os pisos que mais mudam decisões.
       <ul>
-        <li><code>mcp</code> (PyPI): <code>&gt;=2.2.0</code>; adapter que limita o <code>mcp</code> a <code>&lt;2</code> usa <code>&gt;=1.30.0,&lt;2</code>
-        (GHSA-qx49-fqc8-xw99, high: o cliente OAuth podia enviar credenciais a um authorization server escolhido pelo servidor MCP).</li>
+        <li><code>mcp</code> (PyPI): <code>&gt;=2.3.0</code>, a versão corrente (<code>crewai</code> e <code>mcp-use</code> ainda exigem <code>mcp&lt;2</code>, limitação desses frameworks;
+        GHSA-qx49-fqc8-xw99, corrigida na 2.2.0, high: o cliente OAuth podia enviar credenciais a um authorization server escolhido pelo servidor MCP).</li>
         <li>SDK oficial TypeScript do MCP: <code>@modelcontextprotocol/server</code> e <code>client</code> <code>&gt;=2.3.0</code>
         (<code>server-legacy&gt;=2.3.1</code>).</li>
-        <li><code>fastmcp</code> (Prefect): <code>&gt;=4.1.2</code> (GHSA-gpgx-58w2-xwwf, crítica: o <code>title</code> do
+        <li><code>fastmcp</code> (Prefect): <code>&gt;=4.2.6</code>, a versão corrente (GHSA-78c8-3jhx-5mg7, medium, 2026-11-21: <code>OAuthProxy</code> aceita resgate duplo, afeta <code>&gt;=2.13.0,&lt;=4.2.3</code>; o piso anterior <code>&gt;=4.1.2</code> cobria GHSA-gpgx-58w2-xwwf, crítica: o <code>title</code> do
         <code>outputSchema</code> de uma tool de servidor MCP malicioso era avaliado como código Python pelo cliente).</li>
-        <li><code>rmcp</code> (Rust): <code>&gt;=3.7.0</code> (GHSA-5p52-q7pq-9fq2, GHSA-4432-vg92-fqh6).</li>
-        <li><code>pydantic-ai</code>: <code>&gt;=2.59.0</code> (GHSA-4whf-38hw-pxxh, high).</li>
+        <li><code>rmcp</code> (Rust): <code>&gt;=3.9.0</code> (GHSA-c9f9-cp8h-jcj5; antes <code>&gt;=3.7.0</code>: GHSA-5p52-q7pq-9fq2, GHSA-4432-vg92-fqh6). PHP <code>mcp/sdk</code>: <code>&gt;=0.9.0</code> (GHSA-f4rf-6ghj-mhr6).</li>
+        <li><code>pydantic-ai-slim</code>: <code>&gt;=2.76.0</code>, a versão corrente (GHSA-gm2p-369w-rcgv, low, 2026-11-25; antes <code>&gt;=2.66.0</code>: GHSA-4whf-38hw-pxxh, high, corrigida na 2.59.0; GHSA-mgmv-r532-pg36 na 2.60.0; GHSA-484x-x9m4-62cj na 2.66.0); <code>pydantic-ai-harness&gt;=0.76.0</code>.</li>
         <li><code>litellm</code>: linha estável <code>1.104+</code> (GHSA-7hp6-4w63-5g45, crítica).</li>
         <li><code>claude-agent-sdk</code> <code>&gt;=0.2.121</code> (CVE-2026-96620, crítica: injeção de argumento pela opção
-        <code>resume</code>; nunca repasse session ID de origem externa sem validar). A versão corrente 0.2.174 está acima do piso.</li>
+        <code>resume</code>; nunca repasse session ID de origem externa sem validar). A versão lida em 2026-11-27 (0.2.189) está acima do piso.</li>
         <li>LangGraph: <code>langgraph&gt;=1.2.14</code>, <code>langgraph-sdk&gt;=0.4.6</code>, <code>langgraph-api&gt;=0.15.0</code>,
         <code>langgraph-cli&gt;=0.4.32</code>, <code>langgraph-checkpoint&gt;=4.1.1</code>,
         <code>langgraph-checkpoint-postgres&gt;=3.1.3</code> e <code>-sqlite&gt;=3.1.2</code>.</li>
@@ -885,8 +885,8 @@
         <code>deepagents&gt;=0.7.25</code> e <code>deepagents-acp&gt;=0.0.13</code>.</li>
         <li><code>google-adk</code>: <code>&gt;=2.5.0</code> (CVE-2026-18236).</li>
       </ul>
-      As versões correntes (<code>mcp</code> 2.3.0, <code>fastmcp</code> 4.1.3, <code>pydantic-ai-slim</code> 2.61.0,
-      <code>langgraph</code> 1.2.17, <code>google-adk</code> 2.13.0, <code>claude-agent-sdk</code> 0.2.174) estão nesses pisos ou acima;
+      As versões lidas em 2026-11-27 (<code>mcp</code> 2.3.0, <code>fastmcp</code> 4.2.6, <code>pydantic-ai-slim</code> 2.76.0,
+      <code>langgraph</code> 1.2.24, <code>google-adk</code> 2.15.1, <code>claude-agent-sdk</code> 0.2.189) estão nesses pisos ou acima;
       o risco está em lockfiles antigos e em adapters com teto.</div>
     </section>
 
@@ -939,7 +939,7 @@
       <h2>Fontes oficiais &amp; verificação</h2>
       <p>
         Os fatos perecíveis citados nos cards (versões de SDK, IDs de modelo, status GA) foram conferidos
-        contra as docs oficiais de cada provedor em 2026-10-24; cada guia traz as fontes e as datas de acesso em "Fontes &amp; verificação".
+        contra as docs oficiais de cada provedor e os registros PyPI/npm em 2026-11-27 (versões de pacote e depreciações do resumo desta página), 2026-11-17 (modelos OpenAI do resumo) e 2026-10-24 (demais itens); cada guia traz as fontes e as datas de acesso em "Fontes &amp; verificação".
       </p>
       <div class="table-wrap"><table>
         <thead><tr><th>Provedor / projeto</th><th>Doc oficial</th></tr></thead>
@@ -955,7 +955,7 @@
       </table></div>
       <p style="font-size:13px;color:var(--c-fg-muted)">
         Legenda dos selos dos cards: <span class="badge da">Núcleo/Framework/Provider/Transversal/Skills</span> trilha ·
-        <span class="badge ok">versão/GA · Publicado</span> fato verificado 2026-10-24.
+        <span class="badge ok">versão/GA · Publicado</span> fato verificado 2026-11-27 ou 2026-11-17 (resumo) ou 2026-10-24 (demais).
       </p>
     </section>
 
@@ -968,7 +968,7 @@
       <div class="brand" style="font-size:15px">Guia Completo de Agentes <small>Portal mestre</small></div>
       <p style="margin:8px 0 0;color:var(--c-fg-muted);font-size:13.5px;line-height:1.55">
         Portal de navegação para os guias de orquestração de agentes de IA. A coleção, as bibliotecas,
-        os protocolos e os pisos de segurança foram verificados em fontes oficiais em <strong>2026-10-24</strong>.
+        os protocolos e os pisos de segurança foram verificados em fontes oficiais em <strong>2026-10-24</strong>; as versões de pacote e as depreciações do resumo foram relidas em <strong>2026-11-27</strong> e os modelos OpenAI do resumo em <strong>2026-11-17</strong>.
         Os guias são auto-contidos e podem ser lidos isoladamente.
       </p>
     </div>
@@ -996,7 +996,7 @@
   "name": "Guia Completo de Agentes — Portal",
   "inLanguage": "pt-BR",
   "description": "Portal mestre de guias de orquestração de agentes de IA (núcleo agnóstico, frameworks, providers, contexto, tokens, multimodal, skills, operação).",
-  "dateModified": "2026-10-24",
+  "dateModified": "2026-11-27",
   "hasPart": [
     { "@type": "TechArticle", "name": "OpenAI Agents SDK", "url": "guia_agents_sdk.html" },
     { "@type": "TechArticle", "name": "LangGraph", "url": "guia_langgraph.html" },
