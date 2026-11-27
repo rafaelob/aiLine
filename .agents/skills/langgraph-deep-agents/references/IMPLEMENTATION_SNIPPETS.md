@@ -94,7 +94,7 @@ print(result.value, result.interrupts)
 async for event in app.astream(input, config, stream_mode=["updates", "messages"]):
     ...
 
-# New apps: event streaming v3 (typed projections). Do not confuse with invoke/stream version="v2".
+# Event streaming v3 (typed projections; docstring-deprecated in langchain-core 1.8.5, still @beta in langgraph 1.2.24 - see SKILL.md). Do not confuse with invoke/stream version="v2".
 stream = app.stream_events(input, config, version="v3")
 for message in stream.messages:
     print(message.text)

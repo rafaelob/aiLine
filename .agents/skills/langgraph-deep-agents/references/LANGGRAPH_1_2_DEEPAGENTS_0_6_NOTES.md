@@ -47,9 +47,9 @@
 above under "SOTA delta" and "2026-07-27 update" describes the 0.6 line, which
 ended at `0.6.12` — development cut over to 0.7 on `main` and there is no 0.6.13.
 
-Read `references/VERSIONING_FRESHNESS.md` § "Current pins (as-of 2026-10-24)" for
+Read `references/VERSIONING_FRESHNESS.md` § "Current pins (as-of 2026-11-26)" for
 live pins and § "Freshness (as-of 2026-07-30)" for the 0.6.12 → 0.7.0 12-item
-breaking-change migration checklist (still in force through 0.7.32). The three
+breaking-change migration checklist (still in force through 0.7.42). The three
 highest-risk items, because they are silent rather than raising:
 
 1. `create_deep_agent` no longer wires `TodoListMiddleware` — no `write_todos` tool, no `todos` channel, no planning prompt. Pass `middleware=[TodoListMiddleware()]` (from `langchain.agents.middleware`) on the main agent **and** on each `SubAgent`.
@@ -60,8 +60,8 @@ highest-risk items, because they are silent rather than raising:
 
 > Verified against PyPI JSON and official docs (not the local 2026-08-27 `guia_deepagents.html`, which still said `deepagents 0.7.9`).
 
-- **Versions** (2026-08-28; current pins are `langgraph 1.2.17` and `deepagents 0.7.32` as of 2026-10-24): `langgraph == 1.2.11` (PyPI `2026-08-11T14:00:35Z`), `deepagents == 0.7.10` (PyPI `2026-08-28T00:45:15Z`). Pin the current `deepagents` for new work; walk the 0.7.0 checklist before upgrading existing agents.
+- **Versions** (2026-08-28; current pins are `langgraph 1.2.24` and `deepagents 0.7.42` as of 2026-11-26): `langgraph == 1.2.11` (PyPI `2026-08-11T14:00:35Z`), `deepagents == 0.7.10` (PyPI `2026-08-28T00:45:15Z`). Pin the current `deepagents` for new work; walk the 0.7.0 checklist before upgrading existing agents.
 - **`langgraph-supervisor`:** no longer actively maintained. Replacement: `create_agent` + tool-wrapped subagents (https://docs.langchain.com/oss/python/migrate/langgraph-supervisor).
 - **`langgraph-swarm`:** last PyPI `0.1.0` (2025-12-04). Replacement: LangChain handoffs. Formal sunset **UNVERIFIED** (no official migrate page).
-- **Streaming:** new apps use `stream_events(version="v3")`; `invoke`/`stream` use `version="v2"`. Stream-mode name is `checkpoints` (plural).
-- **CLI:** 0.7.9 commit `da67c86` removed in-tree `libs/cli`. `deepagents-code` (0.1.64 then, 0.2.1 on 2026-10-24) and `deepagents-cli` 0.3.0 remain separate packages.
+- **Streaming:** the LangGraph docs recommend `stream_events(version="v3")` for new apps, but its status is contradictory as of 2026-11-26 (see `references/VERSIONING_FRESHNESS.md`); `invoke`/`stream` use `version="v2"`. Stream-mode name is `checkpoints` (plural).
+- **CLI:** 0.7.9 commit `da67c86` removed in-tree `libs/cli`. `deepagents-code` (0.1.64 then, 0.2.15 on 2026-11-26) and `deepagents-cli` 0.3.0 remain separate packages.
